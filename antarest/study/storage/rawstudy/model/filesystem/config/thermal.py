@@ -13,7 +13,7 @@
 from typing import Annotated, Any, Dict, Optional, Type, TypeAlias, cast
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, Field, TypeAdapter
+from pydantic import BeforeValidator, Field, TypeAdapter, field_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
@@ -135,7 +135,7 @@ class ThermalProperties(ClusterProperties):
     )
     min_up_time: int = Field(
         default=1,
-        ge=0,
+        ge=1,
         le=168,
         description="Min. Up time (h)",
         alias="min-up-time",
@@ -143,7 +143,7 @@ class ThermalProperties(ClusterProperties):
     )
     min_down_time: int = Field(
         default=1,
-        ge=0,
+        ge=1,
         le=168,
         description="Min. Down time (h)",
         alias="min-down-time",
@@ -231,6 +231,10 @@ class ThermalProperties(ClusterProperties):
         description="Emission rate of CO2 (t/MWh)",
         title="Emission rate of CO2",
     )
+
+    @field_validator("min_down_time", "min_up_time", mode="before")
+    def _validate_min_up_and_down_time(cls, v: int) -> int:
+        return 1 if v < 1 else 168 if v > 168 else v
 
 
 class Thermal860Properties(ThermalProperties):

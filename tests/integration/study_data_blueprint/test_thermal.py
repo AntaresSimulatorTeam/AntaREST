@@ -1181,3 +1181,47 @@ class TestThermal:
         json_result = res.json()
         assert len(json_result) == 1
         assert json_result[0]["action"] == "update_thermal_clusters"
+
+    @pytest.mark.parametrize("base_study_id", [{"name": "test_study", "version": 860}], indirect=True)
+    def test_thermal_property_values(self, client: TestClient, user_access_token: str, base_study_id: str) -> None:
+        # test validation rules on minUpTime and minDownTime
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        res = client.get(f"/v1/studies/{base_study_id}")
+        assert res.status_code in {200, 201}
+
+        # Create an area
+        res = client.post(f"/v1/studies/{base_study_id}/areas", json={"name": "area_test", "type": "AREA"})
+        areas = res.json()
+        assert res.status_code in {200, 201}
+        area_id = areas["id"]
+
+        # Create a thermal cluster with minUpTime and minDownTime < 0
+        res = client.post(
+            f"/v1/studies/{base_study_id}/areas/{area_id}/clusters/thermal",
+            json={
+                "name": "thermal_test1",
+                "minUpTime": 0,
+                "minDownTime": 0,
+            },
+        )
+
+        # minUpTime and minDownTime should be equal to 1
+        assert res.status_code in {200, 201}
+        assert res.json()["minUpTime"] == 1
+        assert res.json()["minDownTime"] == 1
+
+        # Create a thermal cluster with minUpTime and minDownTime > 168
+        res = client.post(
+            f"/v1/studies/{base_study_id}/areas/{area_id}/clusters/thermal",
+            json={
+                "name": "thermal_test2",
+                "minUpTime": 169,
+                "minDownTime": 169,
+            },
+        )
+
+        # minUpTime and minDownTime should equal to 168
+        assert res.status_code in {200, 201}
+        assert res.json()["minUpTime"] == 168
+        assert res.json()["minDownTime"] == 168
