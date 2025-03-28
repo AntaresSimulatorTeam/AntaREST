@@ -22,7 +22,6 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
@@ -444,7 +443,7 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     for section, values in config_dict.items():
         try:
             config_list.append(parse_thermal_cluster(version, values))
-        except (ValueError, InvalidFieldForVersionError) as exc:
+        except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid thermal configuration: '{section}' in '{config_path}'", exc_info=exc)
     return config_list
