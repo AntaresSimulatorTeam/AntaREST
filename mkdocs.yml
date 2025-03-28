@@ -11,7 +11,7 @@ theme:
   features:
     - navigation.instant
     - navigation.top
-    - navigation.expand
+  #  - navigation.expand
   #  - navigation.sections
   #   - header.autohide
   #   - toc.separate
