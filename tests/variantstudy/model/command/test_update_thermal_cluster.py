@@ -62,7 +62,6 @@ class TestUpdateThermalCluster:
         study.config.areas[area_id].thermals.append(thermal_config)
 
     def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext):
-        # TODO SL: have a name different from ID
         empty_study = empty_study_810
         area_name = "FR"
         area_id = "fr"
