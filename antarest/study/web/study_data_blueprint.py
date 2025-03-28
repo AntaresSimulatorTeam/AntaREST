@@ -70,6 +70,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterOutput,
@@ -79,7 +80,6 @@ from antarest.study.business.optimization_management import OptimizationFormFiel
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFieldsType
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -518,13 +518,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=ThematicTrimmingFormFieldsType,
         response_model_exclude_none=True,
     )
     def get_thematic_trimming(
         uuid: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThematicTrimmingFormFieldsType:
+    ) -> ThematicTrimming:
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
@@ -538,7 +537,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def set_thematic_trimming(
         uuid: str,
-        field_values: ThematicTrimmingFormFieldsType,
+        field_values: ThematicTrimming,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         logger.info(f"Updating thematic trimming config for study {uuid}")

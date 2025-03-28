@@ -13,13 +13,13 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.thematic_trimming_field_infos import (
+from antarest.study.business.model.thematic_trimming_field_infos import (
     FIELDS_INFO,
     ThematicTrimmingFormFields860,
     ThematicTrimmingFormFields910,
     ThematicTrimmingFormFieldsBase,
 )
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.thematic_trimming_management import (
     ThematicTrimmingManager,
     get_fields_info,
