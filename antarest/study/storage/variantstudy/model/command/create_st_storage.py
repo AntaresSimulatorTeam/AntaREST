@@ -187,37 +187,37 @@ class CreateSTStorage(ICommand):
         # pragma: no cover
         raise TypeError(repr(v))
 
-    def get_9_2_matrices(self) -> list[tuple[str, MatrixType]]:
-        return [
-            ("cost_injection", self.cost_injection),
-            ("cost_withdrawal", self.cost_withdrawal),
-            ("cost_level", self.cost_level),
-            ("cost_variation_injection", self.cost_variation_injection),
-            ("cost_variation_withdrawal", self.cost_variation_withdrawal),
-        ]
+    def get_9_2_matrices(self) -> dict[str, MatrixType]:
+        return {
+            "cost_injection": self.cost_injection,
+            "cost_withdrawal": self.cost_withdrawal,
+            "cost_level": self.cost_level,
+            "cost_variation_injection": self.cost_variation_injection,
+            "cost_variation_withdrawal": self.cost_variation_withdrawal,
+        }
 
-    def get_matrices(self) -> list[tuple[str, MatrixType]]:
-        matrices = [
-            ("pmax_injection", self.pmax_injection),
-            ("pmax_withdrawal", self.pmax_withdrawal),
-            ("lower_rule_curve", self.lower_rule_curve),
-            ("upper_rule_curve", self.upper_rule_curve),
-            ("inflows", self.inflows),
-        ]
+    def get_matrices(self) -> dict[str, MatrixType]:
+        matrices = {
+            "pmax_injection": self.pmax_injection,
+            "pmax_withdrawal": self.pmax_withdrawal,
+            "lower_rule_curve": self.lower_rule_curve,
+            "upper_rule_curve": self.upper_rule_curve,
+            "inflows": self.inflows,
+        }
         if self.study_version >= STUDY_VERSION_9_2:
-            matrices.extend(self.get_9_2_matrices())
+            matrices.update(self.get_9_2_matrices())
         return matrices
 
     @model_validator(mode="after")
     def validate_matrices(self) -> "CreateSTStorage":
         if self.study_version < STUDY_VERSION_9_2:
-            for matrix_name, data in self.get_9_2_matrices():
+            for matrix_name, data in self.get_9_2_matrices().items():
                 if data is not None:
                     raise ValueError(
                         f"You gave a 9.2 matrix: '{matrix_name}' for a study in version {self.study_version}"
                     )
 
-        for matrix_name, matrix_data in self.get_matrices():
+        for matrix_name, matrix_data in self.get_matrices().items():
             setattr(self, matrix_name, self.validate_field(matrix_data, matrix_name))
 
         return self
@@ -310,7 +310,12 @@ class CreateSTStorage(ICommand):
                 "st-storage": {
                     "clusters": {self.area_id: {"list": config}},
                     "series": {
-                        self.area_id: {storage_id: {attr: getattr(self, attr) or {} for attr, _ in self.get_matrices()}}
+                        self.area_id: {
+                            storage_id: {
+                                matrix_name: matrix_data or {}
+                                for matrix_name, matrix_data in self.get_matrices().items()
+                            }
+                        }
                     },
                 }
             }
@@ -329,9 +334,9 @@ class CreateSTStorage(ICommand):
             The DTO object representing the current command.
         """
         args = {"area_id": self.area_id, "parameters": self.parameters.model_dump(mode="json", by_alias=True)}
-        for attr, _ in self.get_matrices():
-            if getattr(self, attr) is not None:
-                args[attr] = strip_matrix_protocol(getattr(self, attr))
+        for matrix_name, matrix_data in self.get_matrices().items():
+            if matrix_data is not None:
+                args[matrix_name] = strip_matrix_protocol(matrix_data)
         return CommandDTO(
             action=self.command_name.value,
             version=self._SERIALIZATION_VERSION,
@@ -345,7 +350,7 @@ class CreateSTStorage(ICommand):
         Retrieves the list of matrix IDs.
         """
         matrices: List[str] = []
-        for attr, _ in self.get_matrices():
-            if getattr(self, attr) is not None:
-                matrices.append(strip_matrix_protocol(getattr(self, attr)))
+        for matrix_name, matrix_data in self.get_matrices().items():
+            if matrix_data is not None:
+                matrices.append(strip_matrix_protocol(matrix_data))
         return matrices
