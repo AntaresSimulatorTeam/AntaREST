@@ -467,6 +467,7 @@ class TestCreateSTStorage:
 
         # Create new st storage by specifying 9.2 properties
         parameters_9_2 = copy.deepcopy(PARAMETERS)
+        parameters_9_2["group"] = "My Group"
         parameters_9_2["efficiency_withdrawal"] = 0.55
         parameters_9_2["penalize_variation_injection"] = True
         cost_injection_matrix = GEN.uniform(0, 1000, size=(8760, 1)).tolist()
@@ -486,6 +487,7 @@ class TestCreateSTStorage:
         ini_content = read_ini(ini_path)
         expected_content["storage1"]["efficiencywithdrawal"] = 0.55
         expected_content["storage1"]["penalize-variation-injection"] = True
+        expected_content["storage1"]["group"] = "my group"  # the group is allowed and written in lower case
         assert ini_content == expected_content
 
         # Checks matrices were created

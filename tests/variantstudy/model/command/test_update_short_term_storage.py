@@ -118,6 +118,7 @@ class TestUpdateShortTermSorage:
             if study_version >= STUDY_VERSION_9_2:
                 new_properties["fr"]["storage_1"]["efficiency_withdrawal"] = 0.3
                 new_properties["DE"]["Storage_3"]["penalize_variation_injection"] = True
+                new_properties["DE"]["Storage_3"]["group"] = "MY DESIGN !!!"
             cmd = UpdateSTStorages(
                 storage_properties=new_properties,
                 command_context=command_context,
@@ -152,6 +153,7 @@ class TestUpdateShortTermSorage:
                 expected_de_content["Storage_3??"]["efficiencywithdrawal"] = 1
                 expected_de_content["Storage_3??"]["penalize-variation-withdrawal"] = False
                 expected_de_content["Storage_3??"]["penalize-variation-injection"] = True
+                expected_de_content["Storage_3??"]["group"] = "my design !!!"  # allowed and written in lower case
             assert de_content == expected_de_content
 
     def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
