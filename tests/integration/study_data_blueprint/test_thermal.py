@@ -50,14 +50,9 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.core.utils.string import to_camel_case
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from tests.integration.utils import wait_task_completion
-
-DEFAULT_PROPERTIES = ThermalCluster(name="Dummy").model_dump(mode="json")
-DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = [
