@@ -135,8 +135,7 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
         if data == {}:
             return ThematicTrimmingFileData()
 
-        args = {}
-        if data["selected_vars_reset"] is True:
+        if data.get("selected_vars_reset", True):
             # Means written fields are deactivated and others are activated
             unselected_vars = data.get("select_var -", [])
             args = {var: False for var in unselected_vars}
@@ -198,6 +197,7 @@ def _get_default_fields() -> list[str]:
         "h_ror",
         "wind",
         "solar",
+        "nuclear",
         "lignite",
         "coal",
         "gas",
@@ -276,6 +276,7 @@ def _get_sts_group_fields() -> list[str]:
         "psp_open_level",
         "psp_closed_injection",
         "psp_closed_withdrawal",
+        "psp_closed_level",
         "pondage_injection",
         "pondage_withdrawal",
         "pondage_level",

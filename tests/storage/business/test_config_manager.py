@@ -13,17 +13,9 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.study.business.model.thematic_trimming_field_infos import (
-    FIELDS_INFO,
-    ThematicTrimmingFormFields860,
-    ThematicTrimmingFormFields910,
-    ThematicTrimmingFormFieldsBase,
-)
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.thematic_trimming_management import (
-    ThematicTrimmingManager,
-    get_fields_info,
-)
+from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
     STUDY_VERSION_7_0,
     STUDY_VERSION_8,
@@ -34,9 +26,9 @@ from antarest.study.model import (
     STUDY_VERSION_9_1,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming import initialize_with_version
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -76,79 +68,42 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
 
     study.version = config.version = STUDY_VERSION_7_0
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study.version)
-    expected = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, True))
+    expected = ThematicTrimming()
+    initialize_with_version(expected, STUDY_VERSION_7_0)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study.version)
-    expected = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, True))
-    expected.avl_dtg = False
+    expected = ThematicTrimming(avl_dtg=False)
+    initialize_with_version(expected, STUDY_VERSION_8)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_2
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study.version)
-    expected = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, True))
-    expected.avl_dtg = False
+    expected = ThematicTrimming(avl_dtg=False)
+    initialize_with_version(expected, STUDY_VERSION_8_2)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_3
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study.version)
-    expected = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, True))
-    expected.dens = False
-    expected.profit_by_plant = False
+    expected = ThematicTrimming(dens=False, profit_by_plant=False)
+    initialize_with_version(expected, STUDY_VERSION_8_3)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_4
-    study_version = study.version
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study_version)
-    expected = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, False))
-    expected.cong_fee_alg = True
+    expected = ThematicTrimming(cong_fee_alg=True)
+    initialize_with_version(expected, STUDY_VERSION_8_4, False)
     assert actual == expected
-
-    new_config = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, True))
-    new_config.coal = False
-    thematic_trimming_manager.set_field_values(study, new_config)
-    assert study.add_commands.called_with(
-        UpdateConfig(
-            target="settings/generaldata/variables selection",
-            data={"select_var -": [FIELDS_INFO["coal"]["path"]]},
-            command_context=command_context,
-            study_version=study_version,
-        )
-    )
-
-    new_config = ThematicTrimmingFormFieldsBase.model_validate(dict.fromkeys(fields_info, False))
-    new_config.renw_1 = True
-    thematic_trimming_manager.set_field_values(study, new_config)
-    assert study.add_commands.called_with(
-        UpdateConfig(
-            target="settings/generaldata/variables selection",
-            data={
-                "selected_vars_reset": False,
-                "select_var +": [FIELDS_INFO["renw_1"]["path"]],
-            },
-            command_context=command_context,
-            study_version=study_version,
-        )
-    )
-
-    assert len(FIELDS_INFO) == 95
 
     study.version = config.version = STUDY_VERSION_8_6
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study.version)
-    expected = ThematicTrimmingFormFields860.model_validate(dict.fromkeys(fields_info, True))
-    expected.sts_inj_by_plant = False
+    expected = ThematicTrimming(sts_inj_by_plant=False)
+    initialize_with_version(expected, STUDY_VERSION_8_6)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_9_1
     actual = thematic_trimming_manager.get_field_values(study)
-    fields_info = get_fields_info(study.version)
-    expected = ThematicTrimmingFormFields910.model_validate(dict.fromkeys(fields_info, True))
-    expected.sts_by_group = False
+    expected = ThematicTrimming(sts_by_group=False)
+    initialize_with_version(expected, STUDY_VERSION_9_1)
     assert actual == expected
