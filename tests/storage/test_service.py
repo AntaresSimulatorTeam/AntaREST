@@ -2027,3 +2027,46 @@ def test_is_output_archived(tmp_path) -> None:
     zipped_with_suffix.mkdir(parents=True)
     assert is_output_archived(path_output=zipped_with_suffix)
     assert is_output_archived(path_output=tmp_path / "output_1.4.3")
+
+
+# @pytest.mark.unit_test
+# def test_create_external_study(tmp_path: Path) -> None:
+#     # Mock dependencies
+#     repository = Mock()
+#     event_bus = Mock()
+#     storage_service = Mock()
+#     user_service = Mock()
+#     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+#     service = build_study_service(
+#         raw_study_service=storage_service.raw_study_service,
+#         repository=repository,
+#         config=config,
+#         user_service=user_service,
+#         event_bus=event_bus,
+#     )
+
+#     # Input data
+#     study_folder = StudyFolder(
+#         path=tmp_path / "external_study",
+#         workspace="external",
+#         groups=[],
+#     )
+#     study_folder.path.mkdir(parents=True)
+#     params = RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
+
+#     # Mock behavior
+#     user_service.get_user_name.return_value = "test_user"
+#     storage_service.raw_study_service.update_from_raw_meta = Mock()
+
+#     # Call the method
+#     study_id = service.create_external_study(study_folder, params)
+
+#     # Assertions
+#     assert study_id is not None
+#     storage_service.raw_study_service.update_from_raw_meta.assert_called_once()
+#     repository.save.assert_called_once()
+#     event_bus.push.assert_called_once()
+#     event = event_bus.push.call_args[0][0]
+#     assert event.type == EventType.STUDY_CREATED
+#     assert event.payload["id"] == study_id
+#     assert event.permissions.public_mode == PublicMode.FULL
