@@ -270,7 +270,6 @@ class ThermalClusterUpdate(AntaresBaseModel):
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = ThermalClusterUpdate(
                 group="Gas",
-                name="Gas Cluster XY",
                 enabled=False,
                 unit_count=100,
                 nominal_capacity=1000.0,
@@ -278,7 +277,18 @@ class ThermalClusterUpdate(AntaresBaseModel):
                 co2=7.0,
             ).model_dump(mode="json")
 
-    name: Optional[str] = None  # TODO SL: better ignore this, not handled correctly
+    @model_validator(mode="before")
+    @classmethod
+    def _ignore_name(cls, data: Any) -> Any:
+        """
+        Renaming is not currently supported, but name needs to be accepted
+        for backwards compatibility. We can restore that property when
+        proper renaming is implemented.
+        """
+        if isinstance(data, dict) and "name" in data:
+            del data["name"]
+        return data
+
     unit_count: Optional[int] = Field(ge=1, default=None)  # TODO SL: generalize validation of that object
     nominal_capacity: Optional[float] = None
     enabled: Optional[bool] = None

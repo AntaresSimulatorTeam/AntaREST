@@ -521,8 +521,8 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         assert res.json() == expected
 
-        # Update with a pollutant. Should succeed even with versions prior to v8.6
-        # TODO SL: chek if it's still necessary ? Should raise instead ?
+        # Update with a pollutant. Should faild with versions prior to v8.6
+        # (note that previously, we tolerated this even for prior versions)
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={"nox": 10.0},
@@ -532,7 +532,8 @@ class TestThermal:
         else:
             assert res.status_code == 422, res.json()
 
-        # Update with the field `efficiency`. Should succeed even with versions prior to v8.7
+        # Update with the field `efficiency`. Should fail for versions prior to v8.7
+        # (note that previously, we tolerated this even for prior versions)
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={"efficiency": 97.0},
