@@ -366,8 +366,9 @@ class TestSTStorageManager:
         assert "unknown_storage" in ctx.value.detail
 
         # Test behavior for nominal case
-        file_study.tree.get.return_value = LIST_CFG["storage1"]
-        st_storage_output = manager.update_storage(study, area_id="West", storage_id="storage1", cluster_data=edit_form)
+        study.file_study.config.areas = {"west": area_west}
+        file_study.tree.get.return_value = LIST_CFG
+        st_storage_output = manager.update_storage(study, area_id="west", storage_id="storage1", cluster_data=edit_form)
 
         assert st_storage_output.initial_level == 0.0
         assert not st_storage_output.initial_level_optim

@@ -10,7 +10,9 @@
 #
 # This file is part of the Antares project.
 
-# noinspection PyUnresolvedReferences
 from antarest.core.persistence import Base as PersistenceBase
+from antarest.core.tasks.model import TaskJob  # noqa: F401
+from antarest.launcher.model import JobResult  # noqa: F401
+from antarest.login.model import Identity  # noqa: F401
 
 Base = PersistenceBase

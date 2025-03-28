@@ -12,6 +12,7 @@
 
 from antares.study.version import StudyVersion
 
+from antarest.core.model import LowerCaseId
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableConfig,
@@ -30,6 +31,9 @@ class RenewableClusterUpdate(RenewableProperties):
 
     class Config:
         populate_by_name = True
+
+
+RenewableClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, RenewableClusterUpdate]]
 
 
 @all_optional_model

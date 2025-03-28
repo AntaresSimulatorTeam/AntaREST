@@ -30,12 +30,13 @@ class TestCreateArea:
     @pytest.mark.parametrize("enr_modelling", list(EnrModelling))
     def test_apply(
         self,
-        empty_study: FileStudy,
+        empty_study_720: FileStudy,
         command_context: CommandContext,
         # pytest parameters
         version: int,
         enr_modelling: EnrModelling,
     ) -> None:
+        empty_study = empty_study_720
         empty_study.config.enr_modelling = enr_modelling.value
         study_version = StudyVersion.parse(version)
         empty_study.config.version = study_version

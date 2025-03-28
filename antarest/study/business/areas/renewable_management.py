@@ -27,6 +27,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterOutput,
     RenewableClusterUpdate,
+    RenewableClusterUpdates,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -300,17 +301,16 @@ class RenewableManager:
     def update_renewables_props(
         self,
         study: StudyInterface,
-        update_renewables_by_areas: Mapping[str, Mapping[str, RenewableClusterUpdate]],
+        update_renewables_by_areas: RenewableClusterUpdates,
     ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}
 
-        study_version = study.version
         # Prepare the command to update the renewable clusters.
         command = UpdateRenewablesClusters(
             cluster_properties=update_renewables_by_areas,
             command_context=self._command_context,
-            study_version=study_version,
+            study_version=study.version,
         )
 
         # Prepare the return of the method
