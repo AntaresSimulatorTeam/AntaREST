@@ -13,6 +13,7 @@ from typing import Any, List
 
 import pytest
 from antares.study.version import StudyVersion
+from pydantic import ValidationError
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.thermal_cluster_model import (
@@ -393,3 +394,29 @@ def test_thermal_cluster_update():
         efficiency=10,
         variable_o_m_cost=15,
     )
+
+
+def invalid_fields() -> list[dict[str, Any]]:
+    fields = [
+        {"unit_count": 0},
+        {"nominal_capacity": -10},
+        {"spinning": -1},
+        {"spinning": 102},
+        {"efficiency": 0},
+        {"efficiency": 102},
+    ]
+    for v in ["volatility_planned", "volatility_forced"]:
+        fields.append({v: -1})
+        fields.append({v: 2})
+    for cost in ["marginal_cost", "spread_cost", "fixed_cost", "startup_cost", "market_bid_cost", "variable_o_m_cost"]:
+        fields.append({cost: -1})
+    for e in ["co2", "nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
+        fields.append({e: -1})
+    return fields
+
+
+@pytest.mark.parametrize("fields", invalid_fields())
+@pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
+def test_invalid_field_values(thermal_cluster_cls, fields: dict[str, Any]):
+    with pytest.raises(ValidationError):
+        thermal_cluster_cls(name="cluster-data", **fields)

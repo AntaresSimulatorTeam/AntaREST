@@ -28,7 +28,7 @@ on those default values in other parts of the code: parsers, tests ...
 
 """
 
-from typing import Any, MutableMapping, Optional, cast
+from typing import Annotated, Any, MutableMapping, Optional, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
@@ -126,6 +126,16 @@ class ThermalCostGeneration(EnumIgnoreCase):
     USE_COST_TIME_SERIES = "useCostTimeseries"
 
 
+# Validation helpers
+UnitCount: TypeAlias = Annotated[int, Field(ge=1)]
+NominalCapacity: TypeAlias = Annotated[float, Field(ge=0)]
+Spinning: TypeAlias = Annotated[float, Field(ge=0, le=100)]
+Emission: TypeAlias = Annotated[float, Field(ge=0)]
+Efficiency: TypeAlias = Annotated[float, Field(gt=0, le=100)]
+Cost: TypeAlias = Annotated[float, Field(ge=0)]
+Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
+
+
 class ThermalCluster(AntaresBaseModel):
     """
     Thermal cluster model.
@@ -143,8 +153,8 @@ class ThermalCluster(AntaresBaseModel):
 
     id: str
     name: str
-    unit_count: int = 1
-    nominal_capacity: float = 0
+    unit_count: UnitCount = 1
+    nominal_capacity: NominalCapacity = 0
     enabled: bool = True
     group: ThermalClusterGroup = ThermalClusterGroup.OTHER1
     gen_ts: LocalTSGenerationBehavior = LocalTSGenerationBehavior.USE_GLOBAL
@@ -152,36 +162,36 @@ class ThermalCluster(AntaresBaseModel):
     min_up_time: int = 1
     min_down_time: int = 1
     must_run: bool = False
-    spinning: float = 0
-    volatility_forced: float = 0
-    volatility_planned: float = 0
+    spinning: Spinning = 0
+    volatility_forced: Volatility = 0
+    volatility_planned: Volatility = 0
     law_forced: LawOption = LawOption.UNIFORM
     law_planned: LawOption = LawOption.UNIFORM
-    marginal_cost: float = 0
-    spread_cost: float = 0
-    fixed_cost: float = 0
-    startup_cost: float = 0
-    market_bid_cost: float = 0
-    co2: float = Field(default=0, ge=0)
+    marginal_cost: Cost = 0
+    spread_cost: Cost = 0
+    fixed_cost: Cost = 0
+    startup_cost: Cost = 0
+    market_bid_cost: Cost = 0
+    co2: Emission = 0
 
     # Added in 8.6
-    nh3: Optional[float] = Field(default=None, ge=0)
-    so2: Optional[float] = Field(default=None, ge=0)
-    nox: Optional[float] = Field(default=None, ge=0)
-    pm2_5: Optional[float] = Field(default=None, ge=0)
-    pm5: Optional[float] = Field(default=None, ge=0)
-    pm10: Optional[float] = Field(default=None, ge=0)
-    nmvoc: Optional[float] = Field(default=None, ge=0)
-    op1: Optional[float] = Field(default=None, ge=0)
-    op2: Optional[float] = Field(default=None, ge=0)
-    op3: Optional[float] = Field(default=None, ge=0)
-    op4: Optional[float] = Field(default=None, ge=0)
-    op5: Optional[float] = Field(default=None, ge=0)
+    nh3: Optional[Emission] = None
+    so2: Optional[Emission] = None
+    nox: Optional[Emission] = None
+    pm2_5: Optional[Emission] = None
+    pm5: Optional[Emission] = None
+    pm10: Optional[Emission] = None
+    nmvoc: Optional[Emission] = None
+    op1: Optional[Emission] = None
+    op2: Optional[Emission] = None
+    op3: Optional[Emission] = None
+    op4: Optional[Emission] = None
+    op5: Optional[Emission] = None
 
     # Added in 8.7
-    cost_generation: Optional[ThermalCostGeneration] = Field(default=None)
-    efficiency: Optional[float] = Field(default=None, ge=0)
-    variable_o_m_cost: Optional[float] = Field(default=None, ge=0)
+    cost_generation: Optional[ThermalCostGeneration] = None
+    efficiency: Optional[Efficiency] = None
+    variable_o_m_cost: Optional[Cost] = None
 
 
 class ThermalClusterCreation(AntaresBaseModel):
@@ -210,8 +220,8 @@ class ThermalClusterCreation(AntaresBaseModel):
             ).model_dump(mode="json")
 
     name: ItemName
-    unit_count: Optional[int] = None
-    nominal_capacity: Optional[float] = None
+    unit_count: Optional[UnitCount] = None
+    nominal_capacity: Optional[NominalCapacity] = None
     enabled: Optional[bool] = None
     group: Optional[ThermalClusterGroup] = None
     gen_ts: Optional[LocalTSGenerationBehavior] = None
@@ -219,32 +229,32 @@ class ThermalClusterCreation(AntaresBaseModel):
     min_up_time: Optional[int] = None
     min_down_time: Optional[int] = None
     must_run: Optional[bool] = None
-    spinning: Optional[float] = None
-    volatility_forced: Optional[float] = None
-    volatility_planned: Optional[float] = None
+    spinning: Optional[Spinning] = None
+    volatility_forced: Optional[Volatility] = None
+    volatility_planned: Optional[Volatility] = None
     law_forced: Optional[LawOption] = None
     law_planned: Optional[LawOption] = None
-    marginal_cost: Optional[float] = None
-    spread_cost: Optional[float] = None
-    fixed_cost: Optional[float] = None
-    startup_cost: Optional[float] = None
-    market_bid_cost: Optional[float] = None
-    co2: Optional[float] = None
-    nh3: Optional[float] = None
-    so2: Optional[float] = None
-    nox: Optional[float] = None
-    pm2_5: Optional[float] = None
-    pm5: Optional[float] = None
-    pm10: Optional[float] = None
-    nmvoc: Optional[float] = None
-    op1: Optional[float] = None
-    op2: Optional[float] = None
-    op3: Optional[float] = None
-    op4: Optional[float] = None
-    op5: Optional[float] = None
+    marginal_cost: Optional[Cost] = None
+    spread_cost: Optional[Cost] = None
+    fixed_cost: Optional[Cost] = None
+    startup_cost: Optional[Cost] = None
+    market_bid_cost: Optional[Cost] = None
+    co2: Optional[Emission] = None
+    nh3: Optional[Emission] = None
+    so2: Optional[Emission] = None
+    nox: Optional[Emission] = None
+    pm2_5: Optional[Emission] = None
+    pm5: Optional[Emission] = None
+    pm10: Optional[Emission] = None
+    nmvoc: Optional[Emission] = None
+    op1: Optional[Emission] = None
+    op2: Optional[Emission] = None
+    op3: Optional[Emission] = None
+    op4: Optional[Emission] = None
+    op5: Optional[Emission] = None
     cost_generation: Optional[ThermalCostGeneration] = None
-    efficiency: Optional[float] = None
-    variable_o_m_cost: Optional[float] = None
+    efficiency: Optional[Efficiency] = None
+    variable_o_m_cost: Optional[Cost] = None
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
@@ -289,8 +299,8 @@ class ThermalClusterUpdate(AntaresBaseModel):
             del data["name"]
         return data
 
-    unit_count: Optional[int] = Field(ge=1, default=None)  # TODO SL: generalize validation of that object
-    nominal_capacity: Optional[float] = None
+    unit_count: Optional[UnitCount] = None
+    nominal_capacity: Optional[NominalCapacity] = None
     enabled: Optional[bool] = None
     group: Optional[ThermalClusterGroup] = None
     gen_ts: Optional[LocalTSGenerationBehavior] = None
@@ -298,32 +308,32 @@ class ThermalClusterUpdate(AntaresBaseModel):
     min_up_time: Optional[int] = None
     min_down_time: Optional[int] = None
     must_run: Optional[bool] = None
-    spinning: Optional[float] = None
-    volatility_forced: Optional[float] = None
-    volatility_planned: Optional[float] = None
+    spinning: Optional[Spinning] = None
+    volatility_forced: Optional[Volatility] = None
+    volatility_planned: Optional[Volatility] = None
     law_forced: Optional[LawOption] = None
     law_planned: Optional[LawOption] = None
-    marginal_cost: Optional[float] = None
-    spread_cost: Optional[float] = None
-    fixed_cost: Optional[float] = None
-    startup_cost: Optional[float] = None
-    market_bid_cost: Optional[float] = None
-    co2: Optional[float] = None
-    nh3: Optional[float] = None
-    so2: Optional[float] = None
-    nox: Optional[float] = None
-    pm2_5: Optional[float] = None
-    pm5: Optional[float] = None
-    pm10: Optional[float] = None
-    nmvoc: Optional[float] = None
-    op1: Optional[float] = None
-    op2: Optional[float] = None
-    op3: Optional[float] = None
-    op4: Optional[float] = None
-    op5: Optional[float] = None
+    marginal_cost: Optional[Cost] = None
+    spread_cost: Optional[Cost] = None
+    fixed_cost: Optional[Cost] = None
+    startup_cost: Optional[Cost] = None
+    market_bid_cost: Optional[Cost] = None
+    co2: Optional[Emission] = None
+    nh3: Optional[Emission] = None
+    so2: Optional[Emission] = None
+    nox: Optional[Emission] = None
+    pm2_5: Optional[Emission] = None
+    pm5: Optional[Emission] = None
+    pm10: Optional[Emission] = None
+    nmvoc: Optional[Emission] = None
+    op1: Optional[Emission] = None
+    op2: Optional[Emission] = None
+    op3: Optional[Emission] = None
+    op4: Optional[Emission] = None
+    op5: Optional[Emission] = None
     cost_generation: Optional[ThermalCostGeneration] = None
-    efficiency: Optional[float] = None
-    variable_o_m_cost: Optional[float] = None
+    efficiency: Optional[Efficiency] = None
+    variable_o_m_cost: Optional[Cost] = None
 
 
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
@@ -334,9 +344,6 @@ def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
 
 
-# TODO SL: we could centralize fields definitions so that min version and default values are defined in one place
-# TODO SL: we could define and use a protocol here, for better type checking
-#          But adds some boiler plate again
 def validate_thermal_cluster_against_version(
     version: StudyVersion,
     cluster_data: ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate,
