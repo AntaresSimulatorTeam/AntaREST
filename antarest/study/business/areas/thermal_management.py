@@ -350,7 +350,7 @@ class ThermalManager:
 
         study.add_commands(commands)
 
-        return self.get_cluster(study, area_id, new_id)
+        return create_thermal_cluster(cluster_creation, study_version)
 
     def validate_series(self, study: StudyInterface, area_id: str, cluster_id: str) -> bool:
         lower_cluster_id = cluster_id.lower()
