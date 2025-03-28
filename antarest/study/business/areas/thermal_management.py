@@ -30,6 +30,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
     ThermalClusterUpdates,
+    create_thermal_cluster,
     update_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
@@ -195,7 +196,7 @@ class ThermalManager:
 
         command = self._make_create_cluster_cmd(area_id, cluster_data, study.version)
         study.add_commands([command])
-        return self.get_cluster(study, area_id, transform_name_to_id(cluster_data.name))
+        return create_thermal_cluster(cluster_data, study.version)
 
     def _make_create_cluster_cmd(
         self, area_id: str, cluster: ThermalClusterCreation, study_version: StudyVersion
