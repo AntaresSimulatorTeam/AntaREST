@@ -32,10 +32,7 @@ function Fields() {
 
   return (
     <Box>
-      <Fieldset
-        legend={t("study.configuration.adequacyPatch.legend.operatingParameters")}
-        fullFieldWidth
-      >
+      <Fieldset fullFieldWidth>
         <SwitchFE
           label={t("study.configuration.adequacyPatch.enableAdequacyPatch")}
           name="enableAdequacyPatch"
@@ -59,11 +56,6 @@ function Fields() {
             "study.configuration.adequacyPatch.ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch",
           )}
           name="ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch"
-          control={control}
-        />
-        <SwitchFE
-          label={t("study.configuration.adequacyPatch.ntcBetweenPhysicalAreasOutAdequacyPatch")}
-          name="ntcBetweenPhysicalAreasOutAdequacyPatch"
           control={control}
         />
       </Fieldset>
@@ -164,11 +156,6 @@ function Fields() {
               </span>
             </Tooltip>
             <Fieldset.Break />
-            <SwitchFE
-              label={t("study.configuration.adequacyPatch.checkCsrCostFunction")}
-              name="checkCsrCostFunction"
-              control={control}
-            />
           </Fieldset>
         </>
       )}
