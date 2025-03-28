@@ -39,7 +39,8 @@ class ThematicTrimmingManager:
         """
         Set Thematic Trimming config from the webapp form
         """
-        data = serialize_thematic_trimming(study.version, thematic_trimming)
+        current_thematic_trimming = self.get_field_values(study)
+        data = serialize_thematic_trimming(study.version, thematic_trimming, current_thematic_trimming)
 
         command = UpdateConfig(
             target="settings/generaldata/variables selection",
