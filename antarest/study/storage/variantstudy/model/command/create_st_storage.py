@@ -151,6 +151,10 @@ class CreateSTStorage(ICommand):
         """
         values = {"command_context": self.command_context}
         if v is None:
+            # As of simulator v9.2.1 and v8.8.15 the default sts matrices are not needed by the Simulator
+            # todo: once v8.8.15 is released change this test to `if self.study_version >= STUDY_VERSION_8_8:`
+            if self.study_version >= STUDY_VERSION_9_2:
+                return None
             # use an already-registered default matrix
             constants: GeneratorMatrixConstants
             constants = self.command_context.generator_matrix_constants
@@ -162,8 +166,7 @@ class CreateSTStorage(ICommand):
                 "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
                 "inflows": constants.get_st_storage_inflows,
             }
-            method = methods.get(field, lambda: None)
-            return method()
+            return methods[field]()
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, values)
