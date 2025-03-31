@@ -86,7 +86,14 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
+    def copy(
+        self,
+        src_meta: T,
+        dest_name: str,
+        groups: Sequence[str],
+        with_outputs: bool = False,
+        destination_path: str = "",
+    ) -> T:
         """
         Create a new study by copying a reference study.
 
@@ -95,6 +102,7 @@ class IStudyStorageService(ABC, Generic[T]):
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
+            destination_path: The path where the destination study should be created. If not provided, the default path will be used.
 
         Returns:
             The newly created study.

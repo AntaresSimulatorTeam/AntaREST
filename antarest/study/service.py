@@ -1168,6 +1168,7 @@ class StudyService:
         use_task: bool,
         params: RequestParameters,
         with_outputs: bool = False,
+        destination_path: str = "",
     ) -> str:
         """
         Copy study to another location.
@@ -1179,6 +1180,7 @@ class StudyService:
             params: request parameters
             with_outputs: Indicates whether the study's outputs should also be duplicated.
             use_task: indicate if the task job service should be used
+            destination_path: destination path
 
         Returns:
             The unique identifier of the task copying the study.
@@ -1190,10 +1192,7 @@ class StudyService:
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study,
-                dest_study_name,
-                group_ids,
-                with_outputs,
+                origin_study, dest_study_name, group_ids, with_outputs, destination_path
             )
             self._save_study(study, params.user, group_ids)
             self.event_bus.push(

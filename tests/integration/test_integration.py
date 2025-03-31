@@ -1814,6 +1814,41 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     assert output_file.read_text() == new_output_file.read_text()
 
 
+def test_copy_variant_with_specific_path(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    raw = client.post("/v1/studies?name=raw")
+    assert raw.status_code == 201
+    parent_id = raw.json()
+    client.post(
+        f"/v1/studies/{parent_id}/areas",
+        json={"name": "area1", "type": "AREA"},
+    )
+    client.post(
+        f"/v1/studies/{parent_id}/areas",
+        json={"name": "area2", "type": "AREA"},
+    )
+    variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
+
+    dest_path = tmp_path / "internal_workspace" / "specific_path"
+
+    copy = client.post(
+        f"/v1/studies/{variant.json()}/copy",
+        params={"dest": "copied", "with_outputs": True, "use_task": True, "destination_path": dest_path},
+    )
+    client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
+
+    copied_study = client.get("/v1/studies?name=copied")
+    copied_id = next(iter(copied_study.json()))
+
+    study_synthesis = client.get(f"/v1/studies/{copied_id}/synthesis")
+    assert study_synthesis.status_code == 200, study_synthesis.json()
+    study_path = study_synthesis.json()["path"]
+    assert study_path.startswith(str(dest_path))
+    copied_areas = client.get(f"/v1/studies/{copied_id}/areas")
+    assert copied_areas.json() == client.get(f"/v1/studies/{parent_id}/areas").json()
+
+
 def test_areas_deletion_with_binding_constraints(
     client: TestClient, user_access_token: str, internal_study_id: str
 ) -> None:
