@@ -231,13 +231,13 @@ class ThermalClusterTimeSeriesGeneratorTask:
     Task to generate thermal clusters time series
     """
 
-    def __init__(  # type: ignore
+    def __init__(
         self,
         _study_id: str,
         repository: StudyMetadataRepository,
         storage_service: StudyStorageService,
         event_bus: IEventBus,
-        interface_method,
+        interface_method: Callable[[], Callable[[Study], StudyInterface]],
     ):
         self._study_id = _study_id
         self.repository = repository
@@ -255,7 +255,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context, study_version=file_study.config.version
             )
-            self.interface_method(study).add_commands([command])
+            self.interface_method()(study).add_commands([command])
 
             if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
