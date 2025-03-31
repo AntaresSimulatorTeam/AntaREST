@@ -1791,16 +1791,19 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> Non
 def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
+    # Create a raw study and a variant
     raw = client.post("/v1/studies?name=raw")
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
 
     generation = client.put(f"/v1/studies/{variant.json()}/generate")
     client.get(f"/v1/tasks/{generation.json()}?wait_for_completion=True")
 
+    # Create a fake output file
     output_file = tmp_path / "internal_workspace" / variant.json() / "output" / "output.txt"
     output_file.parent.mkdir(parents=True)
     output_file.write_text("Output data")
 
+    # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
         params={"dest": "copied", "with_outputs": True, "use_task": True},  # type: ignore
@@ -1810,6 +1813,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     copied_study = client.get("/v1/studies?name=copied")
     copied_id = next(iter(copied_study.json()))
 
+    # The new study must contain an output fodler with the same data as the source variant study
     new_output_file = tmp_path / "internal_workspace" / copied_id / "output" / "output.txt"
     assert output_file.read_text() == new_output_file.read_text()
 
