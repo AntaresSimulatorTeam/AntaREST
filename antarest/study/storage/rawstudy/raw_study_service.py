@@ -249,14 +249,14 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         return dest_study
 
-    def build_raw_study(self, dest_name: str, groups: Sequence[str], src_meta: Study) -> RawStudy:
-        if src_meta.additional_data is None:
+    def build_raw_study(self, dest_name: str, groups: Sequence[str], src_study: Study) -> RawStudy:
+        if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
             additional_data = StudyAdditionalData(
-                horizon=src_meta.additional_data.horizon,
-                author=src_meta.additional_data.author,
-                patch=src_meta.additional_data.patch,
+                horizon=src_study.additional_data.horizon,
+                author=src_study.additional_data.author,
+                patch=src_study.additional_data.patch,
             )
         dest_id = str(uuid4())
         dest_study = RawStudy(
@@ -266,7 +266,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             path=str(self.config.get_workspace_path() / dest_id),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
-            version=src_meta.version,
+            version=src_study.version,
             additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
