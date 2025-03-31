@@ -922,8 +922,8 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         dest_path = dest_study.path
         shutil.copytree(src_path, dest_path)
 
-        if with_outputs:
-            src_path = cast(Path, file_study.config.output_path)
+        src_path = cast(Path, file_study.config.output_path)
+        if with_outputs and src_path.exists():
             dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
             shutil.copytree(src_path, dest_path)
 
