@@ -37,11 +37,13 @@ from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -401,4 +403,27 @@ def study_storage_service_fixture(
     return StudyStorageService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+    )
+
+
+@pytest.fixture(name="study_service")
+def study_service_fixture(
+    raw_study_service: RawStudyService,
+    variant_study_service: VariantStudyService,
+    command_context: CommandContext,
+    event_bus: IEventBus,
+    task_service: ITaskService,
+    core_config: Config,
+):
+    return StudyService(
+        raw_study_service,
+        variant_study_service,
+        command_context,
+        Mock(),
+        Mock(),
+        event_bus,
+        Mock(),
+        task_service,
+        Mock(),
+        core_config,
     )
