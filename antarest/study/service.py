@@ -1420,15 +1420,12 @@ class StudyService:
             else:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
 
-        self.repository.delete(study.id)
+        # If the study is a variant, and its snapshot is generating,
+        # we need to wait until it's done to delete it to avoid any fs issues
+        if isinstance(study, VariantStudy) and study.generation_task:
+            self.task_service.await_task(study.generation_task, 600)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DELETED,
-                payload=study_info,
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        self.repository.delete(study.id)
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
@@ -1438,6 +1435,13 @@ class StudyService:
             if isinstance(study, RawStudy):
                 os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_DELETED,
+                payload=study_info,
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
         logger.info("study %s deleted by user %s", uuid, params.get_user_id())
 
         self._on_study_delete(uuid=uuid)

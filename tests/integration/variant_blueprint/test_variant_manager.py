@@ -436,3 +436,15 @@ def test_clear_snapshots(
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert not (older.exists() and old.exists() and recent.exists())
+
+
+def test_deletion_while_generating(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    # Generates the study from scratch
+    res = client.put(f"/v1/studies/{variant_id}/generate?from_scratch=True")
+    res.raise_for_status()
+    # Deletes it without waiting for the generation to end
+    res = client.delete(f"/v1/studies/{variant_id}")
+    # Ensures the deletion succeeds
+    assert res.status_code == 200
+    assert not (tmp_path / "internal_workspace" / variant_id).exists()
