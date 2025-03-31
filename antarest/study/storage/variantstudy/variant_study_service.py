@@ -923,7 +923,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         shutil.copytree(src_path, dest_path)
 
         if with_outputs:
-            src_path = file_study.config.output_path
+            src_path = cast(Path, file_study.config.output_path)
             dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
             shutil.copytree(src_path, dest_path)
 
