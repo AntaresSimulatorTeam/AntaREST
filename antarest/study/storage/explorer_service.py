@@ -108,6 +108,14 @@ class Explorer:
         if should_ignore_folder_for_scan(path, [".*"], []):
             raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, "Can't to open a file in a filtered folder")
 
+        # check if path is inside the default workspace folder
+        default_workspace = get_workspace_from_config(self.config, DEFAULT_WORKSPACE_NAME, default_allowed=True)
+        if default_workspace.path in path.parents:
+            raise HTTPException(
+                HTTPStatus.UNPROCESSABLE_ENTITY,
+                f"Path {path} is inside the default workspace folder and cannot be opened as an external study",
+            )
+
         # check study doens't already exist
         study_count = self.study_service.count_studies(
             StudyFilter(folder=str(path), access_permissions=AccessPermissions.from_params(params))

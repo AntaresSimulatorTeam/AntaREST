@@ -212,6 +212,22 @@ def test_open_external_study_already_exists(tmp_path: Path, request_params: Requ
 
 
 @pytest.mark.unit_test
+def test_open_external_study_in_default_workspace(tmp_path: Path, request_params: RequestParameters):
+    config = config_desktop_mode(tmp_path)
+    path = tmp_path / DEFAULT_WORKSPACE_NAME / "study_in_default"
+    path.mkdir(parents=True)
+    (path / "study.antares").touch()
+    study_service = Mock()
+    explorer = Explorer(config, study_service)
+
+    with pytest.raises(
+        HTTPException,
+        match=f"Path {path} is inside the default workspace folder and cannot be opened as an external study",
+    ):
+        explorer.open_external_study(path, request_params)
+
+
+@pytest.mark.unit_test
 def test_close_external_study_success(tmp_path: Path, request_params: RequestParameters):
     config = config_desktop_mode(tmp_path)
     study_service = Mock()

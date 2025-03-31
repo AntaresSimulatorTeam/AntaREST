@@ -68,7 +68,15 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         response_model=str,
     )
     def open_external_study(path: Path, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
-        """ """
+        """
+        This endpoint create a raw study in DB for the study at the given path.
+        Args:
+            path: The file system path to the external study.
+            current_user: user that perform the request.
+        Returns:
+            str: The unique identifier of the opened study.
+        """
+
         logger.info(f"Open study under path {path}")
         params = RequestParameters(user=current_user)
         study_id = explorer.open_external_study(path, params)
@@ -76,11 +84,18 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     @bp.delete(
         "/explorer/external/_close/{uuid}",
-        summary="For a given study path, import the study",
+        summary="For a given UUID, close the external study",
         response_model=str,
     )
     def close_external_study(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
-        """ """
+        """
+        This endpoint delete a raw study from DB.
+        Args:
+            uuid: id of the study to delete.
+            current_user: user that perform the request.
+        Returns:
+            str: empty string.
+        """
         logger.info(f"Deleting study {uuid}")
         params = RequestParameters(user=current_user)
         explorer.close_external_study(uuid, params)
