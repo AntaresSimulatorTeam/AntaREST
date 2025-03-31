@@ -41,7 +41,6 @@ from antarest.study.storage.utils import (
     remove_from_cache,
     update_antares_info,
 )
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +214,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
     @override
     def copy(
         self,
-        src_meta: RawStudy | VariantStudy,
+        src_meta: RawStudy,
         dest_name: str,
         groups: Sequence[str],
         with_outputs: bool = False,
@@ -232,9 +231,25 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         Returns:
             The newly created study.
         """
-        if isinstance(src_meta, RawStudy):
-            self._check_study_exists(src_meta)
+        self._check_study_exists(src_meta)
 
+        dest_study = self.build_raw_study(dest_name, groups, src_meta)
+
+        src_path = self.get_study_path(src_meta)
+        dest_path = self.get_study_path(dest_study)
+
+        shutil.copytree(src_path, dest_path)
+
+        output = dest_path / "output"
+        if not with_outputs and output.exists():
+            shutil.rmtree(output)
+
+        study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
+        update_antares_info(dest_study, study.tree, update_author=False)
+
+        return dest_study
+
+    def build_raw_study(self, dest_name: str, groups: Sequence[str], src_meta: Study) -> RawStudy:
         if src_meta.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
@@ -256,19 +271,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
         )
-
-        src_path = self.get_study_path(src_meta)
-        dest_path = self.get_study_path(dest_study)
-
-        shutil.copytree(src_path, dest_path)
-
-        output = dest_path / "output"
-        if not with_outputs and output.exists():
-            shutil.rmtree(output)
-
-        study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
-        update_antares_info(dest_study, study.tree, update_author=False)
-
         return dest_study
 
     @override

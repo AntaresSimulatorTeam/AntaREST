@@ -70,6 +70,7 @@ from antarest.study.storage.utils import (
     export_study_flat,
     is_managed,
     remove_from_cache,
+    update_antares_info,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -913,18 +914,20 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             The newly created study.
         """
 
-        self._safe_generation(src_study)
+        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study)
 
-        output_path = str(src_study.path + "/output")
-        src_study.path += "/snapshot"
+        file_study = self.get_raw(metadata=src_study)
 
-        dest_study = self.raw_study_service.copy(src_study, dest_name, groups, with_outputs)
-
-        dest_path = Path(dest_study.path)
+        src_path = file_study.config.path
+        dest_path = dest_study.path
+        shutil.copytree(src_path, dest_path)
 
         if with_outputs:
-            shutil.copytree(output_path, dest_path / "output")
+            src_path = file_study.config.output_path
+            dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
+            shutil.copytree(src_path, dest_path)
 
+        update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
