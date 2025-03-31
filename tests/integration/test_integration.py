@@ -1772,8 +1772,7 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> Non
     assert variant_study.status_code == 200
 
     # Copy Variant as a reference study
-    copy = client.post(f"/v1/studies/{variant_id}/copy?dest=copied&use_task=False")
-    client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
+    client.post(f"/v1/studies/{variant_id}/copy?dest=copied&use_task=False")
 
     all_studies = client.get("/v1/studies")
     assert variant_study.status_code == 200
@@ -1794,9 +1793,6 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     # Create a raw study and a variant
     raw = client.post("/v1/studies?name=raw")
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
-
-    generation = client.put(f"/v1/studies/{variant.json()}/generate")
-    client.get(f"/v1/tasks/{generation.json()}?wait_for_completion=True")
 
     # Create a fake output file
     output_file = tmp_path / "internal_workspace" / variant.json() / "output" / "output.txt"
