@@ -95,7 +95,7 @@ function Fields() {
 
           <Fieldset
             legend={t("study.configuration.adequacyPatch.legend.advanced")}
-            fieldWidth={390}
+            fieldWidth={500}
           >
             <Tooltip
               title={t(
