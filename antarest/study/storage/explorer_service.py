@@ -106,7 +106,7 @@ class Explorer:
 
         # check path is not in a filtered folder
         if should_ignore_folder_for_scan(path, [".*"], []):
-            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, "Can't to open a file in a filtered folder")
+            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, "Cannot open a file in a filtered folder")
 
         # check if path is inside the default workspace folder
         default_workspace = get_workspace_from_config(self.config, DEFAULT_WORKSPACE_NAME, default_allowed=True)
