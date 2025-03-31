@@ -53,18 +53,18 @@ To import a study into Antares Web, follow these steps from the "Studies" view:
 
 Click the "Import" button in the "Studies" view:
 
-![studies-import-main-view.png](../assets/media/how-to/studies-import-main-view.png)
+![studies-import-main-view.png](../../assets/media/how-to/studies-import-main-view.png)
 
 The import dialog box will appear. Click the "Browse" button to select the compressed file to import:
 
-![studies-import-drop-file-dialog.png](../assets/media/how-to/studies-import-drop-file-dialog.png)
+![studies-import-drop-file-dialog.png](../../assets/media/how-to/studies-import-drop-file-dialog.png)
 
 You can also drag and drop the compressed file into the dialog box.
 
 Once imported, you can see the study in the list of studies. Select the "default" workspace to view the imported study.
 You can also search for the study by name using the search input.
 
-![studies-import-studies-list.png](../assets/media/how-to/studies-import-studies-list.png)
+![studies-import-studies-list.png](../../assets/media/how-to/studies-import-studies-list.png)
 
 > **NOTE:** The properties of the imported study can be modified by clicking on the "More options" button and
 > selecting "Properties". You can change the study name, permission, and metadata.
@@ -135,7 +135,7 @@ Here is a breakdown of what each part of the code does:
 
 See also:
 
-- ["User account & api tokens"](../user-guide/1-interface.md#user-account-and-api-tokens) in the user guide.
+- ["User account & api tokens"](../../user-guide/1-interface.md#user-account-and-api-tokens) in the user guide.
 
 ## See also
 

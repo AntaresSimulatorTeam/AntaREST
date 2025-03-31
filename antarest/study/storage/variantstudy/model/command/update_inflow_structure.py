@@ -14,10 +14,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.inflow_model import (
-    INFLOW_PATH,
+from antarest.study.business.model.hydro_model import (
     InflowStructureFileData,
     InflowStructureUpdate,
+    get_inflow_path,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -49,7 +49,7 @@ class UpdateInflowStructure(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        path = [s.format(area_id=self.area_id) for s in INFLOW_PATH]
+        path = get_inflow_path(self.area_id)
 
         current_inflow = InflowStructureFileData(**study_data.tree.get(path))
 

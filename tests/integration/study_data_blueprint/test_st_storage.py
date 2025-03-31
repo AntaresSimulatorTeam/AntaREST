@@ -682,12 +682,8 @@ class TestSTStorage:
         actual = commands[1]
         expected = {
             "id": ANY,
-            "action": "update_st_storage",
-            "args": {
-                "area_id": "fr",
-                "properties": {"initial_level": 0.5},
-                "st_storage_id": "siemens battery",
-            },
+            "action": "update_st_storages",
+            "args": {"storage_properties": {"fr": {"siemens battery": {"initial_level": 0.5}}}},
             "version": 1,
             "updated_at": ANY,
             "user_name": ANY,
@@ -709,11 +705,11 @@ class TestSTStorage:
         actual = commands[2]
         expected = {
             "id": ANY,
-            "action": "update_st_storage",
+            "action": "update_st_storages",
             "args": {
-                "area_id": "fr",
-                "properties": {"initial_level": 0.0, "injection_nominal_capacity": 1600.0},
-                "st_storage_id": "siemens battery",
+                "storage_properties": {
+                    "fr": {"siemens battery": {"initial_level": 0.0, "injection_nominal_capacity": 1600.0}}
+                }
             },
             "version": 1,
             "updated_at": ANY,
@@ -851,7 +847,7 @@ class TestSTStorage:
         assert actions == [
             "create_area",
             "create_st_storage",
-            "update_st_storage",
+            "update_st_storages",
             "replace_matrix",
             "create_st_storage",
             "replace_matrix",

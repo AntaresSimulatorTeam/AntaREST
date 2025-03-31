@@ -14,6 +14,7 @@ from typing import Optional
 from antares.study.version import StudyVersion
 from pydantic import field_validator
 
+from antarest.core.model import LowerCaseId
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorage880Config,
@@ -32,6 +33,9 @@ class STStorageUpdate(STStorage880Properties):
 
     class Config:
         populate_by_name = True
+
+
+STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]
 
 
 class STStorageCreation(STStorageUpdate):
