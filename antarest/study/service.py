@@ -1004,6 +1004,7 @@ class StudyService:
             str: The ID of the newly created study.
         """
 
+        author = self.get_user_name(params)
         now = datetime.now(timezone.utc)
         path = str(study_folder.path)
         raw = RawStudy(
@@ -1017,7 +1018,7 @@ class StudyService:
             owner=None,
             groups=study_folder.groups,
             public_mode=PublicMode.FULL if len(study_folder.groups) == 0 else PublicMode.NONE,
-            # additional_data=StudyAdditionalData(author=author),
+            additional_data=StudyAdditionalData(author=author),
             version=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
         )
 

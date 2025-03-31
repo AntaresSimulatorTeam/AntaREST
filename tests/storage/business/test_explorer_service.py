@@ -14,36 +14,37 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
+from fastapi import HTTPException
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.model import StudyPermissionType
+from antarest.core.exceptions import ExternalWorkspaceDisabled
+from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
-from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, StudyFolder, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
 
-def build_config(root: Path) -> Config:
+def build_config(root: Path, desktop_mode=False) -> Config:
     return Config(
+        desktop_mode=desktop_mode,
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
                 "diese": WorkspaceConfig(path=root / "diese", filter_out=[".git", ".*RECYCLE.BIN"]),
                 "test": WorkspaceConfig(path=root / "test"),
             }
-        )
+        ),
     )
 
 
-@pytest.fixture
-def config_scenario_a(tmp_path: Path) -> Config:
-    default = tmp_path / "default"
+def build_tree(root: Path) -> None:
+    default = root / "default"
     default.mkdir()
     a = default / "studyA"
     a.mkdir()
     (a / "study.antares").touch()
 
-    diese = tmp_path / "diese"
+    diese = root / "diese"
     diese.mkdir()
     c = diese / "folder/studyC"
     c.mkdir(parents=True)
@@ -78,14 +79,32 @@ def config_scenario_a(tmp_path: Path) -> Config:
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-    config = build_config(tmp_path)
 
+@pytest.fixture
+def config_scenario_a(tmp_path: Path) -> Config:
+    build_tree(tmp_path)
+    config = build_config(tmp_path)
+    return config
+
+
+@pytest.fixture
+def request_params() -> Config:
+    return RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
+
+
+def config_desktop_mode(tmp_path: Path) -> Config:
+    config = build_config(tmp_path, desktop_mode=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    ext_study = outside / "external_study"
+    ext_study.mkdir()
+    (ext_study / "study.antares").touch()
     return config
 
 
 @pytest.mark.unit_test
 def test_list_dir_empty_string(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a)
+    explorer = Explorer(config_scenario_a, Mock())
     result = explorer.list_dir("diese", "")
 
     # We don't want to see the .git folder or the $RECYCLE.BIN as they were ignored in the workspace config
@@ -95,7 +114,7 @@ def test_list_dir_empty_string(config_scenario_a: Config):
 
 @pytest.mark.unit_test
 def test_list_dir_several_subfolders(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a)
+    explorer = Explorer(config_scenario_a, Mock())
     result = explorer.list_dir("diese", "folder")
 
     assert len(result) == 3
@@ -119,7 +138,7 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
 
 @pytest.mark.unit_test
 def test_list_dir_in_empty_folder(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a)
+    explorer = Explorer(config_scenario_a, Mock())
     result = explorer.list_dir("diese", "folder/subfolder1")
 
     assert len(result) == 0
@@ -127,7 +146,7 @@ def test_list_dir_in_empty_folder(config_scenario_a: Config):
 
 @pytest.mark.unit_test
 def test_list_dir_with_permission_error(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a)
+    explorer = Explorer(config_scenario_a, Mock())
     with patch("os.listdir", side_effect=PermissionError("Permission denied")):
         # asserts the endpoint doesn't fail but rather returns an empty list
         result = explorer.list_dir("diese", "folder")
@@ -137,113 +156,86 @@ def test_list_dir_with_permission_error(config_scenario_a: Config):
 @pytest.mark.unit_test
 def test_list_workspaces(tmp_path: Path):
     config = build_config(tmp_path)
-    explorer = Explorer(config)
+    explorer = Explorer(config, Mock())
 
     result = explorer.list_workspaces()
     assert result == [WorkspaceMetadata(name="diese"), WorkspaceMetadata(name="test")]
 
 
 @pytest.mark.unit_test
-def test_open_external_study_success(config_scenario_a: Config):
-    repository = Mock()
-    # repository.get_all_raw.side_effect = []
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    study_service = build_study_service(Mock(), repository, config)
+def test_open_external_study_success(tmp_path: Path, request_params: RequestParameters):
+    config = config_desktop_mode(tmp_path)
+    path = tmp_path / Path("outside/external_study")
+    study_service = Mock()
+    study_service.create_external_study.return_value = "study_id_123"
+    study_service.count_studies.return_value = 0
+    explorer = Explorer(config, study_service)
 
-    explorer = Explorer(config_scenario_a, study_service)
-    explorer.config.desktop_mode = True
-    path = Path("/valid/study/folder")
-    params = RequestParameters(user="test_user")
-
-    with (
-        patch("antarest.study.storage.explorer_service.is_study_folder", return_value=True),
-        patch("antarest.study.storage.explorer_service.should_ignore_folder_for_scan", return_value=False),
-        patch.object(explorer.study_service, "create_external_study", return_value="study_id_123"),
-    ):
-        study_id = explorer.open_external_study(path, params)
+    study_id = explorer.open_external_study(path, request_params)
 
     assert study_id == "study_id_123"
-    repository.save.assert_called_once_with(StudyFolder(path=path, workspace="external", groups=[]), params)
+    study_service.create_external_study.assert_called_once_with(
+        StudyFolder(path=path, workspace="external", groups=[]), request_params
+    )
+    study_service.count_studies.assert_called_once()
 
 
 @pytest.mark.unit_test
-def test_open_external_study_desktop_mode_disabled(config_scenario_a: Config):
+def test_open_external_study_desktop_mode_disabled(config_scenario_a: Config, request_params: RequestParameters):
     explorer = Explorer(config_scenario_a, study_service=MagicMock())
-    explorer.config.desktop_mode = False
     path = Path("/valid/study/folder")
-    params = RequestParameters(user="test_user")
 
-    with pytest.raises(ValueError, match="Study mode is not enabled in the configuration"):
-        explorer.open_external_study(path, params)
+    with pytest.raises(ExternalWorkspaceDisabled, match="Desktop mode is not enabled in the configuration"):
+        explorer.open_external_study(path, request_params)
 
 
 @pytest.mark.unit_test
-def test_open_external_study_invalid_folder(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, study_service=MagicMock())
-    explorer.config.desktop_mode = True
+def test_open_external_study_invalid_folder(tmp_path: Path, request_params: RequestParameters):
+    config = config_desktop_mode(tmp_path)
+    explorer = Explorer(config, study_service=MagicMock())
     path = Path("/invalid/folder")
-    params = RequestParameters(user="test_user")
 
-    with patch("antarest.study.storage.explorer_service.is_study_folder", return_value=False):
-        with pytest.raises(ValueError, match=f"Path {path} is not a study folder"):
-            explorer.open_external_study(path, params)
+    with pytest.raises(HTTPException, match=f"Path {path} is not a study folder"):
+        explorer.open_external_study(path, request_params)
 
 
 @pytest.mark.unit_test
-def test_open_external_study_filtered_folder(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, study_service=MagicMock())
-    explorer.config.desktop_mode = True
-    path = Path("/filtered/folder")
-    params = RequestParameters(user="test_user")
+def test_open_external_study_already_exists(tmp_path: Path, request_params: RequestParameters):
+    config = config_desktop_mode(tmp_path)
+    path = tmp_path / Path("outside/external_study")
+    study_service = Mock()
+    study_service.count_studies.return_value = 1
+    explorer = Explorer(config, study_service)
 
-    with (
-        patch("antarest.study.storage.explorer_service.is_study_folder", return_value=True),
-        patch("antarest.study.storage.explorer_service.should_ignore_folder_for_scan", return_value=True),
-    ):
-        with pytest.raises(ValueError, match="Can't to open a file in a filtered folder"):
-            explorer.open_external_study(path, params)
+    with pytest.raises(HTTPException, match=f"Study at {path} already exists in database"):
+        explorer.open_external_study(path, request_params)
 
 
 @pytest.mark.unit_test
-def test_open_external_study_already_exists(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, study_service=MagicMock())
-    explorer.config.desktop_mode = True
-    path = Path("/existing/study/folder")
-    params = RequestParameters(user="test_user")
+def test_close_external_study_success(tmp_path: Path, request_params: RequestParameters):
+    config = config_desktop_mode(tmp_path)
+    study_service = Mock()
+    explorer = Explorer(config, study_service=study_service)
+    uuid = "677c1f6f-ecf7-4490-b359-b5fc50d4764d"
 
-    with (
-        patch("antarest.study.storage.explorer_service.is_study_folder", return_value=True),
-        patch("antarest.study.storage.explorer_service.should_ignore_folder_for_scan", return_value=False),
-        patch.object(explorer.study_service, "count_studies", return_value=1),
-    ):
-        with pytest.raises(ValueError, match=f"Study at {path} already exists in database"):
-            explorer.open_external_study(path, params)
+    explorer.close_external_study(uuid, request_params)
+
+    study_service.delete_external_study.assert_called_once()
 
 
 @pytest.mark.unit_test
-def test_close_external_study_success(config_scenario_a: Config):
+def test_close_external_study_desktop_mode_disabled(config_scenario_a: Config, request_params: RequestParameters):
     explorer = Explorer(config_scenario_a, study_service=MagicMock())
-    explorer.config.desktop_mode = True
-    uuid = "study_uuid_123"
-    params = RequestParameters(user="test_user")
+    uuid = "677c1f6f-ecf7-4490-b359-b5fc50d4764d"
 
-    with (
-        patch("antarest.study.storage.explorer_service.sanitize_uuid", return_value=uuid),
-        patch.object(explorer.study_service, "check_study_access") as mock_check_access,
-        patch.object(explorer.study_service, "delete_external_study") as mock_delete_study,
-    ):
-        explorer.close_external_study(uuid, params)
-
-    mock_check_access.assert_called_once_with(uuid, StudyPermissionType.WRITE, params)
-    mock_delete_study.assert_called_once()
+    with pytest.raises(ExternalWorkspaceDisabled, match="Study mode is not enabled in the configuration"):
+        explorer.close_external_study(uuid, request_params)
 
 
 @pytest.mark.unit_test
-def test_close_external_study_desktop_mode_disabled(config_scenario_a: Config):
+def test_close_external_wrong_uuid_format(config_scenario_a: Config, request_params: RequestParameters):
     explorer = Explorer(config_scenario_a, study_service=MagicMock())
-    explorer.config.desktop_mode = False
-    uuid = "study_uuid_123"
-    params = RequestParameters(user="test_user")
+    uuid = "xxxx"
 
-    with pytest.raises(ValueError, match="Study mode is not enabled in the configuration"):
-        explorer.close_external_study(uuid, params)
+    with pytest.raises(HTTPException, match="uuid xxxx is not a valid UUID"):
+        explorer.close_external_study(uuid, request_params)

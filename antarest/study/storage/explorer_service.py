@@ -11,10 +11,14 @@
 # This file is part of the Antares project.
 
 import logging
+from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from typing import List
 
+from fastapi import HTTPException
+
 from antarest.core.config import Config
+from antarest.core.exceptions import ExternalWorkspaceDisabled
 from antarest.core.model import StudyPermissionType
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
@@ -94,22 +98,22 @@ class Explorer:
         # check that desktop_mode is enabled in config
         if not self.config.desktop_mode:
             logger.warning("Called open api when desktop mode was off")
-            raise ValueError("Study mode is not enabled in the configuration")
+            raise ExternalWorkspaceDisabled("Desktop mode is not enabled in the configuration")
 
         # check path is a study folder and we have read permission
         if not is_study_folder(path):
-            raise ValueError(f"Path {path} is not a study folder")
+            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, f"Path {path} is not a study folder")
 
         # check path is not in a filtered folder
         if should_ignore_folder_for_scan(path, [".*"], []):
-            raise ValueError("Can't to open a file in a filtered folder")
+            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, "Can't to open a file in a filtered folder")
 
         # check study doens't already exist
         study_count = self.study_service.count_studies(
             StudyFilter(folder=str(path), access_permissions=AccessPermissions.from_params(params))
         )
         if study_count > 0:
-            raise ValueError(f"Study at {path} already exists in database")
+            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, f"Study at {path} already exists in database")
 
         # create a study object from the path
         study_folder = StudyFolder(path=path, workspace="external", groups=[])
@@ -126,14 +130,11 @@ class Explorer:
         # check that desktop_mode is enabled in config
         if not self.config.desktop_mode:
             logger.warning("Called open api when desktop mode was off")
-            raise ValueError("Study mode is not enabled in the configuration")
+            raise ExternalWorkspaceDisabled("Study mode is not enabled in the configuration")
 
         sanitized_uuid = sanitize_uuid(uuid)
 
         # create a study object from the path
-        logger.info(
-            "Study %s at %s is will be deleted",
-            sanitized_uuid,
-        )
+        logger.info(f"Study {sanitized_uuid} will be deleted")
         study = self.study_service.check_study_access(sanitized_uuid, StudyPermissionType.WRITE, params)
         self.study_service.delete_external_study(study)
