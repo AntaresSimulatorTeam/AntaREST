@@ -62,6 +62,7 @@ __all__ = (
     "raw_study_service_fixture",
     "variant_study_service_fixture",
     "study_storage_service_fixture",
+    "study_service_fixture",
 )
 
 
