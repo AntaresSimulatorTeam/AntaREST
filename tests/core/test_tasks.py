@@ -567,7 +567,7 @@ nominalcapacity = 14.0
         repository=study_service.repository,
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
-        interface_method=study_service.get_study_interface,
+        interface_method=lambda: study_service.get_study_interface,
     )
 
     task_id = study_service.task_service.add_task(

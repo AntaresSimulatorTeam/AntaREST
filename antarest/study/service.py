@@ -255,7 +255,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context, study_version=file_study.config.version
             )
-            self.interface_method()(study).add_commands([command])
+            self.interface_method()(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
