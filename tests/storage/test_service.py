@@ -1148,6 +1148,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         last_access=datetime.utcnow(),
     )
+    study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
 
     # it freezes the mock and raise Attribute error if anything else than defined is used
