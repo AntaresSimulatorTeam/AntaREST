@@ -237,13 +237,13 @@ class ThermalClusterTimeSeriesGeneratorTask:
         repository: StudyMetadataRepository,
         storage_service: StudyStorageService,
         event_bus: IEventBus,
-        interface_method: Callable[[], Callable[[Study], StudyInterface]],
+        study_interface_supplier: Callable[[Study], StudyInterface],
     ):
         self._study_id = _study_id
         self.repository = repository
         self.storage_service = storage_service
         self.event_bus = event_bus
-        self.interface_method = interface_method
+        self.study_interface_supplier = study_interface_supplier
 
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
@@ -255,7 +255,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context, study_version=file_study.config.version
             )
-            self.interface_method()(study).add_commands([command], listener)
+            self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
@@ -2660,7 +2660,7 @@ class StudyService:
             repository=self.repository,
             storage_service=self.storage_service,
             event_bus=self.event_bus,
-            interface_method=lambda: self.get_study_interface,
+            study_interface_supplier=self.get_study_interface,
         )
 
         return self.task_service.add_task(
