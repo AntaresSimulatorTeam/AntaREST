@@ -139,7 +139,8 @@ class AllocationManager:
         if not allocation_data:
             raise AllocationDataNotFound(area_id)
 
-        return allocation_data.get("[allocation]", {})  # type: ignore
+        # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
+        return allocation_data.get("[allocation]", allocation_data.get("allocation", {}))  # type: ignore
 
     def get_allocation_form_fields(
         self, all_areas: List[AreaInfoDTO], study: StudyInterface, area_id: str
@@ -243,7 +244,8 @@ class AllocationManager:
         array = np.zeros((len(rows), len(columns)), dtype=np.float64)
 
         for prod_area, allocation_dict in allocation_cfg.items():
-            allocations = allocation_dict["[allocation]"]
+            # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
+            allocations = allocation_dict.get("[allocation]", allocation_dict.get("allocation", {}))
             for cons_area, coefficient in allocations.items():
                 row_idx = rows.index(cons_area)
                 col_idx = columns.index(prod_area)
