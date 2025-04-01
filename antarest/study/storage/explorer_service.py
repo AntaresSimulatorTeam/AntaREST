@@ -24,6 +24,7 @@ from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    EXTERNAL_WORKSPACE_NAME,
     NonStudyFolderDTO,
     StudyFolder,
     WorkspaceMetadata,
@@ -117,14 +118,15 @@ class Explorer:
             )
 
         # check study doens't already exist
+        folder = f"{EXTERNAL_WORKSPACE_NAME}{path}"
         study_count = self.study_service.count_studies(
-            StudyFilter(folder=str(path), access_permissions=AccessPermissions.from_params(params))
+            StudyFilter(folder=folder, access_permissions=AccessPermissions.from_params(params))
         )
         if study_count > 0:
             raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, f"Study at {path} already exists in database")
 
         # create a study object from the path
-        study_folder = StudyFolder(path=path, workspace="external", groups=[])
+        study_folder = StudyFolder(path=path, workspace=EXTERNAL_WORKSPACE_NAME, groups=[])
         study_id = self.study_service.create_external_study(study_folder, params)
         logger.info(f"External study at {path} successfully created with study id  {study_id}")
 

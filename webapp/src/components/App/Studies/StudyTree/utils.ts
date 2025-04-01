@@ -48,7 +48,7 @@ export function buildStudyTree(studies: StudyMetadata[]) {
 
     for (let i = 0; i < path.length; i++) {
       // Skip the last folder, as it represents the study itself
-      if (study.workspace !== "external" && i === path.length - 1) {
+      if (i === path.length - 1) {
         break;
       }
 

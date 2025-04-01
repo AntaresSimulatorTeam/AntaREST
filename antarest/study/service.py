@@ -1008,7 +1008,7 @@ class StudyService:
         author = self.get_user_name(params)
         now = datetime.now(timezone.utc)
         path = str(study_folder.path)
-        folder = f"{EXTERNAL_WORKSPACE_NAME}/{path}"
+        folder = f"{EXTERNAL_WORKSPACE_NAME}{path}"
         raw = RawStudy(
             id=str(uuid4()),
             name=study_folder.path.name,

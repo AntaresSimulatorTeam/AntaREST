@@ -68,7 +68,7 @@ def study_tree_desktop(tmp_path_desktop: Path) -> Path:
             └── study.antares
     """
 
-    g = tmp_path_desktop / "out_folder" / "studyG"
+    g = tmp_path_desktop / Path("out_folder") / Path("studyG")
     g.mkdir(parents=True)
     (g / "study.antares").touch()
 
@@ -164,7 +164,7 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
 
 def test_explorer_desktop(client_desktop: TestClient, admin_access_token: str, study_tree_desktop: Path):
     # open external study doesn't work as desktop mode is disabled
-    external_study_path = study_tree_desktop / "out_folder" / "studyG"
+    external_study_path = study_tree_desktop / Path("out_folder") / Path("studyG")
 
     def assert_count(expected_count: int) -> None:
         res = client_desktop.get(
