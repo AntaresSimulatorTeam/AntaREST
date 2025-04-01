@@ -104,7 +104,6 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
-from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
@@ -238,11 +237,13 @@ class ThermalClusterTimeSeriesGeneratorTask:
         repository: StudyMetadataRepository,
         storage_service: StudyStorageService,
         event_bus: IEventBus,
+        study_interface_supplier: Callable[[Study], StudyInterface],
     ):
         self._study_id = _study_id
         self.repository = repository
         self.storage_service = storage_service
         self.event_bus = event_bus
+        self.study_interface_supplier = study_interface_supplier
 
     def _generate_timeseries(self, notifier: ITaskNotifier) -> None:
         """Run the task (lock the database)."""
@@ -254,7 +255,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
             command = GenerateThermalClusterTimeSeries(
                 command_context=command_context, study_version=file_study.config.version
             )
-            execute_or_add_commands(study, file_study, [command], self.storage_service, listener)
+            self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
                 # In this case we only added the command to the list.
@@ -409,12 +410,12 @@ class RawStudyInterface(StudyInterface):
         return self._cached_file_study
 
     @override
-    def add_commands(self, commands: Sequence[ICommand]) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
         file_study = self.get_files()
 
         for command in commands:
-            result = command.apply(file_study)
+            result = command.apply(file_study, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
         remove_from_cache(self._raw_study_service.cache, study.id)
@@ -468,7 +469,7 @@ class VariantStudyInterface(StudyInterface):
         return self._variant_service.get_raw(self._study)
 
     @override
-    def add_commands(self, commands: Sequence[ICommand]) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         # get current user if not in session, otherwise get session user
         current_user = get_current_user()
         self._variant_service.append_commands(
@@ -1773,7 +1774,7 @@ class StudyService:
             cmd = self._create_edit_study_command(last_save_node, url, int(time.time()), version)
             commands.append(cmd)
 
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
     def apply_commands(self, uuid: str, commands: List[CommandDTO], params: RequestParameters) -> Optional[List[str]]:
@@ -1781,18 +1782,13 @@ class StudyService:
         if isinstance(study, VariantStudy):
             return self.storage_service.variant_study_service.append_commands(uuid, commands, params)
         else:
-            file_study = self.storage_service.raw_study_service.get_raw(study)
             assert_permission(params.user, study, StudyPermissionType.WRITE)
             self._assert_study_unarchived(study)
             parsed_commands: List[ICommand] = []
             for command in commands:
                 parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
-            execute_or_add_commands(
-                study,
-                file_study,
-                parsed_commands,
-                self.storage_service,
-            )
+            self.get_study_interface(study).add_commands(parsed_commands)
+
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -2664,6 +2660,7 @@ class StudyService:
             repository=self.repository,
             storage_service=self.storage_service,
             event_bus=self.event_bus,
+            study_interface_supplier=self.get_study_interface,
         )
 
         return self.task_service.add_task(
@@ -2910,7 +2907,7 @@ class StudyService:
         command = command_class.model_validate(args)
         file_study = self.storage_service.get_storage(study).get_raw(study, True)
         try:
-            execute_or_add_commands(study, file_study, [command], self.storage_service)
+            self.get_study_interface(study).add_commands([command])
         except CommandApplicationError as e:
             raise exception_class(e.detail) from e
 

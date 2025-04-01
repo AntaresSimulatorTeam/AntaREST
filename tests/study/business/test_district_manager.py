@@ -31,9 +31,6 @@ from antarest.study.storage.variantstudy.model.command.remove_district import Re
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
-# noinspection SpellCheckingInspection
-EXECUTE_OR_ADD_COMMANDS = "antarest.study.business.district_manager.execute_or_add_commands"
-
 
 def _check_add_commands(patched_func, expected_cls):
     assert patched_func.call_count == 1

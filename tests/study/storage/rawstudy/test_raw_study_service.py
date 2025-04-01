@@ -22,14 +22,13 @@ from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageGroup,
     STStorageProperties,
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -76,7 +75,7 @@ class TestRawStudyService:
         raw_study_service: RawStudyService,
         simple_matrix_service: SimpleMatrixService,
         generator_matrix_constants: GeneratorMatrixConstants,
-        study_storage_service: StudyStorageService,
+        study_service: StudyService,
         # pytest parameters
         outputs: bool,
         output_filter: t.Optional[t.List[str]],
@@ -114,7 +113,6 @@ class TestRawStudyService:
 
         # Prepare the RAW Study
         raw_study_service.create(raw_study)
-        file_study = raw_study_service.get_raw(raw_study)
 
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
@@ -145,12 +143,7 @@ class TestRawStudyService:
             study_version=raw_study.version,
         )
 
-        execute_or_add_commands(
-            raw_study,
-            file_study,
-            commands=[create_area_fr, create_st_storage],
-            storage_service=study_storage_service,
-        )
+        study_service.get_study_interface(raw_study).add_commands([create_area_fr, create_st_storage])
 
         # Prepare fake outputs
         my_solver_outputs = ["20230802-1425eco", "20230802-1628eco.zip"]
