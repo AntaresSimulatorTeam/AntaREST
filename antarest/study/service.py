@@ -110,6 +110,7 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    EXTERNAL_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     CommentsDto,
@@ -1007,11 +1008,12 @@ class StudyService:
         author = self.get_user_name(params)
         now = datetime.now(timezone.utc)
         path = str(study_folder.path)
+        folder = f"{EXTERNAL_WORKSPACE_NAME}/{path}"
         raw = RawStudy(
             id=str(uuid4()),
             name=study_folder.path.name,
-            folder=path,
-            workspace="external",
+            folder=folder,
+            workspace=EXTERNAL_WORKSPACE_NAME,
             path=path,
             created_at=now,
             updated_at=now,
@@ -1129,6 +1131,10 @@ class StudyService:
                 all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
+
+        all_studies = [
+            study for study in all_studies if study.workspace not in (DEFAULT_WORKSPACE_NAME, EXTERNAL_WORKSPACE_NAME)
+        ]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
@@ -1139,7 +1145,7 @@ class StudyService:
             if (
                 isinstance(study, RawStudy)
                 and not study.archived
-                and (study.workspace != DEFAULT_WORKSPACE_NAME and (study.workspace, study.path) not in workspace_paths)
+                and (study.workspace, study.path) not in workspace_paths
             ):
                 if not study.missing:
                     logger.info(

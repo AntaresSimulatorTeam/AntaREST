@@ -68,7 +68,7 @@ def study_tree_desktop(tmp_path_desktop: Path) -> Path:
             └── study.antares
     """
 
-    g = tmp_path_desktop / "out_folder/studyG"
+    g = tmp_path_desktop / "out_folder" / "studyG"
     g.mkdir(parents=True)
     (g / "study.antares").touch()
 

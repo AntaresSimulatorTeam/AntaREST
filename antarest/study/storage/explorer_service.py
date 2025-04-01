@@ -126,11 +126,7 @@ class Explorer:
         # create a study object from the path
         study_folder = StudyFolder(path=path, workspace="external", groups=[])
         study_id = self.study_service.create_external_study(study_folder, params)
-        logger.info(
-            "Study at %s appears on disk and will be added as %s",
-            path,
-            study_id,
-        )
+        logger.info(f"External study at {path} successfully created with study id  {study_id}")
 
         return study_id
 
