@@ -43,7 +43,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
@@ -52,14 +52,26 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
-from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import (
+    RawStudy,
+    Study,
+    StudyAdditionalData,
+    StudyMetadataDTO,
+    StudySimResultDTO,
+)
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.utils import (
+    assert_permission,
+    export_study_flat,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -884,16 +896,16 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     @override
     def copy(
         self,
-        src_meta: VariantStudy,
+        src_study: VariantStudy,
         dest_name: str,
         groups: Sequence[str],
         with_outputs: bool = False,
-    ) -> VariantStudy:
+    ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
 
         Args:
-            src_meta: The source study that you want to copy.
+            src_study: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
@@ -901,46 +913,22 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns:
             The newly created study.
         """
-        new_id = str(uuid4())
-        study_path = str(self.config.get_workspace_path() / new_id)
-        if src_meta.additional_data is None:
-            additional_data = StudyAdditionalData()
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=src_meta.additional_data.horizon,
-                author=src_meta.additional_data.author,
-                patch=src_meta.additional_data.patch,
-            )
-        dst_meta = VariantStudy(
-            id=new_id,
-            name=dest_name,
-            parent_id=src_meta.parent_id,
-            path=study_path,
-            public_mode=PublicMode.NONE if groups else PublicMode.READ,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            version=src_meta.version,
-            groups=groups,
-            snapshot=None,
-            additional_data=additional_data,
-        )
 
-        # noinspection PyArgumentList
-        dst_meta.commands = [
-            CommandBlock(
-                study_id=new_id,
-                command=command.command,
-                args=command.args,
-                index=command.index,
-                version=command.version,
-                study_version=str(command.study_version),
-                user_id=command.user_id,
-                updated_at=command.updated_at,
-            )
-            for command in src_meta.commands
-        ]
+        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study)
 
-        return dst_meta
+        file_study = self.get_raw(metadata=src_study)
+
+        src_path = file_study.config.path
+        dest_path = dest_study.path
+        shutil.copytree(src_path, dest_path)
+
+        src_path = cast(Path, file_study.config.output_path)
+        if with_outputs and src_path.exists():
+            dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
+            shutil.copytree(src_path, dest_path)
+
+        update_antares_info(dest_study, file_study.tree, update_author=True)
+        return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
