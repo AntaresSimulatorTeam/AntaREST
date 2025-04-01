@@ -1174,6 +1174,9 @@ class StudyService:
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
         missing_studies = {study.path: study for study in all_studies if study.missing is not None}
+        folders = [
+            folder for folder in folders if folder.workspace not in (DEFAULT_WORKSPACE_NAME, EXTERNAL_WORKSPACE_NAME)
+        ]
         for folder in folders:
             study_path = str(folder.path)
             workspace = folder.workspace
