@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from typing_extensions import override
 
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
@@ -60,18 +61,12 @@ class RemoveCluster(ICommand):
         area: Area = study_data.areas[self.area_id]
 
         # Search the Thermal cluster in the area
+        cluster_id = transform_name_to_id(self.cluster_id)
         thermal = next(
-            iter(thermal for thermal in area.thermals if thermal.id == self.cluster_id),
+            iter(thermal for thermal in area.thermals if transform_name_to_id(thermal.id) == cluster_id),
             None,
         )
         if thermal is None:
-            message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
-            return CommandOutput(status=False, message=message), {}
-
-        for thermal in area.thermals:
-            if thermal.id == self.cluster_id:
-                break
-        else:
             message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
             return CommandOutput(status=False, message=message), {}
 

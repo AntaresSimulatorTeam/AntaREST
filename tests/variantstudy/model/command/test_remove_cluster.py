@@ -13,15 +13,12 @@
 import numpy as np
 from checksumdir import dirhash
 
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    ThermalClusterGroup,
-    ThermalProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -57,7 +54,7 @@ class TestRemoveCluster:
 
             output = CreateCluster(
                 area_id=area_id,
-                parameters=ThermalProperties(
+                parameters=ThermalClusterCreation(
                     name=cluster_name,
                     group=ThermalClusterGroup.NUCLEAR,
                     unit_count=1,
