@@ -31,10 +31,11 @@ on those default values in other parts of the code: parsers, tests ...
 from typing import Annotated, Any, MutableMapping, Optional, TypeAlias, cast
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, PlainValidator, model_validator
 from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
+from antarest.core.calendar import HOURS_IN_WEEK
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
@@ -126,6 +127,10 @@ class ThermalCostGeneration(EnumIgnoreCase):
     USE_COST_TIME_SERIES = "useCostTimeseries"
 
 
+def _validate_week_hours(v: int) -> int:
+    return 1 if v < 1 else HOURS_IN_WEEK if v > HOURS_IN_WEEK else v
+
+
 # Validation helpers
 UnitCount: TypeAlias = Annotated[int, Field(ge=1)]
 NominalCapacity: TypeAlias = Annotated[float, Field(ge=0)]
@@ -134,6 +139,7 @@ Emission: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(gt=0, le=100)]
 Cost: TypeAlias = Annotated[float, Field(ge=0)]
 Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
+HoursInWeek: TypeAlias = Annotated[int, PlainValidator(_validate_week_hours)]
 
 
 class ThermalCluster(AntaresBaseModel):
@@ -159,8 +165,8 @@ class ThermalCluster(AntaresBaseModel):
     group: ThermalClusterGroup = ThermalClusterGroup.OTHER1
     gen_ts: LocalTSGenerationBehavior = LocalTSGenerationBehavior.USE_GLOBAL
     min_stable_power: float = 0
-    min_up_time: int = 1
-    min_down_time: int = 1
+    min_up_time: HoursInWeek = 1
+    min_down_time: HoursInWeek = 1
     must_run: bool = False
     spinning: Spinning = 0
     volatility_forced: Volatility = 0
@@ -192,11 +198,6 @@ class ThermalCluster(AntaresBaseModel):
     cost_generation: Optional[ThermalCostGeneration] = None
     efficiency: Optional[Efficiency] = None
     variable_o_m_cost: Optional[Cost] = None
-
-    @field_validator("min_down_time", "min_up_time", mode="before")
-    @classmethod
-    def _validate_min_up_and_down_time(cls, v: int) -> int:
-        return 1 if v < 1 else 168 if v > 168 else v
 
 
 class ThermalClusterCreation(AntaresBaseModel):
@@ -231,8 +232,8 @@ class ThermalClusterCreation(AntaresBaseModel):
     group: Optional[ThermalClusterGroup] = None
     gen_ts: Optional[LocalTSGenerationBehavior] = None
     min_stable_power: Optional[float] = None
-    min_up_time: Optional[int] = None
-    min_down_time: Optional[int] = None
+    min_up_time: Optional[HoursInWeek] = None
+    min_down_time: Optional[HoursInWeek] = None
     must_run: Optional[bool] = None
     spinning: Optional[Spinning] = None
     volatility_forced: Optional[Volatility] = None
@@ -260,11 +261,6 @@ class ThermalClusterCreation(AntaresBaseModel):
     cost_generation: Optional[ThermalCostGeneration] = None
     efficiency: Optional[Efficiency] = None
     variable_o_m_cost: Optional[Cost] = None
-
-    @field_validator("min_down_time", "min_up_time", mode="before")
-    @classmethod
-    def _validate_min_up_and_down_time(cls, v: int) -> int:
-        return 1 if v < 1 else 168 if v > 168 else v
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
@@ -315,8 +311,8 @@ class ThermalClusterUpdate(AntaresBaseModel):
     group: Optional[ThermalClusterGroup] = None
     gen_ts: Optional[LocalTSGenerationBehavior] = None
     min_stable_power: Optional[float] = None
-    min_up_time: Optional[int] = None
-    min_down_time: Optional[int] = None
+    min_up_time: Optional[HoursInWeek] = None
+    min_down_time: Optional[HoursInWeek] = None
     must_run: Optional[bool] = None
     spinning: Optional[Spinning] = None
     volatility_forced: Optional[Volatility] = None
@@ -344,11 +340,6 @@ class ThermalClusterUpdate(AntaresBaseModel):
     cost_generation: Optional[ThermalCostGeneration] = None
     efficiency: Optional[Efficiency] = None
     variable_o_m_cost: Optional[Cost] = None
-
-    @field_validator("min_down_time", "min_up_time", mode="before")
-    @classmethod
-    def _validate_min_up_and_down_time(cls, v: int) -> int:
-        return 1 if v < 1 else 168 if v > 168 else v
 
 
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
