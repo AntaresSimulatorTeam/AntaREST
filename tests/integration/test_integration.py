@@ -1295,7 +1295,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     obj = {
         "group": "lignite",
-        "name": "cluster 1 renamed",
+        "name": "cluster 1",
         "unitCount": 3,
         "enabled": False,
         "nominalCapacity": 3,
