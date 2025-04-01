@@ -28,10 +28,10 @@ To access the configuration of ST storages:
 
 ## ST Storage List
 
-![08-st-storages-list.png](../../../assets/media/user-guide/study/areas/08-st-storage-list.png)
+![08-st-storages-list.png](../../../assets/media/user-guide/study/areas/08-st-storages-list.png)
 _Screenshot for a study version under 8.8_
 
-![08-st-storages-list-enable.png](../../../assets/media/user-guide/study/areas/08-st-storage-list-enable.png)
+![08-st-storages-list-enable.png](../../../assets/media/user-guide/study/areas/08-st-storages-list-enable.png)
 _Screenshot for a study version in 8.8_
 
 On the ST storages page, you will find the following elements:

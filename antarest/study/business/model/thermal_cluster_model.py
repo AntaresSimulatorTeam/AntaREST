@@ -31,7 +31,7 @@ on those default values in other parts of the code: parsers, tests ...
 from typing import Annotated, Any, MutableMapping, Optional, TypeAlias, cast
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
@@ -193,6 +193,11 @@ class ThermalCluster(AntaresBaseModel):
     efficiency: Optional[Efficiency] = None
     variable_o_m_cost: Optional[Cost] = None
 
+    @field_validator("min_down_time", "min_up_time", mode="before")
+    @classmethod
+    def _validate_min_up_and_down_time(cls, v: int) -> int:
+        return 1 if v < 1 else 168 if v > 168 else v
+
 
 class ThermalClusterCreation(AntaresBaseModel):
     """
@@ -255,6 +260,11 @@ class ThermalClusterCreation(AntaresBaseModel):
     cost_generation: Optional[ThermalCostGeneration] = None
     efficiency: Optional[Efficiency] = None
     variable_o_m_cost: Optional[Cost] = None
+
+    @field_validator("min_down_time", "min_up_time", mode="before")
+    @classmethod
+    def _validate_min_up_and_down_time(cls, v: int) -> int:
+        return 1 if v < 1 else 168 if v > 168 else v
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
@@ -334,6 +344,11 @@ class ThermalClusterUpdate(AntaresBaseModel):
     cost_generation: Optional[ThermalCostGeneration] = None
     efficiency: Optional[Efficiency] = None
     variable_o_m_cost: Optional[Cost] = None
+
+    @field_validator("min_down_time", "min_up_time", mode="before")
+    @classmethod
+    def _validate_min_up_and_down_time(cls, v: int) -> int:
+        return 1 if v < 1 else 168 if v > 168 else v
 
 
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
