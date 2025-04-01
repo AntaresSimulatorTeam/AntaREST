@@ -249,9 +249,10 @@ def test_close_external_study_desktop_mode_disabled(config_scenario_a: Config, r
 
 
 @pytest.mark.unit_test
-def test_close_external_wrong_uuid_format(config_scenario_a: Config, request_params: RequestParameters):
-    explorer = Explorer(config_scenario_a, study_service=MagicMock())
+def test_close_external_wrong_uuid_format(tmp_path: Path, request_params: RequestParameters):
+    config = config_desktop_mode(tmp_path)
+    explorer = Explorer(config, study_service=MagicMock())
     uuid = "xxxx"
 
-    with pytest.raises(HTTPException, match="uuid xxxx is not a valid UUID"):
+    with pytest.raises(HTTPException, match="uuid eHh4eA== is not a valid UUID"):
         explorer.close_external_study(uuid, request_params)
