@@ -55,15 +55,6 @@ def ini_cleaner() -> Callable[[str], str]:
     return cleaner
 
 
-@pytest.fixture
-def clean_ini_writer(ini_cleaner: Callable[[str], str]) -> Callable[[Path, str], None]:
-    def write_clean_ini(path: Path, txt: str) -> None:
-        clean_ini = ini_cleaner(txt)
-        path.write_text(clean_ini)
-
-    return write_clean_ini
-
-
 @pytest.fixture(name="matrix_service")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
     return InMemorySimpleMatrixService()
