@@ -438,7 +438,7 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
     requested_path = workspace.path / folder
     requested_path = requested_path.resolve()
     safe_dir = workspace.path.resolve()
-    # check weither the requested path is a subdirectory of the workspace
+    # check wether the requested path is a subdirectory of the workspace
     return requested_path.is_relative_to(safe_dir)
 
 

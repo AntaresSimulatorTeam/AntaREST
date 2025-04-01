@@ -74,7 +74,7 @@ def create_utils_routes(config: Config) -> APIRouter:
     )
     def desktop_mode() -> Any:
         """
-        Returns weither the application is running on desktop mode.
+        Returns wether the application is running on desktop mode.
 
         - `desktop_mode`: boolean.
         """

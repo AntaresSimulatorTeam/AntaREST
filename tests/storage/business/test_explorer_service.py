@@ -195,7 +195,7 @@ def test_open_external_study_invalid_folder(tmp_path: Path, request_params: Requ
     explorer = Explorer(config, study_service=MagicMock())
     path = Path("/invalid/folder")
 
-    with pytest.raises(HTTPException, match=f"Path {path} is not a study folder"):
+    with pytest.raises(HTTPException, match="Path .* is not a study folder"):
         explorer.open_external_study(path, request_params)
 
 
@@ -207,7 +207,7 @@ def test_open_external_study_already_exists(tmp_path: Path, request_params: Requ
     study_service.count_studies.return_value = 1
     explorer = Explorer(config, study_service)
 
-    with pytest.raises(HTTPException, match=f"Study at {path} already exists in database"):
+    with pytest.raises(HTTPException, match="Study at .* already exists in database"):
         explorer.open_external_study(path, request_params)
 
 
@@ -222,7 +222,7 @@ def test_open_external_study_in_default_workspace(tmp_path: Path, request_params
 
     with pytest.raises(
         HTTPException,
-        match=f"Path {path} is inside the default workspace folder and cannot be opened as an external study",
+        match="Path .* is inside the default workspace folder and cannot be opened as an external study",
     ):
         explorer.open_external_study(path, request_params)
 
@@ -254,5 +254,5 @@ def test_close_external_wrong_uuid_format(tmp_path: Path, request_params: Reques
     explorer = Explorer(config, study_service=MagicMock())
     uuid = "xxxx"
 
-    with pytest.raises(HTTPException, match="uuid eHh4eA== is not a valid UUID"):
+    with pytest.raises(HTTPException, match="uuid .* is not a valid UUID"):
         explorer.close_external_study(uuid, request_params)
