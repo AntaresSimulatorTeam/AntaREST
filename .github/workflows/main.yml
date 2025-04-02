@@ -32,7 +32,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [windows-latest]
+        os: [windows-latest, ubuntu-22.04]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -142,7 +142,7 @@ jobs:
 
   sonarcloud:
     runs-on: ubuntu-22.04
-    needs: [python-test]
+    needs: [python-test, npm-test]
     steps:
       - uses: actions/checkout@v4
       - name: Download python coverage report
