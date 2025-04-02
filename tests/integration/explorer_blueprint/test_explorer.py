@@ -17,7 +17,6 @@ from starlette.testclient import TestClient
 from antarest.study.model import NonStudyFolderDTO, WorkspaceMetadata
 
 OK_STATUS_CODE = 200
-FORBIDDEN_STATUS_CODE = 403
 NOT_FOUND_STATUS_CODE = 404
 BAD_REQUEST_STATUS_CODE = 400
 # Status code for directory listing with invalid parameters
@@ -146,7 +145,7 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
     res = [WorkspaceMetadata(**e) for e in res]
     assert res == expected
 
-    # open external study is forbidden as desktop mode is disabled
+    # open external study is unavailable as desktop mode is disabled
     external_study_path = study_tree / "out_folder/studyG"
     res = client.post(
         f"/v1/private/explorer/external/_open?path={external_study_path}",
@@ -154,7 +153,7 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
     )
     assert res.status_code == NOT_FOUND_STATUS_CODE
 
-    # close external study is forbidden as desktop mode is disabled
+    # close external study is unavailable as desktop mode is disabled
     res = client.delete(
         "/v1/private/explorer/external/_close/some-uuid",
         headers={"Authorization": f"Bearer {admin_access_token}"},
