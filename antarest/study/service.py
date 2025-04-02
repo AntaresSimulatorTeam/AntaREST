@@ -153,6 +153,7 @@ from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_
 from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
+    is_external,
     is_managed,
     is_output_archived,
     remove_from_cache,
@@ -1498,7 +1499,7 @@ class StudyService:
 
         self.repository.delete(study.id)
 
-        if study.workspace != EXTERNAL_WORKSPACE_NAME:
+        if not is_external(study):
             # delete the files afterward for
             # if the study cannot be deleted from database for foreign key reason
             if self._assert_study_unarchived(study=study, raise_exception=False):
