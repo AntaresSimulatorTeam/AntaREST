@@ -1498,13 +1498,14 @@ class StudyService:
 
         self.repository.delete(study.id)
 
-        # delete the files afterward for
-        # if the study cannot be deleted from database for foreign key reason
-        if self._assert_study_unarchived(study=study, raise_exception=False):
-            self.storage_service.get_storage(study).delete(study)
-        else:
-            if isinstance(study, RawStudy):
-                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+        if study.workspace != EXTERNAL_WORKSPACE_NAME:
+            # delete the files afterward for
+            # if the study cannot be deleted from database for foreign key reason
+            if self._assert_study_unarchived(study=study, raise_exception=False):
+                self.storage_service.get_storage(study).delete(study)
+            else:
+                if isinstance(study, RawStudy):
+                    os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
         self.event_bus.push(
             Event(

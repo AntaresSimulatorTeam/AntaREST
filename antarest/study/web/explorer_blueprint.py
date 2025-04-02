@@ -62,45 +62,6 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         logger.info(f"Listing directory {path} in workspace {workspace}")
         return explorer.list_dir(workspace, path)
 
-    @bp.post(
-        "/explorer/external/_open",
-        summary="For a given study path, import the study",
-        response_model=str,
-    )
-    def open_external_study(path: Path, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
-        """
-        This endpoint create a raw study in DB for the study at the given path.
-        Args:
-            path: The file system path to the external study.
-            current_user: user that perform the request.
-        Returns:
-            str: The unique identifier of the opened study.
-        """
-
-        logger.info(f"Open study under path {path}")
-        params = RequestParameters(user=current_user)
-        study_id = explorer.open_external_study(path, params)
-        return study_id
-
-    @bp.delete(
-        "/explorer/external/_close/{uuid}",
-        summary="For a given UUID, close the external study",
-        response_model=str,
-    )
-    def close_external_study(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
-        """
-        This endpoint delete a raw study from DB.
-        Args:
-            uuid: id of the study to delete.
-            current_user: user that perform the request.
-        Returns:
-            str: empty string.
-        """
-        logger.info(f"Deleting study {uuid}")
-        params = RequestParameters(user=current_user)
-        explorer.close_external_study(uuid, params)
-        return ""
-
     @bp.get(
         "/explorer/_list_workspaces",
         summary="List all workspaces",
@@ -121,4 +82,42 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         logger.info("Listing workspaces")
         return explorer.list_workspaces()
 
+    if config.desktop_mode:
+        create_external_studies_routes(bp, auth, explorer)
+
     return bp
+
+
+def create_external_studies_routes(bp: APIRouter, auth: Auth, explorer: Explorer) -> None:
+    @bp.post("/explorer/external/_open", summary="For a given study path, import the study", response_model=str)
+    def open_external_study(path: Path, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
+        """
+        This endpoint create a raw study in DB for the study at the given path.
+        Args:
+            path: The file system path to the external study.
+            current_user: user that perform the request.
+        Returns:
+            str: The unique identifier of the opened study.
+        """
+
+        logger.info(f"Open study under path {path}")
+        params = RequestParameters(user=current_user)
+        study_id = explorer.open_external_study(path, params)
+        return study_id
+
+    @bp.delete(
+        "/explorer/external/_close/{uuid}", summary="For a given UUID, close the external study", response_model=str
+    )
+    def close_external_study(uuid: str, current_user: JWTUser = Depends(auth.get_current_user)) -> str:
+        """
+        This endpoint delete a raw study from DB.
+        Args:
+            uuid: id of the study to delete.
+            current_user: user that perform the request.
+        Returns:
+            str: empty string.
+        """
+        logger.info(f"Deleting study {uuid}")
+        params = RequestParameters(user=current_user)
+        explorer.close_external_study(uuid, params)
+        return ""
