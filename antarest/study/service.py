@@ -1168,7 +1168,7 @@ class StudyService:
         group_ids: List[str],
         use_task: bool,
         params: RequestParameters,
-        destination_folder: str,
+        destination_folder: PurePosixPath,
         allowed_outputs: List[str],
         with_outputs: bool = False,
     ) -> str:

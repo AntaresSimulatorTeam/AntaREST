@@ -14,7 +14,7 @@ import logging
 import shutil
 import time
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
@@ -231,7 +231,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         src_meta: RawStudy,
         dest_name: str,
         groups: Sequence[str],
-        destination_folder: str,
+        destination_folder: PurePosixPath,
         allowed_outputs: List[str],
         with_outputs: bool = False,
     ) -> RawStudy:
@@ -270,7 +270,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         return dest_study
 
     def build_raw_study(
-        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_folder: str
+        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
     ) -> RawStudy:
         if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
@@ -292,7 +292,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
-            folder=str(Path(destination_folder) / dest_id),
+            folder=str(destination_folder / dest_id),
         )
         return dest_study
 
