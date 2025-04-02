@@ -47,7 +47,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Test with pytest
         run: |
-          pytest --cov antarest --cov-report xml -n auto --dist=worksteal tests/integration/explorer_blueprint/test_explorer.py::test_explorer_desktop
+          pytest --cov antarest --cov-report xml -n auto --dist=worksteal
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
@@ -55,90 +55,90 @@ jobs:
           name: python-code-coverage-report
           path: coverage.xml
 
-  # npm-setup:
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Cache node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-webapp-node-modules-
-  #           ${{ runner.os }}-
-  #         save-always: true
-  #     - name: Install dependencies
-  #       run: npm install
-  #       working-directory: webapp
+  npm-setup:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-webapp-node-modules-
+            ${{ runner.os }}-
+          save-always: true
+      - name: Install dependencies
+        run: npm install
+        working-directory: webapp
 
-  # npm-lint:
-  #   needs: npm-setup
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Restore node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         save-always: true
-  #     - name: Lint
-  #       run: npm run lint
-  #       working-directory: webapp
+  npm-lint:
+    needs: npm-setup
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          save-always: true
+      - name: Lint
+        run: npm run lint
+        working-directory: webapp
 
-  # npm-test:
-  #   needs: npm-setup
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Restore node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         save-always: true
-  #     - name: Test
-  #       run: npm run test
-  #       working-directory: webapp
+  npm-test:
+    needs: npm-setup
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          save-always: true
+      - name: Test
+        run: npm run test
+        working-directory: webapp
 
-  # npm-build:
-  #   needs: npm-setup
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout github repo
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 22.13.0
-  #     - name: Restore node modules
-  #       uses: actions/cache@v4
-  #       with:
-  #         path: webapp/node_modules
-  #         key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
-  #         save-always: true
-  #     - name: Build
-  #       run: npm run build
-  #       working-directory: webapp
-  #       env:
-  #         NODE_OPTIONS: --max-old-space-size=8192
-  #         DISABLE_ESLINT_PLUGIN: true
+  npm-build:
+    needs: npm-setup
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+      - name: Restore node modules
+        uses: actions/cache@v4
+        with:
+          path: webapp/node_modules
+          key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
+          save-always: true
+      - name: Build
+        run: npm run build
+        working-directory: webapp
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192
+          DISABLE_ESLINT_PLUGIN: true
 
   sonarcloud:
     runs-on: ubuntu-22.04
