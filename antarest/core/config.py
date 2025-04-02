@@ -693,7 +693,7 @@ class Config:
             data["resources_path"] = res
         return cls.from_dict(data)
 
-    def get_workspace_path(self, *, workspace: str = DEFAULT_WORKSPACE_NAME, destination_path: str = "") -> Path:
+    def get_workspace_path(self, *, workspace: str = DEFAULT_WORKSPACE_NAME) -> Path:
         """
         Get workspace path from config file.
 
@@ -705,6 +705,6 @@ class Config:
             Absolute (or relative) path to the workspace directory.
         """
         try:
-            return self.storage.workspaces[workspace].path / destination_path
+            return self.storage.workspaces[workspace].path
         except KeyError:
             raise ValueError(f"Workspace '{workspace}' not found in config") from None
