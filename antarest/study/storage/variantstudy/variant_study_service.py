@@ -17,7 +17,7 @@ import shutil
 import typing as t
 from datetime import datetime, timedelta
 from functools import reduce
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, cast
 from uuid import uuid4
 
@@ -899,7 +899,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         src_study: VariantStudy,
         dest_name: str,
         groups: Sequence[str],
-        destination_folder: str,
+        destination_folder: PurePosixPath,
         with_outputs: bool = False,
     ) -> RawStudy:
         """

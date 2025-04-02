@@ -14,7 +14,7 @@ import collections
 import io
 import logging
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request
@@ -392,7 +392,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             with_outputs=with_outputs,
             use_task=use_task,
             params=params,
-            destination_folder=destination_folder,
+            destination_folder=PurePosixPath(destination_folder),
         )
 
         return task_id

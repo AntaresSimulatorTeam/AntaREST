@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
 
 from antarest.core.exceptions import StudyNotFoundError
@@ -91,7 +91,7 @@ class IStudyStorageService(ABC, Generic[T]):
         src_meta: T,
         dest_name: str,
         groups: Sequence[str],
-        destination_folder: str,
+        destination_folder: PurePosixPath,
         with_outputs: bool = False,
     ) -> T:
         """
