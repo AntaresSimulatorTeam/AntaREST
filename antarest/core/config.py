@@ -699,7 +699,6 @@ class Config:
 
         Args:
             workspace: Workspace name.
-            dest_path: Destination path.
 
         Returns:
             Absolute (or relative) path to the workspace directory.
