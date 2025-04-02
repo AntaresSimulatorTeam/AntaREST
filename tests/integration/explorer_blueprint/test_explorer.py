@@ -152,14 +152,14 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
         f"/v1/private/explorer/external/_open?path={external_study_path}",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
-    assert res.status_code == FORBIDDEN_STATUS_CODE
+    assert res.status_code == NOT_FOUND_STATUS_CODE
 
     # close external study is forbidden as desktop mode is disabled
     res = client.delete(
         "/v1/private/explorer/external/_close/some-uuid",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
-    assert res.status_code == FORBIDDEN_STATUS_CODE
+    assert res.status_code == NOT_FOUND_STATUS_CODE
 
 
 def test_explorer_desktop(client_desktop: TestClient, admin_access_token: str, study_tree_desktop: Path):
