@@ -14,6 +14,7 @@ import os
 import typing as t
 import zipfile
 from pathlib import Path
+from shutil import rmtree
 
 import jinja2
 import pytest
@@ -33,8 +34,7 @@ RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 RUN_ON_WINDOWS = os.name == "nt"
 
 
-@pytest.fixture(name="app")
-def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
+def build_app(tmp_path: Path, config_file_name: str):
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -71,7 +71,7 @@ def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
     # Generate a "config.yml" file for the app
     template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
     template_env = jinja2.Environment(loader=template_loader)
-    template = template_env.get_template("config.template.yml")
+    template = template_env.get_template(config_file_name)
 
     config_path = tmp_path / "config.yml"
     launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
@@ -97,6 +97,31 @@ def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
 def client_fixture(app: FastAPI) -> TestClient:
     """Get the webservice client used for unit testing"""
     return TestClient(app, raise_server_exceptions=False)
+
+
+@pytest.fixture(name="app")
+def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
+    # Rename the last part of tmp_path to add the suffix "desktop"
+    yield from build_app(tmp_path, "config.template.yml")
+
+
+@pytest.fixture
+def tmp_path_desktop(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
+    root = tmp_path.with_name(f"{tmp_path.name}_desktop")
+    root.mkdir(parents=True)
+    yield root
+    rmtree(root)
+
+
+@pytest.fixture
+def app_desktop(tmp_path_desktop: Path) -> t.Generator[FastAPI, None, None]:
+    yield from build_app(tmp_path_desktop, "config-desktop.template.yml")
+
+
+@pytest.fixture(name="client_desktop")
+def client_fixture_desktop(app_desktop: FastAPI) -> TestClient:
+    """Get the webservice client used for unit testing, using the config template for desktop version"""
+    return TestClient(app_desktop, raise_server_exceptions=False)
 
 
 @pytest.fixture(name="admin_access_token")

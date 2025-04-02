@@ -37,6 +37,7 @@ let config: Config = {
     version: "unknown",
     gitcommit: "unknown",
     dependencies: {},
+    desktop_mode: false,
   },
 };
 

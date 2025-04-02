@@ -66,6 +66,12 @@ function StudyTree() {
       // api doesn't allow to fetch the subfolders of the default workspace
       return;
     }
+    if (itemId.startsWith("root/external")) {
+      // we don't update the tree if the user clicks on the default workspace
+      // api doesn't allow to fetch the subfolders of the default workspace
+      return;
+    }
+
     // If the user clicks on the root folder, we don't update the tree,
     // there're no subfolders under the root only workspaces.
     if (itemId === ROOT_FOLDER_NAME) {
@@ -112,6 +118,7 @@ function StudyTree() {
   };
 
   const handleTreeItemClick = (itemId: string) => {
+    console.log("handleTreeItemClick itemId", itemId);
     dispatch(updateStudyFilters({ folder: itemId }));
   };
 

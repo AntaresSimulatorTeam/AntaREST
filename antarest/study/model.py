@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from antarest.core.tasks.model import TaskJob
 
 DEFAULT_WORKSPACE_NAME = "default"
+EXTERNAL_WORKSPACE_NAME = "external"
 
 NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("8.8")
 STUDY_VERSION_6_5 = StudyVersion.parse("6.5")

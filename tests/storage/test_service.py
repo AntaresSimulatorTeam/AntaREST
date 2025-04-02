@@ -42,6 +42,8 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    EXTERNAL_WORKSPACE_NAME,
+    NEW_DEFAULT_STUDY_VERSION,
     STUDY_VERSION_7_2,
     ExportFormat,
     MatrixAggregationResultDTO,
@@ -283,12 +285,14 @@ def test_sync_studies_from_disk() -> None:
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
     fc = StudyFolder(path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    fe = StudyFolder(path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fe = StudyFolder(path=Path("e"), workspace="workspace1", groups=[])
     ff = StudyFolder(path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    config = Config(
+        storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(), "workspace1": WorkspaceConfig()})
+    )
     service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fa, fc, fe, ff])
@@ -298,16 +302,6 @@ def test_sync_studies_from_disk() -> None:
         [
             call(RawStudy(id="b", path="b", missing=ANY)),
             call(RawStudy(id="e", path="e", created_at=now, missing=None)),
-            call(
-                RawStudy(
-                    id=ANY,
-                    path="f",
-                    workspace=DEFAULT_WORKSPACE_NAME,
-                    name="f",
-                    folder="f",
-                    public_mode=PublicMode.FULL,
-                )
-            ),
         ]
     )
 
@@ -339,11 +333,13 @@ def test_partial_sync_studies_from_disk() -> None:
     )
     fc = StudyFolder(path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    ff = StudyFolder(path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    ff = StudyFolder(path=Path("directory/f"), workspace="workspace1", groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    config = Config(
+        storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(), "workspace1": WorkspaceConfig()})
+    )
     service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
@@ -358,7 +354,7 @@ def test_partial_sync_studies_from_disk() -> None:
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
-            workspace=DEFAULT_WORKSPACE_NAME,
+            workspace="workspace1",
         )
     )
 
@@ -2029,3 +2025,68 @@ def test_is_output_archived(tmp_path) -> None:
     zipped_with_suffix.mkdir(parents=True)
     assert is_output_archived(path_output=zipped_with_suffix)
     assert is_output_archived(path_output=tmp_path / "output_1.4.3")
+
+
+# @patch("uuid.uuid4", side_effect=['id1'])
+@pytest.mark.unit_test
+def test_create_external_study(tmp_path: Path) -> None:
+    # Mock dependencies
+    repository = Mock()
+    event_bus = Mock()
+    user_service = Mock()
+    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    service = build_study_service(
+        raw_study_service=Mock(),
+        repository=repository,
+        config=config,
+        user_service=user_service,
+        event_bus=event_bus,
+    )
+
+    # Input
+    user = User(id=1, name="user")
+    study_folder = StudyFolder(
+        path=tmp_path / "external_study",
+        workspace="external",
+        groups=[],
+    )
+    params = RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
+    user_service.get_user.return_value = user
+
+    # Expected
+    author = service.get_user_name(params)
+    expected = RawStudy(
+        id="id1",
+        name=study_folder.path.name,
+        folder=f"{EXTERNAL_WORKSPACE_NAME}{study_folder.path}",
+        workspace="external",
+        path=f"{study_folder.path}",
+        created_at=None,
+        updated_at=None,
+        owner=None,
+        groups=study_folder.groups,
+        public_mode=PublicMode.FULL if len(study_folder.groups) == 0 else PublicMode.NONE,
+        additional_data=StudyAdditionalData(author=author),
+        version=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
+    )
+
+    # Call the method
+    study_id = service.create_external_study(study_folder, params)
+
+    assert study_id is not None
+
+    # assert event bus
+    event_bus.push.assert_called_once()
+    event = event_bus.push.call_args[0][0]
+    assert event.type == EventType.STUDY_CREATED
+    assert event.payload["id"] == study_id
+    assert event.permissions.public_mode == PublicMode.FULL
+
+    # assert repository
+    repository.save.assert_called_once()
+    actual = repository.save.call_args[0][0]
+    assert actual.workspace == expected.workspace
+    assert actual.path == expected.path
+    assert actual.folder == expected.folder
+    assert actual.additional_data == expected.additional_data
+    assert actual.version == expected.version

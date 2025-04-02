@@ -51,6 +51,7 @@ from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    EXTERNAL_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_9_0,
     MatrixIndex,
@@ -181,6 +182,10 @@ def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None
 
 def is_managed(study: Study) -> bool:
     return not hasattr(study, "workspace") or study.workspace == DEFAULT_WORKSPACE_NAME
+
+
+def is_external(study: Study) -> bool:
+    return hasattr(study, "workspace") and study.workspace == EXTERNAL_WORKSPACE_NAME
 
 
 def remove_from_cache(cache: ICache, root_id: str) -> None:
@@ -438,7 +443,7 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
     requested_path = workspace.path / folder
     requested_path = requested_path.resolve()
     safe_dir = workspace.path.resolve()
-    # check weither the requested path is a subdirectory of the workspace
+    # check wether the requested path is a subdirectory of the workspace
     return requested_path.is_relative_to(safe_dir)
 
 
