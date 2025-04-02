@@ -900,7 +900,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         dest_name: str,
         groups: Sequence[str],
         with_outputs: bool = False,
-        destination_path: str = "",
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -916,13 +915,13 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             The newly created study.
         """
 
-        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study, destination_path)
+        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study)
 
         file_study = self.get_raw(metadata=src_study)
 
         src_path = file_study.config.path
         dest_path = dest_study.path
-        shutil.copytree(str(src_path), str(dest_path))
+        shutil.copytree(src_path, dest_path)
 
         src_path = cast(Path, file_study.config.output_path)
         if with_outputs and src_path.exists():

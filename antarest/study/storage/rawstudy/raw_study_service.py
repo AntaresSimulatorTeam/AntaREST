@@ -235,7 +235,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(src_meta)
 
-        dest_study = self.build_raw_study(dest_name, groups, src_meta, destination_path)
+        dest_study = self.build_raw_study(dest_name, groups, src_meta)
 
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
@@ -251,9 +251,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         return dest_study
 
-    def build_raw_study(
-        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_path: str = ""
-    ) -> RawStudy:
+    def build_raw_study(self, dest_name: str, groups: Sequence[str], src_study: Study) -> RawStudy:
         if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
         else:

@@ -1295,7 +1295,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     obj = {
         "group": "lignite",
-        "name": "cluster 1 renamed",
+        "name": "cluster 1",
         "unitCount": 3,
         "enabled": False,
         "nominalCapacity": 3,
@@ -1812,7 +1812,6 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     # The new study must contain an output fodler with the same data as the source variant study
     new_output_file = tmp_path / "internal_workspace" / copied_id / "output" / "output.txt"
     assert output_file.read_text() == new_output_file.read_text()
-
 
 def test_copy_variant_with_specific_path(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
