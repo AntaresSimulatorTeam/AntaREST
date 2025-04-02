@@ -28,6 +28,7 @@ from antarest.study.model import (
     NonStudyFolderDTO,
     StudyFolder,
     WorkspaceMetadata,
+    normalize_path,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
@@ -37,7 +38,6 @@ from antarest.study.storage.utils import (
     has_non_study_folder,
     is_non_study_folder,
     is_study_folder,
-    should_ignore_folder_for_scan,
 )
 
 logger = logging.getLogger(__name__)
@@ -105,10 +105,6 @@ class Explorer:
         if not is_study_folder(path):
             raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, f"Path {path} is not a study folder")
 
-        # check path is not in a filtered folder
-        if should_ignore_folder_for_scan(path, [".*"], []):
-            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, "Cannot open a file in a filtered folder")
-
         # check if path is inside the default workspace folder
         default_workspace = get_workspace_from_config(self.config, DEFAULT_WORKSPACE_NAME, default_allowed=True)
         if default_workspace.path in path.parents:
@@ -118,7 +114,8 @@ class Explorer:
             )
 
         # check study doens't already exist
-        folder = f"{EXTERNAL_WORKSPACE_NAME}{path}"
+        normalized_path = normalize_path(str(path))
+        folder = f"{EXTERNAL_WORKSPACE_NAME}{normalized_path}"
         study_count = self.study_service.count_studies(
             StudyFilter(folder=folder, access_permissions=AccessPermissions.from_params(params))
         )
