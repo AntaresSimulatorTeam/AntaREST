@@ -356,6 +356,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         uuid: str,
         dest: str,
         with_outputs: bool = False,
+        allowed_outputs: Optional[List[str]] = Query([]),
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
@@ -371,8 +372,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
+            It is recommended and set as the default value: True.
         - `destination_folder`: The destination path where the study will be copied.
-          It is recommended and set as the default value: True.
+        - `allowed_outputs`: A list of output names that you want to include in the destination study.
 
         Returns:
         - The unique identifier of the task copying the study.
@@ -393,6 +395,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             use_task=use_task,
             params=params,
             destination_folder=destination_folder,
+            allowed_outputs=allowed_outputs,
         )
 
         return task_id

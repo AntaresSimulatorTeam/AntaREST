@@ -45,6 +45,20 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
+def copy_output_folders(src_output_path: Path,
+                        dest_output_path: Path,
+                        allowed_outputs: List[str]
+                        ):
+    for folder_name in allowed_outputs:
+        src_folder = src_output_path / folder_name
+        dest_folder = dest_output_path / folder_name
+
+        if src_folder.exists() and src_folder.is_dir():
+            shutil.copytree(src_folder, dest_folder)
+        else:
+            print(f"Le dossier {folder_name} n'existe pas dans {src_output_path}, il sera ignoré.")
+
+
 class RawStudyService(AbstractStorageService[RawStudy]):
     """
     Manage set of raw studies stored in the workspaces.
@@ -218,6 +232,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: str,
+        allowed_outputs: List[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -228,6 +243,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
+            allowed_outputs: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -240,11 +256,13 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
 
-        shutil.copytree(src_path, dest_path)
+        shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
-        output = dest_path / "output"
-        if not with_outputs and output.exists():
-            shutil.rmtree(output)
+        if with_outputs:
+            src_output_path = src_path / "output"
+            dest_output_path = dest_path / "output"
+
+            copy_output_folders(src_output_path, dest_output_path, allowed_outputs)
 
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
@@ -277,6 +295,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             folder=str(Path(destination_folder) / dest_id),
         )
         return dest_study
+
 
     @override
     def delete(self, metadata: RawStudy) -> None:
