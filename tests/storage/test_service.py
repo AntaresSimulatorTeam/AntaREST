@@ -1144,6 +1144,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         last_access=datetime.utcnow(),
     )
+    study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
 
     # it freezes the mock and raise Attribute error if anything else than defined is used
@@ -1291,19 +1292,20 @@ def test_edit_study_with_command() -> None:
     )
     command = Mock()
     service._create_edit_study_command = Mock(return_value=command)
-    file_study = Mock()
-    file_study.config.study_id = study_id
     study_service = Mock(spec=RawStudyService)
-    study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
+    raw_study = Mock(spec=RawStudy)
+    raw_study.version = "880"
+    raw_study.id = study_id
 
-    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
-    command.apply.assert_called_with(file_study, None)
+    service._edit_study_using_command(study=raw_study, url="", data=[])
+    command.apply.assert_called()
 
+    variant_study = Mock(spec=VariantStudy)
+    variant_study.version = "880"
     study_service = Mock(spec=VariantStudyService)
-    study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
-    service._edit_study_using_command(study=Mock(), url="", data=[])
+    service._edit_study_using_command(study=variant_study, url="", data=[])
     service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 

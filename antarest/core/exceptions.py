@@ -525,9 +525,9 @@ class InvalidConstraintName(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
-class InvalidFieldForVersionError(HTTPException):
+class InvalidFieldForVersionError(HTTPException, ValueError):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+        HTTPException.__init__(self, HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class MCRootNotHandled(HTTPException):

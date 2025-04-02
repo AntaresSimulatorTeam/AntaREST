@@ -14,9 +14,6 @@ import re
 from typing import Any, Mapping, MutableMapping
 
 from pydantic import Field, model_validator
-
-__all__ = ("IgnoreCaseIdentifier", "LowerCaseIdentifier")
-
 from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel

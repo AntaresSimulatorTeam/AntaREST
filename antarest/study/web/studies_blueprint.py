@@ -376,16 +376,15 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - The unique identifier of the task copying the study.
         """
         logger.info(f"Copying study {uuid} into new study '{dest}'")
-        source_uuid = uuid
         group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids]
-        source_uuid_sanitized = sanitize_uuid(source_uuid)
+        uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
 
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
-            src_uuid=source_uuid_sanitized,
+            src_uuid=uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
             with_outputs=with_outputs,

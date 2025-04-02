@@ -50,13 +50,9 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.core.utils.string import to_camel_case
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalProperties
 from tests.integration.utils import wait_task_completion
-
-DEFAULT_PROPERTIES = ThermalProperties(name="Dummy").model_dump(mode="json")
-DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = [
@@ -358,7 +354,6 @@ class TestThermal:
 
         # We can create a thermal cluster with the following properties:
         fr_gas_conventional_props = {
-            **DEFAULT_PROPERTIES,
             "name": fr_gas_conventional,
             "group": "gas",
             "unitCount": 15,
@@ -377,26 +372,64 @@ class TestThermal:
         assert res.status_code == 200, res.json()
         fr_gas_conventional_id = res.json()["id"]
         assert fr_gas_conventional_id == transform_name_to_id(fr_gas_conventional, lower=False)
-        # noinspection SpellCheckingInspection
-        fr_gas_conventional_cfg = {
-            **fr_gas_conventional_props,
+        expected = {
+            "co2": 0.57,
+            "costGeneration": None,
+            "efficiency": None,
+            "enabled": True,
+            "fixedCost": 0.0,
+            "genTs": "use global",
+            "group": "gas",
+            "id": "FR_Gas conventional",
+            "lawForced": "uniform",
+            "lawPlanned": "uniform",
+            "marginalCost": 181.267,
+            "marketBidCost": 181.267,
+            "minDownTime": 5,
+            "minStablePower": 5.4984,
+            "minUpTime": 5,
+            "mustRun": False,
+            "name": "FR_Gas conventional",
+            "nh3": None,
+            "nmvoc": None,
+            "nominalCapacity": 31.6,
+            "nox": None,
+            "op1": None,
+            "op2": None,
+            "op3": None,
+            "op4": None,
+            "op5": None,
+            "pm10": None,
+            "pm25": None,
+            "pm5": None,
+            "so2": None,
+            "spinning": 0.0,
+            "spreadCost": 0.0,
+            "startupCost": 6035.6,
+            "unitCount": 15,
+            "variableOMCost": None,
+            "volatilityForced": 0.0,
+            "volatilityPlanned": 0.0,
+        }
+        expected = {
+            **expected,
             "id": fr_gas_conventional_id,
             **{p: pollutants_values for p in pollutants_names},
         }
-        fr_gas_conventional_cfg = {
-            **fr_gas_conventional_cfg,
+        expected = {
+            **expected,
             **{
                 "costGeneration": "SetManually" if version == 870 else None,
                 "efficiency": 100.0 if version == 870 else None,
                 "variableOMCost": 0.0 if version == 870 else None,
             },
         }
-        assert res.json() == fr_gas_conventional_cfg
+        assert res.json() == expected
 
         # reading the properties of a thermal cluster
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         assert res.status_code == 200, res.json()
-        assert res.json() == fr_gas_conventional_cfg
+        assert res.json() == expected
 
         # asserts it didn't break the allocation matrix
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/allocation/form")
@@ -425,27 +458,25 @@ class TestThermal:
         # Reading the list of thermal clusters
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal")
         assert res.status_code == 200, res.json()
-        assert res.json() == EXISTING_CLUSTERS + [fr_gas_conventional_cfg]
+        assert res.json() == EXISTING_CLUSTERS + [expected]
 
         # updating properties
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={
-                "name": "FR_Gas conventional old 1",
                 "nominalCapacity": 32.1,
             },
         )
         assert res.status_code == 200, res.json()
-        fr_gas_conventional_cfg = {
-            **fr_gas_conventional_cfg,
-            "name": "FR_Gas conventional old 1",
+        expected = {
+            **expected,
             "nominalCapacity": 32.1,
         }
-        assert res.json() == fr_gas_conventional_cfg
+        assert res.json() == expected
 
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         assert res.status_code == 200, res.json()
-        assert res.json() == fr_gas_conventional_cfg
+        assert res.json() == expected
 
         # ===========================
         #  THERMAL CLUSTER UPDATE
@@ -460,14 +491,14 @@ class TestThermal:
                 "marketBidCost": 182.456,
             },
         )
-        fr_gas_conventional_cfg = {
-            **fr_gas_conventional_cfg,
+        expected = {
+            **expected,
             "marginalCost": 182.456,
             "startupCost": 6140.8,
             "marketBidCost": 182.456,
         }
         assert res.status_code == 200, res.json()
-        assert res.json() == fr_gas_conventional_cfg
+        assert res.json() == expected
 
         # An attempt to update the `unitCount` property with an invalid value
         # should raise a validation error.
@@ -483,21 +514,29 @@ class TestThermal:
         # The thermal cluster properties should not have been updated.
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}")
         assert res.status_code == 200, res.json()
-        assert res.json() == fr_gas_conventional_cfg
+        assert res.json() == expected
 
-        # Update with a pollutant. Should succeed even with versions prior to v8.6
+        # Update with a pollutant. Should faild with versions prior to v8.6
+        # (note that previously, we tolerated this even for prior versions)
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={"nox": 10.0},
         )
-        assert res.status_code == 200
+        if version >= STUDY_VERSION_8_6:
+            assert res.status_code == 200, res.json()
+        else:
+            assert res.status_code == 422, res.json()
 
-        # Update with the field `efficiency`. Should succeed even with versions prior to v8.7
+        # Update with the field `efficiency`. Should fail for versions prior to v8.7
+        # (note that previously, we tolerated this even for prior versions)
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={"efficiency": 97.0},
         )
-        assert res.status_code == 200
+        if version >= STUDY_VERSION_8_7:
+            assert res.status_code == 200, res.json()
+        else:
+            assert res.status_code == 422, res.json()
 
         # =============================
         #  THERMAL CLUSTER DUPLICATION
@@ -510,7 +549,7 @@ class TestThermal:
         )
         assert res.status_code in {200, 201}, res.json()
         # asserts the config is the same
-        duplicated_config = dict(fr_gas_conventional_cfg)
+        duplicated_config = dict(expected)
         duplicated_config["name"] = new_name
         duplicated_id = transform_name_to_id(new_name, lower=False)
         duplicated_config["id"] = duplicated_id
@@ -1181,3 +1220,47 @@ class TestThermal:
         json_result = res.json()
         assert len(json_result) == 1
         assert json_result[0]["action"] == "update_thermal_clusters"
+
+    @pytest.mark.parametrize("base_study_id", [{"name": "test_study", "version": 860}], indirect=True)
+    def test_thermal_property_values(self, client: TestClient, user_access_token: str, base_study_id: str) -> None:
+        # test validation rules on minUpTime and minDownTime
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        res = client.get(f"/v1/studies/{base_study_id}")
+        assert res.status_code in {200, 201}
+
+        # Create an area
+        res = client.post(f"/v1/studies/{base_study_id}/areas", json={"name": "area_test", "type": "AREA"})
+        areas = res.json()
+        assert res.status_code in {200, 201}
+        area_id = areas["id"]
+
+        # Create a thermal cluster with minUpTime and minDownTime < 0
+        res = client.post(
+            f"/v1/studies/{base_study_id}/areas/{area_id}/clusters/thermal",
+            json={
+                "name": "thermal_test1",
+                "minUpTime": 0,
+                "minDownTime": 0,
+            },
+        )
+
+        # minUpTime and minDownTime should be equal to 1
+        assert res.status_code in {200, 201}
+        assert res.json()["minUpTime"] == 1
+        assert res.json()["minDownTime"] == 1
+
+        # Create a thermal cluster with minUpTime and minDownTime > 168
+        res = client.post(
+            f"/v1/studies/{base_study_id}/areas/{area_id}/clusters/thermal",
+            json={
+                "name": "thermal_test2",
+                "minUpTime": 169,
+                "minDownTime": 169,
+            },
+        )
+
+        # minUpTime and minDownTime should equal to 168
+        assert res.status_code in {200, 201}
+        assert res.json()["minUpTime"] == 168
+        assert res.json()["minDownTime"] == 168
