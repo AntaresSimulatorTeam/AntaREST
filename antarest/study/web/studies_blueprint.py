@@ -358,7 +358,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         with_outputs: bool = False,
         groups: str = "",
         use_task: bool = True,
-        destination_path: str = "",
+        destination_folder: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
@@ -371,7 +371,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
-        - `destination_path`: The destination path where the study will be copied.
+        - `destination_folder`: The destination path where the study will be copied.
           It is recommended and set as the default value: True.
 
         Returns:
@@ -392,7 +392,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             with_outputs=with_outputs,
             use_task=use_task,
             params=params,
-            destination_path=destination_path,
+            destination_folder=destination_folder,
         )
 
         return task_id

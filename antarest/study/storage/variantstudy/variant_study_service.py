@@ -899,6 +899,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         src_study: VariantStudy,
         dest_name: str,
         groups: Sequence[str],
+        destination_folder: str,
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -908,14 +909,14 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             src_study: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
             with_outputs: Indicates whether to copy the outputs as well.
-            destination_path: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
 
         Returns:
             The newly created study.
         """
 
-        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study)
+        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study, destination_folder)
 
         file_study = self.get_raw(metadata=src_study)
 

@@ -217,8 +217,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         src_meta: RawStudy,
         dest_name: str,
         groups: Sequence[str],
+        destination_folder: str,
         with_outputs: bool = False,
-        destination_path: str = "",
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -227,15 +227,15 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             src_meta: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             with_outputs: Indicates whether to copy the outputs as well.
-            dest_path: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
 
         Returns:
             The newly created study.
         """
         self._check_study_exists(src_meta)
 
-        dest_study = self.build_raw_study(dest_name, groups, src_meta)
+        dest_study = self.build_raw_study(dest_name, groups, src_meta, destination_folder)
 
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
@@ -251,7 +251,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         return dest_study
 
-    def build_raw_study(self, dest_name: str, groups: Sequence[str], src_study: Study) -> RawStudy:
+    def build_raw_study(
+        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_folder: str
+    ) -> RawStudy:
         if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
@@ -265,13 +267,14 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             id=dest_id,
             name=dest_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(self.config.get_workspace_path(destination_path=destination_path) / dest_id),
+            path=str(self.config.get_workspace_path() / dest_id),
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=src_study.version,
             additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
+            folder=str(Path(destination_folder) / dest_id),
         )
         return dest_study
 
