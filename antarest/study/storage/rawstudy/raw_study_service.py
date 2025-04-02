@@ -45,10 +45,7 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-def copy_output_folders(src_output_path: Path,
-                        dest_output_path: Path,
-                        allowed_outputs: List[str]
-                        ):
+def copy_output_folders(src_output_path: Path, dest_output_path: Path, allowed_outputs: List[str]) -> None:
     for folder_name in allowed_outputs:
         src_folder = src_output_path / folder_name
         dest_folder = dest_output_path / folder_name
@@ -232,7 +229,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        allowed_outputs: List[str],
+        allowed_outputs: Optional[List[str]] = None,
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -295,7 +292,6 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             folder=str(destination_folder / dest_id),
         )
         return dest_study
-
 
     @override
     def delete(self, metadata: RawStudy) -> None:
