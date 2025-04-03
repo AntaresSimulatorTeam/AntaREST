@@ -221,15 +221,6 @@ export default {
       size: "small",
     },
   },
-  MuiTableRow: {
-    styleOverrides: {
-      root: {
-        ":last-child .MuiTableCell-body": {
-          border: "none",
-        },
-      },
-    },
-  },
   MuiTableCell: {
     styleOverrides: {
       body: ({ theme }) => ({
