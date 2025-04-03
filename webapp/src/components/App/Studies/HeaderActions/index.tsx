@@ -17,7 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import { createStudy, updateStudyFilters } from "@/redux/ducks/studies";
+import { createStudy, openExternalStudy, updateStudyFilters } from "@/redux/ducks/studies";
 import UploadDialog, { type UploadDialogProps } from "../../../common/dialogs/UploadDialog";
 import CreateStudyDialog from "../CreateStudyDialog";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
@@ -26,13 +26,15 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
 import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import { OpenInBrowserOutlined } from "@mui/icons-material";
+import OpenExternalDialog from "@/components/common/dialogs/OpenExternalDialog";
 
 interface Props {
   onOpenFilterClick: VoidFunction;
 }
 
 function HeaderActions({ onOpenFilterClick }: Props) {
-  const [dialog, setDialog] = useState<null | "create" | "upload">();
+  const [dialog, setDialog] = useState<null | "create" | "upload" | "open_external">();
   const searchValue = useAppSelector((state) => getStudyFilters(state).inputValue);
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
@@ -83,12 +85,20 @@ function HeaderActions({ onOpenFilterClick }: Props) {
         sx={{ maxWidth: 200 }}
       />
       <Divider flexItem orientation="vertical" variant="middle" />
+
       <Button
         variant="outlined"
         startIcon={<UploadOutlinedIcon />}
         onClick={() => setDialog("upload")}
       >
         {t("global.import")}
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<OpenInBrowserOutlined />}
+        onClick={() => setDialog("open_external")}
+      >
+        {t("global.open")}
       </Button>
       <Button
         variant="contained"
@@ -107,6 +117,7 @@ function HeaderActions({ onOpenFilterClick }: Props) {
           onImport={handleImport}
         />
       )}
+      {dialog === "open_external" && <OpenExternalDialog open onClose={closeDialog} />}
     </>
   );
 }

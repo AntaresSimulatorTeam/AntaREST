@@ -71,6 +71,11 @@ interface StudyUpload {
   onUploadProgress?: (progress: number) => void;
 }
 
+interface ExternalStudyOpen {
+  path: string;
+  onUploadProgress?: (progress: number) => void;
+}
+
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
 
 const initialState = studiesAdapter.getInitialState({
@@ -178,6 +183,21 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
     }
   },
 );
+
+export const openExternalStudy = createAsyncThunk<
+  StudyMetadata,
+  ExternalStudyOpen,
+  AppAsyncThunkConfig
+>(n("OPEN_EXTERNAL_STUDY"), async (arg, { rejectWithValue }) => {
+  // StudyMetadata
+  try {
+    // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
+    const studyId = await api.openExternalStudy(arg.path, arg.onUploadProgress);
+    return api.getStudyMetadata(studyId);
+  } catch (err) {
+    return rejectWithValue(err);
+  }
+});
 
 export const setStudy = createAsyncThunk<StudyMetadata, StudyEventPayload, AppAsyncThunkConfig>(
   n("SET_STUDY"),
