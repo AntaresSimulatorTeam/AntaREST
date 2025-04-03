@@ -155,7 +155,6 @@ function Fields() {
                 />
               </span>
             </Tooltip>
-            <Fieldset.Break />
           </Fieldset>
         </>
       )}
