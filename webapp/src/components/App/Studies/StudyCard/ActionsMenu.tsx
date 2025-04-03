@@ -141,7 +141,7 @@ function ActionsMenu(props: Props) {
           handleArchiveClick,
         ),
         menuItem(
-          study.managed,
+          study.managed || study.workspace === "external",
           t("global.delete"),
           DeleteOutlinedIcon,
           handleDeleteClick,
