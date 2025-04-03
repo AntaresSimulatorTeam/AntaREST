@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
 
 from antarest.core.exceptions import StudyNotFoundError
@@ -86,7 +86,14 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
+    def copy(
+        self,
+        src_meta: T,
+        dest_name: str,
+        groups: Sequence[str],
+        destination_folder: PurePosixPath,
+        with_outputs: bool = False,
+    ) -> T:
         """
         Create a new study by copying a reference study.
 
@@ -94,6 +101,7 @@ class IStudyStorageService(ABC, Generic[T]):
             src_meta: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
