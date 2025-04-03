@@ -698,7 +698,6 @@
   "studies.selectOutput": "Selectionnez une sortie",
   "studies.variant": "Variant",
   "studies.tree.error.failToFetchFolder": "Échec lors de la récupération des sous dossiers de {{path}}",
-  "studies.tree.fetchFolderLoading": "Chargement...",
   "variants.createNewVariant": "Créer une nouvelle variante",
   "variants.newVariant": "Nouvelle variante",
   "variants.newCommand": "Ajouter une nouvelle commande",

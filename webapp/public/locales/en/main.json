@@ -695,7 +695,6 @@
   "studies.selectOutput": "Select an output",
   "studies.variant": "Variant",
   "studies.tree.error.failToFetchFolder": "Failed to load subfolders for {{path}}",
-  "studies.tree.fetchFolderLoading": "Loading...",
   "variants.createNewVariant": "Create new variant",
   "variants.newVariant": "New variant",
   "variants.newCommand": "Add new command",
