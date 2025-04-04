@@ -14,8 +14,6 @@
 
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   Box,
@@ -28,12 +26,13 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Tooltip,
   Typography,
   type SelectChangeEvent,
+  type TableSortLabelProps,
 } from "@mui/material";
-import moment from "moment";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useInterval } from "react-use";
 import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
@@ -42,6 +41,7 @@ import { TaskType } from "../../../services/api/tasks/constants";
 import type { TaskView } from "../../../types/types";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
+import * as R from "ramda";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -57,37 +57,46 @@ const FILTER_LIST: Array<TaskView["type"]> = [
 
 type FilterListType = (typeof FILTER_LIST)[number];
 
-interface PropType {
+interface Props {
   content: TaskView[];
   refresh: () => void;
 }
 
-function JobTableView(props: PropType) {
+function JobTableView(props: Props) {
   const { content, refresh } = props;
   const [t] = useTranslation();
-  const [sorted, setSorted] = useState<string>();
+  const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
-  const [currentContent, setCurrentContent] = useState<TaskView[]>(content);
 
   const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
     errorMessage: t("study.error.launchLoad"),
     deps: [],
   });
 
-  const applyFilter = useCallback(
-    (taskList: TaskView[]) => {
-      let filteredContent = taskList;
-      if (filterRunningStatus) {
-        filteredContent = filteredContent.filter((o) => o.status === "running");
-      }
-      if (filterType) {
-        filteredContent = filteredContent.filter((o) => o.type === filterType);
-      }
-      return filteredContent;
-    },
-    [filterType, filterRunningStatus],
-  );
+  // Refresh launcher metrics every minute
+  useInterval(launcherMetrics.reload, 60_000);
+
+  const displayContent = useMemo(() => {
+    const filteredContent = R.filter(
+      R.allPass(
+        [
+          filterRunningStatus && (({ status }: TaskView) => status === "running"),
+          filterType && (({ type }: TaskView) => type === filterType),
+        ].filter(Boolean),
+      ),
+      content,
+    );
+
+    return R.sort(
+      dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
+      filteredContent,
+    );
+  }, [content, dateOrder, filterRunningStatus, filterType]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
 
   const handleChange = (event: SelectChangeEvent<unknown>) => {
     setFilterType(event.target.value as FilterListType | "");
@@ -97,12 +106,13 @@ function JobTableView(props: PropType) {
     setFilterRunningStatus(!filterRunningStatus);
   };
 
-  useEffect(() => {
-    setCurrentContent(applyFilter(content));
-  }, [content, applyFilter]);
+  const handleRequestDateSort = () => {
+    setDateOrder(dateOrder === "asc" ? "desc" : "asc");
+  };
 
-  // Refresh launcher metrics every minute
-  useInterval(launcherMetrics.reload, 60_000);
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>
@@ -188,57 +198,31 @@ function JobTableView(props: PropType) {
         </Box>
       </Box>
       {/* List */}
-      <TableContainer component={Paper} elevation={2}>
+      <TableContainer component={Paper} elevation={2} sx={{ flex: 1 }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
               <TableCell>{t("global.jobs")}</TableCell>
               <TableCell align="right">{t("study.type")}</TableCell>
               <TableCell align="right">
-                <Box display="flex" alignItems="center" justifyContent="flex-end">
+                <TableSortLabel active direction={dateOrder} onClick={handleRequestDateSort}>
                   {t("global.date")}
-                  {!sorted ? (
-                    <ArrowDropUpIcon
-                      sx={{
-                        cursor: "pointer",
-                        color: "action.active",
-                        "&:hover": { color: "action.hover" },
-                      }}
-                      onClick={() => setSorted("date")}
-                    />
-                  ) : (
-                    <ArrowDropDownIcon
-                      sx={{
-                        cursor: "pointer",
-                        color: "action.active",
-                        "&:hover": { color: "action.hover" },
-                      }}
-                      onClick={() => setSorted(undefined)}
-                    />
-                  )}
-                </Box>
+                </TableSortLabel>
               </TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {currentContent
-              .sort((a, b) => {
-                if (!sorted && sorted !== "date") {
-                  return moment(a.date).isAfter(moment(b.date)) ? -1 : 1;
-                }
-                return moment(a.date).isAfter(moment(b.date)) ? 1 : -1;
-              })
-              .map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell component="th" scope="row">
-                    {row.name}
-                  </TableCell>
-                  <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
-                  <TableCell align="right">{row.dateView}</TableCell>
-                  <TableCell align="right">{row.action}</TableCell>
-                </TableRow>
-              ))}
+            {displayContent.map((row) => (
+              <TableRow key={row.id}>
+                <TableCell component="th" scope="row">
+                  {row.name}
+                </TableCell>
+                <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
+                <TableCell align="right">{row.dateView}</TableCell>
+                <TableCell align="right">{row.action}</TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </TableContainer>

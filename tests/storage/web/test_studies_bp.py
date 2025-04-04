@@ -16,7 +16,7 @@ import shutil
 import uuid
 from datetime import datetime
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, call
 
 import pytest
@@ -210,6 +210,7 @@ def test_copy_study(tmp_path: Path) -> None:
     storage_service.copy_study.assert_called_with(
         src_uuid=UUID,
         dest_study_name="study-copied",
+        destination_folder=PurePosixPath(),
         group_ids=["admin"],
         with_outputs=False,
         use_task=True,

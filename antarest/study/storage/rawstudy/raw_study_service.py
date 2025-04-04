@@ -14,7 +14,7 @@ import logging
 import shutil
 import time
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
@@ -217,6 +217,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         src_meta: RawStudy,
         dest_name: str,
         groups: Sequence[str],
+        destination_folder: PurePosixPath,
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -226,6 +227,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             src_meta: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -233,7 +235,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(src_meta)
 
-        dest_study = self.build_raw_study(dest_name, groups, src_meta)
+        dest_study = self.build_raw_study(dest_name, groups, src_meta, destination_folder)
 
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
@@ -249,7 +251,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         return dest_study
 
-    def build_raw_study(self, dest_name: str, groups: Sequence[str], src_study: Study) -> RawStudy:
+    def build_raw_study(
+        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
+    ) -> RawStudy:
         if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
         else:
@@ -270,6 +274,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             additional_data=additional_data,
             public_mode=PublicMode.NONE if groups else PublicMode.READ,
             groups=groups,
+            folder=str(destination_folder / dest_id),
         )
         return dest_study
 

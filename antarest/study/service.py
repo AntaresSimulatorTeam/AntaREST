@@ -216,6 +216,8 @@ def _get_path_inside_user_folder(
     url = [item for item in path.split("/") if item]
     if len(url) < 2 or url[0] != "user":
         raise exception_class(f"the given path isn't inside the 'User' folder: {path}")
+    if url[1] == "expansion":
+        raise exception_class(f"the given path is inside the `expansion` folder: {path}")
     return "/".join(url[1:])
 
 
@@ -1239,6 +1241,7 @@ class StudyService:
         group_ids: List[str],
         use_task: bool,
         params: RequestParameters,
+        destination_folder: PurePosixPath,
         with_outputs: bool = False,
     ) -> str:
         """
@@ -1248,9 +1251,10 @@ class StudyService:
             src_uuid: source study
             dest_study_name: destination study
             group_ids: group to attach on new study
-            params: request parameters
-            with_outputs: Indicates whether the study's outputs should also be duplicated.
             use_task: indicate if the task job service should be used
+            params: request parameters
+            destination_folder: destination path
+            with_outputs: Indicates whether the study's outputs should also be duplicated.
 
         Returns:
             The unique identifier of the task copying the study.
@@ -1262,10 +1266,7 @@ class StudyService:
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study,
-                dest_study_name,
-                group_ids,
-                with_outputs,
+                origin_study, dest_study_name, group_ids, destination_folder, with_outputs
             )
             self._save_study(study, params.user, group_ids)
             self.event_bus.push(
@@ -2940,7 +2941,8 @@ class StudyService:
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
-        cmd_data = RemoveUserResourceData(**{"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)})
+        args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
+        cmd_data = RemoveUserResourceData(**args)
         self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
 
     def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
