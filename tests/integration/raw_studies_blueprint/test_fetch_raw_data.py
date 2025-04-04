@@ -382,8 +382,12 @@ class TestFetchRawData:
 
         # try to delete expansion folder
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/user/expansion")
-        expected_msg = "you are not allowed to delete this resource : expansion"
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceDeletionNotAllowed")
+        expected_msg = (
+            "Resource deletion failed because the given path is inside the `expansion` folder: /user/expansion"
+        )
+        assert res.status_code == 403
+        assert res.json()["exception"] == "ResourceDeletionNotAllowed"
+        assert expected_msg in res.json()["description"]
 
         # try to delete a file which isn't inside the 'User' folder
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=/input/thermal")
@@ -464,9 +468,11 @@ class TestFetchRawData:
 
         # try to create a folder inside the 'expansion` folder
         expansion_folder = "user/expansion/wrong_folder"
-        expected_msg = "you are not allowed to create a resource here: expansion/wrong_folder"
+        expected_msg = "Folder creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
+        assert res.status_code == 403
+        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert expected_msg in res.json()["description"]
 
         # try to create an already existing folder
         existing_folder = "user/folder_1"
