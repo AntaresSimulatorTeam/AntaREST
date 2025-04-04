@@ -397,7 +397,7 @@ class TestTableMode:
         if study_version >= 860:
             _solar_values["so2"] = 8.25
         if study_version >= 870:
-            _solar_values.update({"costGeneration": "useCostTimeseries", "efficiency": 87, "variableOMCost": -12.5})
+            _solar_values.update({"costGeneration": "useCostTimeseries", "efficiency": 87, "variableOMCost": 12.5})
 
         res = client.put(
             f"/v1/studies/{internal_study_id}/table-mode/thermals",
@@ -476,7 +476,7 @@ class TestTableMode:
         if study_version >= 870:
             _values = {"costGeneration": "SetManually", "efficiency": 100, "variableOMCost": 0}
             expected_thermals["de / 02_wind_on"].update(_values)
-            _values = {"costGeneration": "useCostTimeseries", "efficiency": 87, "variableOMCost": -12.5}
+            _values = {"costGeneration": "useCostTimeseries", "efficiency": 87, "variableOMCost": 12.5}
             expected_thermals["de / 01_solar"].update(_values)
 
         assert res.json()["de / 01_solar"] == expected_thermals["de / 01_solar"]

@@ -14,7 +14,7 @@ import logging
 import shutil
 import time
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from threading import Thread
 from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
@@ -218,6 +218,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         src_meta: RawStudy,
         dest_name: str,
         groups: Sequence[str],
+        destination_folder: PurePosixPath,
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -227,6 +228,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             src_meta: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -234,27 +236,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         """
         self._check_study_exists(src_meta)
 
-        if src_meta.additional_data is None:
-            additional_data = StudyAdditionalData()
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=src_meta.additional_data.horizon,
-                author=src_meta.additional_data.author,
-                patch=src_meta.additional_data.patch,
-            )
-        dest_id = str(uuid4())
-        dest_study = RawStudy(
-            id=dest_id,
-            name=dest_name,
-            workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(self.config.get_workspace_path() / dest_id),
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            version=src_meta.version,
-            additional_data=additional_data,
-            public_mode=PublicMode.NONE if groups else PublicMode.READ,
-            groups=groups,
-        )
+        dest_study = self.build_raw_study(dest_name, groups, src_meta, destination_folder)
 
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
@@ -268,6 +250,33 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
 
+        return dest_study
+
+    def build_raw_study(
+        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
+    ) -> RawStudy:
+        if src_study.additional_data is None:
+            additional_data = StudyAdditionalData()
+        else:
+            additional_data = StudyAdditionalData(
+                horizon=src_study.additional_data.horizon,
+                author=src_study.additional_data.author,
+                patch=src_study.additional_data.patch,
+            )
+        dest_id = str(uuid4())
+        dest_study = RawStudy(
+            id=dest_id,
+            name=dest_name,
+            workspace=DEFAULT_WORKSPACE_NAME,
+            path=str(self.config.get_workspace_path() / dest_id),
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow(),
+            version=src_study.version,
+            additional_data=additional_data,
+            public_mode=PublicMode.NONE if groups else PublicMode.READ,
+            groups=groups,
+            folder=str(destination_folder / dest_id),
+        )
         return dest_study
 
     @override

@@ -39,16 +39,13 @@ export function sortStudies(sortConf: StudiesSortConf, studies: StudyMetadata[])
 ////////////////////////////////////////////////////////////////
 
 const folderPredicate = R.curry((folder: string, strict: boolean, study: StudyMetadata) => {
-  let studyNodeId = `root/${study.workspace}`;
-  if (study.folder) {
-    const folderPathComponents = study.folder.split("/");
-    folderPathComponents.pop();
-    const folderPath = folderPathComponents.join("/");
-    if (folderPath) {
-      studyNodeId += `/${folderPath}`;
-    }
-  }
-  return strict ? studyNodeId === folder : `${studyNodeId}/`.startsWith(`${folder}/`);
+  const workspacePath = `/${study.workspace}`;
+
+  const studyPath = study.folder
+    ? `${workspacePath}/${R.dropLast(1, study.folder.split("/")).join("/")}`
+    : workspacePath;
+
+  return strict ? studyPath === folder : `${studyPath}/`.startsWith(`${folder}/`);
 });
 
 const inputValuePredicate = R.curry(

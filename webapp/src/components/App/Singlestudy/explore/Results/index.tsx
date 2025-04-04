@@ -34,14 +34,14 @@ import {
   TableRow,
   Tooltip,
   Typography,
-  colors,
+  Link as MuiLink,
 } from "@mui/material";
 import type { AxiosError } from "axios";
 import moment from "moment";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
@@ -114,13 +114,11 @@ const iconStyle = {
   fontSize: 22,
   color: "action.active",
   cursor: "pointer",
-  "&:hover": { color: "action.hover" },
 };
 
 function Results() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
 
@@ -197,12 +195,6 @@ function Results() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleOutputNameClick = (output: OutputDetail) => () => {
-    navigate(`/studies/${study.id}/explore/results/${output.name}`, {
-      state: output.output,
-    });
-  };
-
   const handleDeleteOutput = async (outputName: string) => {
     closeDialog();
     await deleteOutput(study.id, outputName);
@@ -214,8 +206,8 @@ function Results() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <ViewWrapper flex>
-      <TableContainer component={Paper} elevation={2}>
+    <ViewWrapper>
+      <TableContainer component={Paper} elevation={2} sx={{ height: 1 }}>
         <Table stickyHeader>
           <TableHead>
             <TableRow>
@@ -248,15 +240,14 @@ function Results() {
                       <TableRow key={row.name}>
                         <TableCell component="th" scope="row">
                           {row.completionDate ? (
-                            <Typography
-                              sx={{
-                                "&:hover": { textDecoration: "underline" },
-                                cursor: "pointer",
-                              }}
-                              onClick={handleOutputNameClick(row)}
+                            <MuiLink
+                              color="inherit"
+                              underline="hover"
+                              component={Link}
+                              to={`/studies/${study.id}/explore/results/${encodeURI(row.name)}`}
                             >
                               {row.name}
-                            </Typography>
+                            </MuiLink>
                           ) : (
                             <Box sx={{ display: "flex", alignItems: "center" }}>
                               <CircularProgress
@@ -277,7 +268,6 @@ function Results() {
                               alignItems: "flex-end",
                               justifyContent: "center",
                               flexDirection: "column",
-                              color: colors.grey[500],
                               fontSize: "0.85rem",
                             }}
                           >

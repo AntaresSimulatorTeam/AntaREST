@@ -23,7 +23,16 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import InfoIcon from "@mui/icons-material/Info";
-import { Box, Chip, CircularProgress, Tooltip, Typography, colors, useTheme } from "@mui/material";
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  Tooltip,
+  Typography,
+  Link as MuiLink,
+  colors,
+  useTheme,
+} from "@mui/material";
 import type { AxiosError } from "axios";
 import debug from "debug";
 import debounce from "lodash/debounce";
@@ -246,12 +255,15 @@ function JobsListing() {
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
               {renderStatus(job)}
-              <Link style={{ textDecoration: "none" }} to={`/studies/${encodeURI(job.studyId)}`}>
-                <Typography sx={{ fontSize: "0.95rem", color: "text.primary" }}>
-                  {studies.find((s) => s.id === job.studyId)?.name ||
-                    `${t("global.unknown")} (${job.id})`}
-                </Typography>
-              </Link>
+              <MuiLink
+                color="inherit"
+                underline="hover"
+                component={Link}
+                to={`/studies/${encodeURI(job.studyId)}`}
+              >
+                {studies.find((s) => s.id === job.studyId)?.name ||
+                  `${t("global.unknown")} (${job.id})`}
+              </MuiLink>
               {renderTags(job)}
             </Box>
             {job.status === "running" && (
@@ -270,7 +282,6 @@ function JobsListing() {
               alignItems: "flex-end",
               justifyContent: "center",
               flexDirection: "column",
-              color: colors.grey[500],
               fontSize: "0.85rem",
             }}
           >
@@ -315,7 +326,6 @@ function JobsListing() {
                       fontSize: 22,
                       color: "action.active",
                       cursor: "pointer",
-                      "&:hover": { color: "action.hover" },
                     }}
                     onClick={() => exportJobOutput(job.id)}
                   />
@@ -340,7 +350,7 @@ function JobsListing() {
         id: download.id,
         name: download.name,
         dateView: (
-          <Box sx={{ color: colors.grey[500], fontSize: "0.85rem" }}>
+          <Box sx={{ fontSize: "0.85rem" }}>
             {`(${t("downloads.expirationDate")} : ${convertUTCToLocalTime(
               download.expirationDate,
             )})`}
@@ -371,9 +381,6 @@ function JobsListing() {
                 <DownloadIcon
                   sx={{
                     fontSize: 22,
-                    color: "action.active",
-                    cursor: "pointer",
-                    "&:hover": { color: "action.hover" },
                   }}
                 />
               </DownloadLink>
@@ -462,8 +469,11 @@ function JobsListing() {
   return (
     <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
       <ViewWrapper flex={{ gap: 1 }}>
-        {!loaded && <SimpleLoader />}
-        {loaded && <JobTableView content={content || []} refresh={() => init(false)} />}
+        {loaded ? (
+          <JobTableView content={content || []} refresh={() => init(false)} />
+        ) : (
+          <SimpleLoader />
+        )}
         {openConfirmationDialog && (
           <ConfirmationDialog
             title={t("dialog.title.confirmation")}

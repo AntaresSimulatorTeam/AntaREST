@@ -13,7 +13,7 @@
  */
 
 import TabsView from "@/components/common/TabsView";
-import { type StudyMetadata } from "@/types/types";
+import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Matrix from "../../../../../../../common/Matrix";
@@ -27,6 +27,12 @@ interface Props {
   studyVersion: number;
 }
 
+// !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
+// `customColumns={["TS 1"]}` as a temporary solution. These are actually
+// time series matrices, but the development for them has not been completed
+// on the simulator side yet. When that development is done, these properties
+// should be removed to restore the standard time series behavior with resize
+// functionality.
 function BuildMatrices(areaId: string, storageId: string, studyVersion: number) {
   const { t } = useTranslation();
   const matrices = [
@@ -82,7 +88,13 @@ function BuildMatrices(areaId: string, storageId: string, studyVersion: number) 
     },
     {
       label: t("study.modelization.storages.inflows"),
-      content: () => <Matrix url={`input/st-storage/series/${areaId}/${storageId}/inflows`} />,
+      content: () => (
+            <Matrix
+              url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
+              isTimeSeries={false}
+              customColumns={["TS 1"]}
+            />
+          ),
     },
   ];
   if (studyVersion >= 920) {

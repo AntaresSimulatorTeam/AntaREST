@@ -17,9 +17,9 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import Thermal870Properties, ThermalClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -35,7 +35,7 @@ class TestCreateCluster:
         modulation = GEN.random((8760, 4)).tolist()
         cl = CreateCluster(
             area_id="foo",
-            parameters=Thermal870Properties(
+            parameters=ThermalClusterCreation(
                 name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
@@ -54,7 +54,7 @@ class TestCreateCluster:
         modulation_id = command_context.matrix_service.create(modulation)
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == Thermal870Properties(
+        assert cl.parameters == ThermalClusterCreation(
             name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
         )
         assert cl.prepro == f"matrix://{prepro_id}"
@@ -64,7 +64,7 @@ class TestCreateCluster:
         with pytest.raises(ValidationError, match="name"):
             CreateCluster(
                 area_id="fr",
-                parameters=Thermal870Properties(name="%"),
+                parameters=ThermalClusterCreation(name="%"),
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_8,
             )
@@ -72,7 +72,7 @@ class TestCreateCluster:
     def test_validate_prepro(self, command_context: CommandContext):
         cl = CreateCluster(
             area_id="fr",
-            parameters=Thermal870Properties(name="C1"),
+            parameters=ThermalClusterCreation(name="C1"),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         )
@@ -81,7 +81,7 @@ class TestCreateCluster:
     def test_validate_modulation(self, command_context: CommandContext):
         cl = CreateCluster(
             area_id="fr",
-            parameters=Thermal870Properties(name="C1"),
+            parameters=ThermalClusterCreation(name="C1"),
             command_context=command_context,
             study_version=STUDY_VERSION_8_8,
         )
@@ -99,14 +99,14 @@ class TestCreateCluster:
             empty_study
         )
 
-        parameters = Thermal870Properties.model_validate(
+        parameters = ThermalClusterCreation.model_validate(
             {
                 "name": cluster_name,
                 "group": "Other",
-                "unitcount": "1",
-                "nominalcapacity": "1000000",
-                "marginal-cost": "30",
-                "market-bid-cost": "30",
+                "unitCount": "1",
+                "nominalCapacity": "1000000",
+                "marginalCost": "30",
+                "marketBidCost": "30",
             }
         )
 
@@ -176,7 +176,7 @@ class TestCreateCluster:
         modulation = GEN.random((8760, 4)).tolist()
         command = CreateCluster(
             area_id="foo",
-            parameters=Thermal870Properties(
+            parameters=ThermalClusterCreation(
                 name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
@@ -193,42 +193,10 @@ class TestCreateCluster:
             "args": {
                 "area_id": "foo",
                 "parameters": {
-                    "co2": 0.0,
-                    "costgeneration": "SetManually",
-                    "efficiency": 100.0,
-                    "enabled": True,
-                    "fixed-cost": 0.0,
-                    "gen-ts": "use global",
                     "group": "nuclear",
-                    "law.forced": "uniform",
-                    "law.planned": "uniform",
-                    "marginal-cost": 0.0,
-                    "market-bid-cost": 0.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "must-run": False,
                     "name": "Cluster1",
-                    "nh3": 0.0,
-                    "nmvoc": 0.0,
-                    "nominalcapacity": 2400.0,
-                    "nox": 0.0,
-                    "op1": 0.0,
-                    "op2": 0.0,
-                    "op3": 0.0,
-                    "op4": 0.0,
-                    "op5": 0.0,
-                    "pm10": 0.0,
-                    "pm2_5": 0.0,
-                    "pm5": 0.0,
-                    "so2": 0.0,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "startup-cost": 0.0,
-                    "unitcount": 2,
-                    "variableomcost": 0.0,
-                    "volatility.forced": 0.0,
-                    "volatility.planned": 0.0,
+                    "nominalCapacity": 2400.0,
+                    "unitCount": 2,
                 },
                 "prepro": prepro_id,
                 "modulation": modulation_id,
@@ -237,5 +205,15 @@ class TestCreateCluster:
             "study_version": "8.8",
             "updated_at": None,
             "user_id": None,
-            "version": 2,
+            "version": 3,
         }
+
+    def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext):
+        creation_data = ThermalClusterCreation(name="cluster", nox=12.0)
+        with pytest.raises(ValidationError):
+            CreateCluster(
+                area_id="foo",
+                parameters=creation_data,
+                command_context=command_context,
+                study_version=STUDY_VERSION_8_1,
+            )

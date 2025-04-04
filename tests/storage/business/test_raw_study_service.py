@@ -15,8 +15,7 @@ import os
 import platform
 import re
 import time
-from pathlib import Path
-from typing import Callable
+from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -384,13 +383,9 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_copy_study(
-    tmp_path: str,
-    clean_ini_writer: Callable,
-) -> None:
-    path_studies = Path(tmp_path)
+def test_copy_study(tmp_path: Path) -> None:
     source_name = "study1"
-    path_study = path_studies / source_name
+    path_study = tmp_path / source_name
     path_study.mkdir()
     path_study_info = path_study / "study.antares"
     path_study_info.touch()
@@ -414,7 +409,7 @@ def test_copy_study(
 
     url_engine = Mock()
     url_engine.resolve.return_value = None, None, None
-    config = build_config(path_studies)
+    config = build_config(tmp_path)
     study_service = RawStudyService(
         config=config,
         cache=Mock(),
@@ -430,7 +425,7 @@ def test_copy_study(
         version="700",
         groups=groups,
     )
-    md = study_service.copy(src_md, "dst_name", groups)
+    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath())
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE
