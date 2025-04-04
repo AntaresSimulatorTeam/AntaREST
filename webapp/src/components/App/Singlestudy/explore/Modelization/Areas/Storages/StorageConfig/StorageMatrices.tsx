@@ -89,12 +89,12 @@ function BuildMatrices(areaId: string, storageId: string, studyVersion: number) 
     {
       label: t("study.modelization.storages.inflows"),
       content: () => (
-            <Matrix
-              url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
-              isTimeSeries={false}
-              customColumns={["TS 1"]}
-            />
-          ),
+        <Matrix
+          url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
+          isTimeSeries={false}
+          customColumns={["TS 1"]}
+        />
+      ),
     },
   ];
   if (studyVersion >= 920) {
