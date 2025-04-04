@@ -23,12 +23,14 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.study_data_blueprint import create_study_data_routes
@@ -113,6 +115,8 @@ def build_study_service(
         config=config,
     )
 
+    output_service = OutputService(study_service=study_service)
+
     if app_ctxt:
         api_root = app_ctxt.api_root
         api_root.include_router(create_study_routes(study_service, file_transfer_manager, config))
@@ -125,5 +129,6 @@ def build_study_service(
             )
         )
         api_root.include_router(create_xpansion_routes(study_service, config))
+        api_root.include_router(create_output_routes(output_service, config))
 
     return study_service

@@ -735,7 +735,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         if isinstance(study, RawStudy):
             self.edit_study(
@@ -859,14 +859,14 @@ class StudyService:
 
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
-            self._assert_study_unarchived(study)
+            self.assert_study_unarchived(study)
             study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
             study_settings["horizon"] = metadata_patch.horizon
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
 
         if metadata_patch.author:
             study_antares_url = "study/antares"
-            self._assert_study_unarchived(study)
+            self.assert_study_unarchived(study)
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
             study_antares["author"] = metadata_patch.author
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
@@ -900,7 +900,7 @@ class StudyService:
     ) -> Study:
         study = self.get_study(uuid)
         assert_permission(params.user, study, permission)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         return study
 
     def get_study_interface(self, study: Study) -> StudyInterface:
@@ -1190,7 +1190,7 @@ class StudyService:
         """
         src_study = self.get_study(src_uuid)
         assert_permission(params.user, src_study, StudyPermissionType.READ)
-        self._assert_study_unarchived(src_study)
+        self.assert_study_unarchived(src_study)
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
@@ -1269,7 +1269,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
@@ -1316,7 +1316,7 @@ class StudyService:
         """
         study = self.get_study(study_uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         return get_output_variables_information(self.storage_service.get_storage(study).get_raw(study), output_uuid)
 
     def export_output(
@@ -1334,7 +1334,7 @@ class StudyService:
         """
         study = self.get_study(study_uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {study.name}/{output_uuid} export"
@@ -1385,7 +1385,7 @@ class StudyService:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         return self.storage_service.get_storage(study).export_study_flat(
             study, dest, len(output_list or []) > 0, output_list
@@ -1431,7 +1431,7 @@ class StudyService:
 
         # delete the files afterward for
         # if the study cannot be deleted from database for foreign key reason
-        if self._assert_study_unarchived(study=study, raise_exception=False):
+        if self.assert_study_unarchived(study=study, raise_exception=False):
             self.storage_service.get_storage(study).delete(study)
         else:
             if isinstance(study, RawStudy):
@@ -1461,7 +1461,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         self.storage_service.get_storage(study).delete_output(study, output_name)
         self.event_bus.push(
             Event(
@@ -1500,7 +1500,7 @@ class StudyService:
         # GET STUDY ID
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         logger.info(f"Study {study_id} output download asked by {params.get_user_id()}")
 
         if use_task:
@@ -1667,7 +1667,7 @@ class StudyService:
         logger.info(f"Importing new output for study {uuid}")
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.RUN)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         if not Path(study.path).exists():
             raise StudyNotFoundError(f"Study files were not found for study {uuid}")
 
@@ -1788,7 +1788,7 @@ class StudyService:
             return self.storage_service.variant_study_service.append_commands(uuid, commands, params)
         else:
             assert_permission(params.user, study, StudyPermissionType.WRITE)
-            self._assert_study_unarchived(study)
+            self.assert_study_unarchived(study)
             parsed_commands: List[ICommand] = []
             for command in commands:
                 parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
@@ -1831,7 +1831,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
 
@@ -1863,7 +1863,7 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.MANAGE_PERMISSIONS)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         new_owner = self.user_service.get_user(owner_id, params)
         study.owner = new_owner
         self.repository.save(study)
@@ -1978,7 +1978,7 @@ class StudyService:
 
     def check_errors(self, uuid: str) -> List[str]:
         study = self.get_study(uuid)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         return self.storage_service.raw_study_service.check_errors(study)
 
     def get_all_areas(
@@ -2014,7 +2014,7 @@ class StudyService:
     ) -> AreaInfoDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
         self.event_bus.push(
             Event(
@@ -2033,7 +2033,7 @@ class StudyService:
     ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
         self.event_bus.push(
             Event(
@@ -2054,7 +2054,7 @@ class StudyService:
     ) -> LinkDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         updated_link = self.links_manager.update_link(
             self.get_study_interface(study), area_from, area_to, link_update_dto
         )
@@ -2077,7 +2077,7 @@ class StudyService:
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
 
     def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
@@ -2096,7 +2096,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         study_interface = self.get_study_interface(study)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
             study_interface, ConstraintFilters(area_name=area_id)
         )
@@ -2134,7 +2134,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
@@ -2157,7 +2157,7 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
 
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
@@ -2305,7 +2305,7 @@ class StudyService:
             raise StudyNotFoundError(uuid)
         return study
 
-    def _assert_study_unarchived(self, study: Study, raise_exception: bool = True) -> bool:
+    def assert_study_unarchived(self, study: Study, raise_exception: bool = True) -> bool:
         if study.archived and raise_exception:
             raise UnsupportedOperationOnArchivedStudy(study.id)
         return not study.archived
@@ -2346,14 +2346,14 @@ class StudyService:
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.create_xpansion_configuration(study_interface)
 
     def delete_xpansion_configuration(self, uuid: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.delete_xpansion_configuration(study_interface)
 
@@ -2371,7 +2371,7 @@ class StudyService:
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_settings(study_interface, xpansion_settings_dto)
 
@@ -2383,7 +2383,7 @@ class StudyService:
     ) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate_dto)
 
@@ -2408,14 +2408,14 @@ class StudyService:
     ) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate_dto)
 
     def delete_xpansion_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> None:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
@@ -2427,7 +2427,7 @@ class StudyService:
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
@@ -2455,7 +2455,7 @@ class StudyService:
         """
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         try:
             self.matrix_manager.update_matrix(study_interface, path, matrix_edit_instruction)
@@ -2490,7 +2490,7 @@ class StudyService:
         logger.info(f"Archiving all outputs for study {study_id}")
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
         study = self.get_study(study_id)
         file_study = self.storage_service.get_storage(study).get_raw(study)
         for output in file_study.config.outputs:
@@ -2513,7 +2513,7 @@ class StudyService:
     ) -> Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         output_path = Path(study.path) / "output" / output_id
         if is_output_archived(output_path):
@@ -2575,7 +2575,7 @@ class StudyService:
     ) -> Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         output_path = Path(study.path) / "output" / output_id
         if not is_output_archived(output_path):
@@ -2686,7 +2686,7 @@ class StudyService:
     ) -> str:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self._assert_study_unarchived(study)
+        self.assert_study_unarchived(study)
 
         # The upgrade of a study variant requires the use of a command specifically dedicated to the upgrade.
         # However, such a command does not currently exist. Moreover, upgrading a study (whether raw or variant)
