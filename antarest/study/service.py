@@ -64,13 +64,6 @@ from antarest.login.utils import get_current_user
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
-from antarest.study.business.aggregator_management import (
-    AggregatorManager,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
 from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
@@ -130,7 +123,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -584,41 +577,6 @@ class StudyService:
         output = self.storage_service.get_storage(study).get_file(study, url)
 
         return output
-
-    def aggregate_output_data(
-        self,
-        uuid: str,
-        output_id: str,
-        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
-        frequency: MatrixFrequency,
-        columns_names: Sequence[str],
-        ids_to_consider: Sequence[str],
-        params: RequestParameters,
-        mc_years: Optional[Sequence[int]] = None,
-    ) -> pd.DataFrame:
-        """
-        Aggregates output data based on several filtering conditions
-
-        Args:
-            uuid: study uuid
-            output_id: simulation output ID
-            query_file: which types of data to retrieve: "values", "details", "details-st-storage", "details-res", "ids"
-            frequency: yearly, monthly, weekly, daily or hourly.
-            columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
-            ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
-            params: request parameters
-            mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
-
-        Returns: the aggregated data as a DataFrame
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        study_path = self.storage_service.raw_study_service.get_study_path(study)
-        aggregator_manager = AggregatorManager(
-            study_path, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
-        )
-        return aggregator_manager.aggregate_output_data()
 
     def get_logs(
         self,

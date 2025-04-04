@@ -55,7 +55,7 @@ from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
-from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
@@ -81,7 +81,7 @@ class LauncherService:
     def __init__(
         self,
         config: Config,
-        study_service: StudyService,
+        output_service: OutputService,
         job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
@@ -90,7 +90,7 @@ class LauncherService:
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
-        self.study_service = study_service
+        self.output_service = output_service
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -110,7 +110,7 @@ class LauncherService:
         self.extensions = self._init_extensions()
 
     def _init_extensions(self) -> Dict[str, ILauncherExtension]:
-        adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
+        adequacy_patch_ext = AdequacyPatchExtension(self.output_service.study_service, self.config)
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> List[str]:
@@ -229,7 +229,7 @@ class LauncherService:
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
-        study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
+        study_info = self.output_service.study_service.get_study_information(uuid=study_uuid, params=params)
         solver_version = SolverVersion.parse(study_version or study_info.version)
 
         self._assert_launcher_is_initialized(launcher)
@@ -269,7 +269,7 @@ class LauncherService:
             raise ValueError(f"Job {job_id} not found")
 
         study_uuid = job_result.study_id
-        study = self.study_service.get_study(study_uuid)
+        study = self.output_service.study_service.get_study(study_uuid)
         assert_permission(
             user=params.user,
             study=study,
@@ -315,7 +315,7 @@ class LauncherService:
         if study_ids:
             studies = {
                 study.id: study
-                for study in self.study_service.repository.get_all(
+                for study in self.output_service.study_service.repository.get_all(
                     study_filter=StudyFilter(
                         study_ids=study_ids, access_permissions=AccessPermissions.from_params(user)
                     )
@@ -342,7 +342,7 @@ class LauncherService:
 
         try:
             if job_result:
-                study = self.study_service.get_study(job_result.study_id)
+                study = self.output_service.study_service.get_study(job_result.study_id)
                 assert_permission(
                     user=params.user,
                     study=study,
@@ -390,7 +390,7 @@ class LauncherService:
         if job_result:
             if job_result.output_id:
                 launcher_logs = (
-                    self.study_service.get_logs(
+                    self.output_service.study_service.get_logs(
                         job_result.study_id,
                         job_result.output_id,
                         job_id,
@@ -431,7 +431,7 @@ class LauncherService:
                 and launcher_params.xpansion.output_id is not None
                 else None
             )
-            self.study_service.export_study_flat(
+            self.output_service.study_service.export_study_flat(
                 study_id,
                 RequestParameters(DEFAULT_ADMIN_USER),
                 target_path,
@@ -502,7 +502,7 @@ class LauncherService:
 
             # Search for the user who launched the job in the database.
             if owner_id := job_result.owner_id:
-                roles = self.study_service.user_service.roles.get_all_by_user(owner_id)
+                roles = self.output_service.study_service.user_service.roles.get_all_by_user(owner_id)
                 groups = [JWTGroup(id=role.group_id, name=role.group.name, role=role.type) for role in roles]
                 launching_user = JWTUser(id=owner_id, impersonator=owner_id, type="users", groups=groups)
             else:
@@ -555,13 +555,13 @@ class LauncherService:
                             log_suffix = log_name
                             if log_type:
                                 log_suffix = log_type.to_suffix()
-                            self.study_service.save_logs(
+                            self.output_service.study_service.save_logs(
                                 study_id,
                                 job_id,
                                 log_suffix,
                                 concat_files_to_str(log_paths),
                             )
-                    return self.study_service.import_output(
+                    return self.output_service.import_output(
                         study_id,
                         final_output_path,
                         RequestParameters(launching_user),
@@ -622,8 +622,8 @@ class LauncherService:
         if job_result and job_result.output_id:
             if self._get_job_output_fallback_path(job_id).exists():
                 return self._download_fallback_output(job_id, params)
-            self.study_service.get_study(job_result.study_id)
-            return self.study_service.export_output(
+            self.output_service.study_service.get_study(job_result.study_id)
+            return self.output_service.export_output(
                 job_result.study_id,
                 job_result.output_id,
                 params,
@@ -705,7 +705,7 @@ class LauncherService:
             raise JobNotFound()
         study_uuid = job_result.study_id
         launcher = job_result.launcher
-        study = self.study_service.get_study(study_uuid)
+        study = self.output_service.study_service.get_study(study_uuid)
         assert_permission(
             user=params.user,
             study=study,

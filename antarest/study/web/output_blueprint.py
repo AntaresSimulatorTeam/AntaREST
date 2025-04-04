@@ -271,7 +271,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         mc_years: str = "",
         areas_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         # noinspection SpellCheckingInspection
@@ -340,7 +340,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         mc_years: str = "",
         links_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         """
@@ -407,7 +407,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         frequency: MatrixFrequency,
         areas_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         # noinspection SpellCheckingInspection
@@ -473,7 +473,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         frequency: MatrixFrequency,
         links_ids: str = "",
         columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         """

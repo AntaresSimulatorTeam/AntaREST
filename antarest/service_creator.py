@@ -42,6 +42,7 @@ from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
@@ -126,7 +127,9 @@ def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tup
 
 def create_core_services(
     app_ctxt: Optional[AppBuildContext], config: Config
-) -> Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService]:
+) -> Tuple[
+    ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService, OutputService
+]:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
@@ -150,6 +153,7 @@ def create_core_services(
         user_service=login_service,
         event_bus=event_bus,
     )
+    output_service = OutputService(study_service=study_service)
     return (
         cache,
         event_bus,
@@ -158,6 +162,7 @@ def create_core_services(
         login_service,
         matrix_service,
         study_service,
+        output_service,
     )
 
 
@@ -173,7 +178,7 @@ def create_watcher(
             task_service=study_service.task_service,
         )
     else:
-        _, _, task_service, _, _, _, study_service = create_core_services(app_ctxt, config)
+        _, _, task_service, _, _, _, study_service, _ = create_core_services(app_ctxt, config)
         watcher = Watcher(
             config=config,
             study_service=study_service,
@@ -207,7 +212,7 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, _, _, matrix_service, study_service = create_core_services(app_ctxt, config)
+        _, _, _, _, _, matrix_service, study_service, _ = create_core_services(app_ctxt, config)
         return MatrixGarbageCollector(
             config=config,
             study_service=study_service,
@@ -237,6 +242,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         user_service,
         matrix_service,
         study_service,
+        output_service,
     ) = create_core_services(app_ctxt, config)
 
     maintenance_service = build_maintenance_manager(app_ctxt, config=config, cache=cache, event_bus=event_bus)
@@ -244,7 +250,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     launcher = build_launcher(
         app_ctxt,
         config,
-        study_service=study_service,
+        output_service=output_service,
         event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=file_transfer_manager,

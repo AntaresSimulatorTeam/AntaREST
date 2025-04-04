@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Optional
+from typing import BinaryIO, Optional, Sequence
 
+import pandas as pd
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
@@ -33,8 +34,16 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import StopWatch
+from antarest.study.business.aggregator_management import (
+    AggregatorManager,
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+)
 from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
     DigestSynthesis,
     DigestUI,
@@ -485,3 +494,38 @@ class OutputService:
         )
 
         return task_id
+
+    def aggregate_output_data(
+        self,
+        uuid: str,
+        output_id: str,
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        frequency: MatrixFrequency,
+        columns_names: Sequence[str],
+        ids_to_consider: Sequence[str],
+        params: RequestParameters,
+        mc_years: Optional[Sequence[int]] = None,
+    ) -> pd.DataFrame:
+        """
+        Aggregates output data based on several filtering conditions
+
+        Args:
+            uuid: study uuid
+            output_id: simulation output ID
+            query_file: which types of data to retrieve: "values", "details", "details-st-storage", "details-res", "ids"
+            frequency: yearly, monthly, weekly, daily or hourly.
+            columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
+            ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
+            params: request parameters
+            mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
+
+        Returns: the aggregated data as a DataFrame
+
+        """
+        study = self.study_service.get_study(uuid)
+        assert_permission(params.user, study, StudyPermissionType.READ)
+        study_path = self.study_service.storage_service.raw_study_service.get_study_path(study)
+        aggregator_manager = AggregatorManager(
+            study_path, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
+        )
+        return aggregator_manager.aggregate_output_data()

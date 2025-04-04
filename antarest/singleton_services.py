@@ -42,15 +42,7 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
     configure_logger(config)
 
-    (
-        cache,
-        event_bus,
-        task_service,
-        ft_manager,
-        login_service,
-        matrix_service,
-        study_service,
-    ) = create_core_services(None, config)
+    _, event_bus, _, _, _, matrix_service, study_service, _ = create_core_services(None, config)
 
     services: Dict[Module, IService] = {}
 
