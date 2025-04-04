@@ -165,12 +165,6 @@ function BuildMatrices(areaId: string, storageId: string, studyVersion: number) 
   return matrices;
 }
 
-// !NOTE: The Matrix components are configured with `isTimeSeries={false}` and
-// `customColumns={["TS 1"]}` as a temporary solution. These are actually
-// time series matrices, but the development for them has not been completed
-// on the simulator side yet. When that development is done, these properties
-// should be removed to restore the standard time series behavior with resize
-// functionality.
 function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
