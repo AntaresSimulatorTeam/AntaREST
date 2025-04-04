@@ -19,14 +19,13 @@ import os
 import time
 from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Type, cast
 from uuid import uuid4
 
 import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
-from starlette.responses import FileResponse, Response
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -38,9 +37,6 @@ from antarest.core.exceptions import (
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
-    OutputAlreadyArchived,
-    OutputAlreadyUnarchived,
-    OutputNotFound,
     ReferencedObjectDeletionNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
@@ -57,7 +53,6 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
-from antarest.core.serde.json import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -112,18 +107,15 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     CommentsDto,
-    ExportFormat,
     MatrixIndex,
     RawStudy,
     Study,
     StudyAdditionalData,
     StudyContentStatus,
-    StudyDownloadDTO,
     StudyDownloadLevelDTO,
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
-    StudySimResultDTO,
 )
 from antarest.study.repository import (
     AccessPermissions,
@@ -147,13 +139,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
 from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
     is_managed,
-    is_output_archived,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -179,7 +169,6 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
 
@@ -1301,80 +1290,6 @@ class StudyService:
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def output_variables_information(
-        self,
-        study_uuid: str,
-        output_uuid: str,
-        params: RequestParameters,
-    ) -> Dict[str, List[str]]:
-        """
-        Returns information about output variables using thematic and geographic trimming information
-        Args:
-            study_uuid: study id
-            output_uuid: output id
-            params: request parameters
-        """
-        study = self.get_study(study_uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        self.assert_study_unarchived(study)
-        return get_output_variables_information(self.storage_service.get_storage(study).get_raw(study), output_uuid)
-
-    def export_output(
-        self,
-        study_uuid: str,
-        output_uuid: str,
-        params: RequestParameters,
-    ) -> FileDownloadTaskDTO:
-        """
-        Export study output to a zip file.
-        Args:
-            study_uuid: study id
-            output_uuid: output id
-            params: request parameters
-        """
-        study = self.get_study(study_uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        self.assert_study_unarchived(study)
-
-        logger.info(f"Exporting {output_uuid} from study {study_uuid}")
-        export_name = f"Study output {study.name}/{output_uuid} export"
-        export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}",
-            export_name,
-            params.user,
-        )
-        export_path = Path(export_file_download.path)
-        export_id = export_file_download.id
-
-        def export_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                target_study = self.get_study(study_uuid)
-                self.storage_service.get_storage(target_study).export_output(
-                    metadata=target_study,
-                    output_id=output_uuid,
-                    target=export_path,
-                )
-                self.file_transfer_manager.set_ready(export_id)
-                return TaskResult(
-                    success=True,
-                    message=f"Study output {study_uuid}/{output_uuid} successfully exported",
-                )
-            except Exception as e:
-                self.file_transfer_manager.fail(export_id, str(e))
-                raise e
-
-        task_id = self.task_service.add_task(
-            export_task,
-            export_name,
-            task_type=TaskType.EXPORT,
-            ref_id=study.id,
-            progress=None,
-            custom_event_messages=None,
-            request_params=params,
-        )
-
-        return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
-
     def export_study_flat(
         self,
         uuid: str,
@@ -1448,157 +1363,6 @@ class StudyService:
 
         self._on_study_delete(uuid=uuid)
 
-    def delete_output(self, uuid: str, output_name: str, params: RequestParameters) -> None:
-        """
-        Delete specific output simulation in study
-        Args:
-            uuid: study uuid
-            output_name: output simulation name
-            params: request parameters
-
-        Returns:
-
-        """
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self.assert_study_unarchived(study)
-        self.storage_service.get_storage(study).delete_output(study, output_name)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-
-        logger.info(f"Output {output_name} deleted from study {uuid}")
-
-    def download_outputs(
-        self,
-        study_id: str,
-        output_id: str,
-        data: StudyDownloadDTO,
-        use_task: bool,
-        filetype: ExportFormat,
-        params: RequestParameters,
-        tmp_export_file: Optional[Path] = None,
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
-        """
-        Download outputs
-        Args:
-            study_id: study ID.
-            output_id: output ID.
-            data: Json parameters.
-            use_task: use task or not.
-            filetype: type of returning file,.
-            tmp_export_file: temporary file (if `use_task` is false),.
-            params: request parameters.
-
-        Returns: CSV content file
-
-        """
-        # GET STUDY ID
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        self.assert_study_unarchived(study)
-        logger.info(f"Study {study_id} output download asked by {params.get_user_id()}")
-
-        if use_task:
-            logger.info(f"Exporting {output_id} from study {study_id}")
-            export_name = f"Study filtered output {study.name}/{output_id} export"
-            export_file_download = self.file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}",
-                export_name,
-                params.user,
-            )
-            export_path = Path(export_file_download.path)
-            export_id = export_file_download.id
-
-            def export_task(_notifier: ITaskNotifier) -> TaskResult:
-                try:
-                    _study = self.get_study(study_id)
-                    _stopwatch = StopWatch()
-                    _matrix = StudyDownloader.build(
-                        self.storage_service.get_storage(_study).get_raw(_study),
-                        output_id,
-                        data,
-                    )
-                    _stopwatch.log_elapsed(
-                        lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s")
-                    )
-                    StudyDownloader.export(_matrix, filetype, export_path)
-                    _stopwatch.log_elapsed(
-                        lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
-                    )
-                    self.file_transfer_manager.set_ready(export_id)
-                    return TaskResult(
-                        success=True,
-                        message=f"Study filtered output {study_id}/{output_id} successfully exported",
-                    )
-                except Exception as e:
-                    self.file_transfer_manager.fail(export_id, str(e))
-                    raise
-
-            task_id = self.task_service.add_task(
-                export_task,
-                export_name,
-                task_type=TaskType.EXPORT,
-                ref_id=study.id,
-                progress=None,
-                custom_event_messages=None,
-                request_params=params,
-            )
-
-            return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
-        else:
-            stopwatch = StopWatch()
-            matrix = StudyDownloader.build(
-                self.storage_service.get_storage(study).get_raw(study),
-                output_id,
-                data,
-            )
-            stopwatch.log_elapsed(lambda x: logger.info(f"Study {study_id} filtered output {output_id} built in {x}s"))
-            if tmp_export_file is not None:
-                StudyDownloader.export(matrix, filetype, tmp_export_file)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
-                )
-
-                if filetype == ExportFormat.JSON:
-                    headers = {"Content-Disposition": "inline"}
-                elif filetype == ExportFormat.TAR_GZ:
-                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.tar.gz'}
-                elif filetype == ExportFormat.ZIP:
-                    headers = {"Content-Disposition": f'attachment; filename="output-{output_id}.zip'}
-                else:  # pragma: no cover
-                    raise NotImplementedError(f"Export format {filetype} is not supported")
-
-                return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
-
-            else:
-                json_response = to_json(matrix.model_dump(mode="json"))
-                return Response(content=json_response, media_type="application/json")
-
-    def get_study_sim_result(self, study_id: str, params: RequestParameters) -> List[StudySimResultDTO]:
-        """
-        Get global result information
-        Args:
-            study_id: study Id
-            params: request parameters
-
-        Returns: an object containing all needed information
-
-        """
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        logger.info(
-            "study %s output listing asked by user %s",
-            study_id,
-            params.get_user_id(),
-        )
-
-        return self.storage_service.get_storage(study).get_study_sim_result(study)
-
     def import_study(
         self,
         stream: BinaryIO,
@@ -1643,42 +1407,6 @@ class StudyService:
 
         logger.info("study %s imported by user %s", study.id, params.get_user_id())
         return str(study.id)
-
-    def import_output(
-        self,
-        uuid: str,
-        output: BinaryIO | Path,
-        params: RequestParameters,
-        output_name_suffix: Optional[str] = None,
-        auto_unzip: bool = True,
-    ) -> Optional[str]:
-        """
-        Import specific output simulation inside study
-        Args:
-            uuid: study uuid
-            output: zip file with simulation folder or simulation folder path
-            params: request parameters
-            output_name_suffix: optional suffix name for the output
-            auto_unzip: add a task to unzip the output after import
-
-        Returns: output simulation json formatted
-
-        """
-        logger.info(f"Importing new output for study {uuid}")
-        study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.RUN)
-        self.assert_study_unarchived(study)
-        if not Path(study.path).exists():
-            raise StudyNotFoundError(f"Study files were not found for study {uuid}")
-
-        output_id = self.storage_service.get_storage(study).import_output(study, output, output_name_suffix)
-        remove_from_cache(cache=self.cache_service, root_id=study.id)
-        logger.info("output added to study %s by user %s", uuid, params.get_user_id())
-
-        if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
-            self.unarchive_output(uuid, output_id, not is_managed(study), params)
-
-        return output_id
 
     def _create_edit_study_command(
         self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
@@ -2485,167 +2213,6 @@ class StudyService:
         for study in studies:
             storage = self.storage_service.raw_study_service
             storage.check_and_update_study_version_in_database(study)
-
-    def archive_outputs(self, study_id: str, params: RequestParameters) -> None:
-        logger.info(f"Archiving all outputs for study {study_id}")
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self.assert_study_unarchived(study)
-        study = self.get_study(study_id)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        for output in file_study.config.outputs:
-            if not file_study.config.outputs[output].archived:
-                self.archive_output(study_id, output, params)
-
-    @staticmethod
-    def _get_output_archive_task_names(study: Study, output_id: str) -> Tuple[str, str]:
-        return (
-            f"Archive output {study.id}/{output_id}",
-            f"Unarchive output {study.name}/{output_id} ({study.id})",
-        )
-
-    def archive_output(
-        self,
-        study_id: str,
-        output_id: str,
-        params: RequestParameters,
-        force: bool = False,
-    ) -> Optional[str]:
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
-        self.assert_study_unarchived(study)
-
-        output_path = Path(study.path) / "output" / output_id
-        if is_output_archived(output_path):
-            raise OutputAlreadyArchived(output_id)
-        if not output_path.exists():
-            raise OutputNotFound(output_id)
-
-        archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
-        task_name = archive_task_names[0]
-
-        if not force:
-            study_tasks = self.task_service.list_tasks(
-                TaskListFilter(
-                    ref_id=study_id,
-                    name=task_name,
-                    type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
-                    status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-                ),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
-            )
-            if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
-                raise TaskAlreadyRunning()
-
-        def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                study = self.get_study(study_id)
-                stopwatch = StopWatch()
-                self.storage_service.get_storage(study).archive_study_output(study, output_id)
-                stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
-                return TaskResult(
-                    success=True,
-                    message=f"Study output {study_id}/{output_id} successfully archived",
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Could not archive the output {study_id}/{output_id}",
-                    exc_info=e,
-                )
-                raise e
-
-        task_id = self.task_service.add_task(
-            archive_output_task,
-            task_name,
-            task_type=TaskType.ARCHIVE,
-            ref_id=study.id,
-            progress=None,
-            custom_event_messages=None,
-            request_params=params,
-        )
-
-        return task_id
-
-    def unarchive_output(
-        self,
-        study_id: str,
-        output_id: str,
-        keep_src_zip: bool,
-        params: RequestParameters,
-    ) -> Optional[str]:
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        self.assert_study_unarchived(study)
-
-        output_path = Path(study.path) / "output" / output_id
-        if not is_output_archived(output_path):
-            if not output_path.exists():
-                raise OutputNotFound(output_id)
-            raise OutputAlreadyUnarchived(output_id)
-
-        archive_task_names = StudyService._get_output_archive_task_names(study, output_id)
-        task_name = archive_task_names[1]
-
-        study_tasks = self.task_service.list_tasks(
-            TaskListFilter(
-                ref_id=study_id,
-                type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
-                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
-        )
-        if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
-            raise TaskAlreadyRunning()
-
-        def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
-            try:
-                study = self.get_study(study_id)
-                stopwatch = StopWatch()
-                self.storage_service.get_storage(study).unarchive_study_output(study, output_id, keep_src_zip)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
-                )
-                return TaskResult(
-                    success=True,
-                    message=f"Study output {study_id}/{output_id} successfully unarchived",
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Could not unarchive the output {study_id}/{output_id}",
-                    exc_info=e,
-                )
-                raise e
-
-        task_id: Optional[str] = None
-        workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
-        if workspace != DEFAULT_WORKSPACE_NAME:
-            dest = Path(study.path) / "output" / output_id
-            src = Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}"
-            task_id = self.task_service.add_worker_task(
-                TaskType.UNARCHIVE,
-                f"unarchive_{workspace}",
-                ArchiveTaskArgs(
-                    src=str(src),
-                    dest=str(dest),
-                    remove_src=not keep_src_zip,
-                ).model_dump(mode="json"),
-                name=task_name,
-                ref_id=study.id,
-                request_params=params,
-            )
-
-        if not task_id:
-            task_id = self.task_service.add_task(
-                unarchive_output_task,
-                task_name,
-                task_type=TaskType.UNARCHIVE,
-                ref_id=study.id,
-                progress=None,
-                custom_event_messages=None,
-                request_params=params,
-            )
-
-        return task_id
 
     def generate_timeseries(self, study: Study, params: RequestParameters) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
