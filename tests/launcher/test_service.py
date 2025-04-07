@@ -726,11 +726,13 @@ class TestLauncherService:
 
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
+        output_service = Mock(spec=OutputService)
+        output_service.import_output.return_value = ""
 
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
-            output_service=OutputService(study_service),
+            output_service=output_service,
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
