@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, cast
 
 import numpy as np
-import numpy.typing as npt
 import pandas as pd
 import yaml
 
@@ -40,16 +39,15 @@ class InternalMatrixFormat(StrEnum):
     PARQUET = "parquet"
     FEATHER = "feather"
 
-    def load_matrix(self, path: Path) -> npt.NDArray[np.float64]:
+    def load_matrix(self, path: Path) -> pd.DataFrame:
         if self == InternalMatrixFormat.TSV or path.stat().st_size == 0:
-            return np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2)
+            return pd.DataFrame(data=np.loadtxt(path, delimiter="\t", ndmin=2))
         elif self == InternalMatrixFormat.HDF:
-            df = cast(pd.DataFrame, pd.read_hdf(path))
-            return df.to_numpy(dtype=np.float64)
+            return cast(pd.DataFrame, pd.read_hdf(path))
         elif self == InternalMatrixFormat.PARQUET:
-            return pd.read_parquet(path).to_numpy(dtype=np.float64)
+            return pd.read_parquet(path)
         elif self == InternalMatrixFormat.FEATHER:
-            return pd.read_feather(path).to_numpy(dtype=np.float64)
+            return pd.read_feather(path)
         else:
             raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 

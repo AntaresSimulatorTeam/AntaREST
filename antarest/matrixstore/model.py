@@ -14,6 +14,7 @@ import datetime
 import uuid
 from typing import Any, List, TypeAlias
 
+import numpy.typing as npt
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
@@ -221,24 +222,9 @@ class MatrixDTO(AntaresBaseModel):
     height: int
     index: List[int | str]
     columns: List[int | str]
-    data: List[List[MatrixData]]
+    data: npt.NDArray[Any]
     created_at: int = 0
     id: str = ""
-
-
-class MatrixContent(AntaresBaseModel):
-    """
-    Matrix content (Data Frame array)
-
-    Attributes:
-        data: A 2D-array matrix of floating point values.
-        index: A list of row indexes or names.
-        columns: A list of columns indexes or names.
-    """
-
-    data: List[List[MatrixData]]
-    index: List[int | str]
-    columns: List[int | str]
 
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):

@@ -18,9 +18,10 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 import numpy as np
+import pandas as pd
 import py7zr
 from fastapi import UploadFile
 from numpy import typing as npt
@@ -41,7 +42,6 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixContent,
     MatrixData,
     MatrixDataSet,
     MatrixDataSetDTO,
@@ -72,7 +72,7 @@ class ISimpleMatrixService(ABC):
         self.matrix_content_repository = matrix_content_repository
 
     @abstractmethod
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -114,7 +114,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         super().__init__(matrix_content_repository=matrix_content_repository)
 
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
         return self.matrix_content_repository.save(data)
 
     @override
@@ -124,9 +124,9 @@ class SimpleMatrixService(ISimpleMatrixService):
             id=matrix_id,
             width=len(data.columns),
             height=len(data.index),
-            index=data.index,
-            columns=data.columns,
-            data=data.data,
+            index=list(data.index),
+            columns=list(data.columns),
+            data=data.values,
         )
 
     @override
@@ -157,21 +157,8 @@ class MatrixService(ISimpleMatrixService):
         self.task_service = task_service
         self.config = config
 
-    @staticmethod
-    def _from_dto(dto: MatrixDTO) -> Tuple[Matrix, MatrixContent]:
-        matrix = Matrix(
-            id=dto.id,
-            width=dto.width,
-            height=dto.height,
-            created_at=datetime.fromtimestamp(dto.created_at),
-        )
-
-        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)
-
-        return matrix, content
-
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -195,7 +182,7 @@ class MatrixService(ISimpleMatrixService):
             unreferenced matrices to avoid leaving unused files lying around.
         """
         matrix_id = self.matrix_content_repository.save(data)
-        shape = data.shape if isinstance(data, np.ndarray) else (len(data), len(data[0]) if data else 0)
+        shape = (len(data), len(data[0]) if data else 0) if isinstance(data, list) else data.shape
         with db():
             # Do not use the `timezone.utc` timezone to preserve a naive datetime.
             created_at = datetime.utcnow()
@@ -267,8 +254,8 @@ class MatrixService(ISimpleMatrixService):
         """
         if is_json:
             obj = from_json(file)
-            content = MatrixContent(**obj)
-            return self.create(content.data)
+            df = pd.DataFrame.from_dict(obj, orient="index")
+            return self.create(df)
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
@@ -399,9 +386,9 @@ class MatrixService(ISimpleMatrixService):
             width=matrix.width,
             height=matrix.height,
             created_at=int(matrix.created_at.timestamp()),
-            index=content.index,
-            columns=content.columns,
-            data=content.data,
+            index=list(content.index),
+            columns=list(content.columns),
+            data=content.values,
         )
 
     @override

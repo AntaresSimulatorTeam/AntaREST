@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
+from antarest.matrixstore.model import Matrix, MatrixData, MatrixDataSet
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +152,7 @@ class MatrixContentRepository:
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
         self.format = format
 
-    def get(self, matrix_hash: str) -> MatrixContent:
+    def get(self, matrix_hash: str) -> pd.DataFrame:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
 
@@ -170,12 +170,7 @@ class MatrixContentRepository:
                 break
         if not storage_format:
             raise FileNotFoundError(str(matrix_path.with_suffix("")))
-        matrix = storage_format.load_matrix(matrix_path)
-        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        data = matrix.tolist()
-        index: List[int | str] = list(range(matrix.shape[0]))
-        columns: List[int | str] = list(range(matrix.shape[1]))
-        return MatrixContent.model_construct(data=data, columns=columns, index=index)
+        return storage_format.load_matrix(matrix_path)
 
     def exists(self, matrix_hash: str) -> bool:
         """
@@ -193,7 +188,7 @@ class MatrixContentRepository:
                 return True
         return False
 
-    def save(self, content: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def save(self, content: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
@@ -203,7 +198,7 @@ class MatrixContentRepository:
         Parameters:
             content:
                 The matrix content to be saved. It can be either a nested list of floats
-                or a NumPy array of type np.float64.
+                ,a NumPy array of type np.float64 or a dataframe
 
         Returns:
             The SHA256 hash of the saved matrix file.
@@ -222,8 +217,13 @@ class MatrixContentRepository:
         #    of the floating point numbers which can introduce rounding errors.
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
-        matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
-        matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+        if isinstance(content, np.ndarray):
+            matrix_as_df = pd.DataFrame(content)
+        elif isinstance(content, list):
+            matrix_as_df = pd.DataFrame(np.array(content, dtype=np.float64))
+        else:
+            matrix_as_df = content
+        matrix_hash = hashlib.sha256(matrix_as_df.to_numpy().data).hexdigest()
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
@@ -236,19 +236,17 @@ class MatrixContentRepository:
                 # We want to migrate the old matrix in the given repository format.
                 # Ensure exclusive access to the matrix file between multiple processes (or threads).
                 with FileLock(lock_file, timeout=15):
-                    data = internal_format.load_matrix(matrix_in_another_format_path)
-                    df = pd.DataFrame(data)
+                    df = internal_format.load_matrix(matrix_in_another_format_path)
                     self.format.save_matrix(df, matrix_path)
                     matrix_in_another_format_path.unlink()
                 return matrix_hash
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
         with FileLock(lock_file, timeout=15):
-            if matrix.size == 0:
+            if matrix_as_df.empty:
                 matrix_path.touch()
             else:
-                df = pd.DataFrame(matrix)
-                self.format.save_matrix(df, matrix_path)
+                self.format.save_matrix(matrix_as_df, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31

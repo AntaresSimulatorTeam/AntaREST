@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session  # type: ignore
 from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
-from antarest.matrixstore.model import Matrix, MatrixContent, MatrixDataSet, MatrixDataSetRelation
+from antarest.matrixstore.model import Matrix, MatrixDataSet, MatrixDataSetRelation
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 ArrayData = t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]
@@ -49,8 +49,8 @@ class TestMatrixRepository:
         a: ArrayData = [[1, 2], [3, 4]]
         b: ArrayData = [[5, 6], [7, 8]]
 
-        matrix_content_a = MatrixContent(data=a, index=[0, 1], columns=[0, 1])
-        matrix_content_b = MatrixContent(data=b, index=[0, 1], columns=[0, 1])
+        matrix_content_a = pd.DataFrame(data=a, index=[0, 1], columns=[0, 1])
+        matrix_content_b = pd.DataFrame(data=b, index=[0, 1], columns=[0, 1])
 
         aid = repo.save(a)
         assert aid == repo.save(a)
