@@ -45,10 +45,13 @@ class UpdateSTStorages(ICommand):
     storage_properties: STStorageUpdates
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass
+
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         for area_id, value in self.storage_properties.items():
             if area_id not in study_data.areas:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found."), {}
+                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
             storage_mapping: dict[str, tuple[int, STStorageConfigType]] = {}
             for index, storage in enumerate(study_data.areas[area_id].st_storages):
@@ -56,17 +59,15 @@ class UpdateSTStorages(ICommand):
 
             for storage_id in value:
                 if storage_id not in storage_mapping:
-                    return (
-                        CommandOutput(
-                            status=False,
-                            message=f"The short-term storage '{storage_id}' in the area '{area_id}' is not found.",
-                        ),
-                        {},
+                    return CommandOutput(
+                        status=False,
+                        message=f"The short-term storage '{storage_id}' in the area '{area_id}' is not found.",
                     )
+
                 index, storage = storage_mapping[storage_id]
                 study_data.areas[area_id].st_storages[index] = self.update_st_storage_config(area_id, storage)
 
-        return CommandOutput(status=True, message="The short-term storages were successfully updated."), {}
+        return CommandOutput(status=True, message="The short-term storages were successfully updated.")
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -95,7 +96,7 @@ class UpdateSTStorages(ICommand):
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 
-        output, _ = self._apply_config(study_data.config)
+        output = self.update_in_config(study_data.config)
 
         return output
 

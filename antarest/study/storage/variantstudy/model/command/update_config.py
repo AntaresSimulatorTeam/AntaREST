@@ -55,7 +55,10 @@ class UpdateConfig(ICommand):
     data: _Data
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
+
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         # The renewable-generation-modelling parameter must be reflected in the config
         if self.target.startswith("settings"):
             for key, value in _iter_dict(self.data, root_key=self.target):
@@ -63,7 +66,7 @@ class UpdateConfig(ICommand):
                     study_data.enr_modelling = value
                     break
 
-        return CommandOutput(status=True, message="ok"), {}
+        return CommandOutput(status=True, message="ok")
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -77,7 +80,7 @@ class UpdateConfig(ICommand):
 
         study_data.tree.save(self.data, url)
 
-        output, _ = self._apply_config(study_data.config)
+        output = self.update_in_config(study_data.config)
         return output
 
     @override

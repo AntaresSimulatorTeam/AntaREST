@@ -51,8 +51,8 @@ class UpdateRawFile(ICommand):
             return f"{cls}(target={target!r}, b64Data={self.b64Data!r})"
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="ok"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

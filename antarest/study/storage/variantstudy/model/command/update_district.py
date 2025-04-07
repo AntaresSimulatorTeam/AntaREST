@@ -43,7 +43,10 @@ class UpdateDistrict(ICommand):
     comments: Optional[str] = None
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
+
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         base_set = study_data.sets[self.id]
         if self.id not in study_data.sets:
             return (
@@ -71,7 +74,7 @@ class UpdateDistrict(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        output, data = self.update_in_config(study_data.config)
         if not output.status:
             return output
         sets = study_data.tree.get(["input", "areas", "sets"])

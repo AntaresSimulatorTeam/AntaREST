@@ -53,8 +53,8 @@ class UpdateXpansionSettings(ICommand):
     settings: XpansionSettingsUpdate
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="Xpansion settings updated successfully"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -73,7 +73,7 @@ class UpdateXpansionSettings(ICommand):
             sensitivity_obj = self.settings.sensitivity_config.model_dump(mode="json", by_alias=True)
             study_data.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
-        return self._apply_config(study_data.config)[0]
+        return CommandOutput(status=True, message="Xpansion settings updated successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

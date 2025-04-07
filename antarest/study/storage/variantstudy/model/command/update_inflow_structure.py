@@ -44,8 +44,8 @@ class UpdateInflowStructure(ICommand):
     properties: InflowStructureUpdate
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message=f"Inflow properties in '{self.area_id}' updated."), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -57,9 +57,7 @@ class UpdateInflowStructure(ICommand):
 
         study_data.tree.save(updated_inflow, path)
 
-        output, _ = self._apply_config(study_data.config)
-
-        return output
+        return CommandOutput(status=True, message=f"Inflow properties in '{self.area_id}' updated.")
 
     @override
     def to_dto(self) -> CommandDTO:

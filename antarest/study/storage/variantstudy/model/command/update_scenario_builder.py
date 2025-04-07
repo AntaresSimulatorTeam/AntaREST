@@ -97,8 +97,8 @@ class UpdateScenarioBuilder(ICommand):
         return CommandOutput(status=True)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def to_dto(self) -> CommandDTO:

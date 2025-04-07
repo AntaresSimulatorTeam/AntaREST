@@ -57,10 +57,13 @@ class UpdateThermalClusters(ICommand):
         return self
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass
+
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         for area_id, value in self.cluster_properties.items():
             if area_id not in study_data.areas:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found."), {}
+                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
 
             thermal_mapping: dict[str, tuple[int, ThermalCluster]] = {}
             for index, thermal in enumerate(study_data.areas[area_id].thermals):
@@ -68,17 +71,15 @@ class UpdateThermalClusters(ICommand):
 
             for cluster_id, update in value.items():
                 if cluster_id not in thermal_mapping:
-                    return (
-                        CommandOutput(
-                            status=False,
-                            message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
-                        ),
-                        {},
+                    return CommandOutput(
+                        status=False,
+                        message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
                     )
+
                 index, thermal = thermal_mapping[cluster_id]
                 study_data.areas[area_id].thermals[index] = update_thermal_cluster(thermal, update)
 
-        return CommandOutput(status=True, message="The thermal clusters were successfully updated."), {}
+        return CommandOutput(status=True, message="The thermal clusters were successfully updated.")
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -109,7 +110,7 @@ class UpdateThermalClusters(ICommand):
 
             study_data.tree.save(data=all_clusters_for_area, url=ini_path)
 
-        output, _ = self._apply_config(study_data.config)
+        output = self.update_in_config(study_data.config)
 
         return output
 
