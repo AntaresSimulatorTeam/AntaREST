@@ -14,7 +14,6 @@ import datetime
 import uuid
 from typing import Any, List, TypeAlias
 
-import numpy.typing as npt
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
@@ -220,25 +219,11 @@ MatrixData: TypeAlias = float
 class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
     width: int
     height: int
-    index: List[int | str]
-    columns: List[int | str]
-    data: npt.NDArray[Any]
+    index: list[int | str]
+    columns: list[int | str]
+    data: list[list[int | str]]
     created_at: int = 0
     id: str = ""
-
-    @override
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, MatrixDTO):
-            return False
-        return (
-            self.width == other.width
-            and self.height == other.height
-            and self.index == other.index
-            and self.columns == other.columns
-            and self.data.all() == other.data.all()
-            and self.created_at == other.created_at
-            and self.id == other.id
-        )
 
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):

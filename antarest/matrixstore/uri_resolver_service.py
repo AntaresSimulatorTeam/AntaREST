@@ -53,7 +53,7 @@ class UriResolverService:
         data = self.matrix_service.get(id)
         if not data:
             raise ValueError(f"id matrix {id} not found")
-        if data.data.shape == (0, 0):
+        if data.data == [[]]:
             # Corresponds to an empty matrix, so we should return empty index and columns.
             data.columns = []
             data.index = []

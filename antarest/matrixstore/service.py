@@ -126,7 +126,7 @@ class SimpleMatrixService(ISimpleMatrixService):
             height=len(data.index),
             index=list(data.index),
             columns=list(data.columns),
-            data=data.values,
+            data=data.values.tolist(),
         )
 
     @override
