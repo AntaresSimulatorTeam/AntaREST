@@ -42,6 +42,7 @@ import type { TaskView } from "../../../types/types";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import * as R from "ramda";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -117,86 +118,86 @@ function JobTableView(props: Props) {
   return (
     <>
       {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: 1,
-          px: 1,
-          overflowX: "auto",
-          overflowY: "hidden",
-        }}
-      >
+      <CustomScrollbar>
         <Box
           sx={{
             display: "flex",
-            alignContent: "center",
-            alignSelf: "center",
+            justifyContent: "space-between",
+            alignItems: "center",
             gap: 1,
+            px: 1,
           }}
         >
-          <UsePromiseCond
-            response={launcherMetrics}
-            keepLastResolvedOnReload
-            ifFulfilled={(data) => (
-              <>
-                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-                  {t("study.allocatedCpuRate")}
-                </Typography>
-                <LinearProgressWithLabel
-                  value={Math.floor(data.allocatedCpuRate)}
-                  tooltip={t("study.allocatedCpuRate")}
-                  sx={{ width: 100 }}
-                />
-                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-                  {t("study.clusterLoadRate")}
-                </Typography>
-                <LinearProgressWithLabel
-                  value={Math.floor(data.clusterLoadRate)}
-                  tooltip={t("study.clusterLoadRate")}
-                  sx={{ width: 100 }}
-                />
-                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
-                  {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
-                </Typography>
-              </>
-            )}
-            ifPending={() => <Skeleton width={300} />}
-          />
+          <Box
+            sx={{
+              display: "flex",
+              alignContent: "center",
+              alignSelf: "center",
+              gap: 1,
+            }}
+          >
+            <UsePromiseCond
+              response={launcherMetrics}
+              keepLastResolvedOnReload
+              ifFulfilled={(data) => (
+                <>
+                  <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                    {t("study.allocatedCpuRate")}
+                  </Typography>
+                  <LinearProgressWithLabel
+                    value={Math.floor(data.allocatedCpuRate)}
+                    tooltip={t("study.allocatedCpuRate")}
+                    sx={{ width: 100 }}
+                  />
+                  <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                    {t("study.clusterLoadRate")}
+                  </Typography>
+                  <LinearProgressWithLabel
+                    value={Math.floor(data.clusterLoadRate)}
+                    tooltip={t("study.clusterLoadRate")}
+                    sx={{ width: 100 }}
+                  />
+                  <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                    {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
+                  </Typography>
+                </>
+              )}
+              ifPending={() => <Skeleton width={300} />}
+            />
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Tooltip title={t("tasks.refresh")}>
+              <IconButton
+                onClick={() => {
+                  refresh();
+                  launcherMetrics.reload();
+                }}
+              >
+                <RefreshIcon />
+              </IconButton>
+            </Tooltip>
+            <CheckBoxFE
+              label={t("tasks.runningTasks")}
+              value={filterRunningStatus}
+              onChange={handleFilterStatusChange}
+              sx={{ textWrap: "nowrap" }}
+            />
+            <SelectFE
+              label={t("tasks.typeFilter")}
+              value={filterType}
+              onChange={handleChange}
+              emptyValue
+              options={FILTER_LIST.map((item) => ({
+                value: item,
+                label: t(`tasks.type.${item}`),
+              }))}
+              size="extra-small"
+              margin="dense"
+              sx={{ minWidth: 160 }}
+            />
+          </Box>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Tooltip title={t("tasks.refresh")}>
-            <IconButton
-              onClick={() => {
-                refresh();
-                launcherMetrics.reload();
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
-          <CheckBoxFE
-            label={t("tasks.runningTasks")}
-            value={filterRunningStatus}
-            onChange={handleFilterStatusChange}
-            sx={{ textWrap: "nowrap" }}
-          />
-          <SelectFE
-            label={t("tasks.typeFilter")}
-            value={filterType}
-            onChange={handleChange}
-            emptyValue
-            options={FILTER_LIST.map((item) => ({
-              value: item,
-              label: t(`tasks.type.${item}`),
-            }))}
-            size="extra-small"
-            margin="dense"
-            sx={{ minWidth: 160 }}
-          />
-        </Box>
-      </Box>
+      </CustomScrollbar>
       {/* List */}
       <TableContainer component={Paper} elevation={2} sx={{ flex: 1 }}>
         <Table stickyHeader>

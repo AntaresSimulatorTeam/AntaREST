@@ -56,7 +56,7 @@ function RootPage({ title, titleIcon: TitleIcon, headerActions, children }: Prop
           <Typography sx={{ fontSize: 28 }}>{title}</Typography>
         </Box>
         {headerActions && (
-          <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+          <CustomScrollbar>
             <Box
               sx={{
                 display: "flex",
