@@ -231,7 +231,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        allowed_outputs: List[str],
+        output_ids: List[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -242,7 +242,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
-            allowed_outputs: A list of output names that you want to include in the destination study.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -261,7 +261,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             src_output_path = src_path / "output"
             dest_output_path = dest_path / "output"
 
-            copy_output_folders(src_output_path, dest_output_path, allowed_outputs)
+            copy_output_folders(src_output_path, dest_output_path, output_ids)
 
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)

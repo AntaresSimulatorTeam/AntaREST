@@ -1802,7 +1802,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "with_outputs": True, "use_task": True, "allowed_outputs": ["output.txt"]},  # type: ignore
+        params={"dest": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output.txt"]},  # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1863,9 +1863,8 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
             "dest": "copied",
             "with_outputs": True,
             "use_task": True,
-            "allowed_outputs": ["output_0.txt", "output_1.txt"],
+            "output_ids": ["output_0.txt", "output_1.txt"],
         },
-        # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1889,7 +1888,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
             "dest": "copied",
             "with_outputs": False,
             "use_task": True,
-            "allowed_outputs": ["output_2.txt"],
+            "output_ids": ["output_2.txt"],
         },
         # type: ignore
     )

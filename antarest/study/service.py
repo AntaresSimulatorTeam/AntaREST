@@ -1171,7 +1171,7 @@ class StudyService:
         use_task: bool,
         params: RequestParameters,
         destination_folder: PurePosixPath,
-        allowed_outputs: List[str],
+        output_ids: List[str],
         with_outputs: bool = False,
     ) -> str:
         """
@@ -1184,7 +1184,7 @@ class StudyService:
             use_task: indicate if the task job service should be used
             params: request parameters
             destination_folder: destination path
-            allowed_outputs: A list of output names that you want to include in the destination study.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether the study's outputs should also be duplicated.
 
         Returns:
@@ -1197,7 +1197,7 @@ class StudyService:
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study, dest_study_name, group_ids, destination_folder, allowed_outputs, with_outputs
+                origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
             )
             self._save_study(study, params.user, group_ids)
             self.event_bus.push(

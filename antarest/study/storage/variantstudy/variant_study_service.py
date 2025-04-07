@@ -900,7 +900,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        allowed_outputs: List[str],
+        output_ids: List[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
@@ -911,7 +911,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
-            allowed_outputs: A list of output names that you want to include in the destination study.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -927,9 +927,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         shutil.copytree(src_path, dest_path)
 
         src_path = cast(Path, file_study.config.output_path)
-        if with_outputs and src_path.exists() and allowed_outputs:
+        if with_outputs and src_path.exists() and output_ids:
             dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
-            copy_output_folders(src_path, dest_path, allowed_outputs)
+            copy_output_folders(src_path, dest_path, output_ids)
 
         update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study

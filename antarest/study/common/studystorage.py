@@ -92,7 +92,7 @@ class IStudyStorageService(ABC, Generic[T]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        allowed_outputs: List[str],
+        output_ids: List[str],
         with_outputs: bool = False,
     ) -> T:
         """
@@ -103,7 +103,7 @@ class IStudyStorageService(ABC, Generic[T]):
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
-            allowed_outputs: A list of output names that you want to include in the destination study.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:

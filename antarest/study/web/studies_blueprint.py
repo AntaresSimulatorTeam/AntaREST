@@ -356,7 +356,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         uuid: str,
         dest: str,
         with_outputs: bool = False,
-        allowed_outputs: Annotated[list[str] | None, Query()] = None,
+        output_ids: Annotated[list[str] | None, Query()] = None,
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
@@ -374,7 +374,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - `use_task`: Determines whether this duplication operation should trigger a task.
             It is recommended and set as the default value: True.
         - `destination_folder`: The destination path where the study will be copied.
-        - `allowed_outputs`: A list of output names that you want to include in the destination study.
+        - `output_ids`: A list of output names that you want to include in the destination study.
 
         Returns:
         - The unique identifier of the task copying the study.
@@ -384,7 +384,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         group_ids = [sanitize_string(gid) for gid in group_ids]
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
-        outputs = allowed_outputs or []
+        outputs = output_ids or []
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
@@ -395,7 +395,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             use_task=use_task,
             params=params,
             destination_folder=PurePosixPath(destination_folder),
-            allowed_outputs=outputs,
+            output_ids=outputs,
         )
 
         return task_id
