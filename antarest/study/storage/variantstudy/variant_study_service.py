@@ -1088,19 +1088,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         """
         self._safe_generation(metadata)
-        self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
-
-        # if params is None:
-        #     raise UserHasNotPermissionError()
-        #
-        # results, config = self.generate_study_config(metadata.id, params)
-        # if results.success:
-        #     return FileStudyTreeConfigDTO.from_build_config(config)
-        #
-        # raise VariantGenerationError(f"Error during light generation of {metadata.id}")
 
     @override
     def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
