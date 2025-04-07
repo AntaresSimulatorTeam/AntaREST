@@ -204,8 +204,8 @@ class TestMatrixContentRepository:
             # then a file is created in the repo directory
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             assert matrix_file.exists()
-            array = matrix_format.load_matrix(matrix_file)
-            assert array.tolist() == data
+            df = matrix_format.load_matrix(matrix_file)
+            assert df.to_numpy().tolist() == data
             modif_time = matrix_file.stat().st_mtime
 
             # when the data is saved again with same float values
@@ -239,7 +239,7 @@ class TestMatrixContentRepository:
             retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
             assert not matrix_file.read_bytes()
-            assert retrieved_matrix.data == [[]]
+            assert retrieved_matrix.empty
 
             # Test with an empty 2D array
             empty_2d_array: ArrayData = [[]]
@@ -248,7 +248,7 @@ class TestMatrixContentRepository:
             retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
             assert not matrix_file.read_bytes()
-            assert retrieved_matrix.data == [[]]
+            assert retrieved_matrix.empty
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
     def test_get_exists_and_delete(self, tmp_path: str, matrix_format: str) -> None:
@@ -264,9 +264,9 @@ class TestMatrixContentRepository:
             assert matrix_content_repo.exists(matrix_hash)
             # and it can be retrieved
             content = matrix_content_repo.get(matrix_hash)
-            assert content.index == list(range(len(data)))
-            assert content.columns == list(range(len(data[0])))
-            assert content.data == data
+            assert list(content.index) == list(range(len(data)))
+            assert list(content.columns) == list(range(len(data[0])))
+            assert content.to_numpy().tolist() == data
 
             # we can delete the data that was previously saved
             matrix_content_repo.delete(matrix_hash)
@@ -305,9 +305,9 @@ class TestMatrixContentRepository:
                     assert matrix_content_repo.exists(associated_hash)
                     # and it can be retrieved
                     content = matrix_content_repo.get(associated_hash)
-                    assert content.index == list(range(len(data)))
-                    assert content.columns == list(range(len(data[0])))
-                    assert content.data == data
+                    assert list(content.index) == list(range(len(data)))
+                    assert list(content.columns) == list(range(len(data[0])))
+                    assert content.to_numpy().tolist() == data
 
                     # we can delete the data that was previously saved
                     matrix_content_repo.delete(associated_hash)
