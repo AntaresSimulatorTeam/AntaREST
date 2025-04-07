@@ -254,7 +254,7 @@ class MatrixService(ISimpleMatrixService):
         """
         if is_json:
             obj = from_json(file)
-            df = pd.DataFrame.from_dict(obj, orient="index")
+            df = pd.DataFrame(data=obj["data"], index=obj["index"], columns=obj["columns"])
             return self.create(df)
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)

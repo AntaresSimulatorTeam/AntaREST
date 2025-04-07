@@ -223,7 +223,7 @@ class MatrixContentRepository:
             matrix_as_df = pd.DataFrame(np.array(content, dtype=np.float64))
         else:
             matrix_as_df = content
-        matrix_hash = hashlib.sha256(matrix_as_df.to_numpy().data).hexdigest()
+        matrix_hash = hashlib.sha256(np.ascontiguousarray(matrix_as_df.to_numpy()).data).hexdigest()
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).

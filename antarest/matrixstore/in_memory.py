@@ -50,7 +50,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         if isinstance(data, np.ndarray):
             matrix = data
         elif isinstance(data, pd.DataFrame):
-            matrix = data.to_numpy()
+            matrix = np.ascontiguousarray(data.to_numpy())
         else:
             matrix = np.array(data, dtype=np.float64)
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
