@@ -75,22 +75,22 @@ class CreateArea(ICommand):
     metadata: Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.command_context.generator_matrix_constants is None:
-            raise ValueError()
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
+        pass  # TODO DELETE
+
+    @override
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        config = study_data.config
 
         area_id = transform_name_to_id(self.area_name)
 
-        if area_id in study_data.areas.keys():
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_name}' already exists and could not be created",
-                ),
-                {},
+        if area_id in config.areas.keys():
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_name}' already exists and could not be created",
             )
 
-        study_data.areas[area_id] = Area(
+        config.areas[area_id] = Area(
             name=self.area_name,
             links={},
             thermals=[],
@@ -98,19 +98,7 @@ class CreateArea(ICommand):
             filters_synthesis=[],
             filters_year=[],
         )
-        return (
-            CommandOutput(status=True, message=f"Area '{self.area_name}' created"),
-            {"area_id": area_id},
-        )
 
-    @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        config = study_data.config
-
-        output, data = self._apply_config(config)
-        if not output.status:
-            return output
-        area_id = data["area_id"]
         version = config.version
 
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
@@ -287,7 +275,7 @@ class CreateArea(ICommand):
 
         study_data.tree.save(new_area_data)
 
-        return output
+        return CommandOutput(status=True, message=f"Area '{self.area_name}' created")
 
     @override
     def to_dto(self) -> CommandDTO:
