@@ -43,7 +43,6 @@ class UpdateDistrict(ICommand):
     comments: Optional[str] = None
 
     def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        base_set = study_data.sets[self.id]
         if self.id not in study_data.sets:
             return (
                 CommandOutput(
@@ -53,9 +52,10 @@ class UpdateDistrict(ICommand):
                 dict(),
             )
 
+        base_set = study_data.sets[self.id]
+
         if self.base_filter:
-            base_filter = self.base_filter or DistrictBaseFilter.remove_all
-            inverted_set = base_filter == DistrictBaseFilter.add_all
+            inverted_set = self.base_filter == DistrictBaseFilter.add_all
         else:
             inverted_set = base_set.inverted_set
         study_data.sets[self.id].areas = self.filter_items or base_set.areas
