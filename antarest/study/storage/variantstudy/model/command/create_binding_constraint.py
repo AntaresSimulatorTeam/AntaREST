@@ -420,20 +420,8 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     name: str
 
     @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        bd_id = transform_name_to_id(self.name)
-        group = self.group or DEFAULT_GROUP
-        operator = self.operator or DEFAULT_OPERATOR
-        time_step = self.time_step or DEFAULT_TIMESTEP
-        parse_bindings_coeffs_and_save_into_config(
-            bd_id,
-            study_data_config,
-            self.coeffs or {},
-            operator=operator,
-            time_step=time_step,
-            group=group,
-        )
-        return CommandOutput(status=True), {}
+    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
