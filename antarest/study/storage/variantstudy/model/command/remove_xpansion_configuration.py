@@ -33,8 +33,8 @@ class RemoveXpansionConfiguration(ICommand):
     command_name: CommandName = CommandName.REMOVE_XPANSION_CONFIGURATION
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="Xpansion configuration removed successfully"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -43,7 +43,7 @@ class RemoveXpansionConfiguration(ICommand):
         except ChildNotFoundError:
             return CommandOutput(status=False, message="Couldn't delete the xpansion configuration, it doesn't exist")
 
-        return self._apply_config(study_data.config)[0]
+        return CommandOutput(status=True, message="Xpansion configuration removed successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

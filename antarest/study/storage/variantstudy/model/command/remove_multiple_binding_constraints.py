@@ -36,19 +36,22 @@ class RemoveMultipleBindingConstraints(ICommand):
     ids: List[str]
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass
+
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         # If at least one bc is missing in the database, we raise an error
         already_existing_ids = {binding.id for binding in study_data.bindings}
         missing_bc_ids = [id_ for id_ in self.ids if id_ not in already_existing_ids]
 
         if missing_bc_ids:
-            return CommandOutput(status=False, message=f"Binding constraints missing: {missing_bc_ids}"), {}
+            return CommandOutput(status=False, message=f"Binding constraints missing: {missing_bc_ids}")
 
-        return CommandOutput(status=True), {}
+        return CommandOutput(status=True)
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        command_output, _ = self._apply_config(study_data.config)
+        command_output = self.remove_from_config(study_data.config)
 
         if not command_output.status:
             return command_output

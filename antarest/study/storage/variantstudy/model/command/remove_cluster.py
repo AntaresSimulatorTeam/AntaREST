@@ -43,9 +43,12 @@ class RemoveCluster(ICommand):
     cluster_id: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass  # TODO DELETE
+
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         """
-        Applies configuration changes to the study data: remove the thermal clusters from the storages list.
+        Remove the thermal clusters from the storages list.
 
         Args:
             study_data: The study data configuration.
@@ -57,7 +60,7 @@ class RemoveCluster(ICommand):
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             message = f"Area '{self.area_id}' does not exist in the study configuration."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
         area: Area = study_data.areas[self.area_id]
 
         # Search the Thermal cluster in the area
@@ -68,7 +71,7 @@ class RemoveCluster(ICommand):
         )
         if thermal is None:
             message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
 
         # Remove the Thermal cluster from the configuration
         area.thermals.remove(thermal)
@@ -76,7 +79,7 @@ class RemoveCluster(ICommand):
         remove_area_cluster_from_binding_constraints(study_data, self.area_id, self.cluster_id)
 
         message = f"Thermal cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
-        return CommandOutput(status=True, message=message), {}
+        return CommandOutput(status=True, message=message)
 
     def _remove_cluster_from_scenario_builder(self, study_data: FileStudy) -> None:
         """
@@ -135,7 +138,7 @@ class RemoveCluster(ICommand):
 
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -50,14 +50,8 @@ class ReplaceMatrix(ICommand):
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Matrix '{self.target}' has been successfully replaced.",
-            ),
-            {},
-        )
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -88,8 +82,10 @@ class ReplaceMatrix(ICommand):
             )
 
         study_data.tree.save(replace_matrix_data)
-        output, _ = self._apply_config(study_data.config)
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Matrix '{self.target}' has been successfully replaced.",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

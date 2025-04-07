@@ -38,15 +38,17 @@ class RemoveDistrict(ICommand):
     id: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass  # TODO DELETE
+
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         del study_data.sets[self.id]
-        return CommandOutput(status=True, message=self.id), dict()
+        return CommandOutput(status=True, message=self.id)
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, _ = self._apply_config(study_data.config)
         study_data.tree.delete(["input", "areas", "sets", self.id])
-        return output
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:

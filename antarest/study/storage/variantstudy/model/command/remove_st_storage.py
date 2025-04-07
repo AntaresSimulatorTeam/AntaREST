@@ -44,7 +44,10 @@ class RemoveSTStorage(ICommand):
     storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
+
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: remove the storage from the storages list.
 
@@ -129,7 +132,7 @@ class RemoveSTStorage(ICommand):
             study_data.tree.delete(path)
         # Deleting the short-term storage in the configuration must be done AFTER
         # deleting the files and folders.
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)[0]
 
     @override
     def to_dto(self) -> CommandDTO:

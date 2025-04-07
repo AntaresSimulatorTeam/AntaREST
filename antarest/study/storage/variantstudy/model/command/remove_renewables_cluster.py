@@ -39,7 +39,10 @@ class RemoveRenewablesCluster(ICommand):
     cluster_id: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
+
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: remove the renewable clusters from the storages list.
 
@@ -132,7 +135,7 @@ class RemoveRenewablesCluster(ICommand):
 
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)[0]
 
     @override
     def to_dto(self) -> CommandDTO:

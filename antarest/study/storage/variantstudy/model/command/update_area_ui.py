@@ -41,8 +41,8 @@ class UpdateAreaUI(ICommand):
     layer: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        return CommandOutput(status=True, message=f"area '{self.area_id}' UI updated"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]: # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
@@ -59,9 +59,7 @@ class UpdateAreaUI(ICommand):
 
         study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
 
-        output, _ = self._apply_config(study_data.config)
-
-        return output
+        return CommandOutput(status=True, message=f"area '{self.area_id}' UI updated")
 
     @override
     def to_dto(self) -> CommandDTO:

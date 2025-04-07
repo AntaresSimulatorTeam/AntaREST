@@ -78,8 +78,8 @@ class RemoveXpansionResource(ICommand):
     filename: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message=f"Xpansion resource {self.filename} removed successfully"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -87,7 +87,7 @@ class RemoveXpansionResource(ICommand):
 
         study_data.tree.delete(get_resource_dir(self.resource_type) + [self.filename])
 
-        return self._apply_config(study_data.config)[0]
+        return CommandOutput(status=True, message=f"Xpansion resource {self.filename} removed successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

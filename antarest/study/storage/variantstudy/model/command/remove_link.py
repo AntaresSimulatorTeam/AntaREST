@@ -92,7 +92,10 @@ class RemoveLink(ICommand):
         return CommandOutput(status=bool(data), message=message), data
 
     @override
-    def _apply_config(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
+    def _apply_config(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass
+
+    def remove_from_config(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
         """
         Update the study configuration by removing the link between the source and target areas.
 
@@ -152,7 +155,7 @@ class RemoveLink(ICommand):
 
             self._remove_link_from_scenario_builder(study_data)
 
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)[0]
 
     @override
     def to_dto(self) -> CommandDTO:

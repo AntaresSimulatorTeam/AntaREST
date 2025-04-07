@@ -37,14 +37,14 @@ class RemoveBindingConstraint(ICommand):
     id: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass  # TODO DELETE
+
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.bindings]:
-            return (
-                CommandOutput(status=False, message="Binding constraint not found"),
-                dict(),
-            )
+            return CommandOutput(status=False, message="Binding constraint not found")
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
-        return CommandOutput(status=True), {}
+        return CommandOutput(status=True)
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -77,7 +77,7 @@ class RemoveBindingConstraint(ICommand):
             removed_groups = old_groups - new_groups
             remove_bc_from_scenario_builder(study_data, removed_groups)
 
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:

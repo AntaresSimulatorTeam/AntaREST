@@ -98,7 +98,7 @@ class TestRemoveSTStorage:
         remove_st_storage = RemoveSTStorage(
             command_context=command_context, area_id="foo", storage_id="bar", study_version=study_version
         )
-        command_output = remove_st_storage.apply_config(empty_study_720.config)
+        command_output = remove_st_storage.remove_from_config(empty_study_720.config)[0]
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -117,7 +117,7 @@ class TestRemoveSTStorage:
             storage_id="storage_1",
             study_version=recent_study.config.version,
         )
-        command_output = remove_st_storage.apply_config(recent_study.config)
+        command_output = remove_st_storage.remove_from_config(recent_study.config)[0]
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -141,7 +141,7 @@ class TestRemoveSTStorage:
             storage_id="storage 1",
             study_version=recent_study.config.version,
         )
-        command_output = remove_st_storage.apply_config(recent_study.config)
+        command_output = remove_st_storage.remove_from_config(recent_study.config)[0]
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -173,7 +173,7 @@ class TestRemoveSTStorage:
             storage_id=create_st_storage.storage_id,
             study_version=study_version,
         )
-        command_output = remove_st_storage.apply_config(recent_study.config)
+        command_output = remove_st_storage.remove_from_config(recent_study.config)[0]
 
         # Check the command output and extra dict
         assert command_output.status is True
