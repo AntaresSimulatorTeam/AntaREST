@@ -58,8 +58,8 @@ class TestMatrixRepository:
         bid = repo.save(b)
         assert aid != bid
 
-        assert matrix_content_a.equals(repo.get(aid))
-        assert matrix_content_b.equals(repo.get(bid))
+        assert matrix_content_a.eq(repo.get(aid)).all().all()
+        assert matrix_content_b.eq(repo.get(bid)).all().all()
 
         repo.delete(aid)
         with pytest.raises(FileNotFoundError):
