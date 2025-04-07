@@ -214,6 +214,8 @@ def _get_path_inside_user_folder(
     url = [item for item in path.split("/") if item]
     if len(url) < 2 or url[0] != "user":
         raise exception_class(f"the given path isn't inside the 'User' folder: {path}")
+    if url[1] == "expansion":
+        raise exception_class(f"the given path is inside the `expansion` folder: {path}")
     return "/".join(url[1:])
 
 
@@ -2869,7 +2871,8 @@ class StudyService:
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
-        cmd_data = RemoveUserResourceData(**{"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)})
+        args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
+        cmd_data = RemoveUserResourceData(**args)
         self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
 
     def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
