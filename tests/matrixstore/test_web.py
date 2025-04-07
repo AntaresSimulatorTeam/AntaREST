@@ -13,7 +13,6 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-import numpy as np
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -77,7 +76,7 @@ def test_get() -> None:
         created_at=0,
         index=["1", "2"],
         columns=["a", "b"],
-        data=np.array([[1, 2], [3, 4]]),
+        data=[[1, 2], [3, 4]],
     )
 
     service = Mock()
