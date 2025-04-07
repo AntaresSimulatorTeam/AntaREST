@@ -1802,7 +1802,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "with_outputs": True, "use_task": True, "allowed_outputs": "output.txt"},  # type: ignore
+        params={"dest": "copied", "with_outputs": True, "use_task": True, "allowed_outputs": ["output.txt"]},  # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1841,6 +1841,63 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
     study_folder = copied_study[study_id]["folder"]
     assert study_folder == "folder/" + study_id
+
+
+def test_copy_variant_with_specific_output(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    raw = client.post("/v1/studies?name=raw")
+    variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
+
+    output_dir = tmp_path / "internal_workspace" / variant.json() / "output"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    for i in range(3):
+        (output_dir / f"output_{i}.txt").write_text(f"Output data {i}")
+
+    # Copy 2 outputs
+
+    copy = client.post(
+        f"/v1/studies/{variant.json()}/copy",
+        params={
+            "dest": "copied",
+            "with_outputs": True,
+            "use_task": True,
+            "allowed_outputs": ["output_0.txt", "output_1.txt"],
+        },
+        # type: ignore
+    )
+    client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
+
+    copied_study = client.get("/v1/studies?name=copied").json()
+    study_id = next(iter(copied_study))
+
+    expected = ["output_0.txt", "output_1.txt"]
+    folder = tmp_path / "internal_workspace" / study_id / "output"
+
+    for f in expected:
+        file = folder / f
+        assert file.exists()
+
+    assert not (tmp_path / "internal_workspace" / study_id / "output" / "output_2.txt").exists()
+
+    # Try to copy an output but with the with_output boolean set to False, should not copy
+
+    copy = client.post(
+        f"/v1/studies/{variant.json()}/copy",
+        params={
+            "dest": "copied",
+            "with_outputs": False,
+            "use_task": True,
+            "allowed_outputs": ["output_2.txt"],
+        },
+        # type: ignore
+    )
+    client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
+
+    copied_study = client.get("/v1/studies?name=copied").json()
+    study_id = next(iter(copied_study))
+    assert not (tmp_path / "internal_workspace" / study_id / "output" / "output_2.txt").exists()
 
 
 def test_areas_deletion_with_binding_constraints(

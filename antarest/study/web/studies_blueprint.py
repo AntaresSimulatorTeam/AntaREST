@@ -15,7 +15,7 @@ import io
 import logging
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Annotated, Any, Dict, List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request
 from markupsafe import escape
@@ -49,7 +49,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 logger = logging.getLogger(__name__)
 
 QUERY_REGEX = r"^\s*(?:\d+\s*(?:,\s*\d+\s*)*)?$"
-COMMA_SEPARATED_VALUES_REGEX = "^\s*([^,\s][^,]*?)\s*(,\s*([^,\s][^,]*?)\s*)*$"
 
 
 def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
@@ -357,9 +356,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         uuid: str,
         dest: str,
         with_outputs: bool = False,
-        allowed_outputs: str = Query(
-            "", description="Comma-separated list of versions for filtering.", regex=COMMA_SEPARATED_VALUES_REGEX
-        ),
+        allowed_outputs: Annotated[list[str] | None, Query()] = None,
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
@@ -387,8 +384,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         group_ids = [sanitize_string(gid) for gid in group_ids]
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
-        outputs = list(_split_comma_separated_values(allowed_outputs))
-
+        outputs = allowed_outputs or []
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
