@@ -226,6 +226,20 @@ class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
     created_at: int = 0
     id: str = ""
 
+    @override
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, MatrixDTO):
+            return False
+        return (
+            self.width == other.width
+            and self.height == other.height
+            and self.index == other.index
+            and self.columns == other.columns
+            and self.data.all() == other.data.all()
+            and self.created_at == other.created_at
+            and self.id == other.id
+        )
+
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):
     name: str

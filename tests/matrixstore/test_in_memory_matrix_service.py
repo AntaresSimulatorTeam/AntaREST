@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import numpy as np
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.model import MatrixDTO
@@ -21,7 +22,7 @@ def test_matrix_service():
     dto = service.get(matrix_id)
     assert dto == MatrixDTO(
         id=matrix_id,
-        data=[[1, 2, 3], [4, 5, 6]],
+        data=np.array([[1, 2, 3], [4, 5, 6]]),
         index=["0", "1"],
         columns=["0", "1", "2"],
         width=3,
