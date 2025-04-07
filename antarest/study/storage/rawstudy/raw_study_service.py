@@ -24,7 +24,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyDeletionNotAllowed
+from antarest.core.exceptions import StudyDeletionNotAllowed, IncorrectArgumentsForCopy
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
@@ -52,10 +52,9 @@ def copy_output_folders(src_output_path: Path, dest_output_path: Path, allowed_o
         dest_folder = dest_output_path / file_name
 
         if src_folder.exists():
-            os.makedirs(dest_output_path, exist_ok=True)
-            shutil.copy2(src_folder, dest_folder)
+            shutil.copytree(src_folder, dest_folder)
         else:
-            print(f"The file {file_name} does not exist in {src_output_path}, it will be ignored.")
+            raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
 
 
 class RawStudyService(AbstractStorageService[RawStudy]):
@@ -258,10 +257,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
         if with_outputs:
-            src_output_path = src_path / "output"
-            dest_output_path = dest_path / "output"
-
-            copy_output_folders(src_output_path, dest_output_path, output_ids)
+            copy_output_folders(src_path / "output", dest_path / "output", output_ids)
 
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)

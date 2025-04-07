@@ -48,7 +48,7 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
-    UnsupportedOperationOnArchivedStudy,
+    UnsupportedOperationOnArchivedStudy, IncorrectArgumentsForCopy,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -1190,6 +1190,9 @@ class StudyService:
         Returns:
             The unique identifier of the task copying the study.
         """
+        if output_ids and not with_outputs:
+            raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
+
         src_study = self.get_study(src_uuid)
         assert_permission(params.user, src_study, StudyPermissionType.READ)
         self._assert_study_unarchived(src_study)

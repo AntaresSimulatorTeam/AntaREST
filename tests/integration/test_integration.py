@@ -1795,14 +1795,14 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
 
     # Create a fake output file
-    output_file = tmp_path / "internal_workspace" / variant.json() / "output" / "output.txt"
+    output_file = tmp_path / "internal_workspace" / variant.json() / "output" / "output1" / "output.txt"
     output_file.parent.mkdir(parents=True)
     output_file.write_text("Output data")
 
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output.txt"]},  # type: ignore
+        params={"dest": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output1"]},  # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1810,7 +1810,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     copied_id = next(iter(copied_study.json()))
 
     # The new study must contain an output fodler with the same data as the source variant study
-    new_output_file = tmp_path / "internal_workspace" / copied_id / "output" / "output.txt"
+    new_output_file = tmp_path / "internal_workspace" / copied_id / "output" / "output1" / "output.txt"
     assert output_file.read_text() == new_output_file.read_text()
 
 
@@ -1832,7 +1832,7 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "with_outputs": True, "use_task": True, "destination_folder": "folder"},
+        params={"dest": "copied", "use_task": True, "destination_folder": "folder"},
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1849,11 +1849,13 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     raw = client.post("/v1/studies?name=raw")
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
 
-    output_dir = tmp_path / "internal_workspace" / variant.json() / "output"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_base_dir = tmp_path / "internal_workspace" / variant.json() / "output"
+    output_base_dir.mkdir(parents=True, exist_ok=True)
 
-    for i in range(3):
-        (output_dir / f"output_{i}.txt").write_text(f"Output data {i}")
+    for i in range(3):  # output1 à output3
+        output_dir = output_base_dir / f"output{i}"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        (output_dir / "result.txt").write_text(f"Output data for output{i}")
 
     # Copy 2 outputs
 
@@ -1863,7 +1865,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
             "dest": "copied",
             "with_outputs": True,
             "use_task": True,
-            "output_ids": ["output_0.txt", "output_1.txt"],
+            "output_ids": ["output0", "output1"],
         },
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
@@ -1871,14 +1873,15 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     copied_study = client.get("/v1/studies?name=copied").json()
     study_id = next(iter(copied_study))
 
-    expected = ["output_0.txt", "output_1.txt"]
+    expected = ["output0", "output0"]
     folder = tmp_path / "internal_workspace" / study_id / "output"
 
     for f in expected:
-        file = folder / f
-        assert file.exists()
+        dir_ = folder / f
+        assert dir_.is_dir()
+        assert (dir_ / "result.txt").exists()
 
-    assert not (tmp_path / "internal_workspace" / study_id / "output" / "output_2.txt").exists()
+    assert not (folder / "output2").exists()
 
     # Try to copy an output but with the with_output boolean set to False, should not copy
 
@@ -1888,15 +1891,45 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
             "dest": "copied",
             "with_outputs": False,
             "use_task": True,
-            "output_ids": ["output_2.txt"],
+            "output_ids": ["output2"],
         },
-        # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
     copied_study = client.get("/v1/studies?name=copied").json()
     study_id = next(iter(copied_study))
-    assert not (tmp_path / "internal_workspace" / study_id / "output" / "output_2.txt").exists()
+    assert not (tmp_path / "internal_workspace" / study_id / "output" / "output2").exists()
+
+def test_copy_out_with_wrong_parameters(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Test with wrong pair of arguments: with_outputs = False and output_ids not empty
+
+    raw = client.post("/v1/studies?name=raw")
+    res = client.post(
+        f"/v1/studies/{raw.json()}/copy",
+        params={
+            "dest": "copied",
+            "with_outputs": False,
+            "output_ids": ["output0"],
+        },
+    )
+    assert res.status_code == 400
+    assert res.json() == {'description': 'output_ids can only be used with with_outputs=True', 'exception': 'IncorrectArgumentsForCopy'}
+
+    # Try to copy a non existing output
+
+    res = client.post(
+        f"/v1/studies/{raw.json()}/copy",
+        params={
+            "dest": "copied",
+            "use_task": False,
+            "with_outputs": True,
+            "output_ids": ["output0"],
+        },
+    )
+    assert res.status_code == 400
+    assert res.json()['description'].startswith('Output folder output0 not found in')
 
 
 def test_areas_deletion_with_binding_constraints(
