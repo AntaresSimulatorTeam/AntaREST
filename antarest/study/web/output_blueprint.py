@@ -16,8 +16,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import Any, List, Sequence
 
-from fastapi import APIRouter, Depends, File, Query
-from starlette.requests import Request
+from fastapi import APIRouter, Depends, File, Query, Request
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config

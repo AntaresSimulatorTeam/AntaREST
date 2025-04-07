@@ -49,6 +49,7 @@ def build_study_service(
     metadata_repository: Optional[StudyMetadataRepository] = None,
     variant_repository: Optional[VariantStudyRepository] = None,
     study_service: Optional[StudyService] = None,
+    output_service: Optional[OutputService] = None,
     generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StudyService:
@@ -66,6 +67,7 @@ def build_study_service(
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         variant_repository: used by testing to inject mock. Let None to use true instantiation
         study_service: used by testing to inject mock. Let None to use true instantiation
+        output_service: used by testing to inject mock. Let None to use true instantiation
         generator_matrix_constants: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
 
@@ -115,7 +117,7 @@ def build_study_service(
         config=config,
     )
 
-    output_service = OutputService(study_service=study_service)
+    output_service = output_service or OutputService(study_service=study_service)
 
     if app_ctxt:
         api_root = app_ctxt.api_root
