@@ -34,14 +34,8 @@ class UpdateLink(AbstractLinkCommand):
     command_name: CommandName = CommandName.UPDATE_LINK
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Link between '{self.area1}' and '{self.area2}' updated",
-            ),
-            {},
-        )
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -55,8 +49,6 @@ class UpdateLink(AbstractLinkCommand):
 
         study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
 
-        output, _ = self._apply_config(study_data.config)
-
         if self.series:
             self.save_series(self.area1, self.area2, study_data, version)
 
@@ -66,7 +58,10 @@ class UpdateLink(AbstractLinkCommand):
         if self.indirect:
             self.save_indirect(self.area1, self.area2, study_data, version)
 
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Link between '{self.area1}' and '{self.area2}' updated",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
