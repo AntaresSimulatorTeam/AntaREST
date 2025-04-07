@@ -177,9 +177,12 @@ class CreateSTStorage(ICommand):
         return new_values
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
+        pass  # TODO DELETE
+
+    def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
-        Applies configuration changes to the study data: add the short-term storage in the storages list.
+        validate inputs and add the short-term storage in the storages list.
 
         Args:
             study_data: The study data configuration.
@@ -250,7 +253,7 @@ class CreateSTStorage(ICommand):
             The output of the command execution.
         """
         storage_id = self.storage_id
-        output, _ = self._apply_config(study_data.config)
+        output, _ = self.validate_data(study_data.config)
         if not output.status:
             return output
 

@@ -24,7 +24,6 @@ from antarest.study.storage.variantstudy.business.utils import strip_matrix_prot
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    apply_config_create_resource_commands,
     apply_create_resource_commands,
 )
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -59,8 +58,8 @@ class AbstractCreateXpansionMatrix(ICommand):
         return [strip_matrix_protocol(self.matrix)]
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        raise NotImplementedError()
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -75,8 +74,8 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_WEIGHT
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return apply_config_create_resource_commands(self.filename, XpansionResourceFileType.WEIGHTS)
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -91,8 +90,8 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_CAPACITY
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return apply_config_create_resource_commands(self.filename, XpansionResourceFileType.CAPACITIES)
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

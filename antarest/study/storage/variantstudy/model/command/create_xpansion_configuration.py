@@ -34,8 +34,8 @@ class CreateXpansionConfiguration(ICommand):
     command_name: CommandName = CommandName.CREATE_XPANSION_CONFIGURATION
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="Xpansion configuration created successfully"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -62,7 +62,7 @@ class CreateXpansionConfiguration(ICommand):
             }
 
             study_data.tree.save(xpansion_configuration_data)
-            return self._apply_config(study_data.config)[0]
+            return CommandOutput(status=True, message="Xpansion configuration created successfully")
         else:
             raise XpansionConfigurationAlreadyExists(study_data.config.study_id)
 

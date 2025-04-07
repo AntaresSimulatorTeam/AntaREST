@@ -48,8 +48,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message="Nothing to do"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
