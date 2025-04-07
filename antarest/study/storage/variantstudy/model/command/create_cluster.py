@@ -104,7 +104,10 @@ class CreateCluster(ICommand):
         return self
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
+        pass  # TODO DELETE
+
+    def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
@@ -139,7 +142,7 @@ class CreateCluster(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        output, data = self.validate_data(study_data.config)
         if not output.status:
             return output
 
