@@ -1802,7 +1802,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "with_outputs": True, "use_task": True},  # type: ignore
+        params={"dest": "copied", "with_outputs": True, "use_task": True, "allowed_outputs": "output.txt"},  # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 

@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import os
 import shutil
 import time
 from datetime import datetime
@@ -46,14 +47,15 @@ logger = logging.getLogger(__name__)
 
 
 def copy_output_folders(src_output_path: Path, dest_output_path: Path, allowed_outputs: List[str]) -> None:
-    for folder_name in allowed_outputs:
-        src_folder = src_output_path / folder_name
-        dest_folder = dest_output_path / folder_name
+    for file_name in allowed_outputs:
+        src_folder = src_output_path / file_name
+        dest_folder = dest_output_path / file_name
 
-        if src_folder.exists() and src_folder.is_dir():
-            shutil.copytree(src_folder, dest_folder)
+        if src_folder.exists():
+            os.makedirs(dest_output_path, exist_ok=True)
+            shutil.copy2(src_folder, dest_folder)
         else:
-            print(f"Le dossier {folder_name} n'existe pas dans {src_output_path}, il sera ignoré.")
+            print(f"The file {file_name} does not exist in {src_output_path}, it will be ignored.")
 
 
 class RawStudyService(AbstractStorageService[RawStudy]):
@@ -229,7 +231,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        allowed_outputs: Optional[List[str]] = None,
+        allowed_outputs: List[str],
         with_outputs: bool = False,
     ) -> RawStudy:
         """
