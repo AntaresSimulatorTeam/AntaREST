@@ -93,7 +93,9 @@ def test_auto_archival(tmp_path: Path):
     study_service.archive.assert_called_once_with("d", params=RequestParameters(DEFAULT_ADMIN_USER))
 
     # Check that the variant outputs are deleted for the variant study "e"
-    study_service.archive_outputs.assert_called_once_with("e", params=RequestParameters(DEFAULT_ADMIN_USER))
+    auto_archive_service.output_service.archive_outputs.assert_called_once_with(
+        "e", params=RequestParameters(DEFAULT_ADMIN_USER)
+    )
 
     # Check if the `clear_all_snapshots` method was called with default values
     study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
