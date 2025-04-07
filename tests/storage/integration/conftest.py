@@ -39,6 +39,7 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
@@ -143,3 +144,8 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     )
 
     return storage_service
+
+
+@pytest.fixture(name="output_service")
+def output_service_fixture(storage_service: StudyService) -> OutputService:
+    return OutputService(storage_service)
