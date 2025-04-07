@@ -41,7 +41,7 @@ class UpdateAreaUI(ICommand):
     layer: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]: # type: ignore
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:  # type: ignore
         pass
 
     @override

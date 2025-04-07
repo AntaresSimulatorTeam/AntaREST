@@ -49,9 +49,8 @@ class UpdateAreasProperties(ICommand):
     properties: Dict[str, AreaPropertiesUpdate]
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        updated_areas = ", ".join(self.properties.keys())
-        return CommandOutput(status=True, message=f"Areas properties updated: {updated_areas}"), {}
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -86,9 +85,8 @@ class UpdateAreasProperties(ICommand):
             current_properties.thermal_properties.model_dump(mode="json", by_alias=True), get_thermal_path()
         )
 
-        output, _ = self._apply_config(study_data.config)
-
-        return output
+        updated_areas = ", ".join(self.properties.keys())
+        return CommandOutput(status=True, message=f"Areas properties updated: {updated_areas}")
 
     def save_area_properties(self, study_data: FileStudy, area_id: str, current_properties: AreaFileData) -> None:
         study_data.tree.save(

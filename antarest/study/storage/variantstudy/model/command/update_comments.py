@@ -39,14 +39,8 @@ class UpdateComments(ICommand):
     comments: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Comment '{self.comments}' has been successfully replaced.",
-            ),
-            dict(),
-        )
+    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
+        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -54,8 +48,10 @@ class UpdateComments(ICommand):
 
         study_data.tree.save(replace_comment_data)
 
-        output, _ = self._apply_config(study_data.config)
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Comment '{self.comments}' has been successfully replaced.",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
