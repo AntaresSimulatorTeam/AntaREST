@@ -213,7 +213,7 @@ def test_copy_study(tmp_path: Path) -> None:
         destination_folder=PurePosixPath(),
         group_ids=["admin"],
         with_outputs=False,
-        allowed_outputs=None,
+        allowed_outputs=[],
         use_task=True,
         params=PARAMS,
     )
