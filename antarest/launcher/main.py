@@ -40,6 +40,7 @@ def build_launcher(
         #        study_service.add_on_deletion_callback(repository.delete_by_study_id)
         service_launcher = LauncherService(
             config=config,
+            study_service=output_service.study_service,
             output_service=output_service,
             job_result_repository=repository,
             event_bus=event_bus,

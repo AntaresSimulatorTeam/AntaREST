@@ -273,7 +273,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         services["matrix_gc"] = matrix_garbage_collector
 
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
-        auto_archiver = AutoArchiveService(study_service, config)
+        auto_archiver = AutoArchiveService(study_service, output_service, config)
         services["auto_archiver"] = auto_archiver
 
     services["event_bus"] = event_bus

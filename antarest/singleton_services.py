@@ -42,7 +42,7 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
     configure_logger(config)
 
-    _, event_bus, _, _, _, matrix_service, study_service, _ = create_core_services(None, config)
+    _, event_bus, _, _, _, matrix_service, study_service, output_service = create_core_services(None, config)
 
     services: Dict[Module, IService] = {}
 
@@ -64,7 +64,7 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
         services[Module.ARCHIVE_WORKER] = worker
 
     if Module.AUTO_ARCHIVER in services_list:
-        auto_archive_service = AutoArchiveService(study_service, config)
+        auto_archive_service = AutoArchiveService(study_service, output_service, config)
         services[Module.AUTO_ARCHIVER] = auto_archive_service
 
     return services
