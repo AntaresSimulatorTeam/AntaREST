@@ -217,7 +217,7 @@ class MatrixDataSet(Base):  # type: ignore
 MatrixData: TypeAlias = float
 
 
-class MatrixDTO(AntaresBaseModel):
+class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
     width: int
     height: int
     index: List[int | str]

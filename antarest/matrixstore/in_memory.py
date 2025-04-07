@@ -33,11 +33,10 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     def _make_dto(self, id: str, matrix: npt.NDArray[np.float64]) -> MatrixDTO:
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        data = matrix.tolist()
         index = [str(i) for i in range(matrix.shape[0])]
         columns = [str(i) for i in range(matrix.shape[1])]
         return MatrixDTO(
-            data=data,
+            data=matrix,
             index=index,
             columns=columns,
             id=id,
