@@ -13,6 +13,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -53,29 +54,18 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
 
 @pytest.mark.unit_test
 def test_create() -> None:
-    matrix = MatrixDTO(
-        id="id",
-        width=2,
-        height=2,
-        created_at=0,
-        index=["1", "2"],
-        columns=["a", "b"],
-        data=[[1, 2], [3, 4]],
-    )
-    matrix_data = [[1, 2], [3, 4]]
-
     service = Mock()
-    service.create.return_value = matrix
+    service.create.return_value = "matrix_hash"
 
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
         "/v1/matrix",
         headers=create_auth_token(app),
-        json=matrix_data,
+        json=[[1]],
     )
     assert res.status_code == 200
-    assert res.json() == matrix.model_dump()
+    assert res.json() == "matrix_hash"
 
 
 @pytest.mark.unit_test
@@ -87,7 +77,7 @@ def test_get() -> None:
         created_at=0,
         index=["1", "2"],
         columns=["a", "b"],
-        data=[[1, 2], [3, 4]],
+        data=np.array([[1, 2], [3, 4]]),
     )
 
     service = Mock()

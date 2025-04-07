@@ -48,7 +48,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     def create(
         matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[]),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> str:
         logger.info("Creating new matrix")
         if current_user.id is not None:
             return service.create(matrix)

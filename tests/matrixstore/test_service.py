@@ -125,9 +125,9 @@ class TestMatrixService:
         now = datetime.datetime.utcnow()
         local_time = time.mktime(datetime.datetime.timetuple(now))
         assert local_time - 1 <= obj.created_at <= local_time
-        assert obj.data == data
-        assert obj.index == list(range(len(data)))
-        assert obj.columns == list(range(len(data[0])))
+        assert obj.data.tolist() == data
+        assert list(obj.index) == list(range(len(data)))
+        assert list(obj.columns) == list(range(len(data[0])))
 
         # missing_case: the matrix is missing in the database
         with db():
