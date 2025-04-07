@@ -126,10 +126,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
-    DigestSynthesis,
-    DigestUI,
-)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_coherence, find_next_version
@@ -2446,15 +2442,3 @@ class StudyService:
         cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
-
-    def get_digest_file(self, study_id: str, output_id: str, params: RequestParameters) -> DigestUI:
-        """
-        Returns the digest file as 4 separated intelligible matrices.
-        Raises ChildNotFoundError if the output_id doesn't exist or if the digest file wasn't generated
-        """
-        study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
-        assert isinstance(digest_node, DigestSynthesis)
-        return digest_node.get_ui()
