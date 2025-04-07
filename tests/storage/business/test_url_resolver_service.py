@@ -13,15 +13,13 @@
 import os
 from unittest.mock import Mock
 
-import numpy as np
-
 from antarest.matrixstore.model import MatrixDTO
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],
     "columns": ["a", "b"],
-    "data": np.array([[1, 2], [3, 4]]),
+    "data": [[1, 2], [3, 4]],
 }
 
 MOCK_MATRIX_DTO = MatrixDTO(
@@ -29,7 +27,7 @@ MOCK_MATRIX_DTO = MatrixDTO(
     height=2,
     index=["1", "2"],
     columns=["a", "b"],
-    data=np.array([[1, 2], [3, 4]]),
+    data=[[1, 2], [3, 4]],
 )
 
 
