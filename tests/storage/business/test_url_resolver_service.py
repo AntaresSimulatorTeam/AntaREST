@@ -21,7 +21,7 @@ from antarest.matrixstore.uri_resolver_service import UriResolverService
 MOCK_MATRIX_JSON = {
     "index": ["1", "2"],
     "columns": ["a", "b"],
-    "data": [[1, 2], [3, 4]],
+    "data": np.array([[1, 2], [3, 4]]),
 }
 
 MOCK_MATRIX_DTO = MatrixDTO(
