@@ -260,7 +260,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_raw_data],
+        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_areas_raw_data(
@@ -329,7 +329,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_raw_data],
+        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
     def aggregate_links_raw_data(
@@ -397,7 +397,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_raw_data],
+        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
     def aggregate_areas_raw_data__all(
@@ -463,7 +463,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_raw_data],
+        tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
     def aggregate_links_raw_data__all(
