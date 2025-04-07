@@ -35,6 +35,7 @@ from antarest.core.exceptions import (
     ChildNotFoundError,
     CommandApplicationError,
     FolderCreationNotAllowed,
+    IncorrectArgumentsForCopy,
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
@@ -48,7 +49,7 @@ from antarest.core.exceptions import (
     StudyTypeUnsupported,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
-    UnsupportedOperationOnArchivedStudy, IncorrectArgumentsForCopy,
+    UnsupportedOperationOnArchivedStudy,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager

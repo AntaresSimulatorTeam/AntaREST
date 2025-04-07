@@ -1900,6 +1900,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     study_id = next(iter(copied_study))
     assert not (tmp_path / "internal_workspace" / study_id / "output" / "output2").exists()
 
+
 def test_copy_out_with_wrong_parameters(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
@@ -1915,7 +1916,10 @@ def test_copy_out_with_wrong_parameters(client: TestClient, admin_access_token: 
         },
     )
     assert res.status_code == 400
-    assert res.json() == {'description': 'output_ids can only be used with with_outputs=True', 'exception': 'IncorrectArgumentsForCopy'}
+    assert res.json() == {
+        "description": "output_ids can only be used with with_outputs=True",
+        "exception": "IncorrectArgumentsForCopy",
+    }
 
     # Try to copy a non existing output
 
@@ -1929,7 +1933,7 @@ def test_copy_out_with_wrong_parameters(client: TestClient, admin_access_token: 
         },
     )
     assert res.status_code == 400
-    assert res.json()['description'].startswith('Output folder output0 not found in')
+    assert res.json()["description"].startswith("Output folder output0 not found in")
 
 
 def test_areas_deletion_with_binding_constraints(

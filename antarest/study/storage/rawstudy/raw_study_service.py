@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-import os
 import shutil
 import time
 from datetime import datetime
@@ -24,7 +23,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyDeletionNotAllowed, IncorrectArgumentsForCopy
+from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.requests import RequestParameters
