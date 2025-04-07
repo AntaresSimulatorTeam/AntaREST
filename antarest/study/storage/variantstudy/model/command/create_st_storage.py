@@ -176,10 +176,6 @@ class CreateSTStorage(ICommand):
             new_values[field] = cls.validate_field(new_values.get(field, None), new_values, field)
         return new_values
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
-        pass  # TODO DELETE
-
     def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         validate inputs and add the short-term storage in the storages list.

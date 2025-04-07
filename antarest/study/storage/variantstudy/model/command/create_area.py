@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from pydantic import Field
 from typing_extensions import override
@@ -18,7 +18,7 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -73,10 +73,6 @@ class CreateArea(ICommand):
     # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
     #  or if we don't want to support this feature.
     metadata: Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
-        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

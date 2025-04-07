@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -18,11 +18,10 @@ from typing_extensions import override
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     apply_create_resource_commands,
 )
@@ -58,10 +57,6 @@ class AbstractCreateXpansionMatrix(ICommand):
         return [strip_matrix_protocol(self.matrix)]
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
-        pass  # TODO DELETE
-
-    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         raise NotImplementedError()
 
@@ -74,10 +69,6 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_WEIGHT
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass  # TODO DELETE
-
-    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         return apply_create_resource_commands(self.filename, self.matrix, study_data, XpansionResourceFileType.WEIGHTS)
 
@@ -88,10 +79,6 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
     """
 
     command_name: CommandName = CommandName.CREATE_XPANSION_CAPACITY
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

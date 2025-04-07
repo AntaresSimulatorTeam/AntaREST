@@ -68,10 +68,6 @@ class UpdateBindingConstraints(ICommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     bc_props_by_id: t.Mapping[str, BindingConstraintProperties]
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:  # type: ignore
-        pass
-
     def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         def update_binding_constraint_dto(existing_constraint: BindingConstraintDTO) -> BindingConstraintDTO:
             if existing_constraint.id in self.bc_props_by_id:

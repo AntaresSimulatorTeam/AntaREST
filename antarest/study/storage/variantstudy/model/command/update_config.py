@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Generator, List, Optional, Tuple
+from typing import Any, Generator, List, Optional, Tuple
 
 import typing_extensions as te
 from typing_extensions import override
@@ -53,10 +53,6 @@ class UpdateConfig(ICommand):
 
     target: str
     data: _Data
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass
 
     def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         # The renewable-generation-modelling parameter must be reflected in the config

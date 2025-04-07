@@ -103,10 +103,6 @@ class CreateCluster(ICommand):
         validate_thermal_cluster_against_version(self.study_version, self.parameters)
         return self
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
-        pass  # TODO DELETE
-
     def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:

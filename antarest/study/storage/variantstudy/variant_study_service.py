@@ -18,7 +18,7 @@ import typing as t
 from datetime import datetime, timedelta
 from functools import reduce
 from pathlib import Path, PurePosixPath
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Callable, Dict, List, Optional, Sequence, cast
 from uuid import uuid4
 
 import humanize
@@ -61,7 +61,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -80,7 +80,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
-    GenerationResultInfoDTO,
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -784,50 +783,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
 
-    def generate_study_config(
-        self,
-        variant_study_id: str,
-        params: RequestParameters,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        # Get variant study
-        variant_study = self._get_variant_study(variant_study_id, params)
-
-        # Get parent study
-        if variant_study.parent_id is None:
-            raise NoParentStudyError(variant_study_id)
-
-        return self._generate_study_config(variant_study, variant_study, None)
-
-    def _generate_study_config(
-        self,
-        original_study: VariantStudy,
-        metadata: VariantStudy,
-        config: Optional[FileStudyTreeConfig],
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        parent_study = self.repository.get(metadata.parent_id)
-        if parent_study is None:
-            raise StudyNotFoundError(metadata.parent_id)
-
-        if isinstance(parent_study, RawStudy):
-            study = self.study_factory.create_from_fs(
-                self.raw_study_service.get_study_path(parent_study),
-                parent_study.id,
-                output_path=Path(original_study.path) / OUTPUT_RELATIVE_PATH,
-                use_cache=False,
-            )
-            parent_config = study.config
-        else:
-            res, parent_config = self._generate_study_config(original_study, parent_study, config)
-            if res is not None and not res.success:
-                return res, parent_config
-
-        # Generate
-        res, config = self._generate_config(metadata, parent_config)
-        # fix paths
-        config.path = Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
-        config.study_path = Path(metadata.path)
-        return res, config
-
     def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> t.List[t.List[ICommand]]:
         commands: List[List[ICommand]] = [
             self.command_factory.to_command(command_block.to_dto())
@@ -835,14 +790,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             if from_index <= index
         ]
         return commands
-
-    def _generate_config(
-        self,
-        variant_study: VariantStudy,
-        config: FileStudyTreeConfig,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        commands = self._to_commands(variant_study)
-        return self.generator.generate_config(commands, config, variant_study)
 
     def get_study_task(self, study_id: str, params: RequestParameters) -> TaskDTO:
         """

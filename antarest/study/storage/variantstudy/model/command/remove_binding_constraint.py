@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -35,10 +35,6 @@ class RemoveBindingConstraint(ICommand):
 
     # Properties of the `REMOVE_BINDING_CONSTRAINT` command:
     id: str
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass  # TODO DELETE
 
     def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.bindings]:

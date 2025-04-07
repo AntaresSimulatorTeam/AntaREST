@@ -12,7 +12,7 @@
 
 import contextlib
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -64,10 +64,6 @@ class RemoveArea(ICommand):
                 with contextlib.suppress(ValueError):
                     set_.areas.remove(self.id)
                     study_data_config.sets[id_] = set_
-
-    @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass  # TODO DELETE
 
     def remove_from_config(self, study_data_config: FileStudyTreeConfig) -> CommandOutput:
         del study_data_config.areas[self.id]

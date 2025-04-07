@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Mapping, Optional, Tuple
 
 from typing_extensions import override
 
@@ -112,10 +112,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass
 
     def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)

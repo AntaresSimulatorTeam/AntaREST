@@ -15,7 +15,6 @@ import typing as t
 from typing_extensions import override
 
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -39,10 +38,6 @@ class UpdateAreaUI(ICommand):
     area_id: str
     area_ui: UpdateAreaUi
     layer: str
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:  # type: ignore
-        pass
 
     @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:

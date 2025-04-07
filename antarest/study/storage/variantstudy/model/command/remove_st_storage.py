@@ -43,10 +43,6 @@ class RemoveSTStorage(ICommand):
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
     storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass
-
     def remove_from_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         """
         Applies configuration changes to the study data: remove the storage from the storages list.

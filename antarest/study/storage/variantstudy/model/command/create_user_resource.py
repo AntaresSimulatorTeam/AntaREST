@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import List, Optional, cast
 
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, is_url_writeable
@@ -50,10 +49,6 @@ class CreateUserResource(ICommand):
     # ==================
 
     data: CreateUserResourceData
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type: ignore
-        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

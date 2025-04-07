@@ -12,7 +12,7 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Set, Tuple, Type, TypeAlias
+from typing import Any, Dict, Final, List, Optional, Set, Type, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -32,7 +32,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -418,10 +417,6 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
     name: str
-
-    @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
-        pass  # TODO DELETE
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

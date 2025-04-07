@@ -64,10 +64,6 @@ class CreateRenewablesCluster(ICommand):
             values["parameters"] = create_renewable_properties(values["study_version"], parameters)
         return values
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:  # type:ignore
-        pass  # TODO DELETE
-
     def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters

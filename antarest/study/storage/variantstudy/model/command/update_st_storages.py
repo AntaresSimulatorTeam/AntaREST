@@ -24,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -43,10 +43,6 @@ class UpdateSTStorages(ICommand):
     # ==================
 
     storage_properties: STStorageUpdates
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:  # type: ignore
-        pass
 
     def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         for area_id, value in self.storage_properties.items():
