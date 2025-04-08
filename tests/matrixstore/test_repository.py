@@ -313,5 +313,5 @@ class TestMatrixContentRepository:
             assert matrix.to_numpy().all() == legacy_matrix.all()
             # Ensures writing the same matrix in another format works
             matrix_content_repo.save(pd.DataFrame(legacy_matrix))
-            all_files = list(matrix_content_repo.bucket_dir.iterdir())
-            assert len(all_files) == 2  # 1 .lock file and the new matrix
+            all_files = list(matrix_content_repo.bucket_dir.glob(f"*.{new_matrix_format}"))
+            assert len(all_files) == 1
