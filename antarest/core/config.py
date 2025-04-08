@@ -42,8 +42,18 @@ class InternalMatrixFormat(StrEnum):
         if path.stat().st_size == 0:
             return pd.DataFrame()
         if self == InternalMatrixFormat.TSV:
-            df = pd.read_csv(path, sep="\t", index_col=0)
-            # Specific treatment to fit with other formats
+            # The legacy format is TSV, so we have to handle both cases
+            # To know if we're opening a legacy matrix or not we have to seek the first bytes of the file
+            # Legacy
+            header = None
+            index_col = None
+            with open(path, "r") as f:
+                if f.read(1) == "\t":
+                    # New format
+                    header = 0
+                    index_col = 0
+            df = pd.read_csv(path, sep="\t", index_col=index_col, header=header)
+            # Specific treatment on columns to fit with other formats
             length_range = range(len(df.columns))
             if list(df.columns) == [str(k) for k in length_range]:
                 df.columns = pd.Index(length_range)  # type: ignore

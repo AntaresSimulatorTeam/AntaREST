@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import datetime
+import hashlib
 import shutil
 import typing as t
 from contextlib import contextmanager
@@ -297,3 +298,20 @@ class TestMatrixContentRepository:
                     assert len(repo_matrix_files) == 1
                     new_matrix_path = matrix_path.with_suffix(f".{repository_format}")
                     assert repo_matrix_files[0] == new_matrix_path
+
+    @pytest.mark.parametrize("new_matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    def test_legacy_matrices(self, tmp_path: Path, new_matrix_format: str) -> None:
+        with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
+            # Saves a matrix in the legacy format
+            legacy_matrix = np.array([[1, 2, 3], [4, 5, 6]])
+            matrix_hash = hashlib.sha256(np.ascontiguousarray(legacy_matrix.data)).hexdigest()
+            matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+            (matrix_path.parent / f"{matrix_hash}.tsv.lock").touch()
+            np.savetxt(matrix_path, legacy_matrix, delimiter="\t")
+            # Ensures we're still able to read it
+            matrix = matrix_content_repo.get(matrix_hash)
+            assert matrix.to_numpy().all() == legacy_matrix.all()
+            # Ensures writing the same matrix in another format works
+            matrix_content_repo.save(pd.DataFrame(legacy_matrix))
+            all_files = list(matrix_content_repo.bucket_dir.iterdir())
+            assert len(all_files) == 2  # 1 .lock file and the new matrix

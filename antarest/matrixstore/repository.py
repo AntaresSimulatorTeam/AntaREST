@@ -228,8 +228,7 @@ class MatrixContentRepository:
                 # We want to migrate the old matrix in the given repository format.
                 # Ensure exclusive access to the matrix file between multiple processes (or threads).
                 with FileLock(lock_file, timeout=15):
-                    df = internal_format.load_matrix(matrix_in_another_format_path)
-                    self.format.save_matrix(df, matrix_path)
+                    self.format.save_matrix(content, matrix_path)
                     matrix_in_another_format_path.unlink()
                 return matrix_hash
 
