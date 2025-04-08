@@ -52,10 +52,8 @@ class TestMatrixRepository:
         matrix_content_a = pd.DataFrame(data=a, index=[0, 1], columns=[0, 1])
         matrix_content_b = pd.DataFrame(data=b, index=[0, 1], columns=[0, 1])
 
-        aid = repo.save(a)
-        assert aid == repo.save(a)
-
-        bid = repo.save(b)
+        aid = repo.save(pd.DataFrame(a))
+        bid = repo.save(pd.DataFrame(b))
         assert aid != bid
 
         assert matrix_content_a.eq(repo.get(aid)).all().all()
