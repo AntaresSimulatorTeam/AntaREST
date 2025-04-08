@@ -112,3 +112,12 @@ def test_storage_config_from_dict_validiation_errors(storage_config_default):
 
     with pytest.raises(ValueError):
         StorageConfig.from_dict(data)
+
+
+@pytest.mark.unit_test
+def test_storage_default_aggregation_results_max_size_value(storage_config_default):
+    data = {
+        **storage_config_default,
+    }
+    config = StorageConfig.from_dict(data)
+    assert config.aggregation_results_max_size == 200
