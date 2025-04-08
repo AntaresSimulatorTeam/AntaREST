@@ -159,6 +159,7 @@ function Matrix({
                 studyId={study.id}
                 path={url}
                 disabled={currentState.data.length === 0}
+                dateTime={dateTime}
                 isTimeSeries={isTimeSeries}
                 onSave={handleSaveUpdates}
                 onMatrixUpdated={reload}
