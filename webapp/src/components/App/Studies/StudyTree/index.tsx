@@ -28,7 +28,7 @@ import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import type { NonStudyFolderDTO } from "./types";
-import { insertFoldersIfNotExist } from "./utils";
+import { fetchAndInsertWorkspaces, insertFoldersIfNotExist } from "./utils";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
@@ -41,8 +41,11 @@ function StudyTree() {
   const [t] = useTranslation();
 
   useUpdateEffect(() => {
-    const nextStudiesTree = insertFoldersIfNotExist(initialStudiesTree, subFolders);
-    setStudiesTree(nextStudiesTree);
+    console.log("useUpdateEffect");
+    fetchAndInsertWorkspaces(initialStudiesTree).then((treeWithWorkspaces) => {
+      const nextStudiesTree = insertFoldersIfNotExist(treeWithWorkspaces, subFolders);
+      setStudiesTree(nextStudiesTree);
+    });
     // subFolders isn't a dependency because we don't want to trigger this code
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -128,7 +131,6 @@ function StudyTree() {
   };
 
   const handleTreeItemClick = (itemId: string) => {
-    console.log("handleTreeItemClick itemId", itemId);
     dispatch(updateStudyFilters({ folder: itemId }));
   };
 

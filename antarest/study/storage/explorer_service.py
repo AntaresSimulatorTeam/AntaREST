@@ -49,9 +49,7 @@ class Explorer:
         self.study_service = study_service
 
     def list_dir(
-        self,
-        workspace_name: str,
-        workspace_directory_path: str,
+        self, workspace_name: str, workspace_directory_path: str, show_hidden_file: bool = False
     ) -> List[NonStudyFolderDTO]:
         """
         return a list of all directories under workspace_directory_path, that aren't studies.
@@ -65,7 +63,8 @@ class Explorer:
             for child in children:
                 # if we can't access one child we skip it
                 try:
-                    if is_non_study_folder(child, workspace.filter_in, workspace.filter_out):
+                    show = show_hidden_file or not child.name.startswith(".")
+                    if is_non_study_folder(child, workspace.filter_in, workspace.filter_out) and show:
                         # we don't want to expose the full absolute path on the server
                         child_rel_path = PurePosixPath(child.relative_to(workspace.path))
                         has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
