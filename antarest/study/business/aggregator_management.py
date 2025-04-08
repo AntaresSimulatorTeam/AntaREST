@@ -91,8 +91,10 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int) -> None:
-    maximum_size = 100  # size in Mo that corresponds to a 15 seconds task.
+def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int, maximum_size: int) -> None:
+    """
+    A `maximum_size` equivalent to 100 Mo corresponds to a 15 seconds task.
+    """
     estimated_df_size = nb_files * df_bytes_size // (nb_files_checked * 10**6)
     if estimated_df_size > maximum_size:
         raise FileTooLargeError(estimated_df_size, maximum_size)
@@ -149,6 +151,7 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -158,6 +161,7 @@ class AggregatorManager:
         self.mc_years = mc_years
         self.columns_names = columns_names
         self.ids_to_consider = ids_to_consider
+        self.aggregation_results_max_size = aggregation_results_max_size
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
@@ -380,7 +384,7 @@ class AggregatorManager:
             if k == 10:
                 # The following formula is the more accurate one compared to the final csv file.
                 estimated_binary_size = final_df.memory_usage().sum()
-                _checks_estimated_size(nb_files, estimated_binary_size, k)
+                _checks_estimated_size(nb_files, estimated_binary_size, k, self.aggregation_results_max_size)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
