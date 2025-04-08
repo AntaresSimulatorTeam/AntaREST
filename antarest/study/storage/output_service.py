@@ -49,8 +49,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestSynthesis,
     DigestUI,
 )
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.storage_service import OutputStorageService
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
 from antarest.study.storage.utils import assert_permission, is_managed, is_output_archived, remove_from_cache
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -60,11 +63,14 @@ class OutputService:
     def __init__(
         self,
         study_service: StudyService,
+        raw_study_service: RawStudyService,
+        variant_study_service: VariantStudyService,
         task_service: ITaskService,
         file_transfer_manager: FileTransferManager,
         event_bus: IEventBus,
     ) -> None:
         self._study_service = study_service
+        self._storage_service = OutputStorageService(raw_study_service, variant_study_service)
         self._task_service = task_service
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
@@ -119,9 +125,7 @@ class OutputService:
             try:
                 study = self._study_service.get_study(study_id)
                 stopwatch = StopWatch()
-                self._study_service.storage_service.get_storage(study).unarchive_study_output(
-                    study, output_id, keep_src_zip
-                )
+                self._storage_service.get_storage(study).unarchive_study_output(study, output_id, keep_src_zip)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
                 )
@@ -185,7 +189,7 @@ class OutputService:
             params.get_user_id(),
         )
 
-        return self._study_service.storage_service.get_storage(study).get_study_sim_result(study)
+        return self._storage_service.get_storage(study).get_study_sim_result(study)
 
     def import_output(
         self,
@@ -214,9 +218,7 @@ class OutputService:
         if not Path(study.path).exists():
             raise StudyNotFoundError(f"Study files were not found for study {uuid}")
 
-        output_id = self._study_service.storage_service.get_storage(study).import_output(
-            study, output, output_name_suffix
-        )
+        output_id = self._storage_service.get_storage(study).import_output(study, output, output_name_suffix)
         remove_from_cache(cache=self._study_service.cache_service, root_id=study.id)
         logger.info("output added to study %s by user %s", uuid, params.get_user_id())
 
@@ -273,7 +275,7 @@ class OutputService:
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 target_study = self._study_service.get_study(study_uuid)
-                self._study_service.storage_service.get_storage(target_study).export_output(
+                self._storage_service.get_storage(target_study).export_output(
                     metadata=target_study,
                     output_id=output_uuid,
                     target=export_path,
@@ -419,7 +421,7 @@ class OutputService:
         study = self._study_service.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
-        self._study_service.storage_service.get_storage(study).delete_output(study, output_name)
+        self._storage_service.get_storage(study).delete_output(study, output_name)
         self._event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -477,7 +479,7 @@ class OutputService:
             try:
                 study = self._study_service.get_study(study_id)
                 stopwatch = StopWatch()
-                self._study_service.storage_service.get_storage(study).archive_study_output(study, output_id)
+                self._storage_service.get_storage(study).archive_study_output(study, output_id)
                 stopwatch.log_elapsed(lambda x: logger.info(f"Output {output_id} of study {study_id} archived in {x}s"))
                 return TaskResult(
                     success=True,
@@ -531,7 +533,7 @@ class OutputService:
         """
         study = self._study_service.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        study_path = self._study_service.storage_service.raw_study_service.get_study_path(study)
+        study_path = self._storage_service.raw_study_service.get_study_path(study)
         aggregator_manager = AggregatorManager(
             study_path, output_id, query_file, frequency, ids_to_consider, columns_names, mc_years
         )

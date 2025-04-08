@@ -119,6 +119,8 @@ def build_study_service(
 
     output_service = output_service or OutputService(
         study_service=study_service,
+        raw_study_service=raw_study_service,
+        variant_study_service=variant_study_service,
         task_service=task_service,
         file_transfer_manager=file_transfer_manager,
         event_bus=event_bus,

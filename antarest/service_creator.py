@@ -166,6 +166,8 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
     output_service = OutputService(
         study_service=study_service,
+        raw_study_service=study_service.storage_service.raw_study_service,
+        variant_study_service=study_service.storage_service.variant_study_service,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         event_bus=event_bus,

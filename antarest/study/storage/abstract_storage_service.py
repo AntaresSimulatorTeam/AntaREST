@@ -28,6 +28,7 @@ from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO
+from antarest.study.common.outputstorage import IOutputStorageService
 from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -49,7 +50,7 @@ from antarest.study.storage.utils import extract_output_name, fix_study_root, re
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorageService(IStudyStorageService[T], ABC):
+class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], ABC):
     def __init__(
         self,
         config: Config,

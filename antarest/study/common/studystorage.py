@@ -12,12 +12,12 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
-from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
+from typing import Generic, List, Optional, Sequence, TypeVar
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.model import Study, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -109,22 +109,6 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def import_output(
-        self,
-        study: T,
-        output: BinaryIO | Path,
-        output_name: Optional[str] = None,
-    ) -> Optional[str]:
-        """
-        Import an output
-        Args:
-            study: the study
-            output: Path of the output or raw data
-            output_name: Optional name suffix to append to the output name
-        Returns: None
-        """
-
-    @abstractmethod
     def get_study_information(self, metadata: T) -> StudyMetadataDTO:
         """Get study information."""
 
@@ -146,35 +130,11 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
-        """
-        Get global result information
-
-        Args:
-            metadata: study
-
-        Returns:
-            study output data
-        """
-
-    @abstractmethod
     def delete(self, metadata: T) -> None:
         """
         Delete study
         Args:
             metadata: study
-
-        Returns:
-
-        """
-
-    @abstractmethod
-    def delete_output(self, metadata: T, output_id: str) -> None:
-        """
-        Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
 
         Returns:
 
@@ -219,19 +179,6 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
-        """
-        Export and compresses study inside zip
-        Args:
-            metadata: study
-            output_id: output id
-            target: path of the file to export to
-
-        Returns: zip file with study files compressed inside
-
-        """
-
-    @abstractmethod
     def export_study_flat(
         self,
         metadata: T,
@@ -265,12 +212,3 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def initialize_additional_data(self, study: T) -> bool:
         """Initialize additional data for a study."""
-
-    @abstractmethod
-    def archive_study_output(self, study: T, output_id: str) -> bool:
-        """Archive a study output."""
-
-    # noinspection SpellCheckingInspection
-    @abstractmethod
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        """Un-archive a study output."""
