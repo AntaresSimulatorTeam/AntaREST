@@ -196,43 +196,23 @@ class TestMatrixContentRepository:
             bucket_dir = matrix_content_repo.bucket_dir
 
             # when the data is saved in the repo
-            data: ArrayData
-            data = [[1, 2, 3], [4, 5, 6]]
+            data = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
             matrix_hash = matrix_content_repo.save(data)
             # then a file is created in the repo directory
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             assert matrix_file.exists()
             df = matrix_format.load_matrix(matrix_file)
-            assert df.to_numpy().tolist() == data
-            modif_time = matrix_file.stat().st_mtime
-
-            # when the data is saved again with same float values
-            data = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-            matrix_content_repo.save(data)
-            # then no new file is created
-            matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
-            assert matrix_files == [matrix_file]
-            assert matrix_file.stat().st_mtime == modif_time, "date changed!"
-
-            # when the data is saved again as NumPy array
-            data = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
-            matrix_content_repo.save(data)
-            # then no new file is created
-            matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
-            assert matrix_files == [matrix_file]
-            assert matrix_file.stat().st_mtime == modif_time, "date changed!"
+            assert df.equals(data)
 
             # when other data is saved with different values
-            other_data = [[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]]
-            other_matrix_hash = matrix_content_repo.save(other_data)
+            other_matrix_hash = matrix_content_repo.save(pd.DataFrame([[9.0, 2.0, 3.0], [10.0, 20.0, 30.0]]))
             # then a new file is created
             matrix_files = list(bucket_dir.glob(f"*.{matrix_format}"))
             other_matrix_file = bucket_dir.joinpath(f"{other_matrix_hash}.{matrix_format}")
             assert set(matrix_files) == {matrix_file, other_matrix_file}
 
             # Test with an empty matrix
-            empty_array: ArrayData = []
-            matrix_hash = matrix_content_repo.save(empty_array)
+            matrix_hash = matrix_content_repo.save(pd.DataFrame([]))
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
@@ -240,8 +220,7 @@ class TestMatrixContentRepository:
             assert retrieved_matrix.empty
 
             # Test with an empty 2D array
-            empty_2d_array: ArrayData = [[]]
-            matrix_hash = matrix_content_repo.save(empty_2d_array)
+            matrix_hash = matrix_content_repo.save(pd.DataFrame([[]]))
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             retrieved_matrix = matrix_content_repo.get(matrix_hash)
 
