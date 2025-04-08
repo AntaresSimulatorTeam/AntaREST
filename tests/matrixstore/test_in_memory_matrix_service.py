@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pandas as pd
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.model import MatrixDTO
@@ -16,7 +17,7 @@ from antarest.matrixstore.model import MatrixDTO
 
 def test_matrix_service():
     service = InMemorySimpleMatrixService()
-    matrix_id = service.create([[1, 2, 3], [4, 5, 6]])
+    matrix_id = service.create(pd.DataFrame([[1, 2, 3], [4, 5, 6]]))
     assert service.exists(matrix_id)
     dto = service.get(matrix_id)
     assert dto == MatrixDTO(

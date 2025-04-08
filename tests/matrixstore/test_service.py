@@ -19,6 +19,7 @@ import zipfile
 from unittest.mock import Mock
 
 import numpy as np
+import pandas as pd
 import pytest
 from fastapi import UploadFile
 from starlette.datastructures import Headers
@@ -47,7 +48,7 @@ class TestMatrixService:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
         data: MatrixType = [[1, 2, 3], [4, 5, 6]]
-        matrix_id = matrix_service.create(data)
+        matrix_id = matrix_service.create(pd.DataFrame(data))
 
         # A "real" hash value is calculated
         assert matrix_id, "ID can't be empty"

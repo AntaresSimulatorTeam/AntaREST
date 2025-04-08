@@ -13,6 +13,7 @@ import copy
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
 from pydantic import ValidationError
 
@@ -343,8 +344,8 @@ class TestCreateSTStorage:
         config = recent_study.tree.get(["input", "st-storage", "series", cmd.area_id])
         constants = command_context.generator_matrix_constants
         service = command_context.matrix_service
-        pmax_injection_id = service.create(pmax_injection)
-        inflows_id = service.create(inflows)
+        pmax_injection_id = service.create(pd.DataFrame(pmax_injection))
+        inflows_id = service.create(pd.DataFrame(inflows))
         expected = {
             "storage1": {
                 "pmax_injection": f"matrix://{pmax_injection_id}",

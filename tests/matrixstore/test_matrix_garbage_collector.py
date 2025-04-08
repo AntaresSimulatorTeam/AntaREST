@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from antarest.core.jwt import JWTUser
@@ -178,8 +179,8 @@ def test_get_matrices_used_in_dataset(
     matrix_garbage_collector.dataset_repository = MatrixDataSetRepository()
 
     with db():
-        matrix1_id = matrix_service.create(np.ones((1, 1)))
-        matrix2_id = matrix_service.create(np.ones((2, 1)))
+        matrix1_id = matrix_service.create(pd.DataFrame(np.ones((1, 1))))
+        matrix2_id = matrix_service.create(pd.DataFrame(np.ones((2, 1))))
         matrix_service.create_dataset(
             dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
             matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
