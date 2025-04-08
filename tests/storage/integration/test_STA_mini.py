@@ -696,7 +696,7 @@ def test_sta_mini_output_variables_no_mc_ind(output_service):
 
 
 def test_sta_mini_output_variables_no_links(output_service):
-    study_path = Path(output_service.study_service.get_study(UUID).path)
+    study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
     variables = output_service.output_variables_information(
@@ -709,7 +709,7 @@ def test_sta_mini_output_variables_no_links(output_service):
 
 
 def test_sta_mini_output_variables_no_areas(output_service):
-    study_path = Path(output_service.study_service.get_study(UUID).path)
+    study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)

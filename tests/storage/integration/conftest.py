@@ -148,4 +148,6 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
 
 @pytest.fixture(name="output_service")
 def output_service_fixture(storage_service: StudyService) -> OutputService:
-    return OutputService(storage_service)
+    return OutputService(
+        storage_service, storage_service.task_service, storage_service.file_transfer_manager, storage_service.event_bus
+    )

@@ -392,8 +392,6 @@ def test_validate() -> None:
 @pytest.mark.unit_test
 def test_output_download(tmp_path: Path) -> None:
     mock_output_service = Mock(spec=OutputService)
-    mock_study_service = Mock()
-    mock_output_service.study_service = mock_study_service
 
     output_data = MatrixAggregationResultDTO(
         index=MatrixIndex(),
@@ -428,10 +426,8 @@ def test_output_download(tmp_path: Path) -> None:
         includeClusters=True,
     )
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    study_service_mock = Mock(spec=StudyService)
-    study_service_mock.file_transfer_manager = ftm
-    mock_output_service.study_service = study_service_mock
-    client = create_test_client(mock_study_service, mock_output_service, ftm, raise_server_exceptions=False)
+    mock_output_service._file_transfer_manager = ftm
+    client = create_test_client(Mock(), mock_output_service, ftm, raise_server_exceptions=False)
     res = client.post(
         f"/v1/studies/{UUID}/outputs/my-output-id/download",
         json=study_download.model_dump(),
@@ -456,8 +452,9 @@ def test_output_whole_download(tmp_path: Path) -> None:
 
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
     output_service = Mock(spec=OutputService)
-    output_service.study_service = Mock()
+    output_service._study_service = Mock()
     output_service.export_output.return_value = expected
+    output_service._file_transfer_manager = ftm
     client = create_test_client(Mock(), output_service, ftm, raise_server_exceptions=False)
     res = client.get(
         f"/v1/studies/{UUID}/outputs/{output_id}/export",
@@ -489,8 +486,10 @@ def test_sim_result() -> None:
     ]
 
     output_service = Mock(spec=OutputService)
-    output_service.study_service = Mock()
+    output_service._study_service = Mock()
     output_service.get_study_sim_result.return_value = result_data
+    ftm = Mock(spec=FileTransferManager)
+    output_service._file_transfer_manager = ftm
 
     client = create_test_client(Mock(), output_service, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")

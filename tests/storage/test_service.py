@@ -565,7 +565,7 @@ def test_download_output() -> None:
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config)
-    output_service = OutputService(service)
+    output_service = OutputService(service, service.task_service, service.file_transfer_manager, service.event_bus)
 
     res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
     res_study_details = {
@@ -1384,7 +1384,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
     service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.return_value = []  # type: ignore
     (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
-    output_service = OutputService(service)
+    output_service = OutputService(service, service.task_service, Mock(), Mock())
     output_service.unarchive_output(
         study_id,
         output_id,
@@ -1490,7 +1490,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         [],
     ]
 
-    output_service = OutputService(study_service=service)
+    output_service = OutputService(service, service.task_service, Mock(), Mock())
     with pytest.raises(TaskAlreadyRunning):
         output_service.unarchive_output(
             study_id,
