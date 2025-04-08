@@ -235,15 +235,13 @@ class TestMatrixContentRepository:
         matrix_format = InternalMatrixFormat(matrix_format)
         with matrix_repository(Path(tmp_path), matrix_format) as matrix_content_repo:
             # when the data is saved in the repo
-            data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-            matrix_hash = matrix_content_repo.save(data)
+            df_to_save = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+            matrix_hash = matrix_content_repo.save(df_to_save)
             # then the saved matrix object exists
             assert matrix_content_repo.exists(matrix_hash)
             # and it can be retrieved
             content = matrix_content_repo.get(matrix_hash)
-            assert list(content.index) == list(range(len(data)))
-            assert list(content.columns) == list(range(len(data[0])))
-            assert content.to_numpy().tolist() == data
+            assert content.equals(df_to_save)
 
             # we can delete the data that was previously saved
             matrix_content_repo.delete(matrix_hash)
