@@ -296,18 +296,15 @@ class TestMatrixContentRepository:
                 # This situation will occur if we change the default format inside the app config.
                 with matrix_repository(Path(tmp_path), repository_format) as matrix_content_repo:
                     data: ArrayData = [[1, 2, 3], [4, 5, 6]]
-                    df = pd.DataFrame(data)
-                    associated_hash = "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
+                    df = pd.DataFrame(index=["index_0", "index_1"], data=data, columns=["A", "B", "C"])
+                    associated_hash = matrix_content_repo.save(df)
                     matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{associated_hash}.{saved_format}")
-                    saved_format.save_matrix(df, matrix_path)
 
                     # asserts the saved matrix object exists
                     assert matrix_content_repo.exists(associated_hash)
                     # and it can be retrieved
                     content = matrix_content_repo.get(associated_hash)
-                    assert list(content.index) == list(range(len(data)))
-                    assert list(content.columns) == list(range(len(data[0])))
-                    assert content.to_numpy().tolist() == data
+                    assert content.equals(df)
 
                     # we can delete the data that was previously saved
                     matrix_content_repo.delete(associated_hash)
@@ -318,7 +315,7 @@ class TestMatrixContentRepository:
                     # Recreates the matrix
                     saved_format.save_matrix(df, matrix_path)
                     # saving the same matrix will migrate its format to the repository one.
-                    matrix_content_repo.save(data)
+                    matrix_content_repo.save(df)
                     saved_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{matrix_format}"))
                     assert not saved_matrix_files
                     repo_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{repository_format}"))

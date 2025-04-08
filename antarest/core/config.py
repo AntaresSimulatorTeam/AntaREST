@@ -17,7 +17,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Dict, List, Optional, cast
 
-import numpy as np
 import pandas as pd
 import yaml
 
@@ -40,8 +39,15 @@ class InternalMatrixFormat(StrEnum):
     FEATHER = "feather"
 
     def load_matrix(self, path: Path) -> pd.DataFrame:
-        if self == InternalMatrixFormat.TSV or path.stat().st_size == 0:
-            return pd.DataFrame(data=np.loadtxt(path, delimiter="\t", ndmin=2))
+        if path.stat().st_size == 0:
+            return pd.DataFrame()
+        if self == InternalMatrixFormat.TSV:
+            df = pd.read_csv(path, sep="\t", index_col=0)
+            # Specific treatment to fit with other formats
+            length_range = range(len(df.columns))
+            if list(df.columns) == [str(k) for k in length_range]:
+                df.columns = pd.Index(length_range)  # type: ignore
+            return df
         elif self == InternalMatrixFormat.HDF:
             return cast(pd.DataFrame, pd.read_hdf(path))
         elif self == InternalMatrixFormat.PARQUET:
@@ -53,7 +59,7 @@ class InternalMatrixFormat(StrEnum):
 
     def save_matrix(self, dataframe: pd.DataFrame, path: Path) -> None:
         if self == InternalMatrixFormat.TSV:
-            np.savetxt(path, dataframe.to_numpy(), delimiter="\t", fmt="%.18f")
+            dataframe.to_csv(path, sep="\t", float_format="%.6f")
         elif self == InternalMatrixFormat.HDF:
             dataframe.to_hdf(str(path), key="data")
         elif self == InternalMatrixFormat.PARQUET:

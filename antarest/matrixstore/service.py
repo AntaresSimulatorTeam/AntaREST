@@ -388,7 +388,7 @@ class MatrixService(ISimpleMatrixService):
             created_at=int(matrix.created_at.timestamp()),
             index=list(content.index),
             columns=list(content.columns),
-            data=content.values.tolist(),
+            data=content.to_numpy().tolist(),
         )
 
     @override

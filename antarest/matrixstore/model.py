@@ -221,7 +221,7 @@ class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
     height: int
     index: list[int | str]
     columns: list[int | str]
-    data: list[list[int | str]]
+    data: list[list[float | int | str]]
     created_at: int = 0
     id: str = ""
 
