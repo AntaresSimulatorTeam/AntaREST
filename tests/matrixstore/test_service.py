@@ -24,6 +24,7 @@ import pytest
 from fastapi import UploadFile
 from starlette.datastructures import Headers
 
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
@@ -41,14 +42,16 @@ from antarest.matrixstore.model import (
 from antarest.matrixstore.service import MatrixService
 
 MatrixType = t.List[t.List[float]]
+TEST_MATRIX = [[1, 2, 3], [4, 5, 6]]
 
 
 class TestMatrixService:
     def test_create__nominal_case(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data."""
         # when a matrix is created (inserted) in the service
-        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
-        matrix_id = matrix_service.create(pd.DataFrame(data))
+        data = TEST_MATRIX
+        df_to_save = pd.DataFrame(data)
+        matrix_id = matrix_service.create(df_to_save)
 
         # A "real" hash value is calculated
         assert matrix_id, "ID can't be empty"
@@ -56,8 +59,8 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        array = np.loadtxt(content_path)
-        assert array.all() == np.array(data).all()
+        saved_df = InternalMatrixFormat.TSV.load_matrix(content_path)
+        assert saved_df.equals(df_to_save)
 
         # A matrix object is stored in the database
         with db():
@@ -68,38 +71,13 @@ class TestMatrixService:
         now = datetime.datetime.utcnow()
         assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
 
-    def test_create__from_numpy_array(self, matrix_service: MatrixService) -> None:
-        """Creates a new matrix object with the specified data."""
-        # when a matrix is created (inserted) in the service
-        data = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float64)
-        matrix_id = matrix_service.create(data)
-
-        # A "real" hash value is calculated
-        assert matrix_id, "ID can't be empty"
-
-        # The matrix is saved in the content repository as a TSV file
-        bucket_dir = matrix_service.matrix_content_repository.bucket_dir
-        content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        array = np.loadtxt(content_path)
-        assert array.all() == data.all()
-
-        # A matrix object is stored in the database
-        with db():
-            obj = matrix_service.repo.get(matrix_id)
-        assert obj is not None, f"Missing Matrix object {matrix_id}"
-        assert obj.width == data.shape[1]
-        assert obj.height == data.shape[0]
-        now = datetime.datetime.utcnow()
-        assert now - datetime.timedelta(seconds=1) <= obj.created_at <= now
-
     def test_create__side_effect(self, matrix_service: MatrixService) -> None:
         """Creates a new matrix object with the specified data, but fail during saving."""
         # if the matrix can't be created in the service
         matrix_repo = matrix_service.repo
         matrix_repo.save = Mock(side_effect=Exception("database error"))
         with pytest.raises(Exception, match="database error"):
-            data: MatrixType = [[1, 2, 3], [4, 5, 6]]
-            matrix_service.create(data)
+            matrix_service.create(pd.DataFrame(TEST_MATRIX))
 
         # the associated matrix file must not be deleted
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
@@ -113,8 +91,8 @@ class TestMatrixService:
     def test_get(self, matrix_service: MatrixService) -> None:
         """Get a matrix object from the database and the matrix content repository."""
         # when a matrix is created (inserted) in the service
-        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
-        matrix_id = matrix_service.create(data)
+        data = TEST_MATRIX
+        matrix_id = matrix_service.create(pd.DataFrame(data))
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
@@ -139,8 +117,8 @@ class TestMatrixService:
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""
         # when a matrix is created (inserted) in the service
-        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
-        matrix_id = matrix_service.create(data)
+        data = TEST_MATRIX
+        matrix_id = matrix_service.create(pd.DataFrame(data))
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
@@ -151,8 +129,8 @@ class TestMatrixService:
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
-        data: MatrixType = [[1, 2, 3], [4, 5, 6]]
-        matrix_id = matrix_service.create(data)
+        data = TEST_MATRIX
+        matrix_id = matrix_service.create(pd.DataFrame(data))
 
         # When the matrix id deleted
         with db():
@@ -186,7 +164,7 @@ class TestMatrixService:
     @pytest.mark.parametrize(
         "data",
         [
-            pytest.param([[1, 2, 3], [4, 5, 6]], id="classic-array"),
+            pytest.param(TEST_MATRIX, id="classic-array"),
             pytest.param([[]], id="2D-empty-array"),
         ],
     )
@@ -235,8 +213,8 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-        actual = np.loadtxt(content_path)
-        assert actual.all() == matrix.all()
+        actual = InternalMatrixFormat.TSV.load_matrix(content_path)
+        assert actual.to_numpy().all() == matrix.all()
 
         # A matrix object is stored in the database
         with db():
@@ -256,7 +234,7 @@ class TestMatrixService:
         """
         # Prepare the matrix data to import
         data_list: t.List[MatrixType] = [
-            [[1, 2, 3], [4, 5, 6]],
+            TEST_MATRIX,
             [[7, 8, 9, 10, 11], [17, 18, 19, 20, 21], [27, 28, 29, 30, 31]],
             [[]],
         ]
@@ -302,8 +280,8 @@ class TestMatrixService:
             # The matrix is saved in the content repository as a TSV file
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
             content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-            actual = np.loadtxt(content_path)
-            assert actual.all() == matrix.all()
+            actual = InternalMatrixFormat.TSV.load_matrix(content_path)
+            assert actual.to_numpy().all() == matrix.all()
 
             # A matrix object is stored in the database
             with db():
