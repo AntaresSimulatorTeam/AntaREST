@@ -12,14 +12,14 @@
 
 import hashlib
 import time
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
 from typing_extensions import override
 
-from antarest.matrixstore.model import MatrixData, MatrixDTO
+from antarest.matrixstore.model import MatrixDTO
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -46,13 +46,8 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         )
 
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
-        if isinstance(data, np.ndarray):
-            matrix = data
-        elif isinstance(data, pd.DataFrame):
-            matrix = np.ascontiguousarray(data.to_numpy())
-        else:
-            matrix = np.array(data, dtype=np.float64)
+    def create(self, data: pd.DataFrame) -> str:
+        matrix = np.ascontiguousarray(data.to_numpy())
         matrix_hash = hashlib.sha256(matrix.data).hexdigest()
         self._content[matrix_hash] = self._make_dto(matrix_hash, matrix)
         return matrix_hash

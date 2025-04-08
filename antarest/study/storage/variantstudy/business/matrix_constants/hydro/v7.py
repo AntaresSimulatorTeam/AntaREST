@@ -10,11 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import List
 
-from antarest.matrixstore.model import MatrixData
+import pandas as pd
 
-credit_modulations: List[List[MatrixData]] = [[1.0] * 101] * 2
-inflow_pattern: List[List[MatrixData]] = [[1.0]] * 365
-max_power: List[List[MatrixData]] = [[0.0, 24.0, 0.0, 24.0]] * 365
-reservoir: List[List[MatrixData]] = [[0.0, 0.5, 1.0]] * 365
+credit_modulations = pd.DataFrame(data=[[1] * 101] * 2)
+inflow_pattern = pd.DataFrame(data=[[1]] * 365)
+max_power = pd.DataFrame(data=[[0, 24, 0, 24]] * 365)
+reservoir = pd.DataFrame(data=[[0, 0.5, 1]] * 365)

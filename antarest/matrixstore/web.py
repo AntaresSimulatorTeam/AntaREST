@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
+import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, UploadFile
 from starlette.responses import FileResponse
 
@@ -51,7 +52,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     ) -> str:
         logger.info("Creating new matrix")
         if current_user.id is not None:
-            return service.create(matrix)
+            return service.create(pd.DataFrame(matrix))
         raise UserHasNotPermissionError()
 
     @bp.post(

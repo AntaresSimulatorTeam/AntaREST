@@ -294,7 +294,7 @@ class TestMatrixContentRepository:
             if repository_format != saved_format:
                 # MatrixContentRepository differs from the one where file were created.
                 # This situation will occur if we change the default format inside the app config.
-                with matrix_repository(Path(tmp_path), repository_format) as matrix_content_repo:
+                with matrix_repository(tmp_path, repository_format) as matrix_content_repo:
                     data: ArrayData = [[1, 2, 3], [4, 5, 6]]
                     df = pd.DataFrame(index=["index_0", "index_1"], data=data, columns=["A", "B", "C"])
                     associated_hash = matrix_content_repo.save(df)
@@ -322,3 +322,14 @@ class TestMatrixContentRepository:
                     assert len(repo_matrix_files) == 1
                     new_matrix_path = matrix_path.with_suffix(f".{repository_format}")
                     assert repo_matrix_files[0] == new_matrix_path
+
+    def test_save_called_with_different_objects(self, tmp_path: Path) -> None:
+        with matrix_repository(tmp_path, InternalMatrixFormat.TSV) as matrix_content_repo:
+            data_as_list = [[1, 2, 3], [4, 5, 6]]
+            matrix_content_repo.save(data_as_list)
+            data_as_array = np.array([[1, 2, 3], [4, 5, 6]])
+            matrix_content_repo.save(data_as_array)
+            data_as_df = pd.DataFrame(data=np.array([[1, 2, 3], [4, 5, 6]]))
+            matrix_content_repo.save(data_as_df)
+            # Ensures only one matrix exists
+            assert len(list(matrix_content_repo.bucket_dir.iterdir())) == 2  # 1 .lock file and 1 matrix

@@ -18,13 +18,12 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from filelock import FileLock
-from numpy import typing as npt
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixData, MatrixDataSet
+from antarest.matrixstore.model import Matrix, MatrixDataSet
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +187,7 @@ class MatrixContentRepository:
                 return True
         return False
 
-    def save(self, content: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
+    def save(self, content: pd.DataFrame) -> str:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
@@ -197,8 +196,7 @@ class MatrixContentRepository:
 
         Parameters:
             content:
-                The matrix content to be saved. It can be either a nested list of floats
-                ,a NumPy array of type np.float64 or a dataframe
+                The matrix content to be saved represented as a dataframe
 
         Returns:
             The SHA256 hash of the saved matrix file.
@@ -217,13 +215,7 @@ class MatrixContentRepository:
         #    of the floating point numbers which can introduce rounding errors.
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
-        if isinstance(content, np.ndarray):
-            matrix_as_df = pd.DataFrame(content)
-        elif isinstance(content, list):
-            matrix_as_df = pd.DataFrame(np.array(content, dtype=np.float64))
-        else:
-            matrix_as_df = content
-        matrix_hash = hashlib.sha256(np.ascontiguousarray(matrix_as_df.to_numpy()).data).hexdigest()
+        matrix_hash = hashlib.sha256(np.ascontiguousarray(content.to_numpy()).data).hexdigest()
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
@@ -243,10 +235,10 @@ class MatrixContentRepository:
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
         with FileLock(lock_file, timeout=15):
-            if matrix_as_df.empty:
+            if content.empty:
                 matrix_path.touch()
             else:
-                self.format.save_matrix(matrix_as_df, matrix_path)
+                self.format.save_matrix(content, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31

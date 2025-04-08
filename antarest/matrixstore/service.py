@@ -24,7 +24,6 @@ import numpy as np
 import pandas as pd
 import py7zr
 from fastapi import UploadFile
-from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -42,7 +41,6 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixData,
     MatrixDataSet,
     MatrixDataSetDTO,
     MatrixDataSetRelation,
@@ -72,7 +70,7 @@ class ISimpleMatrixService(ABC):
         self.matrix_content_repository = matrix_content_repository
 
     @abstractmethod
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
+    def create(self, data: pd.DataFrame) -> str:
         raise NotImplementedError()
 
     @abstractmethod
@@ -104,7 +102,7 @@ class ISimpleMatrixService(ABC):
         if isinstance(matrix, str):
             return matrix.removeprefix("matrix://")
         elif isinstance(matrix, list):
-            return self.create(matrix)
+            return self.create(pd.DataFrame(data=matrix))
         else:
             raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
@@ -114,7 +112,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         super().__init__(matrix_content_repository=matrix_content_repository)
 
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
+    def create(self, data: pd.DataFrame) -> str:
         return self.matrix_content_repository.save(data)
 
     @override
@@ -158,7 +156,7 @@ class MatrixService(ISimpleMatrixService):
         self.config = config
 
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64] | pd.DataFrame) -> str:
+    def create(self, data: pd.DataFrame) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -182,14 +180,13 @@ class MatrixService(ISimpleMatrixService):
             unreferenced matrices to avoid leaving unused files lying around.
         """
         matrix_id = self.matrix_content_repository.save(data)
-        shape = (len(data), len(data[0]) if data else 0) if isinstance(data, list) else data.shape
         with db():
             # Do not use the `timezone.utc` timezone to preserve a naive datetime.
             created_at = datetime.utcnow()
             matrix = Matrix(
                 id=matrix_id,
-                width=shape[1],
-                height=shape[0],
+                width=data.shape[1],
+                height=data.shape[0],
                 created_at=created_at,
             )
             self.repo.save(matrix)
@@ -259,7 +256,7 @@ class MatrixService(ISimpleMatrixService):
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        return self.create(matrix)
+        return self.create(pd.DataFrame(data=matrix))
 
     def get_dataset(
         self,
