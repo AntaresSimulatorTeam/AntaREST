@@ -1173,7 +1173,7 @@ class StudyService:
         params: RequestParameters,
         destination_folder: PurePosixPath,
         output_ids: List[str],
-        with_outputs: bool = False,
+        with_outputs: bool | None,
     ) -> str:
         """
         Copy study to another location.

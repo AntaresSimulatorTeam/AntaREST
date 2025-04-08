@@ -355,8 +355,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     def copy_study(
         uuid: str,
         dest: str,
-        with_outputs: bool = False,
-        output_ids: Annotated[list[str] | None, Query()] = None,
+        output_ids: Annotated[list[str], Query(default_factory=list)],
+        with_outputs: bool | None = None,
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
@@ -384,7 +384,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         group_ids = [sanitize_string(gid) for gid in group_ids]
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
-        outputs = output_ids or []
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
@@ -395,7 +394,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             use_task=use_task,
             params=params,
             destination_folder=PurePosixPath(destination_folder),
-            output_ids=outputs,
+            output_ids=output_ids,
         )
 
         return task_id

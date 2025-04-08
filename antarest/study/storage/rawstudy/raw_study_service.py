@@ -45,15 +45,22 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-def copy_output_folders(src_output_path: Path, dest_output_path: Path, allowed_outputs: List[str]) -> None:
-    for file_name in allowed_outputs:
-        src_folder = src_output_path / file_name
-        dest_folder = dest_output_path / file_name
+def copy_output_folders(
+    src_output_path: Path, dest_output_path: Path, with_outputs: bool | None, selected_outputs: List[str]
+) -> None:
+    if with_outputs:
+        if selected_outputs:  # if some outputs are selected, we copy only them
+            for file_name in selected_outputs:
+                src_folder = src_output_path / file_name
+                dest_folder = dest_output_path / file_name
 
-        if src_folder.exists():
-            shutil.copytree(src_folder, dest_folder)
-        else:
-            raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
+                if src_folder.exists():
+                    shutil.copytree(src_folder, dest_folder)
+                else:
+                    raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
+
+        else:  # we copy all the outputs if none is selected
+            shutil.copytree(src_output_path, dest_output_path)
 
 
 class RawStudyService(AbstractStorageService[RawStudy]):
@@ -230,7 +237,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],
-        with_outputs: bool = False,
+        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -255,8 +262,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
-        if with_outputs:
-            copy_output_folders(src_path / "output", dest_path / "output", output_ids)
+        copy_output_folders(src_path / "output", dest_path / "output", with_outputs, output_ids)
 
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)

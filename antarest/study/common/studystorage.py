@@ -93,7 +93,7 @@ class IStudyStorageService(ABC, Generic[T]):
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],
-        with_outputs: bool = False,
+        with_outputs: bool | None,
     ) -> T:
         """
         Create a new study by copying a reference study.

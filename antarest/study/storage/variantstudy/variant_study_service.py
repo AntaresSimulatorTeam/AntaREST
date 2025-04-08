@@ -901,7 +901,7 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],
-        with_outputs: bool = False,
+        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -927,9 +927,9 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         shutil.copytree(src_path, dest_path)
 
         src_path = cast(Path, file_study.config.output_path)
-        if with_outputs and src_path.exists() and output_ids:
+        if src_path.exists():
             dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
-            copy_output_folders(src_path, dest_path, output_ids)
+            copy_output_folders(src_path, dest_path, with_outputs, output_ids)
 
         update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study
