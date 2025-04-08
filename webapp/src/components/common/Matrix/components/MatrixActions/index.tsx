@@ -22,6 +22,7 @@ import { Button, Divider, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import MatrixResize from "../MatrixResize";
+import MatrixFilter from "../MatrixFilter";
 
 interface MatrixActionsProps {
   studyId: string;
@@ -29,6 +30,7 @@ interface MatrixActionsProps {
   onImport: SplitButtonProps["onClick"];
   onSave: VoidFunction;
   disabled: boolean;
+  dateTime: string[];
   isTimeSeries: boolean;
   onMatrixUpdated: VoidFunction;
   canImport?: boolean;
@@ -40,6 +42,7 @@ function MatrixActions({
   onImport,
   onSave,
   disabled,
+  dateTime,
   isTimeSeries,
   canImport = false,
 }: MatrixActionsProps) {
@@ -85,6 +88,7 @@ function MatrixActions({
       {isTimeSeries && (
         <>
           <MatrixResize />
+          <MatrixFilter dateTime={dateTime} isTimeSeries={isTimeSeries} />
           <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
         </>
       )}
