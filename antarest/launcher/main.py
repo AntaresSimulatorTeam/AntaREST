@@ -21,12 +21,14 @@ from antarest.core.tasks.service import ITaskService
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
+from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
 
 
 def build_launcher(
     app_ctxt: Optional[AppBuildContext],
     config: Config,
+    study_service: StudyService,
     output_service: OutputService,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
@@ -40,7 +42,7 @@ def build_launcher(
         #        study_service.add_on_deletion_callback(repository.delete_by_study_id)
         service_launcher = LauncherService(
             config=config,
-            study_service=output_service.study_service,
+            study_service=study_service,
             output_service=output_service,
             job_result_repository=repository,
             event_bus=event_bus,

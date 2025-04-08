@@ -117,7 +117,12 @@ def build_study_service(
         config=config,
     )
 
-    output_service = output_service or OutputService(study_service=study_service)
+    output_service = output_service or OutputService(
+        study_service=study_service,
+        task_service=task_service,
+        file_transfer_manager=file_transfer_manager,
+        event_bus=event_bus,
+    )
 
     if app_ctxt:
         api_root = app_ctxt.api_root

@@ -42,29 +42,29 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
     DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
     configure_logger(config)
 
-    _, event_bus, _, _, _, matrix_service, study_service, output_service = create_core_services(None, config)
+    core_services = create_core_services(None, config)
 
     services: Dict[Module, IService] = {}
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, app_ctxt=None, study_service=study_service)
+        watcher = create_watcher(config=config, app_ctxt=None, study_service=core_services.study_service)
         services[Module.WATCHER] = watcher
 
     if Module.MATRIX_GC in services_list:
         matrix_gc = create_matrix_gc(
             config=config,
             app_ctxt=None,
-            study_service=study_service,
-            matrix_service=matrix_service,
+            study_service=core_services.study_service,
+            matrix_service=core_services.matrix_service,
         )
         services[Module.MATRIX_GC] = matrix_gc
 
     if Module.ARCHIVE_WORKER in services_list:
-        worker = create_archive_worker(config, "test", event_bus=event_bus)
+        worker = create_archive_worker(config, "test", event_bus=core_services.event_bus)
         services[Module.ARCHIVE_WORKER] = worker
 
     if Module.AUTO_ARCHIVER in services_list:
-        auto_archive_service = AutoArchiveService(study_service, output_service, config)
+        auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)
         services[Module.AUTO_ARCHIVER] = auto_archive_service
 
     return services

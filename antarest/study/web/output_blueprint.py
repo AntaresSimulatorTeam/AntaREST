@@ -138,7 +138,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         data: StudyDownloadDTO,
         request: Request,
         use_task: bool = False,
-        tmp_export_file: Path = Depends(output_service.study_service.file_transfer_manager.request_tmp_file),
+        tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
@@ -258,7 +258,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         return content
 
     @bp.get(
-        "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
+        "/studies/{uuid}/outputs/{output_id}/mc-ind/areas",
         tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
@@ -317,7 +317,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
         return export_file(
             df_matrix,
-            output_service.study_service.file_transfer_manager,
+            output_service._file_transfer_manager,
             export_format,
             False,
             True,
@@ -327,7 +327,28 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         )
 
     @bp.get(
-        "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
+        "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
+        tags=[APITag.study_outputs],
+        summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
+        include_in_schema=False,
+    )
+    def redirect_aggregate_areas_raw_data(
+        uuid: str,
+        output_id: str,
+        query_file: MCIndAreasQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: str = "",
+        areas_ids: str = "",
+        columns_names: str = "",
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileResponse:
+        return aggregate_areas_raw_data(
+            uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format, current_user
+        )
+
+    @bp.get(
+        "/studies/{uuid}/outputs/{output_id}/aggregate/links/mc-ind",
         tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
     )
@@ -385,7 +406,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
         return export_file(
             df_matrix,
-            output_service.study_service.file_transfer_manager,
+            output_service._file_transfer_manager,
             export_format,
             False,
             True,
@@ -395,7 +416,28 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         )
 
     @bp.get(
-        "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
+        "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
+        tags=[APITag.study_outputs],
+        summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
+        include_in_schema=False,
+    )
+    def redirect_aggregate_links_raw_data(
+        uuid: str,
+        output_id: str,
+        query_file: MCIndLinksQueryFile,
+        frequency: MatrixFrequency,
+        mc_years: str = "",
+        links_ids: str = "",
+        columns_names: str = "",
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileResponse:
+        return aggregate_links_raw_data(
+            uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format, current_user
+        )
+
+    @bp.get(
+        "/studies/{uuid}/outputs/{output_id}/aggregate/areas/mc-all",
         tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
     )
@@ -451,7 +493,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
         return export_file(
             df_matrix,
-            output_service.study_service.file_transfer_manager,
+            output_service._file_transfer_manager,
             export_format,
             False,
             True,
@@ -461,7 +503,27 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         )
 
     @bp.get(
-        "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
+        "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
+        tags=[APITag.study_outputs],
+        summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
+        include_in_schema=False,
+    )
+    def redirect_aggregate_areas_raw_data__all(
+        uuid: str,
+        output_id: str,
+        query_file: MCAllAreasQueryFile,
+        frequency: MatrixFrequency,
+        areas_ids: str = "",
+        columns_names: str = "",
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileResponse:
+        return aggregate_areas_raw_data__all(
+            uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format, current_user
+        )
+
+    @bp.get(
+        "/studies/{uuid}/outputs/{output_id}/aggregate/links/mc-all",
         tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
     )
@@ -516,13 +578,33 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
 
         return export_file(
             df_matrix,
-            output_service.study_service.file_transfer_manager,
+            output_service._file_transfer_manager,
             export_format,
             False,
             True,
             download_name,
             download_log,
             current_user,
+        )
+
+    @bp.get(
+        "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
+        tags=[APITag.study_outputs],
+        summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
+        include_in_schema=False,
+    )
+    def redirect_aggregate_links_raw_data__all(
+        uuid: str,
+        output_id: str,
+        query_file: MCAllLinksQueryFile,
+        frequency: MatrixFrequency,
+        links_ids: str = "",
+        columns_names: str = "",
+        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> FileResponse:
+        return aggregate_links_raw_data__all(
+            uuid, output_id, query_file, frequency, links_ids, columns_names, export_format, current_user
         )
 
     return bp

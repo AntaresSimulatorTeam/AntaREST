@@ -584,7 +584,7 @@ class StudyService:
     ) -> Optional[str]:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self.get_file_study(study)
         log_locations = {
             False: [
                 ["output", "logs", f"{job_id}-out.log"],
@@ -628,7 +628,7 @@ class StudyService:
         logger.info(f"Saving logs for job {job_id} of study {study_id}")
         stopwatch = StopWatch()
         study = self.get_study(study_id)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self.get_file_study(study)
         file_study.tree.save(
             bytes(log_data, encoding="utf-8"),
             [
@@ -864,6 +864,9 @@ class StudyService:
         else:
             raise ValueError(f"Unsupported study type '{study.type}'")
 
+    def get_file_study(self, study: Study) -> FileStudy:
+        return self.storage_service.get_storage(study).get_raw(study)
+
     def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
         """
         Retrieve study path
@@ -967,7 +970,7 @@ class StudyService:
     def get_input_matrix_startdate(self, study_id: str, path: Optional[str], params: RequestParameters) -> MatrixIndex:
         study = self.get_study(study_id)
         assert_permission(params.user, study, StudyPermissionType.READ)
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = self.get_file_study(study)
         output_id = None
         level = StudyDownloadLevelDTO.HOURLY
         if path:
@@ -2432,7 +2435,7 @@ class StudyService:
             "command_context": self.storage_service.variant_study_service.command_factory.command_context,
         }
         command = command_class.model_validate(args)
-        file_study = self.storage_service.get_storage(study).get_raw(study, True)
+        file_study = self.get_file_study(study)
         try:
             self.get_study_interface(study).add_commands([command])
         except CommandApplicationError as e:
