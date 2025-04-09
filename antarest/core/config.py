@@ -15,7 +15,7 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 
 import pandas as pd
 import yaml
@@ -37,35 +37,6 @@ class InternalMatrixFormat(StrEnum):
     HDF = "hdf"
     PARQUET = "parquet"
     FEATHER = "feather"
-
-    def load_matrix(self, path: Path) -> pd.DataFrame:
-        if path.stat().st_size == 0:
-            return pd.DataFrame()
-        if self == InternalMatrixFormat.TSV:
-            # The legacy format is TSV, so we have to handle both cases
-            # To know if we're opening a legacy matrix or not we have to seek the first bytes of the file
-            # Legacy
-            header = None
-            index_col = None
-            with open(path, "r") as f:
-                if f.read(1) == "\t":
-                    # New format
-                    header = 0
-                    index_col = 0
-            df = pd.read_csv(path, sep="\t", index_col=index_col, header=header)
-            # Specific treatment on columns to fit with other formats
-            length_range = range(len(df.columns))
-            if list(df.columns) == [str(k) for k in length_range]:
-                df.columns = pd.Index(length_range)  # type: ignore
-            return df
-        elif self == InternalMatrixFormat.HDF:
-            return cast(pd.DataFrame, pd.read_hdf(path))
-        elif self == InternalMatrixFormat.PARQUET:
-            return pd.read_parquet(path)
-        elif self == InternalMatrixFormat.FEATHER:
-            return pd.read_feather(path)
-        else:
-            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
     def save_matrix(self, dataframe: pd.DataFrame, path: Path) -> None:
         if self == InternalMatrixFormat.TSV:

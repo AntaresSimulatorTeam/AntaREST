@@ -15,6 +15,7 @@ from functools import partial
 from pathlib import Path
 
 from antarest.core.config import InternalMatrixFormat
+from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,8 @@ logger = logging.getLogger(__name__)
 def migrate_matrix(matrix_path: Path, matrix_format: InternalMatrixFormat) -> None:
     new_path = matrix_path.parent.joinpath(matrix_path.stem + f".{matrix_format.value}")
     old_format = InternalMatrixFormat(matrix_path.suffix[1:])  # remove the "."
-    df = old_format.load_matrix(matrix_path)
-    matrix_format.save_matrix(df, new_path)
+    df = load_matrix(old_format, matrix_path)
+    save_matrix(matrix_format, df, new_path)
     matrix_path.unlink()
 
 

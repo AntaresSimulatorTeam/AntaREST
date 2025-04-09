@@ -12,7 +12,7 @@
 
 import hashlib
 import time
-from typing import Dict, Optional
+from typing import Dict
 
 import numpy as np
 import numpy.typing as npt
@@ -53,8 +53,8 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         return matrix_hash
 
     @override
-    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
-        return self._content.get(matrix_id, None)
+    def get(self, matrix_id: str) -> MatrixDTO:
+        return self._content[matrix_id]
 
     @override
     def exists(self, matrix_id: str) -> bool:

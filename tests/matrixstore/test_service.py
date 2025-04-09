@@ -39,6 +39,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
 )
+from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.service import MatrixService
 
 MatrixType = t.List[t.List[float]]
@@ -59,7 +60,7 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        saved_df = InternalMatrixFormat.TSV.load_matrix(content_path)
+        saved_df = load_matrix(InternalMatrixFormat.TSV, content_path)
         assert saved_df.equals(df_to_save)
 
         # A matrix object is stored in the database
@@ -213,7 +214,7 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-        actual = InternalMatrixFormat.TSV.load_matrix(content_path)
+        actual = load_matrix(InternalMatrixFormat.TSV, content_path)
         assert actual.to_numpy().all() == matrix.all()
 
         # A matrix object is stored in the database
@@ -280,7 +281,7 @@ class TestMatrixService:
             # The matrix is saved in the content repository as a TSV file
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
             content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-            actual = InternalMatrixFormat.TSV.load_matrix(content_path)
+            actual = load_matrix(InternalMatrixFormat.TSV, content_path)
             assert actual.to_numpy().all() == matrix.all()
 
             # A matrix object is stored in the database

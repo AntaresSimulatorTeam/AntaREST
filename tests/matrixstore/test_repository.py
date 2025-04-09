@@ -27,6 +27,7 @@ from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
 from antarest.matrixstore.model import Matrix, MatrixDataSet, MatrixDataSetRelation
+from antarest.matrixstore.parsing import load_matrix, save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 ArrayData = t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]
@@ -202,7 +203,7 @@ class TestMatrixContentRepository:
             # then a file is created in the repo directory
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             assert matrix_file.exists()
-            df = matrix_format.load_matrix(matrix_file)
+            df = load_matrix(matrix_format, matrix_file)
             assert df.equals(data)
 
             # when other data is saved with different values
@@ -289,7 +290,7 @@ class TestMatrixContentRepository:
                     assert not matrix_files
 
                     # Recreates the matrix
-                    saved_format.save_matrix(df, matrix_path)
+                    save_matrix(saved_format, df, matrix_path)
                     # saving the same matrix will migrate its format to the repository one.
                     matrix_content_repo.save(df)
                     saved_matrix_files = list(matrix_content_repo.bucket_dir.glob(f"*.{matrix_format}"))

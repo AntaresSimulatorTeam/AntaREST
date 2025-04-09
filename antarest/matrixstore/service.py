@@ -38,7 +38,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
-from antarest.matrixstore.exceptions import MatrixDataSetNotFound
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -74,7 +74,7 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> MatrixDTO:
         raise NotImplementedError()
 
     @abstractmethod
@@ -363,7 +363,7 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     @override
-    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> MatrixDTO:
         """
         Get a matrix object from the database and the matrix content repository.
 
@@ -376,7 +376,7 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.repo.get(matrix_id)
         if matrix is None:
-            return None
+            raise MatrixNotFound(matrix_id)
         content = self.matrix_content_repository.get(matrix_id)
         return MatrixDTO.model_construct(
             id=matrix.id,

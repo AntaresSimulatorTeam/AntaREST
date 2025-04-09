@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session  # type: ignore
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix, MatrixDataSet
+from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +170,7 @@ class MatrixContentRepository:
                 break
         if not storage_format:
             raise FileNotFoundError(str(matrix_path.with_suffix("")))
-        return storage_format.load_matrix(matrix_path)
+        return load_matrix(storage_format, matrix_path)
 
     def exists(self, matrix_hash: str) -> bool:
         """
@@ -228,7 +229,7 @@ class MatrixContentRepository:
                 # We want to migrate the old matrix in the given repository format.
                 # Ensure exclusive access to the matrix file between multiple processes (or threads).
                 with FileLock(lock_file, timeout=15):
-                    self.format.save_matrix(content, matrix_path)
+                    save_matrix(self.format, content, matrix_path)
                     matrix_in_another_format_path.unlink()
                 return matrix_hash
 
@@ -237,7 +238,7 @@ class MatrixContentRepository:
             if content.empty:
                 matrix_path.touch()
             else:
-                self.format.save_matrix(content, matrix_path)
+                save_matrix(self.format, content, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
