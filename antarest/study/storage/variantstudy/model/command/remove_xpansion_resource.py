@@ -10,13 +10,12 @@
 #
 # This file is part of the Antares project.
 import contextlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
 from antarest.core.exceptions import FileCurrentlyUsedInSettings
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -78,16 +77,12 @@ class RemoveXpansionResource(ICommand):
     filename: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message=f"Xpansion resource {self.filename} removed successfully"), {}
-
-    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         checks_resource_deletion_is_allowed(self.resource_type, self.filename, study_data)
 
         study_data.tree.delete(get_resource_dir(self.resource_type) + [self.filename])
 
-        return self._apply_config(study_data.config)[0]
+        return CommandOutput(status=True, message=f"Xpansion resource {self.filename} removed successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

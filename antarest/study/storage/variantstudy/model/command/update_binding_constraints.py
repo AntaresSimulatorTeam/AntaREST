@@ -68,8 +68,7 @@ class UpdateBindingConstraints(ICommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     bc_props_by_id: t.Mapping[str, BindingConstraintProperties]
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         def update_binding_constraint_dto(existing_constraint: BindingConstraintDTO) -> BindingConstraintDTO:
             if existing_constraint.id in self.bc_props_by_id:
                 bc_props = self.bc_props_by_id[existing_constraint.id]
@@ -93,12 +92,12 @@ class UpdateBindingConstraints(ICommand):
                 return CommandOutput(
                     status=False,
                     message=f"Binding contraint '{bc_id}' not found in study config id : {study_data.study_id}.",
-                ), {}
+                )
         study_data.bindings = list(map(update_binding_constraint_dto, study_data.bindings))
         return CommandOutput(
             status=True,
             message=f"UpdatedBindingConstraints command applied successfully on study {study_data.study_id}.",
-        ), {}
+        )
 
     @model_validator(mode="before")
     @classmethod
@@ -166,8 +165,7 @@ class UpdateBindingConstraints(ICommand):
         removed_groups = old_groups - new_groups
         remove_bc_from_scenario_builder(file_study, removed_groups)
         file_study.tree.save(bcs_json, bcs_url)
-        output, _ = self._apply_config(file_study.config)
-        return output
+        return self.update_in_config(file_study.config)
 
     @override
     def to_dto(self) -> CommandDTO:

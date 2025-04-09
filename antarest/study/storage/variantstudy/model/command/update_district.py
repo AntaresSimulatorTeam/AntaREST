@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import override
 
@@ -42,21 +42,11 @@ class UpdateDistrict(ICommand):
     output: Optional[bool] = None
     comments: Optional[str] = None
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Dict[str, Any]:
         base_set = study_data.sets[self.id]
-        if self.id not in study_data.sets:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"District '{self.id}' does not exist and should be created",
-                ),
-                dict(),
-            )
 
         if self.base_filter:
-            base_filter = self.base_filter or DistrictBaseFilter.remove_all
-            inverted_set = base_filter == DistrictBaseFilter.add_all
+            inverted_set = self.base_filter == DistrictBaseFilter.add_all
         else:
             inverted_set = base_set.inverted_set
         study_data.sets[self.id].areas = self.filter_items or base_set.areas
@@ -64,16 +54,21 @@ class UpdateDistrict(ICommand):
         study_data.sets[self.id].inverted_set = inverted_set
 
         item_key = "-" if inverted_set else "+"
-        return CommandOutput(status=True, message=self.id), {
+        return {
             "district_id": self.id,
             "item_key": item_key,
         }
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
-        if not output.status:
-            return output
+        if self.id not in study_data.config.sets:
+            return CommandOutput(
+                status=False,
+                message=f"District '{self.id}' does not exist and should be created",
+            )
+
+        data = self.update_in_config(study_data.config)
+
         sets = study_data.tree.get(["input", "areas", "sets"])
         district_id = data["district_id"]
         item_key = data["item_key"]
@@ -91,7 +86,7 @@ class UpdateDistrict(ICommand):
             ["input", "areas", "sets", district_id],
         )
 
-        return output
+        return CommandOutput(status=True, message=self.id)
 
     @override
     def to_dto(self) -> CommandDTO:
