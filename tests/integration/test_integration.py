@@ -1853,7 +1853,7 @@ def test_copy_with_specific_output(client: TestClient, admin_access_token: str, 
     copy_with_output(client, tmp_path, variant.json())
 
 
-def copy_with_output(client, tmp_path, study_id):
+def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     output_base_dir = tmp_path / "internal_workspace" / study_id / "output"
     output_base_dir.mkdir(parents=True, exist_ok=True)
 
