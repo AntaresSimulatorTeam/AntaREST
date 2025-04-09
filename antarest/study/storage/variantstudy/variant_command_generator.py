@@ -12,7 +12,7 @@
 import itertools
 import logging
 import uuid
-from typing import Callable, List, Optional, Tuple, Union, cast
+from typing import Callable, List, Optional, Union, cast
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -123,21 +123,3 @@ class VariantCommandGenerator:
             metadata,
             listener,
         )
-
-    def generate_config(
-        self,
-        commands: List[List[ICommand]],
-        config: FileStudyTreeConfig,
-        metadata: VariantStudy,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        logger.info("Building config (light generation)")
-        results = VariantCommandGenerator._generate(
-            commands,
-            config,
-            lambda command, data, listener: command.apply_config(cast(FileStudyTreeConfig, data)),
-            metadata,
-        )
-        # because the config has the parent id there
-        if metadata:
-            config.study_id = metadata.id
-        return results, config

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from pydantic import field_validator, model_validator
 from typing_extensions import override
@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.identifier import t
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -64,7 +64,7 @@ class RemoveLink(ICommand):
             self.area1, self.area2 = self.area2, self.area1
         return self
 
-    def _check_link_exists(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
+    def _check_link_exists(self, study_cfg: FileStudyTreeConfig) -> CommandOutput:
         """
         Check if the source and target areas exist in the study configuration, and if a link between them exists.
 
@@ -75,10 +75,7 @@ class RemoveLink(ICommand):
             - The ``CommandOutput`` object indicates the status of the operation and a message.
             - The dictionary contains the source and target areas if the link exists.
         """
-
-        # Data is empty in case of error
-        data: Dict[str, Any] = {}
-
+        status = False
         if self.area1 not in study_cfg.areas:
             message = f"The source area '{self.area1}' does not exist."
         elif self.area2 not in study_cfg.areas:
@@ -87,12 +84,11 @@ class RemoveLink(ICommand):
             message = f"The link between {self.area1} and {self.area2} does not exist."
         else:
             message = f"Link between {self.area1} and {self.area2} removed"
-            data = {"area_from": self.area1, "area_to": self.area2}
+            status = True
 
-        return CommandOutput(status=bool(data), message=message), data
+        return CommandOutput(status=status, message=message)
 
-    @override
-    def _apply_config(self, study_cfg: FileStudyTreeConfig) -> OutputTuple:
+    def remove_from_config(self, study_cfg: FileStudyTreeConfig) -> CommandOutput:
         """
         Update the study configuration by removing the link between the source and target areas.
 
@@ -103,12 +99,12 @@ class RemoveLink(ICommand):
             A tuple containing the command output and a dictionary of extra data.
             On success, the dictionary contains the source and target areas.
         """
-        output, data = self._check_link_exists(study_cfg)
+        output = self._check_link_exists(study_cfg)
 
         if output.status:
             del study_cfg.areas[self.area1].links[self.area2]
 
-        return output, data
+        return output
 
     def _remove_link_from_scenario_builder(self, study_data: FileStudy) -> None:
         """
@@ -139,7 +135,7 @@ class RemoveLink(ICommand):
             The status of the operation and a message.
         """
 
-        output = self._check_link_exists(study_data.config)[0]
+        output = self._check_link_exists(study_data.config)
 
         if output.status:
             if study_data.config.version < STUDY_VERSION_8_2:
@@ -152,7 +148,7 @@ class RemoveLink(ICommand):
 
             self._remove_link_from_scenario_builder(study_data)
 
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:

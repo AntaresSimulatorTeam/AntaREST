@@ -119,7 +119,7 @@ def file_study_tree_config():
 
 
 def test_apply_config(file_study_tree_config, update_binding_constraints_command):
-    output, _ = update_binding_constraints_command._apply_config(file_study_tree_config)
+    output = update_binding_constraints_command.update_in_config(file_study_tree_config)
     assert output.status is True
     # bc_0 is not in bc_props_by_id, so it should not be updated
     assert file_study_tree_config.bindings[0].group == "old_group1"
