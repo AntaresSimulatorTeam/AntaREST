@@ -65,15 +65,13 @@ class RemoveArea(ICommand):
                     set_.areas.remove(self.id)
                     study_data_config.sets[id_] = set_
 
-    def remove_from_config(self, study_data_config: FileStudyTreeConfig) -> CommandOutput:
+    def remove_from_config(self, study_data_config: FileStudyTreeConfig) -> None:
         del study_data_config.areas[self.id]
 
         self._remove_area_from_links_in_config(study_data_config)
         self._remove_area_from_sets_in_config(study_data_config)
 
         remove_area_cluster_from_binding_constraints(study_data_config, self.id)
-
-        return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
 
     def _remove_area_from_links(self, study_data: FileStudy) -> None:
         for area_name, area in study_data.config.areas.items():
@@ -273,12 +271,12 @@ class RemoveArea(ICommand):
         self._remove_area_from_districts(study_data)
         self._remove_area_from_scenario_builder(study_data)
 
-        output = self.remove_from_config(study_data.config)
+        self.remove_from_config(study_data.config)
 
         new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
         study_data.tree.save(new_area_data)
 
-        return output
+        return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
 
     @override
     def to_dto(self) -> CommandDTO:

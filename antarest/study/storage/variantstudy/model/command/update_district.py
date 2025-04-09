@@ -42,16 +42,7 @@ class UpdateDistrict(ICommand):
     output: Optional[bool] = None
     comments: Optional[str] = None
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        if self.id not in study_data.sets:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"District '{self.id}' does not exist and should be created",
-                ),
-                dict(),
-            )
-
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Dict[str, Any]:
         base_set = study_data.sets[self.id]
 
         if self.base_filter:
@@ -63,16 +54,21 @@ class UpdateDistrict(ICommand):
         study_data.sets[self.id].inverted_set = inverted_set
 
         item_key = "-" if inverted_set else "+"
-        return CommandOutput(status=True, message=self.id), {
+        return {
             "district_id": self.id,
             "item_key": item_key,
         }
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self.update_in_config(study_data.config)
-        if not output.status:
-            return output
+        if self.id not in study_data.config.sets:
+            return CommandOutput(
+                    status=False,
+                    message=f"District '{self.id}' does not exist and should be created",
+                )
+
+        data = self.update_in_config(study_data.config)
+
         sets = study_data.tree.get(["input", "areas", "sets"])
         district_id = data["district_id"]
         item_key = data["item_key"]
@@ -90,7 +86,7 @@ class UpdateDistrict(ICommand):
             ["input", "areas", "sets", district_id],
         )
 
-        return output
+        return CommandOutput(status=True, message=self.id)
 
     @override
     def to_dto(self) -> CommandDTO:
