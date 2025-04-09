@@ -295,7 +295,7 @@ class LoginService:
             logger.error("group %s not found by user %s", id, params.get_user_id())
             raise GroupNotFoundError()
 
-    def get_user(self, id: int, params: RequestParameters) -> Optional[User]:
+    def get_user(self, id: int, params: RequestParameters) -> Optional[User | UserLdap]:
         """
         Get user
         Permission: SADMIN, GADMIN (own group), USER (own user)
@@ -582,7 +582,7 @@ class LoginService:
 
         """
         if params.user:
-            user_list = []
+            user_list: List[Identity] = []
             roles = self.roles.get_all_by_user(params.user.id)
             groups = [r.group for r in roles]
             if any(
@@ -591,7 +591,7 @@ class LoginService:
                     params.user.is_group_admin(groups),
                 )
             ):
-                user_list = self.ldap.get_all() + self.users.get_all()
+                user_list = list(self.ldap.get_all()) + list(self.users.get_all())
             else:
                 for group in groups:
                     user_list.extend([usr for usr in self._get_user_by_group(group.id) if usr not in user_list])

@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, Sequence, cast
+from typing import List, Optional, Sequence
 
-from sqlalchemy.orm import Session, joinedload  # type: ignore
+from sqlalchemy.orm import Session, joinedload
 from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
@@ -65,8 +65,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
         q = q.order_by(Study.created_at.desc())
-        studies = cast(List[VariantStudy], q.all())
-        return studies
+        return q.all()
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
         """
@@ -83,14 +82,13 @@ class VariantStudyRepository(StudyMetadataRepository):
         # see: [Recursive Queries](https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE)
         top_q = self.session.query(Study.id, Study.parent_id)
         top_q = top_q.filter(Study.id == variant_id)
-        top_q = top_q.cte("study_cte", recursive=True)
+        top_q_cte = top_q.cte("study_cte", recursive=True)
 
         bot_q = self.session.query(Study.id, Study.parent_id)
-        bot_q = bot_q.join(top_q, Study.id == top_q.c.parent_id)
+        bot_q = bot_q.join(top_q_cte, Study.id == top_q_cte.c.parent_id)
 
         recursive_q = top_q.union_all(bot_q)
-        q = self.session.query(recursive_q)
-        return [r[0] for r in q]
+        return [r[0] for r in recursive_q]
 
     def get_all_command_blocks(self) -> List[CommandBlock]:
         """
@@ -99,8 +97,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         Returns:
             List of `CommandBlock` objects.
         """
-        cmd_blocks: List[CommandBlock] = self.session.query(CommandBlock).all()
-        return cmd_blocks
+        return self.session.query(CommandBlock).all()
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
@@ -122,7 +119,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             .options(joinedload(VariantStudy.additional_data))
             .options(joinedload(VariantStudy.owner))
             .options(joinedload(VariantStudy.groups))
-            .filter(VariantStudy.id.in_(variant_ids))  # type: ignore
+            .filter(VariantStudy.id.in_(variant_ids))
         )
         index = {id_: i for i, id_ in enumerate(variant_ids)}
         return sorted(q, key=lambda v: index[v.id])

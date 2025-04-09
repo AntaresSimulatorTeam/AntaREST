@@ -44,13 +44,16 @@ def clean_locks(config: Path) -> None:
 
 
 def reindex_table(config: Path) -> None:
-    import sqlalchemy  # type: ignore
+    import sqlalchemy
     from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
     config_obj = get_config(config)
-    engine = sqlalchemy.create_engine(config_obj.db.db_admin_url, echo=False)
+    if not config_obj.db.db_admin_url:
+        raise ValueError("Admin db url not set.")
+    engine = sqlalchemy.create_engine(
+        config_obj.db.db_admin_url, echo=False, isolation_level=ISOLATION_LEVEL_AUTOCOMMIT
+    )
     connection = engine.raw_connection()
-    connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = connection.cursor()
     cursor.execute("VACUUM ANALYSE study")
     cursor.execute("REINDEX INDEX study_pkey")

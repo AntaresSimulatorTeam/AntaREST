@@ -133,7 +133,7 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def get_raw(
         self,
-        metadata: T,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -183,7 +183,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_study_path(self, metadata: Study) -> Path:
+    def get_study_path(self, metadata: T) -> Path:
         """
         Get study path
         Args:
@@ -193,7 +193,7 @@ class IStudyStorageService(ABC, Generic[T]):
 
         """
 
-    def _check_study_exists(self, metadata: Study) -> None:
+    def _check_study_exists(self, metadata: T) -> None:
         """
         Check study on filesystem.
 

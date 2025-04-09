@@ -28,7 +28,7 @@ class ConfigDataRepository:
         return configdata
 
     def get(self, key: str, owner: Optional[int] = None) -> Optional[ConfigData]:
-        configdata: ConfigData = (
+        return (
             db.session.query(ConfigData)
             .filter(
                 and_(
@@ -38,7 +38,6 @@ class ConfigDataRepository:
             )
             .first()
         )
-        return configdata
 
     def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
         configdata = self.get(key, owner)

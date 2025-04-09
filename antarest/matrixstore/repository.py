@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 from filelock import FileLock
 from numpy import typing as npt
-from sqlalchemy import exists  # type: ignore
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy import exists
+from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -56,12 +56,10 @@ class MatrixDataSetRepository:
         return matrix_user_metadata
 
     def get(self, id_number: str) -> Optional[MatrixDataSet]:
-        matrix: MatrixDataSet = self.session.query(MatrixDataSet).get(id_number)
-        return matrix
+        return self.session.query(MatrixDataSet).get(id_number)
 
     def get_all_datasets(self) -> List[MatrixDataSet]:
-        matrix_datasets: List[MatrixDataSet] = self.session.query(MatrixDataSet).all()
-        return matrix_datasets
+        return self.session.query(MatrixDataSet).all()
 
     def query(
         self,
@@ -80,7 +78,7 @@ class MatrixDataSetRepository:
         """
         query = self.session.query(MatrixDataSet)
         if name is not None:
-            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))  # type: ignore
+            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))
         if owner is not None:
             query = query.filter(MatrixDataSet.owner_id == owner)
         datasets: List[MatrixDataSet] = query.distinct().all()
@@ -118,8 +116,7 @@ class MatrixRepository:
         return matrix
 
     def get(self, matrix_hash: str) -> Optional[Matrix]:
-        matrix: Matrix = self.session.query(Matrix).get(matrix_hash)
-        return matrix
+        return self.session.query(Matrix).get(matrix_hash)
 
     def exists(self, matrix_hash: str) -> bool:
         res: bool = self.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
