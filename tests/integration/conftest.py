@@ -23,7 +23,6 @@ from starlette.testclient import TestClient
 
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
-from antarest.study.storage.rawstudy.watcher import Watcher
 from tests.integration.assets import ASSETS_DIR
 
 HERE = Path(__file__).parent.resolve()
@@ -90,7 +89,7 @@ def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
 
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
     yield app
-    t.cast(Watcher, services["watcher"]).stop()
+    services.watcher.stop()
 
 
 @pytest.fixture(name="client")

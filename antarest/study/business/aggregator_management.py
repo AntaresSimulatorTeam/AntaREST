@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from enum import StrEnum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, List, MutableSequence, Optional, Sequence
 
@@ -25,7 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-MC_TEMPLATE_PARTS = "output/{sim_id}/economy/{mc_root}"
+MC_TEMPLATE_PARTS = "economy/{mc_root}"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
@@ -62,7 +62,7 @@ DUMMY_COMPONENT = 2
 logger = logging.getLogger(__name__)
 
 
-class MCRoot(StrEnum):
+class MCRoot(Enum):
     MC_IND = "mc-ind"
     MC_ALL = "mc-all"
 
@@ -144,16 +144,15 @@ def _filtered_files_listing(
 class AggregatorManager:
     def __init__(
         self,
-        study_path: Path,
-        output_id: str,
+        output_path: Path,
         query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
         mc_years: Optional[Sequence[int]] = None,
     ):
-        self.study_path = study_path
-        self.output_id = output_id
+        self.output_path = output_path
+        self.output_id = self.output_path.name
         self.query_file = query_file
         self.frequency = frequency
         self.mc_years = mc_years
@@ -164,12 +163,8 @@ class AggregatorManager:
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
             else "links"
         )
-        self.mc_ind_path = self.study_path / MC_TEMPLATE_PARTS.format(
-            sim_id=self.output_id, mc_root=MCRoot.MC_IND.value
-        )
-        self.mc_all_path = self.study_path / MC_TEMPLATE_PARTS.format(
-            sim_id=self.output_id, mc_root=MCRoot.MC_ALL.value
-        )
+        self.mc_ind_path = self.output_path / "economy" / MCRoot.MC_IND.value
+        self.mc_all_path = self.output_path / "economy" / MCRoot.MC_ALL.value
         self.mc_root = (
             MCRoot.MC_IND
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
@@ -442,7 +437,7 @@ class AggregatorManager:
 
         logger.info(
             f"Parsing {len(all_output_files)} {self.frequency.value} files"
-            f"to build the aggregated output for study `{self.study_path.name}`"
+            f"to build the aggregated output {self.output_id}"
         )
         # builds final dataframe
         final_df = self._build_dataframe(all_output_files)
