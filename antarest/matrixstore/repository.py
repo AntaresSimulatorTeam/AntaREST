@@ -152,25 +152,22 @@ class MatrixContentRepository:
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
         self.format = format
 
-    def get(self, matrix_hash: str) -> pd.DataFrame:
+    def get(self, matrix_hash: str, matrix_version: int) -> pd.DataFrame:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
 
         Parameters:
             matrix_hash: SHA256 hash
+            matrix_version: The matrix version. Needed for parsing
 
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        storage_format: Optional[InternalMatrixFormat] = None
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():
-                storage_format = internal_format
-                break
-        if not storage_format:
-            raise FileNotFoundError(str(matrix_path.with_suffix("")))
-        return load_matrix(storage_format, matrix_path)
+                return load_matrix(internal_format, matrix_path, matrix_version)
+        raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))
 
     def exists(self, matrix_hash: str) -> bool:
         """

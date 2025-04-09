@@ -30,7 +30,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
-from antarest.matrixstore.exceptions import MatrixDataSetNotFound
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -112,8 +112,8 @@ class TestMatrixService:
         # missing_case: the matrix is missing in the database
         with db():
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
-            obj = matrix_service.get(missing_hash)
-        assert obj is None
+            with pytest.raises(MatrixNotFound, match=f"Matrix {missing_hash} doesn't exist"):
+                matrix_service.get(missing_hash)
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""

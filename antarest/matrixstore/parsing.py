@@ -17,20 +17,17 @@ import pandas as pd
 from antarest.core.config import InternalMatrixFormat
 
 
-def load_matrix(matrix_format: InternalMatrixFormat, path: Path) -> pd.DataFrame:
+def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pd.DataFrame:
     if path.stat().st_size == 0:
         return pd.DataFrame()
     if matrix_format == InternalMatrixFormat.TSV:
-        # The legacy format is TSV, so we have to handle both cases
-        # To know if we're opening a legacy matrix or not we have to seek the first bytes of the file
-        # Legacy
-        header = None
-        index_col = None
-        with open(path, "r") as f:
-            if f.read(1) == "\t":
-                # New format
-                header = 0
-                index_col = 0
+        # Based on the matrix version, we assume its format
+        if matrix_version == 1:
+            header = None
+            index_col = None
+        else:
+            header = 0
+            index_col = 0
         df = pd.read_csv(path, sep="\t", index_col=index_col, header=header)
         # Specific treatment on columns to fit with other formats
         length_range = range(len(df.columns))

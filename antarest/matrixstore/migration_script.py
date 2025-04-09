@@ -15,15 +15,18 @@ from functools import partial
 from pathlib import Path
 
 from antarest.core.config import InternalMatrixFormat
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.matrixstore.model import Matrix
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
 
 
-def migrate_matrix(matrix_path: Path, matrix_format: InternalMatrixFormat) -> None:
-    new_path = matrix_path.parent.joinpath(matrix_path.stem + f".{matrix_format.value}")
+def migrate_matrix(matrix_path: Path, matrix_format: InternalMatrixFormat, version_mapping: dict[str, int]) -> None:
+    matrix_id = matrix_path.stem
+    new_path = matrix_path.parent.joinpath(matrix_id + f".{matrix_format.value}")
     old_format = InternalMatrixFormat(matrix_path.suffix[1:])  # remove the "."
-    df = load_matrix(old_format, matrix_path)
+    df = load_matrix(old_format, matrix_path, version_mapping[matrix_id])
     save_matrix(matrix_format, df, new_path)
     matrix_path.unlink()
 
@@ -37,10 +40,14 @@ def migrate_matrixstore(matrix_store_path: Path, format: InternalMatrixFormat) -
     if matrices:
         logger.info("Matrix store migration starts")
 
+        with db():
+            all_matrices = db.session.query(Matrix).all()
+            version_mapping = {matrix.id: matrix.version for matrix in all_matrices}
+
         import multiprocessing
         from multiprocessing import Pool
 
-        migrate_with_format = partial(migrate_matrix, matrix_format=format)
+        migrate_with_format = partial(migrate_matrix, matrix_format=format, version_mapping=version_mapping)
         with Pool(processes=multiprocessing.cpu_count()) as pool:
             pool.map(migrate_with_format, matrices)
 
