@@ -15,7 +15,7 @@ import io
 import logging
 from http import HTTPStatus
 from pathlib import Path, PurePosixPath
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Annotated, Any, Dict, List, Optional, Sequence
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request
 from markupsafe import escape
@@ -355,7 +355,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     def copy_study(
         uuid: str,
         dest: str,
-        with_outputs: bool = False,
+        output_ids: Annotated[list[str], Query(default_factory=list)],
+        with_outputs: bool | None = None,
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
@@ -371,8 +372,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
+            It is recommended and set as the default value: True.
         - `destination_folder`: The destination path where the study will be copied.
-          It is recommended and set as the default value: True.
+        - `output_ids`: A list of output names that you want to include in the destination study.
 
         Returns:
         - The unique identifier of the task copying the study.
@@ -382,7 +384,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         group_ids = [sanitize_string(gid) for gid in group_ids]
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
-
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
@@ -393,6 +394,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             use_task=use_task,
             params=params,
             destination_folder=PurePosixPath(destination_folder),
+            output_ids=output_ids,
         )
 
         return task_id
