@@ -17,7 +17,6 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Dict, List, Optional
 
-import pandas as pd
 import yaml
 
 from antarest.core.model import JSON
@@ -37,18 +36,6 @@ class InternalMatrixFormat(StrEnum):
     HDF = "hdf"
     PARQUET = "parquet"
     FEATHER = "feather"
-
-    def save_matrix(self, dataframe: pd.DataFrame, path: Path) -> None:
-        if self == InternalMatrixFormat.TSV:
-            dataframe.to_csv(path, sep="\t", float_format="%.6f")
-        elif self == InternalMatrixFormat.HDF:
-            dataframe.to_hdf(str(path), key="data")
-        elif self == InternalMatrixFormat.PARQUET:
-            dataframe.to_parquet(path, compression=None)
-        elif self == InternalMatrixFormat.FEATHER:
-            dataframe.to_feather(path)
-        else:
-            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
 
 @dataclass(frozen=True)

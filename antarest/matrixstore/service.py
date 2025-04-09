@@ -113,7 +113,7 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def create(self, data: pd.DataFrame) -> str:
-        return self.matrix_content_repository.save(data)
+        return self.matrix_content_repository.save(data).hash
 
     @override
     def get(self, matrix_id: str) -> MatrixDTO:
@@ -179,17 +179,19 @@ class MatrixService(ISimpleMatrixService):
             The `MatrixGarbageCollector` class is responsible for removing
             unreferenced matrices to avoid leaving unused files lying around.
         """
-        matrix_id = self.matrix_content_repository.save(data)
-        with db():
-            # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-            created_at = datetime.utcnow()
-            matrix = Matrix(
-                id=matrix_id,
-                width=data.shape[1],
-                height=data.shape[0],
-                created_at=created_at,
-            )
-            self.repo.save(matrix)
+        matrix_metadata = self.matrix_content_repository.save(data)
+        matrix_id = matrix_metadata.hash
+        if not matrix_metadata.new:
+            # Nothing to change inside the DB
+            return matrix_id
+        else:
+            with db():
+                # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+                created_at = datetime.utcnow()
+                matrix = Matrix(
+                    id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2
+                )
+                self.repo.save(matrix)
         return matrix_id
 
     def create_by_importation(self, file: UploadFile, is_json: bool = False) -> List[MatrixInfoDTO]:
@@ -377,7 +379,7 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.repo.get(matrix_id)
         if matrix is None:
             raise MatrixNotFound(matrix_id)
-        content = self.matrix_content_repository.get(matrix_id)
+        content = self.matrix_content_repository.get(matrix_id, matrix.version)
         return MatrixDTO.model_construct(
             id=matrix.id,
             width=matrix.width,

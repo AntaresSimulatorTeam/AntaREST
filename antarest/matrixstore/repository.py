@@ -12,6 +12,7 @@
 
 import hashlib
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
@@ -134,6 +135,12 @@ class MatrixRepository:
         logger.debug(f"Matrix {matrix_hash} deleted")
 
 
+@dataclass
+class MatrixMetaData:
+    hash: str
+    new: bool
+
+
 class MatrixContentRepository:
     """
     Manage the content of matrices stored in a directory.
@@ -185,7 +192,7 @@ class MatrixContentRepository:
                 return True
         return False
 
-    def save(self, content: pd.DataFrame) -> str:
+    def save(self, content: pd.DataFrame) -> MatrixMetaData:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
@@ -217,7 +224,7 @@ class MatrixContentRepository:
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
-            return matrix_hash
+            return MatrixMetaData(hash=matrix_hash, new=False)
 
         lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
         for internal_format in InternalMatrixFormat:
@@ -228,7 +235,7 @@ class MatrixContentRepository:
                 with FileLock(lock_file, timeout=15):
                     save_matrix(self.format, content, matrix_path)
                     matrix_in_another_format_path.unlink()
-                return matrix_hash
+                return MatrixMetaData(hash=matrix_hash, new=True)
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
         with FileLock(lock_file, timeout=15):
@@ -242,7 +249,7 @@ class MatrixContentRepository:
             # However, this deletion is possible when the matrix is no longer in use.
             # This is done in `MatrixGarbageCollector` when matrix files are deleted.
 
-        return matrix_hash
+        return MatrixMetaData(hash=matrix_hash, new=True)
 
     def delete(self, matrix_hash: str) -> None:
         """
