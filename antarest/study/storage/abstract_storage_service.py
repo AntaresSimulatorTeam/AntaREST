@@ -28,29 +28,30 @@ from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO
-from antarest.study.common.outputstorage import IOutputStorageService
-from antarest.study.common.studystorage import IStudyStorageService, T
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
     Patch,
     PatchStudy,
+    Study,
     StudyAdditionalData,
     StudyMetadataDTO,
     StudySimResultDTO,
     StudySimSettingsDTO,
 )
+from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.study_storage import IStudyStorage
 from antarest.study.storage.utils import extract_output_name, fix_study_root, remove_from_cache
 
 logger = logging.getLogger(__name__)
 
 
-class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], ABC):
+class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
     def __init__(
         self,
         config: Config,
@@ -64,7 +65,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
     @override
     def get_study_information(
         self,
-        study: T,
+        study: Study,
     ) -> StudyMetadataDTO:
         additional_data = study.additional_data or StudyAdditionalData()
 
@@ -112,7 +113,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
     @override
     def get(
         self,
-        metadata: T,
+        metadata: Study,
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
@@ -154,7 +155,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
     @override
     def get_file(
         self,
-        metadata: T,
+        metadata: Study,
         url: str = "",
         use_cache: bool = True,
     ) -> OriginalFile:
@@ -179,7 +180,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
     @override
     def get_study_sim_result(
         self,
-        study: T,
+        study: Study,
     ) -> List[StudySimResultDTO]:
         """
         Get global result information
@@ -225,7 +226,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
     @override
     def import_output(
         self,
-        metadata: T,
+        metadata: Study,
         output: BinaryIO | Path,
         output_name: Optional[str] = None,
     ) -> Optional[str]:
@@ -283,7 +284,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
         return output_full_name
 
     @override
-    def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
+    def export_study(self, metadata: Study, target: Path, outputs: bool = True) -> Path:
         """
         Export and compress the study inside a 7zip file.
 
@@ -308,7 +309,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
         return target
 
     @override
-    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
+    def export_output(self, metadata: Study, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
         Args:
@@ -342,7 +343,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
         return study_additional_data
 
     @override
-    def archive_study_output(self, study: T, output_id: str) -> bool:
+    def archive_study_output(self, study: Study, output_id: str) -> bool:
         try:
             archive_dir(
                 Path(study.path) / "output" / output_id,
@@ -360,7 +361,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
             return False
 
     @override
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
+    def unarchive_study_output(self, study: Study, output_id: str, keep_src_zip: bool) -> bool:
         if not (Path(study.path) / "output" / f"{output_id}{ArchiveFormat.ZIP}").exists():
             logger.warning(
                 f"Failed to archive study {study.name} output {output_id}. Maybe it's already unarchived",
@@ -380,3 +381,7 @@ class AbstractStorageService(IStudyStorageService[T], IOutputStorageService[T], 
                 exc_info=e,
             )
             return False
+
+    @override
+    def get_output_path(self, study: Study, output_id: str) -> Path:
+        return self.get_study_path(study) / "output" / output_id

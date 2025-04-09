@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path, PurePosixPath
-from typing import Generic, List, Optional, Sequence, TypeVar
+from typing import List, Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
@@ -22,12 +22,10 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
-T = TypeVar("T", bound=Study)
 
-
-class IStudyStorageService(ABC, Generic[T]):
+class IStudyStorage(ABC):
     @abstractmethod
-    def create(self, metadata: T) -> T:
+    def create(self, metadata: Study) -> Study:
         """
         Create empty new study
         Args:
@@ -38,13 +36,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get(
-        self,
-        metadata: T,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-    ) -> JSON:
+    def get(self, metadata: Study, url: str = "", depth: int = 3, formatted: bool = True) -> JSON:
         """
         Entry point to fetch data inside study.
         Args:
@@ -58,11 +50,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_file(
-        self,
-        metadata: T,
-        url: str = "",
-    ) -> OriginalFile:
+    def get_file(self, metadata: Study, url: str = "") -> OriginalFile:
         """
         Entry point to fetch for a specific file inside a study folder
 
@@ -75,7 +63,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def exists(self, metadata: T) -> bool:
+    def exists(self, metadata: Study) -> bool:
         """
         Check study exist.
         Args:
@@ -88,13 +76,13 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def copy(
         self,
-        src_meta: T,
+        src_meta: Study,
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-    ) -> T:
+    ) -> Study:
         """
         Create a new study by copying a reference study.
 
@@ -111,13 +99,13 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_study_information(self, metadata: T) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: Study) -> StudyMetadataDTO:
         """Get study information."""
 
     @abstractmethod
     def get_raw(
         self,
-        metadata: T,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -132,7 +120,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def delete(self, metadata: T) -> None:
+    def delete(self, metadata: Study) -> None:
         """
         Delete study
         Args:
@@ -167,7 +155,7 @@ class IStudyStorageService(ABC, Generic[T]):
             raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @abstractmethod
-    def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
+    def export_study(self, metadata: Study, target: Path, outputs: bool = True) -> Path:
         """
         Export and compress a study to a ZIP file.
 
@@ -183,7 +171,7 @@ class IStudyStorageService(ABC, Generic[T]):
     @abstractmethod
     def export_study_flat(
         self,
-        metadata: T,
+        metadata: Study,
         dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
@@ -201,7 +189,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
@@ -212,5 +200,5 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def initialize_additional_data(self, study: T) -> bool:
+    def initialize_additional_data(self, study: Study) -> bool:
         """Initialize additional data for a study."""

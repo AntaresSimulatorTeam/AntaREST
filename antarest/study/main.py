@@ -26,6 +26,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -119,8 +120,7 @@ def build_study_service(
 
     output_service = output_service or OutputService(
         study_service=study_service,
-        raw_study_service=raw_study_service,
-        variant_study_service=variant_study_service,
+        storage=OutputStorageDispatcher(raw_study_service, variant_study_service),
         task_service=task_service,
         file_transfer_manager=file_transfer_manager,
         event_bus=event_bus,

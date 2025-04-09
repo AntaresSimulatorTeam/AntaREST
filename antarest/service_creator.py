@@ -47,6 +47,7 @@ from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
@@ -164,10 +165,12 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
         user_service=login_service,
         event_bus=event_bus,
     )
+    storage_dispatcher = OutputStorageDispatcher(
+        study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
+    )
     output_service = OutputService(
         study_service=study_service,
-        raw_study_service=study_service.storage_service.raw_study_service,
-        variant_study_service=study_service.storage_service.variant_study_service,
+        storage=storage_dispatcher,
         task_service=task_service,
         file_transfer_manager=filetransfer_service,
         event_bus=event_bus,

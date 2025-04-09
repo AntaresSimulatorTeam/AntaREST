@@ -12,18 +12,16 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import BinaryIO, Generic, List, Optional, TypeVar
+from typing import BinaryIO, List, Optional
 
 from antarest.study.model import Study, StudySimResultDTO
 
-T = TypeVar("T", bound=Study)
 
-
-class IOutputStorageService(ABC, Generic[T]):
+class IOutputStorage(ABC):
     @abstractmethod
     def import_output(
         self,
-        study: T,
+        study: Study,
         output: BinaryIO | Path,
         output_name: Optional[str] = None,
     ) -> Optional[str]:
@@ -37,7 +35,7 @@ class IOutputStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, metadata: Study) -> List[StudySimResultDTO]:
         """
         Get global result information
 
@@ -49,7 +47,7 @@ class IOutputStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def delete_output(self, metadata: T, output_id: str) -> None:
+    def delete_output(self, metadata: Study, output_id: str) -> None:
         """
         Delete a simulation output
         Args:
@@ -61,7 +59,7 @@ class IOutputStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
+    def export_output(self, metadata: Study, output_id: str, target: Path) -> None:
         """
         Export and compresses study inside zip
         Args:
@@ -74,10 +72,14 @@ class IOutputStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def archive_study_output(self, study: T, output_id: str) -> bool:
+    def archive_study_output(self, study: Study, output_id: str) -> bool:
         """Archive a study output."""
 
     # noinspection SpellCheckingInspection
     @abstractmethod
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
+    def unarchive_study_output(self, study: Study, output_id: str, keep_src_zip: bool) -> bool:
         """Un-archive a study output."""
+
+    @abstractmethod
+    def get_output_path(self, study: Study, output_id: str) -> Path:
+        """Returns the output path for the given output_id"""

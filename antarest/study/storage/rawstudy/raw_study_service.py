@@ -63,7 +63,7 @@ def copy_output_folders(
             shutil.copytree(src_output_path, dest_output_path)
 
 
-class RawStudyService(AbstractStorageService[RawStudy]):
+class RawStudyService(AbstractStorageService):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
