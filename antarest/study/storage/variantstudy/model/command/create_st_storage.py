@@ -216,7 +216,10 @@ class CreateSTStorage(ICommand):
             self.study_version, **self.parameters.model_dump(mode="json", by_alias=True)
         )
         area.st_storages.append(storage_config)
-
+        return CommandOutput(
+            status=True,
+            message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
+        )
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -251,10 +254,7 @@ class CreateSTStorage(ICommand):
         }
         study_data.tree.save(new_data)
 
-        return CommandOutput(
-            status=True,
-            message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
-        )
+        return output
 
     @override
     def to_dto(self) -> CommandDTO:
