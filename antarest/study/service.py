@@ -1176,22 +1176,32 @@ class StudyService:
         with_outputs: bool | None,
     ) -> str:
         """
-        Copy study to another location.
+        Create a new study by copying a reference study.
+
+        This method is responsible for duplicating a study, optionally including its outputs.
+
+        Output copy behavior:
+            - If `with_outputs` is True and `output_ids` are specified: only the specified outputs are copied.
+            - If `with_outputs` is True and `output_ids` is empty: all outputs are copied.
+            - If `with_outputs` is False and `output_ids` are specified: an error is raised (incoherent configuration).
+            - If `with_outputs` is False: no outputs are copied
+            - If `with_outputs` is None and `output_ids` are specified: outputs will be copied; behaves like `with_outputs=True`.
+            - If `with_outputs` is None and `output_ids` is empty: no outputs are copied.
 
         Args:
-            src_uuid: source study
-            dest_study_name: destination study
-            group_ids: group to attach on new study
+            src_uuid: The source study that you want to copy.
+            dest_study_name: The name for the destination study.
+            group_ids: A list of groups to assign to the destination study.
             use_task: indicate if the task job service should be used
             params: request parameters
-            destination_folder: destination path
+            destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             output_ids: A list of output names that you want to include in the destination study.
-            with_outputs: Indicates whether the study's outputs should also be duplicated.
+            with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
-            The unique identifier of the task copying the study.
+            The newly created study.
         """
-        if output_ids and not with_outputs:
+        if output_ids and with_outputs is False:
             raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
 
         src_study = self.get_study(src_uuid)

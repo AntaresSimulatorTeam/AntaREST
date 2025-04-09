@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 def copy_output_folders(
     src_output_path: Path, dest_output_path: Path, with_outputs: bool | None, selected_outputs: List[str]
 ) -> None:
-    if with_outputs:
+    if with_outputs or (with_outputs is None and selected_outputs):
         if selected_outputs:  # if some outputs are selected, we copy only them
             for file_name in selected_outputs:
                 src_folder = src_output_path / file_name

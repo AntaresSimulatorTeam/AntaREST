@@ -1843,130 +1843,21 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
     assert study_folder == "folder/" + study_id
 
 
-def test_copy_raw_with_specific_output(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+def test_copy_with_specific_output(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     raw = client.post("/v1/studies?name=raw")
+    copy_with_output(client, tmp_path, raw.json())
 
-    output_base_dir = tmp_path / "internal_workspace" / raw.json() / "output"
-    output_base_dir.mkdir(parents=True, exist_ok=True)
-
-    for i in range(3):  # output1 à output3
-        output_dir = output_base_dir / f"output{i}"
-        output_dir.mkdir(parents=True, exist_ok=True)
-        (output_dir / "result.txt").write_text(f"Output data for output{i}")
-
-    # Copy a study with two outputs
-
-    res = client.post(
-        f"/v1/studies/{raw.json()}/copy",
-        params={
-            "dest": "copied",
-            "with_outputs": True,
-            "use_task": False,
-            "output_ids": ["output0", "output1"],
-        },
-    )
-
-    expected = ["output0", "output1"]
-    folder = tmp_path / "internal_workspace" / res.json() / "output"
-
-    for f in expected:
-        dir_ = folder / f
-        assert dir_.is_dir()
-        assert (dir_ / "result.txt").exists()
-
-    assert not (folder / "output2").exists()
-
-    # Copy a study but with the with_output boolean set to False, should raise an error
-
-    copy = client.post(
-        f"/v1/studies/{raw.json()}/copy",
-        params={
-            "dest": "copied",
-            "with_outputs": False,
-            "use_task": False,
-            "output_ids": ["output2"],
-        },
-    )
-    assert copy.status_code == 400
-    assert copy.json() == {
-        "description": "output_ids can only be used with with_outputs=True",
-        "exception": "IncorrectArgumentsForCopy",
-    }
-
-    # Copy a study but without the outputs
-
-    copy = client.post(
-        f"/v1/studies/{raw.json()}/copy",
-        params={
-            "dest": "copied",
-            "with_outputs": False,
-            "use_task": False,
-        },
-    )
-    assert copy.status_code == 201
-
-    # Copy a study with the boolean set but no id. Should copy all the outputs
-
-    res = client.post(
-        f"/v1/studies/{raw.json()}/copy",
-        params={
-            "dest": "copied",
-            "with_outputs": True,
-            "use_task": False,
-        },
-    )
-
-    expected = ["output0", "output1", "output2"]
-    folder = tmp_path / "internal_workspace" / res.json() / "output"
-
-    for f in expected:
-        dir_ = folder / f
-        assert dir_.is_dir()
-        assert (dir_ / "result.txt").exists()
-
-    # Copy a study with  no boolean aand no id. Should not copy the outputs
-
-    res = client.post(
-        f"/v1/studies/{raw.json()}/copy",
-        params={
-            "dest": "copied",
-            "use_task": False,
-        },
-    )
-    not_expected = ["output0", "output1", "output2"]
-    folder = tmp_path / "internal_workspace" / res.json() / "output"
-
-    for f in not_expected:
-        dir_ = folder / f
-        assert not dir_.exists()
-
-    # Try to copy a non-existing output
-
-    res = client.post(
-        f"/v1/studies/{raw.json()}/copy",
-        params={
-            "dest": "copied",
-            "use_task": False,
-            "with_outputs": True,
-            "output_ids": ["output10"],
-        },
-    )
-    assert res.status_code == 400
-    assert res.json()["description"].startswith("Output folder output10 not found in")
-
-
-def test_copy_variant_with_specific_output(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-    raw = client.post("/v1/studies?name=raw")
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
+    copy_with_output(client, tmp_path, variant.json())
 
-    output_base_dir = tmp_path / "internal_workspace" / variant.json() / "output"
+
+def copy_with_output(client, tmp_path, study_id):
+    output_base_dir = tmp_path / "internal_workspace" / study_id / "output"
     output_base_dir.mkdir(parents=True, exist_ok=True)
 
-    for i in range(3):  # output1 à output3
+    for i in range(3):
         output_dir = output_base_dir / f"output{i}"
         output_dir.mkdir(parents=True, exist_ok=True)
         (output_dir / "result.txt").write_text(f"Output data for output{i}")
@@ -1974,7 +1865,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     # Copy a study with two outputs
 
     res = client.post(
-        f"/v1/studies/{variant.json()}/copy",
+        f"/v1/studies/{study_id}/copy",
         params={
             "dest": "copied",
             "with_outputs": True,
@@ -1990,13 +1881,12 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
         dir_ = folder / f
         assert dir_.is_dir()
         assert (dir_ / "result.txt").exists()
-
     assert not (folder / "output2").exists()
 
     # Copy a study but with the with_output boolean set to False, should raise an error
 
     copy = client.post(
-        f"/v1/studies/{variant.json()}/copy",
+        f"/v1/studies/{study_id}/copy",
         params={
             "dest": "copied",
             "with_outputs": False,
@@ -2004,6 +1894,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
             "output_ids": ["output2"],
         },
     )
+
     assert copy.status_code == 400
     assert copy.json() == {
         "description": "output_ids can only be used with with_outputs=True",
@@ -2013,7 +1904,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     # Copy a study but without the outputs
 
     copy = client.post(
-        f"/v1/studies/{variant.json()}/copy",
+        f"/v1/studies/{study_id}/copy",
         params={
             "dest": "copied",
             "with_outputs": False,
@@ -2025,7 +1916,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     # Copy a study with the boolean set but no id. Should copy all the outputs
 
     res = client.post(
-        f"/v1/studies/{variant.json()}/copy",
+        f"/v1/studies/{study_id}/copy",
         params={
             "dest": "copied",
             "with_outputs": True,
@@ -2035,21 +1926,21 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
 
     expected = ["output0", "output1", "output2"]
     folder = tmp_path / "internal_workspace" / res.json() / "output"
-
     for f in expected:
         dir_ = folder / f
         assert dir_.is_dir()
         assert (dir_ / "result.txt").exists()
 
-    # Copy a study with  no boolean and no id. Should not copy the outputs
+    # Copy a study with no boolean and no id. Should not copy the outputs
 
     res = client.post(
-        f"/v1/studies/{variant.json()}/copy",
+        f"/v1/studies/{study_id}/copy",
         params={
             "dest": "copied",
             "use_task": False,
         },
     )
+
     not_expected = ["output0", "output1", "output2"]
     folder = tmp_path / "internal_workspace" / res.json() / "output"
 
@@ -2060,7 +1951,7 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     # Try to copy a non-existing output
 
     res = client.post(
-        f"/v1/studies/{variant.json()}/copy",
+        f"/v1/studies/{study_id}/copy",
         params={
             "dest": "copied",
             "use_task": False,
@@ -2070,6 +1961,23 @@ def test_copy_variant_with_specific_output(client: TestClient, admin_access_toke
     )
     assert res.status_code == 400
     assert res.json()["description"].startswith("Output folder output10 not found in")
+
+    # Copy an output without the boolean set. The with_outputs boolean is implicitly True
+
+    res = client.post(
+        f"/v1/studies/{study_id}/copy",
+        params={
+            "dest": "copied",
+            "use_task": False,
+            "output_ids": ["output1"],
+        },
+    )
+    assert res.status_code == 201
+    expected = "output1"
+    folder = tmp_path / "internal_workspace" / res.json() / "output"
+    dir_ = folder / expected
+    assert dir_.is_dir()
+    assert (dir_ / "result.txt").exists()
 
 
 def test_areas_deletion_with_binding_constraints(
