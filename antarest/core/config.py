@@ -12,6 +12,7 @@
 
 import multiprocessing
 import tempfile
+from abc import ABC
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -304,8 +305,22 @@ class TimeLimitConfig:
         raise ValueError(msg)
 
 
+class LauncherType(StrEnum):
+    LOCAL = "local"
+    SLURM = "slurm"
+
+
 @dataclass(frozen=True)
-class LocalConfig:
+class AbstractLauncherConfig(ABC):
+    """Abstract class dedicated to launcher module"""
+
+    id: str = ""
+    name: str = ""
+    type: LauncherType = LauncherType.LOCAL
+
+
+@dataclass(frozen=True)
+class LocalConfig(AbstractLauncherConfig):
     """Sub config object dedicated to launcher module (local)"""
 
     binaries: Dict[str, Path] = field(default_factory=dict)
@@ -324,6 +339,9 @@ class LocalConfig:
         Returns: object NbCoresConfig
         """
         defaults = cls()
+        launcher_id = data.get("id", defaults.id)
+        name = data.get("name", defaults.name)
+        type = data.get("type", defaults.type)
         binaries = data.get("binaries", defaults.binaries)
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
@@ -332,6 +350,9 @@ class LocalConfig:
         xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
         local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
         return cls(
+            id=launcher_id,
+            name=name,
+            type=type,
             binaries={str(v): Path(p) for v, p in binaries.items()},
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
@@ -352,7 +373,7 @@ class LocalConfig:
 
 
 @dataclass(frozen=True)
-class SlurmConfig:
+class SlurmConfig(AbstractLauncherConfig):
     """
     Sub config object dedicated to launcher module (slurm)
     """
@@ -384,6 +405,9 @@ class SlurmConfig:
         Returns: object SlurmConfig
         """
         defaults = cls()
+        launcher_id = data.get("id", defaults.id)
+        name = data.get("name", defaults.name)
+        type = data.get("type", defaults.type)
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
         if "default_n_cpu" in data:
@@ -397,6 +421,9 @@ class SlurmConfig:
         max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
+            id=launcher_id,
+            name=name,
+            type=type,
             local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
             username=data.get("username", defaults.username),
             hostname=data.get("hostname", defaults.hostname),
@@ -441,21 +468,27 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: Optional[LocalConfig] = None
-    slurm: Optional[SlurmConfig] = None
+    local: List[LocalConfig] = None
+    slurm: List[SlurmConfig] = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
         defaults = cls()
         default = data.get("default", cls.default)
-        local = LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
-        slurm = SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
         batch_size = data.get("batch_size", defaults.batch_size)
+        launchers: List[AbstractLauncherConfig] = []
+        for launcher in data["launchers"]:
+            if launcher["type"] == "local":
+                config = LocalConfig.from_dict(launcher)
+            elif launcher["type"] == "slurm":
+                config = SlurmConfig.from_dict(launcher)
+            else:
+                continue
+            launchers.append(cast(AbstractLauncherConfig, config))
         return cls(
             default=default,
-            local=local,
-            slurm=slurm,
+            launchers=launchers,
             batch_size=batch_size,
         )
 

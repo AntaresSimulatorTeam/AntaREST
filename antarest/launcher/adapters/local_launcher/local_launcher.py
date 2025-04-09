@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from antares.study.version import SolverVersion
 from typing_extensions import override
 
-from antarest.core.config import Config
+from antarest.core.config import LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -40,15 +40,13 @@ class LocalLauncher(AbstractLauncher):
 
     def __init__(
         self,
-        config: Config,
+        config: LocalConfig,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        if self.config.launcher.local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        self.local_workspace = self.config.launcher.local.local_workspace
+        self.local_workspace = self.config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
