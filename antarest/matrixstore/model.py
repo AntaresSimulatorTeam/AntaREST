@@ -41,6 +41,7 @@ class Matrix(Base):  # type: ignore
     width: int = Column(Integer)
     height: int = Column(Integer)
     created_at: datetime.datetime = Column(DateTime)
+    version: int = Column(Integer)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
