@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy import typing as npt
+from pandas._testing import assert_frame_equal
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import InternalMatrixFormat
@@ -58,8 +59,8 @@ class TestMatrixRepository:
         bid = repo.save(pd.DataFrame(b))
         assert aid != bid
 
-        assert matrix_content_a.eq(repo.get(aid)).all().all()
-        assert matrix_content_b.eq(repo.get(bid)).all().all()
+        assert_frame_equal(matrix_content_a, repo.get(aid))
+        assert_frame_equal(matrix_content_b, repo.get(bid))
 
         repo.delete(aid)
         with pytest.raises(FileNotFoundError):
