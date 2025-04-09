@@ -92,7 +92,7 @@ SNAPSHOT_RELATIVE_PATH = "snapshot"
 OUTPUT_RELATIVE_PATH = "output"
 
 
-class VariantStudyService(AbstractStorageService[VariantStudy]):
+class VariantStudyService(AbstractStorageService):
     def __init__(
         self,
         task_service: ITaskService,
