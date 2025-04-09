@@ -154,7 +154,7 @@ class CreateLink(AbstractLinkCommand):
             ],
         )
 
-    def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
                 CommandOutput(
@@ -211,7 +211,7 @@ class CreateLink(AbstractLinkCommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
-        output, data = self.validate_data(study_data.config)
+        output, data = self.update_in_config(study_data.config)
         if not output.status:
             return output
 

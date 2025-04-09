@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from typing_extensions import override
 
@@ -63,9 +63,9 @@ class UpdateDistrict(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.id not in study_data.config.sets:
             return CommandOutput(
-                    status=False,
-                    message=f"District '{self.id}' does not exist and should be created",
-                )
+                status=False,
+                message=f"District '{self.id}' does not exist and should be created",
+            )
 
         data = self.update_in_config(study_data.config)
 

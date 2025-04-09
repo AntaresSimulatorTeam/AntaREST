@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, Final, List, Optional, Tuple, TypeAlias, Union, cast
+from typing import Any, Dict, Final, List, Optional, TypeAlias, Union, cast
 
 import numpy as np
 from pydantic import Field, ValidationInfo, model_validator
@@ -176,7 +176,7 @@ class CreateSTStorage(ICommand):
             new_values[field] = cls.validate_field(new_values.get(field, None), new_values, field)
         return new_values
 
-    def validate_data(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         """
         validate inputs and add the short-term storage in the storages list.
 
@@ -184,41 +184,31 @@ class CreateSTStorage(ICommand):
             study_data: The study data configuration.
 
         Returns:
-            A tuple containing the command output and a dictionary of extra data.
-            On success, the dictionary of extra data is `{"storage_id": storage_id}`.
+            A tuple containing the command output and the storage_id of the created storage.
         """
 
         # Check if the study version is above the minimum required version.
         storage_id = self.storage_id
         version = study_data.version
         if version < REQUIRED_VERSION:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
             )
 
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_id}' does not exist in the study configuration.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_id}' does not exist in the study configuration.",
             )
         area: Area = study_data.areas[self.area_id]
 
         # Check if the short-term storage already exists in the area
         if any(s.id == storage_id for s in area.st_storages):
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
             )
 
         # Create a new short-term storage and add it to the area
@@ -227,13 +217,6 @@ class CreateSTStorage(ICommand):
         )
         area.st_storages.append(storage_config)
 
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
-            ),
-            {"storage_id": storage_id},
-        )
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -249,7 +232,7 @@ class CreateSTStorage(ICommand):
             The output of the command execution.
         """
         storage_id = self.storage_id
-        output, _ = self.validate_data(study_data.config)
+        output = self.update_in_config(study_data.config)
         if not output.status:
             return output
 
@@ -268,7 +251,10 @@ class CreateSTStorage(ICommand):
         }
         study_data.tree.save(new_data)
 
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
