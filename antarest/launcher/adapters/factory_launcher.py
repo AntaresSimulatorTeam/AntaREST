@@ -32,7 +32,7 @@ class FactoryLauncher:
         cache: ICache,
     ) -> Dict[str, AbstractLauncher]:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
-        for launcher in config.launcher.launchers:
+        for launcher in config.launcher.launcher_configs or []:
             if isinstance(launcher, LocalConfig):
                 dict_launchers[launcher.name] = LocalLauncher(launcher, callbacks, event_bus, cache)
             elif isinstance(launcher, SlurmConfig):

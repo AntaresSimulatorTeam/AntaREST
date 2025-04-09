@@ -251,7 +251,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieving Min, Default, and Max Core Count",
         response_model=Dict[str, int],
     )
-    def get_nb_cores(launcher: Launcher = Launcher.DEFAULT) -> Dict[str, int]:
+    def get_nb_cores(launcher: str = Launcher.DEFAULT) -> Dict[str, int]:
         """
         Retrieve the numer of cores of the launcher.
 

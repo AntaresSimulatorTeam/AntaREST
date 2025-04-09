@@ -46,7 +46,7 @@ class LocalLauncher(AbstractLauncher):
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        self.local_workspace = self.config.local_workspace
+        self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path

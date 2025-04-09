@@ -22,6 +22,7 @@ import numpy as np
 import numpy.typing as npt
 import pandas as pd
 import yaml
+from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
@@ -305,18 +306,13 @@ class TimeLimitConfig:
         raise ValueError(msg)
 
 
-class LauncherType(StrEnum):
-    LOCAL = "local"
-    SLURM = "slurm"
-
-
 @dataclass(frozen=True)
 class AbstractLauncherConfig(ABC):
     """Abstract class dedicated to launcher module"""
 
     id: str = ""
     name: str = ""
-    type: LauncherType = LauncherType.LOCAL
+    type: Launcher = Launcher.LOCAL
 
 
 @dataclass(frozen=True)
@@ -370,6 +366,18 @@ class LocalConfig(AbstractLauncherConfig):
         max_cpu = multiprocessing.cpu_count()
         default = max(min_cpu, max_cpu - 2)
         return {"min": min_cpu, "max": max_cpu, "default": default}
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, LocalConfig):
+            return self.id == other.id
+        if isinstance(other, str):
+            return self.id == other
+        return NotImplemented
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.id)
 
 
 @dataclass(frozen=True)
@@ -449,6 +457,18 @@ class SlurmConfig(AbstractLauncherConfig):
     def _autodetect_nb_cores(cls) -> Dict[str, int]:
         raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
 
+    @override
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, SlurmConfig):
+            return self.id == other.id
+        if isinstance(other, str):
+            return self.id == other
+        return NotImplemented
+
+    @override
+    def __hash__(self) -> int:
+        return hash(self.id)
+
 
 class InvalidConfigurationError(Exception):
     """
@@ -468,8 +488,7 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: List[LocalConfig] = None
-    slurm: List[SlurmConfig] = None
+    launcher_configs: Optional[List[AbstractLauncherConfig]] = None
     batch_size: int = 9999
 
     @classmethod
@@ -480,26 +499,18 @@ class LauncherConfig:
         launchers: List[AbstractLauncherConfig] = []
         for launcher in data["launchers"]:
             if launcher["type"] == "local":
-                config = LocalConfig.from_dict(launcher)
+                launchers.append(LocalConfig.from_dict(launcher))
             elif launcher["type"] == "slurm":
-                config = SlurmConfig.from_dict(launcher)
+                launchers.append(SlurmConfig.from_dict(launcher))
             else:
                 continue
-            launchers.append(cast(AbstractLauncherConfig, config))
         return cls(
             default=default,
-            launchers=launchers,
+            launcher_configs=launchers,
             batch_size=batch_size,
         )
 
-    def __post_init__(self) -> None:
-        possible = {"local", "slurm"}
-        if self.default in possible:
-            return
-        msg = f"Invalid configuration: {self.default=} must be one of {possible!r}"
-        raise ValueError(msg)
-
-    def get_nb_cores(self, launcher: Launcher) -> "NbCoresConfig":
+    def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
         """
         Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
@@ -514,12 +525,10 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 the number of cores of a launcher that doesn't exist in the configuration.
         """
-        config_map = {"local": self.local, "slurm": self.slurm}
-        config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher.value)
-        if launcher_config is None:
-            raise InvalidConfigurationError(launcher.value)
-        return launcher_config.nb_cores
+        cfg = next((c for c in self.launcher_configs if c.id == launcher), None)
+        if cfg is None:
+            raise InvalidConfigurationError(launcher)
+        return cfg.nb_cores
 
     def get_time_limit(self, launcher: Launcher) -> TimeLimitConfig:
         """
@@ -536,12 +545,10 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 a property of a launcher that doesn't exist in the configuration.
         """
-        config_map = {"local": self.local, "slurm": self.slurm}
-        config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher.value)
-        if launcher_config is None:
+        cfg = next((c for c in self.launcher_configs if c.id == launcher), None)
+        if cfg is None:
             raise InvalidConfigurationError(launcher)
-        return launcher_config.time_limit
+        return cfg.time_limit
 
 
 @dataclass(frozen=True)
