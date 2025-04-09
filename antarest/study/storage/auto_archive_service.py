@@ -26,15 +26,17 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
 
 class AutoArchiveService(IService):
-    def __init__(self, study_service: StudyService, config: Config):
+    def __init__(self, study_service: StudyService, output_service: OutputService, config: Config):
         super(AutoArchiveService, self).__init__()
         self.study_service = study_service
+        self.output_service = output_service
         self.config = config
         self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
         self.max_parallel = self.config.storage.auto_archive_max_parallel
@@ -75,7 +77,7 @@ class AutoArchiveService(IService):
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
-                            self.study_service.archive_outputs(
+                            self.output_service.archive_outputs(
                                 study_id,
                                 params=RequestParameters(DEFAULT_ADMIN_USER),
                             )
