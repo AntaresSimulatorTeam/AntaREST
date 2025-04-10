@@ -10,13 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import hashlib
 from typing import Dict
 
-import numpy as np
 import pandas as pd
 from typing_extensions import override
 
+from antarest.matrixstore.repository import calculates_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -30,8 +29,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def create(self, data: pd.DataFrame) -> str:
-        matrix = np.ascontiguousarray(data.to_numpy())
-        matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+        matrix_hash = calculates_hash(data, legacy=False)
         self._content[matrix_hash] = data
         return matrix_hash
 

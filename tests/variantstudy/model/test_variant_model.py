@@ -27,7 +27,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -92,12 +91,9 @@ class TestVariantStudyService:
     def test_commands_service(
         self,
         root_study_id: str,
-        generator_matrix_constants: GeneratorMatrixConstants,
         jwt_user: JWTUser,
         variant_study_service: VariantStudyService,
     ) -> None:
-        # Initialize the default matrix constants
-        generator_matrix_constants.init_constant_matrices()
         params = RequestParameters(user=jwt_user)
 
         # Create a new variant
