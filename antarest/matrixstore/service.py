@@ -26,7 +26,7 @@ import py7zr
 from fastapi import UploadFile
 from typing_extensions import override
 
-from antarest.core.config import Config
+from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
@@ -47,6 +47,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
 )
+from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 # List of files to exclude from ZIP archives
@@ -527,12 +528,10 @@ class MatrixService(ISimpleMatrixService):
         """
         if not params.user:
             raise UserHasNotPermissionError()
-        if matrix := self.get(matrix_id):
-            array = np.array(matrix.data, dtype=np.float64)
-            if array.size == 0:
-                # If the array or dataframe is empty, create an empty file instead of
-                # traditional saving to avoid unwanted line breaks.
-                filepath.touch()
-            else:
-                # noinspection PyTypeChecker
-                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
+        matrix = self.get(matrix_id)
+        if matrix.empty:
+            # If the array or dataframe is empty, create an empty file instead of
+            # traditional saving to avoid unwanted line breaks.
+            filepath.touch()
+        else:
+            save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
