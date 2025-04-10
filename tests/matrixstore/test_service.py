@@ -46,6 +46,16 @@ from antarest.matrixstore.service import MatrixService
 
 MatrixType = t.List[t.List[float]]
 TEST_MATRIX = [[1, 2, 3], [4, 5, 6]]
+resource_path = (
+    PROJECT_DIR
+    / "tests"
+    / "integration"
+    / "raw_studies_blueprint"
+    / "assets"
+    / "aggregate_areas_raw_data"
+    / "test-01-all.result.tsv"
+)
+AGGREGATION_DF = pd.read_csv(resource_path, sep="\t")
 
 
 class TestMatrixService:
@@ -495,17 +505,10 @@ def test_hashing_method():
     other_df = pd.DataFrame(data=8760 * [1.0])
     assert calculates_hash(other_df, legacy=True) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
-    resource_path = (
-        PROJECT_DIR
-        / "tests"
-        / "integration"
-        / "raw_studies_blueprint"
-        / "assets"
-        / "aggregate_areas_raw_data"
-        / "test-01-all.result.tsv"
+    assert (
+        calculates_hash(AGGREGATION_DF, legacy=False)
+        == "9dc3c4daae74ef5b3abfd94d351125387050587ea6e5fa510eafbb091dde64ad"
     )
-    new_df = pd.read_csv(resource_path, sep="\t")
-    assert calculates_hash(new_df, legacy=False) == "9dc3c4daae74ef5b3abfd94d351125387050587ea6e5fa510eafbb091dde64ad"
 
 
 def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
