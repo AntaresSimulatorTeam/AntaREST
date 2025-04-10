@@ -58,6 +58,7 @@ from antarest.login.model import Identity
 from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 
 
 class TestLauncherService:
@@ -103,6 +104,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
@@ -170,6 +172,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -208,6 +211,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -284,6 +288,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -444,6 +449,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=config,
             study_service=Mock(),
+            output_service=Mock(),
             job_result_repository=Mock(),
             factory_launcher=Mock(),
             event_bus=Mock(),
@@ -550,6 +556,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(launcher=launcher_config),
             study_service=Mock(),
+            output_service=Mock(),
             job_result_repository=Mock(),
             factory_launcher=Mock(),
             event_bus=Mock(),
@@ -575,6 +582,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -609,6 +617,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -645,6 +654,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -716,10 +726,13 @@ class TestLauncherService:
 
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
+        output_service = Mock(spec=OutputService)
+        output_service.import_output.return_value = ""
 
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=output_service,
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -769,10 +782,10 @@ class TestLauncherService:
 
         launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
-        launcher_service.study_service.import_output.assert_called()
+        launcher_service.output_service.import_output.assert_called()
 
         launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER))
-        launcher_service.study_service.export_output.assert_called()
+        launcher_service.output_service.export_output.assert_called()
 
         launcher_service._import_output(
             zipped_job_id,
@@ -791,7 +804,7 @@ class TestLauncherService:
             ]
         )
 
-        launcher_service.study_service.import_output.side_effect = [
+        launcher_service.output_service.import_output.side_effect = [
             StudyNotFoundError(""),
             StudyNotFoundError(""),
         ]
@@ -836,6 +849,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -979,6 +993,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=config,
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=job_repository,
             event_bus=Mock(),
             factory_launcher=Mock(),

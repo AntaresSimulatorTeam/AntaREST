@@ -10,13 +10,12 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, Tuple, cast
+from typing import Any, Dict, List, Mapping, MutableMapping, Optional, cast
 
 import numpy as np
 from typing_extensions import override
 
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -95,10 +94,6 @@ class UpdateScenarioBuilder(ICommand):
 
         study_data.tree.save(curr_cfg, url)  # type: ignore
         return CommandOutput(status=True)
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True), {}
 
     @override
     def to_dto(self) -> CommandDTO:

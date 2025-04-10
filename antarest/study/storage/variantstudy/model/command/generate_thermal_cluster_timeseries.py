@@ -24,13 +24,13 @@ from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluste
 from typing_extensions import override
 
 from antarest.study.business.model.thermal_cluster_model import LocalTSGenerationBehavior
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
 from antarest.study.storage.utils import TS_GEN_PREFIX, TS_GEN_SUFFIX
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -46,10 +46,6 @@ class GenerateThermalClusterTimeSeries(ICommand):
     """
 
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        return CommandOutput(status=True, message="Nothing to do"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
