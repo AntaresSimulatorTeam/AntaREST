@@ -65,8 +65,10 @@ export const getWorkspaces = async () => {
  * @returns list of folders that are not studies, under the given path
  */
 export const getFolders = async (workspace: string, folderPath: string) => {
+  const encddwrkscpc = encodeURIComponent(workspace);
+  console.log("getfolderd encddwrkscpc", workspace, encddwrkscpc, decodeURIComponent(encddwrkscpc));
   const res = await client.get<NonStudyFolderDTO[]>(
-    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
+    `/v1/private/explorer/${encodeURIComponent(workspace)}/_list_dir?path=${encodeURIComponent(folderPath)}`,
     {
       timeout: 1000 * 3, // Wait for 3 seconds
     },
