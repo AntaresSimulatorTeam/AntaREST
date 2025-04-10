@@ -292,7 +292,7 @@ class TestDownloadMatrices:
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
         assert dataframe.index[0] == "2018-01-01 00:00:00"
         dataframe.index = range(len(dataframe))
-        transposed_matrix = list(zip(*[8760 * [1.0], 8760 * [1.0], 8760 * [1.0], 8760 * [0.0]]))
+        transposed_matrix = list(zip(*[8760 * [1], 8760 * [1], 8760 * [1], 8760 * [0]]))
         expected_df = pd.DataFrame(
             columns=["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],
             index=range(8760),
