@@ -17,7 +17,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
 import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import { createStudy, openExternalStudy, updateStudyFilters } from "@/redux/ducks/studies";
+import { createStudy, updateStudyFilters } from "@/redux/ducks/studies";
 import UploadDialog, { type UploadDialogProps } from "../../../common/dialogs/UploadDialog";
 import CreateStudyDialog from "../CreateStudyDialog";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";

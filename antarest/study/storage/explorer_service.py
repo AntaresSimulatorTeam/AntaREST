@@ -57,11 +57,8 @@ class Explorer:
         """
         return a list of all directories under workspace_directory_path, that aren't studies.
         """
-        print("coucou ", workspace_name, workspace_directory_path)
         workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
-        print("workspace", workspace)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
-        print("directory_path", directory_path)
         directories = []
         try:
             # this block is skipped in case of permission error
