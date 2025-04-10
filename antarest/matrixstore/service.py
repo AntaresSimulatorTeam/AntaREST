@@ -116,7 +116,7 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
-        return self.matrix_content_repository.get(matrix_id)
+        return self.matrix_content_repository.get(matrix_id, matrix_version=2)
 
     @override
     def exists(self, matrix_id: str) -> bool:
