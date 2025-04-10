@@ -51,9 +51,7 @@ class UriResolverService:
         df = self.matrix_service.get(id)
 
         if formatted:
-            index = [str(k) for k in df.index]
-            columns = [str(k) for k in df.columns]
-            return {"data": df.to_numpy().tolist(), "index": index, "columns": columns}
+            return {"data": df.to_numpy().tolist(), "index": list(df.index), "columns": list(df.columns)}
 
         if df.empty:
             return ""
