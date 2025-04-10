@@ -127,6 +127,13 @@ class TestMatrixService:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             assert not matrix_service.exists(missing_hash)
 
+    def test_same_hash_with_int_and_float_matrices(self, matrix_service: MatrixService) -> None:
+        data = TEST_MATRIX
+        matrix_id = matrix_service.create(pd.DataFrame(data))
+        data_as_float = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        matrix_id_as_float = matrix_service.create(pd.DataFrame(data_as_float))
+        assert matrix_id == matrix_id_as_float
+
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service

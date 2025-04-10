@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import hashlib
 import logging
 from dataclasses import dataclass
@@ -141,6 +140,13 @@ class MatrixMetaData:
     new: bool
 
 
+def calculates_hash(df: pd.DataFrame, legacy: bool = False) -> str:
+    if legacy:
+        return hashlib.sha256(np.ascontiguousarray(df.to_numpy()).data).hexdigest()
+    # todo: change this
+    return hashlib.sha256(np.ascontiguousarray(df.to_numpy()).data).hexdigest()
+
+
 class MatrixContentRepository:
     """
     Manage the content of matrices stored in a directory.
@@ -220,7 +226,17 @@ class MatrixContentRepository:
         #    of the floating point numbers which can introduce rounding errors.
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
-        matrix_hash = hashlib.sha256(np.ascontiguousarray(content.to_numpy()).data).hexdigest()
+
+        # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
+        legacy_format = False
+        if not any(dtype not in [float, int] for dtype in content.dtypes):
+            shape = content.shape
+            # We also need to check the headers to see if they correspond to the default ones
+            if content.index.equals(pd.RangeIndex(0, shape[0])) and content.columns.equals(pd.RangeIndex(0, shape[1])):
+                content = content.astype(float)
+                legacy_format = True
+
+        matrix_hash = calculates_hash(content, legacy_format)
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
