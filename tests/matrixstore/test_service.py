@@ -21,6 +21,7 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
+from conftest import PROJECT_DIR
 from fastapi import UploadFile
 from starlette.datastructures import Headers
 
@@ -40,6 +41,7 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.parsing import load_matrix
+from antarest.matrixstore.repository import calculates_hash
 from antarest.matrixstore.service import MatrixService
 
 MatrixType = t.List[t.List[float]]
@@ -480,6 +482,30 @@ def test_dataset_lifecycle() -> None:
 
     service.delete_dataset("dataset", userA)
     dataset_repo.delete.assert_called_once()
+
+
+def test_hashing_method():
+    """
+    Non-Regression Test for the hashing method
+    It's really important as the whole matrix-store behavior relies on this function
+    """
+    df = pd.DataFrame(TEST_MATRIX)
+    assert calculates_hash(df, legacy=True) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
+
+    other_df = pd.DataFrame(data=8760 * [1.0])
+    assert calculates_hash(other_df, legacy=True) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
+
+    resource_path = (
+        PROJECT_DIR
+        / "tests"
+        / "integration"
+        / "raw_studies_blueprint"
+        / "assets"
+        / "aggregate_areas_raw_data"
+        / "test-01-all.result.tsv"
+    )
+    new_df = pd.read_csv(resource_path, sep="\t")
+    assert calculates_hash(new_df, legacy=False) == "9dc3c4daae74ef5b3abfd94d351125387050587ea6e5fa510eafbb091dde64ad"
 
 
 def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
