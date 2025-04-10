@@ -73,7 +73,7 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        saved_df = load_matrix(InternalMatrixFormat.TSV, content_path)
+        saved_df = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=2)
         assert saved_df.equals(df_to_save)
 
         # A matrix object is stored in the database
@@ -514,7 +514,7 @@ def test_hashing_method():
 
     assert (
         calculates_hash(AGGREGATION_DF, legacy=False)
-        == "9dc3c4daae74ef5b3abfd94d351125387050587ea6e5fa510eafbb091dde64ad"
+        == "454707038a88e9308a5b49fd6b30f04ee116fd1cd1851a03a5ce09c490152c72"
     )
 
 
