@@ -20,7 +20,6 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
-from conftest import PROJECT_DIR
 from fastapi import UploadFile
 from helpers import with_db_context
 from starlette.datastructures import Headers
@@ -43,6 +42,7 @@ from antarest.matrixstore.model import (
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import calculates_hash
 from antarest.matrixstore.service import MatrixService
+from tests.conftest import PROJECT_DIR
 
 MatrixType = t.List[t.List[float]]
 TEST_MATRIX = [[1, 2, 3], [4, 5, 6]]
