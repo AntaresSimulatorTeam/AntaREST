@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
+from typing import Dict, Union
 
 import pytest
 
@@ -17,7 +18,7 @@ from antarest.core.config import InternalMatrixFormat, StorageConfig
 
 
 @pytest.fixture
-def storage_config_default():
+def storage_config_default() -> Dict[str, Union[str, int]]:
     return {
         "matrixstore": "./custom_matrixstore",
         "archive_dir": "./custom_archives",
@@ -37,7 +38,7 @@ def storage_config_default():
     }
 
 
-def test_storage_config_from_dict(storage_config_default):
+def test_storage_config_from_dict(storage_config_default: Dict[str, Union[str, int]]):
     data = {
         **storage_config_default,
         "workspaces": {
@@ -71,7 +72,7 @@ def test_storage_config_from_dict(storage_config_default):
     assert config.matrixstore_format == InternalMatrixFormat.TSV
 
 
-def test_storage_config_from_dict_validiation_errors(storage_config_default):
+def test_storage_config_from_dict_validiation_errors(storage_config_default: Dict[str, Union[str, int]]):
     data = {
         **storage_config_default,
         "workspaces": {
@@ -115,7 +116,7 @@ def test_storage_config_from_dict_validiation_errors(storage_config_default):
 
 
 @pytest.mark.unit_test
-def test_storage_default_aggregation_results_max_size_value(storage_config_default):
+def test_storage_default_aggregation_results_max_size_value(storage_config_default: Dict[str, Union[str, int]]):
     data = {
         **storage_config_default,
     }
