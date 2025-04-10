@@ -142,7 +142,7 @@ class MatrixMetaData:
 
 def calculates_hash(df: pd.DataFrame, legacy: bool = False) -> str:
     if legacy:
-        return hashlib.sha256(np.ascontiguousarray(df.to_numpy()).data).hexdigest()
+        return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=float)).data).hexdigest()
     # todo: change this
     return hashlib.sha256(np.ascontiguousarray(df.to_numpy()).data).hexdigest()
 
@@ -233,7 +233,6 @@ class MatrixContentRepository:
             shape = content.shape
             # We also need to check the headers to see if they correspond to the default ones
             if content.index.equals(pd.RangeIndex(0, shape[0])) and content.columns.equals(pd.RangeIndex(0, shape[1])):
-                content = content.astype(float)
                 legacy_format = True
 
         matrix_hash = calculates_hash(content, legacy_format)
