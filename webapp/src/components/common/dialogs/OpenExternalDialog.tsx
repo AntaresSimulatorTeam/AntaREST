@@ -15,7 +15,6 @@
 import type { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
-import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import { usePromise } from "react-use";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
@@ -23,7 +22,6 @@ import { openExternalStudy } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudyVersionsFormatted } from "../../../redux/selectors";
-import type { StudyPublicMode } from "../../../types/types";
 import FormDialog from "../../common/dialogs/FormDialog";
 import StringFE from "../../common/fieldEditors/StringFE";
 import Fieldset from "../../common/Fieldset";
@@ -45,7 +43,6 @@ function OpenExternalDialog(props: Props) {
   const { open, onClose } = props;
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const versionList = useAppSelector(getStudyVersionsFormatted);
   const mounted = usePromise();
   const dispatch = useAppDispatch();
 
