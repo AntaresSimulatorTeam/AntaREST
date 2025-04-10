@@ -53,9 +53,7 @@ class InternalMatrixFormat(StrEnum):
         elif self == InternalMatrixFormat.FEATHER:
             return pd.read_feather(path).to_numpy(dtype=np.float64)
         else:
-            raise NotImplementedError(
-                f"Internal matrix format '{self}' is not implemented"
-            )
+            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
     def save_matrix(self, dataframe: pd.DataFrame, path: Path) -> None:
         if self == InternalMatrixFormat.TSV:
@@ -67,9 +65,7 @@ class InternalMatrixFormat(StrEnum):
         elif self == InternalMatrixFormat.FEATHER:
             dataframe.to_feather(path)
         else:
-            raise NotImplementedError(
-                f"Internal matrix format '{self}' is not implemented"
-            )
+            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
 
 @dataclass(frozen=True)
@@ -89,9 +85,7 @@ class ExternalAuthConfig:
         return cls(
             url=data.get("url", defaults.url),
             default_group_role=(
-                RoleType(data["default_group_role"])
-                if "default_group_role" in data
-                else defaults.default_group_role
+                RoleType(data["default_group_role"]) if "default_group_role" in data else defaults.default_group_role
             ),
             add_ext_groups=data.get("add_ext_groups", defaults.add_ext_groups),
             group_mapping=data.get("group_mapping", defaults.group_mapping),
@@ -114,9 +108,7 @@ class SecurityConfig:
         defaults = cls()
         return cls(
             jwt_key=data.get("jwt", {}).get("key", defaults.jwt_key),
-            admin_pwd=data.get("login", {})
-            .get("admin", {})
-            .get("pwd", defaults.admin_pwd),
+            admin_pwd=data.get("login", {}).get("admin", {}).get("pwd", defaults.admin_pwd),
             disabled=data.get("disabled", defaults.disabled),
             external_auth=(
                 ExternalAuthConfig.from_dict(data["external_auth"])
@@ -170,9 +162,7 @@ class DbConfig:
         return cls(
             db_admin_url=data.get("admin_url", defaults.db_admin_url),
             db_url=data.get("url", defaults.db_url),
-            db_connect_timeout=data.get(
-                "db_connect_timeout", defaults.db_connect_timeout
-            ),
+            db_connect_timeout=data.get("db_connect_timeout", defaults.db_connect_timeout),
             pool_recycle=data.get("pool_recycle", defaults.pool_recycle),
             pool_pre_ping=data.get("pool_pre_ping", defaults.pool_pre_ping),
             pool_use_null=data.get("pool_use_null", defaults.pool_use_null),
@@ -209,71 +199,40 @@ class StorageConfig:
     def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
         defaults = cls()
         workspaces = (
-            {
-                key: WorkspaceConfig.from_dict(value)
-                for key, value in data["workspaces"].items()
-            }
+            {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
             if "workspaces" in data
             else defaults.workspaces
         )
         print("desktom_mode", desktop_mode)
+        cls.validate_workspaces(workspaces, desktop_mode)
         if desktop_mode:
-            cls.validate_workspaces(workspaces, desktop_mode)
-            print(cls.validate_workspaces(workspaces, desktop_mode))
-            print("cls.system_workspaces", cls.system_workspaces())
             workspaces = {**workspaces, **cls.system_workspaces()}
         return cls(
-            matrixstore=(
-                Path(data["matrixstore"])
-                if "matrixstore" in data
-                else defaults.matrixstore
-            ),
-            archive_dir=(
-                Path(data["archive_dir"])
-                if "archive_dir" in data
-                else defaults.archive_dir
-            ),
+            matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
+            archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
             tmp_dir=Path(data["tmp_dir"]) if "tmp_dir" in data else defaults.tmp_dir,
             workspaces=workspaces,
             allow_deletion=data.get("allow_deletion", defaults.allow_deletion),
             watcher_lock=data.get("watcher_lock", defaults.watcher_lock),
-            watcher_lock_delay=data.get(
-                "watcher_lock_delay", defaults.watcher_lock_delay
-            ),
+            watcher_lock_delay=data.get("watcher_lock_delay", defaults.watcher_lock_delay),
             download_default_expiration_timeout_minutes=(
                 data.get(
                     "download_default_expiration_timeout_minutes",
                     defaults.download_default_expiration_timeout_minutes,
                 )
             ),
-            matrix_gc_sleeping_time=data.get(
-                "matrix_gc_sleeping_time", defaults.matrix_gc_sleeping_time
-            ),
+            matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", defaults.matrix_gc_sleeping_time),
             matrix_gc_dry_run=data.get("matrix_gc_dry_run", defaults.matrix_gc_dry_run),
-            auto_archive_threshold_days=data.get(
-                "auto_archive_threshold_days", defaults.auto_archive_threshold_days
-            ),
-            auto_archive_dry_run=data.get(
-                "auto_archive_dry_run", defaults.auto_archive_dry_run
-            ),
-            auto_archive_sleeping_time=data.get(
-                "auto_archive_sleeping_time", defaults.auto_archive_sleeping_time
-            ),
-            auto_archive_max_parallel=data.get(
-                "auto_archive_max_parallel", defaults.auto_archive_max_parallel
-            ),
-            snapshot_retention_days=data.get(
-                "snapshot_retention_days", defaults.snapshot_retention_days
-            ),
-            matrixstore_format=InternalMatrixFormat(
-                data.get("matrixstore_format", defaults.matrixstore_format)
-            ),
+            auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
+            auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
+            auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
+            auto_archive_max_parallel=data.get("auto_archive_max_parallel", defaults.auto_archive_max_parallel),
+            snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
+            matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
         )
 
     @classmethod
-    def validate_workspaces(
-        cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool
-    ) -> None:
+    def validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
         """
         Validate that no two workspaces have overlapping paths.
         """
@@ -284,9 +243,7 @@ class StorageConfig:
                 f"Desktop mode is on, only default workspace should be configured. Instead conf has {workspace_names}"
             )
 
-        workspace_name_by_path = [
-            (config.path, name) for name, config in workspaces.items()
-        ]
+        workspace_name_by_path = [(config.path, name) for name, config in workspaces.items()]
         for path, name in workspace_name_by_path:
             for path2, name2 in workspace_name_by_path:
                 if name != name2 and path.is_relative_to(path2):
@@ -299,16 +256,10 @@ class StorageConfig:
         if platform.system().lower() == "linux":
             return {"local": WorkspaceConfig(path=Path("/"))}
         elif platform.system().lower() == "windows":
-            drives = [
-                f"{d}:\\"
-                for d in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                if os.path.isdir(f"{d}:\\")
-            ]
+            drives = [f"{d}" for d in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if os.path.isdir(f"{d}:\\")]
             return {drive: WorkspaceConfig(path=Path(drive)) for drive in drives}
         else:
-            raise NotImplementedError(
-                "System workspaces are only implemented for Linux and Windows"
-            )
+            raise NotImplementedError("System workspaces are only implemented for Linux and Windows")
 
 
 @dataclass(frozen=True)
@@ -336,9 +287,7 @@ class NbCoresConfig:
         """validation of CPU configuration"""
         if 1 <= self.min <= self.default <= self.max:
             return
-        msg = (
-            f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
-        )
+        msg = f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
         raise ValueError(msg)
 
 
@@ -372,9 +321,7 @@ class TimeLimitConfig:
         """validation of CPU configuration"""
         if 1 <= self.min <= self.default <= self.max:
             return
-        msg = (
-            f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
-        )
+        msg = f"Invalid configuration: 1 <= {self.min=} <= {self.default=} <= {self.max=}"
         raise ValueError(msg)
 
 
@@ -399,18 +346,12 @@ class LocalConfig:
         """
         defaults = cls()
         binaries = data.get("binaries", defaults.binaries)
-        enable_nb_cores_detection = data.get(
-            "enable_nb_cores_detection", defaults.enable_nb_cores_detection
-        )
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
         xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
-        local_workspace = (
-            Path(data["local_workspace"])
-            if "local_workspace" in data
-            else defaults.local_workspace
-        )
+        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
         return cls(
             binaries={str(v): Path(p) for v, p in binaries.items()},
             enable_nb_cores_detection=enable_nb_cores_detection,
@@ -464,9 +405,7 @@ class SlurmConfig:
         Returns: object SlurmConfig
         """
         defaults = cls()
-        enable_nb_cores_detection = data.get(
-            "enable_nb_cores_detection", defaults.enable_nb_cores_detection
-        )
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
         if "default_n_cpu" in data:
             # Use the old way to configure the NB cores for backward compatibility
@@ -476,9 +415,7 @@ class SlurmConfig:
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
         # In the configuration file, the default time limit is in seconds, so we convert it to hours
-        max_time_limit = (
-            data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
-        )
+        max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
             local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
@@ -490,9 +427,7 @@ class SlurmConfig:
             password=data.get("password", defaults.password),
             default_wait_time=data.get("default_wait_time", defaults.default_wait_time),
             time_limit=time_limit,
-            default_json_db_name=data.get(
-                "default_json_db_name", defaults.default_json_db_name
-            ),
+            default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
             slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
             partition=data.get("partition", defaults.partition),
             antares_versions_on_remote_server=data.get(
@@ -506,9 +441,7 @@ class SlurmConfig:
 
     @classmethod
     def _autodetect_nb_cores(cls) -> Dict[str, int]:
-        raise NotImplementedError(
-            "NB Cores auto-detection is not implemented for SLURM server"
-        )
+        raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
 
 
 class InvalidConfigurationError(Exception):
@@ -537,12 +470,8 @@ class LauncherConfig:
     def from_dict(cls, data: JSON) -> "LauncherConfig":
         defaults = cls()
         default = data.get("default", cls.default)
-        local = (
-            LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
-        )
-        slurm = (
-            SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
-        )
+        local = LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
+        slurm = SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
         batch_size = data.get("batch_size", defaults.batch_size)
         return cls(
             default=default,
@@ -721,9 +650,7 @@ class ServerConfig:
     def from_dict(cls, data: JSON) -> "ServerConfig":
         defaults = cls()
         return cls(
-            worker_threadpool_size=data.get(
-                "worker_threadpool_size", defaults.worker_threadpool_size
-            ),
+            worker_threadpool_size=data.get("worker_threadpool_size", defaults.worker_threadpool_size),
             services=data.get("services", defaults.services),
         )
 
@@ -755,59 +682,21 @@ class Config:
         defaults = cls()
         desktop_mode = data.get("desktop_mode", defaults.desktop_mode)
         storage_config = (
-            StorageConfig.from_dict(data["storage"], desktop_mode)
-            if "storage" in data
-            else defaults.storage
+            StorageConfig.from_dict(data["storage"], desktop_mode) if "storage" in data else defaults.storage
         )
         return cls(
-            server=(
-                ServerConfig.from_dict(data["server"])
-                if "server" in data
-                else defaults.server
-            ),
-            security=(
-                SecurityConfig.from_dict(data["security"])
-                if "security" in data
-                else defaults.security
-            ),
+            server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
+            security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
             storage=storage_config,
-            launcher=(
-                LauncherConfig.from_dict(data["launcher"])
-                if "launcher" in data
-                else defaults.launcher
-            ),
+            launcher=LauncherConfig.from_dict(data["launcher"]) if "launcher" in data else defaults.launcher,
             db=DbConfig.from_dict(data["db"]) if "db" in data else defaults.db,
-            logging=(
-                LoggingConfig.from_dict(data["logging"])
-                if "logging" in data
-                else defaults.logging
-            ),
+            logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
             debug=data.get("debug", defaults.debug),
-            resources_path=(
-                data["resources_path"]
-                if "resources_path" in data
-                else defaults.resources_path
-            ),
-            redis=(
-                RedisConfig.from_dict(data["redis"])
-                if "redis" in data
-                else defaults.redis
-            ),
-            eventbus=(
-                EventBusConfig.from_dict(data["eventbus"])
-                if "eventbus" in data
-                else defaults.eventbus
-            ),
-            cache=(
-                CacheConfig.from_dict(data["cache"])
-                if "cache" in data
-                else defaults.cache
-            ),
-            tasks=(
-                TaskConfig.from_dict(data["tasks"])
-                if "tasks" in data
-                else defaults.tasks
-            ),
+            resources_path=data["resources_path"] if "resources_path" in data else defaults.resources_path,
+            redis=RedisConfig.from_dict(data["redis"]) if "redis" in data else defaults.redis,
+            eventbus=EventBusConfig.from_dict(data["eventbus"]) if "eventbus" in data else defaults.eventbus,
+            cache=CacheConfig.from_dict(data["cache"]) if "cache" in data else defaults.cache,
+            tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
             desktop_mode=desktop_mode,

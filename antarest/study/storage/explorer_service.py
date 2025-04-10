@@ -58,9 +58,7 @@ class Explorer:
         return a list of all directories under workspace_directory_path, that aren't studies.
         """
         print("coucou ", workspace_name, workspace_directory_path)
-        workspace = get_workspace_from_config(
-            self.config, workspace_name, default_allowed=False
-        )
+        workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         print("workspace", workspace)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         print("directory_path", directory_path)
@@ -72,19 +70,10 @@ class Explorer:
                 # if we can't access one child we skip it
                 try:
                     show = show_hidden_file or not child.name.startswith(".")
-                    if (
-                        is_non_study_folder(
-                            child, workspace.filter_in, workspace.filter_out
-                        )
-                        and show
-                    ):
+                    if is_non_study_folder(child, workspace.filter_in, workspace.filter_out) and show:
                         # we don't want to expose the full absolute path on the server
-                        child_rel_path = PurePosixPath(
-                            child.relative_to(workspace.path)
-                        )
-                        has_children = has_non_study_folder(
-                            child, workspace.filter_in, workspace.filter_out
-                        )
+                        child_rel_path = PurePosixPath(child.relative_to(workspace.path))
+                        has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
                         directories.append(
                             NonStudyFolderDTO(
                                 path=child_rel_path,
@@ -94,9 +83,7 @@ class Explorer:
                             )
                         )
                 except PermissionError as e:
-                    logger.warning(
-                        f"Permission error while accessing {child} or one of its children: {e}"
-                    )
+                    logger.warning(f"Permission error while accessing {child} or one of its children: {e}")
         except PermissionError as e:
             logger.warning(f"Permission error while listing {directory_path}: {e}")
         return directories
@@ -117,20 +104,14 @@ class Explorer:
         # check that desktop_mode is enabled in config
         if not self.config.desktop_mode:
             logger.warning("Called open api when desktop mode was off")
-            raise ExternalWorkspaceDisabled(
-                "Desktop mode is not enabled in the configuration"
-            )
+            raise ExternalWorkspaceDisabled("Desktop mode is not enabled in the configuration")
 
         # check path is a study folder and we have read permission
         if not is_study_folder(path):
-            raise HTTPException(
-                HTTPStatus.UNPROCESSABLE_ENTITY, f"Path {path} is not a study folder"
-            )
+            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, f"Path {path} is not a study folder")
 
         # check if path is inside the default workspace folder
-        default_workspace = get_workspace_from_config(
-            self.config, DEFAULT_WORKSPACE_NAME, default_allowed=True
-        )
+        default_workspace = get_workspace_from_config(self.config, DEFAULT_WORKSPACE_NAME, default_allowed=True)
         if default_workspace.path in path.parents:
             raise HTTPException(
                 HTTPStatus.UNPROCESSABLE_ENTITY,
@@ -141,9 +122,7 @@ class Explorer:
         normalized_path = normalize_path(str(path))
         folder = f"{EXTERNAL_WORKSPACE_NAME}{normalized_path}"
         study_count = self.study_service.count_studies(
-            StudyFilter(
-                folder=folder, access_permissions=AccessPermissions.from_params(params)
-            )
+            StudyFilter(folder=folder, access_permissions=AccessPermissions.from_params(params))
         )
         if study_count > 0:
             raise HTTPException(
@@ -152,13 +131,9 @@ class Explorer:
             )
 
         # create a study object from the path
-        study_folder = StudyFolder(
-            path=path, workspace=EXTERNAL_WORKSPACE_NAME, groups=[]
-        )
+        study_folder = StudyFolder(path=path, workspace=EXTERNAL_WORKSPACE_NAME, groups=[])
         study_id = self.study_service.create_external_study(study_folder, params)
-        logger.info(
-            f"External study at {path} successfully created with study id  {study_id}"
-        )
+        logger.info(f"External study at {path} successfully created with study id  {study_id}")
 
         return study_id
 
@@ -166,15 +141,11 @@ class Explorer:
         # check that desktop_mode is enabled in config
         if not self.config.desktop_mode:
             logger.warning("Called open api when desktop mode was off")
-            raise ExternalWorkspaceDisabled(
-                "Study mode is not enabled in the configuration"
-            )
+            raise ExternalWorkspaceDisabled("Study mode is not enabled in the configuration")
 
         sanitized_uuid = sanitize_uuid(uuid)
 
         # create a study object from the path
         logger.info(f"Study {sanitized_uuid} will be deleted")
-        study = self.study_service.check_study_access(
-            sanitized_uuid, StudyPermissionType.WRITE, params
-        )
+        study = self.study_service.check_study_access(sanitized_uuid, StudyPermissionType.WRITE, params)
         self.study_service.delete_external_study(study)
