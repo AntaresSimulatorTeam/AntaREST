@@ -18,6 +18,7 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from filelock import FileLock
+from pandas import util
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
@@ -142,9 +143,10 @@ class MatrixMetaData:
 
 def calculates_hash(df: pd.DataFrame, legacy: bool = False) -> str:
     if legacy:
-        return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=float)).data).hexdigest()
-    # todo: change this
-    return hashlib.sha256(np.ascontiguousarray(df.to_numpy()).data).hexdigest()
+        array = np.ascontiguousarray(df.to_numpy(dtype=float))
+    else:
+        array = pd.concat([util.hash_pandas_object(df), util.hash_pandas_object(df.columns)]).to_numpy()
+    return hashlib.sha256(array.data).hexdigest()
 
 
 class MatrixContentRepository:

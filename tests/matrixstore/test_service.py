@@ -133,7 +133,12 @@ class TestMatrixService:
         data_as_float = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         matrix_id_as_float = matrix_service.create(pd.DataFrame(data_as_float))
         assert matrix_id == matrix_id_as_float
-        matrix_service.create(pd.DataFrame(data=data_as_float, index=["A", "B"], columns=["COL_1", "COL_2", "COL_3"]))
+
+    def test_different_hash_with_same_matrices_with_headers(self, matrix_service: MatrixService) -> None:
+        data = TEST_MATRIX
+        matrix_id = matrix_service.create(pd.DataFrame(data))
+        other_matrix_id = matrix_service.create(pd.DataFrame(data=data, index=["A", "B"], columns=["c1", "c2", "c3"]))
+        assert matrix_id != other_matrix_id
 
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
