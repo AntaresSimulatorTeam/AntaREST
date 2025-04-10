@@ -142,11 +142,9 @@ class MatrixMetaData:
 
 
 def calculates_hash(df: pd.DataFrame, legacy: bool) -> str:
-    if legacy:
-        array = np.ascontiguousarray(df.to_numpy(dtype=float))
-    else:
-        array = pd.concat([util.hash_pandas_object(df), util.hash_pandas_object(df.columns)]).to_numpy()
-    return hashlib.sha256(array.data).hexdigest()
+    if not legacy:
+        df = pd.concat([util.hash_pandas_object(df), util.hash_pandas_object(df.columns)])
+    return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=float)).data).hexdigest()
 
 
 class MatrixContentRepository:
