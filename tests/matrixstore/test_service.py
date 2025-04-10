@@ -134,7 +134,7 @@ class TestMatrixService:
         matrix_id_as_float = matrix_service.create(pd.DataFrame(data_as_float))
         assert matrix_id == matrix_id_as_float
 
-    def test_different_hash_with_same_matrices_with_headers(self, matrix_service: MatrixService) -> None:
+    def test_different_hash_with_same_matrices_with_different_headers(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
         matrix_id = matrix_service.create(pd.DataFrame(data))
         other_matrix_id = matrix_service.create(pd.DataFrame(data=data, index=["A", "B"], columns=["c1", "c2", "c3"]))
