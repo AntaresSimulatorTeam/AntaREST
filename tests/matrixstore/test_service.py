@@ -13,7 +13,6 @@
 import datetime
 import io
 import json
-import time
 import typing as t
 import zipfile
 from unittest.mock import Mock
@@ -110,17 +109,12 @@ class TestMatrixService:
 
         # nominal_case: we can retrieve the matrix and its content
         with db():
-            obj = matrix_service.get(matrix_id)
+            df = matrix_service.get(matrix_id)
 
-        assert obj is not None, f"Missing Matrix object {matrix_id}"
-        assert obj.width == len(data[0])
-        assert obj.height == len(data)
-        now = datetime.datetime.utcnow()
-        local_time = time.mktime(datetime.datetime.timetuple(now))
-        assert local_time - 1 <= obj.created_at <= local_time
-        assert obj.data == data
-        assert list(obj.index) == list(range(len(data)))
-        assert list(obj.columns) == list(range(len(data[0])))
+        assert df is not None, f"Missing Matrix object {matrix_id}"
+        assert df.to_numpy().tolist() == data
+        assert list(df.index) == list(range(len(data)))
+        assert list(df.columns) == list(range(len(data[0])))
 
         # missing_case: the matrix is missing in the database
         with db():
@@ -250,7 +244,7 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-        actual = load_matrix(InternalMatrixFormat.TSV, content_path)
+        actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=2)
         assert actual.to_numpy().all() == matrix.all()
 
         # A matrix object is stored in the database
@@ -317,7 +311,7 @@ class TestMatrixService:
             # The matrix is saved in the content repository as a TSV file
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
             content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-            actual = load_matrix(InternalMatrixFormat.TSV, content_path)
+            actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=2)
             assert actual.to_numpy().all() == matrix.all()
 
             # A matrix object is stored in the database
