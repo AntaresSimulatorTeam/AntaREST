@@ -141,7 +141,7 @@ class MatrixMetaData:
     new: bool
 
 
-def calculates_hash(df: pd.DataFrame, legacy: bool = False) -> str:
+def calculates_hash(df: pd.DataFrame, legacy: bool) -> str:
     if legacy:
         array = np.ascontiguousarray(df.to_numpy(dtype=float))
     else:
