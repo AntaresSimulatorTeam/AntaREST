@@ -1,0 +1,57 @@
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+export interface FilterState {
+  active: boolean;
+  columnsFilter: {
+    type: string;
+    range?: { min: number; max: number };
+    modulo?: { divisor: number; remainder: number };
+    list?: number[];
+  };
+  rowsFilter: {
+    indexingType: string;
+    type: string;
+    range?: { min: number; max: number };
+    modulo?: { divisor: number; remainder: number };
+    list?: number[];
+  };
+  operation: {
+    type: string;
+    value: number;
+  };
+}
+
+export interface FilterCriteria {
+  columnsIndices: number[];
+  rowsIndices: number[];
+}
+
+export interface MatrixFilterProps {
+  dateTime?: string[];
+  isTimeSeries: boolean;
+}
+
+export interface FilterSectionProps {
+  filter: FilterState;
+  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
+}
+
+export interface OperationsProps extends FilterSectionProps {
+  onApplyOperation: () => void;
+}
+
+export interface SelectionSummaryProps {
+  filteredData: FilterCriteria;
+}
