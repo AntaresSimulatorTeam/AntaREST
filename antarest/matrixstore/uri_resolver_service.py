@@ -13,8 +13,6 @@
 import re
 from typing import Optional, Tuple
 
-import pandas as pd
-
 from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -50,25 +48,11 @@ class UriResolverService:
         return res[1] if res else None
 
     def _resolve_matrix(self, id: str, formatted: bool = True) -> JSON | str:
-        data = self.matrix_service.get(id)
-        if not data:
-            raise ValueError(f"id matrix {id} not found")
-        if data.data == [[]]:
-            # Corresponds to an empty matrix, so we should return empty index and columns.
-            data.columns = []
-            data.index = []
+        df = self.matrix_service.get(id)
 
         if formatted:
-            return {
-                "data": data.data,
-                "index": data.index,
-                "columns": data.columns,
-            }
-        df = pd.DataFrame(
-            data=data.data,
-            index=data.index,
-            columns=data.columns,
-        )
+            return {"data": df.to_numpy().tolist(), "index": list(df.index), "columns": list(df.columns)}
+
         if df.empty:
             return ""
         csv = df.to_csv(
