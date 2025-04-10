@@ -13,6 +13,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -22,7 +23,8 @@ from antarest.core.config import Config, SecurityConfig
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
-from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
+from antarest.matrixstore.model import MatrixInfoDTO
+from antarest.matrixstore.web import MatrixDTO
 from tests.login.test_web import create_auth_token
 
 
@@ -80,7 +82,7 @@ def test_get() -> None:
     )
 
     service = Mock()
-    service.get.return_value = matrix
+    service.get.return_value = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 
     app = create_app(service)
     client = TestClient(app)
