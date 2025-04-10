@@ -140,6 +140,10 @@ class TestMatrixService:
         other_matrix_id = matrix_service.create(pd.DataFrame(data=data, index=["A", "B"], columns=["c1", "c2", "c3"]))
         assert matrix_id != other_matrix_id
 
+    def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
+        data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
+        matrix_service.create(pd.DataFrame(data=data, index=["A", "B", "C"], columns=["c1", "c2", "c3"]))
+
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
         # when a matrix is created (inserted) in the service
