@@ -138,6 +138,7 @@ function Matrix({
         currentState,
         isSubmitting,
         updateCount,
+        aggregateTypes,
         setMatrixData,
         undo,
         redo,
@@ -148,7 +149,6 @@ function Matrix({
       }}
     >
       <MatrixContainer>
-        {/* The <Box> allows to keep the height on vertical resize */}
         <Box>
           <CustomScrollbar>
             <MatrixHeader>

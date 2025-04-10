@@ -840,5 +840,54 @@
   "tableMode.type.thermals": "Thermals",
   "tableMode.type.renewables": "Renewables",
   "tableMode.type.st-storages": "Short-Term Storages",
-  "tableMode.type.binding-constraints": "Binding Constraints"
+  "tableMode.type.binding-constraints": "Binding Constraints",
+  "matrix": {
+    "filter": {
+      "title": "Filter Matrix Data",
+      "filterData": "Filter data",
+      "active": "Filter active",
+      "inactive": "Filter inactive",
+      "resetFilters": "Reset filters",
+      "close": "Close",
+      "columnsFilter": "Columns Filter",
+      "rowsFilter": "Rows Filter",
+      "columns": "Columns",
+      "rows": "Rows",
+      "type": "Filter type",
+      "range": "Range",
+      "modulo": "Modulo",
+      "list": "List",
+      "min": "Minimum",
+      "max": "Maximum",
+      "divisor": "Divisor",
+      "remainder": "Remainder",
+      "listValues": "Values (comma separated)",
+      "indexingType": "Time indexing",
+      "operation": "Operation",
+      "operationType": "Operation type",
+      "value": "Value",
+      "applyOperation": "Apply operation",
+      "selectionSummary": "Selection summary",
+      "selectedRows": "Selected rows",
+      "selectedColumns": "Selected columns",
+      "selectedCells": "Selected cells",
+      "indexing": {
+        "dayOfMonth": "Day of month",
+        "dayOfYear": "Day of year",
+        "dayHour": "Hour of day",
+        "hourYear": "Hour of year",
+        "month": "Month",
+        "week": "Week",
+        "weekday": "Weekday"
+      }
+    },
+    "operation": {
+      "equal": "Set value",
+      "add": "Add",
+      "subtract": "Subtract",
+      "multiply": "Multiply",
+      "divide": "Divide",
+      "absolute": "Absolute value"
+    }
+  }
 }

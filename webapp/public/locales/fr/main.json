@@ -843,5 +843,54 @@
   "tableMode.type.thermals": "Thermiques",
   "tableMode.type.renewables": "Renouvelables",
   "tableMode.type.st-storages": "Stockages court terme",
-  "tableMode.type.binding-constraints": "Contraintes couplantes"
+  "tableMode.type.binding-constraints": "Contraintes couplantes",
+  "matrix": {
+    "filter": {
+      "title": "Filtrer les données de la matrice",
+      "filterData": "Filtrer les données",
+      "active": "Filtre actif",
+      "inactive": "Filtre inactif",
+      "resetFilters": "Réinitialiser les filtres",
+      "close": "Fermer",
+      "columnsFilter": "Filtre sur les colonnes",
+      "rowsFilter": "Filtre sur les lignes",
+      "columns": "Colonnes",
+      "rows": "Lignes",
+      "type": "Type de filtre",
+      "range": "Plage",
+      "modulo": "Modulo",
+      "list": "Liste",
+      "min": "Minimum",
+      "max": "Maximum",
+      "divisor": "Diviseur",
+      "remainder": "Reste",
+      "listValues": "Valeurs (séparées par des virgules)",
+      "indexingType": "Indexation temporelle",
+      "operation": "Opération",
+      "operationType": "Type d'opération",
+      "value": "Valeur",
+      "applyOperation": "Appliquer l'opération",
+      "selectionSummary": "Résumé de la sélection",
+      "selectedRows": "Lignes sélectionnées",
+      "selectedColumns": "Colonnes sélectionnées",
+      "selectedCells": "Cellules sélectionnées",
+      "indexing": {
+        "dayOfMonth": "Jour du mois",
+        "dayOfYear": "Jour de l'année",
+        "dayHour": "Heure du jour",
+        "hourYear": "Heure de l'année",
+        "month": "Mois",
+        "week": "Semaine",
+        "weekday": "Jour de la semaine"
+      }
+    },
+    "operation": {
+      "equal": "Définir la valeur",
+      "add": "Ajouter",
+      "subtract": "Soustraire",
+      "multiply": "Multiplier",
+      "divide": "Diviser",
+      "absolute": "Valeur absolue"
+    }
+  }
 }

@@ -18,96 +18,33 @@ import {
   Button,
   Drawer,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
-  Typography,
   IconButton,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Stack,
   Chip,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import { Operation } from "../../shared/constants";
-
-const FILTER_TYPES = {
-  RANGE: "range",
-  MODULO: "modulo",
-  LIST: "list",
-};
-
-const TIME_INDEXING = {
-  DAY_OF_MONTH: "dayOfMonth",
-  DAY_OF_YEAR: "dayOfYear",
-  DAY_HOUR: "dayHour",
-  HOUR_YEAR: "hourYear",
-  MONTH: "month",
-  WEEK: "week",
-  WEEKDAY: "weekday",
-};
-
-interface FilterState {
-  active: boolean;
-  columnsFilter: {
-    type: string;
-    range?: { min: number; max: number };
-    modulo?: { divisor: number; remainder: number };
-    list?: number[];
-  };
-  rowsFilter: {
-    indexingType: string;
-    type: string;
-    range?: { min: number; max: number };
-    modulo?: { divisor: number; remainder: number };
-    list?: number[];
-  };
-  operation: {
-    type: string;
-    value: number;
-  };
-}
-
-interface FilterCriteria {
-  columnsIndices: number[];
-  rowsIndices: number[];
-}
-
-interface MatrixFilterProps {
-  dateTime?: string[];
-  isTimeSeries: boolean;
-}
+import { calculateMatrixAggregates } from "../../shared/utils";
+import type { FilterState, FilterCriteria, MatrixFilterProps } from "./types";
+import { FILTER_TYPES, TIME_INDEXING, getDefaultFilterState } from "./constants";
+import ColumnFilter from "./ColumnFilter";
+import RowFilter from "./RowFilter";
+import Operations from "./Operations";
+import SelectionSummary from "./SelectionSummary";
 
 function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
   const { t } = useTranslation();
-  const { currentState, setMatrixData } = useMatrixContext();
+  const { currentState, setMatrixData, aggregateTypes } = useMatrixContext();
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<FilterState>({
-    active: false,
-    columnsFilter: {
-      type: FILTER_TYPES.RANGE,
-      range: { min: 1, max: currentState.data[0]?.length || 1 },
-    },
-    rowsFilter: {
-      indexingType: TIME_INDEXING.DAY_OF_MONTH,
-      type: FILTER_TYPES.RANGE,
-      range: { min: 1, max: currentState.data.length || 1 },
-    },
-    operation: {
-      type: Operation.Eq,
-      value: 0,
-    },
-  });
+  const [filter, setFilter] = useState<FilterState>(
+    getDefaultFilterState(currentState.data.length, currentState.data[0]?.length || 0),
+  );
 
   // Calculate the filtered data based on current filter settings
   const filteredData = useMemo((): FilterCriteria => {
@@ -259,25 +196,12 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
     // Update the matrix data
     setMatrixData({
       data: newData,
-      aggregates: {},
-      // TODO recalculate aggregates
+      aggregates: calculateMatrixAggregates({ matrix: newData, types: aggregateTypes }),
     });
   };
 
   const resetFilters = () => {
-    setFilter({
-      ...filter,
-      active: false,
-      columnsFilter: {
-        type: FILTER_TYPES.RANGE,
-        range: { min: 1, max: currentState.data[0]?.length || 1 },
-      },
-      rowsFilter: {
-        indexingType: TIME_INDEXING.DAY_OF_MONTH,
-        type: FILTER_TYPES.RANGE,
-        range: { min: 1, max: currentState.data.length || 1 },
-      },
-    });
+    setFilter(getDefaultFilterState(currentState.data.length, currentState.data[0]?.length || 0));
   };
 
   const toggleDrawer = () => {
@@ -328,375 +252,6 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
     );
   };
 
-  const renderColumnFilter = () => (
-    <Accordion defaultExpanded>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">{t("matrix.filter.columnsFilter")}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <FormControl fullWidth margin="dense">
-          <InputLabel>{t("matrix.filter.type")}</InputLabel>
-          <Select
-            value={filter.columnsFilter.type}
-            label={t("matrix.filter.type")}
-            onChange={(e) =>
-              setFilter({
-                ...filter,
-                columnsFilter: {
-                  ...filter.columnsFilter,
-                  type: e.target.value,
-                },
-              })
-            }
-          >
-            <MenuItem value={FILTER_TYPES.RANGE}>{t("matrix.filter.range")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.MODULO}>{t("matrix.filter.modulo")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.LIST}>{t("matrix.filter.list")}</MenuItem>
-          </Select>
-        </FormControl>
-
-        {filter.columnsFilter.type === FILTER_TYPES.RANGE && (
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <TextField
-              label={t("matrix.filter.min")}
-              type="number"
-              value={filter.columnsFilter.range?.min || 1}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  columnsFilter: {
-                    ...filter.columnsFilter,
-                    range: {
-                      ...filter.columnsFilter.range,
-                      min: Number.parseInt(e.target.value) || 1,
-                    } as { min: number; max: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label={t("matrix.filter.max")}
-              type="number"
-              value={filter.columnsFilter.range?.max || 1}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  columnsFilter: {
-                    ...filter.columnsFilter,
-                    range: {
-                      ...filter.columnsFilter.range,
-                      max: Number.parseInt(e.target.value) || 1,
-                    } as { min: number; max: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-          </Box>
-        )}
-
-        {filter.columnsFilter.type === FILTER_TYPES.MODULO && (
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <TextField
-              label={t("matrix.filter.divisor")}
-              type="number"
-              value={filter.columnsFilter.modulo?.divisor || 1}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  columnsFilter: {
-                    ...filter.columnsFilter,
-                    modulo: {
-                      ...filter.columnsFilter.modulo,
-                      divisor: Number.parseInt(e.target.value) || 1,
-                    } as { divisor: number; remainder: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label={t("matrix.filter.remainder")}
-              type="number"
-              value={filter.columnsFilter.modulo?.remainder || 0}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  columnsFilter: {
-                    ...filter.columnsFilter,
-                    modulo: {
-                      ...filter.columnsFilter.modulo,
-                      remainder: Number.parseInt(e.target.value) || 0,
-                    } as { divisor: number; remainder: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-          </Box>
-        )}
-
-        {filter.columnsFilter.type === FILTER_TYPES.LIST && (
-          <TextField
-            label={t("matrix.filter.listValues")}
-            placeholder="e.g., 1,3,5,7"
-            fullWidth
-            margin="dense"
-            value={filter.columnsFilter.list?.join(",") || ""}
-            onChange={(e) => {
-              const values = e.target.value
-                .split(",")
-                .map((val) => Number.parseInt(val.trim()))
-                .filter((val) => !Number.isNaN(val));
-
-              setFilter({
-                ...filter,
-                columnsFilter: {
-                  ...filter.columnsFilter,
-                  list: values,
-                },
-              });
-            }}
-          />
-        )}
-      </AccordionDetails>
-    </Accordion>
-  );
-
-  const renderRowsFilter = () => (
-    <Accordion defaultExpanded>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">{t("matrix.filter.rowsFilter")}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <FormControl fullWidth margin="dense">
-          <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
-          <Select
-            value={filter.rowsFilter.indexingType}
-            label={t("matrix.filter.indexingType")}
-            onChange={(e) =>
-              setFilter({
-                ...filter,
-                rowsFilter: {
-                  ...filter.rowsFilter,
-                  indexingType: e.target.value,
-                },
-              })
-            }
-          >
-            <MenuItem value={TIME_INDEXING.DAY_OF_MONTH}>
-              {t("matrix.filter.indexing.dayOfMonth")}
-            </MenuItem>
-            <MenuItem value={TIME_INDEXING.DAY_OF_YEAR}>
-              {t("matrix.filter.indexing.dayOfYear")}
-            </MenuItem>
-            <MenuItem value={TIME_INDEXING.DAY_HOUR}>
-              {t("matrix.filter.indexing.dayHour")}
-            </MenuItem>
-            <MenuItem value={TIME_INDEXING.HOUR_YEAR}>
-              {t("matrix.filter.indexing.hourYear")}
-            </MenuItem>
-            <MenuItem value={TIME_INDEXING.MONTH}>{t("matrix.filter.indexing.month")}</MenuItem>
-            <MenuItem value={TIME_INDEXING.WEEK}>{t("matrix.filter.indexing.week")}</MenuItem>
-            <MenuItem value={TIME_INDEXING.WEEKDAY}>{t("matrix.filter.indexing.weekday")}</MenuItem>
-          </Select>
-        </FormControl>
-
-        <FormControl fullWidth margin="dense">
-          <InputLabel>{t("matrix.filter.type")}</InputLabel>
-          <Select
-            value={filter.rowsFilter.type}
-            label={t("matrix.filter.type")}
-            onChange={(e) =>
-              setFilter({
-                ...filter,
-                rowsFilter: {
-                  ...filter.rowsFilter,
-                  type: e.target.value,
-                },
-              })
-            }
-          >
-            <MenuItem value={FILTER_TYPES.RANGE}>{t("matrix.filter.range")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.MODULO}>{t("matrix.filter.modulo")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.LIST}>{t("matrix.filter.list")}</MenuItem>
-          </Select>
-        </FormControl>
-
-        {filter.rowsFilter.type === FILTER_TYPES.RANGE && (
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <TextField
-              label={t("matrix.filter.min")}
-              type="number"
-              value={filter.rowsFilter.range?.min || 1}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  rowsFilter: {
-                    ...filter.rowsFilter,
-                    range: {
-                      ...filter.rowsFilter.range,
-                      min: Number.parseInt(e.target.value) || 1,
-                    } as { min: number; max: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label={t("matrix.filter.max")}
-              type="number"
-              value={filter.rowsFilter.range?.max || 1}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  rowsFilter: {
-                    ...filter.rowsFilter,
-                    range: {
-                      ...filter.rowsFilter.range,
-                      max: Number.parseInt(e.target.value) || 1,
-                    } as { min: number; max: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-          </Box>
-        )}
-
-        {filter.rowsFilter.type === FILTER_TYPES.MODULO && (
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <TextField
-              label={t("matrix.filter.divisor")}
-              type="number"
-              value={filter.rowsFilter.modulo?.divisor || 1}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  rowsFilter: {
-                    ...filter.rowsFilter,
-                    modulo: {
-                      ...filter.rowsFilter.modulo,
-                      divisor: Number.parseInt(e.target.value) || 1,
-                    } as { divisor: number; remainder: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-            <TextField
-              label={t("matrix.filter.remainder")}
-              type="number"
-              value={filter.rowsFilter.modulo?.remainder || 0}
-              onChange={(e) =>
-                setFilter({
-                  ...filter,
-                  rowsFilter: {
-                    ...filter.rowsFilter,
-                    modulo: {
-                      ...filter.rowsFilter.modulo,
-                      remainder: Number.parseInt(e.target.value) || 0,
-                    } as { divisor: number; remainder: number },
-                  },
-                })
-              }
-              fullWidth
-            />
-          </Box>
-        )}
-
-        {filter.rowsFilter.type === FILTER_TYPES.LIST && (
-          <TextField
-            label={t("matrix.filter.listValues")}
-            placeholder="e.g., 1,3,5,7"
-            fullWidth
-            margin="dense"
-            value={filter.rowsFilter.list?.join(",") || ""}
-            onChange={(e) => {
-              const values = e.target.value
-                .split(",")
-                .map((val) => Number.parseInt(val.trim()))
-                .filter((val) => !Number.isNaN(val));
-
-              setFilter({
-                ...filter,
-                rowsFilter: {
-                  ...filter.rowsFilter,
-                  list: values,
-                },
-              });
-            }}
-          />
-        )}
-      </AccordionDetails>
-    </Accordion>
-  );
-
-  const renderOperation = () => (
-    <Accordion defaultExpanded>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">{t("matrix.filter.operation")}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        <FormControl fullWidth margin="dense">
-          <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
-          <Select
-            value={filter.operation.type}
-            label={t("matrix.filter.operationType")}
-            onChange={(e) =>
-              setFilter({
-                ...filter,
-                operation: {
-                  ...filter.operation,
-                  type: e.target.value,
-                },
-              })
-            }
-          >
-            <MenuItem value={Operation.Eq}>{t("matrix.operation.equal")}</MenuItem>
-            <MenuItem value={Operation.Add}>{t("matrix.operation.add")}</MenuItem>
-            <MenuItem value={Operation.Sub}>{t("matrix.operation.subtract")}</MenuItem>
-            <MenuItem value={Operation.Mul}>{t("matrix.operation.multiply")}</MenuItem>
-            <MenuItem value={Operation.Div}>{t("matrix.operation.divide")}</MenuItem>
-            <MenuItem value={Operation.Abs}>{t("matrix.operation.absolute")}</MenuItem>
-          </Select>
-        </FormControl>
-
-        {filter.operation.type !== Operation.Abs && (
-          <TextField
-            label={t("matrix.filter.value")}
-            type="number"
-            value={filter.operation.value}
-            onChange={(e) =>
-              setFilter({
-                ...filter,
-                operation: {
-                  ...filter.operation,
-                  value: Number.parseFloat(e.target.value) || 0,
-                },
-              })
-            }
-            fullWidth
-            margin="dense"
-          />
-        )}
-
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={applyOperation}
-            startIcon={<PlayArrowIcon />}
-            disabled={!filter.active}
-          >
-            {t("matrix.filter.applyOperation")}
-          </Button>
-        </Box>
-      </AccordionDetails>
-    </Accordion>
-  );
-
   return (
     <>
       <Tooltip title={t("matrix.filter.filterData")}>
@@ -731,38 +286,26 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
           </Box>
         </Box>
 
-        <FormControl sx={{ mb: 2 }} fullWidth>
-          <Button
-            variant={filter.active ? "contained" : "outlined"}
-            color={filter.active ? "primary" : "inherit"}
-            onClick={toggleFilter}
-            startIcon={<FilterListIcon />}
-          >
-            {filter.active ? t("matrix.filter.active") : t("matrix.filter.inactive")}
-          </Button>
-        </FormControl>
+        <Button
+          variant={filter.active ? "contained" : "outlined"}
+          color={filter.active ? "primary" : "inherit"}
+          onClick={toggleFilter}
+          startIcon={<FilterListIcon />}
+          fullWidth
+          sx={{ mb: 2 }}
+        >
+          {filter.active ? t("matrix.filter.active") : t("matrix.filter.inactive")}
+        </Button>
 
         <Divider sx={{ mb: 2 }} />
 
-        {renderColumnFilter()}
-        {renderRowsFilter()}
-        {renderOperation()}
+        <ColumnFilter filter={filter} setFilter={setFilter} />
 
-        <Box sx={{ mt: 2 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            {t("matrix.filter.selectionSummary")}
-          </Typography>
-          <Typography>
-            {t("matrix.filter.selectedRows")}: {filteredData.rowsIndices.length}
-          </Typography>
-          <Typography>
-            {t("matrix.filter.selectedColumns")}: {filteredData.columnsIndices.length}
-          </Typography>
-          <Typography>
-            {t("matrix.filter.selectedCells")}:{" "}
-            {filteredData.rowsIndices.length * filteredData.columnsIndices.length}
-          </Typography>
-        </Box>
+        <RowFilter filter={filter} setFilter={setFilter} />
+
+        <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
+
+        <SelectionSummary filteredData={filteredData} />
       </Drawer>
     </>
   );
