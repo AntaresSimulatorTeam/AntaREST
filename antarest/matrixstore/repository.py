@@ -229,7 +229,7 @@ class MatrixContentRepository:
 
         # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
         legacy_format = False
-        if not any(dtype not in [float, int] for dtype in content.dtypes):
+        if all(dtype in [float, int] for dtype in content.dtypes):
             shape = content.shape
             # We also need to check the headers to see if they correspond to the default ones
             if content.index.equals(pd.RangeIndex(0, shape[0])) and content.columns.equals(pd.RangeIndex(0, shape[1])):
