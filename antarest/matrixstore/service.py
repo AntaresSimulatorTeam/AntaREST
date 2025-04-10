@@ -45,7 +45,6 @@ from antarest.matrixstore.model import (
     MatrixDataSetDTO,
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
-    MatrixDTO,
     MatrixInfoDTO,
 )
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
@@ -74,7 +73,7 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, matrix_id: str) -> MatrixDTO:
+    def get(self, matrix_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
@@ -116,16 +115,8 @@ class SimpleMatrixService(ISimpleMatrixService):
         return self.matrix_content_repository.save(data).hash
 
     @override
-    def get(self, matrix_id: str) -> MatrixDTO:
-        data = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.model_construct(
-            id=matrix_id,
-            width=len(data.columns),
-            height=len(data.index),
-            index=list(data.index),
-            columns=list(data.columns),
-            data=data.values.tolist(),
-        )
+    def get(self, matrix_id: str) -> pd.DataFrame:
+        return self.matrix_content_repository.get(matrix_id)
 
     @override
     def exists(self, matrix_id: str) -> bool:
@@ -365,7 +356,7 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     @override
-    def get(self, matrix_id: str) -> MatrixDTO:
+    def get(self, matrix_id: str) -> pd.DataFrame:
         """
         Get a matrix object from the database and the matrix content repository.
 
@@ -379,16 +370,7 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.repo.get(matrix_id)
         if matrix is None:
             raise MatrixNotFound(matrix_id)
-        content = self.matrix_content_repository.get(matrix_id, matrix.version)
-        return MatrixDTO.model_construct(
-            id=matrix.id,
-            width=matrix.width,
-            height=matrix.height,
-            created_at=int(matrix.created_at.timestamp()),
-            index=list(content.index),
-            columns=list(content.columns),
-            data=content.to_numpy().tolist(),
-        )
+        return self.matrix_content_repository.get(matrix_id, matrix.version)
 
     @override
     def exists(self, matrix_id: str) -> bool:
