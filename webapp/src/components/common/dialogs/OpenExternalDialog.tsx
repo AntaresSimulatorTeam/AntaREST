@@ -20,8 +20,6 @@ import { usePromise } from "react-use";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { openExternalStudy } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudyVersionsFormatted } from "../../../redux/selectors";
 import FormDialog from "../../common/dialogs/FormDialog";
 import StringFE from "../../common/fieldEditors/StringFE";
 import Fieldset from "../../common/Fieldset";
