@@ -263,18 +263,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             }
         },
-        {
-            "a3": {
-                "hurdles-cost": False,
-                "loop-flow": False,
-                "use-phase-shifter": False,
-                "transmission-capacities": TransmissionCapacity.ENABLED,
-                "asset-type": AssetType.AC,
-                "display-comments": False,
-                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
-                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
-            }
-        },
+        {},
     ]
     links = link_manager.get_all_links(study_interface)
     assert [

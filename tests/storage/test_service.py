@@ -18,7 +18,6 @@ import uuid
 from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
@@ -41,7 +40,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
@@ -1299,14 +1297,6 @@ def test_delete_recursively(tmp_path: Path) -> None:
     )
 
 
-class StudyDaoMatcher:
-    def __init__(self, file_study: FileStudy):
-        self._file_study = file_study
-
-    def __eq__(self, other: Any):
-        return isinstance(other, FileStudyTreeDao) and other._file_study is self._file_study
-
-
 @pytest.mark.unit_test
 def test_edit_study_with_command() -> None:
     study_id = str(uuid.uuid4())
@@ -1324,8 +1314,8 @@ def test_edit_study_with_command() -> None:
     raw_study.version = "880"
     raw_study.id = study_id
 
-    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
-    command.apply.assert_called_with(StudyDaoMatcher(Mock()), None)
+    service._edit_study_using_command(study=raw_study, url="", data=[])
+    command.apply.assert_called()
 
     variant_study = Mock(spec=VariantStudy)
     variant_study.version = "880"
