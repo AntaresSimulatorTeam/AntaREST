@@ -246,9 +246,9 @@ function MatrixGrid({
         onCellEdited={handleCellEdited}
         onCellsEdited={handleCellsEdited}
         getCellsForSelection
-        onPaste
+        onPaste={!readOnly}
         fillHandle={!readOnly}
-        onKeyDown={handleKeyDown}
+        onKeyDown={readOnly ? undefined : handleKeyDown}
         allowedFillDirections="any"
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky
