@@ -29,7 +29,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def create(self, data: pd.DataFrame) -> str:
-        matrix_hash = calculates_hash(data, legacy=False)
+        matrix_hash = calculates_hash(data)
         self._content[matrix_hash] = data
         return matrix_hash
 

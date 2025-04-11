@@ -310,7 +310,7 @@ class TestMatrixContentRepository:
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
             # Saves a matrix in the legacy format
             legacy_matrix = np.array([[1, 2, 3], [4, 5, 6]])
-            matrix_hash = calculates_hash(pd.DataFrame(legacy_matrix), legacy=True)
+            matrix_hash = calculates_hash(pd.DataFrame(legacy_matrix))
             matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
             (matrix_path.parent / f"{matrix_hash}.tsv.lock").touch()
             np.savetxt(matrix_path, legacy_matrix, delimiter="\t")

@@ -141,8 +141,16 @@ class MatrixMetaData:
     new: bool
 
 
-def calculates_hash(df: pd.DataFrame, legacy: bool) -> str:
-    if not legacy:
+def calculates_hash(df: pd.DataFrame) -> str:
+    # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
+    legacy_format = False
+    if all(dtype in [float, int] for dtype in df.dtypes):
+        shape = df.shape
+        # We also need to check the headers to see if they correspond to the default ones
+        if df.index.equals(pd.RangeIndex(0, shape[0])) and df.columns.equals(pd.RangeIndex(0, shape[1])):
+            legacy_format = True
+
+    if not legacy_format:
         df = pd.concat([util.hash_pandas_object(df), util.hash_pandas_object(df.columns)])
     return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=float)).data).hexdigest()
 
@@ -227,15 +235,7 @@ class MatrixContentRepository:
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
 
-        # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
-        legacy_format = False
-        if all(dtype in [float, int] for dtype in content.dtypes):
-            shape = content.shape
-            # We also need to check the headers to see if they correspond to the default ones
-            if content.index.equals(pd.RangeIndex(0, shape[0])) and content.columns.equals(pd.RangeIndex(0, shape[1])):
-                legacy_format = True
-
-        matrix_hash = calculates_hash(content, legacy_format)
+        matrix_hash = calculates_hash(content)
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).

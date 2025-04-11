@@ -501,15 +501,12 @@ def test_hashing_method():
     It's really important as the whole matrix-store behavior relies on this function
     """
     df = pd.DataFrame(TEST_MATRIX)
-    assert calculates_hash(df, legacy=True) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
+    assert calculates_hash(df) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
 
     other_df = pd.DataFrame(data=8760 * [1.0])
-    assert calculates_hash(other_df, legacy=True) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
+    assert calculates_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
-    assert (
-        calculates_hash(AGGREGATION_DF, legacy=False)
-        == "454707038a88e9308a5b49fd6b30f04ee116fd1cd1851a03a5ce09c490152c72"
-    )
+    assert calculates_hash(AGGREGATION_DF) == "454707038a88e9308a5b49fd6b30f04ee116fd1cd1851a03a5ce09c490152c72"
 
 
 def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:
