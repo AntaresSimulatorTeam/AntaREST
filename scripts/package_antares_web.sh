@@ -66,8 +66,7 @@ rm $ANTARES_SOLVER_ZIPFILE_NAME
 
 if [[ "$OSTYPE" == "msys"* ]]; then
   echo "INFO: Moving executables in '$ANTARES_SOLVER_DIR'..."
-  mv "$ANTARES_SOLVER_FOLDER_NAME/solver/release/antares-solver.exe" "$ANTARES_SOLVER_DIR"
-  mv "$ANTARES_SOLVER_FOLDER_NAME/solver/release/sirius_solver.dll" "$ANTARES_SOLVER_DIR"
+  mv "$ANTARES_SOLVER_FOLDER_NAME/solver/release/*" "$ANTARES_SOLVER_DIR"
   rm -rf $ANTARES_SOLVER_FOLDER_NAME
 fi
 
