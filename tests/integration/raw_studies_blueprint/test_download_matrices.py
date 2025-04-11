@@ -17,6 +17,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 import pytest
+from pandas._testing import assert_frame_equal
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -197,9 +198,7 @@ class TestDownloadMatrices:
 
             expected_matrix["index"] = time_column
             expected = pd.DataFrame(**expected_matrix)
-            assert dataframe.index.tolist() == expected.index.tolist()
-            assert dataframe.columns.tolist() == expected.columns.tolist()
-            assert dataframe.equals(expected)
+            assert_frame_equal(dataframe, expected)
 
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS
