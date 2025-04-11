@@ -15,9 +15,7 @@ from typing import Sequence
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import (
-    LinkDTO,
-)
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 

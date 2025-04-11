@@ -13,13 +13,7 @@ from dataclasses import field
 from typing import Annotated, List, Optional, Self, Type, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import (
-    BeforeValidator,
-    ConfigDict,
-    Field,
-    PlainSerializer,
-    model_validator,
-)
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
@@ -193,10 +187,7 @@ class LinkDTO(Area, LinkBaseDTO):
         return LinkInternal(**data)
 
     def to_config(self) -> Link:
-        return Link(
-            filters_year=self.filter_year_by_year,
-            filters_synthesis=self.filter_synthesis,
-        )
+        return Link(filters_year=self.filter_year_by_year, filters_synthesis=self.filter_synthesis)
 
 
 class LinkInternal(AntaresBaseModel):

@@ -115,8 +115,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         link_properties = LinkProperties.from_link(link)
 
         study_data.tree.save(
-            link_properties.model_dump(by_alias=True),
-            ["input", "links", area1_id, "properties", area2_id],
+            link_properties.model_dump(by_alias=True), ["input", "links", area1_id, "properties", area2_id]
         )
 
     @override
@@ -138,10 +137,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         if version < STUDY_VERSION_8_2:
             study_data.tree.save(series_id, ["input", "links", area_from, area_to])
         else:
-            study_data.tree.save(
-                series_id,
-                ["input", "links", area_from, f"{area_to}_parameters"],
-            )
+            study_data.tree.save(series_id, ["input", "links", area_from, f"{area_to}_parameters"])
 
     @override
     def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
@@ -149,16 +145,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:
-            study_data.tree.save(
-                series_id,
-                [
-                    "input",
-                    "links",
-                    area_from,
-                    "capacities",
-                    f"{area_to}_direct",
-                ],
-            )
+            study_data.tree.save(series_id, ["input", "links", area_from, "capacities", f"{area_to}_direct"])
 
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
@@ -166,13 +153,4 @@ class FileStudyLinkDao(LinkDao, ABC):
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:
-            study_data.tree.save(
-                series_id,
-                [
-                    "input",
-                    "links",
-                    area_from,
-                    "capacities",
-                    f"{area_to}_indirect",
-                ],
-            )
+            study_data.tree.save(series_id, ["input", "links", area_from, "capacities", f"{area_to}_indirect"])

@@ -62,9 +62,7 @@ class LinkManager:
             area1=link.area1,
             area2=link.area2,
             parameters=link.model_dump(
-                include=link_update_dto.model_fields_set,
-                exclude={"area1", "area2"},
-                exclude_none=True,
+                include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
             ),
             command_context=self._command_context,
             study_version=study.version,

@@ -15,9 +15,7 @@ from pydantic import ValidationError
 
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.model import STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
