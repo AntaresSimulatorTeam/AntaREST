@@ -879,6 +879,10 @@
         "month": "Month",
         "week": "Week",
         "weekday": "Weekday"
+      },
+      "preview": {
+        "active": "Preview mode: showing only filtered data",
+        "inactive": "Enable preview to see only filtered data"
       }
     },
     "operation": {

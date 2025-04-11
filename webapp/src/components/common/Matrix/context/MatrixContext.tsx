@@ -16,6 +16,7 @@ import { createContext, useContext } from "react";
 import type { Actions, State } from "use-undo";
 import type { DataState, SetMatrixDataFunction } from "../hooks/useMatrixData";
 import type { AggregateType } from "../shared/types";
+import type { FilterCriteria } from "../components/MatrixFilter/types";
 
 export interface MatrixContextValue {
   // State
@@ -31,6 +32,13 @@ export interface MatrixContextValue {
   canUndo: Actions<DataState>["canUndo"];
   canRedo: Actions<DataState>["canRedo"];
   isDirty: boolean;
+
+  // Filters
+  filterPreview: {
+    active: boolean;
+    criteria: FilterCriteria;
+  };
+  setFilterPreview: (preview: { active: boolean; criteria: FilterCriteria }) => void;
 }
 
 const MatrixContext = createContext<MatrixContextValue | undefined>(undefined);

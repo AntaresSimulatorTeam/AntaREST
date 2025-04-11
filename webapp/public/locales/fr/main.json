@@ -891,6 +891,10 @@
       "multiply": "Multiplier",
       "divide": "Diviser",
       "absolute": "Valeur absolue"
+    },
+    "preview": {
+      "active": "Mode aperçu : affichage des données filtrées uniquement",
+      "inactive": "Activer l'aperçu pour voir uniquement les données filtrées"
     }
   }
 }

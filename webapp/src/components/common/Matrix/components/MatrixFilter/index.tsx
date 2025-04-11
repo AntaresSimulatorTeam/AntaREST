@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Button,
@@ -27,6 +27,8 @@ import {
 import FilterListIcon from "@mui/icons-material/FilterList";
 import DeleteIcon from "@mui/icons-material/Delete";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import { Operation } from "../../shared/constants";
@@ -40,7 +42,8 @@ import SelectionSummary from "./SelectionSummary";
 
 function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
   const { t } = useTranslation();
-  const { currentState, setMatrixData, aggregateTypes } = useMatrixContext();
+  const { currentState, setMatrixData, aggregateTypes, setFilterPreview, filterPreview } =
+    useMatrixContext();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<FilterState>(
     getDefaultFilterState(currentState.data.length, currentState.data[0]?.length || 0),
@@ -150,6 +153,30 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
 
     return { columnsIndices, rowsIndices };
   }, [currentState.data, filter, dateTime, isTimeSeries]);
+
+  // Enable preview mode, allowing users to preview the filtered data before applying operations on it.
+  const togglePreviewMode = () => {
+    setFilterPreview({
+      active: !filterPreview.active,
+      criteria: filteredData,
+    });
+  };
+
+  // Update the filter preview when filter criteria changes
+  useEffect(() => {
+    if (filter.active) {
+      setFilterPreview({
+        ...filterPreview,
+        criteria: filteredData,
+      });
+    } else {
+      // Deactivate preview when filter is deactivated
+      setFilterPreview({
+        active: false,
+        criteria: filteredData,
+      });
+    }
+  }, [filteredData, filter.active, setFilterPreview, filterPreview]);
 
   const applyOperation = () => {
     if (!filter.active || currentState.data.length === 0) {
@@ -286,16 +313,35 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
           </Box>
         </Box>
 
-        <Button
-          variant={filter.active ? "contained" : "outlined"}
-          color={filter.active ? "primary" : "inherit"}
-          onClick={toggleFilter}
-          startIcon={<FilterListIcon />}
-          fullWidth
-          sx={{ mb: 2 }}
-        >
-          {filter.active ? t("matrix.filter.active") : t("matrix.filter.inactive")}
-        </Button>
+        {/* Side-by-side buttons container */}
+        <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+          {/* Main filter toggle button */}
+          <Button
+            variant={filter.active ? "contained" : "outlined"}
+            color={filter.active ? "primary" : "inherit"}
+            onClick={toggleFilter}
+            startIcon={<FilterListIcon />}
+            sx={{ flex: 1 }}
+          >
+            {filter.active ? t("matrix.filter.active") : t("matrix.filter.inactive")}
+          </Button>
+
+          {/* Preview toggle button - smaller and side-by-side */}
+          {filter.active && (
+            <Tooltip
+              title={t(filterPreview.active ? "matrix.preview.active" : "matrix.preview.inactive")}
+            >
+              <Button
+                variant={filterPreview.active ? "contained" : "outlined"}
+                color={filterPreview.active ? "secondary" : "inherit"}
+                onClick={togglePreviewMode}
+                sx={{ minWidth: "unset", width: "48px" }}
+              >
+                {filterPreview.active ? <VisibilityIcon /> : <VisibilityOffIcon />}
+              </Button>
+            </Tooltip>
+          )}
+        </Box>
 
         <Divider sx={{ mb: 2 }} />
 
