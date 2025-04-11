@@ -13,7 +13,6 @@
 import datetime
 import io
 import json
-import os
 import typing as t
 import zipfile
 from unittest.mock import Mock
@@ -501,14 +500,8 @@ def test_hashing_method():
     Non-Regression Test for the hashing method
     It's really important as the whole matrix-store behavior relies on this function
     """
-    _os = "windows" if os.name == "nt" else "unix"
-
-    os_hashes = {
-        "unix": "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0",
-        "windows": "8a12c1c0d2bad4debdb6b357f7d84887aeb2d6e147fd73c05d22f49d41ff479c",
-    }
     df = pd.DataFrame(TEST_MATRIX)
-    assert calculates_hash(df) == os_hashes[_os]
+    assert calculates_hash(df) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
 
     other_df = pd.DataFrame(data=8760 * [1.0])
     assert calculates_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
