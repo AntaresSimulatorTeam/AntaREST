@@ -18,6 +18,7 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
+from antarest.core.exceptions import ScanDisabled
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
@@ -60,6 +61,8 @@ def create_watcher_routes(
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         params = RequestParameters(user=current_user)
+        if config.desktop_mode and recursive:
+            raise ScanDisabled("Recursive scan disables when desktop mode is on")
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:
