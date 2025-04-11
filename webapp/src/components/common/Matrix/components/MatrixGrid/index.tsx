@@ -22,7 +22,7 @@ import {
   type GridKeyEventArgs,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import DataGrid from "@/components/common/DataGrid";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import type {
@@ -35,6 +35,7 @@ import MatrixStats from "../MatrixStats";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import { formatGridNumber } from "../../shared/utils";
 import { useTranslation } from "react-i18next";
+import { useMatrixContext } from "../../context/MatrixContext";
 
 export interface MatrixGridProps {
   data: NonEmptyMatrix;
@@ -68,18 +69,22 @@ function MatrixGrid({
   showStats = true,
 }: MatrixGridProps) {
   const { t } = useTranslation();
+  const { filterPreview } = useMatrixContext();
   const [gridSelection, setGridSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
   });
 
-  const { gridToData } = useColumnMapping(columns);
+  // Only use filtered rows in preview mode
+  const visibleRows = useMemo(() => {
+    if (!filterPreview.active) {
+      return rows;
+    }
 
-  const selectionStats = useSelectionStats({
-    data,
-    selection: gridSelection,
-    gridToData,
-  });
+    return filterPreview.criteria.rowsIndices.length;
+  }, [rows, filterPreview.active, filterPreview.criteria.rowsIndices]);
+
+  const { gridToData } = useColumnMapping(columns);
 
   const getCellContent = useGridCellContent(
     data,
@@ -88,9 +93,15 @@ function MatrixGrid({
     dateTime,
     aggregates,
     rowHeaders,
-    readOnly,
+    readOnly || filterPreview.active, // Make read-only in preview mode,
     showPercent,
   );
+
+  const selectionStats = useSelectionStats({
+    data,
+    selection: gridSelection,
+    gridToData,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -241,7 +252,7 @@ function MatrixGrid({
         key={`matrix-grid-${columns.length}-${data.length}`}
         width={width}
         height={height}
-        rows={rows}
+        rows={visibleRows}
         columns={columns}
         getCellContent={getCellContent}
         onCellEdited={handleCellEdited}
