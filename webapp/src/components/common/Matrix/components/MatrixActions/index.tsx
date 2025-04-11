@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Divider, IconButton, Tooltip } from "@mui/material";
-import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/SplitButton";
 import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
+import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/SplitButton";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
+import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
+import UndoIcon from "@mui/icons-material/Undo";
+import { Button, Divider, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import MatrixResize from "../MatrixResize";
 import { useMatrixContext } from "../../context/MatrixContext";
+import MatrixResize from "../MatrixResize";
 
 interface MatrixActionsProps {
   studyId: string;
@@ -51,7 +51,7 @@ function MatrixActions({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1, overflowX: "auto" }}>
+    <>
       <Tooltip title={t("global.undo")}>
         <span>
           <IconButton onClick={undo} disabled={isSubmitting || !canUndo}>
@@ -67,18 +67,19 @@ function MatrixActions({
         </span>
       </Tooltip>
       <Tooltip title={t("global.save")}>
-        <Button
-          role="button"
-          aria-label={t("global.save")}
-          onClick={onSave}
-          loading={isSubmitting}
-          loadingPosition="start"
-          startIcon={<SaveIcon />}
-          variant="contained"
-          disabled={!isDirty}
-        >
-          ({updateCount})
-        </Button>
+        <span>
+          <Button
+            aria-label={t("global.save")}
+            onClick={onSave}
+            loading={isSubmitting}
+            loadingPosition="start"
+            startIcon={<SaveIcon />}
+            variant="contained"
+            disabled={!isDirty}
+          >
+            ({updateCount})
+          </Button>
+        </span>
       </Tooltip>
       <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
       {isTimeSeries && (
@@ -99,7 +100,7 @@ function MatrixActions({
         {t("global.import")}
       </SplitButton>
       <DownloadMatrixButton studyId={studyId} path={path} disabled={disabled || isSubmitting} />
-    </Box>
+    </>
   );
 }
 

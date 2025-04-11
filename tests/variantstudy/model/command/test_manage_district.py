@@ -13,26 +13,18 @@
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import (
-    transform_name_to_id,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_district import (
-    CreateDistrict,
-    DistrictBaseFilter,
-)
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.remove_district import (
-    RemoveDistrict,
-)
-from antarest.study.storage.variantstudy.model.command.update_district import (
-    UpdateDistrict,
-)
+from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def test_manage_district(empty_study: FileStudy, command_context: CommandContext):
+def test_manage_district(empty_study_810: FileStudy, command_context: CommandContext):
+    empty_study = empty_study_810
     study_dao = FileStudyTreeDao(empty_study)
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
@@ -45,27 +37,15 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
     study_version = empty_study.config.version
 
     CreateArea.model_validate(
-        {
-            "area_name": area1,
-            "command_context": command_context,
-            "study_version": study_version,
-        }
+        {"area_name": area1, "command_context": command_context, "study_version": study_version}
     ).apply(study_dao)
 
     CreateArea.model_validate(
-        {
-            "area_name": area2,
-            "command_context": command_context,
-            "study_version": study_version,
-        }
+        {"area_name": area2, "command_context": command_context, "study_version": study_version}
     ).apply(study_dao)
 
     CreateArea.model_validate(
-        {
-            "area_name": area3,
-            "command_context": command_context,
-            "study_version": study_version,
-        }
+        {"area_name": area3, "command_context": command_context, "study_version": study_version}
     ).apply(study_dao)
 
     create_district1_command: ICommand = CreateDistrict(
@@ -117,10 +97,7 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
     assert set_config["apply-filter"] == "remove-all"
 
     create_district3_command: ICommand = CreateDistrict(
-        name="Empty district without output",
-        output=False,
-        command_context=command_context,
-        study_version=study_version,
+        name="Empty district without output", output=False, command_context=command_context, study_version=study_version
     )
     output_d3 = create_district3_command.apply(
         study_data=study_dao,
@@ -140,9 +117,7 @@ def test_manage_district(empty_study: FileStudy, command_context: CommandContext
     assert len(read_config.sets.keys()) == 4
 
     remove_district3_command: ICommand = RemoveDistrict(
-        id="empty district without output",
-        command_context=command_context,
-        study_version=study_version,
+        id="empty district without output", command_context=command_context, study_version=study_version
     )
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 4

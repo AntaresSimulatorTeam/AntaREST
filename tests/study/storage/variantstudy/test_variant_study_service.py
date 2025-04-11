@@ -27,14 +27,13 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
-from antarest.study.business.utils import execute_or_add_commands
 from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageGroup,
     STStorageProperties,
 )
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -129,7 +128,7 @@ class TestVariantStudyService:
         raw_study_service: RawStudyService,
         simple_matrix_service: SimpleMatrixService,
         generator_matrix_constants: GeneratorMatrixConstants,
-        study_storage_service: StudyStorageService,
+        study_service: StudyService,
         # pytest parameters
         denormalize: bool,
         from_scratch: bool,
@@ -181,9 +180,6 @@ class TestVariantStudyService:
             ),
         )
 
-        ## Prepare the RAW Study
-        file_study = variant_study_service.get_raw(variant_study)
-
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
             matrix_service=simple_matrix_service,
@@ -215,12 +211,7 @@ class TestVariantStudyService:
         )
 
         with current_user_context(jwt_user):
-            execute_or_add_commands(
-                variant_study,
-                file_study,
-                commands=[create_area_fr, create_st_storage],
-                storage_service=study_storage_service,
-            )
+            study_service.get_study_interface(variant_study).add_commands([create_area_fr, create_st_storage])
 
         ## Run the "generate" task
         actual_uui = variant_study_service.generate_task(

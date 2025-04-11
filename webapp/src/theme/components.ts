@@ -12,9 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { colors, type CssVarsThemeOptions, type Theme } from "@mui/material";
+import { colors, type CssVarsTheme, type CssVarsThemeOptions, type Theme } from "@mui/material";
 
-const TAB_MIN_HEIGHT = 38;
+const TAB_MIN_HEIGHT_S = 38;
+const TAB_MIN_HEIGHT_XS = 30;
+
+const muiPopComp = {
+  styleOverrides: {
+    root: ({ theme }: { theme: CssVarsTheme }) => ({
+      ".MuiList-root": theme.applyStyles("light", {
+        backgroundColor: theme.palette.background.paper,
+      }),
+    }),
+  },
+};
 
 export default {
   MuiCssBaseline: {
@@ -34,7 +45,11 @@ export default {
   MuiFormControl: {
     defaultProps: {
       size: "small",
-      margin: "dense", // Prevent label from being cut
+    },
+    styleOverrides: {
+      root: {
+        minWidth: 70,
+      },
     },
   },
   MuiAutocomplete: {
@@ -119,7 +134,6 @@ export default {
       {
         props: { size: "extra-small" },
         style: {
-          margin: 0,
           ".MuiInputBase-root": {
             padding: "0 9px",
           },
@@ -130,15 +144,10 @@ export default {
       },
     ],
   },
+  // Used by select
+  MuiPopover: muiPopComp,
+  MuiPopper: muiPopComp,
   MuiSelect: {
-    defaultProps: {
-      MenuProps: {
-        MenuListProps: {
-          sx: (theme: Theme) =>
-            theme.applyStyles("light", { backgroundColor: theme.palette.background.paper }),
-        },
-      },
-    },
     variants: [
       {
         props: { size: "extra-small" },
@@ -169,21 +178,57 @@ export default {
     },
   },
   MuiTabs: {
-    styleOverrides: {
-      root: {
-        minHeight: TAB_MIN_HEIGHT,
-        // Add 2px like default MUI theme for bottom border when tab is selected
-        height: `${TAB_MIN_HEIGHT + 2}px !important`,
-      },
+    defaultProps: {
+      size: "small",
+      variant: "scrollable",
     },
+    variants: [
+      {
+        props: { size: "small" },
+        style: {
+          minHeight: TAB_MIN_HEIGHT_S,
+          // Add 2px like default MUI theme for bottom border when tab is selected
+          height: `${TAB_MIN_HEIGHT_S + 2}px !important`,
+          ".MuiTab-root": {
+            paddingTop: 5,
+            paddingBottom: 5,
+            minHeight: TAB_MIN_HEIGHT_S,
+          },
+        },
+      },
+      {
+        props: { size: "extra-small" },
+        style: {
+          minHeight: TAB_MIN_HEIGHT_XS,
+          // Add 2px like default MUI theme for bottom border when tab is selected
+          height: `${TAB_MIN_HEIGHT_XS + 2}px !important`,
+          ".MuiTab-root": {
+            padding: 5,
+            minHeight: TAB_MIN_HEIGHT_XS,
+            minWidth: 60,
+          },
+        },
+      },
+    ],
   },
   MuiTab: {
+    defaultProps: {
+      wrapped: true,
+    },
+  },
+  MuiTable: {
+    defaultProps: {
+      size: "small",
+    },
+  },
+  MuiTableCell: {
     styleOverrides: {
-      root: {
-        paddingTop: 5,
-        paddingBottom: 5,
-        minHeight: TAB_MIN_HEIGHT,
-      },
+      body: ({ theme }) => ({
+        borderColor: theme.palette.divider,
+      }),
+      stickyHeader: ({ theme }) => ({
+        borderColor: theme.palette.divider,
+      }),
     },
   },
 } satisfies CssVarsThemeOptions["components"];

@@ -10,6 +10,4 @@
 #
 # This file is part of the Antares project.
 
-from pathlib import Path
-
-ASSETS_DIR = Path(__file__).parent.resolve()
+HOURS_IN_WEEK = 168

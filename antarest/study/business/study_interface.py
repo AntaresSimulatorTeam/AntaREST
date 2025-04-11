@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Optional, Sequence
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -21,6 +21,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
 
 class StudyInterface(ABC):
@@ -52,10 +53,7 @@ class StudyInterface(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def add_commands(
-        self,
-        commands: Sequence[ICommand],
-    ) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         """
         Adds commands to that study.
         Note that implementations are not required to actually modify the underlying file study.
@@ -92,9 +90,9 @@ class InMemoryStudyInterface(StudyInterface):
         raise NotImplementedError("In memory studies cannot be converted to file study.")
 
     @override
-    def add_commands(self, commands: Sequence[ICommand]) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         for command in commands:
-            result = command.apply(self._study_dao)
+            result = command.apply(self._study_dao, listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
 
@@ -127,7 +125,7 @@ class FileStudyInterface(StudyInterface):
         return self.file_study
 
     @override
-    def add_commands(self, commands: Sequence[ICommand]) -> None:
+    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         for command in commands:
             result = command.apply(FileStudyTreeDao(self.file_study))
             if not result.status:

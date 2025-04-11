@@ -17,8 +17,8 @@ import shutil
 import typing as t
 from datetime import datetime, timedelta
 from functools import reduce
-from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, cast
+from pathlib import Path, PurePosixPath
+from typing import Callable, Dict, List, Optional, Sequence, cast
 from uuid import uuid4
 
 import humanize
@@ -43,7 +43,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.model import JSON, PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
@@ -52,14 +52,26 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
 from antarest.matrixstore.service import MatrixService
-from antarest.study.model import RawStudy, Study, StudyAdditionalData, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import (
+    RawStudy,
+    Study,
+    StudyAdditionalData,
+    StudyMetadataDTO,
+    StudySimResultDTO,
+)
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.utils import assert_permission, export_study_flat, is_managed, remove_from_cache
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService, copy_output_folders
+from antarest.study.storage.utils import (
+    assert_permission,
+    export_study_flat,
+    is_managed,
+    remove_from_cache,
+    update_antares_info,
+)
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -68,7 +80,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
-    GenerationResultInfoDTO,
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -81,7 +92,7 @@ SNAPSHOT_RELATIVE_PATH = "snapshot"
 OUTPUT_RELATIVE_PATH = "output"
 
 
-class VariantStudyService(AbstractStorageService[VariantStudy]):
+class VariantStudyService(AbstractStorageService):
     def __init__(
         self,
         task_service: ITaskService,
@@ -772,50 +783,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
 
         return self.generate_task(variant_study, denormalize, from_scratch=from_scratch)
 
-    def generate_study_config(
-        self,
-        variant_study_id: str,
-        params: RequestParameters,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        # Get variant study
-        variant_study = self._get_variant_study(variant_study_id, params)
-
-        # Get parent study
-        if variant_study.parent_id is None:
-            raise NoParentStudyError(variant_study_id)
-
-        return self._generate_study_config(variant_study, variant_study, None)
-
-    def _generate_study_config(
-        self,
-        original_study: VariantStudy,
-        metadata: VariantStudy,
-        config: Optional[FileStudyTreeConfig],
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        parent_study = self.repository.get(metadata.parent_id)
-        if parent_study is None:
-            raise StudyNotFoundError(metadata.parent_id)
-
-        if isinstance(parent_study, RawStudy):
-            study = self.study_factory.create_from_fs(
-                self.raw_study_service.get_study_path(parent_study),
-                parent_study.id,
-                output_path=Path(original_study.path) / OUTPUT_RELATIVE_PATH,
-                use_cache=False,
-            )
-            parent_config = study.config
-        else:
-            res, parent_config = self._generate_study_config(original_study, parent_study, config)
-            if res is not None and not res.success:
-                return res, parent_config
-
-        # Generate
-        res, config = self._generate_config(metadata, parent_config)
-        # fix paths
-        config.path = Path(metadata.path) / SNAPSHOT_RELATIVE_PATH
-        config.study_path = Path(metadata.path)
-        return res, config
-
     def _to_commands(self, metadata: VariantStudy, from_index: int = 0) -> t.List[t.List[ICommand]]:
         commands: List[List[ICommand]] = [
             self.command_factory.to_command(command_block.to_dto())
@@ -823,14 +790,6 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
             if from_index <= index
         ]
         return commands
-
-    def _generate_config(
-        self,
-        variant_study: VariantStudy,
-        config: FileStudyTreeConfig,
-    ) -> Tuple[GenerationResultInfoDTO, FileStudyTreeConfig]:
-        commands = self._to_commands(variant_study)
-        return self.generator.generate_config(commands, config, variant_study)
 
     def get_study_task(self, study_id: str, params: RequestParameters) -> TaskDTO:
         """
@@ -884,63 +843,43 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
     @override
     def copy(
         self,
-        src_meta: VariantStudy,
+        src_study: VariantStudy,
         dest_name: str,
         groups: Sequence[str],
-        with_outputs: bool = False,
-    ) -> VariantStudy:
+        destination_folder: PurePosixPath,
+        output_ids: List[str],
+        with_outputs: bool | None,
+    ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
 
         Args:
-            src_meta: The source study that you want to copy.
+            src_study: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
             The newly created study.
         """
-        new_id = str(uuid4())
-        study_path = str(self.config.get_workspace_path() / new_id)
-        if src_meta.additional_data is None:
-            additional_data = StudyAdditionalData()
-        else:
-            additional_data = StudyAdditionalData(
-                horizon=src_meta.additional_data.horizon,
-                author=src_meta.additional_data.author,
-                patch=src_meta.additional_data.patch,
-            )
-        dst_meta = VariantStudy(
-            id=new_id,
-            name=dest_name,
-            parent_id=src_meta.parent_id,
-            path=study_path,
-            public_mode=PublicMode.NONE if groups else PublicMode.READ,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            version=src_meta.version,
-            groups=groups,
-            snapshot=None,
-            additional_data=additional_data,
-        )
 
-        # noinspection PyArgumentList
-        dst_meta.commands = [
-            CommandBlock(
-                study_id=new_id,
-                command=command.command,
-                args=command.args,
-                index=command.index,
-                version=command.version,
-                study_version=str(command.study_version),
-                user_id=command.user_id,
-                updated_at=command.updated_at,
-            )
-            for command in src_meta.commands
-        ]
+        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study, destination_folder)
 
-        return dst_meta
+        file_study = self.get_raw(metadata=src_study)
+
+        src_path = file_study.config.path
+        dest_path = dest_study.path
+        shutil.copytree(src_path, dest_path)
+
+        src_path = cast(Path, file_study.config.output_path)
+        if src_path.exists():
+            dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
+            copy_output_folders(src_path, dest_path, with_outputs, output_ids)
+
+        update_antares_info(dest_study, file_study.tree, update_author=True)
+        return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
         try:
@@ -1097,14 +1036,10 @@ class VariantStudyService(AbstractStorageService[VariantStudy]):
         Returns: FileStudyTreeConfigDTO
 
         """
-        if params is None:
-            raise UserHasNotPermissionError()
-
-        results, config = self.generate_study_config(metadata.id, params)
-        if results.success:
-            return FileStudyTreeConfigDTO.from_build_config(config)
-
-        raise VariantGenerationError(f"Error during light generation of {metadata.id}")
+        self._safe_generation(metadata)
+        study_path = self.get_study_path(metadata)
+        study = self.study_factory.create_from_fs(study_path, metadata.id)
+        return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
     def initialize_additional_data(self, variant_study: VariantStudy) -> bool:

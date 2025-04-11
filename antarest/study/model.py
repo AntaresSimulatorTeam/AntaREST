@@ -207,7 +207,30 @@ class StudyAdditionalData(Base):  # type:ignore
 
 class Study(Base):  # type: ignore
     """
-    Standard Study entity
+    Base study entity to save main metadata, common for any type of study (raw, variant, managed or not)
+
+    Attributes:
+        id: The unique identifier of the study in the application. A UUID.
+        name: The name of the study, will be used for display purpose or searching. Note that this is NOT
+              a unique identifier. May contain any type of characters.
+        version: The version of the study, for example "7.0". Currently, any format accepted by StudyVersion.parse i
+                 considered valid: "8.8" or "880" for example.
+        author: The author name. Note that it may be different from the owner, and even not be a user of the application.
+        created_at: The timestamp when the study was created.
+        updated_at: The timestamp when the study was last updated.
+        last_access: The timestamp when the study was last accessed.
+        path: The path to a study directory on the file system. Note that depending on the type of study, this may
+              represent different things. In particular, this is generally speaking not a valid study for the simulator.
+              (for example, variants will generate snapshots in "<path> / snapshot").
+        folder: Where the study is located in the workspace, from the user point of view.
+                Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
+                folder presented to the user, not the way we organize data internally.
+        parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
+        public_mode: Defines the actions any user logged in is allowed to take on the study.
+        owner_id: The ID of the owner of the study.
+        archived: Whether the study is archived or not. Most operations are not allowed on archived studies.
+                  The actual implementation of study archival may depend on the type of study. Currently,
+                  only managed raw studies may be archived.
     """
 
     __tablename__ = "study"
@@ -304,6 +327,14 @@ def normalize_path(path: Optional[str]) -> Optional[str]:
 class RawStudy(Study):
     """
     Study filesystem based entity implementation.
+
+    Attributes:
+        content_status: A validity status of this study content.
+        workspace: The workspace this study belongs to. Note that the workspace in particular defines
+                   if the study is "managed" (if it belongs to the "default" workspace) or not.
+        missing: A timestamp indicating when the study has been identified as missing on disk, typically by
+                 a scan of the filesystem. When a study is missing, the deletion does not happen immediately,
+                 in case there was a disk-mounting issue.
     """
 
     __tablename__ = "rawstudy"

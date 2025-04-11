@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from pydantic import Field
 from typing_extensions import override
@@ -43,8 +43,7 @@ class RemoveSTStorage(ICommand):
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
     storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         """
         Applies configuration changes to the study data: remove the storage from the storages list.
 
@@ -58,23 +57,18 @@ class RemoveSTStorage(ICommand):
         # Check if the study version is above the minimum required version.
         version = study_data.version
         if version < REQUIRED_VERSION:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
             )
 
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_id}' does not exist in the study configuration.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_id}' does not exist in the study configuration.",
             )
+
         area: Area = study_data.areas[self.area_id]
 
         # Search the Short term storage in the area
@@ -82,23 +76,17 @@ class RemoveSTStorage(ICommand):
             if st_storage.id == self.storage_id:
                 break
         else:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Short term storage '{self.storage_id}' does not exist in the area '{self.area_id}'.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Short term storage '{self.storage_id}' does not exist in the area '{self.area_id}'.",
             )
 
         # Remove the Short term storage from the configuration
         area.st_storages.remove(st_storage)
 
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Short term storage '{self.storage_id}' removed from the area '{self.area_id}'.",
-            ),
-            {},
+        return CommandOutput(
+            status=True,
+            message=f"Short term storage '{self.storage_id}' removed from the area '{self.area_id}'.",
         )
 
     @override
@@ -129,7 +117,7 @@ class RemoveSTStorage(ICommand):
             study_data.tree.delete(path)
         # Deleting the short-term storage in the configuration must be done AFTER
         # deleting the files and folders.
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:

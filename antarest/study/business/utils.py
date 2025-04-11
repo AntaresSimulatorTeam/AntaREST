@@ -10,73 +10,15 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Callable, MutableSequence, Optional, Sequence, TypedDict
+from typing import Any, Callable, Optional, TypedDict
 
 from antares.study.version import StudyVersion
 
-from antarest.core.exceptions import CommandApplicationError
-from antarest.core.requests import RequestParameters
 from antarest.core.serde import AntaresBaseModel
-from antarest.login.utils import get_current_user
 from antarest.study.business.all_optional_meta import camel_case_model
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import RawStudy, Study
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.utils import is_managed, remove_from_cache
-from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
-    ICommandListener,
-)
 
 # noinspection SpellCheckingInspection
 GENERAL_DATA_PATH = "settings/generaldata"
-
-
-def execute_or_add_commands(
-    study: Study,
-    file_study: FileStudy,
-    commands: Sequence[ICommand],
-    storage_service: StudyStorageService,
-    listener: Optional[ICommandListener] = None,
-) -> None:
-    # get current user if not in session, otherwise get session user
-    current_user = get_current_user()
-
-    if isinstance(study, RawStudy):
-        executed_commands: MutableSequence[ICommand] = []
-        for command in commands:
-            result = command.apply(FileStudyTreeDao(file_study), listener)
-            if not result.status:
-                raise CommandApplicationError(result.message)
-            executed_commands.append(command)
-        remove_from_cache(storage_service.raw_study_service.cache, study.id)
-        storage_service.variant_study_service.on_parent_change(study.id)
-        if not is_managed(study):
-            # In a previous version, de-normalization was performed asynchronously.
-            # However, this cause problems with concurrent file access,
-            # especially when de-normalizing a matrix (which can take time).
-            #
-            # async_denormalize = threading.Thread(
-            #     name=f"async_denormalize-{study.id}",
-            #     target=file_study.tree.denormalize,
-            # )
-            # async_denormalize.start()
-            #
-            # To avoid this concurrency problem, it would be necessary to implement a
-            # locking system for the entire study using a file lock (since multiple processes,
-            # not only multiple threads, could access the same content simultaneously).
-            #
-            # Currently, we use a synchronous call to address the concurrency problem
-            # within the current process (not across multiple processes)...
-            file_study.tree.denormalize()
-    else:
-        storage_service.variant_study_service.append_commands(
-            study.id,
-            transform_command_to_dto(commands, force_aggregate=True),
-            RequestParameters(user=current_user),
-        )
 
 
 @camel_case_model

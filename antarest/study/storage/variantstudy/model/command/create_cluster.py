@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 import typing as t
-from typing import Any, Dict, Final, List, Optional, Tuple
+from typing import Any, Dict, Final, List, Optional, Self, Tuple
 
+from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
@@ -19,12 +20,17 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
+    ThermalClusterCreation,
+    create_thermal_cluster,
+    validate_thermal_cluster_against_version,
+)
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    ThermalPropertiesType,
-    create_thermal_config,
-    create_thermal_properties,
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -51,12 +57,13 @@ class CreateCluster(ICommand):
     # ==================
 
     area_id: AreaId
-    parameters: ThermalPropertiesType
+    parameters: ThermalClusterCreation
     prepro: OptionalMatrixData = Field(None, validate_default=True)
     modulation: OptionalMatrixData = Field(None, validate_default=True)
 
     # version 2: remove cluster_name and type parameters as ThermalPropertiesType
-    _SERIALIZATION_VERSION: Final[int] = 2
+    # version 3: type parameters as ThermalClusterCreation
+    _SERIALIZATION_VERSION: Final[int] = 3
 
     @property
     def cluster_name(self) -> str:
@@ -64,13 +71,18 @@ class CreateCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model(cls, values: Dict[str, t.Any], info: ValidationInfo) -> Dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
+            study_version = StudyVersion.parse(values["study_version"])
             parameters = values["parameters"]
-            if info.context and info.context.version == 1:
-                parameters["name"] = values.pop("cluster_name")
-            values["parameters"] = create_thermal_properties(values["study_version"], parameters)
+            if info.context:
+                version = info.context.version
+                if version == 1:
+                    parameters["name"] = values.pop("cluster_name")
+                if version < 3:
+                    cluster = parse_thermal_cluster(study_version, parameters)
+                    values["parameters"] = ThermalClusterCreation.from_cluster(cluster)
 
         # Validate prepro
         if "prepro" in values:
@@ -86,8 +98,12 @@ class CreateCluster(ICommand):
 
         return values
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_thermal_cluster_against_version(self.study_version, self.parameters)
+        return self
+
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, str]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
@@ -95,20 +111,19 @@ class CreateCluster(ICommand):
                     status=False,
                     message=f"Area '{self.area_id}' does not exist in the study configuration.",
                 ),
-                {},
+                "",
             )
         area: Area = study_data.areas[self.area_id]
 
         # Check if the cluster already exists in the area
-        version = study_data.version
-        cluster = create_thermal_config(version, name=self.cluster_name)
+        cluster = ThermalCluster.model_validate({"name": self.cluster_name})
         if any(cl.id == cluster.id for cl in area.thermals):
             return (
                 CommandOutput(
                     status=False,
                     message=f"Thermal cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
                 ),
-                {},
+                "",
             )
 
         area.thermals.append(cluster)
@@ -118,20 +133,20 @@ class CreateCluster(ICommand):
                 status=True,
                 message=f"Thermal cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster.id},
+            cluster.id,
         )
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        output, cluster_id = self.update_in_config(study_data.config)
         if not output.status:
             return output
 
         version = study_data.config.version
 
-        cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
-        config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True)
+        cluster = create_thermal_cluster(self.parameters, version)
+        config[cluster_id] = serialize_thermal_cluster(version, cluster)
 
         # Series identifiers are in lower case.
         series_id = cluster_id.lower()
@@ -166,7 +181,7 @@ class CreateCluster(ICommand):
             action=self.command_name.value,
             args={
                 "area_id": self.area_id,
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
                 "prepro": strip_matrix_protocol(self.prepro),
                 "modulation": strip_matrix_protocol(self.modulation),
             },

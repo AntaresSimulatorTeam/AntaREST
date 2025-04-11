@@ -12,6 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import ArchiveIcon from "@mui/icons-material/Archive";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import DownloadIcon from "@mui/icons-material/Download";
+import EqualizerIcon from "@mui/icons-material/Equalizer";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import UnarchiveIcon from "@mui/icons-material/Unarchive";
 import {
   Box,
   CircularProgress,
@@ -25,21 +34,15 @@ import {
   TableRow,
   Tooltip,
   Typography,
-  colors,
+  Link as MuiLink,
 } from "@mui/material";
+import type { AxiosError } from "axios";
+import moment from "moment";
+import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import ArchiveIcon from "@mui/icons-material/Archive";
-import UnarchiveIcon from "@mui/icons-material/Unarchive";
-import DownloadIcon from "@mui/icons-material/Download";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import EqualizerIcon from "@mui/icons-material/Equalizer";
-import * as R from "ramda";
-import { useNavigate, useOutletContext } from "react-router-dom";
-import moment from "moment";
-import type { AxiosError } from "axios";
+import { Link, useOutletContext } from "react-router-dom";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
   archiveOutput,
@@ -49,13 +52,11 @@ import {
   getStudyOutputs,
   unarchiveOutput,
 } from "../../../../../services/api/study";
-import type { LaunchJob, StudyMetadata, StudyOutput } from "../../../../../types/types";
 import { convertUTCToLocalTime } from "../../../../../services/utils";
-import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
+import type { LaunchJob, StudyMetadata, StudyOutput } from "../../../../../types/types";
 import type { EmptyObject } from "../../../../../utils/tsUtils";
-import DigestDialog from "@/components/common/dialogs/DigestDialog";
+import ConfirmationDialog from "../../../../common/dialogs/ConfirmationDialog";
+import LaunchJobLogView from "../../../Tasks/LaunchJobLogView";
 
 interface OutputDetail {
   name: string;
@@ -113,13 +114,11 @@ const iconStyle = {
   fontSize: 22,
   color: "action.active",
   cursor: "pointer",
-  "&:hover": { color: "action.hover" },
 };
 
 function Results() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
 
@@ -196,12 +195,6 @@ function Results() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleOutputNameClick = (output: OutputDetail) => () => {
-    navigate(`/studies/${study.id}/explore/results/${output.name}`, {
-      state: output.output,
-    });
-  };
-
   const handleDeleteOutput = async (outputName: string) => {
     closeDialog();
     await deleteOutput(study.id, outputName);
@@ -213,32 +206,13 @@ function Results() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        width: 1,
-        height: 1,
-        overflow: "auto",
-        p: 2,
-      }}
-    >
-      <TableContainer component={Paper}>
-        <Table sx={{ width: 1, height: "90%" }} aria-label="simple table">
+    <ViewWrapper>
+      <TableContainer component={Paper} elevation={2} sx={{ height: 1 }}>
+        <Table stickyHeader>
           <TableHead>
-            <TableRow
-              sx={{
-                "& td, & th": {
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                  color: colors.grey[500],
-                },
-              }}
-            >
+            <TableRow>
               <TableCell>{t("global.name")}</TableCell>
-              <TableCell align="right">
-                <Box display="flex" alignItems="center" justifyContent="flex-end">
-                  {t("global.date")}
-                </Box>
-              </TableCell>
+              <TableCell align="right">{t("global.date")}</TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
             </TableRow>
           </TableHead>
@@ -249,17 +223,7 @@ function Results() {
                 () => (
                   <>
                     {Array.from({ length: 3 }, (v, k) => k).map((v) => (
-                      <TableRow
-                        key={`sk-${v}`}
-                        sx={{
-                          "& td, & th": {
-                            borderColor: "divider",
-                          },
-                          "&:last-child > td, &:last-child > th": {
-                            border: 0,
-                          },
-                        }}
-                      >
+                      <TableRow key={v}>
                         <TableCell colSpan={3} scope="row">
                           <Skeleton sx={{ width: 1, height: 50 }} />
                         </TableCell>
@@ -273,28 +237,17 @@ function Results() {
                 () => (
                   <>
                     {outputs.map((row) => (
-                      <TableRow
-                        key={`job-${row.name}`}
-                        sx={{
-                          "& td, & th": {
-                            borderColor: "divider",
-                          },
-                          "&:last-child > td, &:last-child > th": {
-                            border: 0,
-                          },
-                        }}
-                      >
+                      <TableRow key={row.name}>
                         <TableCell component="th" scope="row">
                           {row.completionDate ? (
-                            <Typography
-                              sx={{
-                                "&:hover": { textDecoration: "underline" },
-                                cursor: "pointer",
-                              }}
-                              onClick={handleOutputNameClick(row)}
+                            <MuiLink
+                              color="inherit"
+                              underline="hover"
+                              component={Link}
+                              to={`/studies/${study.id}/explore/results/${encodeURI(row.name)}`}
                             >
                               {row.name}
-                            </Typography>
+                            </MuiLink>
                           ) : (
                             <Box sx={{ display: "flex", alignItems: "center" }}>
                               <CircularProgress
@@ -315,7 +268,6 @@ function Results() {
                               alignItems: "flex-end",
                               justifyContent: "center",
                               flexDirection: "column",
-                              color: colors.grey[500],
                               fontSize: "0.85rem",
                             }}
                           >
@@ -414,17 +366,7 @@ function Results() {
               [
                 R.T,
                 () => (
-                  <TableRow
-                    key="job-none"
-                    sx={{
-                      "& td, & th": {
-                        borderColor: "divider",
-                      },
-                      "&:last-child > td, &:last-child > th": {
-                        border: 0,
-                      },
-                    }}
-                  >
+                  <TableRow>
                     <TableCell colSpan={3} scope="row">
                       <Typography sx={{ m: 2 }} align="center">
                         {t("results.noOutputs")}
@@ -454,7 +396,7 @@ function Results() {
           onOk={closeDialog}
         />
       )}
-    </Box>
+    </ViewWrapper>
   );
 }
 

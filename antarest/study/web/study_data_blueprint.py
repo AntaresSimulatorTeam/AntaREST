@@ -56,8 +56,13 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
-from antarest.study.business.model.hydro_model import HydroManagement, HydroManagementUpdate
-from antarest.study.business.model.inflow_model import InflowStructure, InflowStructureUpdate
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    HydroManagementUpdate,
+    HydroProperties,
+    InflowStructure,
+    InflowStructureUpdate,
+)
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
@@ -66,8 +71,8 @@ from antarest.study.business.model.renewable_cluster_model import (
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
 from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
     ThermalClusterCreation,
-    ThermalClusterOutput,
     ThermalClusterUpdate,
 )
 from antarest.study.business.optimization_management import OptimizationFormFields
@@ -390,6 +395,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)
         study_interface = study_service.get_study_interface(study)
         study_service.district_manager.remove_district(study_interface, district_id)
+
+    @bp.get(
+        "/studies/{uuid}/hydro",
+        tags=[APITag.study_data],
+        summary="Get Hydro properties for each area of the study",
+        response_model=dict[str, HydroProperties],
+        response_model_exclude_none=True,
+    )
+    def get_hydro_properties_by_area(
+        uuid: str,
+        current_user: JWTUser = Depends(auth.get_current_user),
+    ) -> dict[str, HydroProperties]:
+        logger.info(
+            msg=f"Getting Hydro properties for each area of study {uuid}",
+            extra={"user": current_user.id},
+        )
+        params = RequestParameters(user=current_user)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ, params)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.hydro_manager.get_all_hydro_properties(study_interface)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
@@ -1873,13 +1898,12 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
         summary="Get thermal clusters for a given area",
-        response_model=Sequence[ThermalClusterOutput],
     )
     def get_thermal_clusters(
         uuid: str,
         area_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Sequence[ThermalClusterOutput]:
+    ) -> Sequence[ThermalCluster]:
         """
         Retrieve the list of thermal clusters for a specified area.
 
@@ -1899,14 +1923,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
         tags=[APITag.study_data],
         summary="Get thermal configuration for a given cluster",
-        response_model=ThermalClusterOutput,
     )
     def get_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Retrieve the thermal clusters for a specified area.
 
@@ -1941,14 +1964,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
         summary="Create a new thermal cluster for a given area",
-        response_model=ThermalClusterOutput,
     )
     def create_thermal_cluster(
         uuid: str,
         area_id: str,
         cluster_data: ThermalClusterCreation,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Create a new thermal cluster for a specified area.
 
@@ -1970,7 +1992,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}",
         tags=[APITag.study_data],
         summary="Update thermal cluster for a given area",
-        response_model=ThermalClusterOutput,
     )
     def update_thermal_cluster(
         uuid: str,
@@ -1978,7 +1999,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_id: str,
         cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Update the properties of a thermal cluster for a specified area.
 
@@ -1999,7 +2020,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/form",
         tags=[APITag.study_data],
         summary="Get thermal configuration for a given cluster (deprecated)",
-        response_model=ThermalClusterOutput,
         deprecated=True,
     )
     def redirect_update_thermal_cluster(
@@ -2008,7 +2028,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_id: str,
         cluster_data: ThermalClusterUpdate,
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
         return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data, current_user=current_user)
 
@@ -2383,7 +2403,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         source_cluster_id: str,
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> STStorageOutput | ThermalClusterOutput | RenewableClusterOutput:
+    ) -> STStorageOutput | ThermalCluster | RenewableClusterOutput:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         params = RequestParameters(user=current_user)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE, params)

@@ -56,6 +56,7 @@ from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,7 @@ class LauncherService:
         self,
         config: Config,
         study_service: StudyService,
+        output_service: OutputService,
         job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
@@ -91,6 +93,7 @@ class LauncherService:
     ) -> None:
         self.config = config
         self.study_service = study_service
+        self.output_service = output_service
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -561,7 +564,7 @@ class LauncherService:
                                 log_suffix,
                                 concat_files_to_str(log_paths),
                             )
-                    return self.study_service.import_output(
+                    return self.output_service.import_output(
                         study_id,
                         final_output_path,
                         RequestParameters(launching_user),
@@ -623,7 +626,7 @@ class LauncherService:
             if self._get_job_output_fallback_path(job_id).exists():
                 return self._download_fallback_output(job_id, params)
             self.study_service.get_study(job_result.study_id)
-            return self.study_service.export_output(
+            return self.output_service.export_output(
                 job_result.study_id,
                 job_result.output_id,
                 params,

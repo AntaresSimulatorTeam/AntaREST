@@ -12,24 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import { Divider, Skeleton } from "@mui/material";
-import MatrixGrid from "./components/MatrixGrid";
+import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Skeleton, Tooltip } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../types/types";
-import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
-import MatrixActions from "./components/MatrixActions";
-import EmptyView from "../page/EmptyView";
 import type { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { isNonEmptyMatrix, type AggregateConfig, type RowCountSource } from "./shared/types";
-import GridOffIcon from "@mui/icons-material/GridOff";
-import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
+import CustomScrollbar from "../CustomScrollbar";
+import EmptyView from "../page/EmptyView";
+import MatrixActions from "./components/MatrixActions";
+import MatrixGrid from "./components/MatrixGrid";
 import { MatrixProvider } from "./context/MatrixContext";
-import { useMatrixData } from "./hooks/useMatrixData";
-import { getAggregateTypes } from "./shared/utils";
-import { useMatrixMutations } from "./hooks/useMatrixMutations";
 import { useMatrixColumns } from "./hooks/useMatrixColumns";
+import { useMatrixData } from "./hooks/useMatrixData";
+import { useMatrixMutations } from "./hooks/useMatrixMutations";
+import { isNonEmptyMatrix, type AggregateConfig, type RowCountSource } from "./shared/types";
+import { getAggregateTypes } from "./shared/utils";
+import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
   url: string;
@@ -50,7 +51,7 @@ interface MatrixProps {
 
 function Matrix({
   url,
-  title = "global.timeSeries",
+  title: titleProp,
   customRowHeaders = [],
   dateTimeColumn = true,
   isTimeSeries = true,
@@ -67,6 +68,7 @@ function Matrix({
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
+  const title = titleProp ?? t("global.timeSeries");
 
   const aggregateTypes = useMemo(
     () => getAggregateTypes(aggregateColumns || []),
@@ -145,22 +147,28 @@ function Matrix({
       }}
     >
       <MatrixContainer>
-        <MatrixHeader>
-          <MatrixTitle>{t(title)}</MatrixTitle>
-          <MatrixActions
-            studyId={study.id}
-            path={url}
-            disabled={currentState.data.length === 0}
-            isTimeSeries={isTimeSeries}
-            onSave={handleSaveUpdates}
-            onMatrixUpdated={reload}
-            canImport={canImport}
-            onImport={(_, index) => {
-              setUploadType(index === 0 ? "file" : "database");
-            }}
-          />
-        </MatrixHeader>
-        <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
+        {/* The <Box> allows to keep the height on vertical resize */}
+        <Box>
+          <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+            <MatrixHeader>
+              <Tooltip title={title}>
+                <MatrixTitle>{title}</MatrixTitle>
+              </Tooltip>
+              <MatrixActions
+                studyId={study.id}
+                path={url}
+                disabled={currentState.data.length === 0}
+                isTimeSeries={isTimeSeries}
+                onSave={handleSaveUpdates}
+                onMatrixUpdated={reload}
+                canImport={canImport}
+                onImport={(_, index) => {
+                  setUploadType(index === 0 ? "file" : "database");
+                }}
+              />
+            </MatrixHeader>
+          </CustomScrollbar>
+        </Box>
         {isNonEmptyMatrix(currentState.data) ? (
           <MatrixGrid
             data={currentState.data}

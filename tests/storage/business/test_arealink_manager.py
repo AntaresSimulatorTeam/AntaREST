@@ -14,37 +14,20 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.area_management import (
-    AreaCreationDTO,
-    AreaManager,
-    AreaType,
-    UpdateAreaUi,
-)
+from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkDTO, LinkManager
 from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
-    DistrictSet,
-    FileStudyTreeConfig,
-    Link,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    ThermalConfig,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import (
-    FileStudyTree,
-)
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
 
 
 def test_area_crud(
-    study: StudyInterface,
-    matrix_service: ISimpleMatrixService,
-    area_manager: AreaManager,
-    link_manager: LinkManager,
+    study: StudyInterface, matrix_service: ISimpleMatrixService, area_manager: AreaManager, link_manager: LinkManager
 ) -> None:
     file_study = study.get_files()
     assert len(file_study.config.areas.keys()) == 0
@@ -93,7 +76,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "a2": Link(filters_synthesis=[], filters_year=[]),
                     "a3": Link(filters_synthesis=[], filters_year=[]),
                 },
-                thermals=[ThermalConfig(id="a", name="a", enabled=True)],
+                thermals=[ThermalCluster(name="a", enabled=True)],
                 renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
@@ -147,7 +130,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "fixed_cost": 0.0,
                     "gen_ts": "use global",
                     "group": "other 1",
-                    "id": "a",
+                    "id": "A",
                     "law_forced": "uniform",
                     "law_planned": "uniform",
                     "marginal_cost": 0.0,
@@ -197,7 +180,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         },
     ]
     areas = area_manager.get_all_areas(study_interface, AreaType.AREA)
-    assert expected_areas == [area.model_dump() for area in areas]
+    assert [area.model_dump() for area in areas] == expected_areas
 
     expected_clusters = [
         {

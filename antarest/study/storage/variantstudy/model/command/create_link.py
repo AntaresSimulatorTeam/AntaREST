@@ -34,9 +34,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import (
-    ICommandListener,
-)
+from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 MATRIX_ATTRIBUTES = ["series", "direct", "indirect"]
@@ -57,9 +55,7 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
 
     @field_validator("series", "direct", "indirect", mode="before")
     def validate_series(
-        cls,
-        v: Optional[Union[List[List[MatrixData]], str]],
-        values: Union[Dict[str, Any], ValidationInfo],
+        cls, v: Optional[Union[List[List[MatrixData]], str]], values: Union[Dict[str, Any], ValidationInfo]
     ) -> Optional[Union[List[List[MatrixData]], str]]:
         new_values = values if isinstance(values, dict) else values.data
         return validate_matrix(v, new_values) if v is not None else v
@@ -147,7 +143,6 @@ class CreateLink(AbstractLinkCommand):
     command_name: CommandName = CommandName.CREATE_LINK
     version: int = 1
 
-    @override
     def _apply_config_dao(self, study_data: StudyDao) -> Tuple[CommandOutput, Dict[str, Any]]:
         try:
             link = LinkInternal.model_validate(self.parameters or {}).to_dto()
