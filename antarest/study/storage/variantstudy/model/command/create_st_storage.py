@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, Final, List, Optional, Tuple, TypeAlias, cast
+from typing import Any, Dict, Final, List, Optional, TypeAlias, cast
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -222,50 +222,39 @@ class CreateSTStorage(ICommand):
 
         return self
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         """
-        Applies configuration changes to the study data: add the short-term storage in the storages list.
+        validate inputs and add the short-term storage in the storages list.
 
         Args:
             study_data: The study data configuration.
 
         Returns:
-            A tuple containing the command output and a dictionary of extra data.
-            On success, the dictionary of extra data is `{"storage_id": storage_id}`.
+            A tuple containing the command output and the storage_id of the created storage.
         """
 
         # Check if the study version is above the minimum required version.
         storage_id = self.storage_id
         version = study_data.version
         if version < REQUIRED_VERSION:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
             )
 
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_id}' does not exist in the study configuration.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_id}' does not exist in the study configuration.",
             )
         area: Area = study_data.areas[self.area_id]
 
         # Check if the short-term storage already exists in the area
         if any(s.id == storage_id for s in area.st_storages):
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
-                ),
-                {},
+            return CommandOutput(
+                status=False,
+                message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
             )
 
         # Create a new short-term storage and add it to the area
@@ -273,13 +262,9 @@ class CreateSTStorage(ICommand):
             self.study_version, **self.parameters.model_dump(mode="json", by_alias=True)
         )
         area.st_storages.append(storage_config)
-
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
-            ),
-            {"storage_id": storage_id},
+        return CommandOutput(
+            status=True,
+            message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
         )
 
     @override
@@ -296,7 +281,7 @@ class CreateSTStorage(ICommand):
             The output of the command execution.
         """
         storage_id = self.storage_id
-        output, _ = self._apply_config(study_data.config)
+        output = self.update_in_config(study_data.config)
         if not output.status:
             return output
 

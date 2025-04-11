@@ -21,6 +21,7 @@ import type { GridUpdate, AggregateType } from "../shared/types";
 import { calculateMatrixAggregates } from "../shared/utils";
 import { toError } from "@/utils/fnUtils";
 import type { DataState, SetMatrixDataFunction } from "./useMatrixData";
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 
 interface UseMatrixMutationsProps {
   studyId: string;
@@ -51,6 +52,9 @@ export function useMatrixMutations({
 }: UseMatrixMutationsProps): MatrixMutationsResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  // Prevents accidental navigation when matrix has unsaved changes or during submission
+  useFormCloseProtection({ isSubmitting, isDirty });
 
   const updateMatrixData = useCallback(
     (updates: GridUpdate[]): void => {

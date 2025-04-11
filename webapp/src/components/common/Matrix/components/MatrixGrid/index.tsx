@@ -19,9 +19,10 @@ import {
   type EditableGridCell,
   type EditListItem,
   type Item,
+  type GridKeyEventArgs,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import DataGrid from "@/components/common/DataGrid";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import type {
@@ -32,6 +33,8 @@ import type {
 } from "../../shared/types";
 import MatrixStats from "../MatrixStats";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
+import { formatGridNumber } from "../../shared/utils";
+import { useTranslation } from "react-i18next";
 
 export interface MatrixGridProps {
   data: NonEmptyMatrix;
@@ -64,6 +67,7 @@ function MatrixGrid({
   showPercent,
   showStats = true,
 }: MatrixGridProps) {
+  const { t } = useTranslation();
   const [gridSelection, setGridSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
@@ -141,6 +145,92 @@ function MatrixGrid({
     return true;
   };
 
+  const handleKeyDown = useCallback(
+    (event: GridKeyEventArgs) => {
+      // Fill selection with value (Ctrl+Shift+Enter)
+      if (event.shiftKey && event.ctrlKey && event.key === "Enter") {
+        if (
+          gridSelection.current?.range ||
+          gridSelection.rows.length > 0 ||
+          gridSelection.columns.length > 0
+        ) {
+          const userInput = prompt(t("matrix.fillSelection.numberPrompt"));
+
+          // Return early if user cancelled or input is empty/whitespace
+          if (userInput === null || userInput.trim() === "") {
+            return;
+          }
+
+          const value = Number(userInput);
+
+          if (Number.isNaN(value)) {
+            alert(t("form.field.invalidNumber"));
+            return;
+          }
+
+          const updates: GridUpdate[] = [];
+
+          const addItemUpdate = (item: Item) => {
+            const column = columns[item[0]];
+
+            if (!column.editable || column.type !== GridCellKind.Number) {
+              return;
+            }
+
+            const coordinates = gridToData(item);
+
+            if (coordinates) {
+              updates.push({
+                coordinates,
+                value: {
+                  kind: GridCellKind.Number,
+                  data: value,
+                  displayData: formatGridNumber({ value }),
+                  allowOverlay: true,
+                },
+              });
+            }
+          };
+
+          // Handle range selection
+          if (gridSelection.current?.range) {
+            const { x, y, width, height } = gridSelection.current.range;
+
+            for (let col = x; col < x + width; col++) {
+              for (let row = y; row < y + height; row++) {
+                addItemUpdate([col, row]);
+              }
+            }
+          }
+
+          // Handle row selections
+          else if (gridSelection.rows.length > 0) {
+            for (const rowIndex of gridSelection.rows) {
+              for (let col = 0; col < columns.length; col++) {
+                addItemUpdate([col, rowIndex]);
+              }
+            }
+          }
+
+          // Handle column selections
+          else if (gridSelection.columns.length > 0) {
+            for (const colIndex of gridSelection.columns) {
+              for (let row = 0; row < rows; row++) {
+                addItemUpdate([colIndex, row]);
+              }
+            }
+          }
+
+          // Apply the updates if there are any
+          if (updates.length > 0 && onMultipleCellsEdit) {
+            onMultipleCellsEdit(updates);
+          }
+        }
+      }
+    },
+    [gridSelection, gridToData, onMultipleCellsEdit, columns, rows, t],
+  );
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -155,9 +245,10 @@ function MatrixGrid({
         getCellContent={getCellContent}
         onCellEdited={handleCellEdited}
         onCellsEdited={handleCellsEdited}
-        keybindings={{ paste: false, copy: false }}
-        getCellsForSelection // TODO handle large copy/paste using this
+        getCellsForSelection
+        onPaste={!readOnly}
         fillHandle={!readOnly}
+        onKeyDown={readOnly ? undefined : handleKeyDown}
         allowedFillDirections="any"
         rowMarkers="both"
         freezeColumns={1} // Make the first column sticky

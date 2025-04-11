@@ -218,7 +218,7 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Extra inputs are not permitted"
         assert "efficiency_withdrawal" in raised_error["loc"]
 
-    def test_apply_config__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
+    def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
         empty_study = empty_study_720
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
@@ -234,7 +234,7 @@ class TestCreateSTStorage:
         assert raised_error["type"] == "value_error"
         assert raised_error["msg"] == "Value error, Unsupported study version: 7.2"
 
-    def test_apply_config__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -243,7 +243,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=empty_study_860.config.version,
         )
-        command_output = create_st_storage.apply_config(empty_study_860.config)
+        command_output = create_st_storage.apply(empty_study_860)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -253,7 +253,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext):
         recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
@@ -268,7 +268,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
         assert command_output.status is True
 
         # Then, apply the config a second time
@@ -279,7 +279,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**parameters),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -289,7 +289,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext):
+    def test_apply_create__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext):
         recent_study = empty_study_860
         # First, prepare a new Area
         create_area = CreateArea(
@@ -304,7 +304,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
 
         # Check the command output and extra dict
         assert command_output.status is True

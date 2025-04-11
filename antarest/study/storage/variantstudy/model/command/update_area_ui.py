@@ -15,7 +15,6 @@ import typing as t
 from typing_extensions import override
 
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -41,10 +40,6 @@ class UpdateAreaUI(ICommand):
     layer: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        return CommandOutput(status=True, message=f"area '{self.area_id}' UI updated"), {}
-
-    @override
     def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
         current_area = study_data.tree.get(["input", "areas", self.area_id, "ui"])
 
@@ -59,9 +54,7 @@ class UpdateAreaUI(ICommand):
 
         study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
 
-        output, _ = self._apply_config(study_data.config)
-
-        return output
+        return CommandOutput(status=True, message=f"area '{self.area_id}' UI updated")
 
     @override
     def to_dto(self) -> CommandDTO:

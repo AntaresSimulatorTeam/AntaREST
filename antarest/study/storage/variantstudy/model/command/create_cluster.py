@@ -103,8 +103,7 @@ class CreateCluster(ICommand):
         validate_thermal_cluster_against_version(self.study_version, self.parameters)
         return self
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, str]:
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             return (
@@ -112,7 +111,7 @@ class CreateCluster(ICommand):
                     status=False,
                     message=f"Area '{self.area_id}' does not exist in the study configuration.",
                 ),
-                {},
+                "",
             )
         area: Area = study_data.areas[self.area_id]
 
@@ -124,7 +123,7 @@ class CreateCluster(ICommand):
                     status=False,
                     message=f"Thermal cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
                 ),
-                {},
+                "",
             )
 
         area.thermals.append(cluster)
@@ -134,18 +133,17 @@ class CreateCluster(ICommand):
                 status=True,
                 message=f"Thermal cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster.id},
+            cluster.id,
         )
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        output, cluster_id = self.update_in_config(study_data.config)
         if not output.status:
             return output
 
         version = study_data.config.version
 
-        cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "thermal", "clusters", self.area_id, "list"])
         cluster = create_thermal_cluster(self.parameters, version)
         config[cluster_id] = serialize_thermal_cluster(version, cluster)

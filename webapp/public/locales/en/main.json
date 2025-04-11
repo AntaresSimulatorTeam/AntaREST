@@ -169,6 +169,7 @@
   "form.field.path.endWithSlashNotAllowed": "Path must not end with a '/'",
   "form.field.path.invalid": "Invalid path",
   "matrix.resize": "Resize",
+  "matrix.fillSelection.numberPrompt": "Please enter a number to fill the selected cells:",
   "matrix.message.importHint": "Click or drag and drop a matrix here",
   "matrix.importNewMatrix": "Import a new matrix",
   "matrix.monotonicView": "Monotonic",
