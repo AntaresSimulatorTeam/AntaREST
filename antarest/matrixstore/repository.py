@@ -152,7 +152,7 @@ def calculates_hash(df: pd.DataFrame) -> str:
 
     if not legacy_format:
         df = pd.concat([util.hash_pandas_object(df), util.hash_pandas_object(df.columns)])
-    return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=float)).data).hexdigest()
+    return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=np.float64)).data).hexdigest()
 
 
 class MatrixContentRepository:
