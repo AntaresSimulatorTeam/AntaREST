@@ -18,7 +18,12 @@ DIST_DIR="${PROJECT_DIR}/dist/package"
 RESOURCES_DIR="${PROJECT_DIR}/resources"
 ANTARES_SOLVER_DIR="${DIST_DIR}/AntaresWeb/antares_solver"
 
-ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu20.04.tar.gz"
+if [[ "$OSTYPE" == "msys"* ]]; then
+  ANTARES_SOLVER_FOLDER_NAME="antares-solver_windows"
+  ANTARES_SOLVER_ZIPFILE_NAME="$ANTARES_SOLVER_FOLDER_NAME.zip"
+else
+  ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu20.04.tar.gz"
+fi
 
 LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v$ANTARES_SOLVER_FULL_VERSION/$ANTARES_SOLVER_ZIPFILE_NAME"
 
@@ -58,6 +63,13 @@ else
   tar xzf $ANTARES_SOLVER_ZIPFILE_NAME
 fi
 rm $ANTARES_SOLVER_ZIPFILE_NAME
+
+if [[ "$OSTYPE" == "msys"* ]]; then
+  echo "INFO: Moving executables in '$ANTARES_SOLVER_DIR'..."
+  mv "$ANTARES_SOLVER_FOLDER_NAME/solver/release/antares-solver.exe" "$ANTARES_SOLVER_DIR"
+  mv "$ANTARES_SOLVER_FOLDER_NAME/solver/release/sirius_solver.dll" "$ANTARES_SOLVER_DIR"
+  rm -rf $ANTARES_SOLVER_FOLDER_NAME
+fi
 
 echo "INFO: Copying basic configuration files..."
 rm -rf "${DIST_DIR}/examples" # in case of replay
