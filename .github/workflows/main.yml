@@ -47,7 +47,7 @@ jobs:
           pip install -r requirements-dev.txt
       - name: Test with pytest
         run: |
-          pytest tests/matrixstore/test_service.py
+          pytest tests/integration/raw_studies_blueprint/test_download_matrices.py
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
