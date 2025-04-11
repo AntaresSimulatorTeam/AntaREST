@@ -144,7 +144,7 @@ class MatrixMetaData:
 def calculates_hash(df: pd.DataFrame) -> str:
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
-    if all(dtype in [float, int] for dtype in df.dtypes):
+    if all(np.issubdtype(dtype, np.number) for dtype in df.dtypes):
         shape = df.shape
         # We also need to check the headers to see if they correspond to the default ones
         if df.index.equals(pd.RangeIndex(0, shape[0])) and df.columns.equals(pd.RangeIndex(0, shape[1])):
