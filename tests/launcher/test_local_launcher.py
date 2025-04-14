@@ -14,6 +14,7 @@ import os
 import textwrap
 import uuid
 from pathlib import Path
+from typing import cast
 from unittest.mock import Mock, call
 
 import pytest
@@ -32,8 +33,13 @@ def launcher_config(tmp_path: Path) -> Config:
     Fixture to create a launcher config with a local launcher.
     """
     solver_path = tmp_path.joinpath(SOLVER_NAME)
-    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True, "local_workspace": tmp_path}
-    return Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
+    data = {
+        "id": "local_id",
+        "binaries": {"700": solver_path},
+        "enable_nb_cores_detection": True,
+        "local_workspace": tmp_path,
+    }
+    return Config(launcher=LauncherConfig(cfg=[LocalConfig.from_dict(data)]))
 
 
 @pytest.mark.unit_test
@@ -43,7 +49,7 @@ def test_local_launcher__launcher_init_exception():
         match="Missing parameter 'launcher.local'",
     ):
         LocalLauncher(
-            config=Config(launcher=LauncherConfig(local=None)),
+            config=LocalConfig(),
             callbacks=Mock(),
             event_bus=Mock(),
             cache=Mock(),
@@ -52,7 +58,8 @@ def test_local_launcher__launcher_init_exception():
 
 @pytest.mark.unit_test
 def test_compute(tmp_path: Path, launcher_config: Config):
-    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    config = cast(LocalConfig, launcher_config.launcher.get_launcher_cfg("local_id"))
+    local_launcher = LocalLauncher(config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
     if os.name == "nt":
@@ -112,7 +119,8 @@ def test_compute(tmp_path: Path, launcher_config: Config):
 
 @pytest.mark.unit_test
 def test_parse_launcher_arguments(launcher_config: Config):
-    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    config = cast(LocalConfig, launcher_config.launcher.get_launcher_cfg("local_id"))
+    local_launcher = LocalLauncher(config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launcher_parameters = LauncherParametersDTO(nb_cpu=4)
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
     assert sim_args == ["--force-parallel=4"]
@@ -147,9 +155,10 @@ def test_parse_launcher_arguments(launcher_config: Config):
 
 @pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path):
-    data = {"xpress_dir": "fake_path_for_test"}
-    launcher_config = Config(launcher=LauncherConfig(local=LocalConfig.from_dict(data)))
-    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    data = {"id": "local_id", "xpress_dir": "fake_path_for_test"}
+    launcher_config = Config(launcher=LauncherConfig(cfg=[LocalConfig.from_dict(data)]))
+    local_cfg = cast(LocalConfig, launcher_config.launcher.get_launcher_cfg("local_id"))
+    local_launcher = LocalLauncher(local_cfg, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO())
     assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
 
@@ -163,7 +172,12 @@ def test_select_best_binary():
         "1000": Path("1000"),
     }
     local_launcher = LocalLauncher(
-        Config(launcher=LauncherConfig(local=LocalConfig(binaries=binaries))),
+        cast(
+            LocalConfig,
+            Config(
+                launcher=LauncherConfig(cfg=[LocalConfig(id="local_id", binaries=binaries)])
+            ).launcher.get_launcher_cfg("local_id"),
+        ),
         callbacks=Mock(),
         event_bus=Mock(),
         cache=Mock(),
