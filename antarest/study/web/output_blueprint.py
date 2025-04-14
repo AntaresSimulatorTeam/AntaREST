@@ -258,7 +258,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         return content
 
     @bp.get(
-        "/studies/{uuid}/outputs/{output_id}/mc-ind/areas",
+        "/studies/{uuid}/outputs/{output_id}/aggregate/mc-ind/areas",
         tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )

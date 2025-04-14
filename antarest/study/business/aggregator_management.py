@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-MC_TEMPLATE_PARTS = "economy/{mc_root}"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
