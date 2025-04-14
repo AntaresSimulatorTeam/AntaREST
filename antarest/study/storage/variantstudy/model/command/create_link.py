@@ -12,7 +12,6 @@
 from abc import ABCMeta
 from typing import Any, Dict, List, Optional, Union
 
-from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
@@ -22,7 +21,6 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.link_model import LinkInternal
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -89,44 +87,6 @@ class AbstractLinkCommand(ICommand, metaclass=ABCMeta):
                 assert_this(isinstance(value, str))
                 list_matrices.append(strip_matrix_protocol(value))
         return list_matrices
-
-    def save_series(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        assert isinstance(self.series, str)
-        if version < STUDY_VERSION_8_2:
-            study_data.tree.save(self.series, ["input", "links", area_from, area_to])
-        else:
-            study_data.tree.save(
-                self.series,
-                ["input", "links", area_from, f"{area_to}_parameters"],
-            )
-
-    def save_direct(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        assert isinstance(self.direct, str)
-        if version >= STUDY_VERSION_8_2:
-            study_data.tree.save(
-                self.direct,
-                [
-                    "input",
-                    "links",
-                    area_from,
-                    "capacities",
-                    f"{area_to}_direct",
-                ],
-            )
-
-    def save_indirect(self, area_from: str, area_to: str, study_data: FileStudy, version: StudyVersion) -> None:
-        assert isinstance(self.indirect, str)
-        if version >= STUDY_VERSION_8_2:
-            study_data.tree.save(
-                self.indirect,
-                [
-                    "input",
-                    "links",
-                    area_from,
-                    "capacities",
-                    f"{area_to}_indirect",
-                ],
-            )
 
 
 class CreateLink(AbstractLinkCommand):
