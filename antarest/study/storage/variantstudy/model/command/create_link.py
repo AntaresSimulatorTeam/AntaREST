@@ -140,15 +140,6 @@ class CreateLink(AbstractLinkCommand):
     command_name: CommandName = CommandName.CREATE_LINK
     version: int = 1
 
-    def _apply_config_dao(self, study_data: StudyDao) -> CommandOutput:
-        try:
-            link = LinkInternal.model_validate(self.parameters or {}).to_dto()
-            study_data.update_link_config(self.area1, self.area2, link)
-        except ValueError as ex:
-            return command_failed(str(ex))
-
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
-
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if study_data.link_exists(self.area1, self.area2):
@@ -164,11 +155,11 @@ class CreateLink(AbstractLinkCommand):
         indirect = self.indirect or (self.command_context.generator_matrix_constants.get_link_indirect())
 
         area_from, area_to = sorted((self.area1, self.area2))
-        study_data.save_link_capacities(area_from, area_to, str(series))
+        study_data.save_link_series(area_from, area_to, str(series))
         study_data.save_link_direct_capacities(area_from, area_to, str(direct))
         study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
 
-        return self._apply_config_dao(study_data)
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
 
     @override
     def to_dto(self) -> CommandDTO:

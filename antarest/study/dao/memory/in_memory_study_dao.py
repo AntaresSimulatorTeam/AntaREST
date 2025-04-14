@@ -77,11 +77,7 @@ class InMemoryStudyDao(StudyDao):
         self._links[link_key(area1_id, area2_id)] = link
 
     @override
-    def update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        self._links[link_key(area1_id, area2_id)] = link
-
-    @override
-    def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
+    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
         self._link_capacities[link_key(area_from, area_to)] = series_id
 
     @override

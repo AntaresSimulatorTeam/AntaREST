@@ -36,10 +36,6 @@ class LinkDao(ReadOnlyLinkDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
         raise NotImplementedError()
 
@@ -48,5 +44,5 @@ class LinkDao(ReadOnlyLinkDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
+    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
         raise NotImplementedError()

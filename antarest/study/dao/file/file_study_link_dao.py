@@ -106,15 +106,14 @@ class FileStudyLinkDao(LinkDao, ABC):
     def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
         study_data = self.impl._file_study
         area1_id, area2_id = sorted((area1_id, area2_id))
-        self.update_link_config(area1_id, area2_id, link)
+        self._update_link_config(area1_id, area2_id, link)
         link_properties = LinkProperties.from_link(link)
 
         study_data.tree.save(
             link_properties.model_dump(by_alias=True), ["input", "links", area1_id, "properties", area2_id]
         )
 
-    @override
-    def update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
+    def _update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
         study_data = self.impl._file_study.config
         if area1_id not in study_data.areas:
             raise ValueError(f"The area '{area1_id}' does not exist")
@@ -125,7 +124,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         study_data.areas[area_from].links[area_to] = link.to_config()
 
     @override
-    def save_link_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
+    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
         study_data = self.impl._file_study
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))

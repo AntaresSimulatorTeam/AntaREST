@@ -9,16 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional
+from typing import Optional
 
 from typing_extensions import override
 
 from antarest.study.business.model.link_model import LinkInternal
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
-from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateLink(AbstractLinkCommand):
@@ -32,35 +31,21 @@ class UpdateLink(AbstractLinkCommand):
     command_name: CommandName = CommandName.UPDATE_LINK
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        version = study_data.config.version
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        current_properties = study_data.get_link(self.area1, self.area2).model_dump(mode="json")
+        upd_properties = LinkInternal.model_validate(self.parameters).model_dump(mode="json", include=self.parameters)
+        current_properties.update(upd_properties)
 
-        properties = study_data.tree.get(["input", "links", self.area1, "properties", self.area2])
-
-        new_properties = LinkInternal.model_validate(self.parameters).model_dump(include=self.parameters, by_alias=True)
-
-        properties.update(new_properties)
-
-        study_data.tree.save(properties, ["input", "links", self.area1, "properties", self.area2])
+        new_link = LinkInternal.model_validate(current_properties).to_dto()
+        study_data.save_link(self.area1, self.area2, new_link)
 
         if self.series:
-            self.save_series(self.area1, self.area2, study_data, version)
+            study_data.save_link_series(self.area1, self.area2, str(self.series))
 
         if self.direct:
-            self.save_direct(self.area1, self.area2, study_data, version)
+            study_data.save_link_direct_capacities(self.area1, self.area2, str(self.direct))
 
         if self.indirect:
-            self.save_indirect(self.area1, self.area2, study_data, version)
+            study_data.save_link_indirect_capacities(self.area1, self.area2, str(self.indirect))
 
-        return CommandOutput(
-            status=True,
-            message=f"Link between '{self.area1}' and '{self.area2}' updated",
-        )
-
-    @override
-    def to_dto(self) -> CommandDTO:
-        return super().to_dto()
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return super().get_inner_matrices()
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' updated")
