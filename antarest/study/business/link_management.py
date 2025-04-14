@@ -10,13 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, List, Mapping, Tuple
+from typing import List, Mapping, Tuple
 
-from antarest.core.exceptions import LinkNotFound
 from antarest.core.model import JSON
 from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
@@ -53,10 +51,9 @@ class LinkManager:
     ) -> tuple[UpdateLink, LinkInternal]:
         link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
 
-        file_study = study.get_files()
         link = link_dto.to_internal(study.version)
 
-        self._get_link_if_exists(file_study, link)
+        self.get_link(study, link)
 
         command = UpdateLink(
             area1=link.area1,
@@ -108,12 +105,6 @@ class LinkManager:
             study_version=study.version,
         )
         study.add_commands([command])
-
-    def _get_link_if_exists(self, file_study: FileStudy, link: LinkInternal) -> dict[str, Any]:
-        try:
-            return file_study.tree.get(["input", "links", link.area1, "properties", link.area2])
-        except KeyError:
-            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
 
     @staticmethod
     def get_table_schema() -> JSON:
