@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
@@ -140,17 +140,14 @@ class CreateLink(AbstractLinkCommand):
     command_name: CommandName = CommandName.CREATE_LINK
     version: int = 1
 
-    def _apply_config_dao(self, study_data: StudyDao) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def _apply_config_dao(self, study_data: StudyDao) -> CommandOutput:
         try:
             link = LinkInternal.model_validate(self.parameters or {}).to_dto()
             study_data.update_link_config(self.area1, self.area2, link)
         except ValueError as ex:
-            return command_failed(str(ex)), {}
+            return command_failed(str(ex))
 
-        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created"), {
-            "area_from": self.area1,
-            "area_to": self.area2,
-        }
+        return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -171,7 +168,7 @@ class CreateLink(AbstractLinkCommand):
         study_data.save_link_direct_capacities(area_from, area_to, str(direct))
         study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
 
-        return self._apply_config_dao(study_data)[0]
+        return self._apply_config_dao(study_data)
 
     @override
     def to_dto(self) -> CommandDTO:
