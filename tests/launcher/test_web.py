@@ -149,7 +149,7 @@ def test_get_solver_versions() -> None:
         pytest.param(
             "",
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
-            "Input should be 'slurm', 'local' or 'default'",
+            "",
             id="empty",
         ),
         pytest.param("default", http.HTTPStatus.OK, ["1", "2", "3"], id="default"),
@@ -172,7 +172,7 @@ def test_get_solver_versions__with_query_string(
     if status_code == http.HTTPStatus.OK:
         service.get_solver_versions.return_value = ["1", "2", "3"]
     else:
-        service.get_solver_versions.side_effect = KeyError(solver)
+        service.get_solver_versions.side_effect = KeyError("unknown " + solver)
 
     app = create_app(service)
     client = TestClient(app)

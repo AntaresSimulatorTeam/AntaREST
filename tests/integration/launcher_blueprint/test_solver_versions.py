@@ -58,9 +58,11 @@ class TestSolverVersions:
             "/v1/launcher/versions?solver=slurm",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
-        res.raise_for_status()
-        actual = res.json()
-        assert actual == []
+        assert res.status_code == 500
+        assert res.json() == {
+            "description": "Unexpected server error: 'Default launcher is slurm but it is not registered in the config file'",
+            "exception": "KeyError",
+        }
 
     def test_get_solver_versions__default(
         self,

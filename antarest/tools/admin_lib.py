@@ -27,7 +27,7 @@ def get_config(config_path: Path) -> Config:
 
 
 def clean_locks_from_config(config: Config) -> None:
-    for launcher in config.launcher.launcher_configs or []:
+    for launcher in config.launcher.cfg or []:
         if isinstance(launcher, SlurmConfig):
             slurm_workspace = launcher.local_workspace
             if slurm_workspace.exists() and slurm_workspace.is_dir():

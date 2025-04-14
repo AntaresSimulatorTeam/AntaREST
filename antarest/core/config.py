@@ -312,15 +312,16 @@ class AbstractLauncherConfig(ABC):
 
     id: str = ""
     name: str = ""
-    type: Launcher = Launcher.LOCAL
     nb_cores: NbCoresConfig = NbCoresConfig()
     time_limit: TimeLimitConfig = TimeLimitConfig()
+    type: Launcher = Launcher.DEFAULT
 
 
 @dataclass(frozen=True)
 class LocalConfig(AbstractLauncherConfig):
     """Sub config object dedicated to launcher module (local)"""
 
+    type: Launcher = Launcher.LOCAL
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     xpress_dir: Optional[str] = None
@@ -374,6 +375,7 @@ class SlurmConfig(AbstractLauncherConfig):
     Sub config object dedicated to launcher module (slurm)
     """
 
+    type: Launcher = Launcher.SLURM
     local_workspace: Path = Path()
     username: str = ""
     hostname: str = ""
@@ -474,7 +476,7 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    launcher_configs: Optional[List[AbstractLauncherConfig]] = None
+    cfg: Optional[List[AbstractLauncherConfig]] = None
     batch_size: int = 9999
 
     @classmethod
@@ -492,17 +494,16 @@ class LauncherConfig:
                 continue
         return cls(
             default=default,
-            launcher_configs=launchers,
+            cfg=launchers,
             batch_size=batch_size,
         )
 
-    def get_launcher_cfg(self, config_id: str) -> AbstractLauncherConfig:
+    def get_launcher_cfg(self, config_id: str) -> AbstractLauncherConfig | None:
         if config_id == Launcher.DEFAULT:
             cluster_id = self.default
         else:
             cluster_id = config_id
-        return  next((c for c in self.launcher_configs or [] if c.id == cluster_id), None)
-
+        return next((c for c in self.cfg or [] if c.id == cluster_id), None)
 
     def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
         """

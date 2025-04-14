@@ -704,7 +704,7 @@ class LauncherService:
                 local_config = cast(LocalConfig, config)
                 return sorted(local_config.binaries)
         else:
-            return []
+            raise KeyError("Default launcher is slurm but it is not registered in the config file")
 
     def get_launch_progress(self, job_id: str, params: RequestParameters) -> float:
         job_result = self.job_result_repository.get(job_id)
