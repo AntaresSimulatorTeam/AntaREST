@@ -104,7 +104,7 @@ class FileStudyLinkDao(LinkDao, ABC):
     def save_link(self, link: LinkDTO) -> None:
         study_data = self.get_file_study()
         self._update_link_config(link.area1, link.area2, link)
-        link_properties = LinkProperties.from_link(link)
+        link_properties = link.to_internal(study_data.config.version)
 
         study_data.tree.save(
             link_properties.model_dump(by_alias=True), ["input", "links", link.area1, "properties", link.area2]
