@@ -34,7 +34,7 @@ class StudyDao(ReadOnlyStudyDao, LinkDao):
 
     def read_only(self) -> ReadOnlyStudyDao:
         """
-        Returns a read only version this this DAO,
+        Returns a read only version of this DAO,
         to ensure it's not used for writing.
         """
         return ReadOnlyAdapter(self)
@@ -49,7 +49,7 @@ class StudyDao(ReadOnlyStudyDao, LinkDao):
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
-    Adapts a full DAO as a read only DAO without modificatin methods.
+    Adapts a full DAO as a read only DAO without modification methods.
     """
 
     def __init__(self, adaptee: StudyDao):
