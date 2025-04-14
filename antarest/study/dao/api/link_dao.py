@@ -32,7 +32,7 @@ class ReadOnlyLinkDao(ABC):
 
 class LinkDao(ReadOnlyLinkDao):
     @abstractmethod
-    def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
+    def save_link(self, link: LinkDTO) -> None:
         raise NotImplementedError()
 
     @abstractmethod

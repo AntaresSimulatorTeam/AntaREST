@@ -73,8 +73,8 @@ class InMemoryStudyDao(StudyDao):
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
 
     @override
-    def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        self._links[link_key(area1_id, area2_id)] = link
+    def save_link(self, link: LinkDTO) -> None:
+        self._links[link_key(link.area1, link.area2)] = link
 
     @override
     def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:

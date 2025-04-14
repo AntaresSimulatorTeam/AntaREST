@@ -174,45 +174,20 @@ class Area(AntaresBaseModel):
 
 
 class LinkDTO(Area, LinkBaseDTO):
-    def to_internal(self, version: StudyVersion) -> "LinkInternal":
+    def to_internal(self, version: StudyVersion) -> "LinkProperties":
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
-        data = self.model_dump()
+        data = self.model_dump(exclude={"area1", "area2"})
 
         if version < STUDY_VERSION_8_2:
             data["filter_synthesis"] = None
             data["filter_year_by_year"] = None
 
-        return LinkInternal(**data)
+        return LinkProperties(**data)
 
     def to_config(self) -> Link:
         return Link(filters_year=self.filter_year_by_year, filters_synthesis=self.filter_synthesis)
-
-
-class LinkInternal(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
-
-    area1: str = "area1"
-    area2: str = "area2"
-    hurdles_cost: bool = False
-    loop_flow: bool = False
-    use_phase_shifter: bool = False
-    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
-    asset_type: AssetType = AssetType.AC
-    display_comments: bool = True
-    comments: str = ""
-    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    link_width: float = 1
-    link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
-
-    def to_dto(self) -> LinkDTO:
-        data = self.model_dump()
-        return LinkDTO(**data)
 
 
 class LinkProperties(AntaresBaseModel):
@@ -236,6 +211,10 @@ class LinkProperties(AntaresBaseModel):
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
     filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
+
+    def to_dto(self, area_from: str, area_to: str) -> LinkDTO:
+        data = self.model_dump() | {"area1": area_from, "area2": area_to}
+        return LinkDTO(**data)
 
     @classmethod
     def from_link(cls, link: LinkDTO) -> "LinkProperties":

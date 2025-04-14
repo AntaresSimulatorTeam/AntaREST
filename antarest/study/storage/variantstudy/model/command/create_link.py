@@ -18,7 +18,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.link_model import LinkInternal
+from antarest.study.business.model.link_model import LinkProperties
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -105,8 +105,8 @@ class CreateLink(AbstractLinkCommand):
         if study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' already exists")
 
-        link = LinkInternal.model_validate(self.parameters or {}).to_dto()
-        study_data.save_link(self.area1, self.area2, link)
+        link = LinkProperties.model_validate(self.parameters or {}).to_dto(self.area1, self.area2)
+        study_data.save_link(link)
 
         series = self.series or (
             self.command_context.generator_matrix_constants.get_link(version=study_data.get_version())

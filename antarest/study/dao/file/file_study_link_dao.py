@@ -24,7 +24,6 @@ from antarest.study.business.model.link_model import (
     AssetType,
     CommaSeparatedFilterOptions,
     LinkDTO,
-    LinkInternal,
     LinkProperties,
     LinkStyle,
     TransmissionCapacity,
@@ -75,9 +74,8 @@ class FileStudyLinkDao(LinkDao, ABC):
             ).root
             for area_to, link_data in area_links.items():
                 link_tree_config = link_data.model_dump()
-                link_tree_config.update({"area1": area_from, "area2": area_to})
-                link_internal = LinkInternal.model_validate(link_tree_config)
-                result.append(link_internal.to_dto())
+                link_properties = LinkProperties.model_validate(link_tree_config)
+                result.append(link_properties.to_dto(area_from, area_to))
         return result
 
     @override
@@ -92,25 +90,24 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
+        area_from, area_to = sorted((area1_id, area2_id))
         file_study = self.get_file_study()
         try:
             props = LinkPropertiesFileData.model_validate(
-                file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
+                file_study.tree.get(["input", "links", area_from, "properties", area_to])
             ).model_dump()
         except KeyError:
-            raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
-        props.update({"area1": area1_id, "area2": area2_id})
-        return LinkInternal.model_validate(props).to_dto()
+            raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
+        return LinkProperties.model_validate(props).to_dto(area_from, area_to)
 
     @override
-    def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
+    def save_link(self, link: LinkDTO) -> None:
         study_data = self.get_file_study()
-        area1_id, area2_id = sorted((area1_id, area2_id))
-        self._update_link_config(area1_id, area2_id, link)
+        self._update_link_config(link.area1, link.area2, link)
         link_properties = LinkProperties.from_link(link)
 
         study_data.tree.save(
-            link_properties.model_dump(by_alias=True), ["input", "links", area1_id, "properties", area2_id]
+            link_properties.model_dump(by_alias=True), ["input", "links", link.area1, "properties", link.area2]
         )
 
     def _update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
