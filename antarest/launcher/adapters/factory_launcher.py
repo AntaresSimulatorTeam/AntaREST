@@ -34,9 +34,9 @@ class FactoryLauncher:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
         for launcher in config.launcher.launcher_configs or []:
             if isinstance(launcher, LocalConfig):
-                dict_launchers[launcher.name] = LocalLauncher(launcher, callbacks, event_bus, cache)
+                dict_launchers[launcher.id] = LocalLauncher(launcher, callbacks, event_bus, cache)
             elif isinstance(launcher, SlurmConfig):
-                dict_launchers[launcher.name] = SlurmLauncher(
+                dict_launchers[launcher.id] = SlurmLauncher(
                     launcher,
                     callbacks,
                     event_bus,

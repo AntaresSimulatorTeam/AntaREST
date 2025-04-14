@@ -216,7 +216,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get list of supported solver versions",
         response_model=List[str],
     )
-    def get_solver_versions(solver: Launcher = Launcher.DEFAULT) -> List[str]:
+    def get_solver_versions(solver: str = Launcher.DEFAULT) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.
 

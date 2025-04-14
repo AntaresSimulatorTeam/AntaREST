@@ -496,6 +496,14 @@ class LauncherConfig:
             batch_size=batch_size,
         )
 
+    def get_launcher_cfg(self, config_id: str) -> AbstractLauncherConfig:
+        if config_id == Launcher.DEFAULT:
+            cluster_id = self.default
+        else:
+            cluster_id = config_id
+        return  next((c for c in self.launcher_configs or [] if c.id == cluster_id), None)
+
+
     def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
         """
         Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
@@ -511,7 +519,7 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 the number of cores of a launcher that doesn't exist in the configuration.
         """
-        cfg = next((c for c in self.launcher_configs or [] if c.id == launcher), None)
+        cfg = self.get_launcher_cfg(launcher)
         if cfg is None:
             raise InvalidConfigurationError(launcher)
         return cfg.nb_cores
@@ -531,7 +539,7 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 a property of a launcher that doesn't exist in the configuration.
         """
-        cfg = next((c for c in self.launcher_configs or [] if c.id == launcher), None)
+        cfg = self.get_launcher_cfg(launcher)
         if cfg is None:
             raise InvalidConfigurationError(launcher)
         return cfg.time_limit

@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 
 import pathlib
+from typing import cast
 
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
-from antarest.core.config import Config
+from antarest.core.config import Config, LocalConfig
 
 HERE = pathlib.Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
@@ -110,5 +111,6 @@ def test_resources_config():
     config_path = RESOURCES_DIR.joinpath("deploy/config.yaml")
     config = Config.from_yaml_file(config_path, res=RESOURCES_DIR)
     assert config.launcher.default == "local"
-    assert config.launcher.local is not None
-    assert config.launcher.local.enable_nb_cores_detection is True
+    config = cast(LocalConfig, next((c for c in config.launcher.launcher_configs or [] if c.id == "local_id"), None))
+    assert config is not None
+    assert config.enable_nb_cores_detection is True

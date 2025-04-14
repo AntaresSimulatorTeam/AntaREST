@@ -47,7 +47,7 @@ class TestSolverVersions:
         assert actual == ["700"]
 
         res = client.get(
-            "/v1/launcher/versions?solver=local",
+            "/v1/launcher/versions?solver=local_id",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()

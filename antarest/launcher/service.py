@@ -637,7 +637,7 @@ class LauncherService:
         """
         Get the load of the SLURM cluster or the local machine.
         """
-        config = next((c for c in self.config.launcher.launcher_configs or [] if c.id == cluster_id), None)
+        config = self.config.launcher.get_launcher_cfg(cluster_id)
         if config:
             if config.type == "slurm":
                 slurm_config = cast(SlurmConfig, config)
@@ -695,7 +695,7 @@ class LauncherService:
         Raises:
             KeyError: if the configuration is not "default", "slurm" or "local".
         """
-        config = next((c for c in self.config.launcher.launcher_configs or [] if c.id == cluster_id), None)
+        config = self.config.launcher.get_launcher_cfg(cluster_id)
         if config:
             if config.type == "slurm":
                 slurm_config = cast(SlurmConfig, config)
@@ -704,7 +704,7 @@ class LauncherService:
                 local_config = cast(LocalConfig, config)
                 return sorted(local_config.binaries)
         else:
-            raise  # TODO add exception
+            return []
 
     def get_launch_progress(self, job_id: str, params: RequestParameters) -> float:
         job_result = self.job_result_repository.get(job_id)

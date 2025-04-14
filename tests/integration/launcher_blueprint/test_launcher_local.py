@@ -50,7 +50,7 @@ class TestLauncherNbCores:
         assert actual == nb_cores_expected
 
         res = client.get(
-            "/v1/launcher/nbcores?launcher=local",
+            "/v1/launcher/nbcores?launcher=local_id",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -59,13 +59,13 @@ class TestLauncherNbCores:
 
         # Check that the endpoint raise an exception when the "slurm" launcher is requested.
         res = client.get(
-            "/v1/launcher/nbcores?launcher=slurm",
+            "/v1/launcher/nbcores?launcher=slurm_id",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
         actual = res.json()
         assert actual == {
-            "description": "Unknown solver configuration: 'slurm'",
+            "description": "Unknown solver configuration: 'slurm_id'",
             "exception": "UnknownSolverConfig",
         }
 
@@ -76,8 +76,8 @@ class TestLauncherNbCores:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
         actual = res.json()
-        assert actual["description"] == "Input should be 'slurm', 'local' or 'default'"
-        assert actual["exception"] == "RequestValidationError"
+        assert actual["description"] == "Unknown solver configuration: 'unknown'"
+        assert actual["exception"] == "UnknownSolverConfig"
 
     def test_get_launcher_time_limit(
         self,
@@ -102,7 +102,7 @@ class TestLauncherNbCores:
         assert actual == expected
 
         res = client.get(
-            "/v1/launcher/time-limit?launcher=local",
+            "/v1/launcher/time-limit?launcher=local_id",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -128,8 +128,8 @@ class TestLauncherNbCores:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY, res.json()
         actual = res.json()
-        assert actual["description"] == "Input should be 'slurm', 'local' or 'default'"
-        assert actual["exception"] == "RequestValidationError"
+        assert actual["description"] == "Unknown solver configuration: 'unknown'"
+        assert actual["exception"] == "UnknownSolverConfig"
 
     def test_jobs_permissions(
         self,
@@ -151,7 +151,7 @@ class TestLauncherNbCores:
         res = client.post(
             f"/v1/launcher/run/{study_id}",
             headers={"Authorization": f"Bearer {admin_access_token}"},
-            json={"launcher": "local"},
+            json={"launcher": "local_id"},
         )
         res.raise_for_status()
         job_id = res.json()["job_id"]
