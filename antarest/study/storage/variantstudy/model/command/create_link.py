@@ -160,11 +160,3 @@ class CreateLink(AbstractLinkCommand):
         study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
 
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
-
-    @override
-    def to_dto(self) -> CommandDTO:
-        return super().to_dto()
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        return super().get_inner_matrices()
