@@ -148,3 +148,37 @@ class FileStudyLinkDao(LinkDao, ABC):
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:
             study_data.tree.save(series_id, ["input", "links", area_from, "capacities", f"{area_to}_indirect"])
+
+    @override
+    def delete_link(self, link: LinkDTO) -> None:
+        study_data = self.impl._file_study
+
+        if study_data.config.version < STUDY_VERSION_8_2:
+            study_data.tree.delete(["input", "links", link.area1, link.area2])
+        else:
+            study_data.tree.delete(["input", "links", link.area1, f"{link.area2}_parameters"])
+            study_data.tree.delete(["input", "links", link.area1, "capacities", f"{link.area2}_direct"])
+            study_data.tree.delete(["input", "links", link.area1, "capacities", f"{link.area2}_indirect"])
+
+        study_data.tree.delete(["input", "links", link.area1, "properties", link.area2])
+
+        del study_data.config.areas[link.area1].links[link.area2]
+        self._remove_link_from_scenario_builder(link)
+
+    def _remove_link_from_scenario_builder(self, link: LinkDTO) -> None:
+        """
+        Update the scenario builder by removing the rows that correspond to the link to remove.
+
+        NOTE: this update can be very long if the scenario builder configuration is large.
+        """
+        study_data = self.impl._file_study
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                # The key is in the form "symbol,area1,area2,year".
+                symbol, *parts = key.split(",")
+                if symbol == "ntc" and parts[0] == link.area1 and parts[1] == link.area2:
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])

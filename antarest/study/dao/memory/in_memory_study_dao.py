@@ -87,3 +87,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
         self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
+
+    @override
+    def delete_link(self, link: LinkDTO) -> None:
+        del self._links[link_key(link.area1, link.area2)]

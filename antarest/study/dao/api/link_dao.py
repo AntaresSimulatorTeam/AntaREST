@@ -46,3 +46,7 @@ class LinkDao(ReadOnlyLinkDao):
     @abstractmethod
     def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def delete_link(self, link: LinkDTO) -> None:
+        raise NotImplementedError()
