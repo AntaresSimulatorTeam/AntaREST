@@ -105,13 +105,8 @@ class FileStudyLinkDao(LinkDao, ABC):
     @override
     def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
         study_data = self.impl._file_study
-        version = study_data.config.version
         area1_id, area2_id = sorted((area1_id, area2_id))
         self.update_link_config(area1_id, area2_id, link)
-        to_exclude = {"area1", "area2"}
-        if version < STUDY_VERSION_8_2:
-            to_exclude.update("filter-synthesis", "filter-year-by-year")
-
         link_properties = LinkProperties.from_link(link)
 
         study_data.tree.save(
