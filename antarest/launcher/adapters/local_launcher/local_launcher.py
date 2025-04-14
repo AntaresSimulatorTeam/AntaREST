@@ -18,7 +18,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from antares.study.version import SolverVersion
 from typing_extensions import override
@@ -55,7 +55,7 @@ class LocalLauncher(AbstractLauncher):
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
-        local = self.config.launcher.local
+        local = cast(LocalConfig, self.config)
         if local is None:
             raise LauncherInitException("Missing parameter 'launcher.local'")
         elif version in local.binaries:

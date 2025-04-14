@@ -313,6 +313,8 @@ class AbstractLauncherConfig(ABC):
     id: str = ""
     name: str = ""
     type: Launcher = Launcher.LOCAL
+    nb_cores: NbCoresConfig = NbCoresConfig()
+    time_limit: TimeLimitConfig = TimeLimitConfig()
 
 
 @dataclass(frozen=True)
@@ -321,8 +323,6 @@ class LocalConfig(AbstractLauncherConfig):
 
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
-    nb_cores: NbCoresConfig = NbCoresConfig()
-    time_limit: TimeLimitConfig = TimeLimitConfig()
     xpress_dir: Optional[str] = None
     local_workspace: Path = Path("./local_workspace")
 
@@ -367,18 +367,6 @@ class LocalConfig(AbstractLauncherConfig):
         default = max(min_cpu, max_cpu - 2)
         return {"min": min_cpu, "max": max_cpu, "default": default}
 
-    @override
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, LocalConfig):
-            return self.id == other.id
-        if isinstance(other, str):
-            return self.id == other
-        return NotImplemented
-
-    @override
-    def __hash__(self) -> int:
-        return hash(self.id)
-
 
 @dataclass(frozen=True)
 class SlurmConfig(AbstractLauncherConfig):
@@ -394,14 +382,12 @@ class SlurmConfig(AbstractLauncherConfig):
     key_password: str = ""
     password: str = ""
     default_wait_time: int = 0
-    time_limit: TimeLimitConfig = TimeLimitConfig()
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
-    nb_cores: NbCoresConfig = NbCoresConfig()
 
     @classmethod
     def from_dict(cls, data: JSON) -> "SlurmConfig":
@@ -525,12 +511,12 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 the number of cores of a launcher that doesn't exist in the configuration.
         """
-        cfg = next((c for c in self.launcher_configs if c.id == launcher), None)
+        cfg = next((c for c in self.launcher_configs or [] if c.id == launcher), None)
         if cfg is None:
             raise InvalidConfigurationError(launcher)
         return cfg.nb_cores
 
-    def get_time_limit(self, launcher: Launcher) -> TimeLimitConfig:
+    def get_time_limit(self, launcher: str) -> TimeLimitConfig:
         """
         Retrieve the time limit for a job of the given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
@@ -545,7 +531,7 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 a property of a launcher that doesn't exist in the configuration.
         """
-        cfg = next((c for c in self.launcher_configs if c.id == launcher), None)
+        cfg = next((c for c in self.launcher_configs or [] if c.id == launcher), None)
         if cfg is None:
             raise InvalidConfigurationError(launcher)
         return cfg.time_limit
