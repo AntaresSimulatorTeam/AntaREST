@@ -27,15 +27,7 @@ class FileStudyTreeDao(StudyDao, FileStudyLinkDao):
         self._file_study = study
 
     @override
-    @property
-    def impl(self) -> "FileStudyTreeDao":
-        return self
-
-    @override
-    def as_file_study(self) -> FileStudy:
-        """
-        To ease transition, to be removed when all goes through other methods
-        """
+    def get_file_study(self) -> FileStudy:
         return self._file_study
 
     @override

@@ -29,9 +29,10 @@ from antarest.study.business.model.link_model import (
     LinkStyle,
     TransmissionCapacity,
 )
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
-    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+    pass
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
 
@@ -59,14 +60,13 @@ AreaLinksPropertiesFileData = RootModel[Dict[str, LinkPropertiesFileData]]
 
 
 class FileStudyLinkDao(LinkDao, ABC):
-    @property
     @abstractmethod
-    def impl(self) -> "FileStudyTreeDao":
+    def get_file_study(self) -> FileStudy:
         pass
 
     @override
     def get_links(self) -> Sequence[LinkDTO]:
-        file_study = self.impl._file_study
+        file_study = self.get_file_study()
         result: List[LinkDTO] = []
 
         for area_from, area in file_study.config.areas.items():
@@ -82,7 +82,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
-        file_study = self.impl._file_study
+        file_study = self.get_file_study()
         try:
             area1_id, area2_id = sorted((area1_id, area2_id))
             file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
@@ -92,7 +92,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
-        file_study = self.impl._file_study
+        file_study = self.get_file_study()
         try:
             props = LinkPropertiesFileData.model_validate(
                 file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
@@ -104,7 +104,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def save_link(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        study_data = self.impl._file_study
+        study_data = self.get_file_study()
         area1_id, area2_id = sorted((area1_id, area2_id))
         self._update_link_config(area1_id, area2_id, link)
         link_properties = LinkProperties.from_link(link)
@@ -114,7 +114,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         )
 
     def _update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
-        study_data = self.impl._file_study.config
+        study_data = self.get_file_study().config
         if area1_id not in study_data.areas:
             raise ValueError(f"The area '{area1_id}' does not exist")
         if area2_id not in study_data.areas:
@@ -125,7 +125,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self.impl._file_study
+        study_data = self.get_file_study()
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version < STUDY_VERSION_8_2:
@@ -135,7 +135,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self.impl._file_study
+        study_data = self.get_file_study()
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:
@@ -143,7 +143,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self.impl._file_study
+        study_data = self.get_file_study()
         version = study_data.config.version
         area_from, area_to = sorted((area_from, area_to))
         if version >= STUDY_VERSION_8_2:
@@ -151,7 +151,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
     @override
     def delete_link(self, link: LinkDTO) -> None:
-        study_data = self.impl._file_study
+        study_data = self.get_file_study()
 
         if study_data.config.version < STUDY_VERSION_8_2:
             study_data.tree.delete(["input", "links", link.area1, link.area2])
@@ -171,7 +171,7 @@ class FileStudyLinkDao(LinkDao, ABC):
 
         NOTE: this update can be very long if the scenario builder configuration is large.
         """
-        study_data = self.impl._file_study
+        study_data = self.get_file_study()
         rulesets = study_data.tree.get(["settings", "scenariobuilder"])
 
         for ruleset in rulesets.values():

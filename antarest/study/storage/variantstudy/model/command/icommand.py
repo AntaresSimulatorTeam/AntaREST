@@ -56,7 +56,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         Returns:
             A tuple containing the command output and a dictionary of extra data.
         """
-        return self._apply(study_dao.as_file_study(), listener)
+        return self._apply(study_dao.get_file_study(), listener)
 
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """

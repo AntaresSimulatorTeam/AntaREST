@@ -47,7 +47,7 @@ class InMemoryStudyDao(StudyDao):
         self._link_indirect_capacities: Dict[LinkKey, str] = {}
 
     @override
-    def as_file_study(self) -> FileStudy:
+    def get_file_study(self) -> FileStudy:
         """
         To ease transition, to be removed when all goes through other methods
         """
