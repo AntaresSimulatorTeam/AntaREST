@@ -21,9 +21,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import Matri
 
 
 @pytest.fixture(name="get_output_path")
-def get_output_path_fixture(tmp_path: Path) -> Path:
+def get_output_path_fixture(tmp_path: Path, project_path: Path) -> Path:
     # Prepare the directories used by the repos
-    zipped_study_path = tmp_path.parent.parent.joinpath("examples/studies/STA-mini.zip")
+    zipped_study_path = project_path.joinpath("examples/studies/STA-mini.zip")
 
     # Extract the sample study
     with zipfile.ZipFile(zipped_study_path) as zip_output:
@@ -32,7 +32,8 @@ def get_output_path_fixture(tmp_path: Path) -> Path:
     return tmp_path.joinpath("STA-mini/output")
 
 
-def test_storage_different_max_size_value(tmp_path: Path, get_output_path: Path):
+@pytest.mark.integration
+def test_storage_different_max_size_value(get_output_path: Path):
     """
     SetUp: This test unzip the STA-mini study that contains outputs.
     Initialize an aggregator manager first with a high value and next change it for a low value.
