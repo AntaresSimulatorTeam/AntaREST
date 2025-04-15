@@ -67,10 +67,10 @@ class TestLink:
             f"/v1/studies/{study_id}/links/{area1_id}/{area1_id}",
             json={"hurdlesCost": False},
         )
-        assert res.status_code == 422
+        assert res.status_code == 404
         expected = {
-            "description": "Cannot create a link that goes from and to the same single area: area 1",
-            "exception": "LinkValidationError",
+            "description": "The link area 1 -> area 1 is not present in the study",
+            "exception": "LinkNotFound",
         }
         assert expected == res.json()
 
