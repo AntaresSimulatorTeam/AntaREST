@@ -73,8 +73,8 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "a1": Area(
                 name="a1",
                 links={
-                    "a2": Link(area_from="a1", area_to="a2", filters_synthesis=[], filters_year=[]),
-                    "a3": Link(area_from="a1", area_to="a3", filters_synthesis=[], filters_year=[]),
+                    "a2": Link(area_from="a1", area_to="a2"),
+                    "a3": Link(area_from="a1", area_to="a3"),
                 },
                 thermals=[ThermalCluster(name="a", enabled=True)],
                 renewables=[],
@@ -83,7 +83,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             ),
             "a2": Area(
                 name="a2",
-                links={"a3": Link(area_from="a2", area_to="a3", filters_synthesis=[], filters_year=[])},
+                links={"a3": Link(area_from="a2", area_to="a3")},
                 thermals=[],
                 renewables=[],
                 filters_synthesis=[],

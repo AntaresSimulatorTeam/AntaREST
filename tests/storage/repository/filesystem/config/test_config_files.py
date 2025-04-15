@@ -18,7 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.business.model.link_model import LinkBaseDTO
+from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -598,5 +598,5 @@ filter-year-by-year =
     """
     (study_path / "input/links/fr/properties.ini").write_text(content)
 
-    link = LinkBaseDTO(filter_synthesis=["annual"], filter_year_by_year=["hourly"])
+    link = Link(area_from="fr", area_to="l1", filter_synthesis=["annual"], filter_year_by_year=["hourly"])
     assert _parse_links(study_path, "fr") == {"l1": link}
