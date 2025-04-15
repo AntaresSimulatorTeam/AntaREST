@@ -192,4 +192,7 @@ def update_link(link: Link, data: LinkUpdate) -> Link:
     """
     Updates a link according to the provided update data.
     """
-    return link.model_copy(update=data.model_dump(exclude_none=True))
+    current_properties = link.model_dump(mode="json")
+    new_properties = data.model_dump(mode="json", exclude_none=True)
+    current_properties.update(new_properties)
+    return Link.model_validate(current_properties)

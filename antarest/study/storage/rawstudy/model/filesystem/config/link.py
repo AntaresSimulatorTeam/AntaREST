@@ -62,4 +62,4 @@ def parse_link(data: Any, area_from: str, area_to: str) -> Link:
 
 
 def serialize_link(link: Link) -> dict[str, Any]:
-    return LinkFileData.from_model(link).model_dump(by_alias=True, exclude_none=True, exclude={"area1", "area2"})
+    return LinkFileData.from_model(link).model_dump(by_alias=True, exclude_none=True)

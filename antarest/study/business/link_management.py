@@ -53,7 +53,7 @@ class LinkManager:
         command = UpdateLink(
             area1=area_from,
             area2=area_to,
-            parameters=link_update_dto.model_dump(exclude_none=True),
+            parameters=link_update_dto.model_dump(mode="json", exclude_none=True),
             command_context=self._command_context,
             study_version=study.version,
         )
