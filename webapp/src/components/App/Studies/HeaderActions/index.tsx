@@ -26,7 +26,7 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
 import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import { OpenInBrowserOutlined } from "@mui/icons-material";
+// import { OpenInBrowserOutlined } from "@mui/icons-material";
 // import OpenExternalDialog from "@/components/common/dialogs/OpenExternalDialog";
 
 interface Props {
