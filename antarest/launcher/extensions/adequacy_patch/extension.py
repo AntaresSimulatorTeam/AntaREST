@@ -56,11 +56,9 @@ def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> Di
         # links
         for area_2, link in area.links.items():
             link_id = f"{area_id} - {area_2}"
-            new_link = link.model_copy(deep=True)
-            if not new_link.filter_year_by_year:
-                new_link.filter_year_by_year = []
-            original_link_enabled[link_id] = FilterOption.HOURLY in new_link.filter_year_by_year
+            original_link_enabled[link_id] = FilterOption.HOURLY in link.filter_year_by_year
             if not original_link_enabled[link_id] and (area_id in area_to_turn_on or area_2 in area_to_turn_on):
+                new_link = link.model_copy(deep=True)
                 new_link.filter_year_by_year.append(FilterOption.HOURLY)
                 study.tree.save(
                     new_link.model_dump(mode="json", include={"filter-year-by-year"})["filter-year-by-year"],

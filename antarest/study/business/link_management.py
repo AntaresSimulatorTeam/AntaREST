@@ -36,7 +36,7 @@ class LinkManager:
         command = CreateLink(
             area1=new_link.area1,
             area2=new_link.area2,
-            parameters=serialize_link(study.version, new_link),
+            parameters=serialize_link(new_link),
             command_context=self._command_context,
             study_version=study.version,
         )

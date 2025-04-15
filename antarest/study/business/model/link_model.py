@@ -9,16 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, List, Optional, Self, Type, TypeAlias
+from typing import Annotated, List, Optional, Self, Type, TypeAlias
 
-from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 
-from antarest.core.exceptions import InvalidFieldForVersionError, LinkValidationError
+from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_2
 
 
 class AssetType(EnumIgnoreCase):
@@ -167,9 +165,8 @@ class Link(Area):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    # v8.2 fields
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+    filter_synthesis: CommaSeparatedFilterOptions = Field(default_factory=lambda: FILTER_VALUES)
+    filter_year_by_year: CommaSeparatedFilterOptions = Field(default_factory=lambda: FILTER_VALUES)
 
 
 class LinkUpdate(AntaresBaseModel):
@@ -189,36 +186,6 @@ class LinkUpdate(AntaresBaseModel):
     link_style: Optional[LinkStyle] = None
     filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
     filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
-
-
-def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
-def validate_link_against_version(version: StudyVersion, link_data: Link | LinkUpdate) -> None:
-    """
-    Validates input link data against the provided study versions
-
-    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
-    """
-    if version < STUDY_VERSION_8_2:
-        for field in ["filter_synthesis", "filter_year_by_year"]:
-            _check_min_version(link_data, field, version)
-
-
-def _initialize_field_default(link: Link, field: str, default_value: Any) -> None:
-    if getattr(link, field) is None:
-        setattr(link, field, default_value)
-
-
-def initialize_link(link: Link, version: StudyVersion) -> None:
-    """
-    Set undefined version-specific fields to default values.
-    """
-    if version >= STUDY_VERSION_8_2:
-        for field in ["filter_synthesis", "filter_year_by_year"]:
-            _initialize_field_default(link, field, FILTER_VALUES)
 
 
 def update_link(link: Link, data: LinkUpdate) -> Link:

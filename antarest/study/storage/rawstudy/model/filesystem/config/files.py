@@ -505,13 +505,12 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
 
 
 def _parse_links(root: Path, area: str) -> Dict[str, Link]:
-    version = _parse_version(root)
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: parse_link(version, obj, area, link_id) for link_id, obj in properties_ini.items()}
+    links_by_ids = {link_id: parse_link(obj, area, link_id) for link_id, obj in properties_ini.items()}
     return links_by_ids
 
 

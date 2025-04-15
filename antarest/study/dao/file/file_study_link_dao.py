@@ -40,7 +40,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         for area_from, area in file_study.config.areas.items():
             area_links = file_study.tree.get(["input", "links", area_from, "properties"])
             for area_to, link_data in area_links.items():
-                result.append(parse_link(file_study.config.version, link_data, area_from, area_to))
+                result.append(parse_link(link_data, area_from, area_to))
         return result
 
     @override
@@ -59,7 +59,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         file_study = self.get_file_study()
         try:
             area_links = file_study.tree.get(["input", "links", area_from, "properties", area_to])
-            return parse_link(file_study.config.version, area_links, area_from, area_to)
+            return parse_link(area_links, area_from, area_to)
         except KeyError:
             raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
 
@@ -68,9 +68,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         study_data = self.get_file_study()
         self._update_link_config(link.area1, link.area2, link)
 
-        study_data.tree.save(
-            serialize_link(study_data.config.version, link), ["input", "links", link.area1, "properties", link.area2]
-        )
+        study_data.tree.save(serialize_link(link), ["input", "links", link.area1, "properties", link.area2])
 
     def _update_link_config(self, area1_id: str, area2_id: str, link: Link) -> None:
         study_data = self.get_file_study().config
