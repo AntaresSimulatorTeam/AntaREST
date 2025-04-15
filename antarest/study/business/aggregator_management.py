@@ -90,15 +90,6 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int, maximum_size: int) -> None:
-    """
-    A `maximum_size` equivalent to 100 Mo corresponds to a 15 seconds task.
-    """
-    estimated_df_size = nb_files * df_bytes_size // (nb_files_checked * 10**6)
-    if estimated_df_size > maximum_size:
-        raise FileTooLargeError(estimated_df_size, maximum_size)
-
-
 def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
     # original columns
     org_cols = df_cols.copy()
@@ -366,7 +357,7 @@ class AggregatorManager:
             MCAllAreasQueryFile.DETAILS_RES,
         ]
         final_df = pd.DataFrame()
-        nb_files = len(files)
+
         for k, file_path in enumerate(files):
             df = self._process_df(file_path, is_details)
 
@@ -380,7 +371,8 @@ class AggregatorManager:
 
             # The following formula is the more accurate one compared to the final csv file.
             estimated_binary_size = final_df.memory_usage().sum()
-            _checks_estimated_size(nb_files, estimated_binary_size, k, self.aggregation_results_max_size)
+            if estimated_binary_size > self.aggregation_results_max_size * 10**6:
+                raise FileTooLargeError(estimated_binary_size, estimated_binary_size)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)

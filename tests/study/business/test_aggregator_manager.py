@@ -20,20 +20,8 @@ from antarest.study.business.aggregator_management import AggregatorManager, MCI
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
 
-@pytest.fixture(name="get_output_path")
-def get_output_path_fixture(tmp_path: Path, project_path: Path) -> Path:
-    # Prepare the directories used by the repos
-    zipped_study_path = project_path.joinpath("examples/studies/STA-mini.zip")
-
-    # Extract the sample study
-    with zipfile.ZipFile(zipped_study_path) as zip_output:
-        zip_output.extractall(path=tmp_path)
-
-    return tmp_path.joinpath("STA-mini/output")
-
-
 @pytest.mark.integration
-def test_storage_different_max_size_value(get_output_path: Path):
+def test_storage_different_max_size_value(tmp_path: Path, project_path: Path):
     """
     SetUp: This test unzip the STA-mini study that contains outputs.
     Initialize an aggregator manager first with a high value and next change it for a low value.
@@ -44,7 +32,14 @@ def test_storage_different_max_size_value(get_output_path: Path):
     For this test we use the `20201014-1425eco-goodbye` outputs because it has enough data
     to check the estimated size of df.
     """
-    output_path = get_output_path.joinpath("20201014-1425eco-goodbye")
+    # Prepare the directories used by the repos
+    zipped_study_path = project_path.joinpath("examples/studies/STA-mini.zip")
+
+    # Extract the sample study
+    with zipfile.ZipFile(zipped_study_path) as zip_output:
+        zip_output.extractall(path=tmp_path)
+
+    output_path = tmp_path.joinpath("STA-mini/output/20201014-1425eco-goodbye")
 
     # aggregation_results_max_size equals to 200Mo
     aggregator_manager = AggregatorManager(
@@ -60,7 +55,7 @@ def test_storage_different_max_size_value(get_output_path: Path):
     res = aggregator_manager.aggregate_output_data()
     assert res.empty is False
 
-    aggregator_manager.aggregation_results_max_size = 0
+    aggregator_manager.aggregation_results_max_size = 1
 
     # must fail
     with pytest.raises(FileTooLargeError):
