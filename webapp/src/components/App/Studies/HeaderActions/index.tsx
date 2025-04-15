@@ -27,7 +27,7 @@ import { getStudyFilters } from "@/redux/selectors";
 import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import { OpenInBrowserOutlined } from "@mui/icons-material";
-import OpenExternalDialog from "@/components/common/dialogs/OpenExternalDialog";
+// import OpenExternalDialog from "@/components/common/dialogs/OpenExternalDialog";
 
 interface Props {
   onOpenFilterClick: VoidFunction;
@@ -93,13 +93,13 @@ function HeaderActions({ onOpenFilterClick }: Props) {
       >
         {t("global.import")}
       </Button>
-      <Button
+      {/* <Button
         variant="outlined"
         startIcon={<OpenInBrowserOutlined />}
         onClick={() => setDialog("open_external")}
       >
         {t("global.open")}
-      </Button>
+      </Button> */}
       <Button
         variant="contained"
         startIcon={<AddCircleOutlineOutlinedIcon />}
@@ -117,7 +117,7 @@ function HeaderActions({ onOpenFilterClick }: Props) {
           onImport={handleImport}
         />
       )}
-      {dialog === "open_external" && <OpenExternalDialog open onClose={closeDialog} />}
+      {/* {dialog === "open_external" && <OpenExternalDialog open onClose={closeDialog} />} */}
     </>
   );
 }
