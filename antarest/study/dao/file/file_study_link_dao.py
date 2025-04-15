@@ -24,7 +24,7 @@ from antarest.study.business.model.link_model import (
     AssetType,
     CommaSeparatedFilterOptions,
     LinkDTO,
-    LinkProperties,
+    LinkFileData,
     LinkStyle,
     TransmissionCapacity,
 )
@@ -74,7 +74,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             ).root
             for area_to, link_data in area_links.items():
                 link_tree_config = link_data.model_dump()
-                link_properties = LinkProperties.model_validate(link_tree_config)
+                link_properties = LinkFileData.model_validate(link_tree_config)
                 result.append(link_properties.to_dto(file_study.config.version, area_from, area_to))
         return result
 
@@ -98,7 +98,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             ).model_dump()
         except KeyError:
             raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
-        return LinkProperties.model_validate(props).to_dto(file_study.config.version, area_from, area_to)
+        return LinkFileData.model_validate(props).to_dto(file_study.config.version, area_from, area_to)
 
     @override
     def save_link(self, link: LinkDTO) -> None:

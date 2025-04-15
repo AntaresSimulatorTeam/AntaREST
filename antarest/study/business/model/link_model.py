@@ -174,7 +174,7 @@ class Area(AntaresBaseModel):
 
 
 class LinkDTO(Area, LinkBaseDTO):
-    def to_internal(self, version: StudyVersion) -> "LinkProperties":
+    def to_internal(self, version: StudyVersion) -> "LinkFileData":
         if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
             raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
 
@@ -184,13 +184,13 @@ class LinkDTO(Area, LinkBaseDTO):
             data["filter_synthesis"] = None
             data["filter_year_by_year"] = None
 
-        return LinkProperties(**data)
+        return LinkFileData(**data)
 
     def to_config(self) -> Link:
         return Link(filters_year=self.filter_year_by_year, filters_synthesis=self.filter_synthesis)
 
 
-class LinkProperties(AntaresBaseModel):
+class LinkFileData(AntaresBaseModel):
     """
     Link properties for serialization in ini file.
     """

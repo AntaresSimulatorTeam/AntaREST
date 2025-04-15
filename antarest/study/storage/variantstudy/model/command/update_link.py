@@ -13,7 +13,7 @@ from typing import Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import LinkProperties
+from antarest.study.business.model.link_model import LinkFileData
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
@@ -35,10 +35,10 @@ class UpdateLink(AbstractLinkCommand):
         current_properties = (
             study_data.get_link(self.area1, self.area2).to_internal(self.study_version).model_dump(mode="json")
         )
-        upd_properties = LinkProperties.model_validate(self.parameters).model_dump(mode="json", include=self.parameters)
+        upd_properties = LinkFileData.model_validate(self.parameters).model_dump(mode="json", include=self.parameters)
         current_properties.update(upd_properties)
 
-        new_link = LinkProperties.model_validate(current_properties).to_dto(self.study_version, self.area1, self.area2)
+        new_link = LinkFileData.model_validate(current_properties).to_dto(self.study_version, self.area1, self.area2)
         study_data.save_link(new_link)
 
         if self.series:
