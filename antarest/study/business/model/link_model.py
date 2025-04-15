@@ -212,6 +212,7 @@ class LinkProperties(AntaresBaseModel):
     filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
     filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
 
-    def to_dto(self, area_from: str, area_to: str) -> LinkDTO:
-        data = self.model_dump() | {"area1": area_from, "area2": area_to}
+    def to_dto(self, study_version: StudyVersion, area_from: str, area_to: str) -> LinkDTO:
+        excludes = {"filter_synthesis", "filter_year_by_year"} if study_version < STUDY_VERSION_8_2 else set()
+        data = self.model_dump(exclude=excludes) | {"area1": area_from, "area2": area_to}
         return LinkDTO(**data)

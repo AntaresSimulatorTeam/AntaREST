@@ -105,7 +105,7 @@ class CreateLink(AbstractLinkCommand):
         if study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' already exists")
 
-        link = LinkProperties.model_validate(self.parameters or {}).to_dto(self.area1, self.area2)
+        link = LinkProperties.model_validate(self.parameters or {}).to_dto(self.study_version, self.area1, self.area2)
         study_data.save_link(link)
 
         series = self.series or (

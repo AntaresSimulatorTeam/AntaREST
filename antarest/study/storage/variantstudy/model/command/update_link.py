@@ -38,7 +38,7 @@ class UpdateLink(AbstractLinkCommand):
         upd_properties = LinkProperties.model_validate(self.parameters).model_dump(mode="json", include=self.parameters)
         current_properties.update(upd_properties)
 
-        new_link = LinkProperties.model_validate(current_properties).to_dto(self.area1, self.area2)
+        new_link = LinkProperties.model_validate(current_properties).to_dto(self.study_version, self.area1, self.area2)
         study_data.save_link(new_link)
 
         if self.series:
