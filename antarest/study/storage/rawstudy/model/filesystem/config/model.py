@@ -11,16 +11,15 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import Any, Dict, List, MutableMapping, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from antares.study.version import StudyVersion
-from pydantic import Field, model_validator
 from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import LinkBaseDTO
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import StudyVersionInt
 
@@ -33,7 +32,7 @@ from .binding_constraint import (
 )
 from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
-from .validation import extract_filtering, study_version_context
+from .validation import study_version_context
 
 
 class EnrModelling(EnumIgnoreCase):
@@ -54,38 +53,13 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(AntaresBaseModel, extra="ignore"):
-    """
-    Object linked to /input/links/<link>/properties.ini information
-
-    Attributes:
-        filters_synthesis: list of filters for synthesis data
-        filters_year: list of filters for year-by-year data
-
-    Notes:
-        Ignore extra fields, because we only need `filter-synthesis` and `filter-year-by-year`.
-    """
-
-    filters_synthesis: List[str] = Field(default_factory=list)
-    filters_year: List[str] = Field(default_factory=list)
-
-    @model_validator(mode="before")
-    def validation(cls, values: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
-        # note: field names are in kebab-case in the INI file
-        filters_synthesis = values.pop("filter-synthesis", values.pop("filters_synthesis", ""))
-        filters_year = values.pop("filter-year-by-year", values.pop("filters_year", ""))
-        values["filters_synthesis"] = extract_filtering(filters_synthesis)
-        values["filters_year"] = extract_filtering(filters_year)
-        return values
-
-
 class Area(AntaresBaseModel, extra="forbid"):
     """
     Object linked to /input/<area>/optimization.ini information
     """
 
     name: str
-    links: Dict[str, LinkDTO]
+    links: Dict[str, LinkBaseDTO]
     thermals: List[ThermalCluster]
     renewables: List[RenewableConfigType]
     filters_synthesis: List[str]

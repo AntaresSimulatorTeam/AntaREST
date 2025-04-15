@@ -26,6 +26,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.study.business.model.link_model import LinkBaseDTO, LinkFileData
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -43,7 +44,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
-    Link,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
@@ -421,7 +421,7 @@ def parse_area(root: Path, area: str) -> "Area":
 
     return Area(
         name=area,
-        links=_parse_links_filtering(root, area_id),
+        links=_parse_links(root, area_id),
         thermals=_parse_thermal(root, area_id),
         renewables=_parse_renewables(root, area_id),
         filters_synthesis=filter_synthesis,
@@ -503,13 +503,13 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     return config_list
 
 
-def _parse_links_filtering(root: Path, area: str) -> Dict[str, Link]:
+def _parse_links(root: Path, area: str) -> Dict[str, LinkBaseDTO]:
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: Link(**obj) for link_id, obj in properties_ini.items()}
+    links_by_ids = {link_id: LinkFileData(**obj) for link_id, obj in properties_ini.items()}
     return links_by_ids
 
 

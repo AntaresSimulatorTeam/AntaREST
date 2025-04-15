@@ -40,6 +40,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.link_model import LinkBaseDTO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
@@ -66,7 +67,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
     FileStudyTreeConfig,
-    Link,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -533,7 +533,7 @@ def test_download_output() -> None:
 
     area = Area(
         name="area",
-        links={"west": Link(filters_synthesis=[], filters_year=[])},
+        links={"west": LinkBaseDTO(filters_synthesis=[], filters_year=[])},
         thermals=[],
         renewables=[],
         filters_synthesis=[],
