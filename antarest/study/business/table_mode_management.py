@@ -32,7 +32,6 @@ from antarest.study.business.model.renewable_cluster_model import RenewableClust
 from antarest.study.business.model.sts_model import STStorageUpdate, STStorageUpdates
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate, ThermalClusterUpdates
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_2
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -106,11 +105,7 @@ class TableModeManager:
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links(study)
-            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
-            data = {
-                f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True, exclude=excludes)
-                for link in links_map
-            }
+            data = {f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True) for link in links_map}
         elif table_type == TableModeType.THERMAL:
             thermals_by_areas = self._thermal_manager.get_all_thermals_props(study)
             data = {

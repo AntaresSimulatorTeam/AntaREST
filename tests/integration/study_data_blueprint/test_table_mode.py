@@ -311,8 +311,8 @@ class TestTableMode:
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": False,
-                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-                "filterYearByYear": "hourly, daily, weekly, monthly, annual",
+                "filterSynthesis": "",
+                "filterYearByYear": "hourly",
             },
         }
 
