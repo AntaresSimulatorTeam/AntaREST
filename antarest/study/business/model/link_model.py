@@ -175,14 +175,14 @@ class Area(AntaresBaseModel):
 
 class LinkDTO(Area, LinkBaseDTO):
     def to_internal(self, version: StudyVersion) -> "LinkFileData":
-        if version < STUDY_VERSION_8_2 and {"filter_synthesis", "filter_year_by_year"} & self.model_fields_set:
-            raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
-
-        data = self.model_dump(exclude={"area1", "area2"})
-
+        filtering_keys = {"filter_synthesis", "filter_year_by_year"}
+        excludes = {"area1", "area2"}
         if version < STUDY_VERSION_8_2:
-            data["filter_synthesis"] = None
-            data["filter_year_by_year"] = None
+            if filtering_keys & self.model_fields_set:
+                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
+            excludes.update(filtering_keys)
+
+        data = self.model_dump(exclude=excludes)
 
         return LinkFileData(**data)
 
