@@ -15,8 +15,8 @@ from unittest.mock import Mock
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
-from antarest.study.business.link_management import LinkDTO, LinkManager
-from antarest.study.business.model.link_model import AssetType, LinkBaseDTO, TransmissionCapacity
+from antarest.study.business.link_management import LinkManager
+from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
@@ -49,7 +49,7 @@ def test_area_crud(
 
     link_manager.create_link(
         study,
-        LinkDTO(
+        Link(
             area1="test",
             area2="test2",
         ),
@@ -73,8 +73,8 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "a1": Area(
                 name="a1",
                 links={
-                    "a2": LinkBaseDTO(filters_synthesis=[], filters_year=[]),
-                    "a3": LinkBaseDTO(filters_synthesis=[], filters_year=[]),
+                    "a2": Link(area_from="a1", area_to="a2", filters_synthesis=[], filters_year=[]),
+                    "a3": Link(area_from="a1", area_to="a3", filters_synthesis=[], filters_year=[]),
                 },
                 thermals=[ThermalCluster(name="a", enabled=True)],
                 renewables=[],
@@ -83,7 +83,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             ),
             "a2": Area(
                 name="a2",
-                links={"a3": LinkBaseDTO(filters_synthesis=[], filters_year=[])},
+                links={"a3": Link(area_from="a2", area_to="a3", filters_synthesis=[], filters_year=[])},
                 thermals=[],
                 renewables=[],
                 filters_synthesis=[],
