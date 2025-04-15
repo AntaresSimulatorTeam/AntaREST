@@ -9,10 +9,22 @@
       "name": "DE",
       "links": {
         "fr": {
-          "filters_synthesis": [],
-          "filters_year": [
-            "hourly"
-          ]
+          "area1": "de",
+          "area2": "fr",
+          "hurdlesCost": true,
+          "loopFlow": false,
+          "usePhaseShifter": false,
+          "transmissionCapacities": "enabled",
+          "assetType": "ac",
+          "displayComments": true,
+          "comments": "",
+          "colorr": 112,
+          "colorb": 112,
+          "colorg": 112,
+          "linkWidth": 1.0,
+          "linkStyle": "plain",
+          "filterSynthesis": "",
+          "filterYearByYear": "hourly"
         }
       },
       "thermals": [
@@ -384,10 +396,22 @@
       "name": "ES",
       "links": {
         "fr": {
-          "filters_synthesis": [],
-          "filters_year": [
-            "hourly"
-          ]
+          "area1": "es",
+          "area2": "fr",
+          "hurdlesCost": true,
+          "loopFlow": false,
+          "usePhaseShifter": false,
+          "transmissionCapacities": "enabled",
+          "assetType": "ac",
+          "displayComments": true,
+          "comments": "",
+          "colorr": 112,
+          "colorb": 112,
+          "colorg": 112,
+          "linkWidth": 1.0,
+          "linkStyle": "plain",
+          "filterSynthesis": "",
+          "filterYearByYear": "hourly"
         }
       },
       "thermals": [
@@ -759,10 +783,22 @@
       "name": "FR",
       "links": {
         "it": {
-          "filters_synthesis": [],
-          "filters_year": [
-            "hourly"
-          ]
+          "area1": "fr",
+          "area2": "it",
+          "hurdlesCost": true,
+          "loopFlow": false,
+          "usePhaseShifter": false,
+          "transmissionCapacities": "enabled",
+          "assetType": "ac",
+          "displayComments": true,
+          "comments": "",
+          "colorr": 112,
+          "colorb": 112,
+          "colorg": 112,
+          "linkWidth": 1.0,
+          "linkStyle": "plain",
+          "filterSynthesis": "",
+          "filterYearByYear": "hourly"
         }
       },
       "thermals": [
