@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -122,6 +122,7 @@ class TestCreateLink:
 
         # TODO:assert matrix default content : 1 column, 8760 rows, value = 1
 
+        empty_study.config.version = STUDY_VERSION_8_1
         output = CreateLink.model_validate(
             {
                 "area1": area1_id,
