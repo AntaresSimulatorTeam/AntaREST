@@ -598,5 +598,5 @@ filter-year-by-year =
     """
     (study_path / "input/links/fr/properties.ini").write_text(content)
 
-    link = Link(area_from="fr", area_to="l1", filter_synthesis=["annual"], filter_year_by_year=["hourly"])
+    link = Link(area1="fr", area2="l1", filter_synthesis=["annual"], filter_year_by_year=["hourly"])
     assert _parse_links(study_path, "fr") == {"l1": link}
