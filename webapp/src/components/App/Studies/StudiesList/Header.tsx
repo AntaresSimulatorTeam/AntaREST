@@ -228,11 +228,13 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               open
             >
               {`${t("studies.scanFolder")} ${folder}?`}
-              <CheckBoxFE
-                label={t("studies.recursiveScan")}
-                value={isRecursiveScan}
-                onChange={handleRecursiveScan}
-              />
+              {import.meta.env.MODE !== "desktop" && (
+                <CheckBoxFE
+                  label={t("studies.recursiveScan")}
+                  value={isRecursiveScan}
+                  onChange={handleRecursiveScan}
+                />
+              )}
             </ConfirmationDialog>
           )}
           <RefreshButton mini />
