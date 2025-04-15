@@ -136,23 +136,11 @@ FILTER_VALUES: List[FilterOption] = [
 ]
 
 
-class Area(AntaresBaseModel):
-    area1: str
-    area2: str
-
-    @model_validator(mode="after")
-    def validate_areas(self) -> Self:
-        if self.area1 == self.area2:
-            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
-        area_from, area_to = sorted([self.area1, self.area2])
-        self.area1 = area_from
-        self.area2 = area_to
-        return self
-
-
-class Link(Area):
+class Link(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
+    area1: str
+    area2: str
     hurdles_cost: bool = False
     loop_flow: bool = False
     use_phase_shifter: bool = False
@@ -167,6 +155,15 @@ class Link(Area):
     link_style: LinkStyle = LinkStyle.PLAIN
     filter_synthesis: CommaSeparatedFilterOptions = Field(default_factory=lambda: FILTER_VALUES)
     filter_year_by_year: CommaSeparatedFilterOptions = Field(default_factory=lambda: FILTER_VALUES)
+
+    @model_validator(mode="after")
+    def validate_areas(self) -> Self:
+        if self.area1 == self.area2:
+            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
+        area_from, area_to = sorted([self.area1, self.area2])
+        self.area1 = area_from
+        self.area2 = area_to
+        return self
 
 
 class LinkUpdate(AntaresBaseModel):
