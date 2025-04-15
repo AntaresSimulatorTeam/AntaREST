@@ -80,7 +80,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidateDTO,
@@ -1712,7 +1712,7 @@ class StudyService:
         self,
         uuid: str,
         params: RequestParameters,
-    ) -> List[LinkDTO]:
+    ) -> List[Link]:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
@@ -1739,9 +1739,9 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkDTO,
+        link_creation_dto: Link,
         params: RequestParameters,
-    ) -> LinkDTO:
+    ) -> Link:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1760,9 +1760,9 @@ class StudyService:
         uuid: str,
         area_from: str,
         area_to: str,
-        link_update_dto: LinkBaseDTO,
+        link_update_dto: LinkUpdate,
         params: RequestParameters,
-    ) -> LinkDTO:
+    ) -> Link:
         study = self.get_study(uuid)
         assert_permission(params.user, study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)

@@ -13,8 +13,9 @@
 from typing import List, Mapping, Tuple
 
 from antarest.core.model import JSON
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.rawstudy.model.filesystem.config.link import serialize_link
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
@@ -25,48 +26,40 @@ class LinkManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_links(self, study: StudyInterface) -> List[LinkDTO]:
+    def get_all_links(self, study: StudyInterface) -> List[Link]:
         return list(study.get_study_dao().get_links())
 
-    def get_link(self, study: StudyInterface, area_from: str, area_to: str) -> LinkDTO:
+    def get_link(self, study: StudyInterface, area_from: str, area_to: str) -> Link:
         return study.get_study_dao().get_link(area_from, area_to)
 
-    def create_link(self, study: StudyInterface, link_creation_dto: LinkDTO) -> LinkDTO:
-        link = link_creation_dto.to_internal(study.version)
-
+    def create_link(self, study: StudyInterface, new_link: Link) -> Link:
         command = CreateLink(
-            area1=link_creation_dto.area1,
-            area2=link_creation_dto.area2,
-            parameters=link.model_dump(exclude_none=True),
+            area1=new_link.area1,
+            area2=new_link.area2,
+            parameters=serialize_link(study.version, new_link),
             command_context=self._command_context,
             study_version=study.version,
         )
 
         study.add_commands([command])
 
-        return link_creation_dto
+        return new_link
 
     def _create_update_link_command(
-        self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO
+        self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkUpdate
     ) -> UpdateLink:
-        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
-
-        properties = link_dto.to_internal(study.version)
-
         self.get_link(study, area_from, area_to)
 
         command = UpdateLink(
             area1=area_from,
             area2=area_to,
-            parameters=properties.model_dump(
-                include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
-            ),
+            parameters=link_update_dto.model_dump(exclude_none=True),
             command_context=self._command_context,
             study_version=study.version,
         )
         return command
 
-    def update_link(self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
+    def update_link(self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkUpdate) -> Link:
         command = self._create_update_link_command(study, area_from, area_to, link_update_dto)
 
         study.add_commands([command])
@@ -75,8 +68,8 @@ class LinkManager:
     def update_links(
         self,
         study: StudyInterface,
-        update_links_by_ids: Mapping[Tuple[str, str], LinkBaseDTO],
-    ) -> Mapping[Tuple[str, str], LinkDTO]:
+        update_links_by_ids: Mapping[Tuple[str, str], LinkUpdate],
+    ) -> Mapping[Tuple[str, str], Link]:
         # Build all commands
         commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():
@@ -108,4 +101,4 @@ class LinkManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return LinkBaseDTO.model_json_schema()
+        return LinkUpdate.model_json_schema()

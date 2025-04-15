@@ -15,7 +15,7 @@ from typing import List, Optional
 from pydantic import field_validator, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -73,7 +73,7 @@ class RemoveLink(ICommand):
         if not study_data.link_exists(self.area1, self.area2):
             return command_failed(f"Link between '{self.area1}' and '{self.area2}' doesn't exists")
 
-        study_data.delete_link(LinkDTO(**{"area1": self.area1, "area2": self.area2}))
+        study_data.delete_link(Link(**{"area1": self.area1, "area2": self.area2}))
 
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' deleted")
 

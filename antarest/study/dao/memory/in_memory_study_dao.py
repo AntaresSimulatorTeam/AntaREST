@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -41,7 +41,7 @@ class InMemoryStudyDao(StudyDao):
 
     def __init__(self, version: StudyVersion) -> None:
         self._version = version
-        self._links: Dict[LinkKey, LinkDTO] = {}
+        self._links: Dict[LinkKey, Link] = {}
         self._link_capacities: Dict[LinkKey, str] = {}
         self._link_direct_capacities: Dict[LinkKey, str] = {}
         self._link_indirect_capacities: Dict[LinkKey, str] = {}
@@ -58,7 +58,7 @@ class InMemoryStudyDao(StudyDao):
         return self._version
 
     @override
-    def get_links(self) -> Sequence[LinkDTO]:
+    def get_links(self) -> Sequence[Link]:
         return list(self._links.values())
 
     @override
@@ -66,14 +66,14 @@ class InMemoryStudyDao(StudyDao):
         return link_key(area1_id, area2_id) in self._links
 
     @override
-    def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
+    def get_link(self, area1_id: str, area2_id: str) -> Link:
         try:
             return self._links[link_key(area1_id, area2_id)]
         except KeyError:
             raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
 
     @override
-    def save_link(self, link: LinkDTO) -> None:
+    def save_link(self, link: Link) -> None:
         self._links[link_key(link.area1, link.area2)] = link
 
     @override
@@ -89,5 +89,5 @@ class InMemoryStudyDao(StudyDao):
         self._link_indirect_capacities[link_key(area_from, area_to)] = series_id
 
     @override
-    def delete_link(self, link: LinkDTO) -> None:
+    def delete_link(self, link: Link) -> None:
         del self._links[link_key(link.area1, link.area2)]

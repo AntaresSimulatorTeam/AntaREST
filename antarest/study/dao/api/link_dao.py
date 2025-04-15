@@ -13,16 +13,16 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import Link
 
 
 class ReadOnlyLinkDao(ABC):
     @abstractmethod
-    def get_links(self) -> Sequence[LinkDTO]:
+    def get_links(self) -> Sequence[Link]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
+    def get_link(self, area1_id: str, area2_id: str) -> Link:
         raise NotImplementedError()
 
     @abstractmethod
@@ -32,7 +32,7 @@ class ReadOnlyLinkDao(ABC):
 
 class LinkDao(ReadOnlyLinkDao):
     @abstractmethod
-    def save_link(self, link: LinkDTO) -> None:
+    def save_link(self, link: Link) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -48,5 +48,5 @@ class LinkDao(ReadOnlyLinkDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_link(self, link: LinkDTO) -> None:
+    def delete_link(self, link: Link) -> None:
         raise NotImplementedError()

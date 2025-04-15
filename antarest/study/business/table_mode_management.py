@@ -27,7 +27,7 @@ from antarest.study.business.binding_constraint_management import BindingConstra
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
-from antarest.study.business.model.link_model import LinkBaseDTO
+from antarest.study.business.model.link_model import LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate, RenewableClusterUpdates
 from antarest.study.business.model.sts_model import STStorageUpdate, STStorageUpdates
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate, ThermalClusterUpdates
@@ -202,7 +202,7 @@ class TableModeManager:
             data = {area_id: area.model_dump(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
             return data
         elif table_type == TableModeType.LINK:
-            links_map = {tuple(key.split(" / ")): LinkBaseDTO(**values) for key, values in data.items()}
+            links_map = {tuple(key.split(" / ")): LinkUpdate(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
             excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {

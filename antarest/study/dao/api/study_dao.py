@@ -15,7 +15,7 @@ from typing import Sequence
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -60,11 +60,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_version()
 
     @override
-    def get_links(self) -> Sequence[LinkDTO]:
+    def get_links(self) -> Sequence[Link]:
         return self._adaptee.get_links()
 
     @override
-    def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
+    def get_link(self, area1_id: str, area2_id: str) -> Link:
         return self._adaptee.get_link(area1_id, area2_id)
 
     @override

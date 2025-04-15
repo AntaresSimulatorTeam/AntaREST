@@ -10,14 +10,14 @@
 #
 # This file is part of the Antares project.
 from dataclasses import field
-from typing import Annotated, List, Optional, Self, Type, TypeAlias
+from typing import Annotated, Any, List, Optional, Self, Type, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 
-from antarest.core.exceptions import LinkValidationError
+from antarest.core.exceptions import InvalidFieldForVersionError, LinkValidationError
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_camel_case, to_kebab_case
+from antarest.core.utils.string import to_camel_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_2
 
@@ -139,7 +139,21 @@ FILTER_VALUES: List[FilterOption] = [
 ]
 
 
-class LinkBaseDTO(AntaresBaseModel):
+class Area(AntaresBaseModel):
+    area1: str
+    area2: str
+
+    @model_validator(mode="after")
+    def validate_areas(self) -> Self:
+        if self.area1 == self.area2:
+            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
+        area_from, area_to = sorted([self.area1, self.area2])
+        self.area1 = area_from
+        self.area2 = area_to
+        return self
+
+
+class Link(Area):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     hurdles_cost: bool = False
@@ -158,57 +172,57 @@ class LinkBaseDTO(AntaresBaseModel):
     filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
 
 
-class Area(AntaresBaseModel):
-    area1: str
-    area2: str
+class LinkUpdate(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
-    @model_validator(mode="after")
-    def validate_areas(self) -> Self:
-        if self.area1 == self.area2:
-            raise LinkValidationError(f"Cannot create a link that goes from and to the same single area: {self.area1}")
-        area_from, area_to = sorted([self.area1, self.area2])
-        self.area1 = area_from
-        self.area2 = area_to
-        return self
-
-
-class LinkDTO(Area, LinkBaseDTO):
-    def to_internal(self, version: StudyVersion) -> "LinkFileData":
-        filtering_keys = {"filter_synthesis", "filter_year_by_year"}
-        excludes = {"area1", "area2"}
-        if version < STUDY_VERSION_8_2:
-            if filtering_keys & self.model_fields_set:
-                raise LinkValidationError("Cannot specify a filter value for study's version earlier than v8.2")
-            excludes.update(filtering_keys)
-
-        data = self.model_dump(exclude=excludes)
-
-        return LinkFileData(**data)
+    hurdles_cost: Optional[bool] = None
+    loop_flow: Optional[bool] = None
+    use_phase_shifter: Optional[bool] = None
+    transmission_capacities: Optional[TransmissionCapacity] = None
+    asset_type: Optional[AssetType] = None
+    display_comments: Optional[bool] = None
+    comments: Optional[str] = None
+    colorr: Optional[int] = None
+    colorb: Optional[int] = None
+    colorg: Optional[int] = None
+    link_width: Optional[float] = None
+    link_style: Optional[LinkStyle] = None
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
 
 
-class LinkFileData(AntaresBaseModel):
+def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
+    if getattr(data, field) is not None:
+        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
+
+
+def validate_link_against_version(version: StudyVersion, link_data: Link | LinkUpdate) -> None:
     """
-    Link properties for serialization in ini file.
+    Validates input link data against the provided study versions
+
+    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
     """
+    if version < STUDY_VERSION_8_2:
+        for field in ["filter_synthesis", "filter_year_by_year"]:
+            _check_min_version(link_data, field, version)
 
-    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-    hurdles_cost: bool = False
-    loop_flow: bool = False
-    use_phase_shifter: bool = False
-    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
-    asset_type: AssetType = AssetType.AC
-    display_comments: bool = True
-    comments: str = ""
-    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    link_width: float = 1
-    link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
+def _initialize_field_default(link: Link, field: str, default_value: Any) -> None:
+    if getattr(link, field) is None:
+        setattr(link, field, default_value)
 
-    def to_dto(self, study_version: StudyVersion, area_from: str, area_to: str) -> LinkDTO:
-        excludes = {"filter_synthesis", "filter_year_by_year"} if study_version < STUDY_VERSION_8_2 else set()
-        data = self.model_dump(exclude=excludes) | {"area1": area_from, "area2": area_to}
-        return LinkDTO(**data)
+
+def initialize_link(link: Link, version: StudyVersion) -> None:
+    """
+    Set undefined version-specific fields to default values.
+    """
+    if version >= STUDY_VERSION_8_2:
+        for field in ["filter_synthesis", "filter_year_by_year"]:
+            _initialize_field_default(link, field, FILTER_VALUES)
+
+
+def update_link(link: Link, data: LinkUpdate) -> Link:
+    """
+    Updates a link according to the provided update data.
+    """
+    return link.model_copy(update=data.model_dump(exclude_none=True))

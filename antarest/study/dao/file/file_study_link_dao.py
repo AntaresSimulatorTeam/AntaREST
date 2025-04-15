@@ -10,24 +10,15 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Sequence
 
-from pydantic import ConfigDict, Field, RootModel
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
-from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.link_model import (
-    DEFAULT_COLOR,
-    FILTER_VALUES,
-    AssetType,
-    CommaSeparatedFilterOptions,
-    LinkDTO,
-    LinkFileData,
-    LinkStyle,
-    TransmissionCapacity,
+    Link,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
@@ -36,46 +27,20 @@ from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
 
 
-class LinkPropertiesFileData(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
-
-    hurdles_cost: bool = False
-    loop_flow: bool = False
-    use_phase_shifter: bool = False
-    transmission_capacities: TransmissionCapacity = TransmissionCapacity.ENABLED
-    asset_type: AssetType = AssetType.AC
-    display_comments: bool = True
-    comments: str = ""
-    colorr: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorb: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
-    link_width: float = 1
-    link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = Field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = Field(default_factory=lambda: FILTER_VALUES)
-
-
-AreaLinksPropertiesFileData = RootModel[Dict[str, LinkPropertiesFileData]]
-
-
 class FileStudyLinkDao(LinkDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass
 
     @override
-    def get_links(self) -> Sequence[LinkDTO]:
+    def get_links(self) -> Sequence[Link]:
         file_study = self.get_file_study()
-        result: List[LinkDTO] = []
+        result: List[Link] = []
 
         for area_from, area in file_study.config.areas.items():
-            area_links = AreaLinksPropertiesFileData.model_validate(
-                file_study.tree.get(["input", "links", area_from, "properties"])
-            ).root
+            area_links = file_study.tree.get(["input", "links", area_from, "properties"])
             for area_to, link_data in area_links.items():
-                link_tree_config = link_data.model_dump()
-                link_properties = LinkFileData.model_validate(link_tree_config)
-                result.append(link_properties.to_dto(file_study.config.version, area_from, area_to))
+                result.append(parse_link(file_study.config.version, link_data, area_from, area_to))
         return result
 
     @override
@@ -89,28 +54,25 @@ class FileStudyLinkDao(LinkDao, ABC):
             return False
 
     @override
-    def get_link(self, area1_id: str, area2_id: str) -> LinkDTO:
+    def get_link(self, area1_id: str, area2_id: str) -> Link:
         area_from, area_to = sorted((area1_id, area2_id))
         file_study = self.get_file_study()
         try:
-            props = LinkPropertiesFileData.model_validate(
-                file_study.tree.get(["input", "links", area_from, "properties", area_to])
-            ).model_dump()
+            area_links = file_study.tree.get(["input", "links", area_from, "properties", area_to])
+            return parse_link(file_study.config.version, area_links, area_from, area_to)
         except KeyError:
             raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
-        return LinkFileData.model_validate(props).to_dto(file_study.config.version, area_from, area_to)
 
     @override
-    def save_link(self, link: LinkDTO) -> None:
+    def save_link(self, link: Link) -> None:
         study_data = self.get_file_study()
         self._update_link_config(link.area1, link.area2, link)
-        link_properties = link.to_internal(study_data.config.version)
 
         study_data.tree.save(
-            link_properties.model_dump(by_alias=True), ["input", "links", link.area1, "properties", link.area2]
+            serialize_link(study_data.config.version, link), ["input", "links", link.area1, "properties", link.area2]
         )
 
-    def _update_link_config(self, area1_id: str, area2_id: str, link: LinkDTO) -> None:
+    def _update_link_config(self, area1_id: str, area2_id: str, link: Link) -> None:
         study_data = self.get_file_study().config
         if area1_id not in study_data.areas:
             raise ValueError(f"The area '{area1_id}' does not exist")
@@ -147,7 +109,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             study_data.tree.save(series_id, ["input", "links", area_from, "capacities", f"{area_to}_indirect"])
 
     @override
-    def delete_link(self, link: LinkDTO) -> None:
+    def delete_link(self, link: Link) -> None:
         study_data = self.get_file_study()
 
         if study_data.config.version < STUDY_VERSION_8_2:
@@ -162,7 +124,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         del study_data.config.areas[link.area1].links[link.area2]
         self._remove_link_from_scenario_builder(link)
 
-    def _remove_link_from_scenario_builder(self, link: LinkDTO) -> None:
+    def _remove_link_from_scenario_builder(self, link: Link) -> None:
         """
         Update the scenario builder by removing the rows that correspond to the link to remove.
 
