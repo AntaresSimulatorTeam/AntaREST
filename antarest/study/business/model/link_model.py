@@ -167,6 +167,7 @@ class Link(Area):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
+    # v8.2 fields
     filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
     filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
 

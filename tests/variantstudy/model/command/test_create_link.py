@@ -102,20 +102,19 @@ class TestCreateLink:
         assert int(link_data[area2_id]["colorb"]) == 112
         assert link_data[area2_id]["display-comments"] is True
 
-        empty_study.config.version = 820
+        empty_study.config.version = STUDY_VERSION_8_8
         create_link_command: ICommand = CreateLink(
             area1=area2_id,
             area2=area3_id,
             parameters={},
             command_context=command_context,
             series=[[0]],
-            study_version=study_version,
+            study_version=empty_study.config.version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
         )
         assert output.status
-        empty_study.config.version = 800
 
         assert (study_path / "input" / "links" / area2_id / f"{area3_id}_parameters.txt.link").exists()
         assert (study_path / "input" / "links" / area2_id / "capacities" / f"{area3_id}_direct.txt.link").exists()

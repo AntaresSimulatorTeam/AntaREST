@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import field
 from typing import Any, Optional
 
 from antares.study.version import StudyVersion
@@ -19,7 +18,6 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.link_model import (
     DEFAULT_COLOR,
-    FILTER_VALUES,
     AssetType,
     CommaSeparatedFilterOptions,
     Link,
@@ -49,8 +47,9 @@ class LinkFileData(AntaresBaseModel):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
+    # v8.2 fields
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
 
     def to_model(self, area_from: str, area_to: str) -> Link:
         data = self.model_dump(exclude_none=True) | {"area1": area_from, "area2": area_to}
