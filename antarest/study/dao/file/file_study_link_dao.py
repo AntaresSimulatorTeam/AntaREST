@@ -118,7 +118,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             raise ValueError(f"The area '{area2_id}' does not exist")
 
         area_from, area_to = sorted([area1_id, area2_id])
-        study_data.areas[area_from].links[area_to] = link.to_config()
+        study_data.areas[area_from].links[area_to] = link
 
     @override
     def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:

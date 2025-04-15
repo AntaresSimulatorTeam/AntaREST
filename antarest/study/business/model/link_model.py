@@ -20,7 +20,6 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case, to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Link
 
 
 class AssetType(EnumIgnoreCase):
@@ -185,9 +184,6 @@ class LinkDTO(Area, LinkBaseDTO):
         data = self.model_dump(exclude=excludes)
 
         return LinkFileData(**data)
-
-    def to_config(self) -> Link:
-        return Link(filters_year=self.filter_year_by_year, filters_synthesis=self.filter_synthesis)
 
 
 class LinkFileData(AntaresBaseModel):

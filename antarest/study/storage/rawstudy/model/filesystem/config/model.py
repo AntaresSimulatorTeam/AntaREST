@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.link_model import LinkDTO
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import StudyVersionInt
 
@@ -84,7 +85,7 @@ class Area(AntaresBaseModel, extra="forbid"):
     """
 
     name: str
-    links: Dict[str, Link]
+    links: Dict[str, LinkDTO]
     thermals: List[ThermalCluster]
     renewables: List[RenewableConfigType]
     filters_synthesis: List[str]
@@ -264,20 +265,6 @@ class FileStudyTreeConfig(DTO):
         """
         lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
         return [grp for _, grp in sorted(lower_groups.items())]
-
-    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_synthesis
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_synthesis
-        return self.areas[area].filters_synthesis
-
-    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_year
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_year
-        return self.areas[area].filters_year
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):
