@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from dataclasses import field
 from typing import Annotated, Any, List, Optional, Self, Type, TypeAlias
 
 from antares.study.version import StudyVersion
@@ -168,8 +167,8 @@ class Link(Area):
     colorg: int = Field(default=DEFAULT_COLOR, ge=0, le=255)
     link_width: float = 1
     link_style: LinkStyle = LinkStyle.PLAIN
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = field(default_factory=lambda: FILTER_VALUES)
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
 
 
 class LinkUpdate(AntaresBaseModel):
