@@ -56,7 +56,7 @@ resource_path = (
     / "aggregate_areas_raw_data"
     / "test-01-all.result.tsv"
 )
-AGGREGATION_DF = pd.read_csv(resource_path, sep="\t", dtype=pd.StringDtype())
+AGGREGATION_DF = pd.read_csv(resource_path, sep="\t")
 
 
 class TestMatrixService:
@@ -153,10 +153,12 @@ class TestMatrixService:
         matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype()))
 
     @with_db_context
-    def test_get_with_versions(self, matrix_service: MatrixService) -> None:
+    @pytest.mark.parametrize("matrix_format", ["hdf"])
+    def test_get_with_versions(self, matrix_service: MatrixService, matrix_format: str) -> None:
+        matrix_service.matrix_content_repository.format = InternalMatrixFormat(matrix_format)
         matrix_id = matrix_service.create(AGGREGATION_DF)
         content = matrix_service.get(matrix_id)
-        assert content.astype(pd.StringDtype()).equals(AGGREGATION_DF)
+        assert content.equals(AGGREGATION_DF)
 
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
@@ -507,7 +509,7 @@ def test_hashing_method():
     other_df = pd.DataFrame(data=8760 * [1.0])
     assert compute_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
-    assert compute_hash(AGGREGATION_DF) == "a0e8de4e00f2cfaf0c3f1a10e9fcd323ec79c00b9e43d01ad8b296a33bce203c"
+    assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
 
 
 def test_check_compliance_method():
@@ -532,7 +534,7 @@ def test_check_compliance_method():
     with pytest.raises(
         MatrixNotSupported,
         match=re.escape(
-            "Could not save the matrix: Supported matrix data types are [<class 'numpy.number'>, <class 'numpy.str_'>, <class 'numpy.datetime64'>] and you provided object"
+            "Could not save the matrix: Supported matrix data types are 'string, np.number, datetime' and you provided object"
         ),
     ):
         check_dataframe_compliance(df)

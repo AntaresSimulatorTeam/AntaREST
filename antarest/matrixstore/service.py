@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 import py7zr
 from fastapi import UploadFile
+from pandas.api.types import infer_dtype
 from typing_extensions import override
 
 from antarest.core.config import Config, InternalMatrixFormat
@@ -141,10 +142,13 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
     if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
         raise MatrixNotSupported("The matrixstore doesn't support dataframes with a non-default index")
 
-    supported_dtypes = [np.number, np.str_, np.datetime64]
-    for dtype in df.dtypes:
+    supported_dtypes = [np.number, np.datetime64]
+    for k, dtype in enumerate(list(df.dtypes)):
         if not any(np.issubdtype(dtype.type, supported_type) for supported_type in supported_dtypes):
-            raise MatrixNotSupported(f"Supported matrix data types are {supported_dtypes} and you provided {dtype}")
+            if infer_dtype(df[df.columns[k]]) != "string":
+                raise MatrixNotSupported(
+                    f"Supported matrix data types are 'string, np.number, datetime' and you provided {dtype}"
+                )
 
 
 class MatrixService(ISimpleMatrixService):
