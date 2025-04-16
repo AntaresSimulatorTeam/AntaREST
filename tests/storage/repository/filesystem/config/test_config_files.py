@@ -18,11 +18,10 @@ from zipfile import ZipFile
 
 import pytest
 
-from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
-    _parse_links,
+    _parse_links_filtering,
     _parse_renewables,
     _parse_sets,
     _parse_st_storage,
@@ -35,6 +34,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
+    LinkConfig,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
@@ -581,22 +581,10 @@ def test_parse_links(study_path: Path) -> None:
     (study_path / "input/links/fr").mkdir(parents=True)
     content = """
     [l1]
-hurdles-cost = true
-loop-flow = false
-use-phase-shifter = false
-transmission-capacities = enabled
-asset-type = ac
-link-style = plain
-link-width = 1
-colorr = 112
-colorg = 112
-colorb = 112
-display-comments = true
-filter-synthesis = annual
-filter-year-by-year = 
-
+    filter-synthesis = annual
+    filter-year-by-year = hourly
     """
     (study_path / "input/links/fr/properties.ini").write_text(content)
 
-    link = Link(area1="fr", area2="l1", hurdles_cost=True, filter_synthesis=["annual"], filter_year_by_year=[])
-    assert _parse_links(study_path, "fr") == {"l1": link}
+    link = LinkConfig(filters_synthesis=["annual"], filters_year=["hourly"])
+    assert _parse_links_filtering(study_path, "fr") == {"l1": link}

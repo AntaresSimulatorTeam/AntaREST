@@ -17,6 +17,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.storage.rawstudy.model.filesystem.config.model import LinkConfig
 
 
 class AssetType(EnumIgnoreCase):
@@ -164,6 +165,10 @@ class Link(AntaresBaseModel):
         self.area1 = area_from
         self.area2 = area_to
         return self
+
+    def to_config(self) -> LinkConfig:
+        data = self.model_dump(mode="json", include={"filter_synthesis", "filter_year_by_year"})
+        return LinkConfig(**data)
 
 
 class LinkUpdate(AntaresBaseModel):

@@ -23,7 +23,6 @@ from antarest.core.model import JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.extensions.interface import ILauncherExtension
-from antarest.study.business.model.link_model import FilterOption
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -56,12 +55,10 @@ def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> Di
         # links
         for area_2, link in area.links.items():
             link_id = f"{area_id} - {area_2}"
-            original_link_enabled[link_id] = FilterOption.HOURLY in link.filter_year_by_year
+            original_link_enabled[link_id] = "hourly" in link.filters_year
             if not original_link_enabled[link_id] and (area_id in area_to_turn_on or area_2 in area_to_turn_on):
-                new_link = link.model_copy(deep=True)
-                new_link.filter_year_by_year.append(FilterOption.HOURLY)
                 study.tree.save(
-                    new_link.model_dump(mode="json", include={"filter-year-by-year"})["filter-year-by-year"],
+                    ", ".join([*link.filters_year, "hourly"]),
                     [
                         "input",
                         "links",

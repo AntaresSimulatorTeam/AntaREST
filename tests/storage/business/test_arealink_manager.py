@@ -20,7 +20,12 @@ from antarest.study.business.model.link_model import AssetType, Link, Transmissi
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    DistrictSet,
+    FileStudyTreeConfig,
+    LinkConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -73,8 +78,8 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "a1": Area(
                 name="a1",
                 links={
-                    "a2": Link(area1="a1", area2="a2"),
-                    "a3": Link(area1="a1", area2="a3"),
+                    "a2": LinkConfig(filters_synthesis=[], filters_year=[]),
+                    "a3": LinkConfig(filters_synthesis=[], filters_year=[]),
                 },
                 thermals=[ThermalCluster(name="a", enabled=True)],
                 renewables=[],
@@ -83,7 +88,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             ),
             "a2": Area(
                 name="a2",
-                links={"a3": Link(area1="a2", area2="a3")},
+                links={"a3": LinkConfig(filters_synthesis=[], filters_year=[])},
                 thermals=[],
                 renewables=[],
                 filters_synthesis=[],
