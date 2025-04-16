@@ -304,6 +304,12 @@ default:
 - **Default value:** 5
 - **Description:** Max auto archival tasks in parallel.
 
+## **aggregation_results_max_size**
+
+- **Type**: Integer
+- **Default value:** 200
+- **Description:** Size in Mo of maximum size of results of aggregation.
+
 ## **snapshot_retention_days**
 
 - **Type:** Integer
