@@ -137,7 +137,7 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
 
     supported_dtypes = [np.number, np.str_, np.datetime64]
     for dtype in df.dtypes:
-        if not any(np.issubdtype(dtype, supported_type) for supported_type in supported_dtypes):
+        if not any(np.issubdtype(dtype.type, supported_type) for supported_type in supported_dtypes):
             raise MatrixNotSupported(f"Supported matrix data types are {supported_dtypes} and you provided {dtype}")
 
 

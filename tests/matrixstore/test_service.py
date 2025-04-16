@@ -515,7 +515,7 @@ def test_check_compliance_method():
     df = pd.DataFrame(data=TEST_MATRIX)
     check_dataframe_compliance(df)
 
-    df = pd.DataFrame(data=["test"])
+    df = pd.DataFrame(data=["test"], dtype=pd.StringDtype())
     check_dataframe_compliance(df)
 
     df = pd.DataFrame(data=[datetime.datetime(2025, 4, 16)])
