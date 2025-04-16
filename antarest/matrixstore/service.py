@@ -71,6 +71,12 @@ class ISimpleMatrixService(ABC):
 
     @abstractmethod
     def create(self, data: pd.DataFrame) -> str:
+        """
+        Creates a new matrix object with the specified data.
+
+        Warning:
+            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
+        """
         raise NotImplementedError()
 
     @abstractmethod
