@@ -135,7 +135,7 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
     if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
         raise MatrixNotSupported("The matrixstore doesn't support dataframes with a non-default index")
 
-    supported_dtypes = [np.number, str, datetime]
+    supported_dtypes = [np.number, np.str_, np.datetime64]
     for dtype in df.dtypes:
         if not any(np.issubdtype(dtype, supported_type) for supported_type in supported_dtypes):
             raise MatrixNotSupported(f"Supported matrix data types are {supported_dtypes} and you provided {dtype}")

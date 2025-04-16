@@ -511,9 +511,29 @@ def test_hashing_method():
 
 
 def test_check_compliance_method():
+    # Success
+    df = pd.DataFrame(data=TEST_MATRIX)
+    check_dataframe_compliance(df)
+
+    df = pd.DataFrame(data=["test"])
+    check_dataframe_compliance(df)
+
+    df = pd.DataFrame(data=[datetime.datetime(2025, 4, 16)])
+    check_dataframe_compliance(df)
+
+    # Error
     df = pd.DataFrame(index=["A", "B"], data=TEST_MATRIX)
     with pytest.raises(
         MatrixNotSupported, match=re.escape("The matrixstore doesn't support dataframes with a non-default index")
+    ):
+        check_dataframe_compliance(df)
+
+    df = pd.DataFrame(data=[[b"fake_byte/n"]])
+    with pytest.raises(
+        MatrixNotSupported,
+        match=re.escape(
+            "Could not save the matrix: Supported matrix data types are [<class 'numpy.number'>, <class 'numpy.str_'>, <class 'numpy.datetime64'>] and you provided object"
+        ),
     ):
         check_dataframe_compliance(df)
 
