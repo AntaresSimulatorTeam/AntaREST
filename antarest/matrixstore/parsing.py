@@ -20,23 +20,25 @@ from antarest.core.config import InternalMatrixFormat
 def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pd.DataFrame:
     if path.stat().st_size == 0:
         return pd.DataFrame()
+
     if matrix_format == InternalMatrixFormat.TSV:
         # Based on the matrix version, we assume its format
         header = None if matrix_version == 1 else 0
         df = pd.read_csv(path, sep="\t", header=header)
-        # Specific treatment on columns to fit with other formats
-        length_range = range(len(df.columns))
-        if list(df.columns) == [str(k) for k in length_range]:
-            df.columns = pd.Index(length_range)  # type: ignore
-        return df
     elif matrix_format == InternalMatrixFormat.HDF:
-        return cast(pd.DataFrame, pd.read_hdf(path))
+        df = cast(pd.DataFrame, pd.read_hdf(path))
     elif matrix_format == InternalMatrixFormat.PARQUET:
-        return pd.read_parquet(path)
+        df = pd.read_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:
-        return pd.read_feather(path)
+        df = pd.read_feather(path)
     else:
         raise NotImplementedError(f"Internal matrix format '{matrix_format}' is not implemented")
+
+    # Specific treatment on columns for each format to have the same behavior
+    length_range = range(len(df.columns))
+    if list(df.columns) == [str(k) for k in length_range]:
+        df.columns = pd.Index(length_range)  # type: ignore
+    return df
 
 
 def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pd.DataFrame, path: Path) -> None:
