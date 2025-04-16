@@ -688,7 +688,7 @@ class LauncherService:
             This list is empty if the configuration is not available.
 
         Raises:
-            KeyError: if the configuration is not "default", "slurm" or "local".
+            InvalidConfigurationError: if the configuration is not found.
         """
         config = self.config.launcher.get_launcher_cfg(cluster_id)
         if config.type == "slurm":

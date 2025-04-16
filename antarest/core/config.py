@@ -445,18 +445,6 @@ class SlurmConfig(AbstractLauncherConfig):
     def _autodetect_nb_cores(cls) -> Dict[str, int]:
         raise NotImplementedError("NB Cores auto-detection is not implemented for SLURM server")
 
-    @override
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, SlurmConfig):
-            return self.id == other.id
-        if isinstance(other, str):
-            return self.id == other
-        return NotImplemented
-
-    @override
-    def __hash__(self) -> int:
-        return hash(self.id)
-
 
 class InvalidConfigurationError(Exception):
     """

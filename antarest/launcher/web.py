@@ -221,7 +221,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         Get list of supported solver versions defined in the configuration.
 
         Args:
-        - `solver`: name of the configuration to read: "default", "slurm" or "local".
+        - `solver`: name of the configuration to read.
         """
         logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
         return service.get_solver_versions(solver)
