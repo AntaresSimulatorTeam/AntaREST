@@ -41,7 +41,7 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
-from antarest.matrixstore.service import MatrixService, check_dataframe_compliance
+from antarest.matrixstore.service import NEW_MATRIX_VERSION, MatrixService, check_dataframe_compliance
 from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
@@ -73,7 +73,7 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{matrix_id}.tsv")
-        saved_df = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=2)
+        saved_df = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
         assert saved_df.equals(df_to_save)
 
         # A matrix object is stored in the database
@@ -247,7 +247,7 @@ class TestMatrixService:
         # The matrix is saved in the content repository as a TSV file
         bucket_dir = matrix_service.matrix_content_repository.bucket_dir
         content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-        actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=2)
+        actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
         assert actual.to_numpy().all() == matrix.all()
 
         # A matrix object is stored in the database
@@ -314,7 +314,7 @@ class TestMatrixService:
             # The matrix is saved in the content repository as a TSV file
             bucket_dir = matrix_service.matrix_content_repository.bucket_dir
             content_path = bucket_dir.joinpath(f"{info.id}.tsv")
-            actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=2)
+            actual = load_matrix(InternalMatrixFormat.TSV, content_path, matrix_version=NEW_MATRIX_VERSION)
             assert actual.to_numpy().all() == matrix.all()
 
             # A matrix object is stored in the database

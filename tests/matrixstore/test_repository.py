@@ -34,6 +34,7 @@ from antarest.matrixstore.repository import (
     MatrixRepository,
     compute_hash,
 )
+from antarest.matrixstore.service import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION
 
 ArrayData = t.Union[t.List[t.List[float]], npt.NDArray[np.float64]]
 
@@ -63,12 +64,12 @@ class TestMatrixRepository:
         bid = repo.save(pd.DataFrame(b)).hash
         assert aid != bid
 
-        assert_frame_equal(matrix_content_a, repo.get(aid, matrix_version=2))
-        assert_frame_equal(matrix_content_b, repo.get(bid, matrix_version=2))
+        assert_frame_equal(matrix_content_a, repo.get(aid, matrix_version=NEW_MATRIX_VERSION))
+        assert_frame_equal(matrix_content_b, repo.get(bid, matrix_version=NEW_MATRIX_VERSION))
 
         repo.delete(aid)
         with pytest.raises(FileNotFoundError):
-            repo.get(aid, matrix_version=2)
+            repo.get(aid, matrix_version=NEW_MATRIX_VERSION)
 
     def test_dataset(self, db_session: Session) -> None:
         with db_session:
@@ -208,7 +209,7 @@ class TestMatrixContentRepository:
             # then a file is created in the repo directory
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             assert matrix_file.exists()
-            df = load_matrix(matrix_format, matrix_file, matrix_version=2)
+            df = load_matrix(matrix_format, matrix_file, matrix_version=NEW_MATRIX_VERSION)
             assert df.equals(data)
 
             # when other data is saved with different values
@@ -221,7 +222,7 @@ class TestMatrixContentRepository:
             # Test with an empty matrix
             matrix_hash = matrix_content_repo.save(pd.DataFrame([])).hash
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
-            retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
+            retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
 
             assert not matrix_file.read_bytes()
             assert retrieved_matrix.empty
@@ -229,7 +230,7 @@ class TestMatrixContentRepository:
             # Test with an empty 2D array
             matrix_hash = matrix_content_repo.save(pd.DataFrame([[]])).hash
             matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
-            retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
+            retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
 
             assert not matrix_file.read_bytes()
             assert retrieved_matrix.empty
@@ -247,7 +248,7 @@ class TestMatrixContentRepository:
             # then the saved matrix object exists
             assert matrix_content_repo.exists(matrix_hash)
             # and it can be retrieved
-            content = matrix_content_repo.get(matrix_hash, matrix_version=2)
+            content = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
             assert content.equals(df_to_save)
 
             # we can delete the data that was previously saved
@@ -261,7 +262,7 @@ class TestMatrixContentRepository:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             assert not matrix_content_repo.exists(missing_hash)
             with pytest.raises(FileNotFoundError):
-                matrix_content_repo.get(missing_hash, matrix_version=2)
+                matrix_content_repo.get(missing_hash, matrix_version=NEW_MATRIX_VERSION)
             # it cannot be deleted
             with pytest.raises(FileNotFoundError):
                 matrix_content_repo.delete(missing_hash)
@@ -285,7 +286,7 @@ class TestMatrixContentRepository:
                     # asserts the saved matrix object exists
                     assert matrix_content_repo.exists(associated_hash)
                     # and it can be retrieved
-                    content = matrix_content_repo.get(associated_hash, matrix_version=2)
+                    content = matrix_content_repo.get(associated_hash, matrix_version=NEW_MATRIX_VERSION)
                     assert content.equals(df)
 
                     # we can delete the data that was previously saved
@@ -315,7 +316,7 @@ class TestMatrixContentRepository:
             (matrix_path.parent / f"{matrix_hash}.tsv.lock").touch()
             np.savetxt(matrix_path, legacy_matrix, delimiter="\t")
             # Ensures we're still able to read it
-            matrix = matrix_content_repo.get(matrix_hash, matrix_version=1)
+            matrix = matrix_content_repo.get(matrix_hash, matrix_version=LEGACY_MATRIX_VERSION)
             assert matrix.to_numpy().all() == legacy_matrix.all()
             # Ensures writing the same matrix in another format works
             matrix_content_repo.save(pd.DataFrame(legacy_matrix))

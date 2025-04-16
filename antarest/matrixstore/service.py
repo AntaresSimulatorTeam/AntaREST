@@ -65,6 +65,13 @@ EXCLUDED_FILES = {
 
 logger = logging.getLogger(__name__)
 
+LEGACY_MATRIX_VERSION = 1
+NEW_MATRIX_VERSION = 2
+"""
+Version 1 matrices were not saved with a header, unlike version 2 ones.
+Therefore, we rely on this version to know how to read the matrices
+"""
+
 
 class ISimpleMatrixService(ABC):
     def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
@@ -124,7 +131,7 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
-        return self.matrix_content_repository.get(matrix_id, matrix_version=2)
+        return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
     def exists(self, matrix_id: str) -> bool:
