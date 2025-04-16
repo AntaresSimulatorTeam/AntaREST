@@ -144,7 +144,7 @@ class MatrixCreationResult:
 def compute_hash(df: pd.DataFrame) -> str:
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
-    if all(np.issubdtype(dtype, np.number) for dtype in df.dtypes):
+    if all(np.issubdtype(dtype.type, np.number) for dtype in df.dtypes):
         # We also need to check the headers to see if they correspond to the default ones
         if df.columns.equals(pd.RangeIndex(0, df.shape[1])):
             legacy_format = True

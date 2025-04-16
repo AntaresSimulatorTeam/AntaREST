@@ -56,7 +56,7 @@ resource_path = (
     / "aggregate_areas_raw_data"
     / "test-01-all.result.tsv"
 )
-AGGREGATION_DF = pd.read_csv(resource_path, sep="\t")
+AGGREGATION_DF = pd.read_csv(resource_path, sep="\t", dtype=pd.StringDtype())
 
 
 class TestMatrixService:
@@ -150,13 +150,13 @@ class TestMatrixService:
 
     def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
         data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
+        matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype()))
 
     @with_db_context
     def test_get_with_versions(self, matrix_service: MatrixService) -> None:
         matrix_id = matrix_service.create(AGGREGATION_DF)
         content = matrix_service.get(matrix_id)
-        assert content.equals(AGGREGATION_DF)
+        assert content.astype(pd.StringDtype()).equals(AGGREGATION_DF)
 
     def test_delete__nominal_case(self, matrix_service: MatrixService) -> None:
         """Delete a matrix object from the matrix content repository and the database."""
