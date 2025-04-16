@@ -60,8 +60,8 @@ class TestSolverVersions:
         )
         assert res.status_code == 500
         assert res.json() == {
-            "description": "Unexpected server error: 'Default launcher is slurm but it is not registered in the config file'",
-            "exception": "KeyError",
+            "description": "Unexpected server error: Configuration is not available for the 'slurm' launcher",
+            "exception": "InvalidConfigurationError",
         }
 
     def test_get_solver_versions__default(

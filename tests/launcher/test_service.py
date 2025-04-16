@@ -385,7 +385,7 @@ class TestLauncherService:
                 id="local-config-slurm",
                 marks=pytest.mark.xfail(
                     reason="Unknown solver configuration: 'unknown'",
-                    raises=KeyError,
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
@@ -405,7 +405,7 @@ class TestLauncherService:
                 id="local-config-unknown",
                 marks=pytest.mark.xfail(
                     reason="Unknown solver configuration: 'unknown'",
-                    raises=KeyError,
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
@@ -440,7 +440,7 @@ class TestLauncherService:
                 id="slurm-config-local",
                 marks=pytest.mark.xfail(
                     reason="Unknown solver configuration: 'unknown'",
-                    raises=KeyError,
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
@@ -460,7 +460,7 @@ class TestLauncherService:
                 id="slurm-config-unknown",
                 marks=pytest.mark.xfail(
                     reason="Unknown solver configuration: 'unknown'",
-                    raises=KeyError,
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
@@ -1103,8 +1103,8 @@ class TestLauncherService:
                 "slurm",
                 id="slurm launcher with no config",
                 marks=pytest.mark.xfail(
-                    reason="Default launcher is slurm but it is not registered in the config file",
-                    raises=KeyError,
+                    reason="Configuration is not available for the slurm launcher",
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
