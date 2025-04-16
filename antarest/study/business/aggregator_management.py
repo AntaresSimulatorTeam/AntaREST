@@ -372,7 +372,7 @@ class AggregatorManager:
             # The following formula is the more accurate one compared to the final csv file.
             estimated_binary_size = final_df.memory_usage().sum()
             if estimated_binary_size > self.aggregation_results_max_size * 10**6:
-                raise FileTooLargeError(estimated_binary_size, estimated_binary_size)
+                raise FileTooLargeError(round(estimated_binary_size / 10**6, 2), self.aggregation_results_max_size)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
