@@ -1122,7 +1122,7 @@ class TestLauncherService:
 
         config = Config(
             storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default=default_launcher, local=LocalConfig(), slurm=None),
+            launcher=LauncherConfig(default=default_launcher, cfg=[LocalConfig(id="local")]),
         )
         launcher_service = LauncherService(
             config=config,
@@ -1139,7 +1139,7 @@ class TestLauncherService:
         job_repository.get_running.return_value = running_jobs
 
         launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
-        actual_result = launcher_service.get_load()
+        actual_result = launcher_service.get_load(default_launcher)
 
         assert launcher_expected_result.launcher_status == actual_result.launcher_status
         assert launcher_expected_result.nb_queued_jobs == actual_result.nb_queued_jobs

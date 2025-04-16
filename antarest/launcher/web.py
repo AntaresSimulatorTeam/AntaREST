@@ -191,12 +191,12 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         return LauncherEnginesDTO(engines=service.get_launchers())
 
     @bp.get(
-        "/load/{cluster_id}",
+        "/load",
         tags=[APITag.launcher],
         summary="Get the SLURM cluster or local machine load",
         response_model=LauncherLoadDTO,
     )
-    def get_load(cluster_id: str) -> LauncherLoadDTO:
+    def get_load(cluster_id: str = "local") -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(cluster_id)

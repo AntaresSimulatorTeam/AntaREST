@@ -280,7 +280,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     job_id = res.json()["job_id"]
 
-    res = client.get("/v1/launcher/load")
+    res = client.get("/v1/launcher/load?cluster_id=local_id")
     assert res.status_code == 200, res.json()
     launcher_load = LauncherLoadDTO(**res.json())
     assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
