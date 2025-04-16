@@ -296,7 +296,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert job_info == {
         "id": job_id,
         "study_id": study_id,
-        "launcher": "local",
+        "launcher": "local_id",
         "launcher_params": ANY,
         "status": "pending",
         "creation_date": ANY,

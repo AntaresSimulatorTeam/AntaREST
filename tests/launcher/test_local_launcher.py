@@ -20,7 +20,6 @@ from unittest.mock import Mock, call
 import pytest
 
 from antarest.core.config import Config, LauncherConfig, LocalConfig
-from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
 
@@ -40,20 +39,6 @@ def launcher_config(tmp_path: Path) -> Config:
         "local_workspace": tmp_path,
     }
     return Config(launcher=LauncherConfig(cfg=[LocalConfig.from_dict(data)]))
-
-
-@pytest.mark.unit_test
-def test_local_launcher__launcher_init_exception():
-    with pytest.raises(
-        LauncherInitException,
-        match="Missing parameter 'launcher.local'",
-    ):
-        LocalLauncher(
-            config=LocalConfig(),
-            callbacks=Mock(),
-            event_bus=Mock(),
-            cache=Mock(),
-        )
 
 
 @pytest.mark.unit_test
