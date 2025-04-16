@@ -22,13 +22,8 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
         return pd.DataFrame()
     if matrix_format == InternalMatrixFormat.TSV:
         # Based on the matrix version, we assume its format
-        if matrix_version == 1:
-            header = None
-            index_col = None
-        else:
-            header = 0
-            index_col = 0
-        df = pd.read_csv(path, sep="\t", index_col=index_col, header=header)
+        header = None if matrix_version == 1 else 0
+        df = pd.read_csv(path, sep="\t", header=header)
         # Specific treatment on columns to fit with other formats
         length_range = range(len(df.columns))
         if list(df.columns) == [str(k) for k in length_range]:
@@ -46,11 +41,11 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
 
 def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pd.DataFrame, path: Path) -> None:
     if matrix_format == InternalMatrixFormat.TSV:
-        dataframe.to_csv(path, sep="\t", float_format="%.6f")
+        dataframe.to_csv(path, sep="\t", float_format="%.6f", index=False)
     elif matrix_format == InternalMatrixFormat.HDF:
-        dataframe.to_hdf(str(path), key="data")
+        dataframe.to_hdf(str(path), key="data", index=False)
     elif matrix_format == InternalMatrixFormat.PARQUET:
-        dataframe.to_parquet(path, compression=None)
+        dataframe.to_parquet(path, compression=None, index=False)
     elif matrix_format == InternalMatrixFormat.FEATHER:
         dataframe.to_feather(path)
     else:

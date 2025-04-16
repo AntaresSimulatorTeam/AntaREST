@@ -11,6 +11,6 @@
 # This file is part of the Antares project.
 import pandas as pd
 
-link = pd.DataFrame([[0, 0, 0, 0, 0, 0]] * 8760)
-direct = pd.DataFrame([[1]] * 8760)
-indirect = pd.DataFrame([[1]] * 8760)
+link = pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+direct = pd.DataFrame([[1.0]] * 8760)
+indirect = pd.DataFrame([[1.0]] * 8760)

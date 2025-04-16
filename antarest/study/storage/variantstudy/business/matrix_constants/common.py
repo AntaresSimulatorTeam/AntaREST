@@ -14,6 +14,6 @@
 import pandas as pd
 
 NULL_MATRIX = pd.DataFrame()
-NULL_SCENARIO_MATRIX = pd.DataFrame([[0]] * 8760)
-FIXED_4_COLUMNS = pd.DataFrame([[0, 0, 0, 0]] * 8760)
-FIXED_8_COLUMNS = pd.DataFrame([[0, 0, 0, 0, 0, 0, 0, 0]] * 8760)
+NULL_SCENARIO_MATRIX = pd.DataFrame([[0.0]] * 8760)
+FIXED_4_COLUMNS = pd.DataFrame([[0.0, 0.0, 0.0, 0.0]] * 8760)
+FIXED_8_COLUMNS = pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)

@@ -15,7 +15,7 @@ from typing import Dict
 import pandas as pd
 from typing_extensions import override
 
-from antarest.matrixstore.repository import calculates_hash
+from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -29,7 +29,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def create(self, data: pd.DataFrame) -> str:
-        matrix_hash = calculates_hash(data)
+        matrix_hash = compute_hash(data)
         self._content[matrix_hash] = data
         return matrix_hash
 

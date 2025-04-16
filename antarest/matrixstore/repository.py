@@ -135,23 +135,30 @@ class MatrixRepository:
         logger.debug(f"Matrix {matrix_hash} deleted")
 
 
-@dataclass
-class MatrixMetaData:
+@dataclass(frozen=True)
+class MatrixCreationResult:
     hash: str
     new: bool
 
 
-def calculates_hash(df: pd.DataFrame) -> str:
+def compute_hash(df: pd.DataFrame) -> str:
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
     if all(np.issubdtype(dtype, np.number) for dtype in df.dtypes):
-        shape = df.shape
         # We also need to check the headers to see if they correspond to the default ones
-        if df.index.equals(pd.RangeIndex(0, shape[0])) and df.columns.equals(pd.RangeIndex(0, shape[1])):
+        if df.columns.equals(pd.RangeIndex(0, df.shape[1])):
             legacy_format = True
 
     if not legacy_format:
-        df = pd.concat([util.hash_pandas_object(df), util.hash_pandas_object(df.columns)])
+        # We're computing the hash with the dataframe content and its headers
+        column_names_hashes = util.hash_pandas_object(df.columns, index=False)
+        row_hashes = util.hash_pandas_object(df, index=False)
+        df_hash = hashlib.sha256(column_names_hashes.to_numpy(dtype=np.int64).data)
+        df_hash.update(row_hashes.to_numpy(dtype=np.int64).data)
+        return df_hash.hexdigest()
+
+    # We're using `np.ascontiguousarray` as hashlib requires C contiguous arrays,
+    # while this is not the general behaviour of pandas to store its data this way
     return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=np.float64)).data).hexdigest()
 
 
@@ -206,7 +213,7 @@ class MatrixContentRepository:
                 return True
         return False
 
-    def save(self, content: pd.DataFrame) -> MatrixMetaData:
+    def save(self, content: pd.DataFrame) -> MatrixCreationResult:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
@@ -235,11 +242,11 @@ class MatrixContentRepository:
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
 
-        matrix_hash = calculates_hash(content)
+        matrix_hash = compute_hash(content)
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
-            return MatrixMetaData(hash=matrix_hash, new=False)
+            return MatrixCreationResult(hash=matrix_hash, new=False)
 
         lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
         for internal_format in InternalMatrixFormat:
@@ -250,7 +257,7 @@ class MatrixContentRepository:
                 with FileLock(lock_file, timeout=15):
                     save_matrix(self.format, content, matrix_path)
                     matrix_in_another_format_path.unlink()
-                return MatrixMetaData(hash=matrix_hash, new=True)
+                return MatrixCreationResult(hash=matrix_hash, new=True)
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
         with FileLock(lock_file, timeout=15):
@@ -264,7 +271,7 @@ class MatrixContentRepository:
             # However, this deletion is possible when the matrix is no longer in use.
             # This is done in `MatrixGarbageCollector` when matrix files are deleted.
 
-        return MatrixMetaData(hash=matrix_hash, new=True)
+        return MatrixCreationResult(hash=matrix_hash, new=True)
 
     def delete(self, matrix_hash: str) -> None:
         """

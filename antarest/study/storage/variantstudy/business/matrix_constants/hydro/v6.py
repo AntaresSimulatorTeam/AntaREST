@@ -13,4 +13,4 @@
 
 import pandas as pd
 
-reservoir = pd.DataFrame([[0, 0.5, 1]] * 12)
+reservoir = pd.DataFrame([[0.0, 0.5, 1.0]] * 12)

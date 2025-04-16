@@ -13,6 +13,7 @@
 import datetime
 import io
 import json
+import re
 import typing as t
 import zipfile
 from unittest.mock import Mock
@@ -29,7 +30,7 @@ from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
-from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -39,8 +40,8 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.parsing import load_matrix
-from antarest.matrixstore.repository import calculates_hash
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.repository import compute_hash
+from antarest.matrixstore.service import MatrixService, check_dataframe_compliance
 from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
@@ -144,12 +145,12 @@ class TestMatrixService:
     def test_different_hash_with_same_matrices_with_different_headers(self, matrix_service: MatrixService) -> None:
         data = TEST_MATRIX
         matrix_id = matrix_service.create(pd.DataFrame(data))
-        other_matrix_id = matrix_service.create(pd.DataFrame(data=data, index=["A", "B"], columns=["c1", "c2", "c3"]))
+        other_matrix_id = matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
         assert matrix_id != other_matrix_id
 
     def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
         data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
-        matrix_service.create(pd.DataFrame(data=data, index=["A", "B", "C"], columns=["c1", "c2", "c3"]))
+        matrix_service.create(pd.DataFrame(data=data, columns=["c1", "c2", "c3"]))
 
     @with_db_context
     def test_get_with_versions(self, matrix_service: MatrixService) -> None:
@@ -501,12 +502,20 @@ def test_hashing_method():
     It's really important as the whole matrix-store behavior relies on this function
     """
     df = pd.DataFrame(TEST_MATRIX)
-    assert calculates_hash(df) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
+    assert compute_hash(df) == "d73f023a3f852bf2e5c6d836cd36cd930d0091dcba7f778161c707e1c58222b0"
 
     other_df = pd.DataFrame(data=8760 * [1.0])
-    assert calculates_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
+    assert compute_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
-    assert calculates_hash(AGGREGATION_DF) == "454707038a88e9308a5b49fd6b30f04ee116fd1cd1851a03a5ce09c490152c72"
+    assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
+
+
+def test_check_compliance_method():
+    df = pd.DataFrame(index=["A", "B"], data=TEST_MATRIX)
+    with pytest.raises(
+        MatrixNotSupported, match=re.escape("The matrixstore doesn't support dataframes with a non-default index")
+    ):
+        check_dataframe_compliance(df)
 
 
 def _create_upload_file(filename: str, file: t.IO = None, content_type: str = "") -> UploadFile:

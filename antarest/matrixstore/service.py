@@ -38,7 +38,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
-from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -128,6 +128,19 @@ class SimpleMatrixService(ISimpleMatrixService):
         self.matrix_content_repository.delete(matrix_id)
 
 
+def check_dataframe_compliance(df: pd.DataFrame) -> None:
+    if df.empty:
+        return
+
+    if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
+        raise MatrixNotSupported("The matrixstore doesn't support dataframes with a non-default index")
+
+    supported_dtypes = [np.number, str, datetime]
+    for dtype in df.dtypes:
+        if not any(np.issubdtype(dtype, supported_type) for supported_type in supported_dtypes):
+            raise MatrixNotSupported(f"Supported matrix data types are {supported_dtypes} and you provided {dtype}")
+
+
 class MatrixService(ISimpleMatrixService):
     def __init__(
         self,
@@ -171,6 +184,7 @@ class MatrixService(ISimpleMatrixService):
             The `MatrixGarbageCollector` class is responsible for removing
             unreferenced matrices to avoid leaving unused files lying around.
         """
+        check_dataframe_compliance(data)
         matrix_metadata = self.matrix_content_repository.save(data)
         matrix_id = matrix_metadata.hash
         if not matrix_metadata.new:
