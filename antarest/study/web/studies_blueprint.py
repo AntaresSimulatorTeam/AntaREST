@@ -14,10 +14,10 @@ import collections
 import io
 import logging
 from http import HTTPStatus
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence
+from pathlib import PurePosixPath
+from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Query
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -33,18 +33,14 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import (
     CommentsDto,
-    ExportFormat,
     MatrixIndex,
-    StudyDownloadDTO,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
-    StudySimResultDTO,
     StudyVersionStr,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyPagination, StudySortBy
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
 
@@ -355,9 +351,11 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     def copy_study(
         uuid: str,
         dest: str,
-        with_outputs: bool = False,
+        output_ids: Annotated[list[str], Query(default_factory=list)],
+        with_outputs: bool | None = None,
         groups: str = "",
         use_task: bool = True,
+        destination_folder: str = "",
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
@@ -370,27 +368,29 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
-          It is recommended and set as the default value: True.
+            It is recommended and set as the default value: True.
+        - `destination_folder`: The destination path where the study will be copied.
+        - `output_ids`: A list of output names that you want to include in the destination study.
 
         Returns:
         - The unique identifier of the task copying the study.
         """
         logger.info(f"Copying study {uuid} into new study '{dest}'")
-        source_uuid = uuid
         group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids]
-        source_uuid_sanitized = sanitize_uuid(source_uuid)
+        uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
-
         params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
-            src_uuid=source_uuid_sanitized,
+            src_uuid=uuid_sanitized,
             dest_study_name=destination_name_sanitized,
             group_ids=group_ids,
             with_outputs=with_outputs,
             use_task=use_task,
             params=params,
+            destination_folder=PurePosixPath(destination_folder),
+            output_ids=output_ids,
         )
 
         return task_id
@@ -498,27 +498,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         study_service.delete_study(uuid_sanitized, children, params)
 
         return ""
-
-    @bp.post(
-        "/studies/{uuid}/output",
-        status_code=HTTPStatus.ACCEPTED,
-        tags=[APITag.study_outputs],
-        summary="Import Output",
-        response_model=str,
-    )
-    def import_output(
-        uuid: str,
-        output: bytes = File(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(f"Importing output for study {uuid}")
-        uuid_sanitized = sanitize_uuid(uuid)
-
-        zip_binary = io.BytesIO(output)
-
-        params = RequestParameters(user=current_user)
-        output_id = study_service.import_output(uuid_sanitized, zip_binary, params)
-        return output_id
 
     @bp.put(
         "/studies/{uuid}/owner/{user_id}",
@@ -634,176 +613,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         params = RequestParameters(user=current_user)
         study_metadata = study_service.update_study_information(uuid, study_metadata_patch, params)
         return study_metadata
-
-    @bp.get(
-        "/studies/{study_id}/outputs/{output_id}/variables",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data variables",
-    )
-    def output_variables_information(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        params = RequestParameters(user=current_user)
-        return study_service.output_variables_information(
-            study_uuid=study_id,
-            output_uuid=output_id,
-            params=params,
-        )
-
-    @bp.get(
-        "/studies/{study_id}/outputs/{output_id}/export",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data",
-    )
-    def output_export(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        params = RequestParameters(user=current_user)
-        return study_service.export_output(
-            study_uuid=study_id,
-            output_uuid=output_id,
-            params=params,
-        )
-
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/download",
-        tags=[APITag.study_outputs],
-        summary="Get outputs data",
-    )
-    def output_download(
-        study_id: str,
-        output_id: str,
-        data: StudyDownloadDTO,
-        request: Request,
-        use_task: bool = False,
-        tmp_export_file: Path = Depends(ftm.request_tmp_file),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
-        params = RequestParameters(user=current_user)
-        accept = request.headers["Accept"]
-        filetype = ExportFormat.from_dto(accept)
-
-        content = study_service.download_outputs(
-            study_id,
-            output_id,
-            data,
-            use_task,
-            filetype,
-            params,
-            tmp_export_file,
-        )
-        return content
-
-    @bp.delete(
-        "/studies/{study_id}/outputs/{output_id}",
-        tags=[APITag.study_outputs],
-        summary="Delete a simulation output",
-    )
-    def delete_output(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"FDeleting output {output_id} from study {study_id}")
-        params = RequestParameters(user=current_user)
-        study_service.delete_output(
-            study_id,
-            output_id,
-            params,
-        )
-
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/_archive",
-        tags=[APITag.study_outputs],
-        summary="Archive output",
-    )
-    def archive_output(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Archiving of the output {output_id} of the study {study_id}")
-        params = RequestParameters(user=current_user)
-
-        content = study_service.archive_output(
-            study_id,
-            output_id,
-            params,
-        )
-        return content
-
-    @bp.post(
-        "/studies/{study_id}/outputs/{output_id}/_unarchive",
-        tags=[APITag.study_outputs],
-        summary="Unarchive output",
-    )
-    def unarchive_output(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
-        params = RequestParameters(user=current_user)
-
-        content = study_service.unarchive_output(
-            study_id,
-            output_id,
-            False,
-            params,
-        )
-        return content
-
-    @bp.get(
-        "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
-        tags=[APITag.study_outputs],
-        summary="Display an output digest file for the front-end",
-        response_model=DigestUI,
-    )
-    def get_digest_file(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> DigestUI:
-        study_id = sanitize_uuid(study_id)
-        output_id = sanitize_string(output_id)
-        logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
-        params = RequestParameters(user=current_user)
-        return study_service.get_digest_file(study_id, output_id, params)
-
-    @bp.get(
-        "/studies/{study_id}/outputs",
-        summary="Get global information about a study simulation result",
-        tags=[APITag.study_outputs],
-        response_model=List[StudySimResultDTO],
-    )
-    def sim_result(
-        study_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        logger.info(f"Fetching output list for study {study_id}")
-        study_id = sanitize_uuid(study_id)
-        params = RequestParameters(user=current_user)
-        content = study_service.get_study_sim_result(study_id, params)
-        return content
 
     @bp.put(
         "/studies/{study_id}/archive",

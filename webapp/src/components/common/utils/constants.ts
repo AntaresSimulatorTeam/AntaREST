@@ -22,5 +22,4 @@ export const PUBLIC_MODE_LIST: GenericInfo[] = [
   { id: "FULL", name: "study.fullPublicMode" },
 ];
 
-export const ROOT_FOLDER_NAME = "root";
-export const DEFAULT_WORKSPACE_PREFIX = `${ROOT_FOLDER_NAME}/default`;
+export const DEFAULT_WORKSPACE_NAME = "default";

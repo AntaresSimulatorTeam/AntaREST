@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Tuple
@@ -28,11 +29,13 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.maintenance.main import build_maintenance_manager
+from antarest.core.maintenance.service import MaintenanceService
 from antarest.core.persistence import upgrade_db
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
 from antarest.launcher.main import build_launcher
+from antarest.launcher.service import LauncherService
 from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
@@ -42,7 +45,9 @@ from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.explorer_service import Explorer
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.watcher import Watcher
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.web.explorer_blueprint import create_explorer_routes
 from antarest.study.web.watcher_blueprint import create_watcher_routes
 from antarest.worker.archive_worker import ArchiveWorker
@@ -124,9 +129,19 @@ def create_event_bus(app_ctxt: Optional[AppBuildContext], config: Config) -> Tup
     )
 
 
-def create_core_services(
-    app_ctxt: Optional[AppBuildContext], config: Config
-) -> Tuple[ICache, IEventBus, ITaskService, FileTransferManager, LoginService, MatrixService, StudyService]:
+@dataclass
+class CoreServices:
+    cache: ICache
+    event_bus: IEventBus
+    task_service: ITaskService
+    file_transfer_manager: FileTransferManager
+    login_service: LoginService
+    matrix_service: MatrixService
+    study_service: StudyService
+    output_service: OutputService
+
+
+def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
     filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
@@ -150,14 +165,25 @@ def create_core_services(
         user_service=login_service,
         event_bus=event_bus,
     )
-    return (
-        cache,
-        event_bus,
-        task_service,
-        filetransfer_service,
-        login_service,
-        matrix_service,
-        study_service,
+    storage_dispatcher = OutputStorageDispatcher(
+        study_service.storage_service.raw_study_service, study_service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        study_service=study_service,
+        storage=storage_dispatcher,
+        task_service=task_service,
+        file_transfer_manager=filetransfer_service,
+        event_bus=event_bus,
+    )
+    return CoreServices(
+        cache=cache,
+        event_bus=event_bus,
+        task_service=task_service,
+        file_transfer_manager=filetransfer_service,
+        login_service=login_service,
+        matrix_service=matrix_service,
+        study_service=study_service,
+        output_service=output_service,
     )
 
 
@@ -173,11 +199,11 @@ def create_watcher(
             task_service=study_service.task_service,
         )
     else:
-        _, _, task_service, _, _, _, study_service = create_core_services(app_ctxt, config)
+        core_services = create_core_services(app_ctxt, config)
         watcher = Watcher(
             config=config,
-            study_service=study_service,
-            task_service=task_service,
+            study_service=core_services.study_service,
+            task_service=core_services.task_service,
         )
 
     if app_ctxt:
@@ -186,7 +212,7 @@ def create_watcher(
     return watcher
 
 
-def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Any:
+def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Explorer:
     explorer = Explorer(config=config)
     if app_ctxt:
         app_ctxt.api_root.include_router(create_explorer_routes(config=config, explorer=explorer))
@@ -207,11 +233,11 @@ def create_matrix_gc(
             matrix_service=matrix_service,
         )
     else:
-        _, _, _, _, _, matrix_service, study_service = create_core_services(app_ctxt, config)
+        core_services = create_core_services(app_ctxt, config)
         return MatrixGarbageCollector(
             config=config,
-            study_service=study_service,
-            matrix_service=matrix_service,
+            study_service=core_services.study_service,
+            matrix_service=core_services.matrix_service,
         )
 
 
@@ -226,55 +252,65 @@ def create_archive_worker(
     return ArchiveWorker(event_bus, workspace, local_root, config)
 
 
-def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Dict[str, Any]:
-    services: Dict[str, Any] = {}
+@dataclass
+class Services:
+    watcher: Watcher
+    explorer: Explorer
+    event_bus: IEventBus
+    study: StudyService
+    matrix: MatrixService
+    user: LoginService
+    cache: ICache
+    maintenance: MaintenanceService
+    launcher: Optional[LauncherService] = None
+    matrix_gc: Optional[MatrixGarbageCollector] = None
+    auto_archiver: Optional[AutoArchiveService] = None
 
-    (
-        cache,
-        event_bus,
-        task_service,
-        file_transfer_manager,
-        user_service,
-        matrix_service,
-        study_service,
-    ) = create_core_services(app_ctxt, config)
 
-    maintenance_service = build_maintenance_manager(app_ctxt, config=config, cache=cache, event_bus=event_bus)
+def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_all: bool = False) -> Services:
+    core_services = create_core_services(app_ctxt, config)
+
+    maintenance_service = build_maintenance_manager(
+        app_ctxt, config=config, cache=core_services.cache, event_bus=core_services.event_bus
+    )
 
     launcher = build_launcher(
         app_ctxt,
         config,
-        study_service=study_service,
-        event_bus=event_bus,
-        task_service=task_service,
-        file_transfer_manager=file_transfer_manager,
-        cache=cache,
+        study_service=core_services.study_service,
+        output_service=core_services.output_service,
+        event_bus=core_services.event_bus,
+        task_service=core_services.task_service,
+        file_transfer_manager=core_services.file_transfer_manager,
+        cache=core_services.cache,
     )
 
-    watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=study_service)
-    services["watcher"] = watcher
-
+    watcher = create_watcher(config=config, app_ctxt=app_ctxt, study_service=core_services.study_service)
     explorer_service = create_explorer(config=config, app_ctxt=app_ctxt)
-    services["explorer"] = explorer_service
 
+    matrix_garbage_collector = None
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(
             config=config,
             app_ctxt=app_ctxt,
-            study_service=study_service,
-            matrix_service=matrix_service,
+            study_service=core_services.study_service,
+            matrix_service=core_services.matrix_service,
         )
-        services["matrix_gc"] = matrix_garbage_collector
 
+    auto_archiver = None
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:
-        auto_archiver = AutoArchiveService(study_service, config)
-        services["auto_archiver"] = auto_archiver
+        auto_archiver = AutoArchiveService(core_services.study_service, core_services.output_service, config)
 
-    services["event_bus"] = event_bus
-    services["study"] = study_service
-    services["launcher"] = launcher
-    services["matrix"] = matrix_service
-    services["user"] = user_service
-    services["cache"] = cache
-    services["maintenance"] = maintenance_service
-    return services
+    return Services(
+        watcher=watcher,
+        explorer=explorer_service,
+        event_bus=core_services.event_bus,
+        study=core_services.study_service,
+        matrix=core_services.matrix_service,
+        user=core_services.login_service,
+        cache=core_services.cache,
+        maintenance=maintenance_service,
+        launcher=launcher,
+        matrix_gc=matrix_garbage_collector,
+        auto_archiver=auto_archiver,
+    )

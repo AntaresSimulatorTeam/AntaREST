@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Mapping, Optional, Tuple
+from typing import Mapping, Optional, Tuple
 
 from typing_extensions import override
 
@@ -113,8 +113,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
         existing_constraint = study_data.bindings[index]
         areas_set = existing_constraint.areas
@@ -140,7 +139,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step,
         )
         study_data.bindings[index] = new_constraint
-        return CommandOutput(status=True), {}
+        return CommandOutput(status=True)
 
     def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:
         """
@@ -176,7 +175,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             new_operator = self.operator
             update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
-        self._apply_config(study_data.config)
+        self.update_in_config(study_data.config)
 
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)

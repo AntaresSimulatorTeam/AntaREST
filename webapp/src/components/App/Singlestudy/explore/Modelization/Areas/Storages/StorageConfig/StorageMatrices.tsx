@@ -13,7 +13,7 @@
  */
 
 import TabsView from "@/components/common/TabsView";
-import { type StudyMetadata } from "@/types/types";
+import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import Matrix from "../../../../../../../common/Matrix";
@@ -95,7 +95,13 @@ function StorageMatrices({ areaId, storageId }: Props) {
         },
         {
           label: t("study.modelization.storages.inflows"),
-          content: () => <Matrix url={`input/st-storage/series/${areaId}/${storageId}/inflows`} />,
+          content: () => (
+            <Matrix
+              url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
+              isTimeSeries={false}
+              customColumns={["TS 1"]}
+            />
+          ),
         },
       ]}
     />

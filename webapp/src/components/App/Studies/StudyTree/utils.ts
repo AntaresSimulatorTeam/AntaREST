@@ -12,9 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
-import type { StudyTreeNode, NonStudyFolderDTO } from "./types";
+import type { NonStudyFolderDTO, StudyTreeNode } from "./types";
 
 /**
  * Builds a tree structure from a list of study metadata.
@@ -149,38 +148,5 @@ export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolderDTO[],
 ): StudyTreeNode {
-  return folders.reduce((tree, folder) => {
-    return insertFolderIfNotExist(tree, folder);
-  }, studiesTree);
-}
-
-/**
- * Call the explorer api to fetch the subfolders under the given path.
- *
- * @param path - path of the subfolder to fetch, should sart with root, e.g. root/workspace/folder1
- * @returns list of subfolders under the given path
- */
-export async function fetchSubfolders(path: string): Promise<NonStudyFolderDTO[]> {
-  if (path === "root") {
-    console.error("this function should not be called with path 'root'", path);
-    // Under root there're workspaces not subfolders
-    return [];
-  }
-  if (!path.startsWith("root/")) {
-    console.error("path here should start with root/ ", path);
-    return [];
-  }
-  // less than 2 parts means we're at the root level
-  const pathParts = path.split("/");
-  if (pathParts.length < 2) {
-    console.error(
-      "this function should not be called with a path that has less than two com",
-      path,
-    );
-    return [];
-  }
-  // path parts should be ["root", workspace, "folder1", ...]
-  const workspace = pathParts[1];
-  const subPath = pathParts.slice(2).join("/");
-  return api.getFolders(workspace, subPath);
+  return folders.reduce(insertFolderIfNotExist, studiesTree);
 }

@@ -11,23 +11,21 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import BinaryIO, Generic, List, Optional, Sequence, TypeVar
+from pathlib import Path, PurePosixPath
+from typing import List, Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
 from antarest.core.requests import RequestParameters
-from antarest.study.model import Study, StudyMetadataDTO, StudySimResultDTO
+from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
-T = TypeVar("T", bound=Study)
 
-
-class IStudyStorageService(ABC, Generic[T]):
+class IStudyStorage(ABC):
     @abstractmethod
-    def create(self, metadata: T) -> T:
+    def create(self, metadata: Study) -> Study:
         """
         Create empty new study
         Args:
@@ -38,13 +36,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get(
-        self,
-        metadata: T,
-        url: str = "",
-        depth: int = 3,
-        formatted: bool = True,
-    ) -> JSON:
+    def get(self, metadata: Study, url: str = "", depth: int = 3, formatted: bool = True) -> JSON:
         """
         Entry point to fetch data inside study.
         Args:
@@ -58,11 +50,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_file(
-        self,
-        metadata: T,
-        url: str = "",
-    ) -> OriginalFile:
+    def get_file(self, metadata: Study, url: str = "") -> OriginalFile:
         """
         Entry point to fetch for a specific file inside a study folder
 
@@ -75,7 +63,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def exists(self, metadata: T) -> bool:
+    def exists(self, metadata: Study) -> bool:
         """
         Check study exist.
         Args:
@@ -86,7 +74,15 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def copy(self, src_meta: T, dest_name: str, groups: Sequence[str], with_outputs: bool = False) -> T:
+    def copy(
+        self,
+        src_meta: Study,
+        dest_name: str,
+        groups: Sequence[str],
+        destination_folder: PurePosixPath,
+        output_ids: List[str],
+        with_outputs: bool | None,
+    ) -> Study:
         """
         Create a new study by copying a reference study.
 
@@ -94,6 +90,8 @@ class IStudyStorageService(ABC, Generic[T]):
             src_meta: The source study that you want to copy.
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
+            destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -101,29 +99,13 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def import_output(
-        self,
-        study: T,
-        output: BinaryIO | Path,
-        output_name: Optional[str] = None,
-    ) -> Optional[str]:
-        """
-        Import an output
-        Args:
-            study: the study
-            output: Path of the output or raw data
-            output_name: Optional name suffix to append to the output name
-        Returns: None
-        """
-
-    @abstractmethod
-    def get_study_information(self, metadata: T) -> StudyMetadataDTO:
+    def get_study_information(self, metadata: Study) -> StudyMetadataDTO:
         """Get study information."""
 
     @abstractmethod
     def get_raw(
         self,
-        metadata: T,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -138,35 +120,11 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_study_sim_result(self, metadata: T) -> List[StudySimResultDTO]:
-        """
-        Get global result information
-
-        Args:
-            metadata: study
-
-        Returns:
-            study output data
-        """
-
-    @abstractmethod
-    def delete(self, metadata: T) -> None:
+    def delete(self, metadata: Study) -> None:
         """
         Delete study
         Args:
             metadata: study
-
-        Returns:
-
-        """
-
-    @abstractmethod
-    def delete_output(self, metadata: T, output_id: str) -> None:
-        """
-        Delete a simulation output
-        Args:
-            metadata: study
-            output_id: output simulation
 
         Returns:
 
@@ -197,7 +155,7 @@ class IStudyStorageService(ABC, Generic[T]):
             raise StudyNotFoundError(f"Study with the uuid {metadata.id} does not exist.")
 
     @abstractmethod
-    def export_study(self, metadata: T, target: Path, outputs: bool = True) -> Path:
+    def export_study(self, metadata: Study, target: Path, outputs: bool = True) -> Path:
         """
         Export and compress a study to a ZIP file.
 
@@ -211,22 +169,9 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def export_output(self, metadata: T, output_id: str, target: Path) -> None:
-        """
-        Export and compresses study inside zip
-        Args:
-            metadata: study
-            output_id: output id
-            target: path of the file to export to
-
-        Returns: zip file with study files compressed inside
-
-        """
-
-    @abstractmethod
     def export_study_flat(
         self,
-        metadata: T,
+        metadata: Study,
         dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
@@ -244,7 +189,7 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: T, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
@@ -255,14 +200,5 @@ class IStudyStorageService(ABC, Generic[T]):
         """
 
     @abstractmethod
-    def initialize_additional_data(self, study: T) -> bool:
+    def initialize_additional_data(self, study: Study) -> bool:
         """Initialize additional data for a study."""
-
-    @abstractmethod
-    def archive_study_output(self, study: T, output_id: str) -> bool:
-        """Archive a study output."""
-
-    # noinspection SpellCheckingInspection
-    @abstractmethod
-    def unarchive_study_output(self, study: T, output_id: str, keep_src_zip: bool) -> bool:
-        """Un-archive a study output."""

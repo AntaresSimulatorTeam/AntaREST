@@ -35,17 +35,20 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import SimpleMatrixService
+from antarest.matrixstore.service import MatrixService, SimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 __all__ = (
+    "command_context_fixture",
     "bucket_dir_fixture",
     "simple_matrix_service_fixture",
     "generator_matrix_constants_fixture",
@@ -60,6 +63,7 @@ __all__ = (
     "raw_study_service_fixture",
     "variant_study_service_fixture",
     "study_storage_service_fixture",
+    "study_service_fixture",
 )
 
 
@@ -113,6 +117,27 @@ class SynchTaskService(ITaskService):
 
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
         pass
+
+
+@pytest.fixture(name="command_context")
+def command_context_fixture(matrix_service: MatrixService) -> CommandContext:
+    """
+    Fixture for creating a CommandContext object.
+
+    Args:
+        matrix_service: The MatrixService object.
+
+    Returns:
+        CommandContext: The CommandContext object.
+    """
+    # sourcery skip: inline-immediately-returned-variable
+    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+    generator_matrix_constants.init_constant_matrices()
+    command_context = CommandContext(
+        generator_matrix_constants=generator_matrix_constants,
+        matrix_service=matrix_service,
+    )
+    return command_context
 
 
 @pytest.fixture(name="bucket_dir", scope="session")
@@ -401,4 +426,27 @@ def study_storage_service_fixture(
     return StudyStorageService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+    )
+
+
+@pytest.fixture(name="study_service")
+def study_service_fixture(
+    raw_study_service: RawStudyService,
+    variant_study_service: VariantStudyService,
+    command_context: CommandContext,
+    event_bus: IEventBus,
+    task_service: ITaskService,
+    core_config: Config,
+):
+    return StudyService(
+        raw_study_service,
+        variant_study_service,
+        command_context,
+        Mock(),
+        Mock(),
+        event_bus,
+        Mock(),
+        task_service,
+        Mock(),
+        core_config,
     )

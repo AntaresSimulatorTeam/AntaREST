@@ -209,7 +209,13 @@ class CorrelationManager:
         file_study: FileStudy,
         area_ids: Sequence[str],
     ) -> npt.NDArray[np.float64]:
-        correlation_cfg = file_study.tree.get(self.url, depth=3)
+        try:
+            correlation_cfg = file_study.tree.get(self.url, depth=3)
+        except KeyError:
+            # some studies could not have an annual field
+            # make sure the other fields exist
+            assert file_study.tree.get(self.url[:-1])
+            correlation_cfg = {}
         return _config_to_array(area_ids, correlation_cfg)
 
     def _set_array(
