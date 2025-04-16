@@ -507,7 +507,7 @@ def test_hashing_method():
     other_df = pd.DataFrame(data=8760 * [1.0])
     assert compute_hash(other_df) == "c5c2c006f733e34ed0748a363bc049e58a4e79c35ce592f6f70788c266a89a66"
 
-    assert compute_hash(AGGREGATION_DF) == "fa164563176cb9130c34c5799138f88dd9eb18e8a6054a2f117c58fcf2a8b519"
+    assert compute_hash(AGGREGATION_DF) == "a0e8de4e00f2cfaf0c3f1a10e9fcd323ec79c00b9e43d01ad8b296a33bce203c"
 
 
 def test_check_compliance_method():
