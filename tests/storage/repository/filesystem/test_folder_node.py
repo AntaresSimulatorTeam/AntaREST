@@ -241,12 +241,10 @@ def test_delete(tmp_path: Path) -> None:
                 config=config.next_file("sub_folder"),
                 children={
                     "ini_node1": IniFileNode(
-                        context=Mock(),
                         config=config.next_file("sub_folder").next_file("ini_node1.txt"),
                         types={},
                     ),
                     "ini_node2": IniFileNode(
-                        context=Mock(),
                         config=config.next_file("sub_folder").next_file("ini_node2.txt"),
                         types={},
                     ),
