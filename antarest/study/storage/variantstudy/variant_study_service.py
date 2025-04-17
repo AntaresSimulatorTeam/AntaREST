@@ -1091,6 +1091,10 @@ class VariantStudyService(AbstractStorageService):
             request_params=params,
         )
 
+    @override
+    def get_output_path(self, study: Study, output_id: str) -> Path:
+        return Path(study.path) / "output" / output_id
+
 
 class SnapshotCleanerTask:
     def __init__(
