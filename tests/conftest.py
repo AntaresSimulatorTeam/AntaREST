@@ -90,7 +90,6 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         config=config,
         tree=FileStudyTree(
             context=ContextServer(
-                matrix=matrix_service,
                 resolver=UriResolverService(matrix_service=matrix_service),
             ),
             config=config,

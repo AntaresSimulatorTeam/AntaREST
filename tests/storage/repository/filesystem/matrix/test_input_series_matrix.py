@@ -22,7 +22,6 @@ import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -85,12 +84,13 @@ class TestInputSeriesMatrix:
         else:
             link_path = file_path.parent / f"{file_path.name}.link"
             link_path.touch()
-            resolver = Mock()
+            resolver = Mock(spec=UriResolverService)
             resolver.resolve.return_value = {}
             resolver.build_matrix_uri.return_value = "matrix://my-id"
             matrix_service = Mock()
             matrix_service.create.return_value = "my-id"
-            context = ContextServer(matrix=matrix_service, resolver=resolver)
+            resolver.matrix_service = matrix_service
+            context = ContextServer(resolver=resolver)
             node = InputSeriesMatrix(context=context, config=my_study_config, default_empty=default_matrix)
 
         # checks formatted response
@@ -129,7 +129,6 @@ class TestInputSeriesMatrix:
             return matrix_obj
 
         context = ContextServer(
-            matrix=Mock(spec=ISimpleMatrixService),
             resolver=Mock(spec=UriResolverService, resolve=resolve),
         )
 
@@ -167,7 +166,7 @@ class TestCopyAndRenameFile:
         self.link.write_text("Link: Mock File Content")
 
         config = FileStudyTreeConfig(study_path=self.file.parent, path=self.file, version=-1, study_id="")
-        context = ContextServer(matrix=Mock(), resolver=Mock())
+        context = ContextServer(resolver=Mock())
         self.node = InputSeriesMatrix(context=context, config=config)
 
         self.modified_file = self.file.parent / "lazy_modified.txt"

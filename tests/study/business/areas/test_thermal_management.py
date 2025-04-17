@@ -77,7 +77,7 @@ def study_path(tmp_path: Path) -> Path:
 
 
 def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path: Path) -> FileStudy:
-    context = ContextServer(matrix_service, UriResolverService(matrix_service))
+    context = ContextServer(UriResolverService(matrix_service))
     config = antarest.study.storage.rawstudy.model.filesystem.config.files.build(study_id=study_id, study_path=path)
     tree = FileStudyTree(context, config)
     return FileStudy(config, tree)

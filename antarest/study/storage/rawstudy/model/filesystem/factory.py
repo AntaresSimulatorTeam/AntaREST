@@ -21,7 +21,6 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
@@ -55,11 +54,10 @@ class StudyFactory:
 
     def __init__(
         self,
-        matrix: ISimpleMatrixService,
         resolver: UriResolverService,
         cache: ICache,
     ) -> None:
-        self.context = ContextServer(matrix=matrix, resolver=resolver)
+        self.context = ContextServer(resolver=resolver)
         self.cache = cache
         # It is better to store lock files in the temporary directory,
         # because it is possible that there not deleted when the web application is stopped.

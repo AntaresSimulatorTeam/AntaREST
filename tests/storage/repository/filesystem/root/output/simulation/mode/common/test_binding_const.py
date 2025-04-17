@@ -17,7 +17,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
@@ -42,9 +41,8 @@ class TestOutputSimulationBindingConstraintItem:
             tmp_path.joinpath(file).touch()
             name = Path(file).stem
             expected[name] = {"freq": MatrixFrequency(name.replace("binding-constraints-", ""))}
-        matrix = Mock(spec=ISimpleMatrixService)
         resolver = Mock(spec=UriResolverService)
-        context = ContextServer(matrix=matrix, resolver=resolver)
+        context = ContextServer(resolver=resolver)
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),

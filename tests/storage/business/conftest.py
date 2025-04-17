@@ -58,6 +58,6 @@ def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterfac
     app = CreateApp(study_dir=study_path, caption="empty_study_810", version=STUDY_VERSION_8_1, author="Unknown")
     app()
     config = build(study_path, study_id)
-    context = ContextServer(matrix_service, UriResolverService(matrix_service))
+    context = ContextServer(UriResolverService(matrix_service))
     empty_study_810 = FileStudy(config, FileStudyTree(context, config))
     return FileStudyInterface(empty_study_810)

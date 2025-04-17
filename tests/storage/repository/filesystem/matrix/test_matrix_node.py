@@ -55,9 +55,10 @@ class TestMatrixNode:
 
         resolver = Mock()
         resolver.build_matrix_uri.return_value = "matrix://my-id"
+        resolver.matrix_service = matrix_service
 
         node = MockMatrixNode(
-            context=ContextServer(matrix=matrix_service, resolver=resolver),
+            context=ContextServer(resolver=resolver),
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
@@ -79,7 +80,7 @@ class TestMatrixNode:
         resolver.resolve.return_value = MOCK_MATRIX_JSON
 
         node = MockMatrixNode(
-            context=ContextServer(matrix=Mock(), resolver=resolver),
+            context=ContextServer(resolver=resolver),
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 

@@ -51,7 +51,7 @@ def test_get_bucket(tmp_path: Path):
         "fileC.txt",
     ]
 
-    context = ContextServer(resolver=resolver, matrix=Mock())
+    context = ContextServer(resolver=resolver)
 
     node = BucketNode(
         config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),

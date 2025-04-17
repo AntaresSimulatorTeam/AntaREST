@@ -57,7 +57,7 @@ def test_factory_cache() -> None:
     path = ASSETS_DIR / "v810/sample1"
 
     cache = Mock()
-    factory = StudyFactory(matrix=Mock(), resolver=Mock(), cache=cache)
+    factory = StudyFactory(resolver=Mock(), cache=cache)
     study_id = "study-id"
     cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
     config = build(path, study_id)

@@ -239,7 +239,6 @@ def study_factory_fixture(
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
     return StudyFactory(
-        matrix=simple_matrix_service,
         resolver=uri_resolver_service,
         cache=core_cache,
     )
