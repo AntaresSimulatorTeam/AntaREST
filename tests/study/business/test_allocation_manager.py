@@ -95,23 +95,24 @@ class TestAllocationFormFields:
                 ],
             )
 
-    def test_validation_fields_no_negative_coefficient(self):
-        """Check that the coefficients column does not contain negative coefficients"""
-        with pytest.raises(ValueError, match="negative"):
-            AllocationFormFields(
-                allocation=[
-                    {"areaId": "NORTH", "coefficient": 0.75},
-                    {"areaId": "SOUTH", "coefficient": -0.25},
-                ],
-            )
+    def test_validation_fields_allow_negative_coefficients(self):
+        """Check that negative coefficients are accepted"""
+        fields = AllocationFormFields(
+            allocation=[
+                {"areaId": "NORTH", "coefficient": -0.75},
+                {"areaId": "SOUTH", "coefficient": 1.25},
+            ]
+        )
+        assert fields.allocation[0].coefficient == -0.75
+        assert fields.allocation[1].coefficient == 1.25
 
-    def test_validation_fields_no_negative_sum_coefficient(self):
-        """Check that the coefficients values does not sum to negative"""
-        with pytest.raises(ValueError, match="negative"):
+    def test_validation_fields_not_all_zero_coefficients(self):
+        """Check that at least one coefficient is non-zero"""
+        with pytest.raises(ValueError, match="non-zero"):
             AllocationFormFields(
                 allocation=[
-                    {"areaId": "NORTH", "coefficient": -0.75},
-                    {"areaId": "SOUTH", "coefficient": -0.25},
+                    {"areaId": "NORTH", "coefficient": 0},
+                    {"areaId": "SOUTH", "coefficient": 0},
                 ],
             )
 
@@ -153,15 +154,6 @@ class TestAllocationMatrix:
                 index=["NORTH", "SOUTH"],
                 columns=["NORTH"],
                 data=[[0.75, 0.25], [0.25, 0.75]],
-            )
-
-    def test_validation_matrix_sum_positive(self):
-        """Check that the coefficients matrix sum to positive"""
-        with pytest.raises(ValueError, match="negative"):
-            AllocationMatrix(
-                index=["NORTH", "SOUTH"],
-                columns=["NORTH", "SOUTH"],
-                data=[[0.75, -0.25], [-0.25, 0.75]],
             )
 
     def test_validation_matrix_no_nan(self):
