@@ -67,7 +67,10 @@ class TestMatrixNode:
         # check the result
         assert node.get_link_path().read_text() == "matrix://my-id"
         assert not file.exists()
-        matrix_service.create.assert_called_once_with(MOCK_MATRIX_DTO)
+        matrix_service.create.assert_called_once()
+        args = matrix_service.create.call_args.args
+        assert len(args) == 1
+        assert pd.DataFrame(MOCK_MATRIX_DTO).equals(args[0])
         resolver.build_matrix_uri.assert_called_once_with("my-id")
 
     def test_denormalize(self, tmp_path: Path):

@@ -109,8 +109,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             return
 
         matrix = self.parse_as_dataframe()
-        data = matrix.to_numpy().tolist()
-        uuid = self.context.resolver.matrix_service.create(data)
+        uuid = self.context.resolver.matrix_service.create(matrix)
         self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
         self.config.path.unlink()
 
