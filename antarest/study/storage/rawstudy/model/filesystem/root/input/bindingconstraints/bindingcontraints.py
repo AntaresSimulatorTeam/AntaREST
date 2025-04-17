@@ -84,8 +84,6 @@ class BindingConstraints(FolderNode):
                         nb_columns=1 if term in ["lt", "gt"] else None,
                         default_empty=default_matrices[binding.time_step],
                     )
-        children["bindingconstraints"] = BindingConstraintsIni(
-            self.context, self.config.next_file("bindingconstraints.ini")
-        )
+        children["bindingconstraints"] = BindingConstraintsIni(self.config.next_file("bindingconstraints.ini"))
 
         return children

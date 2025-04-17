@@ -27,7 +27,6 @@ _VALUE_SERIALIZERS = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER
 class ClusteredRenewableClusterConfig(IniFileNode):
     def __init__(
         self,
-        context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
     ):
@@ -42,7 +41,6 @@ class ClusteredRenewableClusterConfig(IniFileNode):
         types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
         IniFileNode.__init__(
             self,
-            context,
             config,
             types,
             reader=IniReader(value_parsers=_VALUE_PARSERS),
@@ -62,7 +60,7 @@ class ClusteredRenewableCluster(FolderNode):
 
     @override
     def build(self) -> TREE:
-        return {"list": ClusteredRenewableClusterConfig(self.context, self.config.next_file("list.ini"), self.area)}
+        return {"list": ClusteredRenewableClusterConfig(self.config.next_file("list.ini"), self.area)}
 
 
 class ClusteredRenewableAreaCluster(FolderNode):

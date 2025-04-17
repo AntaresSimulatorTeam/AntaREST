@@ -36,8 +36,8 @@ class FileStudyTree(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "Desktop": Desktop(self.context, self.config.next_file("Desktop.ini")),
-            "study": StudyAntares(self.context, self.config.next_file("study.antares")),
+            "Desktop": Desktop(self.config.next_file("Desktop.ini")),
+            "study": StudyAntares(self.config.next_file("study.antares")),
             "settings": Settings(self.context, self.config.next_file("settings")),
             "layers": Layers(self.context, self.config.next_file("layers")),
             "input": Input(self.context, self.config.next_file("input")),

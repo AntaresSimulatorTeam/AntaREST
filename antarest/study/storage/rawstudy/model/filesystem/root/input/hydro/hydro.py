@@ -28,6 +28,6 @@ class InputHydro(FolderNode):
             "common": InputHydroCommon(self.context, self.config.next_file("common")),
             "prepro": InputHydroPrepro(self.context, self.config.next_file("prepro")),
             "series": InputHydroSeries(self.context, self.config.next_file("series")),
-            "hydro": InputHydroIni(self.context, self.config.next_file("hydro.ini")),
+            "hydro": InputHydroIni(self.config.next_file("hydro.ini")),
         }
         return children

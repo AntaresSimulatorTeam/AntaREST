@@ -27,7 +27,7 @@ class Settings(FolderNode):
             "resources": Resources(self.context, self.config.next_file("resources")),
             "simulations": SettingsSimulations(self.context, self.config.next_file("simulations")),
             "comments": RawFileNode(self.context, self.config.next_file("comments.txt")),
-            "generaldata": GeneralData(self.context, self.config.next_file("generaldata.ini")),
-            "scenariobuilder": ScenarioBuilder(self.context, self.config.next_file("scenariobuilder.dat")),
+            "generaldata": GeneralData(self.config.next_file("generaldata.ini")),
+            "scenariobuilder": ScenarioBuilder(self.config.next_file("scenariobuilder.dat")),
         }
         return children

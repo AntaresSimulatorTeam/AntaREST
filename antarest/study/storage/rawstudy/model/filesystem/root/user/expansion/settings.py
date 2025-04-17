@@ -51,7 +51,6 @@ class ExpansionSettings(IniFileNode):
             "additional-constraints": str,
         }
         super().__init__(
-            context,
             config,
             types=types,
             reader=SimpleKeyValueReader(),

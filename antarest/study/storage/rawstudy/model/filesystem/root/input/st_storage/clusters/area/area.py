@@ -34,5 +34,5 @@ class InputSTStorageArea(FolderNode):
     def build(self) -> TREE:
         # Each area has a folder containing a file named "list.ini"
         # If the area does not have any short term storage cluster, the file is empty.
-        children: TREE = {"list": InputSTStorageAreaList(self.context, self.config.next_file("list.ini"), self.area)}
+        children: TREE = {"list": InputSTStorageAreaList(self.config.next_file("list.ini"), self.area)}
         return children

@@ -26,6 +26,6 @@ class InputThermal(FolderNode):
             "clusters": InputThermalClusters(self.context, self.config.next_file("clusters")),
             "prepro": InputThermalPrepro(self.context, self.config.next_file("prepro")),
             "series": InputThermalSeries(self.context, self.config.next_file("series")),
-            "areas": InputThermalAreasIni(self.context, self.config.next_file("areas.ini")),
+            "areas": InputThermalAreasIni(self.config.next_file("areas.ini")),
         }
         return children

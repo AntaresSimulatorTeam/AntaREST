@@ -32,7 +32,5 @@ class InputThermalClustersArea(FolderNode):
 
     @override
     def build(self) -> TREE:
-        children: TREE = {
-            "list": InputThermalClustersAreaList(self.context, self.config.next_file("list.ini"), self.area)
-        }
+        children: TREE = {"list": InputThermalClustersAreaList(self.config.next_file("list.ini"), self.area)}
         return children

@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
@@ -36,7 +35,7 @@ class InputAreasUi(IniFileNode):
     0 = 0 , 128 , 255
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         types = {
             "ui": {
                 "x": int,
@@ -50,4 +49,4 @@ class InputAreasUi(IniFileNode):
             "layerY": {"0": int},
             "layerColor": {"0": str},
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(self, config, types)

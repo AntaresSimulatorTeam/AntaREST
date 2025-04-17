@@ -19,5 +19,5 @@ from antarest.study.storage.rawstudy.model.filesystem.root.layers.layer_ini impo
 class Layers(FolderNode):
     @override
     def build(self) -> TREE:
-        children: TREE = {"layers": LayersIni(self.context, self.config.next_file("layers.ini"))}
+        children: TREE = {"layers": LayersIni(self.config.next_file("layers.ini"))}
         return children

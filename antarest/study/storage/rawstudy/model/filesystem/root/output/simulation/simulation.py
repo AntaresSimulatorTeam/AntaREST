@@ -48,7 +48,7 @@ class OutputSimulation(FolderNode):
         children: TREE = {
             "about-the-study": OutputSimulationAbout(self.context, self.config.next_file("about-the-study")),
             "simulation": RawFileNode(self.context, self.config.next_file("simulation.log")),
-            "info": OutputSimulationInfoAntaresOutput(self.context, self.config.next_file("info.antares-output")),
+            "info": OutputSimulationInfoAntaresOutput(self.config.next_file("info.antares-output")),
             "antares-out": RawFileNode(self.context, self.config.next_file("antares-out.log")),
             "antares-err": RawFileNode(self.context, self.config.next_file("antares-err.log")),
         }
@@ -61,7 +61,7 @@ class OutputSimulation(FolderNode):
 
             file_name = "execution_info"
             if (self.config.path / f"{file_name}.ini").exists():
-                children[file_name] = IniFileNode(self.context, self.config.next_file(f"{file_name}.ini"))
+                children[file_name] = IniFileNode(self.config.next_file(f"{file_name}.ini"))
 
             if (self.config.path / "ts-numbers").exists():
                 children["ts-numbers"] = OutputSimulationTsNumbers(self.context, self.config.next_file("ts-numbers"))

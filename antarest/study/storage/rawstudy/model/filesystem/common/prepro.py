@@ -13,7 +13,6 @@ import numpy as np
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -22,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class PreproCorrelation(IniFileNode):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         types = {
             "general": {"mode": str},
             "0": {},
@@ -38,12 +37,12 @@ class PreproCorrelation(IniFileNode):
             "10": {},
             "11": {},
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(self, config, types)
 
 
 class PreproAreaSettings(IniFileNode):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        IniFileNode.__init__(self, context, config, types={})
+    def __init__(self, config: FileStudyTreeConfig):
+        IniFileNode.__init__(self, config, types={})
 
 
 default_k = np.zeros((24, 12), dtype=np.float64)
@@ -69,7 +68,7 @@ class PreproArea(FolderNode):
             "translation": InputSeriesMatrix(
                 self.context, self.config.next_file("translation.txt"), default_empty=default_scenario_hourly
             ),
-            "settings": PreproAreaSettings(self.context, self.config.next_file("settings.ini")),
+            "settings": PreproAreaSettings(self.config.next_file("settings.ini")),
         }
         return children
 
@@ -78,5 +77,5 @@ class InputPrepro(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {a: PreproArea(self.context, self.config.next_file(a)) for a in self.config.area_names()}
-        children["correlation"] = PreproCorrelation(self.context, self.config.next_file("correlation.ini"))
+        children["correlation"] = PreproCorrelation(self.config.next_file("correlation.ini"))
         return children
