@@ -15,6 +15,6 @@ from dataclasses import dataclass
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 
 
-@dataclass
+@dataclass(frozen=True)
 class ContextServer:
     resolver: UriResolverService
