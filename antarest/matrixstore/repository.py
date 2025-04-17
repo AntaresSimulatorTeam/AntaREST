@@ -142,6 +142,31 @@ class MatrixCreationResult:
 
 
 def compute_hash(df: pd.DataFrame) -> str:
+    """
+    Computes a hash of the dataframe, with the goal of obtaining a stable
+    and unique identifier for its content, including the headers.
+
+    The index is not considered, since the matrix store ignores it.
+
+    For the implementation, we rely on:
+
+    - pandas hash_pandas_object to compute int64 hashes for whole rows and for the
+      column names
+    - sha256 algo to hash the concatenation of those 2 "list" of hashes
+
+    The hash could probably be improved by including more details, like
+    the type of the column, the shape of the matrix ... It has not been
+    considered necessary.
+
+    Legacy implementation assumed the data was only numeric, since the
+    matrix store only managed numeric data. It was only based on the hash
+    of the numpy raw data, which was quite weak since 2 arrays with the
+    same content but different shapes would have conflicting hashes.
+
+    Still, the legacy implementation is still used for backwards compatibility,
+    for numeric-only tables.
+    """
+
     # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
     legacy_format = False
     if all(np.issubdtype(dtype.type, np.number) for dtype in df.dtypes):
