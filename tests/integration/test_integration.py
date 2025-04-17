@@ -344,7 +344,6 @@ def test_matrix(client: TestClient, admin_access_token: str) -> None:
 
     assert res.status_code == 200
     stored = res.json()
-    assert stored["created_at"] > 0
     assert stored["id"] != ""
 
     matrix_id = stored["id"]

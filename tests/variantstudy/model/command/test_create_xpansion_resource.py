@@ -62,7 +62,7 @@ class TestCreateXpansionResource:
             assert resource_path.exists()
             assert resource_path.read_text().startswith("matrix://")
             content = empty_study.tree.get(["user", "expansion", "weights", file_name])
-            assert content == {"columns": ["0", "1"], "data": data, "index": ["0", "1"]}
+            assert content == {"columns": [0, 1], "data": data, "index": [0, 1]}
 
         # Capa
         for file_name in ["capa1.txt", "capa2.txt"]:
@@ -79,7 +79,7 @@ class TestCreateXpansionResource:
             assert resource_path.exists()
             assert resource_path.read_text().startswith("matrix://")
             content = empty_study.tree.get(["user", "expansion", "capa", file_name])
-            assert content == {"columns": ["0", "1"], "data": data, "index": ["0", "1"]}
+            assert content == {"columns": [0, 1], "data": data, "index": [0, 1]}
 
     def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
         empty_study = empty_study_870

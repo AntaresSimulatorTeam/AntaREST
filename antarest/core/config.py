@@ -15,11 +15,8 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 
-import numpy as np
-import numpy.typing as npt
-import pandas as pd
 import yaml
 
 from antarest.core.model import JSON
@@ -39,31 +36,6 @@ class InternalMatrixFormat(StrEnum):
     HDF = "hdf"
     PARQUET = "parquet"
     FEATHER = "feather"
-
-    def load_matrix(self, path: Path) -> npt.NDArray[np.float64]:
-        if self == InternalMatrixFormat.TSV or path.stat().st_size == 0:
-            return np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2)
-        elif self == InternalMatrixFormat.HDF:
-            df = cast(pd.DataFrame, pd.read_hdf(path))
-            return df.to_numpy(dtype=np.float64)
-        elif self == InternalMatrixFormat.PARQUET:
-            return pd.read_parquet(path).to_numpy(dtype=np.float64)
-        elif self == InternalMatrixFormat.FEATHER:
-            return pd.read_feather(path).to_numpy(dtype=np.float64)
-        else:
-            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
-
-    def save_matrix(self, dataframe: pd.DataFrame, path: Path) -> None:
-        if self == InternalMatrixFormat.TSV:
-            np.savetxt(path, dataframe.to_numpy(), delimiter="\t", fmt="%.18f")
-        elif self == InternalMatrixFormat.HDF:
-            dataframe.to_hdf(str(path), key="data")
-        elif self == InternalMatrixFormat.PARQUET:
-            dataframe.to_parquet(path, compression=None)
-        elif self == InternalMatrixFormat.FEATHER:
-            dataframe.to_feather(path)
-        else:
-            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
 
 @dataclass(frozen=True)
