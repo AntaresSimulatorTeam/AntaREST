@@ -143,6 +143,18 @@ class SimpleMatrixService(ISimpleMatrixService):
 
 
 def check_dataframe_compliance(df: pd.DataFrame) -> None:
+    """
+    Checks compliance with the matrix store assumptions.
+
+     - Only supported types for now are numbers, datetimes, and strings.
+     - Because the matrix store ignores indexes, we check that the index
+      is actually the default index.
+
+    Notes:
+    pd.StringDType is considered experimental and not supported everywhere, for example
+    by to_hdf5, therefore we use `infer_dtype` to check object dtype are actually
+    strings.
+    """
     if df.empty:
         return
 
@@ -188,8 +200,9 @@ class MatrixService(ISimpleMatrixService):
 
         Parameters:
             data:
-                The matrix content to be saved. It can be either a nested list of floats
-                or a NumPy array of type np.float64.
+                The matrix content to be saved. Note that the index is ignored by
+                the matrix store, hence all non-default index will be rejected.
+                Only numeric, datetime, and string content are supported.
 
         Returns:
             A SHA256 hash for the new matrix object.
