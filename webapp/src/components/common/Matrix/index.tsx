@@ -144,6 +144,7 @@ function Matrix({
         canUndo,
         canRedo,
         isDirty,
+        aggregateTypes,
       }}
     >
       <MatrixContainer>
