@@ -238,6 +238,7 @@ function MatrixGrid({
   return (
     <>
       <DataGrid
+        key={`matrix-grid-${columns.length}-${data.length}`}
         width={width}
         height={height}
         rows={rows}
