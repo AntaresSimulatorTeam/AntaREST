@@ -9,60 +9,26 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pandas as pd
 
-import re
-from typing import Optional, Tuple
-
-from antarest.core.model import JSON
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 
 
 class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, formatted: bool = True) -> JSON | str | None:
-        res = UriResolverService._extract_uri_components(uri)
-        if res:
-            protocol, uuid = res
-        else:
-            return None
+    def get_matrix(self, uri: str) -> pd.DataFrame:
+        matrix_id = self.extract_id(uri)
+        return self.matrix_service.get(matrix_id)
 
-        if protocol == "matrix":
-            return self._resolve_matrix(uuid, formatted)
-        raise NotImplementedError(f"protocol {protocol} not implemented")
+    def matrix_exists(self, uri: str) -> bool:
+        matrix_id = self.extract_id(uri)
+        return self.matrix_service.exists(matrix_id)
 
     @staticmethod
-    def _extract_uri_components(uri: str) -> Optional[Tuple[str, str]]:
-        match = re.match(r"^(\w+)://(.+)$", uri)
-        if not match:
-            return None
-
-        protocol = match.group(1)
-        uuid = match.group(2)
-        return protocol, uuid
-
-    @staticmethod
-    def extract_id(uri: str) -> Optional[str]:
-        res = UriResolverService._extract_uri_components(uri)
-        return res[1] if res else None
-
-    def _resolve_matrix(self, id: str, formatted: bool = True) -> JSON | str:
-        df = self.matrix_service.get(id)
-
-        if formatted:
-            return {"data": df.to_numpy().tolist(), "index": list(df.index), "columns": list(df.columns)}
-
-        if df.empty:
-            return ""
-        csv = df.to_csv(
-            None,
-            sep="\t",
-            header=False,
-            index=False,
-            float_format="%.6f",
-        )
-        return csv or ""
+    def extract_id(uri: str) -> str:
+        return uri.removeprefix(MATRIX_PROTOCOL_PREFIX)
 
     def build_matrix_uri(self, id: str) -> str:
-        return f"matrix://{id}"
+        return f"{MATRIX_PROTOCOL_PREFIX}{id}"

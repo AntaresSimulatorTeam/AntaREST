@@ -13,7 +13,7 @@ import io
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -65,9 +65,7 @@ class InputSeriesMatrix(MatrixNode):
             link_path = self.get_link_path()
             if link_path.exists():
                 link = link_path.read_text()
-                matrix_json = self.context.resolver.resolve(link)
-                matrix_json = cast(JSON, matrix_json)
-                matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
+                matrix = self.context.resolver.get_matrix(link)
             else:
                 try:
                     matrix = pd.read_csv(

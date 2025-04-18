@@ -26,7 +26,6 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
-from antarest.study.storage.rawstudy.model.filesystem.exceptions import DenormalizationException
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -126,10 +125,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
-        matrix = self.context.resolver.resolve(uuid)
-        if not matrix or not isinstance(matrix, dict):
-            raise DenormalizationException(f"Failed to retrieve original matrix for {self.config.path}")
-
+        matrix = self.context.resolver.get_matrix(uuid)
         self.dump(matrix)
         self.get_link_path().unlink()
 
@@ -168,7 +164,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     @override
     def dump(
         self,
-        data: bytes | JSON,
+        data: bytes | JSON | pd.DataFrame,
         url: Optional[List[str]] = None,
     ) -> None:
         """
@@ -187,5 +183,8 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         if isinstance(data, bytes):
             self.config.path.write_bytes(data)
         else:
-            df = pd.DataFrame(**data)
+            if isinstance(data, dict):
+                df = pd.DataFrame(**data)
+            else:
+                df = data
             dump_dataframe(df, self.config.path)

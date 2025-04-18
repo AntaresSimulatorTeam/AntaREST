@@ -128,7 +128,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 
-        if isinstance(data, str) and self.context.resolver.resolve(data):
+        if isinstance(data, str) and self.context.resolver.matrix_exists(data):
             self.get_link_path().write_text(data)
             if self.config.path.exists():
                 self.config.path.unlink()
