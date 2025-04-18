@@ -59,7 +59,12 @@ function DigestMatrix({ matrix }: DigestMatrixProps) {
       {!matrix.data[0]?.length ? (
         <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOff} />
       ) : (
-        <DataGridViewer data={matrix.data} columns={columns} />
+        <DataGridViewer
+          data={matrix.data}
+          columns={columns}
+          freezeColumns={1} // First column (areas) should be always visible
+          rowMarkers="checkbox"
+        />
       )}
     </>
   );

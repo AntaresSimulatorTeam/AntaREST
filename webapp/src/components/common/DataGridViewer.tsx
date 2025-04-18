@@ -21,25 +21,29 @@ import {
 } from "@glideapps/glide-data-grid";
 import { useMemo } from "react";
 import { formatGridNumber } from "./Matrix/shared/utils";
-import DataGrid from "@/components/common/DataGrid";
+import DataGrid, { type RowMarkers } from "@/components/common/DataGrid";
+import { isNumericValue } from "@/utils/numberUtils";
 
 type CellValue = number | string;
 
 interface DataGridViewerProps {
   data: CellValue[][];
   columns: GridColumn[];
+  freezeColumns?: number;
+  rowMarkers?: RowMarkers;
 }
 
-function DataGridViewer({ data, columns }: DataGridViewerProps) {
+function DataGridViewer({ data, columns, freezeColumns, rowMarkers }: DataGridViewerProps) {
   const getCellContent = useMemo(
     () => (cell: Item) => {
       const [col, row] = cell;
       const value = data[row]?.[col];
 
-      if (typeof value === "number") {
+      // Handle numeric values (both as numbers and as strings)
+      if (isNumericValue(value)) {
         return {
           kind: GridCellKind.Number,
-          data: value,
+          data: Number(value),
           displayData: formatGridNumber({ value, maxDecimals: 3 }),
           decimalSeparator: ".",
           thousandSeparator: " ",
@@ -55,6 +59,7 @@ function DataGridViewer({ data, columns }: DataGridViewerProps) {
         displayData: String(value ?? ""),
         readonly: true,
         allowOverlay: false,
+        contentAlign: "right",
       } satisfies TextCell;
     },
     [data],
@@ -72,8 +77,10 @@ function DataGridViewer({ data, columns }: DataGridViewerProps) {
       rows={data.length}
       columns={columns}
       getCellContent={getCellContent}
-      rowMarkers="none"
+      rowMarkers={rowMarkers}
       getCellsForSelection
+      freezeColumns={freezeColumns}
+      keybindings={{ copy: true, paste: false }}
     />
   );
 }
