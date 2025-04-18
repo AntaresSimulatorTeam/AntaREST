@@ -10,18 +10,13 @@
 #
 # This file is part of the Antares project.
 
-import os
 from unittest.mock import Mock
 
 import pandas as pd
 
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 
-MOCK_MATRIX_JSON = {
-    "index": ["1", "2"],
-    "columns": ["a", "b"],
-    "data": [[1, 2], [3, 4]],
-}
+MOCK_MATRIX = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 
 
 def test_build_matrix_uri():
@@ -35,7 +30,5 @@ def test_resolve_matrix():
 
     resolver = UriResolverService(matrix_service=matrix_service)
 
-    assert MOCK_MATRIX_JSON == resolver.get_matrix("matrix://my-id")
+    assert resolver.get_matrix("matrix://my-id").equals(MOCK_MATRIX)
     matrix_service.get.assert_called_once_with("my-id")
-
-    assert f"1\t2{os.linesep}3\t4{os.linesep}" == resolver.get_matrix("matrix://my-id", False)
