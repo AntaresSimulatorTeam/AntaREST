@@ -21,13 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
 
-MOCK_MATRIX_JSON = {
-    "index": ["1", "2"],
-    "columns": ["a", "b"],
-    "data": [[1, 2], [3, 4]],
-}
-
-MOCK_MATRIX_DTO = [[1, 2], [3, 4]]
+MOCK_MATRIX = pd.DataFrame([[1, 2], [3, 4]])
 
 
 class MockMatrixNode(MatrixNode):
@@ -39,7 +33,7 @@ class MockMatrixNode(MatrixNode):
         )
 
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
-        return pd.DataFrame(MOCK_MATRIX_DTO)
+        return MOCK_MATRIX
 
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used
@@ -70,7 +64,7 @@ class TestMatrixNode:
         matrix_service.create.assert_called_once()
         args = matrix_service.create.call_args.args
         assert len(args) == 1
-        assert pd.DataFrame(MOCK_MATRIX_DTO).equals(args[0])
+        assert MOCK_MATRIX.equals(args[0])
         resolver.build_matrix_uri.assert_called_once_with("my-id")
 
     def test_denormalize(self, tmp_path: Path):
@@ -80,7 +74,7 @@ class TestMatrixNode:
         link.write_text("my-id")
 
         resolver = Mock()
-        resolver.resolve.return_value = MOCK_MATRIX_JSON
+        resolver.get_matrix.return_value = MOCK_MATRIX
 
         node = MockMatrixNode(
             context=ContextServer(resolver=resolver),
@@ -92,4 +86,4 @@ class TestMatrixNode:
         # check the result
         assert not link.exists()
         actual = pd.read_csv(file, sep="\t", header=None)
-        assert actual.values.tolist() == MOCK_MATRIX_JSON["data"]
+        assert actual.equals(MOCK_MATRIX)

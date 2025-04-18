@@ -13,7 +13,6 @@ import io
 import itertools
 import shutil
 import textwrap
-import typing as t
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -85,7 +84,7 @@ class TestInputSeriesMatrix:
             link_path = file_path.parent / f"{file_path.name}.link"
             link_path.touch()
             resolver = Mock(spec=UriResolverService)
-            resolver.resolve.return_value = {}
+            resolver.get_matrix.return_value = pd.DataFrame()
             resolver.build_matrix_uri.return_value = "matrix://my-id"
             matrix_service = Mock()
             matrix_service.create.return_value = "my-id"
@@ -123,13 +122,12 @@ class TestInputSeriesMatrix:
         }
         link.write_text(matrix_uri)
 
-        def resolve(uri: str, formatted: bool = True) -> t.Dict[str, t.Any]:
+        def get_matrix(uri: str) -> pd.DataFrame:
             assert uri == matrix_uri
-            assert formatted is True
-            return matrix_obj
+            return pd.DataFrame(data=matrix_obj["data"])
 
         context = ContextServer(
-            resolver=Mock(spec=UriResolverService, resolve=resolve),
+            resolver=Mock(spec=UriResolverService, get_matrix=get_matrix),
         )
 
         node = InputSeriesMatrix(context=context, config=my_study_config)
