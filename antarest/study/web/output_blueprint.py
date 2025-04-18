@@ -258,7 +258,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         return content
 
     @bp.get(
-        "/studies/{uuid}/outputs/{output_id}/mc-ind/areas",
+        "/studies/{uuid}/outputs/{output_id}/aggregate/areas/mc-ind",
         tags=[APITag.study_outputs],
         summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
     )
@@ -309,6 +309,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             params=parameters,
+            aggregation_results_max_size=config.storage.aggregation_results_max_size,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
         )
 
@@ -398,6 +399,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             params=parameters,
+            aggregation_results_max_size=config.storage.aggregation_results_max_size,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
         )
 
@@ -486,6 +488,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             params=parameters,
+            aggregation_results_max_size=config.storage.aggregation_results_max_size,
         )
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
@@ -571,6 +574,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             params=parameters,
+            aggregation_results_max_size=config.storage.aggregation_results_max_size,
         )
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"

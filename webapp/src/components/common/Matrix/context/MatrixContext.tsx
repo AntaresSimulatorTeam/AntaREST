@@ -15,12 +15,14 @@
 import { createContext, useContext } from "react";
 import type { Actions, State } from "use-undo";
 import type { DataState, SetMatrixDataFunction } from "../hooks/useMatrixData";
+import type { AggregateType } from "../shared/types";
 
 export interface MatrixContextValue {
   // State
   currentState: State<DataState>["present"];
   isSubmitting: boolean;
   updateCount: number;
+  aggregateTypes: AggregateType[];
 
   // History
   setMatrixData: SetMatrixDataFunction;

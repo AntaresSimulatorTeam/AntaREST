@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List
 
-from antarest.matrixstore.model import MatrixData
+import pandas as pd
 
-reservoir: List[List[MatrixData]] = [[0.0, 0.5, 1.0]] * 12
+reservoir = pd.DataFrame([[0.0, 0.5, 1.0]] * 12)

@@ -512,6 +512,10 @@ class RawStudyService(AbstractStorageService):
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)
 
+    @override
+    def get_output_path(self, study: Study, output_id: str) -> Path:
+        return self.get_study_path(study) / "output" / output_id
+
     @staticmethod
     def checks_antares_web_compatibility(study: Study) -> None:
         """

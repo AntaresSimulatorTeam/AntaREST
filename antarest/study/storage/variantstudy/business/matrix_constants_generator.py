@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import Dict
 
+import pandas as pd
 from antares.study.version import StudyVersion
 from filelock import FileLock
 
@@ -111,20 +112,24 @@ class GeneratorMatrixConstants:
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
-        self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.create(series_before_87.default_bc_hourly)
+        self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.create(
+            pd.DataFrame(series_before_87.default_bc_hourly)
+        )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86] = self.matrix_service.create(
-            series_before_87.default_bc_weekly_daily
+            pd.DataFrame(series_before_87.default_bc_weekly_daily)
         )
 
         series_after_87 = matrix_constants.binding_constraint.series_after_v87
-        self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.create(series_after_87.default_bc_hourly)
+        self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.create(
+            pd.DataFrame(series_after_87.default_bc_hourly)
+        )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87] = self.matrix_service.create(
-            series_after_87.default_bc_weekly_daily
+            pd.DataFrame(series_after_87.default_bc_weekly_daily)
         )
 
         # Some short-term storage matrices use np.ones((8760, 1))
         self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
-            matrix_constants.st_storage.series.pmax_injection
+            pd.DataFrame(matrix_constants.st_storage.series.pmax_injection)
         )
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:

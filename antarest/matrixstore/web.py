@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
+import pandas as pd
 from fastapi import APIRouter, Body, Depends, File, UploadFile
 from starlette.responses import FileResponse
 
@@ -21,12 +22,20 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixDTO, MatrixInfoDTO
+from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
+
+
+class MatrixDTO(AntaresBaseModel, arbitrary_types_allowed=True):
+    index: list[int | str]
+    columns: list[int | str]
+    data: list[list[float | int | str]]
+    id: str = ""
 
 
 def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: Config) -> APIRouter:
@@ -48,10 +57,10 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     def create(
         matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[]),
         current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    ) -> str:
         logger.info("Creating new matrix")
         if current_user.id is not None:
-            return service.create(matrix)
+            return service.create(pd.DataFrame(matrix))
         raise UserHasNotPermissionError()
 
     @bp.post(
@@ -70,11 +79,17 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
             return service.create_by_importation(file, is_json=json)
         raise UserHasNotPermissionError()
 
-    @bp.get("/matrix/{id}", tags=[APITag.matrix], response_model=MatrixDTO)
-    def get(id: str, user: JWTUser = Depends(auth.get_current_user)) -> Any:
+    @bp.get("/matrix/{id}", tags=[APITag.matrix])
+    def get(id: str, user: JWTUser = Depends(auth.get_current_user)) -> MatrixDTO:
         logger.info("Fetching matrix")
         if user.id is not None:
-            return service.get(id)
+            df = service.get(id)
+            return MatrixDTO.model_construct(
+                id=id,
+                index=list(df.index),
+                columns=list(df.columns),
+                data=df.to_numpy().tolist(),
+            )
         raise UserHasNotPermissionError()
 
     @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
