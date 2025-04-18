@@ -256,7 +256,7 @@ class StorageConfig:
         if platform.system().lower() == "linux":
             return {"local": WorkspaceConfig(path=Path("/"))}
         elif platform.system().lower() == "windows":
-            drives = [f"{d}" for d in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if os.path.isdir(f"{d}:\\")]
+            drives = [f"{d}:\\" for d in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" if os.path.isdir(f"{d}:\\")]
             return {drive: WorkspaceConfig(path=Path(drive)) for drive in drives}
         else:
             raise NotImplementedError("System workspaces are only implemented for Linux and Windows")
