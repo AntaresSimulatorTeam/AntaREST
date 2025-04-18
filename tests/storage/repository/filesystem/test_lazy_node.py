@@ -98,7 +98,7 @@ def test_save_uri(tmp_path: Path):
     file.touch()
 
     resolver = Mock()
-    resolver.resolve.return_value = "Lazy"
+    resolver.matrix_exists.return_value = True
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
     context = ContextServer(resolver=resolver)
@@ -108,7 +108,7 @@ def test_save_uri(tmp_path: Path):
     node.save(uri)
     assert (file.parent / f"{file.name}.link").read_text() == uri
     assert not file.exists()
-    resolver.resolve.assert_called_once_with(uri)
+    resolver.matrix_exists.assert_called_once_with(uri)
 
 
 def test_save_txt(tmp_path: Path):
@@ -119,7 +119,7 @@ def test_save_txt(tmp_path: Path):
     link.touch()
 
     resolver = Mock()
-    resolver.resolve.return_value = None
+    resolver.matrix_exists.return_value = False
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
     context = ContextServer(resolver=resolver)
@@ -129,4 +129,4 @@ def test_save_txt(tmp_path: Path):
     node.save(content)
     assert file.read_text() == content
     assert not link.exists()
-    resolver.resolve.assert_called_once_with(content)
+    resolver.matrix_exists.assert_called_once_with(content)
