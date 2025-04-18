@@ -2,8 +2,7 @@ name: deploy
 on:
   push:
     branches:
-      - "master"
-      - "hotfix/**"
+      - "**"
 
 jobs:
   binary:
@@ -11,7 +10,7 @@ jobs:
     strategy:
       max-parallel: 3
       matrix:
-        os: [ windows-latest, ubuntu-22.04]
+        os: [ubuntu-22.04]
 
     steps:
       - name: 🐙 Checkout GitHub repo (+ download lfs dependencies)
