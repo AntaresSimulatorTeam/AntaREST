@@ -35,7 +35,7 @@ class TestTableMode:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    @pytest.mark.parametrize("study_version", [0, 810, 830, 860, 870, 880])
+    @pytest.mark.parametrize("study_version", [0, 810, 830, 860, 870, 880, 920])
     def test_lifecycle__nominal(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ) -> None:
@@ -679,6 +679,10 @@ class TestTableMode:
                 "efficiency",
                 "initialLevel",
                 "initialLevelOptim",
+                # Since v9.2
+                "efficiencyWithdrawal",
+                "penalizeVariationInjection",
+                "penalizeVariationWithdrawal",
             }
 
             # Prepare data for short-term storage tests
@@ -736,6 +740,10 @@ class TestTableMode:
             _it_storage3_values = {"group": "Pondage"}
             if study_version >= 880:
                 _it_storage3_values["enabled"] = False
+            if study_version >= 920:
+                _fr_tesla_values["efficiencyWithdrawal"] = 0.4
+                _fr_tesla_values["penalizeVariationInjection"] = False
+                _fr_tesla_values["penalizeVariationWithdrawal"] = True
 
             res = client.put(
                 f"/v1/studies/{internal_study_id}/table-mode/st-storages",
@@ -752,49 +760,69 @@ class TestTableMode:
                     # "id": "siemens",
                     # "name": "Siemens",
                     "efficiency": 1,
-                    "enabled": None,
                     "group": "battery",
                     "initialLevel": 0.5,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1550,
                     "reservoirCapacity": 1500,
                     "withdrawalNominalCapacity": 1550,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
                 "fr / tesla": {
                     # "id": "tesla",
                     # "name": "Tesla",
                     "efficiency": 0.75,
-                    "enabled": None,
                     "group": "battery",
                     "initialLevel": 0.89,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1200,
                     "reservoirCapacity": 1200,
                     "withdrawalNominalCapacity": 1200,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
                 "it / storage3": {
                     # "id": "storage3",
                     # "name": "storage3",
                     "efficiency": 1,
-                    "enabled": None,
                     "group": "pondage",
                     "initialLevel": 1,
                     "initialLevelOptim": False,
                     "injectionNominalCapacity": 1234,
                     "reservoirCapacity": 1357,
                     "withdrawalNominalCapacity": 1020,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
                 "it / storage4": {
                     # "id": "storage4",
                     # "name": "storage4",
                     "efficiency": 1,
-                    "enabled": None,
                     "group": "psp_open",
                     "initialLevel": 0.5,
                     "initialLevelOptim": True,
                     "injectionNominalCapacity": 567,
                     "reservoirCapacity": 500,
                     "withdrawalNominalCapacity": 456,
+                    # v8.8 field
+                    "enabled": None,
+                    # v9.2 fields
+                    "efficiencyWithdrawal": None,
+                    "penalizeVariationInjection": None,
+                    "penalizeVariationWithdrawal": None,
                 },
             }
 
@@ -802,6 +830,13 @@ class TestTableMode:
                 for key in expected:
                     expected[key]["enabled"] = True
                 expected["it / storage3"]["enabled"] = False
+            if study_version >= 920:
+                for key in expected:
+                    expected[key]["efficiencyWithdrawal"] = 1
+                    expected[key]["penalizeVariationInjection"] = False
+                    expected[key]["penalizeVariationWithdrawal"] = False
+                expected["fr / tesla"]["efficiencyWithdrawal"] = 0.4
+                expected["fr / tesla"]["penalizeVariationWithdrawal"] = True
 
             assert actual == expected
 
