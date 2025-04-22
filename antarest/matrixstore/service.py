@@ -18,15 +18,16 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence
 
 import numpy as np
+import pandas as pd
 import py7zr
 from fastapi import UploadFile
-from numpy import typing as npt
+from pandas.api.types import infer_dtype
 from typing_extensions import override
 
-from antarest.core.config import Config
+from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
@@ -38,18 +39,16 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
-from antarest.matrixstore.exceptions import MatrixDataSetNotFound
+from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
     Matrix,
-    MatrixContent,
-    MatrixData,
     MatrixDataSet,
     MatrixDataSetDTO,
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
-    MatrixDTO,
     MatrixInfoDTO,
 )
+from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 
 # List of files to exclude from ZIP archives
@@ -66,17 +65,30 @@ EXCLUDED_FILES = {
 
 logger = logging.getLogger(__name__)
 
+LEGACY_MATRIX_VERSION = 1
+NEW_MATRIX_VERSION = 2
+"""
+Version 1 matrices were not saved with a header, unlike version 2 ones.
+Therefore, we rely on this version to know how to read the matrices
+"""
+
 
 class ISimpleMatrixService(ABC):
     def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
         self.matrix_content_repository = matrix_content_repository
 
     @abstractmethod
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def create(self, data: pd.DataFrame) -> str:
+        """
+        Creates a new matrix object with the specified data.
+
+        Warning:
+            DataFrame indexes are ignored, therefore providing one with a non-default one will raise an exception.
+        """
         raise NotImplementedError()
 
     @abstractmethod
-    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
@@ -104,7 +116,7 @@ class ISimpleMatrixService(ABC):
         if isinstance(matrix, str):
             return matrix.removeprefix("matrix://")
         elif isinstance(matrix, list):
-            return self.create(matrix)
+            return self.create(pd.DataFrame(data=matrix))
         else:
             raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
@@ -114,20 +126,12 @@ class SimpleMatrixService(ISimpleMatrixService):
         super().__init__(matrix_content_repository=matrix_content_repository)
 
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
-        return self.matrix_content_repository.save(data)
+    def create(self, data: pd.DataFrame) -> str:
+        return self.matrix_content_repository.save(data).hash
 
     @override
-    def get(self, matrix_id: str) -> MatrixDTO:
-        data = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.model_construct(
-            id=matrix_id,
-            width=len(data.columns),
-            height=len(data.index),
-            index=data.index,
-            columns=data.columns,
-            data=data.data,
-        )
+    def get(self, matrix_id: str) -> pd.DataFrame:
+        return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
     def exists(self, matrix_id: str) -> bool:
@@ -136,6 +140,34 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def delete(self, matrix_id: str) -> None:
         self.matrix_content_repository.delete(matrix_id)
+
+
+def check_dataframe_compliance(df: pd.DataFrame) -> None:
+    """
+    Checks compliance with the matrix store assumptions.
+
+     - Only supported types for now are numbers, datetimes, and strings.
+     - Because the matrix store ignores indexes, we check that the index
+      is actually the default index.
+
+    Notes:
+    pd.StringDType is considered experimental and not supported everywhere, for example
+    by to_hdf5, therefore we use `infer_dtype` to check object dtype are actually
+    strings.
+    """
+    if df.empty:
+        return
+
+    if not df.index.equals(pd.RangeIndex(0, df.shape[0])):
+        raise MatrixNotSupported("The matrixstore doesn't support dataframes with a non-default index")
+
+    supported_dtypes = [np.number, np.datetime64]
+    for k, dtype in enumerate(list(df.dtypes)):
+        if not any(np.issubdtype(dtype.type, supported_type) for supported_type in supported_dtypes):
+            if infer_dtype(df[df.columns[k]]) != "string":
+                raise MatrixNotSupported(
+                    f"Supported matrix data types are 'string, np.number, datetime' and you provided {dtype}"
+                )
 
 
 class MatrixService(ISimpleMatrixService):
@@ -157,21 +189,8 @@ class MatrixService(ISimpleMatrixService):
         self.task_service = task_service
         self.config = config
 
-    @staticmethod
-    def _from_dto(dto: MatrixDTO) -> Tuple[Matrix, MatrixContent]:
-        matrix = Matrix(
-            id=dto.id,
-            width=dto.width,
-            height=dto.height,
-            created_at=datetime.fromtimestamp(dto.created_at),
-        )
-
-        content = MatrixContent(data=dto.data, index=dto.index, columns=dto.columns)
-
-        return matrix, content
-
     @override
-    def create(self, data: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def create(self, data: pd.DataFrame) -> str:
         """
         Creates a new matrix object with the specified data.
 
@@ -181,8 +200,9 @@ class MatrixService(ISimpleMatrixService):
 
         Parameters:
             data:
-                The matrix content to be saved. It can be either a nested list of floats
-                or a NumPy array of type np.float64.
+                The matrix content to be saved. Note that the index is ignored by
+                the matrix store, hence all non-default index will be rejected.
+                Only numeric, datetime, and string content are supported.
 
         Returns:
             A SHA256 hash for the new matrix object.
@@ -194,18 +214,20 @@ class MatrixService(ISimpleMatrixService):
             The `MatrixGarbageCollector` class is responsible for removing
             unreferenced matrices to avoid leaving unused files lying around.
         """
-        matrix_id = self.matrix_content_repository.save(data)
-        shape = data.shape if isinstance(data, np.ndarray) else (len(data), len(data[0]) if data else 0)
-        with db():
-            # Do not use the `timezone.utc` timezone to preserve a naive datetime.
-            created_at = datetime.utcnow()
-            matrix = Matrix(
-                id=matrix_id,
-                width=shape[1],
-                height=shape[0],
-                created_at=created_at,
-            )
-            self.repo.save(matrix)
+        check_dataframe_compliance(data)
+        matrix_metadata = self.matrix_content_repository.save(data)
+        matrix_id = matrix_metadata.hash
+        if not matrix_metadata.new:
+            # Nothing to change inside the DB
+            return matrix_id
+        else:
+            with db():
+                # Do not use the `timezone.utc` timezone to preserve a naive datetime.
+                created_at = datetime.utcnow()
+                matrix = Matrix(
+                    id=matrix_id, width=data.shape[1], height=data.shape[0], created_at=created_at, version=2
+                )
+                self.repo.save(matrix)
         return matrix_id
 
     def create_by_importation(self, file: UploadFile, is_json: bool = False) -> List[MatrixInfoDTO]:
@@ -267,12 +289,12 @@ class MatrixService(ISimpleMatrixService):
         """
         if is_json:
             obj = from_json(file)
-            content = MatrixContent(**obj)
-            return self.create(content.data)
+            df = pd.DataFrame(data=obj["data"], index=obj["index"], columns=obj["columns"])
+            return self.create(df)
         # noinspection PyTypeChecker
         matrix = np.loadtxt(io.BytesIO(file), delimiter="\t", dtype=np.float64, ndmin=2)
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        return self.create(matrix)
+        return self.create(pd.DataFrame(data=matrix))
 
     def get_dataset(
         self,
@@ -379,7 +401,7 @@ class MatrixService(ISimpleMatrixService):
         return id
 
     @override
-    def get(self, matrix_id: str) -> Optional[MatrixDTO]:
+    def get(self, matrix_id: str) -> pd.DataFrame:
         """
         Get a matrix object from the database and the matrix content repository.
 
@@ -392,17 +414,8 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.repo.get(matrix_id)
         if matrix is None:
-            return None
-        content = self.matrix_content_repository.get(matrix_id)
-        return MatrixDTO.model_construct(
-            id=matrix.id,
-            width=matrix.width,
-            height=matrix.height,
-            created_at=int(matrix.created_at.timestamp()),
-            index=content.index,
-            columns=content.columns,
-            data=content.data,
-        )
+            raise MatrixNotFound(matrix_id)
+        return self.matrix_content_repository.get(matrix_id, matrix.version)
 
     @override
     def exists(self, matrix_id: str) -> bool:
@@ -559,12 +572,10 @@ class MatrixService(ISimpleMatrixService):
         """
         if not params.user:
             raise UserHasNotPermissionError()
-        if matrix := self.get(matrix_id):
-            array = np.array(matrix.data, dtype=np.float64)
-            if array.size == 0:
-                # If the array or dataframe is empty, create an empty file instead of
-                # traditional saving to avoid unwanted line breaks.
-                filepath.touch()
-            else:
-                # noinspection PyTypeChecker
-                np.savetxt(filepath, array, delimiter="\t", fmt="%.18f")
+        matrix = self.get(matrix_id)
+        if matrix.empty:
+            # If the array or dataframe is empty, create an empty file instead of
+            # traditional saving to avoid unwanted line breaks.
+            filepath.touch()
+        else:
+            save_matrix(InternalMatrixFormat.TSV, matrix, filepath)

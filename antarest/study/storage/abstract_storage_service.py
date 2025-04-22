@@ -381,7 +381,3 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
                 exc_info=e,
             )
             return False
-
-    @override
-    def get_output_path(self, study: Study, output_id: str) -> Path:
-        return self.get_study_path(study) / "output" / output_id

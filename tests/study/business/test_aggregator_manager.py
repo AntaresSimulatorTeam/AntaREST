@@ -58,5 +58,5 @@ def test_storage_different_max_size_value(tmp_path: Path, project_path: Path):
     aggregator_manager.aggregation_results_max_size = 1
 
     # must fail
-    with pytest.raises(FileTooLargeError):
+    with pytest.raises(FileTooLargeError, match="The expected size: 1.02Mo exceeds the max supported size: 1"):
         aggregator_manager.aggregate_output_data()

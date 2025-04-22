@@ -9,22 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import hashlib
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
 
 import numpy as np
 import pandas as pd
 from filelock import FileLock
-from numpy import typing as npt
+from pandas import util
 from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session  # type: ignore
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixContent, MatrixData, MatrixDataSet
+from antarest.matrixstore.model import Matrix, MatrixDataSet
+from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +135,58 @@ class MatrixRepository:
         logger.debug(f"Matrix {matrix_hash} deleted")
 
 
+@dataclass(frozen=True)
+class MatrixCreationResult:
+    hash: str
+    new: bool
+
+
+def compute_hash(df: pd.DataFrame) -> str:
+    """
+    Computes a hash of the dataframe, with the goal of obtaining a stable
+    and unique identifier for its content, including the headers.
+
+    The index is not considered, since the matrix store ignores it.
+
+    For the implementation, we rely on:
+
+    - pandas hash_pandas_object to compute int64 hashes for whole rows and for the
+      column names
+    - sha256 algo to hash the concatenation of those 2 "list" of hashes
+
+    The hash could probably be improved by including more details, like
+    the type of the column, the shape of the matrix ... It has not been
+    considered necessary.
+
+    Legacy implementation assumed the data was only numeric, since the
+    matrix store only managed numeric data. It was only based on the hash
+    of the numpy raw data, which was quite weak since 2 arrays with the
+    same content but different shapes would have conflicting hashes.
+
+    Still, the legacy implementation is still used for backwards compatibility,
+    for numeric-only tables.
+    """
+
+    # Checks dataframe dtype to infer if the matrix could correspond to a legacy format
+    legacy_format = False
+    if all(np.issubdtype(dtype.type, np.number) for dtype in df.dtypes):
+        # We also need to check the headers to see if they correspond to the default ones
+        if df.columns.equals(pd.RangeIndex(0, df.shape[1])):
+            legacy_format = True
+
+    if not legacy_format:
+        # We're computing the hash with the dataframe content and its headers
+        column_names_hashes = util.hash_pandas_object(df.columns, index=False)
+        row_hashes = util.hash_pandas_object(df, index=False)
+        df_hash = hashlib.sha256(column_names_hashes.to_numpy(dtype=np.int64).data)
+        df_hash.update(row_hashes.to_numpy(dtype=np.int64).data)
+        return df_hash.hexdigest()
+
+    # We're using `np.ascontiguousarray` as hashlib requires C contiguous arrays,
+    # while this is not the general behaviour of pandas to store its data this way
+    return hashlib.sha256(np.ascontiguousarray(df.to_numpy(dtype=np.float64)).data).hexdigest()
+
+
 class MatrixContentRepository:
     """
     Manage the content of matrices stored in a directory.
@@ -152,30 +205,22 @@ class MatrixContentRepository:
         self.bucket_dir.mkdir(parents=True, exist_ok=True)
         self.format = format
 
-    def get(self, matrix_hash: str) -> MatrixContent:
+    def get(self, matrix_hash: str, matrix_version: int) -> pd.DataFrame:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
 
         Parameters:
             matrix_hash: SHA256 hash
+            matrix_version: The matrix version. Needed for parsing
 
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        storage_format: Optional[InternalMatrixFormat] = None
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():
-                storage_format = internal_format
-                break
-        if not storage_format:
-            raise FileNotFoundError(str(matrix_path.with_suffix("")))
-        matrix = storage_format.load_matrix(matrix_path)
-        matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
-        data = matrix.tolist()
-        index: List[int | str] = list(range(matrix.shape[0]))
-        columns: List[int | str] = list(range(matrix.shape[1]))
-        return MatrixContent.model_construct(data=data, columns=columns, index=index)
+                return load_matrix(internal_format, matrix_path, matrix_version)
+        raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))
 
     def exists(self, matrix_hash: str) -> bool:
         """
@@ -193,7 +238,7 @@ class MatrixContentRepository:
                 return True
         return False
 
-    def save(self, content: List[List[MatrixData]] | npt.NDArray[np.float64]) -> str:
+    def save(self, content: pd.DataFrame) -> MatrixCreationResult:
         """
         The matrix content will be saved in the repository given format, where each row represents
         a line in the file and the values are separated by tabs. The file will be saved
@@ -202,8 +247,7 @@ class MatrixContentRepository:
 
         Parameters:
             content:
-                The matrix content to be saved. It can be either a nested list of floats
-                or a NumPy array of type np.float64.
+                The matrix content to be saved represented as a dataframe
 
         Returns:
             The SHA256 hash of the saved matrix file.
@@ -222,12 +266,12 @@ class MatrixContentRepository:
         #    of the floating point numbers which can introduce rounding errors.
         # However, this method is still a good approach to calculate a hash value
         # for a non-mutable NumPy Array.
-        matrix = content if isinstance(content, np.ndarray) else np.array(content, dtype=np.float64)
-        matrix_hash = hashlib.sha256(matrix.data).hexdigest()
+
+        matrix_hash = compute_hash(content)
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
-            return matrix_hash
+            return MatrixCreationResult(hash=matrix_hash, new=False)
 
         lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
         for internal_format in InternalMatrixFormat:
@@ -236,26 +280,23 @@ class MatrixContentRepository:
                 # We want to migrate the old matrix in the given repository format.
                 # Ensure exclusive access to the matrix file between multiple processes (or threads).
                 with FileLock(lock_file, timeout=15):
-                    data = internal_format.load_matrix(matrix_in_another_format_path)
-                    df = pd.DataFrame(data)
-                    self.format.save_matrix(df, matrix_path)
+                    save_matrix(self.format, content, matrix_path)
                     matrix_in_another_format_path.unlink()
-                return matrix_hash
+                return MatrixCreationResult(hash=matrix_hash, new=True)
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
         with FileLock(lock_file, timeout=15):
-            if matrix.size == 0:
+            if content.empty:
                 matrix_path.touch()
             else:
-                df = pd.DataFrame(matrix)
-                self.format.save_matrix(df, matrix_path)
+                save_matrix(self.format, content, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31
             # However, this deletion is possible when the matrix is no longer in use.
             # This is done in `MatrixGarbageCollector` when matrix files are deleted.
 
-        return matrix_hash
+        return MatrixCreationResult(hash=matrix_hash, new=True)
 
     def delete(self, matrix_hash: str) -> None:
         """
