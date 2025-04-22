@@ -38,7 +38,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
 
@@ -143,6 +143,7 @@ class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
+        launcher_id: str,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
@@ -150,10 +151,7 @@ class SlurmLauncher(AbstractLauncher):
         retrieve_existing_jobs: bool = False,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        if config.launcher.slurm is None:
-            raise LauncherInitException("Missing parameter 'launcher.slurm'")
-
-        self.slurm_config: SlurmConfig = config.launcher.slurm
+        self.slurm_config: SlurmConfig = config.launcher.get_launcher_by_id(launcher_id)
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])

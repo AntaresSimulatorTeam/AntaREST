@@ -41,14 +41,14 @@ class LocalLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
+        launcher_id: str,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        if self.config.launcher.local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        self.local_workspace = self.config.launcher.local.local_workspace
+        launcher = config.launcher.get_launcher_by_id(launcher_id)
+        self.local_workspace = launcher.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
@@ -56,8 +56,8 @@ class LocalLauncher(AbstractLauncher):
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
-    def _select_best_binary(self, version: str) -> Path:
-        local = self.config.launcher.local
+    def _select_best_binary(self, version: str, launcher_id: str) -> Path:
+        local = self.config.launcher.get_launcher_by_id(launcher_id)
         if local is None:
             raise LauncherInitException("Missing parameter 'launcher.local'")
         elif version in local.binaries:
@@ -79,7 +79,7 @@ class LocalLauncher(AbstractLauncher):
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
-        antares_solver_path = self._select_best_binary(f"{version:ddd}")
+        antares_solver_path = self._select_best_binary(f"{version:ddd}", launcher_parameters.launcher_id)
 
         job = threading.Thread(
             target=LocalLauncher._compute,

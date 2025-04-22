@@ -23,7 +23,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, Launcher, NbCoresConfig
+from antarest.core.config import Config, InvalidConfigurationError, Launcher, NbCoresConfig, SlurmConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -633,23 +633,25 @@ class LauncherService:
             )
         raise JobNotFound()
 
-    def get_load(self) -> LauncherLoadDTO:
+    def get_load(self, launcher_id: str) -> LauncherLoadDTO:
         """
         Get the load of the SLURM cluster or the local machine.
         """
-        # SLURM load calculation
-        if self.config.launcher.default == "slurm":
-            if slurm_config := self.config.launcher.slurm:
+        launcher = self.config.launcher.get_launcher_by_id(launcher_id)
+
+        if launcher:
+            if isinstance(launcher, SlurmConfig):
+                # SLURM load calculation
                 ssh_config = SSHConfigDTO(
                     config_path=Path(),
-                    username=slurm_config.username,
-                    hostname=slurm_config.hostname,
-                    port=slurm_config.port,
-                    private_key_file=slurm_config.private_key_file,
-                    key_password=slurm_config.key_password,
-                    password=slurm_config.password,
+                    username=launcher.username,
+                    hostname=launcher.hostname,
+                    port=launcher.port,
+                    private_key_file=launcher.private_key_file,
+                    key_password=launcher.key_password,
+                    password=launcher.password,
                 )
-                partition = slurm_config.partition
+                partition = launcher.partition
                 allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
                 args = {
                     "allocatedCpuRate": allocated_cpus,
@@ -659,24 +661,24 @@ class LauncherService:
                 }
                 return LauncherLoadDTO(**args)
             else:
-                raise KeyError("Default launcher is slurm but it is not registered in the config file")
+                # local load calculation
+                local_used_cpus = sum(
+                    LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1
+                    for job in self.job_result_repository.get_running()
+                )
 
-        # local load calculation
-        local_used_cpus = sum(
-            LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1
-            for job in self.job_result_repository.get_running()
-        )
+                # The cluster load is approximated by the percentage of used CPUs.
+                cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
 
-        # The cluster load is approximated by the percentage of used CPUs.
-        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
-
-        args = {
-            "allocatedCpuRate": cluster_load_approx,
-            "clusterLoadRate": cluster_load_approx,
-            "nbQueuedJobs": 0,
-            "launcherStatus": "SUCCESS",
-        }
-        return LauncherLoadDTO(**args)
+                args = {
+                    "allocatedCpuRate": cluster_load_approx,
+                    "clusterLoadRate": cluster_load_approx,
+                    "nbQueuedJobs": 0,
+                    "launcherStatus": "SUCCESS",
+                }
+                return LauncherLoadDTO(**args)
+        else:
+            raise InvalidConfigurationError(launcher_id)
 
     def get_solver_versions(self, solver: str) -> List[str]:
         """
@@ -692,15 +694,11 @@ class LauncherService:
         Raises:
             KeyError: if the configuration is not "default", "slurm" or "local".
         """
-        local_config = self.config.launcher.local
-        slurm_config = self.config.launcher.slurm
-        default_config = self.config.launcher.default
-        versions_map = {
-            "local": sorted(local_config.binaries) if local_config else [],
-            "slurm": sorted(slurm_config.antares_versions_on_remote_server) if slurm_config else [],
-        }
-        versions_map["default"] = versions_map[default_config]
-        return versions_map[solver]
+        config = self.config.launcher.get_launcher_by_id(solver)
+        if isinstance(config, SlurmConfig):
+            return sorted(config.antares_versions_on_remote_server)
+        else:
+            return sorted(config.binaries)
 
     def get_launch_progress(self, job_id: str, params: RequestParameters) -> float:
         job_result = self.job_result_repository.get(job_id)

@@ -214,10 +214,10 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get the SLURM cluster or local machine load",
         response_model=LauncherLoadDTO,
     )
-    def get_load() -> LauncherLoadDTO:
+    def get_load(launcher_id: str = "local") -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
-            return service.get_load()
+            return service.get_load(launcher_id)
         except SlurmError as e:
             logger.warning(e, exc_info=e)
             args = {
@@ -234,7 +234,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get list of supported solver versions",
         response_model=List[str],
     )
-    def get_solver_versions(solver: Launcher = Launcher.DEFAULT) -> List[str]:
+    def get_solver_versions(solver: str = Launcher.DEFAULT) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.
 

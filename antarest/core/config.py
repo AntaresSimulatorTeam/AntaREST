@@ -287,6 +287,7 @@ class AbstractLauncherConfig(ABC):
     name: str = ""
     type: Launcher = Launcher.DEFAULT
 
+
 @dataclass(frozen=True)
 class LocalConfig(AbstractLauncherConfig):
     """Sub config object dedicated to launcher module (local)"""
@@ -308,6 +309,9 @@ class LocalConfig(AbstractLauncherConfig):
         Returns: object NbCoresConfig
         """
         defaults = cls()
+        _id = data.get("id")
+        _type = data.get("type")
+        name = data.get("name", "local")
         binaries = data.get("binaries", defaults.binaries)
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
@@ -316,6 +320,9 @@ class LocalConfig(AbstractLauncherConfig):
         xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
         local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
         return cls(
+            id=_id,
+            type=_type,
+            name=name,
             binaries={str(v): Path(p) for v, p in binaries.items()},
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
@@ -369,6 +376,9 @@ class SlurmConfig(AbstractLauncherConfig):
         Returns: object SlurmConfig
         """
         defaults = cls()
+        _id = data.get("id")
+        _type = data.get("type")
+        name = data.get("name", "local")
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
         if "default_n_cpu" in data:
@@ -382,6 +392,9 @@ class SlurmConfig(AbstractLauncherConfig):
         max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
+            id=_id,
+            type=_type,
+            name=name,
             local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
             username=data.get("username", defaults.username),
             hostname=data.get("hostname", defaults.hostname),
@@ -437,9 +450,9 @@ class LauncherConfig:
         batch_size = data.get("batch_size", defaults.batch_size)
         for launcher in data["launchers"]:
             if launcher["type"] == Launcher.LOCAL:
-                launchers.append(cast(LocalConfig, launcher))
+                launchers.append(LocalConfig.from_dict(launcher))
             elif launcher["type"] == Launcher.SLURM:
-                launchers.append(cast(SlurmConfig, launcher))
+                launchers.append(SlurmConfig.from_dict(launcher))
             else:
                 continue
 
@@ -494,12 +507,11 @@ class LauncherConfig:
         return launcher_config.time_limit
 
     def get_slurm_configs(self) -> List[SlurmConfig]:
-        list_cfg: List[SlurmConfig] = []
-        for cfg in self.launchers_config:
-            if cfg["type"] == Launcher.SLURM:
-                config = cast(SlurmConfig, cfg)
-                list_cfg.append(config)
-        return list_cfg
+        return [cfg for cfg in self.launchers_config if cfg.type == Launcher.SLURM]
+
+    def get_launcher_by_id(self, launcher_id: str) -> LocalConfig | SlurmConfig:
+        return next((launcher for launcher in self.launchers_config if launcher.id == launcher_id), None)
+
 
 @dataclass(frozen=True)
 class LoggingConfig:
