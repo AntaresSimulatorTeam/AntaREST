@@ -14,7 +14,7 @@ import pandas as pd
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 
 
-class UriResolverService:
+class MatrixUriMapper:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 

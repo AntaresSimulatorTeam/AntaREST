@@ -24,7 +24,7 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -75,7 +75,7 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
 class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ) -> None:

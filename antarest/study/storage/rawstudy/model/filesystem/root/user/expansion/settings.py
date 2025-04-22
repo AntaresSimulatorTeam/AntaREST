@@ -12,7 +12,7 @@
 
 from antarest.core.serde.ini_reader import SimpleKeyValueReader
 from antarest.core.serde.ini_writer import SimpleKeyValueWriter
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
@@ -35,7 +35,7 @@ class ExpansionSettings(IniFileNode):
     - additional-constraints: str = filename. default = ""
     """
 
-    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig):
+    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
         types = {
             "master": str,
             "uc_type": str,

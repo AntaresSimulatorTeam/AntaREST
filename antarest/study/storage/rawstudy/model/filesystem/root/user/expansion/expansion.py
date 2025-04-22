@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.candidates import ExpansionCandidates
@@ -33,5 +33,5 @@ class Expansion(BucketNode):
         RegisteredFile(key="sensitivity", node=SensitivityConfig),
     ]
 
-    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig):
+    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(context, config, self.registered_files)

@@ -12,7 +12,7 @@
 import numpy as np
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -32,7 +32,7 @@ default_link_legacy_matrix.flags.writeable = False
 class InputLinkArea(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):

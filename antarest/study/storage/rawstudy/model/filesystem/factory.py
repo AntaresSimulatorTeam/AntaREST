@@ -21,7 +21,7 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -53,7 +53,7 @@ class StudyFactory:
 
     def __init__(
         self,
-        resolver: UriResolverService,
+        resolver: MatrixUriMapper,
         cache: ICache,
     ) -> None:
         self.context = resolver

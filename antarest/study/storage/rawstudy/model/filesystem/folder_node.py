@@ -18,7 +18,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, PathIsAFolderError
 from antarest.core.model import JSON, SUB_JSON
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
 
@@ -43,7 +43,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         children_glob_exceptions: Optional[List[str]] = None,
     ) -> None:

@@ -21,7 +21,7 @@ import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -82,7 +82,7 @@ class TestInputSeriesMatrix:
         else:
             link_path = file_path.parent / f"{file_path.name}.link"
             link_path.touch()
-            resolver = Mock(spec=UriResolverService)
+            resolver = Mock(spec=MatrixUriMapper)
             resolver.get_matrix.return_value = pd.DataFrame()
             resolver.build_matrix_uri.return_value = "matrix://my-id"
             matrix_service = Mock()
@@ -125,7 +125,7 @@ class TestInputSeriesMatrix:
             assert uri == matrix_uri
             return pd.DataFrame(data=matrix_obj["data"])
 
-        node = InputSeriesMatrix(context=Mock(spec=UriResolverService, get_matrix=get_matrix), config=my_study_config)
+        node = InputSeriesMatrix(context=Mock(spec=MatrixUriMapper, get_matrix=get_matrix), config=my_study_config)
         actual = node.load()
         assert actual == matrix_obj
 

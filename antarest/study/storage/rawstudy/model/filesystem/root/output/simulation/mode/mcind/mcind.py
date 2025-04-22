@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -23,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class OutputSimulationModeMcInd(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):

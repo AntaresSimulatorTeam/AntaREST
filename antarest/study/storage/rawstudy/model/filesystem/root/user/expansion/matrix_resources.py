@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -19,7 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class ExpansionMatrixResources(BucketNode):
-    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig):
+    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(context, config, None, default_file_node=InputSeriesMatrix)
 
     @override

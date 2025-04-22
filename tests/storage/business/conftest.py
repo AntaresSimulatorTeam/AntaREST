@@ -15,7 +15,7 @@ import pytest
 from antares.study.version.create_app import CreateApp
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
@@ -57,5 +57,5 @@ def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterfac
     app = CreateApp(study_dir=study_path, caption="empty_study_810", version=STUDY_VERSION_8_1, author="Unknown")
     app()
     config = build(study_path, study_id)
-    empty_study_810 = FileStudy(config, FileStudyTree(UriResolverService(matrix_service), config))
+    empty_study_810 = FileStudy(config, FileStudyTree(MatrixUriMapper(matrix_service), config))
     return FileStudyInterface(empty_study_810)

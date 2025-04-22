@@ -24,7 +24,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -62,7 +62,7 @@ class MatrixGarbageCollector(IService):
         return {
             matrix_id
             for matrix_id in [
-                UriResolverService.extract_id(f.read_text()) for f in self.managed_studies_path.rglob("*.link")
+                MatrixUriMapper.extract_id(f.read_text()) for f in self.managed_studies_path.rglob("*.link")
             ]
             if matrix_id
         }

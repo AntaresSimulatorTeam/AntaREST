@@ -14,7 +14,7 @@ from typing import Any, Callable, Dict, Optional
 
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
@@ -56,7 +56,7 @@ class AreaMatrixList(FolderNode):
 
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         *,
         prefix: str = "",
@@ -94,10 +94,10 @@ class AreaMatrixList(FolderNode):
 class HydroMatrixList(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -115,9 +115,9 @@ class HydroMatrixList(FolderNode):
 class BindingConstraintMatrixList(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
-        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.matrix_class = matrix_class
@@ -134,10 +134,10 @@ class BindingConstraintMatrixList(FolderNode):
 class ThermalMatrixList(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -171,21 +171,21 @@ class AreaMultipleMatrixList(FolderNode):
 
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
-                UriResolverService,
+                MatrixUriMapper,
                 FileStudyTreeConfig,
                 str,
                 Callable[
-                    [UriResolverService, FileStudyTreeConfig],
+                    [MatrixUriMapper, FileStudyTreeConfig],
                     INode[Any, Any, Any],
                 ],
             ],
             INode[Any, Any, Any],
         ],
-        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.klass = klass

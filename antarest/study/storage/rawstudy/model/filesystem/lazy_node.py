@@ -18,7 +18,7 @@ from zipfile import ZipFile
 
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 
@@ -38,7 +38,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
     ) -> None:
         self.context = context

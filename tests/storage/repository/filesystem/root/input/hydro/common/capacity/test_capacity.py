@@ -16,7 +16,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
@@ -58,7 +58,7 @@ class TestInputHydroCommonCapacity:
         version: str,
         expected: dict,
     ):
-        resolver = Mock(spec=UriResolverService)
+        resolver = Mock(spec=MatrixUriMapper)
         context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(

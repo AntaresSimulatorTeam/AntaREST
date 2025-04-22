@@ -14,7 +14,7 @@ from typing import Dict, List
 
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -26,7 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class _OutputSimulationModeMcAllLinksBis(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area_from: str,
         link_names: List[str],
@@ -49,7 +49,7 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
 class OutputSimulationLinks(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
     ):
         super().__init__(context, config)

@@ -20,7 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
@@ -46,7 +46,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         date_serializer: IDateMatrixSerializer,
@@ -168,7 +168,7 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         src: str,
@@ -186,7 +186,7 @@ class LinkOutputSeriesMatrix(OutputSeriesMatrix):
 class AreaOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
         area: str,
@@ -203,7 +203,7 @@ class AreaOutputSeriesMatrix(OutputSeriesMatrix):
 class BindingConstraintOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ):

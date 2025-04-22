@@ -15,7 +15,7 @@ from typing import Any, Callable, List, Optional
 from typing_extensions import override
 
 from antarest.core.model import JSON, SUB_JSON
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
@@ -26,7 +26,7 @@ class RegisteredFile:
     def __init__(
         self,
         key: str,
-        node: Optional[Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]]],
+        node: Optional[Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]]],
         filename: str = "",
     ):
         self.key = key
@@ -41,7 +41,7 @@ class BucketNode(FolderNode):
 
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
         default_file_node: Callable[..., INode[Any, Any, Any]] = RawFileNode,

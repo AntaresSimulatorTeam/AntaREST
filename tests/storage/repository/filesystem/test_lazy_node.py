@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -26,7 +26,7 @@ class MockLazyNode(LazyNode[str, str, str]):
     def denormalize(self) -> None:
         pass  # no external store in this node
 
-    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig) -> None:
+    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,
             context=context,

@@ -14,7 +14,7 @@ from typing_extensions import override
 from antarest.core.serde.ini_common import any_section_option_matcher
 from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -51,7 +51,7 @@ class ClusteredRenewableClusterConfig(IniFileNode):
 class ClusteredRenewableCluster(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):

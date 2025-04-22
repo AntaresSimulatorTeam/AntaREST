@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import AreaMatrixList
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import InputPrepro
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import de
 
 
 class InputPreproSeries(FolderNode):
-    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig, prefix: str):
+    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig, prefix: str):
         """
         Represents a folder structure, which contains a "prepro" and a time series structure.
 

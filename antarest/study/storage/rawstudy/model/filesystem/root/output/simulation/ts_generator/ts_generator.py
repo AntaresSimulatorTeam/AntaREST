@@ -14,7 +14,7 @@ from typing import Any, Callable
 
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMatrixList,
     AreaMultipleMatrixList,
@@ -39,15 +39,15 @@ class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
 class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
     def __init__(
         self,
-        context: UriResolverService,
+        context: MatrixUriMapper,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
-                UriResolverService,
+                MatrixUriMapper,
                 FileStudyTreeConfig,
                 str,
                 Callable[
-                    [UriResolverService, FileStudyTreeConfig],
+                    [MatrixUriMapper, FileStudyTreeConfig],
                     INode[Any, Any, Any],
                 ],
             ],

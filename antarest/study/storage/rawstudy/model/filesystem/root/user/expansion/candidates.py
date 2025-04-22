@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
 class ExpansionCandidates(IniFileNode):
-    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig) -> None:
+    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(config)
