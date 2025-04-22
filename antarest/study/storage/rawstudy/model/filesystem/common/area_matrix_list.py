@@ -14,8 +14,8 @@ from typing import Any, Callable, Dict, Optional
 
 from typing_extensions import override
 
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -56,7 +56,7 @@ class AreaMatrixList(FolderNode):
 
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         *,
         prefix: str = "",
@@ -94,10 +94,10 @@ class AreaMatrixList(FolderNode):
 class HydroMatrixList(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -115,9 +115,9 @@ class HydroMatrixList(FolderNode):
 class BindingConstraintMatrixList(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
-        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.matrix_class = matrix_class
@@ -134,10 +134,10 @@ class BindingConstraintMatrixList(FolderNode):
 class ThermalMatrixList(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         area: str,
-        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.area = area
@@ -171,21 +171,21 @@ class AreaMultipleMatrixList(FolderNode):
 
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
-                ContextServer,
+                UriResolverService,
                 FileStudyTreeConfig,
                 str,
                 Callable[
-                    [ContextServer, FileStudyTreeConfig],
+                    [UriResolverService, FileStudyTreeConfig],
                     INode[Any, Any, Any],
                 ],
             ],
             INode[Any, Any, Any],
         ],
-        matrix_class: Callable[[ContextServer, FileStudyTreeConfig], INode[Any, Any, Any]],
+        matrix_class: Callable[[UriResolverService, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
         super().__init__(context, config)
         self.klass = klass

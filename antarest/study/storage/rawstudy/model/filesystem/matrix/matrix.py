@@ -24,8 +24,8 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
 class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ) -> None:
@@ -108,8 +108,8 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             return
 
         matrix = self.parse_as_dataframe()
-        uuid = self.context.resolver.matrix_service.create(matrix)
-        self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
+        uuid = self.context.matrix_service.create(matrix)
+        self.get_link_path().write_text(self.context.build_matrix_uri(uuid))
         self.config.path.unlink()
 
     @override
@@ -125,7 +125,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
-        matrix = self.context.resolver.get_matrix(uuid)
+        matrix = self.context.get_matrix(uuid)
         self.dump(matrix)
         self.get_link_path().unlink()
 

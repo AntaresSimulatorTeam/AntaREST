@@ -25,8 +25,8 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode, dump_dataframe
 
@@ -40,7 +40,7 @@ class InputSeriesMatrix(MatrixNode):
 
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
@@ -65,7 +65,7 @@ class InputSeriesMatrix(MatrixNode):
             link_path = self.get_link_path()
             if link_path.exists():
                 link = link_path.read_text()
-                matrix = self.context.resolver.get_matrix(link)
+                matrix = self.context.get_matrix(link)
             else:
                 try:
                     matrix = pd.read_csv(

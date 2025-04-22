@@ -22,6 +22,9 @@ class UriResolverService:
         matrix_id = self.extract_id(uri)
         return self.matrix_service.get(matrix_id)
 
+    def create_matrix(self, matrix: pd.DataFrame) -> str:
+        return self.matrix_service.create(matrix)
+
     def matrix_exists(self, uri: str) -> bool:
         matrix_id = self.extract_id(uri)
         return self.matrix_service.exists(matrix_id)

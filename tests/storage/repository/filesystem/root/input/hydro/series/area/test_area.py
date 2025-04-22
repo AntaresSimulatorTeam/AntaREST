@@ -18,7 +18,6 @@ import pytest
 
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import (
     default_scenario_daily,
     default_scenario_hourly,
@@ -88,7 +87,7 @@ class TestInputHydroSeriesArea:
         expected: dict,
     ):
         resolver = Mock(spec=UriResolverService)
-        context = ContextServer(resolver=resolver)
+        context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),

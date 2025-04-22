@@ -14,6 +14,7 @@ from typing import Any, Callable
 
 from typing_extensions import override
 
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import (
     AreaMatrixList,
     AreaMultipleMatrixList,
@@ -21,7 +22,6 @@ from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list im
     ThermalMatrixList,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -39,15 +39,15 @@ class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
 class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
-                ContextServer,
+                UriResolverService,
                 FileStudyTreeConfig,
                 str,
                 Callable[
-                    [ContextServer, FileStudyTreeConfig],
+                    [UriResolverService, FileStudyTreeConfig],
                     INode[Any, Any, Any],
                 ],
             ],

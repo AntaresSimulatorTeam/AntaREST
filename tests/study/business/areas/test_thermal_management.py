@@ -30,7 +30,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterGroup,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -77,9 +76,8 @@ def study_path(tmp_path: Path) -> Path:
 
 
 def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path: Path) -> FileStudy:
-    context = ContextServer(UriResolverService(matrix_service))
     config = antarest.study.storage.rawstudy.model.filesystem.config.files.build(study_id=study_id, study_path=path)
-    tree = FileStudyTree(context, config)
+    tree = FileStudyTree(UriResolverService(matrix_service), config)
     return FileStudy(config, tree)
 
 

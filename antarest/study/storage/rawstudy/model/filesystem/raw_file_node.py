@@ -15,8 +15,8 @@ from typing import List, Optional
 
 from typing_extensions import override
 
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -27,7 +27,7 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     Basic left which handle text file as like with any parsing / serialization
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig):
         LazyNode.__init__(self, config=config, context=context)
 
     @override

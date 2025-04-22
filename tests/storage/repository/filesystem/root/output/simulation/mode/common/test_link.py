@@ -19,7 +19,6 @@ import pytest
 
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import LinkOutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import link
@@ -40,7 +39,7 @@ class TestOutputSimulationLinkItem:
             name = Path(file).stem
             expected[name] = {"freq": MatrixFrequency(name.split("-")[1])}
         resolver = Mock(spec=UriResolverService)
-        context = ContextServer(resolver=resolver)
+        context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),

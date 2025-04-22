@@ -28,7 +28,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfigDTO,
     validate_config,
 )
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 logger = logging.getLogger(__name__)
@@ -57,7 +56,7 @@ class StudyFactory:
         resolver: UriResolverService,
         cache: ICache,
     ) -> None:
-        self.context = ContextServer(resolver=resolver)
+        self.context = resolver
         self.cache = cache
         # It is better to store lock files in the temporary directory,
         # because it is possible that there not deleted when the web application is stopped.

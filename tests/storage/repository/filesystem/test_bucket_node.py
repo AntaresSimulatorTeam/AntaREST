@@ -15,7 +15,6 @@ from unittest.mock import Mock
 
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settings import ExpansionSettings
 
 
@@ -51,7 +50,7 @@ def test_get_bucket(tmp_path: Path):
         "fileC.txt",
     ]
 
-    context = ContextServer(resolver=resolver)
+    context = resolver
 
     node = BucketNode(
         config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),

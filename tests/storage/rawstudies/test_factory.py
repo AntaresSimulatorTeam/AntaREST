@@ -13,9 +13,9 @@
 from unittest.mock import Mock
 
 from antarest.core.interfaces.cache import CacheConstants
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from tests.storage.rawstudies.samples import ASSETS_DIR
@@ -23,7 +23,7 @@ from tests.storage.rawstudies.samples import ASSETS_DIR
 
 def test_renewable_subtree() -> None:
     path = ASSETS_DIR / "v810/sample1"
-    context: ContextServer = Mock(specs=ContextServer)
+    context: UriResolverService = Mock()
     config = build(path, "")
     assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
 

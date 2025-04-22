@@ -18,8 +18,8 @@ from zipfile import ZipFile
 
 from typing_extensions import override
 
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 
 
@@ -38,7 +38,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
 
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
     ) -> None:
         self.context = context
@@ -128,7 +128,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 
-        if isinstance(data, str) and self.context.resolver.matrix_exists(data):
+        if isinstance(data, str) and self.context.matrix_exists(data):
             self.get_link_path().write_text(data)
             if self.config.path.exists():
                 self.config.path.unlink()

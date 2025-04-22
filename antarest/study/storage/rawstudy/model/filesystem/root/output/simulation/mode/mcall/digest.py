@@ -18,8 +18,8 @@ from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.synthesis import OutputSynthesis
 
 
@@ -82,7 +82,7 @@ def _get_district(df: pd.DataFrame) -> DigestMatrixUI:
 
 
 class DigestSynthesis(OutputSynthesis):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig):
         super().__init__(context, config)
 
     @override

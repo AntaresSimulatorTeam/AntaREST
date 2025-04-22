@@ -16,16 +16,16 @@ from unittest.mock import Mock
 
 import pandas as pd
 
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
 
 MOCK_MATRIX = pd.DataFrame([[1, 2], [3, 4]])
 
 
 class MockMatrixNode(MatrixNode):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig) -> None:
+    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,
             context=context,
@@ -52,7 +52,7 @@ class TestMatrixNode:
         resolver.matrix_service = matrix_service
 
         node = MockMatrixNode(
-            context=ContextServer(resolver=resolver),
+            context=resolver,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
@@ -77,7 +77,7 @@ class TestMatrixNode:
         resolver.get_matrix.return_value = MOCK_MATRIX
 
         node = MockMatrixNode(
-            context=ContextServer(resolver=resolver),
+            context=resolver,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 

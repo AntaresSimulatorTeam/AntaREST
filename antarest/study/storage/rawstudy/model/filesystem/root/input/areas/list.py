@@ -15,8 +15,8 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.core.utils.archives import extract_lines_from_archive
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
 AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
@@ -31,7 +31,7 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     def denormalize(self) -> None:
         pass  # no external store in this node
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, context: UriResolverService, config: FileStudyTreeConfig):
         super().__init__(config)
         self.context = context
 

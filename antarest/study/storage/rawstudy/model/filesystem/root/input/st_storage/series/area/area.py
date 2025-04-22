@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.series.area.st_storage.st_storage import (
@@ -23,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.seri
 class InputSTStorageSeriesArea(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        context: UriResolverService,
         config: FileStudyTreeConfig,
         area: str,
     ):

@@ -22,7 +22,6 @@ from antarest.study.business.study_interface import FileStudyInterface, StudyInt
 from antarest.study.business.xpansion_management import XpansionManager
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -58,6 +57,5 @@ def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterfac
     app = CreateApp(study_dir=study_path, caption="empty_study_810", version=STUDY_VERSION_8_1, author="Unknown")
     app()
     config = build(study_path, study_id)
-    context = ContextServer(UriResolverService(matrix_service))
-    empty_study_810 = FileStudy(config, FileStudyTree(context, config))
+    empty_study_810 = FileStudy(config, FileStudyTree(UriResolverService(matrix_service), config))
     return FileStudyInterface(empty_study_810)
