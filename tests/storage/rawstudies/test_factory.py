@@ -23,11 +23,11 @@ from tests.storage.rawstudies.samples import ASSETS_DIR
 
 def test_renewable_subtree() -> None:
     path = ASSETS_DIR / "v810/sample1"
-    context: MatrixUriMapper = Mock()
+    matrix_mapper: MatrixUriMapper = Mock()
     config = build(path, "")
     assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
 
-    tree = FileStudyTree(context, config)
+    tree = FileStudyTree(matrix_mapper, config)
     json_tree = tree.get([], depth=-1)
     assert json_tree is not None
     assert json_tree["input"]["renewables"]["series"]["area"] == {

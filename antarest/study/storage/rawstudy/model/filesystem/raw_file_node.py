@@ -27,8 +27,8 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     Basic left which handle text file as like with any parsing / serialization
     """
 
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        LazyNode.__init__(self, config=config, context=context)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        LazyNode.__init__(self, config=config, matrix_mapper=matrix_mapper)
 
     @override
     def get_lazy_content(

@@ -16,6 +16,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.expans
 
 
 class User(BucketNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         registered_files = [RegisteredFile(key="expansion", node=Expansion)]
-        super().__init__(context, config, registered_files)
+        super().__init__(matrix_mapper, config, registered_files)

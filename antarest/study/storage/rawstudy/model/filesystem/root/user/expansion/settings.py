@@ -35,7 +35,7 @@ class ExpansionSettings(IniFileNode):
     - additional-constraints: str = filename. default = ""
     """
 
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         types = {
             "master": str,
             "uc_type": str,

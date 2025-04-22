@@ -25,10 +25,10 @@ MOCK_MATRIX = pd.DataFrame([[1, 2], [3, 4]])
 
 
 class MockMatrixNode(MatrixNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,
-            context=context,
+            matrix_mapper=matrix_mapper,
             freq=MatrixFrequency.ANNUAL,
         )
 
@@ -52,7 +52,7 @@ class TestMatrixNode:
         resolver.matrix_service = matrix_service
 
         node = MockMatrixNode(
-            context=resolver,
+            matrix_mapper=resolver,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
@@ -77,7 +77,7 @@ class TestMatrixNode:
         resolver.get_matrix.return_value = MOCK_MATRIX
 
         node = MockMatrixNode(
-            context=resolver,
+            matrix_mapper=resolver,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 

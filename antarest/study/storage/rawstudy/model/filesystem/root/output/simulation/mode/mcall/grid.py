@@ -32,13 +32,13 @@ class OutputSimulationModeMcAllGrid(FolderNode):
         children: TREE = {}
         for file in files:
             synthesis_class = DigestSynthesis if file == "digest" else OutputSynthesis
-            children[file] = synthesis_class(self.context, self.config.next_file(f"{file}.txt"))
+            children[file] = synthesis_class(self.matrix_mapper, self.config.next_file(f"{file}.txt"))
         return children
 
 
 class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config)
 
     @override
     def get_lazy_content(

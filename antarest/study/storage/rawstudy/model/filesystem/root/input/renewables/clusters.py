@@ -51,11 +51,11 @@ class ClusteredRenewableClusterConfig(IniFileNode):
 class ClusteredRenewableCluster(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
@@ -67,6 +67,6 @@ class ClusteredRenewableAreaCluster(FolderNode):
     @override
     def build(self) -> TREE:
         return {
-            area: ClusteredRenewableCluster(self.context, self.config.next_file(area), area)
+            area: ClusteredRenewableCluster(self.matrix_mapper, self.config.next_file(area), area)
             for area in self.config.area_names()
         }

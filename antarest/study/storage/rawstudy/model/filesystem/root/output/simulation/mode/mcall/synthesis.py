@@ -23,8 +23,8 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 
 class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config)
 
     @override
     def get_lazy_content(

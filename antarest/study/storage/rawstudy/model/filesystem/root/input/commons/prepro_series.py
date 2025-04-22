@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import de
 
 
 class InputPreproSeries(FolderNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig, prefix: str):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, prefix: str):
         """
         Represents a folder structure, which contains a "prepro" and a time series structure.
 
@@ -49,15 +49,15 @@ class InputPreproSeries(FolderNode):
                └── load_store_out.txt
         """
 
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.prefix = prefix
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "prepro": InputPrepro(self.context, self.config.next_file("prepro")),
+            "prepro": InputPrepro(self.matrix_mapper, self.config.next_file("prepro")),
             "series": AreaMatrixList(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("series"),
                 prefix=self.prefix,
                 additional_matrix_params={"default_empty": default_scenario_hourly},

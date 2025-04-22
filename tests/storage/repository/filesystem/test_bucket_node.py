@@ -43,18 +43,9 @@ def test_get_bucket(tmp_path: Path):
 
     file = build_bucket(tmp_path)
 
-    resolver = Mock()
-    resolver.build_studyfile_uri.side_effect = [
-        "fileA.txt",
-        "fileB.txt",
-        "fileC.txt",
-    ]
-
-    context = resolver
-
     node = BucketNode(
         config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),
-        context=context,
+        matrix_mapper=Mock(),
         registered_files=registered_files,
     )
 
@@ -72,7 +63,7 @@ def test_save_bucket(tmp_path: Path):
 
     node = BucketNode(
         config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),
-        context=Mock(),
+        matrix_mapper=Mock(),
     )
     node.save(data={"fileA.txt": b"Hello, World"})
 

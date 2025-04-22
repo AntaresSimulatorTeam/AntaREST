@@ -24,10 +24,10 @@ class InputHydro(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "allocation": InputHydroAllocation(self.context, self.config.next_file("allocation")),
-            "common": InputHydroCommon(self.context, self.config.next_file("common")),
-            "prepro": InputHydroPrepro(self.context, self.config.next_file("prepro")),
-            "series": InputHydroSeries(self.context, self.config.next_file("series")),
+            "allocation": InputHydroAllocation(self.matrix_mapper, self.config.next_file("allocation")),
+            "common": InputHydroCommon(self.matrix_mapper, self.config.next_file("common")),
+            "prepro": InputHydroPrepro(self.matrix_mapper, self.config.next_file("prepro")),
+            "series": InputHydroSeries(self.matrix_mapper, self.config.next_file("series")),
             "hydro": InputHydroIni(self.config.next_file("hydro.ini")),
         }
         return children

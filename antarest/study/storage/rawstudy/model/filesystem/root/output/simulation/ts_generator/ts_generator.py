@@ -31,7 +31,7 @@ class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "mc-0": AreaMatrixList(self.context, self.config.next_file("mc-0")),
+            "mc-0": AreaMatrixList(self.matrix_mapper, self.config.next_file("mc-0")),
         }
         return children
 
@@ -39,7 +39,7 @@ class OutputSimulationTsGeneratorSimpleMatrixList(FolderNode):
 class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
@@ -54,14 +54,14 @@ class OutputSimulationTsGeneratorCustomMatrixList(FolderNode):
             INode[Any, Any, Any],
         ],
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.klass = klass
 
     @override
     def build(self) -> TREE:
         children: TREE = {
             "mc-0": AreaMultipleMatrixList(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("mc-0"),
                 self.klass,
                 InputSeriesMatrix,
@@ -77,14 +77,14 @@ class OutputSimulationTsGenerator(FolderNode):
         for output_type in ["load", "solar", "wind"]:
             if (self.config.path / output_type).exists():
                 children[output_type] = OutputSimulationTsGeneratorSimpleMatrixList(
-                    self.context, self.config.next_file(output_type)
+                    self.matrix_mapper, self.config.next_file(output_type)
                 )
         if (self.config.path / "hydro").exists():
             children["hydro"] = OutputSimulationTsGeneratorCustomMatrixList(
-                self.context, self.config.next_file("hydro"), HydroMatrixList
+                self.matrix_mapper, self.config.next_file("hydro"), HydroMatrixList
             )
         if (self.config.path / "thermal").exists():
             children["thermal"] = OutputSimulationTsGeneratorCustomMatrixList(
-                self.context, self.config.next_file("thermal"), ThermalMatrixList
+                self.matrix_mapper, self.config.next_file("thermal"), ThermalMatrixList
             )
         return children

@@ -88,7 +88,7 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
     file_study = FileStudy(
         config=config,
         tree=FileStudyTree(
-            context=MatrixUriMapper(matrix_service=matrix_service),
+            matrix_mapper=MatrixUriMapper(matrix_service=matrix_service),
             config=config,
         ),
     )

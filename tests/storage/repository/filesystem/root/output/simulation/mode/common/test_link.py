@@ -17,7 +17,6 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import LinkOutputSeriesMatrix
@@ -38,8 +37,6 @@ class TestOutputSimulationLinkItem:
             tmp_path.joinpath(file).touch()
             name = Path(file).stem
             expected[name] = {"freq": MatrixFrequency(name.split("-")[1])}
-        resolver = Mock(spec=MatrixUriMapper)
-        context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("path/to/study"),
@@ -49,7 +46,7 @@ class TestOutputSimulationLinkItem:
             areas={},
         )
 
-        node = link.OutputSimulationLinkItem(context=context, config=config, area="fr", link="fr -> de")
+        node = link.OutputSimulationLinkItem(matrix_mapper=Mock(), config=config, area="fr", link="fr -> de")
         actual = node.build()
 
         # check the result

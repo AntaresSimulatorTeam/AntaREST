@@ -40,13 +40,13 @@ class InputSeriesMatrix(MatrixNode):
 
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
         default_empty: Optional[npt.NDArray[np.float64]] = None,  # optional only for the capacity matrix in Xpansion
     ):
-        super().__init__(context=context, config=config, freq=freq)
+        super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
         self.nb_columns = nb_columns
         if default_empty is None:
             self.default_empty = None
@@ -65,7 +65,7 @@ class InputSeriesMatrix(MatrixNode):
             link_path = self.get_link_path()
             if link_path.exists():
                 link = link_path.read_text()
-                matrix = self.context.get_matrix(link)
+                matrix = self.matrix_mapper.get_matrix(link)
             else:
                 try:
                     matrix = pd.read_csv(

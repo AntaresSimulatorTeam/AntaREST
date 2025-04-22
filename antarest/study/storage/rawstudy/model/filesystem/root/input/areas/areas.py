@@ -21,12 +21,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.sets impo
 
 
 class InputAreas(FolderNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config, ["list", "sets"])
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config, ["list", "sets"])
 
     @override
     def build(self) -> TREE:
-        children: TREE = {a: InputAreasItem(self.context, self.config.next_file(a)) for a in self.config.area_names()}
-        children["list"] = InputAreasList(self.context, self.config.next_file("list.txt"))
+        children: TREE = {
+            a: InputAreasItem(self.matrix_mapper, self.config.next_file(a)) for a in self.config.area_names()
+        }
+        children["list"] = InputAreasList(self.matrix_mapper, self.config.next_file("list.txt"))
         children["sets"] = InputAreasSets(self.config.next_file("sets.ini"))
         return children

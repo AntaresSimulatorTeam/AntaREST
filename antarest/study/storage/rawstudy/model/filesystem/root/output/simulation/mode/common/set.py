@@ -22,11 +22,11 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matri
 class OutputSimulationSet(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         set: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.set = set
 
     @override
@@ -38,7 +38,7 @@ class OutputSimulationSet(FolderNode):
                 file_name = f"{output_type}-{freq}.txt"
                 if (self.config.path / file_name).exists():
                     children[f"{output_type}-{freq}"] = AreaOutputSeriesMatrix(
-                        self.context,
+                        self.matrix_mapper,
                         self.config.next_file(file_name),
                         freq,
                         self.set,

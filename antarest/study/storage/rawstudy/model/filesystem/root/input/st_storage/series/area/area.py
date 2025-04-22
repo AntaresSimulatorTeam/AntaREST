@@ -23,17 +23,17 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.seri
 class InputSTStorageSeriesArea(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            st_storage_id: InputSTStorageAreaStorage(self.context, self.config.next_file(st_storage_id))
+            st_storage_id: InputSTStorageAreaStorage(self.matrix_mapper, self.config.next_file(st_storage_id))
             for st_storage_id in self.config.get_st_storage_ids(self.area)
         }
         return children

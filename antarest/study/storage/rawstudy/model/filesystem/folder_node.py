@@ -43,12 +43,12 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         children_glob_exceptions: Optional[List[str]] = None,
     ) -> None:
         super().__init__(config)
-        self.context = context
+        self.matrix_mapper = matrix_mapper
         self.children_glob_exceptions = children_glob_exceptions or []
 
     @abstractmethod

@@ -15,5 +15,5 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 
 class ExpansionCandidates(IniFileNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(config)

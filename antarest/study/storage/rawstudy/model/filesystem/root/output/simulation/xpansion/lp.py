@@ -15,5 +15,5 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 
 
 class Lp(BucketNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config)

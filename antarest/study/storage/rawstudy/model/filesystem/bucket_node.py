@@ -41,12 +41,12 @@ class BucketNode(FolderNode):
 
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         registered_files: Optional[List[RegisteredFile]] = None,
         default_file_node: Callable[..., INode[Any, Any, Any]] = RawFileNode,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.registered_files: List[RegisteredFile] = registered_files or []
         self.default_file_node: Callable[..., INode[Any, Any, Any]] = default_file_node
 
@@ -76,9 +76,9 @@ class BucketNode(FolderNode):
                 registered_file = self._get_registered_file_by_key(key)
                 if registered_file:
                     node = registered_file.node or self.default_file_node
-                    node(self.context, self.config.next_file(key)).save(data, url[1:])
+                    node(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
                 else:
-                    BucketNode(self.context, self.config.next_file(key)).save(data, url[1:])
+                    BucketNode(self.matrix_mapper, self.config.next_file(key)).save(data, url[1:])
             else:
                 self._save(data, key)
 
@@ -90,11 +90,11 @@ class BucketNode(FolderNode):
                 registered_file.filename,
             )
 
-            node(self.context, self.config.next_file(filename)).save(data)
+            node(self.matrix_mapper, self.config.next_file(filename)).save(data)
         elif isinstance(data, (str, bytes)):
-            self.default_file_node(self.context, self.config.next_file(key)).save(data)
+            self.default_file_node(self.matrix_mapper, self.config.next_file(key)).save(data)
         elif isinstance(data, dict):
-            BucketNode(self.context, self.config.next_file(key)).save(data)
+            BucketNode(self.matrix_mapper, self.config.next_file(key)).save(data)
 
     @override
     def build(self) -> TREE:
@@ -106,11 +106,11 @@ class BucketNode(FolderNode):
             registered_file = self._get_registered_file_by_filename(item.name)
             if registered_file:
                 node = registered_file.node or self.default_file_node
-                children[registered_file.key] = node(self.context, self.config.next_file(item.name))
+                children[registered_file.key] = node(self.matrix_mapper, self.config.next_file(item.name))
             elif item.is_file():
-                children[item.name] = self.default_file_node(self.context, self.config.next_file(item.name))
+                children[item.name] = self.default_file_node(self.matrix_mapper, self.config.next_file(item.name))
             else:
-                children[item.name] = BucketNode(self.context, self.config.next_file(item.name))
+                children[item.name] = BucketNode(self.matrix_mapper, self.config.next_file(item.name))
 
         return children
 

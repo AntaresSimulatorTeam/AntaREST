@@ -82,8 +82,8 @@ def _get_district(df: pd.DataFrame) -> DigestMatrixUI:
 
 
 class DigestSynthesis(OutputSynthesis):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config)
 
     @override
     def load(

@@ -19,15 +19,15 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 
 class ExpansionMatrixResources(BucketNode):
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config, None, default_file_node=InputSeriesMatrix)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config, None, default_file_node=InputSeriesMatrix)
 
     @override
     def build(self) -> TREE:
         children: TREE = {}
         for resource in self.config.path.iterdir():
             if resource.is_file():
-                node = InputSeriesMatrix(self.context, self.config.next_file(resource.name))
+                node = InputSeriesMatrix(self.matrix_mapper, self.config.next_file(resource.name))
                 children[node.config.path.name] = node
 
         return children

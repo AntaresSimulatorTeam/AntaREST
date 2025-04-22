@@ -33,5 +33,5 @@ class Expansion(BucketNode):
         RegisteredFile(key="sensitivity", node=SensitivityConfig),
     ]
 
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(context, config, self.registered_files)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config, self.registered_files)

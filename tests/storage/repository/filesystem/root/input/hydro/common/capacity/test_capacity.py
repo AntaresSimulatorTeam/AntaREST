@@ -80,7 +80,7 @@ class TestInputHydroCommonCapacity:
         )
 
         node = capacity.InputHydroCommonCapacity(
-            context=context,
+            matrix_mapper=context,
             config=config,
             children_glob_exceptions=None,
         )

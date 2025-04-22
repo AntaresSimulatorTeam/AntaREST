@@ -23,17 +23,17 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class OutputSimulationModeMcInd(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.simulation = simulation
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            f"{scn:05d}": OutputSimulationModeCommon(self.context, self.config.next_file(f"{scn:05d}"))
+            f"{scn:05d}": OutputSimulationModeCommon(self.matrix_mapper, self.config.next_file(f"{scn:05d}"))
             for scn in self.simulation.playlist or range(1, self.simulation.nbyears + 1)
         }
         return children

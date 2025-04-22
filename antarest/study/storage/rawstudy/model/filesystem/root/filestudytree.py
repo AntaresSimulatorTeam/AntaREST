@@ -38,18 +38,18 @@ class FileStudyTree(FolderNode):
         children: TREE = {
             "Desktop": Desktop(self.config.next_file("Desktop.ini")),
             "study": StudyAntares(self.config.next_file("study.antares")),
-            "settings": Settings(self.context, self.config.next_file("settings")),
-            "layers": Layers(self.context, self.config.next_file("layers")),
-            "input": Input(self.context, self.config.next_file("input")),
-            "user": User(self.context, self.config.next_file("user")),
+            "settings": Settings(self.matrix_mapper, self.config.next_file("settings")),
+            "layers": Layers(self.matrix_mapper, self.config.next_file("layers")),
+            "input": Input(self.matrix_mapper, self.config.next_file("input")),
+            "user": User(self.matrix_mapper, self.config.next_file("user")),
         }
 
         if (self.config.path / "logs").exists():
-            children["logs"] = BucketNode(self.context, self.config.next_file("logs"))
+            children["logs"] = BucketNode(self.matrix_mapper, self.config.next_file("logs"))
 
         if self.config.outputs:
             output_config = self.config.next_file("output")
             output_config.path = self.config.output_path or output_config.path
-            children["output"] = Output(self.context, output_config)
+            children["output"] = Output(self.matrix_mapper, output_config)
 
         return children

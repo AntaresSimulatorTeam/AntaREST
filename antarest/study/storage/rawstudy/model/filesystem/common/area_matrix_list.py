@@ -56,14 +56,14 @@ class AreaMatrixList(FolderNode):
 
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         *,
         prefix: str = "",
         matrix_class: Callable[..., INode[Any, Any, Any]] = InputSeriesMatrix,
         additional_matrix_params: Optional[Dict[str, Any]] = None,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.prefix = prefix
         self.matrix_class = matrix_class
         self.additional_matrix_params = additional_matrix_params or {}
@@ -86,7 +86,7 @@ class AreaMatrixList(FolderNode):
         for file in files:
             name = f"{self.prefix}{file}"
             children[name] = self.matrix_class(
-                self.context, self.config.next_file(f"{name}.txt"), **self.additional_matrix_params
+                self.matrix_mapper, self.config.next_file(f"{name}.txt"), **self.additional_matrix_params
             )
         return children
 
@@ -94,20 +94,20 @@ class AreaMatrixList(FolderNode):
 class HydroMatrixList(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
         matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
         self.matrix_class = matrix_class
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "ror": self.matrix_class(self.context, self.config.next_file("ror.txt")),
-            "storage": self.matrix_class(self.context, self.config.next_file("storage.txt")),
+            "ror": self.matrix_class(self.matrix_mapper, self.config.next_file("ror.txt")),
+            "storage": self.matrix_class(self.matrix_mapper, self.config.next_file("storage.txt")),
         }
         return children
 
@@ -115,18 +115,18 @@ class HydroMatrixList(FolderNode):
 class BindingConstraintMatrixList(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.matrix_class = matrix_class
 
     @override
     def build(self) -> TREE:
         """Builds the folder structure and creates child nodes representing each matrix file."""
         return {
-            file.stem: self.matrix_class(self.context, self.config.next_file(file.name))
+            file.stem: self.matrix_class(self.matrix_mapper, self.config.next_file(file.name))
             for file in self.config.path.glob(TXT_PATTERN)
         }
 
@@ -134,12 +134,12 @@ class BindingConstraintMatrixList(FolderNode):
 class ThermalMatrixList(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
         matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
         self.matrix_class = matrix_class
 
@@ -149,7 +149,8 @@ class ThermalMatrixList(FolderNode):
         # For instance, if your cluster ID is "Base", then the series ID will be "base".
         series_files = self.config.path.glob(TXT_PATTERN)
         return {
-            series.stem: self.matrix_class(self.context, self.config.next_file(series.name)) for series in series_files
+            series.stem: self.matrix_class(self.matrix_mapper, self.config.next_file(series.name))
+            for series in series_files
         }
 
 
@@ -171,7 +172,7 @@ class AreaMultipleMatrixList(FolderNode):
 
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         klass: Callable[
             [
@@ -187,7 +188,7 @@ class AreaMultipleMatrixList(FolderNode):
         ],
         matrix_class: Callable[[MatrixUriMapper, FileStudyTreeConfig], INode[Any, Any, Any]],
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.klass = klass
         self.matrix_class = matrix_class
 
@@ -196,7 +197,7 @@ class AreaMultipleMatrixList(FolderNode):
         folders = [d.name for d in self.config.path.iterdir() if d.is_dir()]
         children: TREE = {
             area: self.klass(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file(area),
                 area,
                 self.matrix_class,

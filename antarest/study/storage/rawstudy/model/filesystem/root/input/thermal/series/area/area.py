@@ -23,11 +23,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.series.
 class InputThermalSeriesArea(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
@@ -36,7 +36,7 @@ class InputThermalSeriesArea(FolderNode):
         # For instance, if your cluster ID is "Base", then the series ID will be "base".
         series_ids = map(str.lower, self.config.get_thermal_ids(self.area))
         children: TREE = {
-            series_id: InputThermalSeriesAreaThermal(self.context, self.config.next_file(series_id))
+            series_id: InputThermalSeriesAreaThermal(self.matrix_mapper, self.config.next_file(series_id))
             for series_id in series_ids
         }
         return children

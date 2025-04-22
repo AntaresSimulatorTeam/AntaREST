@@ -33,7 +33,7 @@ def build_tree() -> INode[t.Any, t.Any, t.Any]:
     config.path.exist.return_value = True
     config.archive_path = None
     return TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={
             "input": CheckSubNode(config, value=100),
@@ -148,7 +148,7 @@ def test_get_depth() -> None:
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )
@@ -165,7 +165,7 @@ def test_validate() -> None:
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )
@@ -233,11 +233,11 @@ def test_delete(tmp_path: Path) -> None:
 
     config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=-1)
     tree_node = TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={
             "sub_folder": TestMiddleNode(
-                context=Mock(),
+                matrix_mapper=Mock(),
                 config=config.next_file("sub_folder"),
                 children={
                     "ini_node1": IniFileNode(
@@ -249,15 +249,15 @@ def test_delete(tmp_path: Path) -> None:
                         types={},
                     ),
                     "area_list": InputAreasList(
-                        context=Mock(),
+                        matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("area_list.ini"),
                     ),
                     "data_node": RawFileNode(
-                        context=Mock(),
+                        matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("data.txt"),
                     ),
                     "data_link_node": RawFileNode(
-                        context=Mock(),
+                        matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("data_link.txt"),
                     ),
                 },

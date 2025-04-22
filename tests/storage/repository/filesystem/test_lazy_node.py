@@ -26,10 +26,10 @@ class MockLazyNode(LazyNode[str, str, str]):
     def denormalize(self) -> None:
         pass  # no external store in this node
 
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,
-            context=context,
+            matrix_mapper=matrix_mapper,
         )
 
     def load(
@@ -56,7 +56,7 @@ def test_get_no_expanded_txt(tmp_path: Path):
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     node = MockLazyNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
     )
     assert "Mock Matrix Content" == node.get(expanded=False)
@@ -70,7 +70,7 @@ def test_get_expanded_txt(tmp_path: Path):
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     node = MockLazyNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
     )
     assert "file://lazy.txt" == node.get(expanded=True)
@@ -86,7 +86,7 @@ def test_get_expanded_link(tmp_path: Path):
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
 
     node = MockLazyNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
     )
     assert uri == node.get(expanded=True)
@@ -101,7 +101,7 @@ def test_save_uri(tmp_path: Path):
     resolver.matrix_exists.return_value = True
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockLazyNode(context=resolver, config=config)
+    node = MockLazyNode(matrix_mapper=resolver, config=config)
 
     uri = "matrix://id"
     node.save(uri)
@@ -121,7 +121,7 @@ def test_save_txt(tmp_path: Path):
     resolver.matrix_exists.return_value = False
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockLazyNode(context=resolver, config=config)
+    node = MockLazyNode(matrix_mapper=resolver, config=config)
 
     content = "Mock File Content"
     node.save(content)

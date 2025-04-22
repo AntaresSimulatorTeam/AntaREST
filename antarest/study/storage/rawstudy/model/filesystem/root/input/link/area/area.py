@@ -32,17 +32,17 @@ default_link_legacy_matrix.flags.writeable = False
 class InputLinkArea(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
     def build(self) -> TREE:
         children: TREE
-        ctx = self.context
+        ctx = self.matrix_mapper
         cfg = self.config
         if cfg.version < STUDY_VERSION_8_2:
             children = {

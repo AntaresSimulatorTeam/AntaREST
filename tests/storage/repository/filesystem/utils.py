@@ -62,11 +62,11 @@ class CheckSubNode(INode[int, int, int]):
 class TestMiddleNode(FolderNode):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         children: TREE,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.children = children
 
     def build(self) -> TREE:

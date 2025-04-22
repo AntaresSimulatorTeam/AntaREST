@@ -98,7 +98,7 @@ class TestInputHydroSeriesArea:
         )
 
         node = area.InputHydroSeriesArea(
-            context=context,
+            matrix_mapper=context,
             config=config,
             children_glob_exceptions=None,
         )

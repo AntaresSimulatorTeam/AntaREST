@@ -75,11 +75,11 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
 class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     def __init__(
         self,
-        context: MatrixUriMapper,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency,
     ) -> None:
-        LazyNode.__init__(self, context, config)
+        LazyNode.__init__(self, matrix_mapper, config)
         self.freq = freq
 
     @override
@@ -108,8 +108,8 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             return
 
         matrix = self.parse_as_dataframe()
-        uuid = self.context.matrix_service.create(matrix)
-        self.get_link_path().write_text(self.context.build_matrix_uri(uuid))
+        uuid = self.matrix_mapper.matrix_service.create(matrix)
+        self.get_link_path().write_text(self.matrix_mapper.build_matrix_uri(uuid))
         self.config.path.unlink()
 
     @override
@@ -125,7 +125,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
         uuid = self.get_link_path().read_text()
-        matrix = self.context.get_matrix(uuid)
+        matrix = self.matrix_mapper.get_matrix(uuid)
         self.dump(matrix)
         self.get_link_path().unlink()
 

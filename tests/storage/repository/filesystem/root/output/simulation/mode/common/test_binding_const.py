@@ -51,7 +51,7 @@ class TestOutputSimulationBindingConstraintItem:
             areas={},
         )
 
-        node = binding_const.OutputSimulationBindingConstraintItem(context=context, config=config)
+        node = binding_const.OutputSimulationBindingConstraintItem(matrix_mapper=context, config=config)
         actual = node.build()
 
         # check the result

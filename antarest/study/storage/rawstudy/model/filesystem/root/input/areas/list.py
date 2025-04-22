@@ -31,9 +31,9 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     def denormalize(self) -> None:
         pass  # no external store in this node
 
-    def __init__(self, context: MatrixUriMapper, config: FileStudyTreeConfig):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(config)
-        self.context = context
+        self.matrix_mapper = matrix_mapper
 
     @override
     def get_node(
