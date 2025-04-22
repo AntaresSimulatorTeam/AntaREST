@@ -12,6 +12,7 @@
 
 import multiprocessing
 import tempfile
+from abc import ABC
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -309,7 +310,13 @@ class TimeLimitConfig:
 
 
 @dataclass(frozen=True)
-class LocalConfig:
+class AbstractLauncherConfig(ABC):
+    id: str = ""
+    name: str = ""
+    type: Launcher = Launcher.DEFAULT
+
+@dataclass(frozen=True)
+class LocalConfig(AbstractLauncherConfig):
     """Sub config object dedicated to launcher module (local)"""
 
     binaries: Dict[str, Path] = field(default_factory=dict)
@@ -318,6 +325,7 @@ class LocalConfig:
     time_limit: TimeLimitConfig = TimeLimitConfig()
     xpress_dir: Optional[str] = None
     local_workspace: Path = Path("./local_workspace")
+    type: Launcher = Launcher.LOCAL
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LocalConfig":
@@ -356,7 +364,7 @@ class LocalConfig:
 
 
 @dataclass(frozen=True)
-class SlurmConfig:
+class SlurmConfig(AbstractLauncherConfig):
     """
     Sub config object dedicated to launcher module (slurm)
     """
@@ -370,13 +378,14 @@ class SlurmConfig:
     password: str = ""
     default_wait_time: int = 0
     time_limit: TimeLimitConfig = TimeLimitConfig()
+    nb_cores: NbCoresConfig = NbCoresConfig()
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
-    nb_cores: NbCoresConfig = NbCoresConfig()
+    type: Launcher = Launcher.SLURM
 
     @classmethod
     def from_dict(cls, data: JSON) -> "SlurmConfig":
@@ -445,30 +454,28 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: Optional[LocalConfig] = None
-    slurm: Optional[SlurmConfig] = None
+    launchers_config: Optional[List[AbstractLauncherConfig]] = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
+        launchers: List[AbstractLauncherConfig] = []
         defaults = cls()
         default = data.get("default", cls.default)
-        local = LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
-        slurm = SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
         batch_size = data.get("batch_size", defaults.batch_size)
+        for launcher in data["launchers"]:
+            if launcher["type"] == Launcher.LOCAL:
+                launchers.append(cast(LocalConfig, launcher))
+            elif launcher["type"] == Launcher.SLURM:
+                launchers.append(cast(SlurmConfig, launcher))
+            else:
+                continue
+
         return cls(
             default=default,
-            local=local,
-            slurm=slurm,
+            launchers_config=launchers,
             batch_size=batch_size,
         )
-
-    def __post_init__(self) -> None:
-        possible = {"local", "slurm"}
-        if self.default in possible:
-            return
-        msg = f"Invalid configuration: {self.default=} must be one of {possible!r}"
-        raise ValueError(msg)
 
     def get_nb_cores(self, launcher: Launcher) -> "NbCoresConfig":
         """
@@ -514,6 +521,13 @@ class LauncherConfig:
             raise InvalidConfigurationError(launcher)
         return launcher_config.time_limit
 
+    def get_slurm_configs(self) -> List[SlurmConfig]:
+        list_cfg: List[SlurmConfig] = []
+        for cfg in self.launchers_config:
+            if cfg["type"] == Launcher.SLURM:
+                config = cast(SlurmConfig, cfg)
+                list_cfg.append(config)
+        return list_cfg
 
 @dataclass(frozen=True)
 class LoggingConfig:
