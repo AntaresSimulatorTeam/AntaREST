@@ -55,7 +55,7 @@ export function validateNumber(
 
   const value = valueOrOpts;
 
-  if (!isFinite(value)) {
+  if (!Number.isFinite(value)) {
     return t("form.field.invalidNumber", { value });
   }
 
