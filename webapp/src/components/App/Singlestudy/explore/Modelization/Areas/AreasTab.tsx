@@ -39,7 +39,7 @@ function AreasTab({ renewablesClustering }: Props) {
       {
         label: "study.modelization.storages",
         pathSuffix: "storages",
-        condition: parseInt(study.version, 10) >= 860,
+        condition: Number.parseInt(study.version, 10) >= 860,
       },
       {
         label: "study.modelization.renewables",

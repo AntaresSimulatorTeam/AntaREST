@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { useLocation, useNavigate, useOutletContext } from "react-router";
+import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
+import { useUpdateEffect } from "react-use";
 import { setCurrentArea } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
@@ -28,37 +29,57 @@ import AreasTab from "./AreasTab";
 
 function Areas() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
-  const res = useStudySynthesis({
-    studyId: study.id,
-    selector: (state, id) => getStudySynthesis(state, id)?.enr_modelling,
-  });
+  const { areaId: paramAreaId } = useParams();
   const currentArea = useAppSelector(getCurrentArea);
   const dispatch = useAppDispatch();
   const location = useLocation();
   const navigate = useNavigate();
 
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
+  const res = useStudySynthesis({
+    studyId: study.id,
+    selector: (state, id) => getStudySynthesis(state, id)?.enr_modelling,
+  });
+
+  useUpdateEffect(() => {
+    if (paramAreaId && (!currentArea || paramAreaId !== currentArea.id)) {
+      dispatch(setCurrentArea(paramAreaId));
+    }
+  }, [paramAreaId, currentArea, dispatch]);
 
   const updateUrl = (newAreaId: string) => {
-    let pathSegments = location.pathname.split("/");
+    if (!newAreaId || (currentArea && newAreaId === currentArea.id)) {
+      return;
+    }
+
+    const pathSegments = location.pathname.split("/");
     const areaIndex = pathSegments.findIndex((segment) => segment === "area");
+
+    if (areaIndex === -1) {
+      return;
+    }
+
     const areaIdIndex = areaIndex + 1;
 
-    if (areaIndex !== -1 && newAreaId !== pathSegments[areaIdIndex]) {
-      const nextPageIndex = areaIdIndex + 1;
+    pathSegments[areaIdIndex] = newAreaId;
 
-      // Set the new area ID
-      pathSegments[areaIdIndex] = newAreaId;
+    // Keep section (properties, thermal, etc.)
+    const sectionIndex = areaIdIndex + 1;
 
-      // If the we are in a cluster page, we don't keep the cluster ID
-      if (["thermal", "storages", "renewables"].includes(pathSegments[nextPageIndex])) {
-        pathSegments = pathSegments.slice(0, nextPageIndex + 1);
+    if (!pathSegments[sectionIndex]) {
+      // If no section specified, default to properties
+      pathSegments[sectionIndex] = "properties";
+    } else if (
+      pathSegments[sectionIndex] &&
+      ["thermal", "storages", "renewables"].includes(pathSegments[sectionIndex])
+    ) {
+      // If we're in a cluster type page, remove the specific cluster ID
+      // This avoids navigating to an invalid cluster when changing areas
+      if (pathSegments.length > sectionIndex + 1) {
+        pathSegments.splice(sectionIndex + 1);
       }
-
-      navigate(pathSegments.join("/"), { replace: true });
     }
+
+    navigate(pathSegments.join("/"), { replace: true });
   };
 
   ////////////////////////////////////////////////////////////////
