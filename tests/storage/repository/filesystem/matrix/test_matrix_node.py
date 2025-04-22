@@ -47,12 +47,10 @@ class TestMatrixNode:
         matrix_service = Mock()
         matrix_service.create.return_value = "my-id"
 
-        resolver = Mock()
-        resolver.build_matrix_uri.return_value = "matrix://my-id"
-        resolver.matrix_service = matrix_service
+        matrix_mapper = MatrixUriMapper(matrix_service)
 
         node = MockMatrixNode(
-            matrix_mapper=resolver,
+            matrix_mapper=matrix_mapper,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
@@ -65,7 +63,6 @@ class TestMatrixNode:
         args = matrix_service.create.call_args.args
         assert len(args) == 1
         assert MOCK_MATRIX.equals(args[0])
-        resolver.build_matrix_uri.assert_called_once_with("my-id")
 
     def test_denormalize(self, tmp_path: Path):
         file = tmp_path / "matrix.json"
