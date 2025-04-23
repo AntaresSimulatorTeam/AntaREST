@@ -42,7 +42,6 @@ from antarest.core.exceptions import (
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON, PermissionInfo, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
@@ -185,7 +184,7 @@ class VariantStudyService(AbstractStorageService):
     def _check_update_authorization(self, metadata: VariantStudy) -> None:
         if metadata.generation_task:
             try:
-                previous_task = self.task_service.status_task(metadata.generation_task, DEFAULT_ADMIN_USER)
+                previous_task = self.task_service.status_task(metadata.generation_task)
                 if not previous_task.status.is_final():
                     logger.error(f"{metadata.id} generation in progress")
                     raise CommandUpdateAuthorizationError(metadata.id)
@@ -663,10 +662,7 @@ class VariantStudyService(AbstractStorageService):
             self.repository.refresh(metadata)
             if metadata.generation_task:
                 try:
-                    previous_task = self.task_service.status_task(
-                        metadata.generation_task,
-                        DEFAULT_ADMIN_USER,
-                    )
+                    previous_task = self.task_service.status_task(metadata.generation_task)
                     if not previous_task.status.is_final():
                         logger.info(f"Returning already existing variant study {study_id} generation")
                         return str(metadata.generation_task)
@@ -831,7 +827,7 @@ class VariantStudyService(AbstractStorageService):
             # Create and run the generation task in a thread pool.
             task_id = self.generate_task(metadata)
             self.task_service.await_task(task_id, timeout)
-            result = self.task_service.status_task(task_id, DEFAULT_ADMIN_USER)
+            result = self.task_service.status_task(task_id)
             if not result.result:
                 raise ValueError("No task result")
             if result.result.success:
