@@ -24,6 +24,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
+from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import task_context
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
@@ -295,7 +296,7 @@ class TaskJobService(ITaskService):
                 permissions=PermissionInfo(owner=user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
+        future = self.threadpool.submit(self._run_task, action, task.id, user, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
@@ -393,14 +394,14 @@ class TaskJobService(ITaskService):
         self,
         callback: Task,
         task_id: str,
+        jwt_user: JWTUser,
         custom_event_messages: Optional[CustomTaskEventMessages] = None,
     ) -> None:
-        user = get_current_user()
         # We need to catch all exceptions so that the calling thread is guaranteed
         # to not die
         try:
             # attention: this function is executed in a thread, not in the main process
-            with task_context(task_id=task_id, user=user):
+            with task_context(task_id=task_id, user=jwt_user):
                 with db():
                     # Important to keep this retry for now,
                     # in case commit is not visible (read from replica ...)
