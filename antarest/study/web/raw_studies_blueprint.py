@@ -16,18 +16,16 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
@@ -90,12 +88,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study_data(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        depth: int = 3,
-        formatted: bool = True
-    ) -> Any:
+    def get_study_data(uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True) -> Any:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -166,10 +159,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(
-        uuid: str,
-        path: PATH_TYPE = "/"
-    ) -> Any:
+    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Any:
         """
         Fetches for a file in its original format from a study folder
 
@@ -208,7 +198,7 @@ def create_raw_study_routes(
                     "user/wind_solar/synthesis_windSolar.xlsx": {"value": "user/wind_solar/synthesis_windSolar.xlsx"}
                 },
             ),
-        ] = "/"
+        ] = "/",
     ) -> Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
@@ -220,11 +210,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
-    def edit_study(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        data: SUB_JSON = Body(default="")
-    ) -> Any:
+    def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
         """
         Updates raw data for a study by posting formatted data.
 
@@ -255,7 +241,7 @@ def create_raw_study_routes(
             False,
             description="Create file or parent directories if missing.",
         ),  # type: ignore
-        resource_type: ResourceType = ResourceType.FILE
+        resource_type: ResourceType = ResourceType.FILE,
     ) -> None:
         """
         Update raw data for a study by posting a raw file or by creating folder(s).
@@ -288,9 +274,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def validate(
-        uuid: str
-    ) -> List[str]:
+    def validate(uuid: str) -> List[str]:
         """
         Launches test validation on the raw data of a study.
         The validation is done recursively on all the files in the study
@@ -321,7 +305,7 @@ def create_raw_study_routes(
         ),
         with_index: bool = Query(  # type: ignore
             True, alias="index", description="Whether to include the index or not", title="With Index"
-        )
+        ),
     ) -> FileResponse:
         """
         Download a matrix in a given format.
@@ -344,10 +328,7 @@ def create_raw_study_routes(
         matrix_path = sanitize_string(matrix_path)
 
         df_matrix = study_service.get_matrix_with_index_and_header(
-            study_id=uuid,
-            path=matrix_path,
-            with_index=with_index,
-            with_header=with_header
+            study_id=uuid, path=matrix_path, with_index=with_index, with_header=with_header
         )
 
         matrix_name = Path(matrix_path).stem
@@ -361,7 +342,7 @@ def create_raw_study_routes(
             with_index,
             with_header,
             download_name,
-            download_log
+            download_log,
         )
 
     return bp
