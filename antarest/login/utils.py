@@ -56,7 +56,8 @@ def get_current_user() -> Optional[JWTUser]:
     return current_user
 
 
-def get_user_id(user: Optional[JWTUser]) -> str:
+def get_user_id() -> str:
+    user = get_current_user()
     return str(escape(str(user.id))) if user else "Unknown"
 
 

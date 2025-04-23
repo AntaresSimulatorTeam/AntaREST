@@ -228,7 +228,7 @@ class VariantStudyService(AbstractStorageService):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=get_user_id(get_current_user()),
+                user_id=get_user_id(),
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
@@ -264,7 +264,7 @@ class VariantStudyService(AbstractStorageService):
                 index=i,
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=get_user_id(get_current_user()),
+                user_id=get_user_id(),
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)

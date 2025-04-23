@@ -41,7 +41,7 @@ from antarest.login.model import (
     UserInfo,
 )
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_user_id
 
 logger = logging.getLogger(__name__)
 
@@ -264,7 +264,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
         response_model=List[BotDTO],
     )
     def get_all_bots(owner: Optional[int] = None) -> Any:
-        logger.info(f"Fetching bot list for {owner or get_user_id(get_current_user())}")
+        logger.info(f"Fetching bot list for {owner or get_user_id()}")
 
         bots = service.get_all_bots_by_owner(owner) if owner else service.get_all_bots()
         return [b.to_dto() for b in bots]

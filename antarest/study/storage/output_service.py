@@ -173,7 +173,7 @@ class OutputService:
         logger.info(
             "study %s output listing asked by user %s",
             study_id,
-            get_user_id(get_current_user()),
+            get_user_id(),
         )
 
         return self._storage.get_study_sim_result(study)
@@ -205,7 +205,7 @@ class OutputService:
 
         output_id = self._storage.import_output(study, output, output_name_suffix)
         remove_from_cache(cache=self._study_service.cache_service, root_id=study.id)
-        logger.info("output added to study %s by user %s", uuid, get_user_id(get_current_user()))
+        logger.info("output added to study %s by user %s", uuid, get_user_id())
 
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
             self.unarchive_output(uuid, output_id, not is_managed(study))
