@@ -29,7 +29,7 @@ from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, I
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import (
     TaskJob,
     TaskJobLog,
@@ -102,10 +102,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     # Test Case: list tasks
     # =====================
 
-    tasks = service.list_tasks(
-        TaskListFilter(),
-        request_params=RequestParameters(user=admin_user),
-    )
+    tasks = service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
     assert tasks[0].status == TaskStatus.FAILED
     assert tasks[0].creation_date_utc == str(creation_date)
@@ -113,7 +110,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     # Test Case: get task status
     # ==========================
 
-    res = service.status_task("a", RequestParameters(user=admin_user))
+    res = service.status_task("a")
     assert res is not None
     expected = {
         "completion_date_utc": ANY,
@@ -141,15 +138,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
     def action_fail(notifier: ITaskNotifier) -> TaskResult:
         raise Exception("this action failed")
 
-    failed_id = service.add_task(
-        action_fail,
-        "failed action",
-        TaskType.COPY,
-        None,
-        None,
-        None,
-        RequestParameters(user=admin_user),
-    )
+    failed_id = service.add_task(action_fail, "failed action", TaskType.COPY, None, None, None)
     service.await_task(failed_id, timeout_sec=2)
 
     failed_task = task_job_repo.get(failed_id)
@@ -167,15 +156,7 @@ def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser)
         notifier.notify_message("end")
         return TaskResult(success=True, message="OK")
 
-    ok_id = service.add_task(
-        action_ok,
-        None,
-        TaskType.COPY,
-        None,
-        None,
-        None,
-        request_params=RequestParameters(user=admin_user),
-    )
+    ok_id = service.add_task(action_ok, None, TaskType.COPY, None, None, None)
     service.await_task(ok_id, timeout_sec=2)
 
     ok_task = task_job_repo.get(ok_id)
@@ -299,7 +280,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
     service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
 
     with pytest.raises(UserHasNotPermissionError):
-        service.cancel_task("a", RequestParameters())
+        service.cancel_task("a")
 
     # The event_bus fixture is actually a EventBusService with LocalEventBus backend
     backend = t.cast(LocalEventBus, t.cast(EventBusService, event_bus).backend)
@@ -309,7 +290,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
 
     backend.clear_events()
 
-    service.cancel_task("b", RequestParameters(user=admin_user), dispatch=True)
+    service.cancel_task("b", dispatch=True)
 
     collected_events = backend.get_events()
 
@@ -325,7 +306,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
 
     backend.clear_events()
 
-    service.cancel_task("a", RequestParameters(user=admin_user), dispatch=True)
+    service.cancel_task("a", dispatch=True)
 
     collected_events = backend.get_events()
     assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
@@ -432,23 +413,23 @@ def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEven
     user_2 = JWTUser(id=user2_id, type="user", impersonator=user2_id)
     for user in [None, user_2]:
         with pytest.raises(UserHasNotPermissionError):
-            service.get_task_progress(first_task.id, RequestParameters(user))
+            service.get_task_progress(first_task.id)
 
     # Asserts admin and user_1 can fetch the first_task progress
     user_1 = JWTUser(id=user1_id, type="user", impersonator=user1_id)
     for user in [user_1, admin_user]:
-        progress = service.get_task_progress(first_task.id, RequestParameters(user))
+        progress = service.get_task_progress(first_task.id)
         assert progress == 40
 
     # Asserts admin and user_2 can fetch the second_task progress
     for user in [user_2, admin_user]:
-        progress = service.get_task_progress(second_task.id, RequestParameters(user))
+        progress = service.get_task_progress(second_task.id)
         assert progress is None
 
     # Asserts fetching with a wrong id raises an Exception
     wrong_id = "foo_bar"
     with pytest.raises(HTTPException, match=f"Task {wrong_id} not found"):
-        service.get_task_progress(wrong_id, RequestParameters(user))
+        service.get_task_progress(wrong_id)
 
 
 @with_db_context
@@ -474,12 +455,6 @@ def test_ts_generation_task(
     raw_study_path = tmp_path / "study"
 
     regular_user = User(id=99, name="regular")
-    jwt_user = Mock(
-        spec=JWTUser,
-        id=regular_user.id,
-        type="users",
-        impersonator=regular_user.id,
-    )
     db.session.add(regular_user)
     db.session.commit()
 
@@ -577,12 +552,11 @@ nominalcapacity = 14.0
         ref_id=raw_study.id,
         progress=0,
         custom_event_messages=None,
-        request_params=RequestParameters(jwt_user),
     )
 
     # Await task
     study_service.task_service.await_task(task_id, 2)
-    tasks = study_service.task_service.list_tasks(TaskListFilter(), RequestParameters(jwt_user))
+    tasks = study_service.task_service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
     task = tasks[0]
     assert task.ref_id == raw_study.id
@@ -640,13 +614,12 @@ def test_task_user(core_config: Config, event_bus: IEventBus):
         ref_id=None,
         progress=None,
         custom_event_messages=None,
-        request_params=RequestParameters(jwt_user),
     )
 
     task_job_service.await_task(result, 10)
 
     # Check whether the owner is the created user and not the admin one
-    task_list = task_job_service.list_tasks(TaskListFilter(), RequestParameters(jwt_user))
+    task_list = task_job_service.list_tasks(TaskListFilter())
     assert len(task_list) == 1
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
