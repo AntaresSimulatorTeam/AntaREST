@@ -305,12 +305,13 @@ class LoginService:
 
         groups = [r.group for r in self.roles.get_all_by_user(user.id)]
 
-        if user and any(
+        current_user = get_current_user()
+        if current_user and any(
             (
-                user.is_site_admin(),
-                user.is_in_group(groups),
-                user.is_himself(user),
-                user.is_bot_of(user),
+                current_user.is_site_admin(),
+                current_user.is_in_group(groups),
+                current_user.is_himself(user),
+                current_user.is_bot_of(user),
             )
         ):
             return user
