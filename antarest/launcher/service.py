@@ -587,11 +587,7 @@ class LauncherService:
         if output_path.exists():
             logger.info(f"Exporting {job_id} fallback output")
             export_name = f"Job output {output_path.name} export"
-            export_file_download = self.file_transfer_manager.request_download(
-                f"{job_id}.zip",
-                export_name,
-                params.user,
-            )
+            export_file_download = self.file_transfer_manager.request_download(f"{job_id}.zip", export_name)
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
 

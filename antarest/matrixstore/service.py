@@ -486,9 +486,7 @@ class MatrixService(ISimpleMatrixService):
         logger.info(f"Exporting matrix dataset {dataset_name}")
         export_name = f"Exporting matrix dataset {dataset_name}"
         export_file_download = self.file_transfer_manager.request_download(
-            f"matrixdataset-{dataset_name}.zip",
-            export_name,
-            get_current_user(),
+            f"matrixdataset-{dataset_name}.zip", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id

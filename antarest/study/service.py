@@ -1236,7 +1236,7 @@ class StudyService:
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name, params.user
+            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id

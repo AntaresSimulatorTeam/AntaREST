@@ -24,7 +24,6 @@ from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadNotFound, FileDownloadNotReady
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
 from antarest.login.utils import get_current_user
@@ -55,13 +54,13 @@ class FileTransferManager:
         self,
         filename: str,
         name: Optional[str] = None,
-        owner: Optional[JWTUser] = None,
         use_notification: bool = True,
         expiration_time_in_minutes: int = 0,
     ) -> FileDownload:
         fh, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
         os.close(fh)
         tmpfile = Path(path)
+        owner = get_current_user()
         download = FileDownload(
             id=str(uuid.uuid4()),
             filename=filename,

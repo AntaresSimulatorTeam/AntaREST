@@ -41,7 +41,6 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
@@ -49,6 +48,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
+from antarest.login.utils import get_current_user
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
@@ -217,7 +217,6 @@ def study_matcher(
 
 
 def assert_permission_on_studies(
-    user: Optional[JWTUser],
     studies: Sequence[Study | StudyMetadataDTO],
     permission_type: StudyPermissionType,
     *,
@@ -227,7 +226,6 @@ def assert_permission_on_studies(
     Asserts whether the provided user has the required permissions on the given studies.
 
     Args:
-        user: The user whose permissions need to be verified.
         studies: The studies for which permissions need to be verified.
         permission_type: The type of permission to be checked for the user.
         raising: If set to `True`, raises `UserHasNotPermissionError` when the permission check fails.
@@ -239,6 +237,7 @@ def assert_permission_on_studies(
         `UserHasNotPermissionError`: If the raising parameter is set to `True`
             and the user does not have the required permissions.
     """
+    user = get_current_user()
     if not user:
         logger.error("FAIL permission: user is not logged")
         raise UserHasNotPermissionError()
@@ -257,7 +256,6 @@ def assert_permission_on_studies(
 
 
 def assert_permission(
-    user: Optional[JWTUser],
     study: Optional[Study | StudyMetadataDTO],
     permission_type: StudyPermissionType,
     raising: bool = True,
@@ -279,7 +277,7 @@ def assert_permission(
             and the user does not have the required permissions.
     """
     studies = [study] if study else []
-    return assert_permission_on_studies(user, studies, permission_type, raising=raising)
+    return assert_permission_on_studies(studies, permission_type, raising=raising)
 
 
 MATRIX_INPUT_DAYS_COUNT = 365
