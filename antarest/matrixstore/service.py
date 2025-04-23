@@ -31,7 +31,7 @@ from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -39,6 +39,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
+from antarest.login.utils import get_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
     Matrix,
@@ -296,34 +297,24 @@ class MatrixService(ISimpleMatrixService):
         matrix = matrix.reshape((1, 0)) if matrix.size == 0 else matrix
         return self.create(pd.DataFrame(data=matrix))
 
-    def get_dataset(
-        self,
-        id: str,
-        params: RequestParameters,
-    ) -> Optional[MatrixDataSet]:
-        if not params.user:
-            raise UserHasNotPermissionError()
+    def get_dataset(self, id: str) -> Optional[MatrixDataSet]:
         dataset = self.repo_dataset.get(id)
         if dataset is None:
             raise MatrixDataSetNotFound()
 
-        MatrixService.check_access_permission(dataset, params.user, raise_error=True)
+        MatrixService.check_access_permission(dataset, raise_error=True)
         return dataset
 
-    def create_dataset(
-        self,
-        dataset_info: MatrixDataSetUpdateDTO,
-        matrices: List[MatrixInfoDTO],
-        params: RequestParameters,
-    ) -> MatrixDataSet:
-        if not params.user:
+    def create_dataset(self, dataset_info: MatrixDataSetUpdateDTO, matrices: List[MatrixInfoDTO]) -> MatrixDataSet:
+        user = get_current_user()
+        if not user:
             raise UserHasNotPermissionError()
 
-        groups = [self.user_service.get_group(group_id, params) for group_id in dataset_info.groups]
+        groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
         dataset = MatrixDataSet(
             name=dataset_info.name,
             public=dataset_info.public,
-            owner_id=params.user.impersonator,
+            owner_id=user.impersonator,
             groups=groups,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
@@ -335,19 +326,12 @@ class MatrixService(ISimpleMatrixService):
 
         return self.repo_dataset.save(dataset)
 
-    def update_dataset(
-        self,
-        dataset_id: str,
-        dataset_info: MatrixDataSetUpdateDTO,
-        params: RequestParameters,
-    ) -> MatrixDataSet:
-        if not params.user:
-            raise UserHasNotPermissionError()
+    def update_dataset(self, dataset_id: str, dataset_info: MatrixDataSetUpdateDTO) -> MatrixDataSet:
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        MatrixService.check_access_permission(dataset, params.user, write=True, raise_error=True)
-        groups = [self.user_service.get_group(group_id, params) for group_id in dataset_info.groups]
+        MatrixService.check_access_permission(dataset, write=True, raise_error=True)
+        groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
         updated_dataset = MatrixDataSet(
             id=dataset_id,
             name=dataset_info.name,
@@ -357,12 +341,7 @@ class MatrixService(ISimpleMatrixService):
         )
         return self.repo_dataset.save(updated_dataset)
 
-    def list(
-        self,
-        dataset_name: Optional[str],
-        filter_own: bool,
-        params: RequestParameters,
-    ) -> List[MatrixDataSetDTO]:
+    def list(self, dataset_name: Optional[str], filter_own: bool) -> List[MatrixDataSetDTO]:
         """
         List matrix user metadata
 
@@ -374,7 +353,7 @@ class MatrixService(ISimpleMatrixService):
         Returns:
             the list of matching MatrixUserMetadata
         """
-        user = params.user
+        user = get_current_user()
         if not user:
             raise UserHasNotPermissionError()
 
@@ -387,16 +366,13 @@ class MatrixService(ISimpleMatrixService):
             or len([group for group in dataset.groups if group.id in [jwtgroup.id for jwtgroup in user.groups]]) > 0
         ]
 
-    def delete_dataset(self, id: str, params: RequestParameters) -> str:
-        if not params.user:
-            raise UserHasNotPermissionError()
-
+    def delete_dataset(self, id: str) -> str:
         dataset = self.repo_dataset.get(id)
 
         if dataset is None:
             raise MatrixDataSetNotFound()
 
-        MatrixService.check_access_permission(dataset, params.user, write=True, raise_error=True)
+        MatrixService.check_access_permission(dataset, write=True, raise_error=True)
         self.repo_dataset.delete(id)
         return id
 
@@ -492,42 +468,27 @@ class MatrixService(ISimpleMatrixService):
             stopwatch.log_elapsed(lambda x: logger.info(f"Matrix dataset exported (zipped mode) in {x}s"))
         return str(export_path)
 
-    def download_dataset(
-        self,
-        dataset_id: str,
-        params: RequestParameters,
-    ) -> FileDownloadTaskDTO:
+    def download_dataset(self, dataset_id: str) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
         Parameters:
             dataset_id: matrix dataset id
             params: request parameters
         """
-        if not params.user:
-            raise UserHasNotPermissionError()
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        MatrixService.check_access_permission(dataset, params.user, raise_error=True)
+        MatrixService.check_access_permission(dataset, raise_error=True)
 
-        return self.download_matrix_list(
-            [mtx_info.matrix_id for mtx_info in dataset.matrices],
-            dataset.id,
-            params,
-        )
+        return self.download_matrix_list([mtx_info.matrix_id for mtx_info in dataset.matrices], dataset.id)
 
-    def download_matrix_list(
-        self,
-        matrix_list: Sequence[str],
-        dataset_name: str,
-        params: RequestParameters,
-    ) -> FileDownloadTaskDTO:
+    def download_matrix_list(self, matrix_list: Sequence[str], dataset_name: str) -> FileDownloadTaskDTO:
         logger.info(f"Exporting matrix dataset {dataset_name}")
         export_name = f"Exporting matrix dataset {dataset_name}"
         export_file_download = self.file_transfer_manager.request_download(
             f"matrixdataset-{dataset_name}.zip",
             export_name,
-            params.user,
+            get_current_user(),
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -545,23 +506,12 @@ class MatrixService(ISimpleMatrixService):
                 raise e
 
         task_id = self.task_service.add_task(
-            export_task,
-            export_name,
-            task_type=TaskType.EXPORT,
-            ref_id=None,
-            progress=None,
-            custom_event_messages=None,
-            request_params=params,
+            export_task, export_name, task_type=TaskType.EXPORT, ref_id=None, progress=None, custom_event_messages=None
         )
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
-    def download_matrix(
-        self,
-        matrix_id: str,
-        filepath: Path,
-        params: RequestParameters,
-    ) -> None:
+    def download_matrix(self, matrix_id: str, filepath: Path) -> None:
         """
         Prepare the matrix download if the user has permissions to do it.
 
@@ -570,7 +520,7 @@ class MatrixService(ISimpleMatrixService):
             filepath: File path of the TSV file to write.
             params: Request parameters.
         """
-        if not params.user:
+        if not get_current_user():
             raise UserHasNotPermissionError()
         matrix = self.get(matrix_id)
         if matrix.empty:

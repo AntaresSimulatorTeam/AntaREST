@@ -27,7 +27,7 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import task_context
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
@@ -42,6 +42,7 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import retry
+from antarest.login.utils import get_current_user
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -72,7 +73,6 @@ class ITaskService(ABC):
         task_args: Dict[str, int | float | bool | str],
         name: Optional[str],
         ref_id: Optional[str],
-        request_params: RequestParameters,
     ) -> Optional[str]:
         raise NotImplementedError()
 
@@ -85,7 +85,6 @@ class ITaskService(ABC):
         ref_id: Optional[str],
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
-        request_params: RequestParameters,
     ) -> str:
         raise NotImplementedError()
 
@@ -93,13 +92,12 @@ class ITaskService(ABC):
     def status_task(
         self,
         task_id: str,
-        request_params: RequestParameters,
         with_logs: bool = False,
     ) -> TaskDTO:
         raise NotImplementedError()
 
     @abstractmethod
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -230,19 +228,13 @@ class TaskJobService(ITaskService):
         task_args: Dict[str, int | float | bool | str],
         name: Optional[str],
         ref_id: Optional[str],
-        request_params: RequestParameters,
     ) -> Optional[str]:
         if not self.check_remote_worker_for_queue(task_queue):
             logger.warning(f"Failed to find configured remote worker for task queue {task_queue}")
             return None
 
-        task = self._create_task(name, task_type, ref_id, None, request_params)
-        self._launch_task(
-            self._create_worker_task(str(task.id), task_queue, task_args),
-            task,
-            None,
-            request_params,
-        )
+        task = self._create_task(name, task_type, ref_id, None)
+        self._launch_task(self._create_worker_task(str(task.id), task_queue, task_args), task, None)
         return str(task.id)
 
     @override
@@ -254,10 +246,9 @@ class TaskJobService(ITaskService):
         ref_id: Optional[str],
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
-        request_params: RequestParameters,
     ) -> str:
-        task = self._create_task(name, task_type, ref_id, progress, request_params)
-        self._launch_task(action, task, custom_event_messages, request_params)
+        task = self._create_task(name, task_type, ref_id, progress)
+        self._launch_task(action, task, custom_event_messages)
         return str(task.id)
 
     def _create_task(
@@ -266,15 +257,15 @@ class TaskJobService(ITaskService):
         task_type: Optional[TaskType],
         ref_id: Optional[str],
         progress: Optional[int],
-        request_params: RequestParameters,
     ) -> TaskJob:
-        if not request_params.user:
+        user = get_current_user()
+        if not user:
             raise MustBeAuthenticatedError()
 
         return self.repo.save(
             TaskJob(
                 name=name or "Unnamed",
-                owner_id=request_params.user.impersonator,
+                owner_id=user.impersonator,
                 type=task_type,
                 ref_id=ref_id,
                 progress=progress,
@@ -286,9 +277,9 @@ class TaskJobService(ITaskService):
         action: Task,
         task: TaskJob,
         custom_event_messages: Optional[CustomTaskEventMessages],
-        request_params: RequestParameters,
     ) -> None:
-        if not request_params.user:
+        user = get_current_user()
+        if not user:
             raise MustBeAuthenticatedError()
 
         self.event_bus.push(
@@ -302,10 +293,10 @@ class TaskJobService(ITaskService):
                     type=task.type,
                     study_id=task.ref_id,
                 ).model_dump(),
-                permissions=PermissionInfo(owner=request_params.user.impersonator),
+                permissions=PermissionInfo(owner=user.impersonator),
             )
         )
-        future = self.threadpool.submit(self._run_task, action, task.id, request_params.user, custom_event_messages)
+        future = self.threadpool.submit(self._run_task, action, task.id, custom_event_messages)
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
@@ -314,9 +305,10 @@ class TaskJobService(ITaskService):
 
         return task_event_callback
 
-    def cancel_task(self, task_id: str, params: RequestParameters, dispatch: bool = False) -> None:
+    def cancel_task(self, task_id: str, dispatch: bool = False) -> None:
         task = self.repo.get_or_raise(task_id)
-        if params.user and (params.user.is_site_admin() or task.owner_id == params.user.impersonator):
+        user = get_current_user()
+        if user and (user.is_site_admin() or task.owner_id == user.impersonator):
             self._cancel_task(task_id, dispatch)
         else:
             raise UserHasNotPermissionError()
@@ -341,10 +333,10 @@ class TaskJobService(ITaskService):
     def status_task(
         self,
         task_id: str,
-        request_params: RequestParameters,
         with_logs: bool = False,
     ) -> TaskDTO:
-        if not request_params.user:
+        user = get_current_user()
+        if not user:
             raise MustBeAuthenticatedError()
         if task := self.repo.get(task_id):
             return task.to_dto(with_logs)
@@ -355,13 +347,14 @@ class TaskJobService(ITaskService):
             )
 
     @override
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
-        return [task.to_dto() for task in self.list_db_tasks(task_filter, request_params)]
+    def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
+        return [task.to_dto() for task in self.list_db_tasks(task_filter)]
 
-    def list_db_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskJob]:
-        if not request_params.user:
+    def list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
+        current_user = get_current_user()
+        if not current_user:
             raise MustBeAuthenticatedError()
-        user = None if request_params.user.is_site_admin() else request_params.user.impersonator
+        user = None if current_user.is_site_admin() else current_user.impersonator
         return self.repo.list(task_filter, user)
 
     @override
@@ -515,9 +508,9 @@ class TaskJobService(ITaskService):
                     exc_info=inner_exc,
                 )
 
-    def get_task_progress(self, task_id: str, params: RequestParameters) -> Optional[int]:
+    def get_task_progress(self, task_id: str) -> Optional[int]:
         task = self.repo.get_or_raise(task_id)
-        user = params.user
+        user = get_current_user()
         if user and (user.is_site_admin() or user.is_admin_token() or task.owner_id == user.impersonator):
             return task.progress
         else:
