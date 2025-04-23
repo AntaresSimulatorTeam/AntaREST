@@ -16,7 +16,6 @@ from unittest.mock import patch
 import pytest
 
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.login.model import (
     ADMIN_ID,
