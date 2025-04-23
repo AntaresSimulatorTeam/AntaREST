@@ -180,7 +180,9 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.get_launcher_by_id(launcher_parameters.launcher_id).xpress_dir:  # type: ignore
+                if xpress_dir_path := self.config.launcher.get_launcher_by_id(
+                    launcher_parameters.launcher_id
+                ).xpress_dir:  # type: ignore
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:

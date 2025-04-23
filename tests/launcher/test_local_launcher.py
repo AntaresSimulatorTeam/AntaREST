@@ -93,7 +93,7 @@ def test_compute(tmp_path: Path, launcher_config: Config):
         auto_unzip=True,
         output_suffix="",
         other_options="",
-        launcher_id="id"
+        launcher_id="id",
     )
     local_launcher._compute(
         antares_solver_path=solver_path,
