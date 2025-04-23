@@ -23,7 +23,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, InvalidConfigurationError, Launcher, NbCoresConfig, SlurmConfig
+from antarest.core.config import Config, Launcher, NbCoresConfig, SlurmConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -676,7 +676,6 @@ class LauncherService:
                 "launcherStatus": "SUCCESS",
             }
             return LauncherLoadDTO(**args)
-
 
     def get_solver_versions(self, solver: str) -> List[str]:
         """
