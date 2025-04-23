@@ -19,15 +19,15 @@ from antarest.core.config import InternalMatrixFormat
 
 
 def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pd.DataFrame:
-    if path.stat().st_size == 0:
-        return pd.DataFrame()
-
     if matrix_format == InternalMatrixFormat.TSV:
         # Based on the matrix version, we assume its format
         if matrix_version == 1:
             df = pd.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
         else:
-            df = pd.read_csv(path, sep="\t", header=0)
+            try:
+                df = pd.read_csv(path, sep="\t", header=0)
+            except pd.errors.EmptyDataError:  # Pandas cannot read an empty DataFrame
+                df = pd.DataFrame()
     elif matrix_format == InternalMatrixFormat.HDF:
         df = cast(pd.DataFrame, pd.read_hdf(path))
     elif matrix_format == InternalMatrixFormat.PARQUET:
@@ -45,10 +45,6 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
 
 
 def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pd.DataFrame, path: Path) -> None:
-    if dataframe.empty:
-        path.touch()
-        return
-
     if matrix_format == InternalMatrixFormat.TSV:
         dataframe.to_csv(path, sep="\t", float_format="%.6f", index=False)
     elif matrix_format == InternalMatrixFormat.HDF:

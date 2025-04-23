@@ -221,18 +221,12 @@ class TestMatrixContentRepository:
 
             # Test with an empty matrix
             matrix_hash = matrix_content_repo.save(pd.DataFrame([])).hash
-            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
-
-            assert not matrix_file.read_bytes()
             assert retrieved_matrix.empty
 
             # Test with an empty 2D array
             matrix_hash = matrix_content_repo.save(pd.DataFrame([[]])).hash
-            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
-
-            assert not matrix_file.read_bytes()
             assert retrieved_matrix.empty
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
