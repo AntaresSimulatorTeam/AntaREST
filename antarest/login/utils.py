@@ -12,6 +12,7 @@
 
 import contextlib
 from contextvars import ContextVar
+from re import escape
 from typing import Iterator, Optional
 
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -53,6 +54,10 @@ class CurrentUserMiddleware(BaseHTTPMiddleware):
 def get_current_user() -> Optional[JWTUser]:
     current_user = _current_user.get()
     return current_user
+
+
+def get_user_id(user: Optional[JWTUser]) -> str:
+    return str(escape(str(user.id))) if user else "Unknown"
 
 
 @contextlib.contextmanager

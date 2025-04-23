@@ -26,7 +26,8 @@ from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
+from antarest.login.utils import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -157,14 +158,11 @@ class FileTransferManager:
         background_tasks.add_task(FileTransferManager._cleanup_file, tmppath)
         return tmppath
 
-    def list_downloads(self, params: RequestParameters) -> List[FileDownloadDTO]:
-        if not params.user:
+    def list_downloads(self) -> List[FileDownloadDTO]:
+        user = get_current_user()
+        if not user:
             raise MustBeAuthenticatedError()
-        downloads = (
-            self.repository.get_all()
-            if params.user.is_site_admin()
-            else self.repository.get_all(params.user.impersonator)
-        )
+        downloads = self.repository.get_all() if user.is_site_admin() else self.repository.get_all(user.impersonator)
         self._clean_up_expired_downloads(downloads)
         return [d.to_dto() for d in downloads]
 
@@ -199,12 +197,13 @@ class FileTransferManager:
                 )
             )
 
-    def fetch_download(self, download_id: str, params: RequestParameters) -> FileDownload:
+    def fetch_download(self, download_id: str) -> FileDownload:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
 
-        if not params.user or not (params.user.is_site_admin() or download.owner == params.user.impersonator):
+        user = get_current_user()
+        if not user or not (user.is_site_admin() or download.owner == user.impersonator):
             raise UserHasNotPermissionError()
 
         if not download.ready:
