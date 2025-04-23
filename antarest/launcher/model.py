@@ -46,7 +46,7 @@ class LauncherParametersDTO(AntaresBaseModel):
     auto_unzip: bool = True
     output_suffix: Optional[str] = None
     other_options: Optional[str] = None
-    launcher_id: str = ""
+    launcher_id: str = "local_id"
 
     # add extensions field here
 

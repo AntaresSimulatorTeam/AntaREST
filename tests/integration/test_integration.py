@@ -280,7 +280,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     job_id = res.json()["job_id"]
 
-    res = client.get("/v1/launcher/load")
+    res = client.get("/v1/launcher/load?launcher_id=local_id")
     assert res.status_code == 200, res.json()
     launcher_load = LauncherLoadDTO(**res.json())
     assert launcher_load.allocated_cpu_rate == 100 / (os.cpu_count() or 1)
@@ -296,7 +296,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert job_info == {
         "id": job_id,
         "study_id": study_id,
-        "launcher": "local",
+        "launcher": "local_id",
         "launcher_params": ANY,
         "status": "pending",
         "creation_date": ANY,

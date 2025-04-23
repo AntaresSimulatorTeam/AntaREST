@@ -27,8 +27,8 @@ def get_config(config_path: Path) -> Config:
 
 
 def clean_locks_from_config(config: Config) -> None:
-    for config in config.launcher.get_slurm_configs():
-        slurm_workspace = config.local_workspace
+    for slurm_config in config.launcher.get_slurm_configs():
+        slurm_workspace = slurm_config.local_workspace
         if slurm_workspace.exists() and slurm_workspace.is_dir():
             for workspace in slurm_workspace.iterdir():
                 lock_file = workspace / WORKSPACE_LOCK_FILE_NAME

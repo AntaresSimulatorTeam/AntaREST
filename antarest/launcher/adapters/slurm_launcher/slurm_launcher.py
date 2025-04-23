@@ -151,7 +151,10 @@ class SlurmLauncher(AbstractLauncher):
         retrieve_existing_jobs: bool = False,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        self.slurm_config: SlurmConfig = config.launcher.get_launcher_by_id(launcher_id)
+        slurm_config = config.launcher.get_launcher_by_id(launcher_id)
+        if not isinstance(slurm_config, SlurmConfig):
+            raise TypeError(f"Launcher {launcher_id} is not a SlurmConfig")
+        self.slurm_config: SlurmConfig = slurm_config
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])

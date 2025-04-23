@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from antares.study.version import SolverVersion
 from typing_extensions import override
 
-from antarest.core.config import Config
+from antarest.core.config import Config, LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -58,9 +58,11 @@ class LocalLauncher(AbstractLauncher):
 
     def _select_best_binary(self, version: str, launcher_id: str) -> Path:
         local = self.config.launcher.get_launcher_by_id(launcher_id)
-        if local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        elif version in local.binaries:
+
+        if not isinstance(local, LocalConfig):
+            raise LauncherInitException("Invalid parameter 'launcher.local'")
+
+        if version in local.binaries:
             antares_solver_path = local.binaries[version]
         else:
             # sourcery skip: extract-method, max-min-default
@@ -178,7 +180,7 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.local.xpress_dir:  # type: ignore
+                if xpress_dir_path := self.config.launcher.get_launcher_by_id(launcher_parameters.launcher_id).xpress_dir:  # type: ignore
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:
