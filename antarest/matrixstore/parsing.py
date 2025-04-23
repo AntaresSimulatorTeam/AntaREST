@@ -26,7 +26,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
         else:
             try:
                 df = pd.read_csv(path, sep="\t", header=0)
-            except pd.errors.EmptyDataError:  # Pandas cannot read an empty DataFrame
+            except pd.errors.EmptyDataError:  # `read_csv` method can fail if the dataframe is empty
                 df = pd.DataFrame()
     elif matrix_format == InternalMatrixFormat.HDF:
         df = cast(pd.DataFrame, pd.read_hdf(path))
