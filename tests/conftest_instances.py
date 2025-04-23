@@ -21,9 +21,13 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
 
 
-@pytest.fixture
-def admin_user() -> User:
+def create_admin_user() -> User:
     with db(commit_on_exit=True):
         user = User(id=DEFAULT_ADMIN_USER.id)
         db.session.add(user)
     return DEFAULT_ADMIN_USER
+
+
+@pytest.fixture
+def admin_user() -> User:
+    return create_admin_user()

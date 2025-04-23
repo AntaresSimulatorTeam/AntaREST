@@ -9,13 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
 import pandas as pd
 import pytest
+from helpers import with_admin_user, with_db_context
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
@@ -168,22 +168,23 @@ def test_get_matrices_used_in_variant_studies(
         assert "[[1,2,4]]" in matrices
 
 
+@with_db_context
+@with_admin_user
 @pytest.mark.unit_test
 def test_get_matrices_used_in_dataset(matrix_garbage_collector: MatrixGarbageCollector, matrix_service: MatrixService):
     matrix_garbage_collector.dataset_repository = MatrixDataSetRepository()
 
-    with db():
-        matrix1_id = matrix_service.create(pd.DataFrame(np.ones((1, 1))))
-        matrix2_id = matrix_service.create(pd.DataFrame(np.ones((2, 1))))
-        matrix_service.create_dataset(
-            dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
-            matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
-        )
+    matrix1_id = matrix_service.create(pd.DataFrame(np.ones((1, 1))))
+    matrix2_id = matrix_service.create(pd.DataFrame(np.ones((2, 1))))
+    matrix_service.create_dataset(
+        dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
+        matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
+    )
 
-        matrices = matrix_garbage_collector._get_datasets_matrices()
-        assert len(matrices) == 2
-        assert matrix1_id in matrices
-        assert matrix2_id in matrices
+    matrices = matrix_garbage_collector._get_datasets_matrices()
+    assert len(matrices) == 2
+    assert matrix1_id in matrices
+    assert matrix2_id in matrices
 
 
 @pytest.mark.unit_test
