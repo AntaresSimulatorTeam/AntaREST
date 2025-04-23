@@ -12,6 +12,7 @@
 from pathlib import Path
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from antarest.core.config import InternalMatrixFormat
@@ -23,8 +24,10 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
 
     if matrix_format == InternalMatrixFormat.TSV:
         # Based on the matrix version, we assume its format
-        header = None if matrix_version == 1 else 0
-        df = pd.read_csv(path, sep="\t", header=header)
+        if matrix_version == 1:
+            df = pd.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
+        else:
+            df = pd.read_csv(path, sep="\t", header=0)
     elif matrix_format == InternalMatrixFormat.HDF:
         df = cast(pd.DataFrame, pd.read_hdf(path))
     elif matrix_format == InternalMatrixFormat.PARQUET:
@@ -42,6 +45,10 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
 
 
 def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pd.DataFrame, path: Path) -> None:
+    if dataframe.empty:
+        path.touch()
+        return
+
     if matrix_format == InternalMatrixFormat.TSV:
         dataframe.to_csv(path, sep="\t", float_format="%.6f", index=False)
     elif matrix_format == InternalMatrixFormat.HDF:
