@@ -26,7 +26,6 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.service import ITaskNotifier
@@ -783,8 +782,7 @@ class TestSnapshotGenerator:
         with db():
             # Create un new variant
             name = "my-variant"
-            params = RequestParameters(user=jwt_user)
-            variant_study = variant_study_service.create_variant_study(root_study_id, name, params=params)
+            variant_study = variant_study_service.create_variant_study(root_study_id, name)
             study_version = StudyVersion.parse(variant_study.version)
 
             # Append some commands
@@ -805,8 +803,7 @@ class TestSnapshotGenerator:
                         },
                         study_version=study_version,
                     ),
-                ],
-                params=params,
+                ]
             )
             return variant_study
 
@@ -1101,14 +1098,12 @@ class TestSnapshotGenerator:
         The snapshot directory must be removed (and no temporary directory must be left).
         """
         # Append an invalid command to the variant study.
-        params = RequestParameters(user=jwt_user)
         study_version = StudyVersion.parse(variant_study.version)
         variant_study_service.append_commands(
             variant_study.id,
             [
                 CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),  # duplicate
-            ],
-            params=params,
+            ]
         )
 
         generator = SnapshotGenerator(
@@ -1228,9 +1223,8 @@ class TestSnapshotGenerator:
             from_scratch=False,
         )
 
-        # Create a new variant of the variant study.
-        params = RequestParameters(user=jwt_user)
-        new_variant = variant_study_service.create_variant_study(variant_study.id, "my-variant", params=params)
+        # Create a new variant of the variant study
+        new_variant = variant_study_service.create_variant_study(variant_study.id, "my-variant")
 
         # Append some commands to the new variant.
         study_version = StudyVersion.parse(new_variant.version)
@@ -1238,8 +1232,7 @@ class TestSnapshotGenerator:
             new_variant.id,
             [
                 CommandDTO(action="create_area", args={"area_name": "East"}, study_version=study_version),
-            ],
-            params=params,
+            ]
         )
 
         # Generate the variant again.
