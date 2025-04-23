@@ -12,11 +12,10 @@
 
 import multiprocessing
 import tempfile
-from abc import ABC
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import Dict, List, Optional
 
 import yaml
 
@@ -282,23 +281,18 @@ class TimeLimitConfig:
 
 
 @dataclass(frozen=True)
-class AbstractLauncherConfig(ABC):
-    id: str = ""
-    name: str = ""
-    type: Launcher = Launcher.DEFAULT
-
-
-@dataclass(frozen=True)
-class LocalConfig(AbstractLauncherConfig):
+class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
+    id: str = ""
+    name: str = ""
+    type: Launcher = Launcher.LOCAL
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
     time_limit: TimeLimitConfig = TimeLimitConfig()
     xpress_dir: Optional[str] = None
     local_workspace: Path = Path("./local_workspace")
-    type: Launcher = Launcher.LOCAL
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LocalConfig":
@@ -343,11 +337,14 @@ class LocalConfig(AbstractLauncherConfig):
 
 
 @dataclass(frozen=True)
-class SlurmConfig(AbstractLauncherConfig):
+class SlurmConfig:
     """
     Sub config object dedicated to launcher module (slurm)
     """
 
+    id: str = ""
+    name: str = ""
+    type: Launcher = Launcher.SLURM
     local_workspace: Path = Path()
     username: str = ""
     hostname: str = ""
@@ -364,7 +361,6 @@ class SlurmConfig(AbstractLauncherConfig):
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
-    type: Launcher = Launcher.SLURM
 
     @classmethod
     def from_dict(cls, data: JSON) -> "SlurmConfig":
@@ -439,12 +435,12 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    configs: Optional[List[AbstractLauncherConfig]] = None
+    configs: Optional[List[LocalConfig | SlurmConfig]] = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
-        launchers: List[AbstractLauncherConfig] = []
+        launchers: List[LocalConfig | SlurmConfig] = []
         defaults = cls()
         default = data.get("default", cls.default)
         batch_size = data.get("batch_size", defaults.batch_size)
@@ -505,13 +501,9 @@ class LauncherConfig:
         if launcher_id == "default":
             launcher_id = self.default
         try:
-            config = next((launcher for launcher in self.configs or [] if launcher.id == launcher_id))
+            return next((launcher for launcher in self.configs or [] if launcher.id == launcher_id))
         except StopIteration:
             raise InvalidConfigurationError(launcher_id)
-        return cast(
-            LocalConfig | SlurmConfig,
-            config,
-        )
 
 
 @dataclass(frozen=True)

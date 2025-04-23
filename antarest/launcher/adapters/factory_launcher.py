@@ -13,7 +13,7 @@
 import logging
 from typing import Dict
 
-from antarest.core.config import Config, Launcher
+from antarest.core.config import Config, LocalConfig, SlurmConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
@@ -33,7 +33,7 @@ class FactoryLauncher:
     ) -> Dict[str, AbstractLauncher]:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
         for cfg in config.launcher.configs or []:
-            if cfg.type == Launcher.SLURM:
+            if isinstance(cfg, SlurmConfig):
                 dict_launchers[cfg.id] = SlurmLauncher(
                     config,
                     cfg.id,
@@ -42,7 +42,7 @@ class FactoryLauncher:
                     cache,
                     retrieve_existing_jobs=True,
                 )
-            elif cfg.type == Launcher.LOCAL:
+            elif isinstance(cfg, LocalConfig):
                 dict_launchers[cfg.id] = LocalLauncher(config, cfg.id, callbacks, event_bus, cache)
 
         return dict_launchers
