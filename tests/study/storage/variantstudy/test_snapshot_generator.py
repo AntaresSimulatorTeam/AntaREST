@@ -803,7 +803,7 @@ class TestSnapshotGenerator:
                         },
                         study_version=study_version,
                     ),
-                ]
+                ],
             )
             return variant_study
 
@@ -1103,7 +1103,7 @@ class TestSnapshotGenerator:
             variant_study.id,
             [
                 CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),  # duplicate
-            ]
+            ],
         )
 
         generator = SnapshotGenerator(
@@ -1232,7 +1232,7 @@ class TestSnapshotGenerator:
             new_variant.id,
             [
                 CommandDTO(action="create_area", args={"area_name": "East"}, study_version=study_version),
-            ]
+            ],
         )
 
         # Generate the variant again.

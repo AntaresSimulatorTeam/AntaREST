@@ -26,7 +26,7 @@ from starlette.datastructures import Headers
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
@@ -335,29 +335,25 @@ def test_dataset_lifecycle() -> None:
 
     service = MatrixService(repo, dataset_repo, content, Mock(), Mock(), Mock(), user_service)
 
-    userA = RequestParameters(
-        user=JWTUser(
-            id=1,
-            type="users",
-            impersonator=1,
-            groups=[JWTGroup(id="groupA", name="groupA", role=RoleType.READER)],
-        )
+    userA = JWTUser(
+        id=1,
+        type="users",
+        impersonator=1,
+        groups=[JWTGroup(id="groupA", name="groupA", role=RoleType.READER)],
     )
-    userB = RequestParameters(
-        user=JWTUser(
-            id=2,
-            type="users",
-            impersonator=2,
-            groups=[JWTGroup(id="groupB", name="groupB", role=RoleType.READER)],
-        )
+
+    userB = JWTUser(
+        id=2,
+        type="users",
+        impersonator=2,
+        groups=[JWTGroup(id="groupB", name="groupB", role=RoleType.READER)],
     )
-    botA = RequestParameters(
-        user=JWTUser(
-            id=3,
-            type="bots",
-            impersonator=1,
-            groups=[JWTGroup(id="groupA", name="groupA", role=RoleType.READER)],
-        )
+
+    botA = JWTUser(
+        id=3,
+        type="bots",
+        impersonator=1,
+        groups=[JWTGroup(id="groupA", name="groupA", role=RoleType.READER)],
     )
 
     dataset_info = MatrixDataSetUpdateDTO(
@@ -377,7 +373,7 @@ def test_dataset_lifecycle() -> None:
     ]
 
     user_service.get_group.return_value = Group(id="groupA", name="groupA")
-    service.create_dataset(dataset_info, matrices, params=userA)
+    service.create_dataset(dataset_info, matrices)
     assert dataset_repo.save.call_count == 1
     call = dataset_repo.save.call_args_list[0]
     assert call[0][0].name == "datasetA"

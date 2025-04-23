@@ -38,9 +38,8 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.launcher.model import (
@@ -115,18 +114,7 @@ class TestLauncherService:
         launcher_service._generate_new_id = lambda: str(uuid)
 
         storage_service_mock.get_user_name.return_value = "fake_user"
-        job_id = launcher_service.run_study(
-            "study_uuid",
-            "local",
-            LauncherParametersDTO(),
-            RequestParameters(
-                user=JWTUser(
-                    id=0,
-                    impersonator=0,
-                    type="users",
-                )
-            ),
-        )
+        job_id = launcher_service.run_study("study_uuid", "local", LauncherParametersDTO())
 
         assert job_id == str(uuid)
 
@@ -182,10 +170,7 @@ class TestLauncherService:
         )
 
         job_id = uuid4()
-        assert (
-            launcher_service.get_result(job_uuid=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == fake_execution_result
-        )
+        assert launcher_service.get_result(job_uuid=job_id) == fake_execution_result
 
     @pytest.mark.unit_test
     def test_service_get_result_from_database(self) -> None:
@@ -220,10 +205,7 @@ class TestLauncherService:
             cache=Mock(),
         )
 
-        assert (
-            launcher_service.get_result(job_uuid=uuid4(), params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == fake_execution_result
-        )
+        assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
     @pytest.mark.unit_test
     def test_service_get_jobs_from_database(self, db_session) -> None:
@@ -298,44 +280,15 @@ class TestLauncherService:
         )
 
         study_id = uuid4()
-        assert (
-            launcher_service.get_jobs(str(study_id), params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == fake_execution_result
-        )
+        assert launcher_service.get_jobs(str(study_id)) == fake_execution_result
         repository.find_by_study.assert_called_once_with(str(study_id))
-        assert (
-            launcher_service.get_jobs(None, params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == all_faked_execution_results
-        )
-        assert (
-            launcher_service.get_jobs(
-                None,
-                params=RequestParameters(
-                    user=JWTUser(
-                        id=2,
-                        impersonator=2,
-                        type="users",
-                        groups=[],
-                    )
-                ),
-            )
-            == []
-        )
+        assert launcher_service.get_jobs(None) == all_faked_execution_results
+        assert launcher_service.get_jobs(None) == []
 
         with pytest.raises(UserHasNotPermissionError):
-            launcher_service.remove_job(
-                "some job",
-                RequestParameters(
-                    user=JWTUser(
-                        id=2,
-                        impersonator=2,
-                        type="users",
-                        groups=[],
-                    )
-                ),
-            )
+            launcher_service.remove_job("some job")
 
-        launcher_service.remove_job("some job", RequestParameters(user=DEFAULT_ADMIN_USER))
+        launcher_service.remove_job("some job")
         repository.delete.assert_called_with("some job")
 
     @pytest.mark.unit_test
@@ -600,10 +553,7 @@ class TestLauncherService:
         launcher_service.job_result_repository.get.return_value = job_result_mock
         launcher_service.launchers = {"slurm": Mock()}
 
-        job_status = launcher_service.kill_job(
-            job_id=job_id,
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        )
+        job_status = launcher_service.kill_job(job_id=job_id)
 
         launcher_service.launchers[launcher].kill_job.assert_called_once_with(job_id=job_id)
 
@@ -681,36 +631,24 @@ class TestLauncherService:
         launcher_service.launchers = {"slurm": slurm_launcher}
         slurm_launcher.get_log.return_value = "launcher logs"
 
-        logs = launcher_service.get_log(job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDOUT)
         assert logs == "first message\nsecond message\nlauncher logs\nlast message"
-        logs = launcher_service.get_log(job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "launcher logs"
 
         study_service.get_logs.side_effect = ["some sim log", "error log"]
 
         job_result_mock.output_id = "some id"
-        logs = launcher_service.get_log(job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDOUT)
         assert logs == "first message\nsecond message\nsome sim log\nlast message"
 
-        logs = launcher_service.get_log(job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "error log"
 
         study_service.get_logs.assert_has_calls(
             [
-                call(
-                    "study_id",
-                    "some id",
-                    job_id,
-                    False,
-                    params=RequestParameters(DEFAULT_ADMIN_USER),
-                ),
-                call(
-                    "study_id",
-                    "some id",
-                    job_id,
-                    True,
-                    params=RequestParameters(DEFAULT_ADMIN_USER),
-                ),
+                call("study_id", "some id", job_id, False),
+                call("study_id", "some id", job_id, True),
             ]
         )
 
@@ -784,7 +722,7 @@ class TestLauncherService:
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
         launcher_service.output_service.import_output.assert_called()
 
-        launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER))
+        launcher_service.download_output("job_id")
         launcher_service.output_service.export_output.assert_called()
 
         launcher_service._import_output(
@@ -824,7 +762,7 @@ class TestLauncherService:
             JobResult(id=job_id, study_id=study_id, output_id=output_name),
         ]
         with pytest.raises(JobNotFound):
-            launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER))
+            launcher_service.download_output("job_id")
 
         study_service.get_study.reset_mock()
         study_service.get_study.side_effect = StudyNotFoundError("")
@@ -835,11 +773,9 @@ class TestLauncherService:
         )
         launcher_service.task_service.add_task.return_value = "some id"
 
-        assert launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER)) == FileDownloadTaskDTO(
-            task="some id", file=export_file
-        )
+        assert launcher_service.download_output("job_id") == FileDownloadTaskDTO(task="some id", file=export_file)
 
-        launcher_service.remove_job(job_id, RequestParameters(user=DEFAULT_ADMIN_USER))
+        launcher_service.remove_job(job_id)
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
 
     def test_save_solver_stats(self, tmp_path: Path) -> None:

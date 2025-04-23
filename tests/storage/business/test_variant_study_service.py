@@ -18,9 +18,7 @@ import pytest
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyNotFoundError, VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
 from antarest.login.model import User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
@@ -319,10 +317,7 @@ def test_get_variant_children(tmp_path: Path) -> None:
     repo_mock.get.side_effect = [parent] + children
     repo_mock.get_children.side_effect = [children, [], []]
 
-    tree = study_service.get_all_variants_children(
-        "parent",
-        RequestParameters(user=JWTUser(id=2, type="user", impersonator=2)),
-    )
+    tree = study_service.get_all_variants_children("parent")
     assert len(tree.children) == 1
 
 

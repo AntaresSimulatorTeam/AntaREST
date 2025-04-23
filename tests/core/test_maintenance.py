@@ -18,7 +18,6 @@ from sqlalchemy import create_engine
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.eventbus import Event, EventType
-from antarest.core.jwt import JWTUser
 from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.maintenance.service import MaintenanceService
@@ -111,12 +110,6 @@ def test_service_without_cache() -> None:
     )
 
     # Set message with no admin permission
-    not_admin_user = JWTUser(
-        id=1,
-        impersonator=1,
-        type="users",
-        groups=[],
-    )
     with pytest.raises(UserHasNotPermissionError):
         service.set_message_info(data=data)
 

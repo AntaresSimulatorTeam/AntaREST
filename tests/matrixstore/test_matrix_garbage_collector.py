@@ -17,8 +17,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from antarest.core.jwt import JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO
@@ -171,11 +169,7 @@ def test_get_matrices_used_in_variant_studies(
 
 
 @pytest.mark.unit_test
-def test_get_matrices_used_in_dataset(
-    matrix_garbage_collector: MatrixGarbageCollector,
-    matrix_service: MatrixService,
-    admin_user: JWTUser,
-):
+def test_get_matrices_used_in_dataset(matrix_garbage_collector: MatrixGarbageCollector, matrix_service: MatrixService):
     matrix_garbage_collector.dataset_repository = MatrixDataSetRepository()
 
     with db():
@@ -184,7 +178,6 @@ def test_get_matrices_used_in_dataset(
         matrix_service.create_dataset(
             dataset_info=MatrixDataSetUpdateDTO(name="name", groups=[], public=True),
             matrices=[MatrixInfoDTO(id=matrix1_id, name="matrix_1"), MatrixInfoDTO(id=matrix2_id, name="matrix_2")],
-            params=RequestParameters(admin_user),
         )
 
         matrices = matrix_garbage_collector._get_datasets_matrices()

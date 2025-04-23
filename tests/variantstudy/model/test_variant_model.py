@@ -95,7 +95,6 @@ class TestVariantStudyService:
         generator_matrix_constants: GeneratorMatrixConstants,
         variant_study_service: VariantStudyService,
     ) -> None:
-
         # Create a new variant
         variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant")
         study_version = StudyVersion.parse(variant_study.version)
@@ -277,7 +276,6 @@ class TestVariantStudyService:
             if orm_execute_state.is_select:
                 nonlocal nb_queries
                 nb_queries += 1
-
 
         # Generate a variant on a study that allow other user to edit it
         variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant")

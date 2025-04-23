@@ -17,7 +17,6 @@ from unittest.mock import Mock
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -92,9 +91,7 @@ def test_auto_archival(tmp_path: Path):
     study_service.archive.assert_called_once_with("d")
 
     # Check that the variant outputs are deleted for the variant study "e"
-    auto_archive_service.output_service.archive_outputs.assert_called_once_with(
-        "e"
-    )
+    auto_archive_service.output_service.archive_outputs.assert_called_once_with("e")
 
     # Check if the `clear_all_snapshots` method was called with default values
     study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
