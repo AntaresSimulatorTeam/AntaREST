@@ -29,9 +29,9 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
+from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, read_in_zip
@@ -54,6 +54,7 @@ from antarest.launcher.model import (
 from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.ssh_client import calculates_slurm_load
 from antarest.launcher.ssh_config import SSHConfigDTO
+from antarest.login.utils import get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -227,23 +228,21 @@ class LauncherService:
         study_uuid: str,
         launcher: str,
         launcher_parameters: LauncherParametersDTO,
-        params: RequestParameters,
         study_version: Optional[str] = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
-        study_info = self.study_service.get_study_information(uuid=study_uuid, params=params)
+        study_info = self.study_service.get_study_information(uuid=study_uuid)
         solver_version = SolverVersion.parse(study_version or study_info.version)
 
         self._assert_launcher_is_initialized(launcher)
         assert_permission(
-            user=params.user,
             study=study_info,
             permission_type=StudyPermissionType.RUN,
         )
         owner_id: int = 0
-        if params.user:
-            owner_id = params.user.impersonator if params.user.type == "bots" else params.user.id
+        if user := get_current_user():
+            owner_id = user.impersonator if user.type == "bots" else user.id
         job_status = JobResult(
             id=job_uuid,
             study_id=study_uuid,
@@ -265,7 +264,7 @@ class LauncherService:
         )
         return job_uuid
 
-    def kill_job(self, job_id: str, params: RequestParameters) -> JobResult:
+    def kill_job(self, job_id: str) -> JobResult:
         logger.info(f"Trying to cancel job {job_id}")
         job_result = self.job_result_repository.get(job_id)
         if job_result is None:
@@ -274,7 +273,6 @@ class LauncherService:
         study_uuid = job_result.study_id
         study = self.study_service.get_study(study_uuid)
         assert_permission(
-            user=params.user,
             study=study,
             permission_type=StudyPermissionType.RUN,
         )
@@ -287,8 +285,8 @@ class LauncherService:
         self.launchers[launcher].kill_job(job_id=job_id)
 
         owner_id = 0
-        if params.user:
-            owner_id = params.user.impersonator if params.user.type == "bots" else params.user.id
+        if user := get_current_user():
+            owner_id = user.impersonator if user.type == "bots" else user.id
         job_status = JobResult(
             id=str(job_id),
             study_id=study_uuid,
@@ -340,14 +338,13 @@ class LauncherService:
                 allowed_job_results.append(job_result)
         return allowed_job_results
 
-    def get_result(self, job_uuid: UUID, params: RequestParameters) -> JobResult:
+    def get_result(self, job_uuid: UUID) -> JobResult:
         job_result = self.job_result_repository.get(str(job_uuid))
 
         try:
             if job_result:
                 study = self.study_service.get_study(job_result.study_id)
                 assert_permission(
-                    user=params.user,
                     study=study,
                     permission_type=StudyPermissionType.READ,
                 )
@@ -358,8 +355,9 @@ class LauncherService:
 
         raise JobNotFound()
 
-    def remove_job(self, job_id: str, params: RequestParameters) -> None:
-        if params.user and params.user.is_site_admin():
+    def remove_job(self, job_id: str) -> None:
+        user = get_current_user()
+        if user and user.is_site_admin():
             logger.info(f"Deleting job {job_id}")
             job_output = self._get_job_output_fallback_path(job_id)
             if job_output.exists():
@@ -372,7 +370,6 @@ class LauncherService:
     def get_jobs(
         self,
         study_uid: Optional[str],
-        params: RequestParameters,
         filter_orphans: bool = True,
         latest: Optional[int] = None,
     ) -> List[JobResult]:
@@ -381,24 +378,20 @@ class LauncherService:
         else:
             job_results = self.job_result_repository.get_all(filter_orphan=filter_orphans, latest=latest)
 
-        return self._filter_from_user_permission(job_results=job_results, user=params.user)
+        return self._filter_from_user_permission(job_results=job_results)
 
     @staticmethod
     def sort_log(log: JobLog, logs: Dict[JobLogType, List[str]]) -> Dict[JobLogType, List[str]]:
         logs[JobLogType.AFTER if log.log_type == str(JobLogType.AFTER) else JobLogType.BEFORE].append(log.message)
         return logs
 
-    def get_log(self, job_id: str, log_type: LogType, params: RequestParameters) -> Optional[str]:
+    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
         job_result = self.job_result_repository.get(str(job_id))
         if job_result:
             if job_result.output_id:
                 launcher_logs = (
                     self.study_service.get_logs(
-                        job_result.study_id,
-                        job_result.output_id,
-                        job_id,
-                        log_type == LogType.STDERR,
-                        params=params,
+                        job_result.study_id, job_result.output_id, job_id, log_type == LogType.STDERR
                     )
                     or ""
                 )
@@ -436,7 +429,6 @@ class LauncherService:
             )
             self.study_service.export_study_flat(
                 study_id,
-                RequestParameters(DEFAULT_ADMIN_USER),
                 target_path,
                 output_list=output_list,
             )
@@ -503,14 +495,6 @@ class LauncherService:
             if not job_result:
                 raise JobNotFound()
 
-            # Search for the user who launched the job in the database.
-            if owner_id := job_result.owner_id:
-                roles = self.study_service.user_service.roles.get_all_by_user(owner_id)
-                groups = [JWTGroup(id=role.group_id, name=role.group.name, role=role.type) for role in roles]
-                launching_user = JWTUser(id=owner_id, impersonator=owner_id, type="users", groups=groups)
-            else:
-                launching_user = DEFAULT_ADMIN_USER
-
             study_id = job_result.study_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
@@ -567,7 +551,6 @@ class LauncherService:
                     return self.output_service.import_output(
                         study_id,
                         final_output_path,
-                        RequestParameters(launching_user),
                         output_suffix,
                         job_launch_params.auto_unzip,
                     )
@@ -582,7 +565,7 @@ class LauncherService:
                         os.unlink(zip_path)
         raise JobNotFound()
 
-    def _download_fallback_output(self, job_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
+    def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
         output_path = self._get_job_output_fallback_path(job_id)
         if output_path.exists():
             logger.info(f"Exporting {job_id} fallback output")
@@ -608,25 +591,20 @@ class LauncherService:
                 ref_id=None,
                 progress=None,
                 custom_event_messages=None,
-                request_params=params,
             )
 
             return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
 
         raise FileNotFoundError()
 
-    def download_output(self, job_id: str, params: RequestParameters) -> FileDownloadTaskDTO:
+    def download_output(self, job_id: str) -> FileDownloadTaskDTO:
         logger.info(f"Downloading output for job {job_id}")
         job_result = self.job_result_repository.get(job_id)
         if job_result and job_result.output_id:
             if self._get_job_output_fallback_path(job_id).exists():
-                return self._download_fallback_output(job_id, params)
+                return self._download_fallback_output(job_id)
             self.study_service.get_study(job_result.study_id)
-            return self.output_service.export_output(
-                job_result.study_id,
-                job_result.output_id,
-                params,
-            )
+            return self.output_service.export_output(job_result.study_id, job_result.output_id)
         raise JobNotFound()
 
     def get_load(self) -> LauncherLoadDTO:
@@ -698,7 +676,7 @@ class LauncherService:
         versions_map["default"] = versions_map[default_config]
         return versions_map[solver]
 
-    def get_launch_progress(self, job_id: str, params: RequestParameters) -> float:
+    def get_launch_progress(self, job_id: str) -> float:
         job_result = self.job_result_repository.get(job_id)
         if not job_result:
             raise JobNotFound()
@@ -706,7 +684,6 @@ class LauncherService:
         launcher = job_result.launcher
         study = self.study_service.get_study(study_uuid)
         assert_permission(
-            user=params.user,
             study=study,
             permission_type=StudyPermissionType.READ,
         )

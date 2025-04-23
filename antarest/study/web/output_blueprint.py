@@ -20,11 +20,8 @@ from fastapi import APIRouter, Depends, File, Query, Request
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
-from antarest.login.auth import Auth
 from antarest.study.business.aggregator_management import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -63,7 +60,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         The FastAPI route for Study data management
     """
     bp = APIRouter(prefix="/v1")
-    auth = Auth(config)
 
     # noinspection PyShadowingBuiltins
     @bp.post(
@@ -73,18 +69,13 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         summary="Import Output",
         response_model=str,
     )
-    def import_output(
-        uuid: str,
-        output: bytes = File(...),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def import_output(uuid: str, output: bytes = File(...)) -> Any:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
         zip_binary = io.BytesIO(output)
 
-        params = RequestParameters(user=current_user)
-        output_id = output_service.import_output(uuid_sanitized, zip_binary, params)
+        output_id = output_service.import_output(uuid_sanitized, zip_binary)
         return output_id
 
     @bp.get(
@@ -92,40 +83,22 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         tags=[APITag.study_outputs],
         summary="Get outputs data variables",
     )
-    def output_variables_information(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def output_variables_information(study_id: str, output_id: str) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        params = RequestParameters(user=current_user)
-        return output_service.output_variables_information(
-            study_uuid=study_id,
-            output_uuid=output_id,
-            params=params,
-        )
+        return output_service.output_variables_information(study_uuid=study_id, output_uuid=output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs/{output_id}/export",
         tags=[APITag.study_outputs],
         summary="Get outputs data",
     )
-    def output_export(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def output_export(study_id: str, output_id: str) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
-        params = RequestParameters(user=current_user)
-        return output_service.export_output(
-            study_uuid=study_id,
-            output_uuid=output_id,
-            params=params,
-        )
+        return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/download",
@@ -139,12 +112,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         request: Request,
         use_task: bool = False,
         tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
-        params = RequestParameters(user=current_user)
         accept = request.headers["Accept"]
         filetype = ExportFormat.from_dto(accept)
 
@@ -154,7 +125,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             data,
             use_task,
             filetype,
-            params,
             tmp_export_file,
         )
         return content
@@ -164,41 +134,23 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         tags=[APITag.study_outputs],
         summary="Delete a simulation output",
     )
-    def delete_output(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> None:
+    def delete_output(study_id: str, output_id: str) -> None:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"FDeleting output {output_id} from study {study_id}")
-        params = RequestParameters(user=current_user)
-        output_service.delete_output(
-            study_id,
-            output_id,
-            params,
-        )
+        output_service.delete_output(study_id, output_id)
 
     @bp.post(
         "/studies/{study_id}/outputs/{output_id}/_archive",
         tags=[APITag.study_outputs],
         summary="Archive output",
     )
-    def archive_output(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def archive_output(study_id: str, output_id: str) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
-        params = RequestParameters(user=current_user)
 
-        content = output_service.archive_output(
-            study_id,
-            output_id,
-            params,
-        )
+        content = output_service.archive_output(study_id, output_id)
         return content
 
     @bp.post(
@@ -206,22 +158,12 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         tags=[APITag.study_outputs],
         summary="Unarchive output",
     )
-    def unarchive_output(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def unarchive_output(study_id: str, output_id: str) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
-        params = RequestParameters(user=current_user)
 
-        content = output_service.unarchive_output(
-            study_id,
-            output_id,
-            False,
-            params,
-        )
+        content = output_service.unarchive_output(study_id, output_id, False)
         return content
 
     @bp.get(
@@ -230,16 +172,11 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         summary="Display an output digest file for the front-end",
         response_model=DigestUI,
     )
-    def get_digest_file(
-        study_id: str,
-        output_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> DigestUI:
+    def get_digest_file(study_id: str, output_id: str) -> DigestUI:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
-        params = RequestParameters(user=current_user)
-        return output_service.get_digest_file(study_id, output_id, params)
+        return output_service.get_digest_file(study_id, output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs",
@@ -247,14 +184,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         tags=[APITag.study_outputs],
         response_model=List[StudySimResultDTO],
     )
-    def sim_result(
-        study_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def sim_result(study_id: str) -> Any:
         logger.info(f"Fetching output list for study {study_id}")
         study_id = sanitize_uuid(study_id)
-        params = RequestParameters(user=current_user)
-        content = output_service.get_study_sim_result(study_id, params)
+        content = output_service.get_study_sim_result(study_id)
         return content
 
     @bp.get(
@@ -271,7 +204,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         # noinspection SpellCheckingInspection
         """
@@ -300,7 +232,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        parameters = RequestParameters(user=current_user)
         df_matrix = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
@@ -308,7 +239,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             frequency=frequency,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
-            params=parameters,
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
         )
@@ -317,14 +247,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
         return export_file(
-            df_matrix,
-            output_service._file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
-            current_user,
+            df_matrix, output_service._file_transfer_manager, export_format, False, True, download_name, download_log
         )
 
     @bp.get(
@@ -342,10 +265,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         return aggregate_areas_raw_data(
-            uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format, current_user
+            uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -362,7 +284,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         """
         Create an aggregation of links raw data
@@ -390,7 +311,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        parameters = RequestParameters(user=current_user)
         df_matrix = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
@@ -398,7 +318,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             frequency=frequency,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
-            params=parameters,
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
         )
@@ -414,7 +333,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             True,
             download_name,
             download_log,
-            current_user,
         )
 
     @bp.get(
@@ -432,10 +350,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         return aggregate_links_raw_data(
-            uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format, current_user
+            uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -451,7 +368,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         # noinspection SpellCheckingInspection
         """
@@ -479,7 +395,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        parameters = RequestParameters(user=current_user)
         df_matrix = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
@@ -487,7 +402,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             frequency=frequency,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
-            params=parameters,
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
         )
 
@@ -502,7 +416,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             True,
             download_name,
             download_log,
-            current_user,
         )
 
     @bp.get(
@@ -519,10 +432,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         return aggregate_areas_raw_data__all(
-            uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format, current_user
+            uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
         )
 
     @bp.get(
@@ -538,7 +450,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         """
         Create an aggregation of links in mc-all
@@ -565,7 +476,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        parameters = RequestParameters(user=current_user)
         df_matrix = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
@@ -573,7 +483,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             frequency=frequency,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
-            params=parameters,
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
         )
 
@@ -581,14 +490,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
         return export_file(
-            df_matrix,
-            output_service._file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
-            current_user,
+            df_matrix, output_service._file_transfer_manager, export_format, False, True, download_name, download_log
         )
 
     @bp.get(
@@ -605,10 +507,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         return aggregate_links_raw_data__all(
-            uuid, output_id, query_file, frequency, links_ids, columns_names, export_format, current_user
+            uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )
 
     return bp

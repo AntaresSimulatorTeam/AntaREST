@@ -934,7 +934,7 @@ class StudyService:
         logger.info("study %s created by user %s", raw.id, params.get_user_id())
         return str(raw.id)
 
-    def get_user_name(self, params: RequestParameters) -> str:
+    def get_user_name(self) -> str:
         """
         Retrieves the name of a user based on the provided request parameters.
 
@@ -945,9 +945,10 @@ class StudyService:
             Returns the user's name or, if the logged user is a "bot"
             (i.e., an application's token), it returns the token's author name.
         """
-        if params.user:
-            user_id = params.user.impersonator if params.user.type == "bots" else params.user.id
-            if curr_user := self.user_service.get_user(user_id, params):
+        user = get_current_user()
+        if user:
+            user_id = user.impersonator if user.type == "bots" else user.id
+            if curr_user := self.user_service.get_user(user_id):
                 return curr_user.to_dto().name
         return "Unknown"
 
