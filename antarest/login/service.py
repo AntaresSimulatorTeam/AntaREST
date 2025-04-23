@@ -273,7 +273,6 @@ class LoginService:
         Returns: group and list of users
 
         """
-        user = get_current_user()
         group = self.get_group(id)
         if group:
             user_list = []
