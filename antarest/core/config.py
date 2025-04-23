@@ -464,7 +464,7 @@ class LauncherConfig:
         If "default" is specified, retrieve the configuration of the default launcher.
 
         Args:
-            launcher: type of launcher "local", "slurm" or "default".
+            launcher: id of launcher.
 
         Returns:
             Number of cores of the given launcher.

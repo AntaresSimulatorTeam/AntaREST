@@ -639,46 +639,44 @@ class LauncherService:
         """
         launcher = self.config.launcher.get_launcher_by_id(launcher_id)
 
-        if launcher:
-            if isinstance(launcher, SlurmConfig):
-                # SLURM load calculation
-                ssh_config = SSHConfigDTO(
-                    config_path=Path(),
-                    username=launcher.username,
-                    hostname=launcher.hostname,
-                    port=launcher.port,
-                    private_key_file=launcher.private_key_file,
-                    key_password=launcher.key_password,
-                    password=launcher.password,
-                )
-                partition = launcher.partition
-                allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
-                args = {
-                    "allocatedCpuRate": allocated_cpus,
-                    "clusterLoadRate": cluster_load,
-                    "nbQueuedJobs": queued_jobs,
-                    "launcherStatus": "SUCCESS",
-                }
-                return LauncherLoadDTO(**args)
-            else:
-                # local load calculation
-                local_used_cpus = sum(
-                    LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1
-                    for job in self.job_result_repository.get_running()
-                )
-
-                # The cluster load is approximated by the percentage of used CPUs.
-                cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
-
-                args = {
-                    "allocatedCpuRate": cluster_load_approx,
-                    "clusterLoadRate": cluster_load_approx,
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                }
-                return LauncherLoadDTO(**args)
+        if isinstance(launcher, SlurmConfig):
+            # SLURM load calculation
+            ssh_config = SSHConfigDTO(
+                config_path=Path(),
+                username=launcher.username,
+                hostname=launcher.hostname,
+                port=launcher.port,
+                private_key_file=launcher.private_key_file,
+                key_password=launcher.key_password,
+                password=launcher.password,
+            )
+            partition = launcher.partition
+            allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
+            args = {
+                "allocatedCpuRate": allocated_cpus,
+                "clusterLoadRate": cluster_load,
+                "nbQueuedJobs": queued_jobs,
+                "launcherStatus": "SUCCESS",
+            }
+            return LauncherLoadDTO(**args)
         else:
-            raise InvalidConfigurationError(launcher_id)
+            # local load calculation
+            local_used_cpus = sum(
+                LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1
+                for job in self.job_result_repository.get_running()
+            )
+
+            # The cluster load is approximated by the percentage of used CPUs.
+            cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
+
+            args = {
+                "allocatedCpuRate": cluster_load_approx,
+                "clusterLoadRate": cluster_load_approx,
+                "nbQueuedJobs": 0,
+                "launcherStatus": "SUCCESS",
+            }
+            return LauncherLoadDTO(**args)
+
 
     def get_solver_versions(self, solver: str) -> List[str]:
         """

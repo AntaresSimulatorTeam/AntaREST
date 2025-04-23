@@ -60,7 +60,7 @@ class LocalLauncher(AbstractLauncher):
         local = self.config.launcher.get_launcher_by_id(launcher_id)
 
         if not isinstance(local, LocalConfig):
-            raise LauncherInitException("Invalid parameter 'launcher.local'")
+            raise LauncherInitException(f"Invalid parameter {launcher_id}")
 
         if version in local.binaries:
             antares_solver_path = local.binaries[version]
