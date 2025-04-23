@@ -465,12 +465,6 @@ def test_save_metadata() -> None:
     }
 
     # Input
-    jwt = JWTUser(
-        id=0,
-        impersonator=0,
-        type="users",
-        groups=[JWTGroup(id="my-group", name="group", role=RoleType.ADMIN)],
-    )
     user = User(id=0, name="user")
     group = Group(id="my-group", name="group")
 
@@ -486,7 +480,7 @@ def test_save_metadata() -> None:
     service = build_study_service(study_service, repository, config)
 
     service.user_service.get_user.return_value = user  # type: ignore
-    service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME), owner=jwt)
+    service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
     repository.save.assert_called_once_with(study)
 
 

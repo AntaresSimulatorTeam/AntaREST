@@ -30,7 +30,6 @@ from typing_extensions import override
 from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.jwt import JWTUser
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskResult, TaskType
@@ -302,7 +301,7 @@ class MatrixService(ISimpleMatrixService):
         if dataset is None:
             raise MatrixDataSetNotFound()
 
-        MatrixService.check_access_permission(dataset, raise_error=True)
+        MatrixService.check_access_permission(dataset)
         return dataset
 
     def create_dataset(self, dataset_info: MatrixDataSetUpdateDTO, matrices: List[MatrixInfoDTO]) -> MatrixDataSet:
@@ -330,7 +329,7 @@ class MatrixService(ISimpleMatrixService):
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        MatrixService.check_access_permission(dataset, write=True, raise_error=True)
+        MatrixService.check_access_permission(dataset, write=True)
         groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
         updated_dataset = MatrixDataSet(
             id=dataset_id,
@@ -372,7 +371,7 @@ class MatrixService(ISimpleMatrixService):
         if dataset is None:
             raise MatrixDataSetNotFound()
 
-        MatrixService.check_access_permission(dataset, write=True, raise_error=True)
+        MatrixService.check_access_permission(dataset, write=True)
         self.repo_dataset.delete(id)
         return id
 
@@ -429,12 +428,10 @@ class MatrixService(ISimpleMatrixService):
                 self.matrix_content_repository.delete(matrix_id)
 
     @staticmethod
-    def check_access_permission(
-        dataset: MatrixDataSet,
-        user: JWTUser,
-        write: bool = False,
-        raise_error: bool = False,
-    ) -> bool:
+    def check_access_permission(dataset: MatrixDataSet, write: bool = False) -> bool:
+        user = get_current_user()
+        if not user:
+            raise UserHasNotPermissionError()
         if user.is_site_admin():
             return True
         dataset_groups = [group.id for group in dataset.groups]
@@ -443,7 +440,7 @@ class MatrixService(ISimpleMatrixService):
             or any(group.id in dataset_groups for group in user.groups)
             and not write
         )
-        if not access and raise_error:
+        if not access:
             raise UserHasNotPermissionError()
         return access
 
@@ -478,7 +475,7 @@ class MatrixService(ISimpleMatrixService):
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
             raise MatrixDataSetNotFound()
-        MatrixService.check_access_permission(dataset, raise_error=True)
+        MatrixService.check_access_permission(dataset)
 
         return self.download_matrix_list([mtx_info.matrix_id for mtx_info in dataset.matrices], dataset.id)
 

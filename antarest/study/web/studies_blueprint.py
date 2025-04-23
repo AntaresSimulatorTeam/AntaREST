@@ -278,8 +278,11 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         logger.info("Importing new study")
         zip_binary = io.BytesIO(study)
 
-        group_ids = _split_comma_separated_values(groups, default=[group.id for group in get_current_user().groups])
-        group_ids = [sanitize_string(gid) for gid in group_ids]
+        user = get_current_user()
+        group_ids: list[str] = []
+        if user:
+            group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
+            group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         try:
             uuid = study_service.import_study(zip_binary, group_ids)
@@ -351,8 +354,13 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - The unique identifier of the task copying the study.
         """
         logger.info(f"Copying study {uuid} into new study '{dest}'")
-        group_ids = _split_comma_separated_values(groups, default=[group.id for group in get_current_user().groups])
-        group_ids = [sanitize_string(gid) for gid in group_ids]
+
+        user = get_current_user()
+        group_ids: list[str] = []
+        if user:
+            group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
+            group_ids = [sanitize_string(gid) for gid in group_ids_raw]
+
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
 

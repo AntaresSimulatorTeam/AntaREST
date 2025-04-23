@@ -390,7 +390,7 @@ class VariantStudyService(AbstractStorageService):
         if not isinstance(study, VariantStudy) and not raw_study_accepted:
             raise StudyTypeUnsupported(study_id, study.type)
 
-        assert_permission(get_current_user(), study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         return study
 
     def on_variant_advance(self, study: VariantStudy) -> None:
@@ -477,7 +477,6 @@ class VariantStudyService(AbstractStorageService):
     ) -> None:
         study = self._get_variant_study(
             parent_id,
-            DEFAULT_ADMIN_USER,
             raw_study_accepted=True,
         )
         children = self.get_children(parent_id=parent_id)
@@ -609,7 +608,7 @@ class VariantStudyService(AbstractStorageService):
             )
 
         user = get_current_user()
-        assert_permission(user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
         if study.additional_data is None:
@@ -647,7 +646,7 @@ class VariantStudyService(AbstractStorageService):
         logger.info(
             "variant study %s created by user %s",
             variant_study.id,
-            get_user_id(user),
+            get_user_id(),
         )
         return variant_study
 
@@ -691,7 +690,6 @@ class VariantStudyService(AbstractStorageService):
                 )
                 generate_result = generator.generate_snapshot(
                     study_id,
-                    DEFAULT_ADMIN_USER,
                     denormalize=denormalize,
                     from_scratch=from_scratch,
                     notifier=notifier,
@@ -712,7 +710,6 @@ class VariantStudyService(AbstractStorageService):
                 ref_id=study_id,
                 progress=None,
                 custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
-                request_params=DEFAULT_ADMIN_USER,
             )
             self.repository.save(metadata)
             return str(metadata.generation_task)

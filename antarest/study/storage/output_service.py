@@ -33,7 +33,7 @@ from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, Ta
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import StopWatch
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_user_id
 from antarest.study.business.aggregator_management import (
     AggregatorManager,
     MCAllAreasQueryFile,
@@ -296,19 +296,16 @@ class OutputService:
 
         """
         # GET STUDY ID
-        user = get_current_user()
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
-        logger.info(f"Study {study_id} output download asked by {get_user_id(user)}")
+        logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
         if use_task:
             logger.info(f"Exporting {output_id} from study {study_id}")
             export_name = f"Study filtered output {study.name}/{output_id} export"
             export_file_download = self._file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}",
-                export_name,
-                user,
+                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
             )
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id

@@ -29,7 +29,6 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
@@ -306,7 +305,8 @@ class LauncherService:
 
         return job_status
 
-    def _filter_from_user_permission(self, job_results: List[JobResult], user: Optional[JWTUser]) -> List[JobResult]:
+    def _filter_from_user_permission(self, job_results: List[JobResult]) -> List[JobResult]:
+        user = get_current_user()
         if not user:
             return []
 
@@ -328,7 +328,6 @@ class LauncherService:
         for job_result in job_results:
             if job_result.study_id in studies:
                 if assert_permission(
-                    user,
                     studies[job_result.study_id],
                     StudyPermissionType.RUN,
                     raising=False,

@@ -51,7 +51,7 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import JWTGroup, JWTUser
+from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
@@ -1876,7 +1876,6 @@ class StudyService:
     def _save_study(
         self,
         study: Study,
-        owner: Optional[JWTUser] = None,
         group_ids: Sequence[str] = (),
     ) -> None:
         """
@@ -1894,6 +1893,7 @@ class StudyService:
             UserHasNotPermissionError:
                 If the owner or the group role is not specified.
         """
+        owner = get_current_user()
         if not owner:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
@@ -2305,7 +2305,7 @@ class StudyService:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
 
-    def delete_user_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def delete_user_file_or_folder(self, study_id: str, path: str) -> None:
         """
         Deletes a file or a folder of the study.
         The data must be located inside the 'User' folder.
@@ -2314,16 +2314,15 @@ class StudyService:
         Args:
             study_id: UUID of the concerned study
             path: Path corresponding to the resource to be deleted
-            current_user: User that called the endpoint
 
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
         args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
         cmd_data = RemoveUserResourceData(**args)
-        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
+        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed)
 
-    def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def create_user_folder(self, study_id: str, path: str) -> None:
         """
         Creates a folder inside the study.
         The data must be located inside the 'User' folder.
@@ -2332,7 +2331,6 @@ class StudyService:
         Args:
             study_id: UUID of the concerned study
             path: Path corresponding to the resource to be deleted
-            current_user: User that called the endpoint
 
         Raises:
             FolderCreationNotAllowed: if the path does not comply with the above rules
@@ -2342,7 +2340,7 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
         }
         command_data = CreateUserResourceData.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed, current_user)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed)
 
     def _alter_user_folder(
         self,
@@ -2350,10 +2348,9 @@ class StudyService:
         command_data: CreateUserResourceData | RemoveUserResourceData,
         command_class: Type[CreateUserResource | RemoveUserResource],
         exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
-        current_user: JWTUser,
     ) -> None:
         study = self.get_study(study_id)
-        assert_permission(current_user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         args = {
             "data": command_data,

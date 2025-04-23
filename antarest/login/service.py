@@ -95,11 +95,11 @@ class LoginService:
                 "%s (%s) saved by user %s",
                 group.name,
                 group.id,
-                get_user_id(user),
+                get_user_id(),
             )
             return self.groups.save(group)
         else:
-            logger.error("user %s has not permission to save group", get_user_id(user))
+            logger.error("user %s has not permission to save group", get_user_id())
             raise UserHasNotPermissionError()
 
     def create_user(self, create: UserCreateDTO) -> Identity:
@@ -118,7 +118,7 @@ class LoginService:
                 raise HTTPException(status_code=400, detail="User already exists")
             return self.users.save(User(name=create.name, password=Password(create.password)))
         else:
-            logger.error("User %s has no permission to create user", get_user_id(user))
+            logger.error("User %s has no permission to create user", get_user_id())
             raise UserHasNotPermissionError()
 
     def save_user(self, user: User) -> User:
@@ -133,10 +133,10 @@ class LoginService:
         """
         current_user = get_current_user()
         if current_user and any((current_user.is_site_admin(), current_user.is_himself(user))):
-            logger.info("user %d saved by user %s", user.id, get_user_id(current_user))
+            logger.info("user %d saved by user %s", user.id, get_user_id())
             return self.users.save(user)
         else:
-            logger.error("user %s has not permission to save user %d", get_user_id(current_user), user.id)
+            logger.error("user %s has not permission to save user %d", get_user_id(), user.id)
             raise UserHasNotPermissionError()
 
     def save_bot(self, bot: BotCreateDTO) -> Bot:
@@ -184,13 +184,13 @@ class LoginService:
                 "bot %s (%d) created by user %s",
                 bot.name,
                 b.id,
-                get_user_id(user),
+                get_user_id(),
             )
             return b
         else:
             logger.error(
                 "user %s has not permission to create bot",
-                get_user_id(user),
+                get_user_id(),
             )
             raise UserHasNotPermissionError()
 
@@ -220,13 +220,13 @@ class LoginService:
                 "role (user=%s, group=%s) created by user %s",
                 role.identity_id,
                 role.group_id,
-                get_user_id(user),
+                get_user_id(),
             )
             return self.roles.save(role_obj)
         else:
             logger.error(
                 "user %s, has not permission to create role (user=%d, group=%s)",
-                get_user_id(user),
+                get_user_id(),
                 role.identity_id,
                 role.group_id,
             )
@@ -245,7 +245,7 @@ class LoginService:
         """
         user = get_current_user()
         if user is None:
-            user_id = get_user_id(user)
+            user_id = get_user_id()
             err_msg = f"user {user_id} has not permission to get group"
             logger.error(err_msg)
             raise UserHasNotPermissionError(err_msg)
@@ -259,7 +259,7 @@ class LoginService:
         ):
             return group
         else:
-            logger.error("group %s not found by user %s", id, get_user_id(user))
+            logger.error("group %s not found by user %s", id, get_user_id())
             raise GroupNotFoundError()
 
     def get_group_info(self, id: str) -> Optional[GroupDetailDTO]:
@@ -284,7 +284,7 @@ class LoginService:
                     user_list.append(UserRoleDTO(id=user.id, name=user.name, role=role.type))
             return GroupDetailDTO(id=group.id, name=group.name, users=user_list)
         else:
-            logger.error("group %s not found by user %s", id, get_user_id(user))
+            logger.error("group %s not found by user %s", id, get_user_id())
             raise GroupNotFoundError()
 
     def get_user(self, id: int) -> Optional[User]:
@@ -300,7 +300,7 @@ class LoginService:
         """
         user = self.ldap.get(id) or self.users.get(id)
         if not user:
-            logger.error("user %d not found by user %s", id, get_user_id(user))
+            logger.error("user %d not found by user %s", id, get_user_id())
             raise UserNotFoundError()
 
         groups = [r.group for r in self.roles.get_all_by_user(user.id)]
@@ -318,7 +318,7 @@ class LoginService:
             logger.error(
                 "user %d info not allowed to fetch by user %s",
                 id,
-                get_user_id(user),
+                get_user_id(),
             )
             return None
 
@@ -390,7 +390,7 @@ class LoginService:
         ):
             return bot
         else:
-            logger.error("bot %d not found by user %s", id, get_user_id(user))
+            logger.error("bot %d not found by user %s", id, get_user_id())
             raise UserHasNotPermissionError()
 
     def get_bot_info(self, id: int) -> Optional[BotIdentityDTO]:
@@ -442,7 +442,7 @@ class LoginService:
         else:
             logger.error(
                 "user %s has not permission to fetch bots owner=%d",
-                get_user_id(user),
+                get_user_id(),
                 owner,
             )
             raise UserHasNotPermissionError()
@@ -534,7 +534,7 @@ class LoginService:
         else:
             logger.error(
                 "user %s has not permission to get all groups",
-                get_user_id(user),
+                get_user_id(),
             )
             raise UserHasNotPermissionError()
 
@@ -587,7 +587,7 @@ class LoginService:
         else:
             logger.error(
                 "user %s has not permission to get all users",
-                get_user_id(user),
+                get_user_id(),
             )
             raise UserHasNotPermissionError()
 
@@ -602,7 +602,7 @@ class LoginService:
         else:
             logger.error(
                 "user %s has not permission to get all bots",
-                get_user_id(user),
+                get_user_id(),
             )
             raise UserHasNotPermissionError()
 
@@ -628,7 +628,7 @@ class LoginService:
         else:
             logger.error(
                 "user %s has not permission to get all roles in group %s",
-                get_user_id(user),
+                get_user_id(),
                 group,
             )
             raise UserHasNotPermissionError()
@@ -653,12 +653,12 @@ class LoginService:
             for role in self.roles.get_all_by_group(group=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
 
-            logger.info("group %s deleted by user %s", id, get_user_id(user))
+            logger.info("group %s deleted by user %s", id, get_user_id())
             return self.groups.delete(id)
         else:
             logger.error(
                 "user %s has not permission to delete group %s",
-                get_user_id(user),
+                get_user_id(),
                 id,
             )
             raise UserHasNotPermissionError()
@@ -680,7 +680,7 @@ class LoginService:
 
             self.delete_all_roles_from_user(id)
 
-            logger.info("user %s deleted by user %s", id, get_user_id(user))
+            logger.info("user %s deleted by user %s", id, get_user_id())
 
             user = self.get_user(id)
             if isinstance(user, UserLdap):
@@ -691,7 +691,7 @@ class LoginService:
         else:
             logger.info(
                 "user %s has not permission to delete user %d",
-                get_user_id(user),
+                get_user_id(),
                 id,
             )
             raise UserHasNotPermissionError()
@@ -718,14 +718,14 @@ class LoginService:
                 )
             )
         ):
-            logger.info("bot %d deleted by user %s", id, get_user_id(user))
+            logger.info("bot %d deleted by user %s", id, get_user_id())
             for role in self.roles.get_all_by_user(id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
             return self.bots.delete(id)
         else:
             logger.error(
                 "user %s has not permission to delete bot %d",
-                get_user_id(user),
+                get_user_id(),
                 id,
             )
             raise UserHasNotPermissionError()
@@ -752,13 +752,13 @@ class LoginService:
                 "role (user=%d, group=%s) deleted by %s",
                 user,
                 group,
-                get_user_id(current_user),
+                get_user_id(),
             )
             return self.roles.delete(user, group)
         else:
             logger.error(
                 "user %s has not permission to delete role (user=%d, group=%s)",
-                get_user_id(current_user),
+                get_user_id(),
                 user,
                 group,
             )
