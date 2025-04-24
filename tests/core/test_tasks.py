@@ -55,7 +55,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from tests.helpers import with_db_context
+from tests.helpers import with_admin_user, with_db_context
 from tests.storage.test_service import build_study_service
 
 
@@ -82,8 +82,9 @@ def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
     engine.dispose()
 
 
+@with_admin_user
 @with_db_context
-def test_service(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) -> None:
+def test_service(core_config: Config, event_bus: IEventBus) -> None:
     engine = db.session.bind
 
     task_job_repo = TaskJobRepository()
@@ -432,11 +433,11 @@ def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEven
         service.get_task_progress(wrong_id)
 
 
+@with_admin_user
 @with_db_context
 def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
-    admin_user: JWTUser,
     raw_study_service: RawStudyService,
 ) -> None:
     # =======================
