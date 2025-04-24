@@ -719,6 +719,7 @@ def test_change_owner() -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=2)
     bob = User(id=3, name="Bob")
+    jwt_user = JWTUser(id=2, impersonator=2, type="users")
 
     file_study = Mock(spec=FileStudy, get_node=Mock(return_value=Mock(spec=IniFileNode)))
 
@@ -747,7 +748,8 @@ def test_change_owner() -> None:
     user_service.get_user.return_value = bob
     service._edit_study_using_command = Mock()
 
-    service.change_owner(study_id, 2)
+    with current_user_context(jwt_user):
+        service.change_owner(study_id, 2)
 
     service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
     user_service.get_user.assert_called_once_with(2)
@@ -755,7 +757,8 @@ def test_change_owner() -> None:
     repository.save.assert_called_with(RawStudy(id=study_id, owner=bob))
 
     with pytest.raises(UserHasNotPermissionError):
-        service.change_owner(study_id, 1)
+        with current_user_context(jwt_user):
+            service.change_owner(study_id, 1)
 
 
 # noinspection PyArgumentList
@@ -765,6 +768,8 @@ def test_manage_group() -> None:
     alice = User(id=1)
     group_a = Group(id="a", name="Group A")
     group_b = Group(id="b", name="Group B")
+    user = JWTUser(id=2, impersonator=2, type="users")
+    group_a_admin = JWTGroup(id="a", name="Group A", role=RoleType.ADMIN)
 
     repository = Mock()
     user_service = Mock()
@@ -774,21 +779,26 @@ def test_manage_group() -> None:
     repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a])
 
     with pytest.raises(UserHasNotPermissionError):
-        service.add_group(study_id, "b")
+        with current_user_context(user):
+            service.add_group(study_id, "b")
 
+    user.groups.append(group_a_admin)
     user_service.get_group.return_value = group_b
-    service.add_group(study_id, "b")
+    with current_user_context(user):
+        service.add_group(study_id, "b")
 
     user_service.get_group.assert_called_once_with("b")
     repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
     repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
-    service.add_group(study_id, "b")
-    user_service.get_group.assert_called_with("b")
+    with current_user_context(user):
+        service.add_group(study_id, "b")
+        user_service.get_group.assert_called_with("b")
     repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
     repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
-    service.remove_group(study_id, "a")
+    with current_user_context(user):
+        service.remove_group(study_id, "a")
     repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_b]))
 
 
@@ -796,6 +806,8 @@ def test_manage_group() -> None:
 @pytest.mark.unit_test
 def test_set_public_mode() -> None:
     study_id = str(uuid.uuid4())
+    group_admin = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
+    user = JWTUser(id=2, impersonator=2, type="users")
 
     repository = Mock()
     user_service = Mock()
@@ -805,9 +817,12 @@ def test_set_public_mode() -> None:
     repository.get.return_value = Study(id=study_id)
 
     with pytest.raises(UserHasNotPermissionError):
-        service.set_public_mode(study_id, PublicMode.FULL)
+        with current_user_context(user):
+            service.set_public_mode(study_id, PublicMode.FULL)
 
-    service.set_public_mode(study_id, PublicMode.FULL)
+    user.groups.append(group_admin)
+    with current_user_context(user):
+        service.set_public_mode(study_id, PublicMode.FULL)
     repository.save.assert_called_with(Study(id=study_id, public_mode=PublicMode.FULL))
 
 
