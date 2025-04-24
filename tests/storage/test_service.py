@@ -17,6 +17,7 @@ import typing as t
 import uuid
 from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
@@ -93,6 +94,15 @@ from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 JWT_USER = JWTUser(id=0, impersonator=0, type="users")
+
+
+def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
+    @wraps(f)
+    def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        with current_user_context(JWT_USER):
+            return f(*args, **kwargs)
+
+    return wrapper
 
 
 def build_study_service(
@@ -490,7 +500,7 @@ def test_save_metadata() -> None:
     repository.save.assert_called_once_with(study)
 
 
-# noinspection PyArgumentList
+@with_jwt_user
 @pytest.mark.unit_test
 def test_download_output() -> None:
     study_service = Mock()
