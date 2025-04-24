@@ -21,7 +21,6 @@ from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
-    StudyNotFoundError,
     TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -200,8 +199,6 @@ class OutputService:
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.RUN)
         self._study_service.assert_study_unarchived(study)
-        if not Path(study.path).exists():
-            raise StudyNotFoundError(f"Study files were not found for study {uuid}")
 
         output_id = self._storage.import_output(study, output, output_name_suffix)
         remove_from_cache(cache=self._study_service.cache_service, root_id=study.id)
