@@ -892,7 +892,7 @@ def test_assert_permission() -> None:
     # good owner
     study = Study(id=study_id, owner=good)
     with current_user_context(jwt):
-        assert assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # wrong group
     study = Study(id=study_id, owner=wrong, groups=[Group(id="wrong")])
@@ -903,12 +903,12 @@ def test_assert_permission() -> None:
     # good group
     study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group")])
     with current_user_context(jwt):
-        assert assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # super admin can do whatever he wants..
     study = Study(id=study_id)
     with current_user_context(admin):
-        assert assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # when study found in workspace without group
     study = Study(id=study_id, public_mode=PublicMode.FULL)
@@ -916,16 +916,16 @@ def test_assert_permission() -> None:
         with current_user_context(jwt):
             assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
     with current_user_context(jwt):
-        assert assert_permission(study, StudyPermissionType.READ)
-        assert assert_permission(study, StudyPermissionType.WRITE)
-        assert assert_permission(study, StudyPermissionType.RUN)
+        assert_permission(study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.RUN)
 
     # some group roles
     study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group-2")])
     with current_user_context(jwt_2):
         with pytest.raises(UserHasNotPermissionError):
             assert_permission(study, StudyPermissionType.WRITE)
-        assert assert_permission(study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
 
 
 class UserGroups(t.TypedDict):
