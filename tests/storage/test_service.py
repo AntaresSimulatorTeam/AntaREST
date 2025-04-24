@@ -887,38 +887,46 @@ def test_assert_permission() -> None:
     repository.get.return_value = Study(id=study_id, owner=wrong)
     study = service.get_study(study_id)
     with pytest.raises(UserHasNotPermissionError):
-        assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
+        with current_user_context(jwt):
+            assert_permission(study, StudyPermissionType.READ)
 
     # good owner
     study = Study(id=study_id, owner=good)
-    assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(jwt):
+        assert assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # wrong group
     study = Study(id=study_id, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
-        assert_permission(jwt, study, StudyPermissionType.READ)
-    assert not assert_permission(jwt, study, StudyPermissionType.READ, raising=False)
+        with current_user_context(jwt):
+            assert_permission(study, StudyPermissionType.READ)
 
     # good group
     study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group")])
-    assert assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(jwt):
+        assert assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # super admin can do whatever he wants..
     study = Study(id=study_id)
-    assert assert_permission(admin, study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(admin):
+        assert assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # when study found in workspace without group
     study = Study(id=study_id, public_mode=PublicMode.FULL)
-    assert not assert_permission(jwt, study, StudyPermissionType.MANAGE_PERMISSIONS, raising=False)
-    assert assert_permission(jwt, study, StudyPermissionType.READ)
-    assert assert_permission(jwt, study, StudyPermissionType.WRITE)
-    assert assert_permission(jwt, study, StudyPermissionType.RUN)
+    with pytest.raises(UserHasNotPermissionError):
+        with current_user_context(jwt):
+            assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
+    with current_user_context(jwt):
+        assert assert_permission(study, StudyPermissionType.READ)
+        assert assert_permission(study, StudyPermissionType.WRITE)
+        assert assert_permission(study, StudyPermissionType.RUN)
 
     # some group roles
     study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group-2")])
-    assert not assert_permission(jwt_2, study, StudyPermissionType.WRITE, raising=False)
-    assert assert_permission(jwt_2, study, StudyPermissionType.READ)
+    with current_user_context(jwt_2):
+        with pytest.raises(UserHasNotPermissionError):
+            assert_permission(study, StudyPermissionType.WRITE)
+        assert assert_permission(study, StudyPermissionType.READ)
 
 
 class UserGroups(t.TypedDict):
@@ -994,7 +1002,8 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Other members of the group should have no access.
     for user_name, jwt_user in jwt_users.items():
         has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
-        actual = assert_permission_on_studies(jwt_user, studies, StudyPermissionType.WRITE, raising=False)
+        with current_user_context(jwt_user):
+            actual = assert_permission_on_studies(studies, StudyPermissionType.WRITE)
         assert actual == has_access
 
     # Jack creates a additional variant study and adds it to the readers and writers groups.

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import functools
 import logging
 import os
@@ -327,11 +326,11 @@ class LauncherService:
 
         for job_result in job_results:
             if job_result.study_id in studies:
-                if assert_permission(
-                    studies[job_result.study_id],
-                    StudyPermissionType.RUN,
-                    raising=False,
-                ):
+                try:
+                    assert_permission(studies[job_result.study_id], StudyPermissionType.RUN)
+                except UserHasNotPermissionError:
+                    continue
+                else:
                     allowed_job_results.append(job_result)
             elif user and (user.is_site_admin() or user.is_admin_token()):
                 allowed_job_results.append(job_result)

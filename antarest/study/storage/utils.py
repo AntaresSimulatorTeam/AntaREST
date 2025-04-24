@@ -217,10 +217,7 @@ def study_matcher(
 
 
 def assert_permission_on_studies(
-    studies: Sequence[Study | StudyMetadataDTO],
-    permission_type: StudyPermissionType,
-    *,
-    raising: bool = True,
+    studies: Sequence[Study | StudyMetadataDTO], permission_type: StudyPermissionType
 ) -> bool:
     """
     Asserts whether the provided user has the required permissions on the given studies.
@@ -249,17 +246,11 @@ def assert_permission_on_studies(
     infos = (PermissionInfo.from_study(study) for study in studies)
     if any(not check_permission(user, permission_info, permission_type) for permission_info in infos):
         logger.error(msg)
-        if raising:
-            raise UserHasNotPermissionError(msg)
-        return False
+        raise UserHasNotPermissionError(msg)
     return True
 
 
-def assert_permission(
-    study: Optional[Study | StudyMetadataDTO],
-    permission_type: StudyPermissionType,
-    raising: bool = True,
-) -> bool:
+def assert_permission(study: Optional[Study | StudyMetadataDTO], permission_type: StudyPermissionType) -> bool:
     """
     Assert user has permission to edit or read study.
 
@@ -267,7 +258,6 @@ def assert_permission(
         user: user logged
         study: study asked
         permission_type: level of permission
-        raising: raise error if permission not matched
 
     Returns:
         `True` if the user has the required permissions, `False` otherwise.
@@ -277,7 +267,7 @@ def assert_permission(
             and the user does not have the required permissions.
     """
     studies = [study] if study else []
-    return assert_permission_on_studies(studies, permission_type, raising=raising)
+    return assert_permission_on_studies(studies, permission_type)
 
 
 MATRIX_INPUT_DAYS_COUNT = 365
