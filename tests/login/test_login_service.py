@@ -835,92 +835,104 @@ class TestLoginService:
         login_service.roles.save(Role(type=RoleType.RUNNER, group=group3, identity=freder))
 
         # The site admin can delete any group
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_group("g1", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_group("g1")
         assert login_service.groups.get(group1.id) is None
 
         # The group admin can delete his own group
-        _param = get_user(login_service, user_id=3, group_id="g2")
-        login_service.delete_group("g2", _param)
+        group_admin = get_user(login_service, user_id=3, group_id="g2")
+        with current_user_context(group_admin):
+            login_service.delete_group("g2")
         assert login_service.groups.get(group2.id) is None
 
         # The user cannot delete a group
-        _param = get_user(login_service, user_id=5, group_id="g3")
-        with pytest.raises(Exception):
-            login_service.delete_group("g3", _param)
+        user = get_user(login_service, user_id=5, group_id="g3")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.delete_group("g3")
         assert login_service.groups.get(group3.id) is not None
 
     @with_db_context
     def test_delete_user(self, login_service: LoginService) -> None:
         # Create Joh's bot
         joh_id = 4
-        _param = get_user(login_service, user_id=joh_id, group_id="metropolis")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_user = get_user(login_service, user_id=joh_id, group_id="metropolis")
+        with current_user_context(joh_user):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can delete Fredersen (5)
         freder_id = 5
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_user(freder_id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_user(freder_id)
         assert login_service.users.get(freder_id) is None
 
         # The group admin Joh can delete himself (4)
-        _param = get_user(login_service, user_id=joh_id, group_id="metropolis")
-        login_service.delete_user(joh_id, _param)
+        with current_user_context(joh_user):
+            login_service.delete_user(joh_id)
         assert login_service.users.get(joh_id) is None
         assert login_service.bots.get(joh_bot.id) is None
 
         # Lois Lane cannot delete Clark Kent (2)
         lois_id = 3
         clark_id = 2
-        _param = get_user(login_service, user_id=lois_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_user(clark_id, _param)
+        lois = get_user(login_service, user_id=lois_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(lois):
+                login_service.delete_user(clark_id)
         assert login_service.users.get(clark_id) is not None
 
         # Clark Kent cannot delete Lois Lane (3)
-        _param = get_user(login_service, user_id=clark_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_user(lois_id, _param)
+        clark = get_user(login_service, user_id=clark_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(clark):
+                login_service.delete_user(lois_id)
         assert login_service.users.get(lois_id) is not None
 
     @with_db_context
     def test_delete_bot(self, login_service: LoginService) -> None:
         # Create Joh's bot
         joh_id = 4
-        _param = get_user(login_service, user_id=joh_id, group_id="metropolis")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_user = get_user(login_service, user_id=joh_id, group_id="metropolis")
+        with current_user_context(joh_user):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can delete the bot
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_bot(joh_bot.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_bot(joh_bot.id)
         assert login_service.bots.get(joh_bot.id) is None
 
         # Create Lois's bot
         lois_id = 3
-        _param = get_user(login_service, user_id=lois_id, group_id="superman")
-        lois_bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]), _param)
+        lois = get_user(login_service, user_id=lois_id, group_id="superman")
+        with current_user_context(lois):
+            lois_bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]))
 
         # The group admin cannot delete the bot
         clark_id = 2
-        _param = get_user(login_service, user_id=clark_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_bot(lois_bot.id, _param)
+        clark = get_user(login_service, user_id=clark_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(clark):
+                login_service.delete_bot(lois_bot.id)
         assert login_service.bots.get(lois_bot.id) is not None
 
         # Create Freder's bot
         freder_id = 5
-        _param = get_user(login_service, user_id=freder_id, group_id="metropolis")
-        freder_bot = login_service.save_bot(BotCreateDTO(name="Freder bot", roles=[]), _param)
+        user = get_user(login_service, user_id=freder_id, group_id="metropolis")
+        with current_user_context(user):
+            freder_bot = login_service.save_bot(BotCreateDTO(name="Freder bot", roles=[]))
 
         # Freder can delete his own bot
-        _param = get_user(login_service, user_id=freder_id, group_id="metropolis")
-        login_service.delete_bot(freder_bot.id, _param)
+        with current_user_context(user):
+            login_service.delete_bot(freder_bot.id)
         assert login_service.bots.get(freder_bot.id) is None
 
         # Freder cannot delete Lois's bot
-        _param = get_user(login_service, user_id=freder_id, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.delete_bot(lois_bot.id, _param)
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.delete_bot(lois_bot.id)
         assert login_service.bots.get(lois_bot.id) is not None
 
     @with_db_context
@@ -935,31 +947,35 @@ class TestLoginService:
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The site admin can delete any role
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_role(role.identity.id, role.group.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin can delete a role of his own group
-        _param = get_user(login_service, user_id=user.id, group_id="g1")
-        login_service.delete_role(role.identity.id, role.group.id, _param)
+        group_admin = get_user(login_service, user_id=user.id, group_id="g1")
+        with current_user_context(group_admin):
+            login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin cannot delete a role of another group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_role(role.identity.id, "g1", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin):
+                login_service.delete_role(role.identity.id, "g1")
         assert login_service.roles.get(role.identity.id, "g1") is not None
 
         # The user cannot delete a role
-        _param = get_user(login_service, user_id=1, group_id="g1")
-        with pytest.raises(Exception):
-            login_service.delete_role(role.identity.id, role.group.id, _param)
+        user = get_user(login_service, user_id=1, group_id="g1")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
     @with_db_context
@@ -974,29 +990,33 @@ class TestLoginService:
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The site admin can delete any role
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_all_roles_from_user(user.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin can delete a role of his own group
-        _param = get_user(login_service, user_id=user.id, group_id="g1")
-        login_service.delete_all_roles_from_user(user.id, _param)
+        group_admin = get_user(login_service, user_id=user.id, group_id="g1")
+        with current_user_context(group_admin):
+            login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin cannot delete a role of another group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_all_roles_from_user(user.id, _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin):
+                login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
         # The user cannot delete a role
-        _param = get_user(login_service, user_id=1, group_id="g1")
-        with pytest.raises(Exception):
-            login_service.delete_all_roles_from_user(user.id, _param)
+        user = get_user(login_service, user_id=1, group_id="g1")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin):
+                login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
