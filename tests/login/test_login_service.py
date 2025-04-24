@@ -535,66 +535,62 @@ class TestLoginService:
     def test_get_bot_info(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get any bot
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_bot_info(joh_bot.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_bot_info(joh_bot.id)
         assert actual is not None
         assert actual.model_dump() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
 
         # Joh Fredersen can get its own bot
-        _param = get_user(login_service, user_id=joh_id, group_id="superman")
-        actual = login_service.get_bot_info(joh_bot.id, _param)
+        with current_user_context(joh_fredersen):
+            actual = login_service.get_bot_info(joh_bot.id)
         assert actual is not None
         assert actual.model_dump() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
 
-        # The bot cannot get itself
-        _param = get_bot_user_and_role(login_service, bot_id=joh_bot.id)
-        with pytest.raises(Exception):
-            login_service.get_bot_info(joh_bot.id, _param)
-
         # Freder Fredersen cannot get the bot
         freder_id = 5
-        _param = get_user(login_service, user_id=freder_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_bot_info(joh_bot.id, _param)
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.get_bot_info(joh_bot.id)
 
-        # Freder Fredersen cannot get the bot
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        # Requesting a fake bot fails
         with pytest.raises(Exception):
-            login_service.get_bot_info(999, _param)
+            with current_user_context(admin_user):
+                login_service.get_bot_info(999)
 
     @with_db_context
     def test_get_all_bots_by_owner(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get any bot
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_all_bots_by_owner(joh_id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_all_bots_by_owner(joh_id)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
         assert [obj.to_dto().model_dump() for obj in actual] == expected
 
         # Freder Fredersen can get its own bot
-        _param = get_user(login_service, user_id=joh_id, group_id="superman")
-        actual = login_service.get_all_bots_by_owner(joh_id, _param)
+        freder_id = 5
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with current_user_context(freder_fredersen):
+            actual = login_service.get_all_bots_by_owner(joh_id)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
         assert [obj.to_dto().model_dump() for obj in actual] == expected
 
-        # The bot cannot get itself
-        _param = get_bot_user_and_role(login_service, bot_id=joh_bot.id)
-        with pytest.raises(Exception):
-            login_service.get_all_bots_by_owner(joh_id, _param)
-
         # Freder Fredersen cannot get the bot
-        freder_id = 5
-        _param = get_user(login_service, user_id=freder_id, group_id="superman")
         with pytest.raises(Exception):
-            login_service.get_all_bots_by_owner(joh_id, _param)
+            with current_user_context(freder_fredersen):
+                login_service.get_all_bots_by_owner(joh_id)
 
     @with_db_context
     def test_exists_bot(self, login_service: LoginService) -> None:
