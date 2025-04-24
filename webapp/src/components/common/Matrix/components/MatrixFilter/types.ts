@@ -48,10 +48,28 @@ export interface FilterSectionProps {
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
 }
 
+export interface RowFilterProps extends FilterSectionProps {
+  dateTime?: string[];
+  isTimeSeries: boolean;
+}
+
 export interface OperationsProps extends FilterSectionProps {
   onApplyOperation: () => void;
 }
 
 export interface SelectionSummaryProps {
   filteredData: FilterCriteria;
+}
+
+export interface TemporalIndexingParams {
+  filter: FilterState;
+  dateTime?: string[];
+  isTimeSeries: boolean;
+  totalRows: number;
+}
+
+export interface TemporalOption {
+  value: string;
+  label: string;
+  description: string;
 }

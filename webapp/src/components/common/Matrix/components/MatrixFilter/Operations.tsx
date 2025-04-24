@@ -24,15 +24,18 @@ import {
   TextField,
   Box,
   Button,
+  Slider,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useTranslation } from "react-i18next";
 import type { OperationsProps } from "./types";
 import { Operation } from "../../shared/constants";
+import { useState } from "react";
 
 function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
+  const [value, setValue] = useState<number>(filter.operation.value);
 
   const handleOperationTypeChange = (e: { target: { value: string } }) => {
     setFilter({
@@ -45,13 +48,50 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   };
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = Number.parseFloat(e.target.value) || 0;
+    setValue(newValue);
     setFilter({
       ...filter,
       operation: {
         ...filter.operation,
-        value: Number.parseFloat(e.target.value) || 0,
+        value: newValue,
       },
     });
+  };
+
+  const handleSliderChange = (_event: Event, newValue: number | number[]) => {
+    if (!Array.isArray(newValue)) {
+      setValue(newValue);
+      setFilter({
+        ...filter,
+        operation: {
+          ...filter.operation,
+          value: newValue,
+        },
+      });
+    }
+  };
+
+  // Common operations with predefined values
+  const quickOperations = [
+    { label: "+1", op: Operation.Add, value: 1 },
+    { label: "-1", op: Operation.Sub, value: 1 },
+    { label: "×2", op: Operation.Mul, value: 2 },
+    { label: "÷2", op: Operation.Div, value: 2 },
+    { label: "=0", op: Operation.Eq, value: 0 },
+    { label: "|x|", op: Operation.Abs, value: 0 },
+  ];
+
+  const applyQuickOperation = (op: string, val: number) => {
+    setFilter({
+      ...filter,
+      operation: {
+        type: op,
+        value: val,
+      },
+    });
+    // Immediately apply the operation
+    setTimeout(onApplyOperation, 0);
   };
 
   return (
@@ -60,6 +100,26 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
         <Typography variant="subtitle1">{t("matrix.filter.operation")}</Typography>
       </AccordionSummary>
       <AccordionDetails>
+        {/* Quick operation buttons */}
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>
+            {t("matrix.filter.quickOperations")}
+          </Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            {quickOperations.map((op) => (
+              <Button
+                key={op.label}
+                variant="outlined"
+                size="small"
+                onClick={() => applyQuickOperation(op.op, op.value)}
+                sx={{ minWidth: 40 }}
+              >
+                {op.label}
+              </Button>
+            ))}
+          </Box>
+        </Box>
+
         <FormControl fullWidth margin="dense">
           <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
           <Select
@@ -77,14 +137,37 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
         </FormControl>
 
         {filter.operation.type !== Operation.Abs && (
-          <TextField
-            label={t("matrix.filter.value")}
-            type="number"
-            value={filter.operation.value}
-            onChange={handleValueChange}
-            fullWidth
-            margin="dense"
-          />
+          <>
+            <TextField
+              label={t("matrix.filter.value")}
+              type="number"
+              value={filter.operation.value}
+              onChange={handleValueChange}
+              fullWidth
+              margin="dense"
+            />
+
+            {/* Slider for common ranges */}
+            {filter.operation.type !== Operation.Div && (
+              <Box sx={{ px: 2, pt: 1, pb: 0 }}>
+                <Slider
+                  value={value}
+                  onChange={handleSliderChange}
+                  min={-100}
+                  max={100}
+                  step={0.1}
+                  valueLabelDisplay="auto"
+                  marks={[
+                    { value: -100, label: "-100 " },
+                    { value: -50, label: "-50 " },
+                    { value: 0, label: "0 " },
+                    { value: 50, label: "50 " },
+                    { value: 100, label: "100 " },
+                  ]}
+                />
+              </Box>
+            )}
+          </>
         )}
 
         <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
