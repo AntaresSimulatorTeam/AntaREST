@@ -196,6 +196,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     assert result.status_code == HTTPStatus.CREATED
     mock_storage_service.import_study.assert_called_once()
 
+
 @with_admin_user
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: Path) -> None:

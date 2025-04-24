@@ -1002,8 +1002,11 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     for user_name, jwt_user in jwt_users.items():
         has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
         with current_user_context(jwt_user):
-            actual = assert_permission_on_studies(studies, StudyPermissionType.WRITE)
-        assert actual == has_access
+            if has_access:
+                assert_permission_on_studies(studies, StudyPermissionType.WRITE)
+            else:
+                with pytest.raises(UserHasNotPermissionError):
+                    assert_permission_on_studies(studies, StudyPermissionType.WRITE)
 
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
@@ -1015,13 +1018,17 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Other members of the group should have no access, because they don't have access to the writers-only studies.
     for user_name, jwt_user in jwt_users.items():
         has_access = any(jwt_group.name in {"admin", "Writers"} for jwt_group in jwt_user.groups)
-        actual = assert_permission_on_studies(jwt_user, studies, StudyPermissionType.READ, raising=False)
-        assert actual == has_access
+        with current_user_context(jwt_user):
+            if has_access:
+                assert_permission_on_studies(studies, StudyPermissionType.READ)
+            else:
+                with pytest.raises(UserHasNotPermissionError):
+                    assert_permission_on_studies(studies, StudyPermissionType.WRITE)
 
     # Everybody should have access to the last study, because it is in the readers and writers group.
     for user_name, jwt_user in jwt_users.items():
-        actual = assert_permission_on_studies(jwt_user, studies[-1:], StudyPermissionType.READ, raising=False)
-        assert actual
+        with current_user_context(jwt_user):
+            assert_permission_on_studies(studies[-1:], StudyPermissionType.READ)
 
 
 @with_admin_user
