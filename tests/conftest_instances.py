@@ -16,12 +16,12 @@ instantiating objects such as users, studies, ...
 
 import pytest
 
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
 
 
-def create_admin_user() -> User:
+def create_admin_user() -> JWTUser:
     with db(commit_on_exit=True):
         user = User(id=DEFAULT_ADMIN_USER.id)
         db.session.add(user)
@@ -29,5 +29,5 @@ def create_admin_user() -> User:
 
 
 @pytest.fixture
-def admin_user() -> User:
+def admin_user() -> JWTUser:
     return create_admin_user()
