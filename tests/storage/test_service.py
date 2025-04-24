@@ -39,6 +39,7 @@ from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -90,6 +91,8 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
+
+JWT_USER = JWTUser(id=0, impersonator=0, type="users")
 
 
 def build_study_service(
@@ -432,14 +435,14 @@ def test_create_study() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config, user_service=user_service)
 
+    jwt_user = JWT_USER
     with pytest.raises(UserHasNotPermissionError):
-        service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
+        with current_user_context(jwt_user):
+            service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
 
-    service.create_study(
-        "new-study",
-        STUDY_VERSION_7_2,
-        ["my-group"],
-    )
+    jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
+    with current_user_context(jwt_user):
+        service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"])
 
     study_service.create.assert_called()
     repository.save.assert_called_once_with(expected)
@@ -465,6 +468,8 @@ def test_save_metadata() -> None:
     }
 
     # Input
+    jwt = JWT_USER
+    jwt.groups = [JWTGroup(id="my-group", name="group", role=RoleType.ADMIN)]
     user = User(id=0, name="user")
     group = Group(id="my-group", name="group")
 
@@ -480,7 +485,8 @@ def test_save_metadata() -> None:
     service = build_study_service(study_service, repository, config)
 
     service.user_service.get_user.return_value = user  # type: ignore
-    service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
+    with current_user_context(jwt):
+        service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
     repository.save.assert_called_once_with(study)
 
 
