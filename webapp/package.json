@@ -24,7 +24,7 @@
     "@mui/material": "6.4.3",
     "@mui/x-tree-view": "7.26.0",
     "@reduxjs/toolkit": "1.9.6",
-    "axios": "1.7.7",
+    "axios": "1.8.4",
     "clsx": "2.1.1",
     "d3": "5.16.0",
     "date-fns": "4.1.0",
