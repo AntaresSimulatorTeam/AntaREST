@@ -73,6 +73,16 @@ export default {
         minWidth: "auto",
       },
     },
+    variants: [
+      {
+        props: { size: "extra-small" },
+        style: {
+          padding: 4,
+          fontSize: "0.75rem",
+          lineHeight: "initial",
+        },
+      },
+    ],
   },
   MuiToggleButton: {
     variants: [

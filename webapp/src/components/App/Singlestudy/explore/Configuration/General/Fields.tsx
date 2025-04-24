@@ -181,7 +181,7 @@ function Fields(props: Props) {
           }}
         />
       </Fieldset>
-      <Box sx={{ display: "flex" }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
         <Fieldset
           legend={t("study.configuration.general.legend.monteCarloScenarios")}
           sx={{
@@ -232,7 +232,7 @@ function Fields(props: Props) {
             </Button>
           </FieldWithButton>
         </Fieldset>
-        <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+        <Divider orientation="vertical" flexItem />
         <Fieldset
           legend={t("study.configuration.general.legend.outputProfile")}
           sx={{
