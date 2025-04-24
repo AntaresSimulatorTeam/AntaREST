@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Button, ButtonGroup, Divider } from "@mui/material";
+import { Box, Button, ButtonGroup, Divider } from "@mui/material";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import * as R from "ramda";
@@ -31,6 +31,7 @@ import useConfirm from "@/hooks/useConfirm";
 import type { PlaylistData } from "@/services/api/studies/config/playlist/types";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface Props {
   study: StudyMetadata;
@@ -119,30 +120,33 @@ function ScenarioPlaylistDialog(props: Props) {
           {t("global.close")}
         </Button>
       }
-      PaperProps={{ sx: { height: 700 } }}
       maxWidth="md"
       fullWidth
     >
       <UsePromiseCond
         response={res}
         ifFulfilled={(defaultValues) => (
-          <>
-            <ButtonGroup disabled={isSubmitting} sx={{ justifyContent: "flex-end", mb: 1 }}>
-              <Button color="secondary" onClick={handleUpdateStatus(R.T)}>
-                {t("study.configuration.general.mcScenarioPlaylist.action.enableAll")}
-              </Button>
-              <Button color="secondary" onClick={handleUpdateStatus(R.F)}>
-                {t("study.configuration.general.mcScenarioPlaylist.action.disableAll")}
-              </Button>
-              <Divider orientation="vertical" flexItem />
-              <Button color="secondary" onClick={handleUpdateStatus(R.not)}>
-                {t("study.configuration.general.mcScenarioPlaylist.action.reverse")}
-              </Button>
-              <Divider orientation="vertical" flexItem />
-              <Button color="secondary" onClick={handleResetWeights}>
-                {t("study.configuration.general.mcScenarioPlaylist.action.resetWeights")}
-              </Button>
-            </ButtonGroup>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflow: "auto" }}>
+            <Box>
+              <CustomScrollbar>
+                <Box>
+                  <ButtonGroup disabled={isSubmitting} color="secondary" size="extra-small">
+                    <Button onClick={handleUpdateStatus(R.T)}>
+                      {t("study.configuration.general.mcScenarioPlaylist.action.enableAll")}
+                    </Button>
+                    <Button onClick={handleUpdateStatus(R.F)}>
+                      {t("study.configuration.general.mcScenarioPlaylist.action.disableAll")}
+                    </Button>
+                    <Button onClick={handleUpdateStatus(R.not)}>
+                      {t("study.configuration.general.mcScenarioPlaylist.action.reverse")}
+                    </Button>
+                    <Button onClick={handleResetWeights}>
+                      {t("study.configuration.general.mcScenarioPlaylist.action.resetWeights")}
+                    </Button>
+                  </ButtonGroup>
+                </Box>
+              </CustomScrollbar>
+            </Box>
             <DataGridForm
               defaultData={defaultValues}
               columns={columns}
@@ -164,7 +168,7 @@ function ScenarioPlaylistDialog(props: Props) {
             >
               {t("form.changeNotSaved")}
             </ConfirmationDialog>
-          </>
+          </Box>
         )}
       />
     </BasicDialog>
