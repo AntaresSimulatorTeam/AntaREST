@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
+from helpers import with_admin_user
 from sqlalchemy import event
 
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -24,6 +25,7 @@ from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
+from antarest.login.utils import current_user_context
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -86,12 +88,12 @@ class TestVariantStudyService:
             variant_study_service.repository.save(root_study)
         return root_study_id
 
+    @with_admin_user
     @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
     def test_commands_service(
         self,
         root_study_id: str,
-        jwt_user: JWTUser,
         generator_matrix_constants: GeneratorMatrixConstants,
         variant_study_service: VariantStudyService,
     ) -> None:
@@ -161,7 +163,7 @@ class TestVariantStudyService:
             study_factory=variant_study_service.study_factory,
             repository=variant_study_service.repository,
         )
-        results = generator.generate_snapshot(saved_id, jwt_user, denormalize=False)
+        results = generator.generate_snapshot(saved_id, denormalize=False)
         assert results.model_dump() == {
             "success": True,
             "details": [
@@ -278,7 +280,8 @@ class TestVariantStudyService:
                 nb_queries += 1
 
         # Generate a variant on a study that allow other user to edit it
-        variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant")
+        with current_user_context(jwt_user):
+            variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant")
 
         commands = []
 
@@ -291,8 +294,10 @@ class TestVariantStudyService:
                     study_version=StudyVersion.parse(variant_study.version),
                 )
             )
-        variant_study_service.append_commands(variant_study.id, commands)
+        with current_user_context(jwt_user):
+            variant_study_service.append_commands(variant_study.id, commands)
 
         nb_queries_before = nb_queries  # store initial state
-        variant_study_service.get_commands(variant_study.id)  # execute database query
+        with current_user_context(jwt_user):
+            variant_study_service.get_commands(variant_study.id)  # execute database query
         assert nb_queries_before + 1 == nb_queries  # compare with initial state to make sure database was queried once
