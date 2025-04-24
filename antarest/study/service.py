@@ -1211,7 +1211,6 @@ class StudyService:
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
         return self.storage_service.get_storage(study).export_study_flat(
