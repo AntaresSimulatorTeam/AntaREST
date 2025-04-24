@@ -31,7 +31,7 @@ from antarest.login.model import (
     UserCreateDTO,
     UserLdap,
 )
-from antarest.login.service import LoginService
+from antarest.login.service import GroupNotFoundError, LoginService
 from antarest.login.utils import current_user_context
 from tests.helpers import with_db_context
 
@@ -294,48 +294,39 @@ class TestLoginService:
     @with_db_context
     def test_save_role(self, login_service: LoginService) -> None:
         # Prepare a new group and a new user
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         login_service.groups.save(Group(id="web", name="Spider Web"))
         login_service.users.save(User(id=20, name="Spider-man"))
         login_service.users.save(User(id=21, name="Spider-woman"))
 
         # The site admin can create a role
-        login_service.save_role(
-            RoleCreationDTO(type=RoleType.ADMIN, group_id="web", identity_id=20),
-            _param,
-        )
+        with current_user_context(admin_user):
+            login_service.save_role(RoleCreationDTO(type=RoleType.ADMIN, group_id="web", identity_id=20))
         actual = login_service.roles.get(20, "web")
         assert actual is not None
         assert actual.type == RoleType.ADMIN
 
         # The group admin can create a role
-        _param = get_user(login_service, user_id=20, group_id="web")
-        login_service.save_role(
-            RoleCreationDTO(type=RoleType.WRITER, group_id="web", identity_id=21),
-            _param,
-        )
+        group_admin = get_user(login_service, user_id=20, group_id="web")
+        with current_user_context(group_admin):
+            login_service.save_role(RoleCreationDTO(type=RoleType.WRITER, group_id="web", identity_id=21))
         actual = login_service.roles.get(21, "web")
         assert actual is not None
         assert actual.type == RoleType.WRITER
 
         # The group admin cannot create a role with an invalid group
-        _param = get_user(login_service, user_id=20, group_id="web")
         with pytest.raises(Exception):
-            login_service.save_role(
-                RoleCreationDTO(type=RoleType.WRITER, group_id="web2", identity_id=21),
-                _param,
-            )
+            with current_user_context(group_admin):
+                login_service.save_role(RoleCreationDTO(type=RoleType.WRITER, group_id="web2", identity_id=21))
         actual = login_service.roles.get(21, "web")
         assert actual is not None
         assert actual.type == RoleType.WRITER
 
         # The user cannot create a role
-        _param = get_user(login_service, user_id=21, group_id="web")
-        with pytest.raises(Exception):
-            login_service.save_role(
-                RoleCreationDTO(type=RoleType.READER, group_id="web", identity_id=20),
-                _param,
-            )
+        user = get_user(login_service, user_id=21, group_id="web")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.save_role(RoleCreationDTO(type=RoleType.READER, group_id="web", identity_id=20))
         actual = login_service.roles.get(20, "web")
         assert actual is not None
         assert actual.type == RoleType.ADMIN
@@ -343,33 +334,37 @@ class TestLoginService:
     @with_db_context
     def test_get_group(self, login_service: LoginService) -> None:
         # Site admin can get any group
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_group("superman", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_group("superman")
         assert actual is not None
         assert actual.name == "Superman"
 
         # Group admin can get his own group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_group("superman", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_group("superman")
         assert actual is not None
         assert actual.name == "Superman"
 
         # Group admin cannot get another group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_group("metropolis", _param)
+        with pytest.raises(GroupNotFoundError):
+            with current_user_context(group_admin):
+                login_service.get_group("metropolis")
 
         # Lois Lane can get its own group
-        _param = get_user(login_service, user_id=3, group_id="superman")
-        actual = login_service.get_group("superman", _param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(user):
+            actual = login_service.get_group("superman")
         assert actual is not None
         assert actual.id == "superman"
 
     @with_db_context
     def test_get_group_info(self, login_service: LoginService) -> None:
         # Site admin can get any group
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_group_info("superman", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_group_info("superman")
         assert actual is not None
         assert actual.name == "Superman"
         assert [obj.model_dump() for obj in actual.users] == [
@@ -378,20 +373,22 @@ class TestLoginService:
         ]
 
         # Group admin can get his own group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_group_info("superman", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_group_info("superman")
         assert actual is not None
         assert actual.name == "Superman"
 
         # Group admin cannot get another group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_group_info("metropolis", _param)
+        with pytest.raises(GroupNotFoundError):
+            with current_user_context(group_admin):
+                login_service.get_group_info("metropolis")
 
         # Lois Lane cannot get its own group
-        _param = get_user(login_service, user_id=3, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_group_info("superman", _param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.get_group_info("superman")
 
     @with_db_context
     def test_get_user(self, login_service: LoginService) -> None:
