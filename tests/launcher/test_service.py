@@ -22,6 +22,7 @@ from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from helpers import with_admin_user
 from sqlalchemy import create_engine
 from typing_extensions import Literal
 
@@ -61,6 +62,7 @@ from antarest.study.storage.output_service import OutputService
 
 
 class TestLauncherService:
+    @with_admin_user
     @pytest.mark.unit_test
     @patch.object(Auth, "get_current_user")
     def test_service_run_study(self, get_current_user_mock) -> None:
@@ -136,6 +138,7 @@ class TestLauncherService:
             )
         )
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_service_get_result_from_launcher(self) -> None:
         launcher_mock = Mock()
@@ -172,6 +175,7 @@ class TestLauncherService:
         job_id = uuid4()
         assert launcher_service.get_result(job_uuid=job_id) == fake_execution_result
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_service_get_result_from_database(self) -> None:
         launcher_mock = Mock()
@@ -527,6 +531,7 @@ class TestLauncherService:
             # Check the result
             assert actual == NbCoresConfig(**expected)
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_service_kill_job(self, tmp_path: Path) -> None:
         study_service = Mock()
@@ -652,6 +657,7 @@ class TestLauncherService:
             ]
         )
 
+    @with_admin_user
     def test_manage_output(self, tmp_path: Path) -> None:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)

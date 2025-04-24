@@ -32,7 +32,7 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
 from antarest.study.storage.study_download_utils import BadOutputFormat
-from tests.helpers import assert_study
+from tests.helpers import assert_study, with_admin_user
 from tests.storage.integration.conftest import UUID
 from tests.storage.integration.data.de_details_hourly import de_details_hourly
 from tests.storage.integration.data.de_fr_values_hourly import de_fr_values_hourly
@@ -84,6 +84,7 @@ def assert_with_errors(
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -103,6 +104,7 @@ def test_sta_mini_settings(storage_service, url: str, expected_output: str):
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -125,6 +127,7 @@ def test_sta_mini_layers_layers(storage_service, url: str, expected_output: str)
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -148,6 +151,7 @@ def test_sta_mini_desktop(storage_service, url: str, expected_output: str):
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -176,6 +180,7 @@ df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
 expected_min_gen_response = buffer.getvalue()
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output, formatted",
@@ -308,6 +313,7 @@ def test_sta_mini_input(storage_service, url: str, expected_output: dict, format
     assert_with_errors(storage_service=storage_service, url=url, expected_output=expected_output, formatted=formatted)
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
