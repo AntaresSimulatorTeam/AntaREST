@@ -85,13 +85,6 @@ def get_user(login_service: LoginService, user_id: int, group_id: str = "(unknow
     )
 
 
-def get_bot_user_and_role(login_service: LoginService, bot_id: int, group_id: str = "(unknown)") -> tuple[Bot, Role]:
-    bot = login_service.bots.get(bot_id)
-    assert bot is not None
-    role = login_service.roles.get(bot_id, group_id)
-    return bot, role
-
-
 class TestLoginService:
     """
     Test login service.
@@ -579,16 +572,16 @@ class TestLoginService:
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
         assert [obj.to_dto().model_dump() for obj in actual] == expected
 
-        # Freder Fredersen can get its own bot
-        freder_id = 5
-        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
-        with current_user_context(freder_fredersen):
+        # Joh Fredersen can get its own bot
+        with current_user_context(joh_fredersen):
             actual = login_service.get_all_bots_by_owner(joh_id)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
         assert [obj.to_dto().model_dump() for obj in actual] == expected
 
         # Freder Fredersen cannot get the bot
-        with pytest.raises(Exception):
+        freder_id = 5
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
             with current_user_context(freder_fredersen):
                 login_service.get_all_bots_by_owner(joh_id)
 
