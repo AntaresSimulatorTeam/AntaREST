@@ -45,7 +45,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
-from antarest.login.utils import get_current_user
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.service_creator import SESSION_ARGS
 from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
@@ -291,7 +291,8 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
 
     backend.clear_events()
 
-    service.cancel_task("b", dispatch=True)
+    with current_user_context(admin_user):
+        service.cancel_task("b", dispatch=True)
 
     collected_events = backend.get_events()
 
@@ -307,7 +308,8 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
 
     backend.clear_events()
 
-    service.cancel_task("a", dispatch=True)
+    with current_user_context(admin_user):
+        service.cancel_task("a", dispatch=True)
 
     collected_events = backend.get_events()
     assert len(collected_events) == 0, "No event should have been emitted because the task is in the service map"
@@ -419,12 +421,14 @@ def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEven
     # Asserts admin and user_1 can fetch the first_task progress
     user_1 = JWTUser(id=user1_id, type="user", impersonator=user1_id)
     for user in [user_1, admin_user]:
-        progress = service.get_task_progress(first_task.id)
+        with current_user_context(user):
+            progress = service.get_task_progress(first_task.id)
         assert progress == 40
 
     # Asserts admin and user_2 can fetch the second_task progress
     for user in [user_2, admin_user]:
-        progress = service.get_task_progress(second_task.id)
+        with current_user_context(user):
+            progress = service.get_task_progress(second_task.id)
         assert progress is None
 
     # Asserts fetching with a wrong id raises an Exception
@@ -608,19 +612,21 @@ def test_task_user(core_config: Config, event_bus: IEventBus):
         # must set the task 'result' field at regular_user.id
         return TaskResult(success=True, message="success", return_value=str(current_user.id))
 
-    result = task_job_service.add_task(
-        action=action_task,
-        name="task_test_2",
-        task_type=TaskType.SCAN,
-        ref_id=None,
-        progress=None,
-        custom_event_messages=None,
-    )
+    with current_user_context(jwt_user):
+        result = task_job_service.add_task(
+            action=action_task,
+            name="task_test_2",
+            task_type=TaskType.SCAN,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
 
     task_job_service.await_task(result, 10)
 
     # Check whether the owner is the created user and not the admin one
-    task_list = task_job_service.list_tasks(TaskListFilter())
+    with current_user_context(jwt_user):
+        task_list = task_job_service.list_tasks(TaskListFilter())
     assert len(task_list) == 1
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
