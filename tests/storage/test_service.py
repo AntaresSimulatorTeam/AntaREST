@@ -23,6 +23,7 @@ from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
 from antares.study.version import StudyVersion
+from helpers import with_admin_user
 from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
@@ -1015,6 +1016,7 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
         assert actual
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_delete_study_calls_callback(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
@@ -1042,6 +1044,7 @@ def test_delete_study_calls_callback(tmp_path: Path) -> None:
     callback.assert_called_once_with(study_uuid)
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
@@ -1127,7 +1130,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     )
 
 
-# noinspection PyArgumentList
+@with_admin_user
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
     raw_study_service = RawStudyService(Config(), Mock(), Mock())
@@ -1311,6 +1314,7 @@ def test_create_command(
     assert command.command_name.value == expected_name
 
 
+@with_admin_user
 def test_unarchive_output(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1378,6 +1382,7 @@ def test_unarchive_output(tmp_path: Path) -> None:
     )
 
 
+@with_admin_user
 def test_archive_output_locks(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1515,6 +1520,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
     )
 
 
+@with_admin_user
 def test_get_save_logs(tmp_path: Path) -> None:
     study_id = str(uuid.uuid4())
     study_name = "My Study"
@@ -1599,6 +1605,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
     )
 
 
+@with_admin_user
 def test_task_upgrade_study(tmp_path: Path) -> None:
     service = build_study_service(
         raw_study_service=Mock(),
