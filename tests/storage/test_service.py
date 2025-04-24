@@ -23,7 +23,6 @@ from unittest.mock import ANY, Mock, call, patch, seal
 
 import pytest
 from antares.study.version import StudyVersion
-from helpers import with_admin_user
 from sqlalchemy.orm import Session  # type: ignore
 from starlette.responses import Response
 
@@ -92,7 +91,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import with_db_context
+from tests.helpers import with_admin_user, with_db_context
 
 JWT_USER = JWTUser(id=0, impersonator=0, type="users")
 
