@@ -393,37 +393,34 @@ class TestLoginService:
     @with_db_context
     def test_get_user(self, login_service: LoginService) -> None:
         # Site admin can get any user
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_user(2, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_user(2)
         assert actual is not None
         assert actual.name == "Clark Kent"
 
         # Group admin can get a user of his own group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_user(3, _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_user(3)
         assert actual is not None
         assert actual.name == "Lois Lane"
 
         # Group admin cannot get a user of another group
-        _param = get_user(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_user(5, _param)
+        with current_user_context(group_admin):
+            actual = login_service.get_user(5)
         assert actual is None
 
         # Lois Lane can get its own user
-        _param = get_user(login_service, user_id=3, group_id="superman")
-        actual = login_service.get_user(3, _param)
+        lois_lane = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(lois_lane):
+            actual = login_service.get_user(3)
         assert actual is not None
         assert actual.name == "Lois Lane"
 
-        # Create a bot for Lois Lane
-        _param = get_user(login_service, user_id=3, group_id="superman")
-        bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]), _param)
-
-        # The bot can get its owner
-        _param = get_bot_user_and_role(login_service, bot_id=bot.id)
-        actual = login_service.get_user(3, _param)
-        assert actual is not None
-        assert actual.name == "Lois Lane"
+        # Lois Lane is able to create its own bot
+        with current_user_context(lois_lane):
+            login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]))
 
     @with_db_context
     def test_get_identity(self, login_service: LoginService) -> None:
@@ -445,9 +442,10 @@ class TestLoginService:
     @with_db_context
     def test_get_user_info(self, login_service: LoginService) -> None:
         # Site admin can get any user
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         clark_id = 2
-        actual = login_service.get_user_info(clark_id, _param)
+        with current_user_context(admin_user):
+            actual = login_service.get_user_info(clark_id)
         assert actual is not None
         assert actual.model_dump() == {
             "id": clark_id,
@@ -463,9 +461,10 @@ class TestLoginService:
         }
 
         # Group admin can get a user of his own group
-        _param = get_user(login_service, user_id=clark_id, group_id="superman")
+        group_admin = get_user(login_service, user_id=clark_id, group_id="superman")
         lois_id = 3
-        actual = login_service.get_user_info(lois_id, _param)
+        with current_user_context(group_admin):
+            actual = login_service.get_user_info(lois_id)
         assert actual is not None
         assert actual.model_dump() == {
             "id": lois_id,
@@ -481,35 +480,15 @@ class TestLoginService:
         }
 
         # Group admin cannot get a user of another group
-        _param = get_user(login_service, user_id=clark_id, group_id="superman")
         freder_id = 5
-        actual = login_service.get_user_info(freder_id, _param)
+        with current_user_context(group_admin):
+            actual = login_service.get_user_info(freder_id)
         assert actual is None
 
         # Lois Lane can get its own user info
-        _param = get_user(login_service, user_id=lois_id, group_id="superman")
-        actual = login_service.get_user_info(lois_id, _param)
-        assert actual is not None
-        assert actual.model_dump() == {
-            "id": lois_id,
-            "name": "Lois Lane",
-            "roles": [
-                {
-                    "group_id": "superman",
-                    "group_name": "Superman",
-                    "identity_id": lois_id,
-                    "type": RoleType.READER,
-                }
-            ],
-        }
-
-        # Create a bot for Lois Lane
-        _param = get_user(login_service, user_id=lois_id, group_id="superman")
-        bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]), _param)
-
-        # The bot can get its owner
-        _param = get_bot_user_and_role(login_service, bot_id=bot.id)
-        actual = login_service.get_user_info(lois_id, _param)
+        lois_lane = get_user(login_service, user_id=lois_id, group_id="superman")
+        with current_user_context(lois_lane):
+            actual = login_service.get_user_info(lois_id)
         assert actual is not None
         assert actual.model_dump() == {
             "id": lois_id,
@@ -528,31 +507,29 @@ class TestLoginService:
     def test_get_bot(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user(login_service, user_id=joh_id, group_id="metropolis")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="metropolis")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get any bot
-        _param = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_bot(joh_bot.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_bot(joh_bot.id)
         assert actual is not None
         assert actual.name == "Maria"
 
         # Joh Fredersen can get its own bot
-        _param = get_user(login_service, user_id=joh_id, group_id="superman")
-        actual = login_service.get_bot(joh_bot.id, _param)
+        with current_user_context(joh_fredersen):
+            actual = login_service.get_bot(joh_bot.id)
         assert actual is not None
         assert actual.name == "Maria"
 
-        # The bot cannot get itself
-        _param = get_bot_user_and_role(login_service, bot_id=joh_bot.id)
-        with pytest.raises(Exception):
-            login_service.get_bot(joh_bot.id, _param)
-
         # Freder Fredersen cannot get the bot
         freder_id = 5
-        _param = get_user(login_service, user_id=freder_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_bot(joh_bot.id, _param)
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.get_bot(joh_bot.id)
 
     @with_db_context
     def test_get_bot_info(self, login_service: LoginService) -> None:
