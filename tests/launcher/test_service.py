@@ -38,6 +38,7 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
@@ -54,6 +55,7 @@ from antarest.launcher.model import (
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.auth import Auth
 from antarest.login.model import Identity
+from antarest.login.utils import current_user_context
 from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -284,15 +286,22 @@ class TestLauncherService:
         )
 
         study_id = uuid4()
-        assert launcher_service.get_jobs(str(study_id)) == fake_execution_result
-        repository.find_by_study.assert_called_once_with(str(study_id))
-        assert launcher_service.get_jobs(None) == all_faked_execution_results
-        assert launcher_service.get_jobs(None) == []
+
+        with current_user_context(DEFAULT_ADMIN_USER):
+            assert launcher_service.get_jobs(str(study_id)) == fake_execution_result
+            repository.find_by_study.assert_called_once_with(str(study_id))
+            assert launcher_service.get_jobs(None) == all_faked_execution_results
+
+        jwt_user = JWTUser(id=2, impersonator=2, type="users", groups=[])
+        with current_user_context(jwt_user):
+            assert launcher_service.get_jobs(None) == []
 
         with pytest.raises(UserHasNotPermissionError):
-            launcher_service.remove_job("some job")
+            with current_user_context(jwt_user):
+                launcher_service.remove_job("some job")
 
-        launcher_service.remove_job("some job")
+        with current_user_context(DEFAULT_ADMIN_USER):
+            launcher_service.remove_job("some job")
         repository.delete.assert_called_with("some job")
 
     @pytest.mark.unit_test
