@@ -446,6 +446,7 @@ def test_sta_mini_output(storage_service, url: str, expected_output: dict):
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -485,6 +486,7 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 def test_sta_mini_copy(storage_service) -> None:
     source_study_name = UUID
@@ -521,6 +523,7 @@ def test_sta_mini_copy(storage_service) -> None:
     assert_study(data_source, data_destination)
 
 
+@with_admin_user
 @pytest.mark.integration_test
 def test_sta_mini_list_studies(storage_service) -> None:
     expected_output = {
@@ -565,6 +568,7 @@ def notest_sta_mini_with_wrong_output_folder(storage_service: StudyService, sta_
     )
 
 
+@with_admin_user
 @pytest.mark.integration_test
 def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     path_study = storage_service.get_study_path(UUID)
@@ -579,6 +583,7 @@ def test_sta_mini_import(tmp_path: Path, storage_service) -> None:
     assert result.status_code == HTTPStatus.CREATED.value
 
 
+@with_admin_user
 @pytest.mark.integration_test
 def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     path_study_output = storage_service.get_study_path(UUID) / "output" / "20201014-1422eco-hello"
@@ -599,6 +604,7 @@ def test_sta_mini_import_output(tmp_path: Path, storage_service) -> None:
     assert result.status_code == HTTPStatus.ACCEPTED.value
 
 
+@with_admin_user
 @pytest.mark.integration_test
 @pytest.mark.parametrize(
     "url, expected_output",
@@ -629,6 +635,7 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
     )
 
 
+@with_admin_user
 def test_sta_mini_output_variables_nominal_case(output_service):
     variables = output_service.output_variables_information(UUID, "20201014-1422eco-hello")
     assert variables["area"] == [
@@ -682,11 +689,13 @@ def test_sta_mini_output_variables_nominal_case(output_service):
     ]
 
 
+@with_admin_user
 def test_sta_mini_output_variables_no_mc_ind(output_service):
     with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
         output_service.output_variables_information(UUID, "20201014-1427eco")
 
 
+@with_admin_user
 def test_sta_mini_output_variables_no_links(output_service):
     study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
@@ -696,6 +705,7 @@ def test_sta_mini_output_variables_no_links(output_service):
     assert variables["link"] == []
 
 
+@with_admin_user
 def test_sta_mini_output_variables_no_areas(output_service):
     study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
