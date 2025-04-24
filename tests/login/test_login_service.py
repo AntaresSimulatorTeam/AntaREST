@@ -199,102 +199,97 @@ class TestLoginService:
     @with_db_context
     def test_save_bot(self, login_service: LoginService) -> None:
         # Joh Fredersen can create Maria because he is the leader of Metropolis
-        _param = get_user(login_service, user_id=4, group_id="metropolis")
-        login_service.save_bot(BotCreateDTO(name="Maria I", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=4, group_id="metropolis")
+        with current_user_context(joh_fredersen):
+            login_service.save_bot(BotCreateDTO(name="Maria I", roles=[]))
         actual: t.Sequence[Role] = login_service.bots.get_all_by_owner(4)
         assert len(actual) == 1
         assert actual[0].name == "Maria I"
 
         # Freder Fredersen can create Maria with the reader role
-        _param = get_user(login_service, user_id=5, group_id="metropolis")
-        login_service.save_bot(
-            BotCreateDTO(
-                name="Maria II",
-                roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.READER.value)],
-            ),
-            _param,
-        )
+        freder_fredersen = get_user(login_service, user_id=5, group_id="metropolis")
+        with current_user_context(freder_fredersen):
+            login_service.save_bot(
+                BotCreateDTO(
+                    name="Maria II",
+                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.READER.value)],
+                )
+            )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create Maria with the admin role
-        _param = get_user(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria III",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria III",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create a bot with an empty name
-        _param = get_user(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create a bot that already exists
-        _param = get_user(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria II",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria II",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create a bot with an invalid group
-        _param = get_user(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria III",
-                    roles=[BotRoleCreateDTO(group="metropolis2", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria III",
+                        roles=[BotRoleCreateDTO(group="metropolis2", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Bot's name cannot be empty
-        _param = get_user(login_service, user_id=4, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(Exception, match="Bot name must not be empty"):
+            with current_user_context(joh_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
 
         # Avoid duplicate bots
-        _param = get_user(login_service, user_id=4, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria I",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(Exception, match="Bot name already exists"):
+            with current_user_context(joh_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria I",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
 
     @with_db_context
     def test_save_role(self, login_service: LoginService) -> None:
