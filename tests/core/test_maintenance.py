@@ -18,6 +18,7 @@ from sqlalchemy import create_engine
 from antarest.core.config import Config
 from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.interfaces.eventbus import Event, EventType
+from antarest.core.jwt import JWTUser
 from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.maintenance.service import MaintenanceService
@@ -25,9 +26,10 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.login.utils import current_user_context
 
 
-def test_service_without_cache() -> None:
+def test_service_without_cache(admin_user) -> None:
     engine = create_engine("sqlite:///:memory:", echo=False)
     Base.metadata.create_all(engine)
     # noinspection SpellCheckingInspection
@@ -82,7 +84,8 @@ def test_service_without_cache() -> None:
     # Set maintenance mode
     mode = True
     maintenance_mode = MaintenanceMode.from_bool(mode)
-    service.set_maintenance_status(data=mode)
+    with current_user_context(admin_user):
+        service.set_maintenance_status(data=mode)
     repo_mock.save_maintenance_mode.assert_called_with(maintenance_mode.value)
     cache.put.assert_called_with(
         ConfigDataAppKeys.MAINTENANCE_MODE.value,
@@ -98,7 +101,8 @@ def test_service_without_cache() -> None:
 
     # Set message
     data = "Hey"
-    service.set_message_info(data=data)
+    with current_user_context(admin_user):
+        service.set_message_info(data=data)
     repo_mock.save_message_info.assert_called_with(data)
     cache.put.assert_called_with(ConfigDataAppKeys.MESSAGE_INFO.value, {"content": data})
     event_bus.push.assert_called_with(
@@ -110,8 +114,15 @@ def test_service_without_cache() -> None:
     )
 
     # Set message with no admin permission
+    not_admin_user = JWTUser(
+        id=1,
+        impersonator=1,
+        type="users",
+        groups=[],
+    )
     with pytest.raises(UserHasNotPermissionError):
-        service.set_message_info(data=data)
+        with current_user_context(not_admin_user):
+            service.set_message_info(data=data)
 
 
 def test_service_with_cache() -> None:
