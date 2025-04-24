@@ -30,6 +30,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
+from antarest.login.utils import current_user_context
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
     Matrix,
@@ -373,12 +374,13 @@ def test_dataset_lifecycle() -> None:
     ]
 
     user_service.get_group.return_value = Group(id="groupA", name="groupA")
-    service.create_dataset(dataset_info, matrices)
+    with current_user_context(userA):
+        service.create_dataset(dataset_info, matrices)
     assert dataset_repo.save.call_count == 1
     call = dataset_repo.save.call_args_list[0]
     assert call[0][0].name == "datasetA"
     assert call[0][0].public is True
-    assert call[0][0].owner_id == userA.user.id
+    assert call[0][0].owner_id == userA.id
     groups = call[0][0].groups
     assert len(groups) == 1
     assert groups[0].id == "groupA"
@@ -394,8 +396,8 @@ def test_dataset_lifecycle() -> None:
             id="some id",
             name="datasetA",
             public=True,
-            owner_id=userA.user.id,
-            owner=Identity(id=userA.user.id, name="userA", type="users"),
+            owner_id=userA.id,
+            owner=Identity(id=userA.id, name="userA", type="users"),
             groups=[Group(id="groupA", name="groupA")],
             created_at=somedate,
             updated_at=somedate,
@@ -408,8 +410,8 @@ def test_dataset_lifecycle() -> None:
             id="some id 2",
             name="datasetB",
             public=False,
-            owner_id=userB.user.id,
-            owner=Identity(id=userB.user.id, name="userB", type="users"),
+            owner_id=userB.id,
+            owner=Identity(id=userB.id, name="userB", type="users"),
             groups=[Group(id="groupB", name="groupB")],
             created_at=somedate,
             updated_at=somedate,
@@ -419,14 +421,15 @@ def test_dataset_lifecycle() -> None:
             ],
         ),
     ]
-    res = service.list("dataset", True, botA)
-    dataset_repo.query.assert_called_with("dataset", botA.user.impersonator)
+    with current_user_context(botA):
+        res = service.list("dataset", True)
+    dataset_repo.query.assert_called_with("dataset", botA.impersonator)
     assert len(res) == 1
     assert res[0] == MatrixDataSetDTO(
         id="some id",
         name="datasetA",
         public=True,
-        owner=UserInfo(id=userA.user.id, name="userA"),
+        owner=UserInfo(id=userA.id, name="userA"),
         groups=[GroupDTO(id="groupA", name="groupA")],
         created_at=str(somedate),
         updated_at=str(somedate),
@@ -435,29 +438,31 @@ def test_dataset_lifecycle() -> None:
             MatrixInfoDTO(name="B", id="m2"),
         ],
     )
-    service.list("dataset", False, botA)
+    with current_user_context(botA):
+        service.list("dataset", False)
     dataset_repo.query.assert_called_with("dataset", None)
-    res = service.list("dataset", False, userB)
+    with current_user_context(userB):
+        res = service.list("dataset", False)
     assert len(res) == 2
 
     with pytest.raises(MatrixDataSetNotFound):
         dataset_repo.get.return_value = None
-        service.update_dataset(
-            "dataset_id",
-            MatrixDataSetUpdateDTO(
-                name="datasetA",
-                groups=["groupA"],
-                public=True,
-            ),
-            userA,
-        )
+        with current_user_context(userB):
+            service.update_dataset(
+                "dataset_id",
+                MatrixDataSetUpdateDTO(
+                    name="datasetA",
+                    groups=["groupA"],
+                    public=True,
+                ),
+            )
 
     dataset_repo.get.return_value = MatrixDataSet(
         id="some id",
         name="datasetA",
         public=True,
-        owner_id=userA.user.id,
-        owner=Identity(id=userA.user.id, name="userA", type="users"),
+        owner_id=userA.id,
+        owner=Identity(id=userA.id, name="userA", type="users"),
         groups=[Group(id="groupA", name="groupA")],
         created_at=somedate,
         updated_at=somedate,
@@ -467,30 +472,31 @@ def test_dataset_lifecycle() -> None:
         ],
     )
     with pytest.raises(UserHasNotPermissionError):
-        service.update_dataset(
-            "dataset_id",
-            MatrixDataSetUpdateDTO(
-                name="datasetA",
-                groups=["groupA"],
-                public=True,
-            ),
-            userB,
-        )
+        with current_user_context(userB):
+            service.update_dataset(
+                "dataset_id",
+                MatrixDataSetUpdateDTO(
+                    name="datasetA",
+                    groups=["groupA"],
+                    public=True,
+                ),
+            )
 
     user_service.get_group.return_value = Group(id="groupB", name="groupB")
-    service.update_dataset(
-        "some id",
-        MatrixDataSetUpdateDTO(
-            name="datasetA bis",
-            groups=["groupB"],
-            public=False,
-        ),
-        botA,
-    )
+    with current_user_context(botA):
+        service.update_dataset(
+            "some id",
+            MatrixDataSetUpdateDTO(
+                name="datasetA bis",
+                groups=["groupB"],
+                public=False,
+            ),
+        )
 
-    user_service.get_group.assert_called_with("groupB", botA)
+    user_service.get_group.assert_called_with("groupB")
 
-    service.delete_dataset("dataset", userA)
+    with current_user_context(userA):
+        service.delete_dataset("dataset")
     dataset_repo.delete.assert_called_once()
 
 
