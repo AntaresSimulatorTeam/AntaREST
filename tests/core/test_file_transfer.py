@@ -16,7 +16,6 @@ from unittest.mock import Mock
 
 import pytest
 from fastapi import Depends, FastAPI
-from helpers import with_admin_user
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
@@ -29,6 +28,7 @@ from antarest.core.requests import MustBeAuthenticatedError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.dbmodel import Base
 from antarest.login.utils import current_user_context
+from tests.helpers import with_admin_user
 
 
 def create_app() -> FastAPI:

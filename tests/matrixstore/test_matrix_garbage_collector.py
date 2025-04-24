@@ -15,7 +15,6 @@ from unittest.mock import Mock
 import numpy as np
 import pandas as pd
 import pytest
-from helpers import with_admin_user, with_db_context
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
@@ -27,6 +26,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from tests.helpers import with_admin_user, with_db_context
 
 
 @pytest.fixture

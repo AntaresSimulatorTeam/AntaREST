@@ -16,7 +16,6 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 from fastapi import FastAPI
-from helpers import with_admin_user
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
@@ -26,6 +25,7 @@ from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixInfoDTO
 from antarest.matrixstore.web import MatrixDTO
+from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 

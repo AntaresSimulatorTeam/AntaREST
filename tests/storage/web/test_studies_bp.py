@@ -21,7 +21,6 @@ from unittest.mock import Mock, call
 
 import pytest
 from fastapi import FastAPI
-from helpers import with_admin_user
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
@@ -54,6 +53,7 @@ from antarest.study.model import (
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
+from tests.helpers import with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 

@@ -13,10 +13,10 @@
 from typing import Optional
 
 import pytest
-from helpers import with_admin_user
 
 from antarest.core.model import SUB_JSON
 from antarest.study.service import StudyService
+from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
 
 

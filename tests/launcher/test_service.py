@@ -22,7 +22,6 @@ from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
-from helpers import with_admin_user
 from sqlalchemy import create_engine
 from typing_extensions import Literal
 
@@ -59,6 +58,7 @@ from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
+from tests.helpers import with_admin_user
 
 
 class TestLauncherService:
