@@ -18,12 +18,12 @@ from functools import wraps
 from typing import Any, Callable, Dict, List, cast
 
 import numpy as np
-from conftest_instances import create_admin_user
 from numpy import typing as npt
 
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
+from tests.conftest_instances import create_admin_user
 
 
 def with_db_context(f: Callable[..., Any]) -> Callable[..., Any]:
