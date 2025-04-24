@@ -23,6 +23,7 @@ import {
   Chip,
   Tooltip,
   Typography,
+  Badge,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -34,11 +35,12 @@ import { useMatrixContext } from "../../context/MatrixContext";
 import { Operation } from "../../shared/constants";
 import { calculateMatrixAggregates } from "../../shared/utils";
 import type { FilterState, FilterCriteria, MatrixFilterProps } from "./types";
-import { FILTER_TYPES, TIME_INDEXING, getDefaultFilterState } from "./constants";
+import { FILTER_TYPES, getDefaultFilterState } from "./constants";
 import ColumnFilter from "./ColumnFilter";
 import RowFilter from "./RowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
+import { getTemporalIndices } from "./utils";
 
 function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
   const { t } = useTranslation();
@@ -80,76 +82,12 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
     }
 
     // Filter rows based on time indexing
-    let rowsIndices: number[] = [];
-    const totalRows = currentState.data.length;
-
-    // Calculate row indices based on the selected indexing type
-    const getRowIndices = () => {
-      if (!isTimeSeries || !dateTime || dateTime.length === 0) {
-        // If not a time series or no dateTime data, use simple row indices
-        return Array.from({ length: totalRows }, (_, i) => i + 1);
-      }
-
-      // Process date-time data to extract the appropriate indices
-      return dateTime.map((date, index) => {
-        const dateObj = new Date(date);
-        switch (filter.rowsFilter.indexingType) {
-          case TIME_INDEXING.DAY_OF_MONTH: {
-            return dateObj.getDate();
-          }
-          case TIME_INDEXING.DAY_OF_YEAR: {
-            const start = new Date(dateObj.getFullYear(), 0, 0);
-            const diff = dateObj.getTime() - start.getTime();
-            return Math.floor(diff / (1000 * 60 * 60 * 24));
-          }
-          case TIME_INDEXING.DAY_HOUR: {
-            return dateObj.getHours() + 1;
-          }
-          case TIME_INDEXING.HOUR_YEAR: {
-            const yearStart = new Date(dateObj.getFullYear(), 0, 0);
-            const hourDiff = dateObj.getTime() - yearStart.getTime();
-            return Math.floor(hourDiff / (1000 * 60 * 60)) + 1;
-          }
-          case TIME_INDEXING.MONTH: {
-            return dateObj.getMonth() + 1;
-          }
-          case TIME_INDEXING.WEEK: {
-            const startOfYear = new Date(dateObj.getFullYear(), 0, 1);
-            const days = Math.floor(
-              (dateObj.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
-            );
-            return Math.ceil((days + startOfYear.getDay() + 1) / 7);
-          }
-          case TIME_INDEXING.WEEKDAY: {
-            return dateObj.getDay() === 0 ? 7 : dateObj.getDay(); // 1 (Monday) to 7 (Sunday)
-          }
-          default: {
-            return index + 1;
-          }
-        }
-      });
-    };
-
-    const rowTimeIndices = getRowIndices();
-
-    if (filter.rowsFilter.type === FILTER_TYPES.RANGE && filter.rowsFilter.range) {
-      const { min, max } = filter.rowsFilter.range;
-      rowsIndices = rowTimeIndices
-        .map((value, index) => ({ value, index }))
-        .filter(({ value }) => value >= min && value <= max)
-        .map(({ index }) => index);
-    } else if (filter.rowsFilter.type === FILTER_TYPES.MODULO && filter.rowsFilter.modulo) {
-      const { divisor, remainder } = filter.rowsFilter.modulo;
-      rowsIndices = rowTimeIndices
-        .map((value, index) => ({ value, index }))
-        .filter(({ value }) => value % divisor === remainder)
-        .map(({ index }) => index);
-    } else if (filter.rowsFilter.type === FILTER_TYPES.LIST && filter.rowsFilter.list) {
-      rowsIndices = rowTimeIndices
-        .map((value, index) => ({ value, index }))
-        .filter(({ value }) => filter.rowsFilter.list?.includes(value))
-        .map(({ index }) => index);
-    }
+    const rowsIndices: number[] = getTemporalIndices({
+      filter,
+      dateTime,
+      isTimeSeries,
+      totalRows: currentState.data.length,
+    });
 
     return { columnsIndices, rowsIndices };
   }, [currentState.data, filter, dateTime, isTimeSeries]);
@@ -229,6 +167,13 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
 
   const resetFilters = () => {
     setFilter(getDefaultFilterState(currentState.data.length, currentState.data[0]?.length || 0));
+    setFilterPreview({
+      active: false,
+      criteria: {
+        columnsIndices: Array.from({ length: currentState.data[0]?.length || 0 }, (_, i) => i),
+        rowsIndices: Array.from({ length: currentState.data.length || 0 }, (_, i) => i),
+      },
+    });
   };
 
   const toggleDrawer = () => {
@@ -238,6 +183,11 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
   const toggleFilter = () => {
     setFilter({ ...filter, active: !filter.active });
   };
+
+  // Count selected items for badge
+  const selectedCount = filter.active
+    ? filteredData.columnsIndices.length * filteredData.rowsIndices.length
+    : 0;
 
   const renderFilterSummary = () => {
     if (!filter.active) {
@@ -282,9 +232,16 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
   return (
     <>
       <Tooltip title={t("matrix.filter.filterData")}>
-        <IconButton onClick={toggleDrawer} color={filter.active ? "primary" : "default"}>
-          <FilterListIcon />
-        </IconButton>
+        <Badge
+          badgeContent={selectedCount > 0 ? selectedCount : null}
+          color="primary"
+          overlap="circular"
+          max={999}
+        >
+          <IconButton onClick={toggleDrawer} color={filter.active ? "primary" : "default"}>
+            <FilterListIcon />
+          </IconButton>
+        </Badge>
       </Tooltip>
 
       {renderFilterSummary()}
@@ -294,7 +251,7 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
         open={open}
         onClose={toggleDrawer}
         PaperProps={{
-          sx: { width: "400px", p: 2 },
+          sx: { width: { xs: "85%", sm: "450px" }, p: 2, maxWidth: "500px" },
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
@@ -347,7 +304,12 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
 
         <ColumnFilter filter={filter} setFilter={setFilter} />
 
-        <RowFilter filter={filter} setFilter={setFilter} />
+        <RowFilter
+          filter={filter}
+          setFilter={setFilter}
+          dateTime={dateTime}
+          isTimeSeries={isTimeSeries}
+        />
 
         <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
 

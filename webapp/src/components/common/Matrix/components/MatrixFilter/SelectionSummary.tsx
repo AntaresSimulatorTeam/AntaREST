@@ -12,29 +12,46 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography } from "@mui/material";
+import { Typography, Paper, Grid } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { SelectionSummaryProps } from "./types";
 
 function SelectionSummary({ filteredData }: SelectionSummaryProps) {
   const { t } = useTranslation();
 
+  const totalCells = filteredData.rowsIndices.length * filteredData.columnsIndices.length;
+
   return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="subtitle2" color="text.secondary">
+    <Paper variant="outlined" sx={{ mt: 2, p: 2, backgroundColor: "background.paper" }}>
+      <Typography variant="subtitle2" color="primary.main" gutterBottom>
         {t("matrix.filter.selectionSummary")}
       </Typography>
-      <Typography>
-        {t("matrix.filter.selectedRows")}: {filteredData.rowsIndices.length}
-      </Typography>
-      <Typography>
-        {t("matrix.filter.selectedColumns")}: {filteredData.columnsIndices.length}
-      </Typography>
-      <Typography>
-        {t("matrix.filter.selectedCells")}:{" "}
-        {filteredData.rowsIndices.length * filteredData.columnsIndices.length}
-      </Typography>
-    </Box>
+
+      <Grid container spacing={2}>
+        <Grid item xs={6}>
+          <Typography variant="body2" color="text.secondary">
+            {t("matrix.filter.selectedRows")}:
+          </Typography>
+          <Typography variant="h6">{filteredData.rowsIndices.length}</Typography>
+        </Grid>
+
+        <Grid item xs={6}>
+          <Typography variant="body2" color="text.secondary">
+            {t("matrix.filter.selectedColumns")}:
+          </Typography>
+          <Typography variant="h6">{filteredData.columnsIndices.length}</Typography>
+        </Grid>
+
+        <Grid item xs={12}>
+          <Typography variant="body2" color="text.secondary">
+            {t("matrix.filter.selectedCells")}:
+          </Typography>
+          <Typography variant="h5" color="primary.main">
+            {totalCells}
+          </Typography>
+        </Grid>
+      </Grid>
+    </Paper>
   );
 }
 
