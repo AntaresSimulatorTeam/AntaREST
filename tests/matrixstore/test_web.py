@@ -16,6 +16,7 @@ from unittest.mock import Mock
 import pandas as pd
 import pytest
 from fastapi import FastAPI
+from helpers import with_admin_user
 from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
@@ -53,6 +54,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
     return build_ctxt.build()
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_create() -> None:
     service = Mock()
@@ -69,6 +71,7 @@ def test_create() -> None:
     assert res.json() == "matrix_hash"
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_get() -> None:
     matrix = MatrixDTO(
@@ -104,6 +107,7 @@ def test_delete() -> None:
     assert res.status_code == 200
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_import() -> None:
     matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]

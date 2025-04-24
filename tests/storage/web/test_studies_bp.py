@@ -21,6 +21,7 @@ from unittest.mock import Mock, call
 
 import pytest
 from fastapi import FastAPI
+from helpers import with_admin_user
 from markupsafe import Markup
 from starlette.testclient import TestClient
 
@@ -217,6 +218,7 @@ def test_copy_study(tmp_path: Path) -> None:
     assert result.status_code == HTTPStatus.CREATED
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_list_studies(tmp_path: str) -> None:
     studies = {
