@@ -254,7 +254,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     bp = APIRouter(
         prefix="/v1/filesystem",
         tags=[APITag.filesystem],
-        dependencies=[Depends(auth.get_current_user)],
+        dependencies=[Depends(auth.yield_current_user)],
         include_in_schema=True,  # but may be disabled in the future
     )
     config_dirs = {

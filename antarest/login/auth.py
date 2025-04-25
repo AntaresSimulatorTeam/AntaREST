@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
+from typing import Any, Callable, Coroutine, Dict, Generator, Optional, Tuple, Union
 
 from fastapi import Depends
 from ratelimit.types import Scope  # type: ignore
@@ -23,6 +23,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.login.utils import current_user_context
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,22 @@ class Auth:
 
         user = JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
         return user
+
+    def yield_current_user(self, auth_jwt: AuthJWT = Depends()) -> Generator[None, None, None]:
+        """
+        Checks that the user is logged.
+        Allows endpoint code to be executed with the user context
+        """
+        if self.disabled:
+            yield
+
+        try:
+            jwt_user = self.get_current_user(auth_jwt)  # fail when no cookies are provided
+        except Exception:
+            jwt_user = None
+
+        with current_user_context(jwt_user):
+            yield
 
     @staticmethod
     def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:

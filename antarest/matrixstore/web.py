@@ -50,7 +50,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
 
     @bp.post("/matrix", tags=[APITag.matrix], description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:

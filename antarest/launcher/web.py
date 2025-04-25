@@ -72,7 +72,7 @@ LauncherQuery = Query(
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1/launcher", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1/launcher", dependencies=[Depends(auth.yield_current_user)])
 
     @bp.post(
         "/run/{study_id}",

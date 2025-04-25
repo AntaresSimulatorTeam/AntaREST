@@ -44,7 +44,7 @@ def create_watcher_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
 
     @bp.post(
         "/watcher/_scan",

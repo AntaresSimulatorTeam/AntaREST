@@ -61,7 +61,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         The FastAPI route for Study data management
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
 
     # noinspection PyShadowingBuiltins
     @bp.post(

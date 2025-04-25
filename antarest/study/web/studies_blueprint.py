@@ -67,7 +67,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
 
     @bp.get(
         "/studies",

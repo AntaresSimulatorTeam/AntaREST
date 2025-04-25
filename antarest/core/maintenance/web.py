@@ -40,7 +40,7 @@ def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRo
         return service.get_maintenance_status()
 
     @bp.post("/core/maintenance", include_in_schema=False)
-    def set_maintenance_status(maintenance: bool, current_user: JWTUser = Depends(auth.get_current_user)) -> None:
+    def set_maintenance_status(maintenance: bool, current_user: JWTUser = Depends(auth.yield_current_user)) -> None:
         return service.set_maintenance_status(maintenance)
 
     @bp.get("/core/maintenance/message", include_in_schema=False)
@@ -49,7 +49,7 @@ def create_maintenance_api(service: MaintenanceService, config: Config) -> APIRo
 
     @bp.post("/core/maintenance/message", include_in_schema=False)
     def set_message_info(
-        message: str = Body(default=""), current_user: JWTUser = Depends(auth.get_current_user)
+        message: str = Body(default=""), current_user: JWTUser = Depends(auth.yield_current_user)
     ) -> None:
         return service.set_message_info(message)
 

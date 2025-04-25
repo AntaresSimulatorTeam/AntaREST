@@ -34,7 +34,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1/private", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1/private", dependencies=[Depends(auth.yield_current_user)])
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",

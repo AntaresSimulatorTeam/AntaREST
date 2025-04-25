@@ -44,7 +44,7 @@ def create_study_variant_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
     variant_study_service = study_service.storage_service.variant_study_service
 
     @bp.post(

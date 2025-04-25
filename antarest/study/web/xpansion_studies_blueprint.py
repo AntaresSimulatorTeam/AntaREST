@@ -41,7 +41,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         config: main server configuration
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion",
