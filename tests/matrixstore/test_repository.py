@@ -221,18 +221,12 @@ class TestMatrixContentRepository:
 
             # Test with an empty matrix
             matrix_hash = matrix_content_repo.save(pd.DataFrame([])).hash
-            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
-
-            assert not matrix_file.read_bytes()
             assert retrieved_matrix.empty
 
             # Test with an empty 2D array
             matrix_hash = matrix_content_repo.save(pd.DataFrame([[]])).hash
-            matrix_file = bucket_dir.joinpath(f"{matrix_hash}.{matrix_format}")
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
-
-            assert not matrix_file.read_bytes()
             assert retrieved_matrix.empty
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
@@ -322,3 +316,25 @@ class TestMatrixContentRepository:
             matrix_content_repo.save(pd.DataFrame(legacy_matrix))
             all_files = list(matrix_content_repo.bucket_dir.glob(f"*.{new_matrix_format}"))
             assert len(all_files) == 1
+
+    def test_null_matrix(self, tmp_path: Path) -> None:
+        """Ensures we can read the legacy null matrix"""
+        matrix_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        with matrix_repository(tmp_path, InternalMatrixFormat.TSV) as matrix_content_repo:
+            matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+            matrix_path.write_text("\n")
+            matrix = matrix_content_repo.get(matrix_hash, matrix_version=1)
+            assert matrix.empty
+
+    @pytest.mark.parametrize("new_matrix_format", ["hdf", "parquet", "feather"])
+    def test_null_matrix_mixed_formats(self, tmp_path: Path, new_matrix_format: str) -> None:
+        """Ensures we can transition from a null matrix TSV to a new format"""
+        matrix_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
+            matrix_path = matrix_content_repo.bucket_dir.joinpath(f"{matrix_hash}.tsv")
+            matrix_path.write_text("\n")
+            null_matrix = pd.DataFrame()
+            matrix_id = matrix_content_repo.save(null_matrix).hash
+            assert matrix_id == matrix_hash
+            matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
+            assert matrix.empty
