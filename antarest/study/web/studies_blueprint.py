@@ -17,18 +17,18 @@ from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, File, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
-from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.login.utils import get_current_user
 from antarest.study.model import (
     CommentsDto,
@@ -55,7 +55,7 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
+def create_study_routes(study_service: StudyService, config: Config) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
@@ -66,7 +66,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.get(
         "/studies",

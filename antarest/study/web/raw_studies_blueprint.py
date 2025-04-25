@@ -16,7 +16,7 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
-from fastapi import APIRouter, Body, File, HTTPException
+from fastapi import APIRouter, Body, Depends, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
@@ -26,6 +26,7 @@ from antarest.core.serde.json import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import TableExportFormat, export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
@@ -81,7 +82,8 @@ def create_raw_study_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.get(
         "/studies/{uuid}/raw",

@@ -15,7 +15,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.exceptions import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError, Launcher
@@ -31,6 +31,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.service import LauncherService
 from antarest.launcher.ssh_client import SlurmError
+from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +71,8 @@ LauncherQuery = Query(
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
-    bp = APIRouter(prefix="/v1/launcher")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1/launcher", dependencies=[Depends(auth.get_current_user)])
 
     @bp.post(
         "/run/{study_id}",

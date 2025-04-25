@@ -16,7 +16,6 @@ from typing import List
 from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
 from antarest.login.auth import Auth
 from antarest.study.model import NonStudyFolderDTO, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
@@ -34,19 +33,15 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1/private")
     auth = Auth(config)
+    bp = APIRouter(prefix="/v1/private", dependencies=[Depends(auth.get_current_user)])
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",
         summary="For a given directory, list sub directories that aren't studies",
         response_model=List[NonStudyFolderDTO],
     )
-    def list_dir(
-        workspace: str,
-        path: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[NonStudyFolderDTO]:
+    def list_dir(workspace: str, path: str) -> List[NonStudyFolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:
@@ -65,9 +60,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
         summary="List all workspaces",
         response_model=List[WorkspaceMetadata],
     )
-    def list_workspaces(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[WorkspaceMetadata]:
+    def list_workspaces() -> List[WorkspaceMetadata]:
         """
         Endpoint to list workspaces
         Args:

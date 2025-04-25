@@ -25,6 +25,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.core.utils.web import APITag
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.login.auth import Auth
 from antarest.login.model import (
     BotCreateDTO,
     BotDTO,
@@ -51,65 +52,29 @@ class UserCredentials(AntaresBaseModel):
     password: str
 
 
-def create_login_api(service: LoginService, config: Config) -> APIRouter:
+def _generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
+    access_token = jwt_manager.create_access_token(subject=user.model_dump_json(), expires_time=expire)
+    refresh_token = jwt_manager.create_refresh_token(subject=user.model_dump_json())
+    return CredentialsDTO(
+        user=user.id,
+        access_token=access_token.decode() if isinstance(access_token, bytes) else access_token,
+        refresh_token=refresh_token.decode() if isinstance(refresh_token, bytes) else refresh_token,
+    )
+
+
+def create_user_api(service: LoginService, config: Config) -> APIRouter:
     """
-    Endpoints login implementation
+    Endpoints user implementation
 
     Args:
         service: login facade service
         config: server config
 
     Returns:
-        login endpoints
+        user endpoints
     """
-    bp = APIRouter(prefix="/v1")
-
-    def generate_tokens(user: JWTUser, jwt_manager: AuthJWT, expire: Optional[timedelta] = None) -> CredentialsDTO:
-        access_token = jwt_manager.create_access_token(subject=user.model_dump_json(), expires_time=expire)
-        refresh_token = jwt_manager.create_refresh_token(subject=user.model_dump_json())
-        return CredentialsDTO(
-            user=user.id,
-            access_token=access_token.decode() if isinstance(access_token, bytes) else access_token,
-            refresh_token=refresh_token.decode() if isinstance(refresh_token, bytes) else refresh_token,
-        )
-
-    @bp.post(
-        "/login",
-        tags=[APITag.users],
-        summary="Login",
-        response_model=CredentialsDTO,
-    )
-    def login(
-        credentials: UserCredentials,
-        jwt_manager: AuthJWT = Depends(),
-    ) -> Any:
-        logger.info(f"New login for {credentials.username}")
-        user = service.authenticate(credentials.username, credentials.password)
-        if not user:
-            raise HTTPException(status_code=401, detail="Bad username or password")
-
-        # Identity can be any data that is json serializable
-        resp = generate_tokens(user, jwt_manager)
-
-        return resp
-
-    @bp.post(
-        "/refresh",
-        tags=[APITag.users],
-        summary="Refresh access token",
-        response_model=CredentialsDTO,
-    )
-    def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
-        jwt_manager.jwt_refresh_token_required()
-        identity = from_json(jwt_manager.get_jwt_subject())
-        logger.debug(f"Refreshing access token for {identity['id']}")
-        user = service.get_jwt(identity["id"])
-        if user:
-            resp = generate_tokens(user, jwt_manager)
-
-            return resp
-        else:
-            raise HTTPException(status_code=403, detail="Token invalid")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.get(
         "/users",
@@ -246,7 +211,7 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
             type=bot.type,
             groups=groups,
         )
-        tokens = generate_tokens(jwt, jwt_manager, expire=timedelta(days=368 * 200))
+        tokens = _generate_tokens(jwt, jwt_manager, expire=timedelta(days=368 * 200))
         return tokens.access_token
 
     @bp.get("/bots/{id}", tags=[APITag.users], response_model=Union[BotIdentityDTO, BotDTO])
@@ -283,5 +248,58 @@ def create_login_api(service: LoginService, config: Config) -> APIRouter:
     @bp.get("/auth", include_in_schema=False)
     def auth_needed() -> bool:
         return not config.security.disabled
+
+    return bp
+
+
+def create_login_api(service: LoginService) -> APIRouter:
+    """
+    Endpoints login implementation
+
+    Args:
+        service: login facade service
+
+    Returns:
+        login endpoints
+    """
+    bp = APIRouter(prefix="/v1")
+
+    @bp.post(
+        "/login",
+        tags=[APITag.users],
+        summary="Login",
+        response_model=CredentialsDTO,
+    )
+    def login(
+        credentials: UserCredentials,
+        jwt_manager: AuthJWT = Depends(),
+    ) -> Any:
+        logger.info(f"New login for {credentials.username}")
+        user = service.authenticate(credentials.username, credentials.password)
+        if not user:
+            raise HTTPException(status_code=401, detail="Bad username or password")
+
+        # Identity can be any data that is json serializable
+        resp = _generate_tokens(user, jwt_manager)
+
+        return resp
+
+    @bp.post(
+        "/refresh",
+        tags=[APITag.users],
+        summary="Refresh access token",
+        response_model=CredentialsDTO,
+    )
+    def refresh(jwt_manager: AuthJWT = Depends()) -> Any:
+        jwt_manager.jwt_refresh_token_required()
+        identity = from_json(jwt_manager.get_jwt_subject())
+        logger.debug(f"Refreshing access token for {identity['id']}")
+        user = service.get_jwt(identity["id"])
+        if user:
+            resp = _generate_tokens(user, jwt_manager)
+
+            return resp
+        else:
+            raise HTTPException(status_code=403, detail="Token invalid")
 
     return bp

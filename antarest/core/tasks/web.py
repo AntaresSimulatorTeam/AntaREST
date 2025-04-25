@@ -15,13 +15,14 @@ import http
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from antarest.core.config import Config
 from antarest.core.tasks.model import TaskDTO, TaskListFilter
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, TaskJobService
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ def create_tasks_api(service: TaskJobService, config: Config) -> APIRouter:
     Returns:
         API router
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.post("/tasks", tags=[APITag.tasks])
     def list_tasks(filter: TaskListFilter) -> Any:

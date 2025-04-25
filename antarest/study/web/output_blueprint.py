@@ -22,6 +22,7 @@ from starlette.responses import FileResponse
 from antarest.core.config import Config
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.study.business.aggregator_management import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
@@ -59,7 +60,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
     Returns:
         The FastAPI route for Study data management
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     # noinspection PyShadowingBuiltins
     @bp.post(

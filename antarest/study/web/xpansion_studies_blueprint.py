@@ -13,13 +13,14 @@
 import logging
 from typing import Any, Sequence
 
-from fastapi import APIRouter, File, UploadFile
+from fastapi import APIRouter, Depends, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidateDTO,
@@ -39,7 +40,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         study_service: study service facade to handle request
         config: main server configuration
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion",

@@ -16,13 +16,14 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import typing_extensions as te
-from fastapi import APIRouter, Body, Query
+from fastapi import APIRouter, Body, Depends, Query
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
@@ -122,7 +123,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     Returns:
         The FastAPI route for Study data management
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     # noinspection PyShadowingBuiltins
     @bp.get(

@@ -14,13 +14,14 @@ import logging
 from typing import List, Optional, Union
 
 import humanize
-from fastapi import APIRouter, Body
+from fastapi import APIRouter, Body, Depends
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -42,7 +43,8 @@ def create_study_variant_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
     variant_study_service = study_service.storage_service.variant_study_service
 
     @bp.post(

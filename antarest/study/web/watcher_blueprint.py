@@ -15,10 +15,11 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.study.storage.rawstudy.watcher import Watcher
 
 logger = logging.getLogger(__name__)
@@ -42,7 +43,8 @@ def create_watcher_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.post(
         "/watcher/_scan",

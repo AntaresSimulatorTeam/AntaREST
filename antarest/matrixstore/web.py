@@ -23,6 +23,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
+from antarest.login.auth import Auth
 from antarest.login.utils import get_current_user
 from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO
 from antarest.matrixstore.service import MatrixService
@@ -48,7 +49,8 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
+    auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.get_current_user)])
 
     @bp.post("/matrix", tags=[APITag.matrix], description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
