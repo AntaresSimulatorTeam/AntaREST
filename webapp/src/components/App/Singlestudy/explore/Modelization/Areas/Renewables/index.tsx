@@ -12,12 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo, useState } from "react";
-import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { createMRTColumnHelper } from "material-react-table";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "../../../../../../../redux/selectors";
 import type { StudyMetadata } from "../../../../../../../types/types";
+import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import type { TRow } from "../../../../../../common/GroupedDataTable/types";
+import {
+  addClusterCapacity,
+  capacityAggregationFn,
+  getClustersWithCapacityTotals,
+  toCapacityString,
+} from "../common/clustersUtils";
 import {
   RENEWABLE_GROUPS,
   createRenewableCluster,
@@ -27,18 +39,6 @@ import {
   type RenewableClusterWithCapacity,
   type RenewableGroup,
 } from "./utils";
-import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../redux/selectors";
-import GroupedDataTable from "../../../../../../common/GroupedDataTable";
-import {
-  addClusterCapacity,
-  capacityAggregationFn,
-  getClustersWithCapacityTotals,
-  toCapacityString,
-} from "../common/clustersUtils";
-import type { TRow } from "../../../../../../common/GroupedDataTable/types";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
@@ -46,7 +46,6 @@ function Renewables() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
@@ -130,7 +129,7 @@ function Renewables() {
   };
 
   const handleNameClick = (row: RenewableClusterWithCapacity) => {
-    navigate(`${location.pathname}/${row.id}`);
+    navigate(row.id);
   };
 
   ////////////////////////////////////////////////////////////////
