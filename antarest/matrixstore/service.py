@@ -18,14 +18,14 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import Callable, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 import py7zr
 from fastapi import UploadFile
 from pandas.api.types import infer_dtype
-from typing_extensions import override
+from typing_extensions import TypeAlias, override
 
 from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -49,7 +49,12 @@ from antarest.matrixstore.model import (
     MatrixInfoDTO,
 )
 from antarest.matrixstore.parsing import save_matrix
-from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+from antarest.matrixstore.repository import (
+    MatrixContentRepository,
+    MatrixDataSetRepository,
+    MatrixRepository,
+    compute_hash,
+)
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -73,9 +78,16 @@ Therefore, we rely on this version to know how to read the matrices
 """
 
 
+MatrixProvider: TypeAlias = Callable[[], pd.DataFrame]
+
+
 class ISimpleMatrixService(ABC):
     def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
         self.matrix_content_repository = matrix_content_repository
+
+    @abstractmethod
+    def add_provider(self, provider: MatrixProvider) -> str:
+        raise NotImplementedError()
 
     @abstractmethod
     def create(self, data: pd.DataFrame) -> str:
@@ -124,6 +136,14 @@ class ISimpleMatrixService(ABC):
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
         super().__init__(matrix_content_repository=matrix_content_repository)
+
+        self._providers: dict[str, MatrixProvider] = {}
+
+    @override
+    def add_provider(self, provider: Callable[[], pd.DataFrame]) -> str:
+        matrix_hash = compute_hash(provider())
+        self._providers[matrix_hash] = provider
+        return matrix_hash
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -188,6 +208,13 @@ class MatrixService(ISimpleMatrixService):
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.config = config
+        self._providers: dict[str, MatrixProvider] = {}
+
+    @override
+    def add_provider(self, provider: Callable[[], pd.DataFrame]) -> str:
+        matrix_hash = compute_hash(provider())
+        self._providers[matrix_hash] = provider
+        return matrix_hash
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -412,6 +439,8 @@ class MatrixService(ISimpleMatrixService):
             A Data Transfer Object (DTO) of the matrix and its content,
             or `None` if the matrix is not found in the database.
         """
+        if matrix_id in self._providers:
+            return self._providers[matrix_id]()
         matrix = self.repo.get(matrix_id)
         if matrix is None:
             raise MatrixNotFound(matrix_id)
@@ -428,7 +457,9 @@ class MatrixService(ISimpleMatrixService):
         Returns:
             bool: `True` if the matrix object exists in both repositories, `False` otherwise.
         """
-        return self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
+        return matrix_id in self._providers or (
+            self.matrix_content_repository.exists(matrix_id) and self.repo.exists(matrix_id)
+        )
 
     @override
     def delete(self, matrix_id: str) -> None:
