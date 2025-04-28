@@ -16,7 +16,7 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.repository import compute_hash
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixProvider
 
 
 class InMemorySimpleMatrixService(ISimpleMatrixService):
@@ -26,6 +26,13 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     def __init__(self) -> None:
         self._content: Dict[str, pd.DataFrame] = {}
+        self._providers: dict[str, MatrixProvider] = {}
+
+    @override
+    def add_provider(self, provider: MatrixProvider) -> str:
+        matrix_hash = compute_hash(provider())
+        self._providers[matrix_hash] = provider
+        return matrix_hash
 
     @override
     def create(self, data: pd.DataFrame) -> str:
