@@ -12,15 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
-import type { TimeSeriesConfigValues } from "../utils";
 import { useFormContextPlus } from "@/components/common/Form";
 import BooleanFE from "@/components/common/fieldEditors/BooleanFE";
+import { TimeSeriesType } from "@/services/api/studies/timeseries/constants";
+import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import type { TimeSeriesConfigValues } from "../utils";
 import TypeConfigFields from "./TypeConfigFields";
-
-const borderStyle = "1px solid rgba(255, 255, 255, 0.12)";
 
 function Fields() {
   const { control } = useFormContextPlus<TimeSeriesConfigValues>();
@@ -32,16 +30,9 @@ function Fields() {
 
   return (
     <TableContainer>
-      <Table sx={{ width: "auto" }}>
+      <Table stickyHeader sx={{ width: "auto" }}>
         <TableHead>
-          <TableRow
-            sx={{
-              th: {
-                fontWeight: "bold",
-                borderBottom: borderStyle,
-              },
-            }}
-          >
+          <TableRow>
             <TableCell />
             <TableCell align="center">{t("global.status")}</TableCell>
             <TableCell align="center">
@@ -49,14 +40,7 @@ function Fields() {
             </TableCell>
           </TableRow>
         </TableHead>
-        <TableBody
-          sx={{
-            "th, td": { borderBottom: borderStyle },
-            "tr:last-child td": {
-              borderBottomColor: "transparent", // 'border: none' change the color of `TableHead` border
-            },
-          }}
-        >
+        <TableBody sx={{ "tr:last-child td": { border: "none" } }}>
           {Object.values(TimeSeriesType).map((type) => (
             <TableRow key={type}>
               <TableCell sx={{ fontWeight: "bold" }}>
@@ -68,8 +52,8 @@ function Fields() {
                   control={control}
                   trueText={t("study.configuration.tsManagement.status.toBeGenerated")}
                   falseText={t("study.configuration.tsManagement.status.readyMade")}
-                  variant="outlined"
-                  size="small"
+                  size="extra-small"
+                  margin="dense"
                 />
               </TableCell>
               <TypeConfigFields type={type} />
