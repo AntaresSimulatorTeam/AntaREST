@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any, Callable, Coroutine, Dict, Generator, Optional, Tuple, Union
+from typing import Any, AsyncGenerator, Callable, Coroutine, Dict, Optional, Tuple, Union
 
 from fastapi import Depends
 from ratelimit.types import Scope  # type: ignore
@@ -51,12 +51,12 @@ class Auth:
     ) -> Callable[[Scope], Coroutine[Any, Any, Tuple[str, str]]]:
         async def auth(scope: Scope) -> Tuple[str, str]:
             auth_jwt = AuthJWT(Request(scope))
-            user = self.get_current_user(auth_jwt)
+            user = self._get_current_user(auth_jwt)
             return str(user.id), "admin" if user.is_site_admin() else "default"
 
         return auth
 
-    def get_current_user(self, auth_jwt: AuthJWT = Depends()) -> JWTUser:
+    def _get_current_user(self, auth_jwt: AuthJWT = Depends()) -> JWTUser:
         """
         Get logged user.
         Returns: jwt user data
@@ -66,24 +66,23 @@ class Auth:
             return DEFAULT_ADMIN_USER
 
         auth_jwt.jwt_required()
+        return JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
 
-        user = JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
-        return user
-
-    def yield_current_user(self, auth_jwt: AuthJWT = Depends()) -> Generator[None, None, None]:
+    def required(self) -> Any:
         """
-        Checks that the user is logged.
-        Allows endpoint code to be executed with the user context
+        A FastAPI dependency to require authentication.
+        Will also set the logged-in user context for the current request.
+
+        Notes:
+            Implementation note:
+            The dependency MUST be async, otherwise it's executed in a thread which will
+            generally not be the same as the one of the request.
         """
-        if self.disabled:
-            yield
+        return Depends(self._yield_current_user)
 
-        try:
-            jwt_user = self.get_current_user(auth_jwt)  # fail when no cookies are provided
-        except Exception:
-            jwt_user = None
-
-        with current_user_context(jwt_user):
+    async def _yield_current_user(self, auth_jwt: AuthJWT = Depends()) -> AsyncGenerator[None, None]:
+        user = self._get_current_user(auth_jwt)  # fail when no cookies are provided
+        with current_user_context(user):
             yield
 
     @staticmethod

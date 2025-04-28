@@ -14,7 +14,7 @@ import logging
 from typing import List, Optional, Union
 
 import humanize
-from fastapi import APIRouter, Body, Depends
+from fastapi import APIRouter, Body
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
@@ -44,7 +44,7 @@ def create_study_variant_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
     variant_study_service = study_service.storage_service.variant_study_service
 
     @bp.post(

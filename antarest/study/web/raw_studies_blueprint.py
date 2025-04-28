@@ -16,7 +16,7 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
@@ -83,7 +83,7 @@ def create_raw_study_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get(
         "/studies/{uuid}/raw",

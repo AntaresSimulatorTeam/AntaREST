@@ -51,7 +51,7 @@ def endpoint():
 def test_local() -> None:
     auth = build(security_disabled=True)
 
-    assert auth.get_current_user() is not None
+    assert auth._get_current_user() is not None
 
 
 # def test_admin_matched() -> None:

@@ -13,7 +13,7 @@
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
@@ -25,7 +25,7 @@ from antarest.login.auth import Auth
 
 def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get("/downloads", tags=[APITag.downloads], summary="Get available downloads")
     def get_downloads() -> list[FileDownloadDTO]:

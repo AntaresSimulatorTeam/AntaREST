@@ -16,7 +16,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import typing_extensions as te
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Body, Query
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -124,7 +124,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         The FastAPI route for Study data management
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     # noinspection PyShadowingBuiltins
     @bp.get(

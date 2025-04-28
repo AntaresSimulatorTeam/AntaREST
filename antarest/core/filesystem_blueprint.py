@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Iterator, Mapping, Sequence, Tuple, TypeAlias
 
 import typing_extensions as te
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import Field
 from starlette.responses import PlainTextResponse, StreamingResponse
 
@@ -254,7 +254,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     bp = APIRouter(
         prefix="/v1/filesystem",
         tags=[APITag.filesystem],
-        dependencies=[Depends(auth.yield_current_user)],
+        dependencies=[auth.required()],
         include_in_schema=True,  # but may be disabled in the future
     )
     config_dirs = {

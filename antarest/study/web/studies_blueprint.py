@@ -17,7 +17,7 @@ from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query
+from fastapi import APIRouter, File, HTTPException, Query
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -67,7 +67,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get(
         "/studies",

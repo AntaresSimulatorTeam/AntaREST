@@ -13,7 +13,7 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.login.auth import Auth
@@ -34,7 +34,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1/private", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1/private", dependencies=[auth.required()])
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",

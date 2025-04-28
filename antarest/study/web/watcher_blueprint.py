@@ -15,7 +15,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.core.utils.web import APITag
@@ -44,7 +44,7 @@ def create_watcher_routes(
 
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.post(
         "/watcher/_scan",

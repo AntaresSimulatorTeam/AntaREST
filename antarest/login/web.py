@@ -74,7 +74,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         user endpoints
     """
     auth = Auth(config)
-    bp = APIRouter(prefix="/v1", dependencies=[Depends(auth.yield_current_user)])
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get(
         "/users",
