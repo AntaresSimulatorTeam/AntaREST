@@ -12,26 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, ButtonGroup, Divider } from "@mui/material";
-import { useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import * as R from "ramda";
-import type * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import usePromise from "../../../../../../../hooks/usePromise";
-import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormState,
 } from "@/components/common/DataGridForm";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import useConfirm from "@/hooks/useConfirm";
-import type { PlaylistData } from "@/services/api/studies/config/playlist/types";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
+import type { PlaylistData } from "@/services/api/studies/config/playlist/types";
+import { Box, Button, ButtonGroup } from "@mui/material";
+import * as R from "ramda";
+import type * as RA from "ramda-adjunct";
+import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import usePromise from "../../../../../../../../hooks/usePromise";
+import type { StudyMetadata } from "../../../../../../../../types/types";
+import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import YearsSelectionFE from "./YearsSelectionFE";
 
 interface Props {
   study: StudyMetadata;
@@ -122,6 +123,7 @@ function ScenarioPlaylistDialog(props: Props) {
       }
       maxWidth="md"
       fullWidth
+      sx={{ ".MuiDialogContent-root": { pb: 0 } }}
     >
       <UsePromiseCond
         response={res}
@@ -129,7 +131,8 @@ function ScenarioPlaylistDialog(props: Props) {
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflow: "auto" }}>
             <Box>
               <CustomScrollbar>
-                <Box>
+                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                  <YearsSelectionFE />
                   <ButtonGroup disabled={isSubmitting} color="secondary" size="extra-small">
                     <Button onClick={handleUpdateStatus(R.T)}>
                       {t("study.configuration.general.mcScenarioPlaylist.action.enableAll")}
