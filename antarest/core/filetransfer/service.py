@@ -25,8 +25,8 @@ from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, File
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
-from antarest.login.utils import get_current_user
+from antarest.core.requests import UserHasNotPermissionError
+from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -158,9 +158,7 @@ class FileTransferManager:
         return tmppath
 
     def list_downloads(self) -> List[FileDownloadDTO]:
-        user = get_current_user()
-        if not user:
-            raise MustBeAuthenticatedError()
+        user = require_current_user()
         downloads = self.repository.get_all() if user.is_site_admin() else self.repository.get_all(user.impersonator)
         self._clean_up_expired_downloads(downloads)
         return [d.to_dto() for d in downloads]

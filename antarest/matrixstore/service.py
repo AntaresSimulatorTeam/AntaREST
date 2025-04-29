@@ -38,7 +38,7 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user
+from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.model import (
     Matrix,
@@ -305,9 +305,7 @@ class MatrixService(ISimpleMatrixService):
         return dataset
 
     def create_dataset(self, dataset_info: MatrixDataSetUpdateDTO, matrices: List[MatrixInfoDTO]) -> MatrixDataSet:
-        user = get_current_user()
-        if not user:
-            raise UserHasNotPermissionError()
+        user = require_current_user()
 
         groups = [self.user_service.get_group(group_id) for group_id in dataset_info.groups]
         dataset = MatrixDataSet(
@@ -352,9 +350,7 @@ class MatrixService(ISimpleMatrixService):
         Returns:
             the list of matching MatrixUserMetadata
         """
-        user = get_current_user()
-        if not user:
-            raise UserHasNotPermissionError()
+        user = require_current_user()
 
         datasets = self.repo_dataset.query(dataset_name, user.impersonator if filter_own else None)
         return [
@@ -429,9 +425,7 @@ class MatrixService(ISimpleMatrixService):
 
     @staticmethod
     def check_access_permission(dataset: MatrixDataSet, write: bool = False) -> bool:
-        user = get_current_user()
-        if not user:
-            raise UserHasNotPermissionError()
+        user = require_current_user()
         if user.is_site_admin():
             return True
         dataset_groups = [group.id for group in dataset.groups]
@@ -513,10 +507,7 @@ class MatrixService(ISimpleMatrixService):
         Parameters:
             matrix_id: The SHA256 hash of the matrix object to download.
             filepath: File path of the TSV file to write.
-            params: Request parameters.
         """
-        if not get_current_user():
-            raise UserHasNotPermissionError()
         matrix = self.get(matrix_id)
         if matrix.empty:
             # If the array or dataframe is empty, create an empty file instead of

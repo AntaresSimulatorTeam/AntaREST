@@ -20,11 +20,9 @@ from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.login.utils import get_current_user
 from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO
 from antarest.matrixstore.service import MatrixService
 
@@ -55,9 +53,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.post("/matrix", tags=[APITag.matrix], description="Upload a new matrix")
     def create(matrix: List[List[MatrixData]] = Body(description="matrix dto", default=[])) -> str:
         logger.info("Creating new matrix")
-        if get_current_user() is not None:
-            return service.create(pd.DataFrame(matrix))
-        raise UserHasNotPermissionError()
+        return service.create(pd.DataFrame(matrix))
 
     @bp.post(
         "/matrix/_import",
@@ -70,22 +66,18 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         file: UploadFile = File(...),
     ) -> Any:
         logger.info("Importing new matrix dataset")
-        if get_current_user() is not None:
-            return service.create_by_importation(file, is_json=json)
-        raise UserHasNotPermissionError()
+        return service.create_by_importation(file, is_json=json)
 
     @bp.get("/matrix/{id}", tags=[APITag.matrix])
     def get(id: str) -> MatrixDTO:
         logger.info("Fetching matrix")
-        if get_current_user() is not None:
-            df = service.get(id)
-            return MatrixDTO.model_construct(
-                id=id,
-                index=list(df.index),
-                columns=list(df.columns),
-                data=df.to_numpy().tolist(),
-            )
-        raise UserHasNotPermissionError()
+        df = service.get(id)
+        return MatrixDTO.model_construct(
+            id=id,
+            index=list(df.index),
+            columns=list(df.columns),
+            data=df.to_numpy().tolist(),
+        )
 
     @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
     def create_dataset(metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)) -> Any:

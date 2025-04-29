@@ -27,7 +27,7 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.jwt import JWTUser
 from antarest.core.logging.utils import task_context
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import (
     CustomTaskEventMessages,
     TaskDTO,
@@ -42,7 +42,7 @@ from antarest.core.tasks.model import (
 from antarest.core.tasks.repository import TaskJobRepository
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import retry
-from antarest.login.utils import get_current_user
+from antarest.login.utils import get_current_user, require_current_user
 from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 logger = logging.getLogger(__name__)
@@ -258,10 +258,7 @@ class TaskJobService(ITaskService):
         ref_id: Optional[str],
         progress: Optional[int],
     ) -> TaskJob:
-        user = get_current_user()
-        if not user:
-            raise MustBeAuthenticatedError()
-
+        user = require_current_user()
         return self.repo.save(
             TaskJob(
                 name=name or "Unnamed",
@@ -278,9 +275,7 @@ class TaskJobService(ITaskService):
         task: TaskJob,
         custom_event_messages: Optional[CustomTaskEventMessages],
     ) -> None:
-        user = get_current_user()
-        if not user:
-            raise MustBeAuthenticatedError()
+        user = require_current_user()
 
         self.event_bus.push(
             Event(
@@ -335,9 +330,6 @@ class TaskJobService(ITaskService):
         task_id: str,
         with_logs: bool = False,
     ) -> TaskDTO:
-        user = get_current_user()
-        if not user:
-            raise MustBeAuthenticatedError()
         if task := self.repo.get(task_id):
             return task.to_dto(with_logs)
         else:
@@ -351,9 +343,7 @@ class TaskJobService(ITaskService):
         return [task.to_dto() for task in self.list_db_tasks(task_filter)]
 
     def list_db_tasks(self, task_filter: TaskListFilter) -> List[TaskJob]:
-        current_user = get_current_user()
-        if not current_user:
-            raise MustBeAuthenticatedError()
+        current_user = require_current_user()
         user = None if current_user.is_site_admin() else current_user.impersonator
         return self.repo.list(task_filter, user)
 

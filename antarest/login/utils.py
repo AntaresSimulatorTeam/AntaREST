@@ -16,6 +16,7 @@ from re import escape
 from typing import Iterator, Optional
 
 from antarest.core.jwt import JWTUser
+from antarest.core.requests import MustBeAuthenticatedError
 
 _current_user: ContextVar[Optional[JWTUser]] = ContextVar("_current_user", default=None)
 
@@ -23,6 +24,12 @@ _current_user: ContextVar[Optional[JWTUser]] = ContextVar("_current_user", defau
 def get_current_user() -> Optional[JWTUser]:
     current_user = _current_user.get()
     return current_user
+
+
+def require_current_user() -> JWTUser:
+    if user := get_current_user():
+        return user
+    raise MustBeAuthenticatedError()
 
 
 def get_user_id() -> str:
