@@ -17,7 +17,7 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Union
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, call
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -53,7 +53,6 @@ from antarest.launcher.model import (
     LogType,
 )
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
-from antarest.login.auth import Auth
 from antarest.login.model import Identity
 from antarest.login.utils import current_user_context
 from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
@@ -66,9 +65,7 @@ from tests.helpers import with_admin_user
 class TestLauncherService:
     @with_admin_user
     @pytest.mark.unit_test
-    @patch.object(Auth, "get_current_user")
-    def test_service_run_study(self, get_current_user_mock) -> None:
-        get_current_user_mock.return_value = None
+    def test_service_run_study(self) -> None:
         storage_service_mock = Mock()
         # noinspection SpellCheckingInspection
         storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
