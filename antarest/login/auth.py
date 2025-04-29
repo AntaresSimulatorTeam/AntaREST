@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any, AsyncGenerator, Callable, Coroutine, Dict, Optional, Tuple, Union
+from typing import Annotated, Any, AsyncGenerator, Callable, Coroutine, Optional, Tuple, TypeAlias, Union
 
 from fastapi import Depends
 from ratelimit.types import Scope  # type: ignore
@@ -28,6 +28,14 @@ from antarest.login.utils import current_user_context
 logger = logging.getLogger(__name__)
 
 
+IdentityValidator: TypeAlias = Callable[[AuthJWT], JWTUser]
+
+
+def _validate_jwt(auth_jwt: AuthJWT) -> JWTUser:
+    auth_jwt.jwt_required()
+    return JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
+
+
 class Auth:
     """
     Context object to retrieve data present in jwt
@@ -39,12 +47,10 @@ class Auth:
     def __init__(
         self,
         config: Config,
-        verify: Callable[[], None] = AuthJWT().jwt_required,  # Test only
-        get_identity: Callable[[], Dict[str, Any]] = AuthJWT().get_raw_jwt,  # Test only
+        validate_identity: IdentityValidator = _validate_jwt,
     ):
         self.disabled = config.security.disabled
-        self.verify = verify
-        self.get_identity = get_identity
+        self.validate_identity = validate_identity
 
     def create_auth_function(
         self,
@@ -56,7 +62,7 @@ class Auth:
 
         return auth
 
-    def _get_current_user(self, auth_jwt: AuthJWT = Depends()) -> JWTUser:
+    def _get_current_user(self, auth_jwt: AuthJWT) -> JWTUser:
         """
         Get logged user.
         Returns: jwt user data
@@ -64,13 +70,12 @@ class Auth:
         """
         if self.disabled:
             return DEFAULT_ADMIN_USER
-
-        auth_jwt.jwt_required()
-        return JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
+        return self.validate_identity(auth_jwt)
 
     def required(self) -> Any:
         """
         A FastAPI dependency to require authentication.
+        Depends itself on AuthJWT dependency.
         Will also set the logged-in user context for the current request.
 
         Notes:
@@ -80,8 +85,8 @@ class Auth:
         """
         return Depends(self._yield_current_user)
 
-    async def _yield_current_user(self, auth_jwt: AuthJWT = Depends()) -> AsyncGenerator[None, None]:
-        user = self._get_current_user(auth_jwt)  # fail when no cookies are provided
+    async def _yield_current_user(self, auth_jwt: Annotated[AuthJWT, Depends(AuthJWT)]) -> AsyncGenerator[None, None]:
+        user = self._get_current_user(auth_jwt)
         with current_user_context(user):
             yield
 
