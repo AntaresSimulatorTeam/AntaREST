@@ -12,37 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { Button, type ButtonProps } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import { Button, type ButtonProps } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 export interface BackButtonProps {
   onClick: ButtonProps["onClick"];
 }
 
-/**
- * Back button used to navigate back to the previous page.
- * The parent element must be in "relative" position.
- *
- * @param props - The button props.
- * @returns The back button.
- */
 function BackButton(props: BackButtonProps) {
   const { t } = useTranslation();
 
   return (
-    <Button
-      color="secondary"
-      startIcon={<ArrowBackIcon />}
-      sx={{
-        position: "sticky",
-        top: 0,
-        left: 0,
-        backdropFilter: "blur(100px)",
-        zIndex: 99,
-      }}
-      {...props}
-    >
+    <Button color="secondary" startIcon={<ArrowBackIcon />} {...props}>
       {t("button.back")}
     </Button>
   );

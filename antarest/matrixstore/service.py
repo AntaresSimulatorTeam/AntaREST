@@ -573,9 +573,4 @@ class MatrixService(ISimpleMatrixService):
         if not params.user:
             raise UserHasNotPermissionError()
         matrix = self.get(matrix_id)
-        if matrix.empty:
-            # If the array or dataframe is empty, create an empty file instead of
-            # traditional saving to avoid unwanted line breaks.
-            filepath.touch()
-        else:
-            save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
+        save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
