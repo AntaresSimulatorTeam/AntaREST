@@ -38,6 +38,7 @@ paramiko~=3.4.1
 plyer~=2.0.0
 psycopg2-binary~=2.9.9
 pyarrow~=18.1.0
+pyarrow-stubs~=10.0.1.7
 py7zr~=0.20.6
 python-json-logger~=2.0.7
 PyYAML~=5.3.1
