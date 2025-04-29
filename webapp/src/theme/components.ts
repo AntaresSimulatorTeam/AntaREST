@@ -117,6 +117,11 @@ export default {
       },
     ],
   },
+  MuiRadio: {
+    defaultProps: {
+      size: "small",
+    },
+  },
   MuiInputBase: {
     defaultProps: {
       size: "small",
@@ -147,7 +152,7 @@ export default {
           ".MuiInputBase-root": {
             padding: "0 9px",
           },
-          input: {
+          "input, textarea": {
             padding: "4px 0",
           },
         },
