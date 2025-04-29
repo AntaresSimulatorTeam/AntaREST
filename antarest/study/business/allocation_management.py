@@ -52,8 +52,11 @@ class AllocationFormFields(FormFieldsBaseModel):
             if numpy.isnan(a.coefficient):
                 raise ValueError("allocation must not contain NaN coefficients")
 
-            if all(a.coefficient == 0 for a in allocation):
-                raise ValueError("at least one allocation coefficient must be non-zero")
+        if all(a.coefficient == 0 for a in allocation):
+            raise ValueError("at least one allocation coefficient must be non-zero")
+
+        if sum(a.coefficient for a in allocation) <= 0:
+            raise ValueError("sum of coefficients must be positive")
 
         return self
 

@@ -116,6 +116,16 @@ class TestAllocationFormFields:
                 ],
             )
 
+    def test_validation_fields_positive_sum(self):
+        """Check that the coefficients sum is positive"""
+        with pytest.raises(ValueError, match="positive"):
+            AllocationFormFields(
+                allocation=[
+                    {"areaId": "NORTH", "coefficient": -0.75},
+                    {"areaId": "SOUTH", "coefficient": -0.25},
+                ],
+            )
+
     def test_validation_fields_no_nan_coefficient(self):
         """Check that the coefficients values does not contain NaN coefficients"""
         with pytest.raises(ValueError, match="NaN"):
