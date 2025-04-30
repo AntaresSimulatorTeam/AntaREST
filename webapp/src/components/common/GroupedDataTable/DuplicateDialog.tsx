@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import Fieldset from "../Fieldset";
-import FormDialog from "../dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../Form/types";
-import StringFE from "../fieldEditors/StringFE";
 import { validateString } from "@/utils/validation/string";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { useTranslation } from "react-i18next";
+import Fieldset from "../Fieldset";
+import type { SubmitHandlerPlus } from "../Form/types";
+import FormDialog from "../dialogs/FormDialog";
+import StringFE from "../fieldEditors/StringFE";
 
 interface Props {
   open: boolean;
@@ -54,7 +54,7 @@ function DuplicateDialog(props: Props) {
       onCancel={onClose}
       onSubmit={handleSubmit}
       config={{ defaultValues }}
-      isCreationForm
+      allowSubmitOnPristine
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>

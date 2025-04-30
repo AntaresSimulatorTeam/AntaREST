@@ -41,7 +41,8 @@ function Fieldset(props: FieldsetProps) {
             display: "flex",
             flexWrap: "wrap",
             gap: 2,
-            ".MuiFormControl-root": {
+            // Ignore RadioGroupFE and its children
+            ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *)": {
               width: fullFieldWidth ? 1 : fieldWidth,
               m: 0,
               // SwitchFE

@@ -15,16 +15,18 @@
 import CustomScrollbar from "@/components/common/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
+  type DataGridFormProps,
   type DataGridFormState,
 } from "@/components/common/DataGridForm";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import useConfirm from "@/hooks/useConfirm";
+import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
-import type { PlaylistData } from "@/services/api/studies/config/playlist/types";
+import type { Playlist, PlaylistData } from "@/services/api/studies/config/playlist/types";
 import { Box, Button, ButtonGroup } from "@mui/material";
 import * as R from "ramda";
-import type * as RA from "ramda-adjunct";
+import * as RA from "ramda-adjunct";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import usePromise from "../../../../../../../../hooks/usePromise";
@@ -33,7 +35,6 @@ import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import YearsSelectionFE from "./YearsSelectionFE";
-
 interface Props {
   study: StudyMetadata;
   open: boolean;
@@ -44,25 +45,69 @@ function ScenarioPlaylistDialog(props: Props) {
   const { study, open, onClose } = props;
   const { t } = useTranslation();
   const dataGridApiRef = useRef<DataGridFormApi<PlaylistData>>(null);
+  const yearsSelectionValueRef = useRef<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [totals, setTotals] = useState({ selected: 0, sumWeights: 0 });
   const closeAction = useConfirm();
   const res = usePromise(() => getPlaylistData({ studyId: study.id }), [study.id]);
 
-  const columns = useMemo(() => {
+  const columns = useMemo<DataGridFormProps<PlaylistData>["columns"]>(() => {
     return [
       {
         id: "status" as const,
         title: t("global.status"),
         grow: 1,
+        trailingRowOptions: {
+          hint: `Selected: ${totals.selected}`,
+        },
       },
       {
         id: "weight" as const,
         title: t("global.weight"),
         grow: 1,
+        trailingRowOptions: {
+          hint: `Sum: ${totals.sumWeights}`,
+        },
       },
     ];
-  }, [t]);
+  }, [t, totals]);
+
+  useUpdateEffectOnce(() => {
+    if (res.data) {
+      updateTotals(res.data);
+    }
+  }, [res.data]);
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const mapSelectedYears = (fn: (item: Playlist) => Playlist, data: PlaylistData): PlaylistData => {
+    const years = yearsSelectionValueRef.current;
+
+    return RA.mapIndexed((item, index) => {
+      if (years.length === 0 || years.includes(index + 1)) {
+        return fn(item);
+      }
+      return item;
+    }, data);
+  };
+
+  function updateTotals(data: PlaylistData) {
+    setTotals(
+      Object.entries(data).reduce(
+        (acc, [_, { status, weight }]) => {
+          if (status) {
+            acc.selected += 1;
+            acc.sumWeights += weight;
+          }
+          return acc;
+        },
+        { selected: 0, sumWeights: 0 },
+      ),
+    );
+  }
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -71,14 +116,14 @@ function ScenarioPlaylistDialog(props: Props) {
   const handleUpdateStatus = (fn: RA.Pred) => () => {
     if (dataGridApiRef.current) {
       const { data, setData } = dataGridApiRef.current;
-      setData(R.map(R.evolve({ status: fn }), data));
+      setData(mapSelectedYears(R.evolve({ status: fn }), data));
     }
   };
 
   const handleResetWeights = () => {
     if (dataGridApiRef.current) {
       const { data, setData } = dataGridApiRef.current;
-      setData(R.map(R.assoc("weight", DEFAULT_WEIGHT), data));
+      setData(mapSelectedYears(R.assoc("weight", DEFAULT_WEIGHT), data));
     }
   };
 
@@ -127,41 +172,51 @@ function ScenarioPlaylistDialog(props: Props) {
     >
       <UsePromiseCond
         response={res}
-        ifFulfilled={(defaultValues) => (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflow: "auto" }}>
-            <Box>
-              <CustomScrollbar>
-                <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                  <YearsSelectionFE />
-                  <ButtonGroup disabled={isSubmitting} color="secondary" size="extra-small">
-                    <Button onClick={handleUpdateStatus(R.T)}>
-                      {t("study.configuration.general.mcScenarioPlaylist.action.enableAll")}
-                    </Button>
-                    <Button onClick={handleUpdateStatus(R.F)}>
-                      {t("study.configuration.general.mcScenarioPlaylist.action.disableAll")}
-                    </Button>
-                    <Button onClick={handleUpdateStatus(R.not)}>
-                      {t("study.configuration.general.mcScenarioPlaylist.action.reverse")}
-                    </Button>
-                    <Button onClick={handleResetWeights}>
-                      {t("study.configuration.general.mcScenarioPlaylist.action.resetWeights")}
-                    </Button>
-                  </ButtonGroup>
-                </Box>
-              </CustomScrollbar>
+        ifFulfilled={(defaultData) => (
+          <>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflow: "auto" }}>
+              <Box>
+                <CustomScrollbar>
+                  <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
+                    <YearsSelectionFE
+                      valueRef={yearsSelectionValueRef}
+                      maxYears={Object.keys(defaultData).length}
+                    />
+                    <ButtonGroup disabled={isSubmitting} color="secondary">
+                      <Button onClick={handleUpdateStatus(R.T)}>{t("global.enable")}</Button>
+                      <Button onClick={handleUpdateStatus(R.F)}>{t("global.disable")}</Button>
+                      <Button onClick={handleUpdateStatus(R.not)}>
+                        {t("study.configuration.general.mcScenarioPlaylist.action.reverse")}
+                      </Button>
+                      <Button onClick={handleResetWeights}>
+                        {t("study.configuration.general.mcScenarioPlaylist.action.resetWeights")}
+                      </Button>
+                    </ButtonGroup>
+                  </Box>
+                </CustomScrollbar>
+              </Box>
+              <DataGridForm
+                defaultData={defaultData}
+                columns={columns}
+                rowMarkers={{
+                  kind: "clickable-string",
+                  getTitle: (index) => `MC Year ${index + 1}`,
+                }}
+                onSubmit={handleSubmit}
+                onDataChange={updateTotals}
+                onStateChange={handleFormStateChange}
+                apiRef={dataGridApiRef}
+                enableColumnResize={false}
+                trailingRowOptions={{
+                  sticky: true,
+                  addIcon: "",
+                }}
+                onRowAppended={() => {
+                  // Allow to display the trailing row, used to display the totals.
+                  // This is the only way to have a footer in the DataGridForm.
+                }}
+              />
             </Box>
-            <DataGridForm
-              defaultData={defaultValues}
-              columns={columns}
-              rowMarkers={{
-                kind: "clickable-string",
-                getTitle: (index) => `MC Year ${index + 1}`,
-              }}
-              onSubmit={handleSubmit}
-              onStateChange={handleFormStateChange}
-              apiRef={dataGridApiRef}
-              enableColumnResize={false}
-            />
             <ConfirmationDialog
               open={closeAction.isPending}
               onConfirm={closeAction.yes}
@@ -171,7 +226,7 @@ function ScenarioPlaylistDialog(props: Props) {
             >
               {t("form.changeNotSaved")}
             </ConfirmationDialog>
-          </Box>
+          </>
         )}
       />
     </BasicDialog>

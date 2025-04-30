@@ -14,12 +14,13 @@
 
 import { isNumericValue } from "@/utils/numberUtils";
 import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type SelectionType = "all" | "range" | "advancedRange";
+export type SelectionType = "all" | "range" | "advanced";
 
 export type Range = [number, number];
 export type Selection = number | Range;
@@ -28,12 +29,27 @@ export type Selection = number | Range;
 // Constants
 ////////////////////////////////////////////////////////////////
 
-const SELECTIONS_SEPARATOR = "\n" as const;
+export const SELECTIONS_SEPARATOR = "," as const;
 export const RANGE_SEPARATOR = "-" as const;
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
+
+export function selectionsToNumbers(selections: Selection[]) {
+  const numbersSet = new Set<number>();
+
+  selections.forEach((selection) => {
+    if (Array.isArray(selection)) {
+      const [start, end] = selection;
+      R.range(start, end + 1).map((num) => numbersSet.add(num));
+    } else {
+      numbersSet.add(selection);
+    }
+  });
+
+  return Array.from(numbersSet).sort((a, b) => a - b);
+}
 
 /**
  * Formalizes the selections by ordering them and merging consecutive numbers.
@@ -42,32 +58,18 @@ export const RANGE_SEPARATOR = "-" as const;
  * @returns The formalized selections.
  */
 export function formalizeSelections(selections: Selection[]) {
-  const numbersSet = new Set<number>();
-
-  selections.forEach((selection) => {
-    if (Array.isArray(selection)) {
-      const [start, end] = selection;
-      for (let i = start; i <= end; i++) {
-        numbersSet.add(i);
-      }
-    } else {
-      numbersSet.add(selection);
-    }
-  });
-
-  const numbersArray = Array.from(numbersSet).sort((a, b) => a - b);
-
-  const formalizeSelections: Selection[] = R.groupWith((a, b) => a + 1 === b, numbersArray).map(
-    (group) => (group.length > 1 ? [group[0], group[group.length - 1]] : group[0]),
-  );
+  const formalizeSelections: Selection[] = R.groupWith(
+    (a, b) => a + 1 === b,
+    selectionsToNumbers(selections),
+  ).map((group) => (group.length > 1 ? [group[0], group[group.length - 1]] : group[0]));
 
   return formalizeSelections;
 }
 
-export function selectionsToString(selections: Selection[], separator?: string) {
+export function selectionsToString(selections: Selection[]) {
   return selections
     .map((selection) => (Array.isArray(selection) ? selection.join(RANGE_SEPARATOR) : selection))
-    .join(separator ?? SELECTIONS_SEPARATOR);
+    .join(SELECTIONS_SEPARATOR + " ");
 }
 
 export function stringToSelection(selectionString: string) {
@@ -82,14 +84,24 @@ export function stringToSelection(selectionString: string) {
   );
 }
 
-export function isSelectionValid(value: string) {
+export function isSelectionValid(value: string, maxValue: number) {
   if (value.includes(RANGE_SEPARATOR)) {
     const splittedValue = value.split(RANGE_SEPARATOR);
+
     if (splittedValue.length > 2) {
       return false;
     }
+
     const [start, end] = splittedValue;
-    return isNumericValue(start) && isNumericValue(end) && Number(start) <= Number(end);
+
+    return (
+      isNumericValue(start) &&
+      isNumericValue(end) &&
+      Number(start) <= Number(end) &&
+      Number(start) >= 1 &&
+      Number(end) <= maxValue
+    );
   }
-  return isNumericValue(value);
+
+  return isNumericValue(value) && RA.inRange(1, maxValue + 1, Number(value));
 }
