@@ -17,25 +17,33 @@ import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import { default as RadioGroupFE } from "@/components/common/fieldEditors/RadioGroupFE";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { setValueAsNumber } from "@/utils/reactHookFormUtils";
 import { validateNumber } from "@/utils/validation/number";
-import { Box, Tooltip } from "@mui/material";
+import { Box, Tooltip, setRef } from "@mui/material";
 import * as R from "ramda";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type Range,
+  SELECTIONS_SEPARATOR,
   type Selection,
   type SelectionType,
   isSelectionValid,
+  selectionsToNumbers,
   selectionsToString,
   stringToSelection,
 } from "./utils";
 
-function YearsSelectionFE() {
+interface Props {
+  valueRef: React.MutableRefObject<Selection[]>;
+  maxYears: number;
+}
+
+function YearsSelectionFE({ valueRef, maxYears }: Props) {
   const [openSelectionDialog, setOpenSelectionDialog] = useState(false);
   const [selections, setSelections] = useState<Selection[]>([]);
   const { t } = useTranslation();
-  const selectionString = selectionsToString(selections, " • ");
+  const selectionString = selectionsToString(selections);
 
   const defaultValues = useMemo(() => {
     const selectionType: SelectionType =
@@ -43,7 +51,7 @@ function YearsSelectionFE() {
         ? "all"
         : selections.length === 1 && Array.isArray(selections[0])
           ? "range"
-          : "advancedRange";
+          : "advanced";
 
     return {
       type: selectionType,
@@ -51,23 +59,27 @@ function YearsSelectionFE() {
         selectionType === "range"
           ? R.zipObj(["start", "end"], selections[0] as Range)
           : { start: 1, end: 1 },
-      advancedRange: selectionType === "advancedRange" ? selectionsToString(selections) : "",
+      advanced: selectionType === "advanced" ? selectionsToString(selections) : "",
     };
   }, [selections]);
+
+  useEffect(() => {
+    setRef(valueRef, selectionsToNumbers(selections));
+  }, [selections, valueRef]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({
-    values: { type, range, advancedRange },
+    values: { type, range, advanced },
   }: SubmitHandlerPlus<typeof defaultValues>) => {
     const newSelection: Selection[] = [];
 
     if (type === "range") {
       newSelection.push([range.start, range.end]);
-    } else if (type === "advancedRange") {
-      newSelection.push(...stringToSelection(advancedRange));
+    } else if (type === "advanced") {
+      newSelection.push(...stringToSelection(advanced));
     }
 
     setSelections(newSelection);
@@ -81,15 +93,16 @@ function YearsSelectionFE() {
   return (
     <>
       <Tooltip title={selectionString} placement="top" disableFocusListener>
-        <StringFE
-          label={t("global.years")}
-          value={selectionString || t("global.all")}
-          slotProps={{ input: { readOnly: true } }}
-          sx={{ input: { cursor: "pointer" } }}
-          onClick={() => setOpenSelectionDialog(true)}
-          size="extra-small"
-          margin="dense"
-        />
+        <span>
+          <StringFE
+            label={t("global.years")}
+            value={selectionString || t("global.all")}
+            slotProps={{ input: { readOnly: true } }}
+            sx={{ input: { cursor: "pointer" } }}
+            onClick={() => setOpenSelectionDialog(true)}
+            size="extra-small"
+          />
+        </span>
       </Tooltip>
       <FormDialog
         open={openSelectionDialog}
@@ -101,21 +114,22 @@ function YearsSelectionFE() {
         allowSubmitOnPristine
         onCancel={() => setOpenSelectionDialog(false)}
       >
-        {({ control, watch }) => {
-          const currentType = watch("type");
+        {({ control, watch, setValue }) => {
+          const [currentType, currentRange] = watch(["type", "range"]);
 
           return (
             <>
               <RadioGroupFE
                 name="type"
                 control={control}
+                fullWidth
                 radios={[
                   { value: "all", label: t("global.all") },
                   {
                     value: "range",
                     label: (
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 2 }}>
-                        Range from
+                        {t("global.from")}
                         <NumberFE
                           name="range.start"
                           control={control}
@@ -123,18 +137,24 @@ function YearsSelectionFE() {
                           sx={{ width: "min-content" }}
                           rules={{
                             deps: "range.end",
-                            validate: (v, { type, range }) => {
+                            setValueAs: setValueAsNumber({ min: 1, max: maxYears }),
+                            onChange: (event) => {
+                              if (event.target.value > currentRange.end) {
+                                setValue("range.end", event.target.value);
+                              }
+                            },
+                            validate: (v, { type }) => {
                               if (type === "range") {
                                 return validateNumber(v, {
                                   min: 1,
-                                  max: range.end,
+                                  max: maxYears,
                                 });
                               }
                             },
                           }}
                           disabled={currentType !== "range"}
                         />
-                        to
+                        {t("global.to").toLowerCase()}
                         <NumberFE
                           name="range.end"
                           control={control}
@@ -142,10 +162,17 @@ function YearsSelectionFE() {
                           sx={{ width: "min-content" }}
                           rules={{
                             deps: "range.start",
+                            setValueAs: setValueAsNumber({ min: 1, max: maxYears }),
+                            onChange: (event) => {
+                              if (event.target.value < currentRange.start) {
+                                setValue("range.start", event.target.value);
+                              }
+                            },
                             validate: (v, { type, range }) => {
                               if (type === "range") {
                                 return validateNumber(v, {
-                                  min: Math.max(range.start, 1),
+                                  min: Math.min(range.start, maxYears),
+                                  max: maxYears,
                                 });
                               }
                             },
@@ -156,33 +183,37 @@ function YearsSelectionFE() {
                     ),
                   },
                   {
-                    value: "advancedRange",
+                    value: "advanced",
                     label: (
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        Advanced Range:
-                        <StringFE
-                          name="advancedRange"
-                          control={control}
-                          size="extra-small"
-                          multiline
-                          minRows={2}
-                          maxRows={4}
-                          rules={{
-                            validate: (v, { type }) => {
-                              if (type === "advancedRange") {
-                                if (!v) {
-                                  return t("form.field.required");
-                                }
-                                return (
-                                  R.all(isSelectionValid, v.split(/\n/).filter(Boolean)) ||
-                                  "Invalid range"
-                                );
+                      <StringFE
+                        name="advanced"
+                        control={control}
+                        size="extra-small"
+                        multiline
+                        fullWidth
+                        placeholder={t(
+                          "study.configuration.general.mcScenarioPlaylist.yearsSelection.advanced.placeholder",
+                        )}
+                        rules={{
+                          validate: (v, { type }) => {
+                            if (type === "advanced") {
+                              if (!v) {
+                                return t("form.field.required");
                               }
-                            },
-                          }}
-                          disabled={currentType !== "advancedRange"}
-                        />
-                      </Box>
+                              return (
+                                R.all(
+                                  (str) => isSelectionValid(str, maxYears),
+                                  v.split(SELECTIONS_SEPARATOR).filter(Boolean),
+                                ) ||
+                                t(
+                                  "study.configuration.general.mcScenarioPlaylist.yearsSelection.advanced.error",
+                                )
+                              );
+                            }
+                          },
+                        }}
+                        disabled={currentType !== "advanced"}
+                      />
                     ),
                   },
                 ]}
