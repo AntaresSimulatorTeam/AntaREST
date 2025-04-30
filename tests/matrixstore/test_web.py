@@ -25,6 +25,7 @@ from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.model import MatrixInfoDTO
 from antarest.matrixstore.web import MatrixDTO
+from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
@@ -53,6 +54,7 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
     return build_ctxt.build()
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_create() -> None:
     service = Mock()
@@ -69,6 +71,7 @@ def test_create() -> None:
     assert res.json() == "matrix_hash"
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_get() -> None:
     matrix = MatrixDTO(
@@ -104,6 +107,7 @@ def test_delete() -> None:
     assert res.status_code == 200
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_import() -> None:
     matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]

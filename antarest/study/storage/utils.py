@@ -41,7 +41,6 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
@@ -49,6 +48,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
+from antarest.login.utils import require_current_user
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
@@ -217,20 +217,14 @@ def study_matcher(
 
 
 def assert_permission_on_studies(
-    user: Optional[JWTUser],
-    studies: Sequence[Study | StudyMetadataDTO],
-    permission_type: StudyPermissionType,
-    *,
-    raising: bool = True,
-) -> bool:
+    studies: Sequence[Study | StudyMetadataDTO], permission_type: StudyPermissionType
+) -> None:
     """
     Asserts whether the provided user has the required permissions on the given studies.
 
     Args:
-        user: The user whose permissions need to be verified.
         studies: The studies for which permissions need to be verified.
         permission_type: The type of permission to be checked for the user.
-        raising: If set to `True`, raises `UserHasNotPermissionError` when the permission check fails.
 
     Returns:
         `True` if the user has the required permissions, `False` otherwise.
@@ -239,9 +233,7 @@ def assert_permission_on_studies(
         `UserHasNotPermissionError`: If the raising parameter is set to `True`
             and the user does not have the required permissions.
     """
-    if not user:
-        logger.error("FAIL permission: user is not logged")
-        raise UserHasNotPermissionError()
+    user = require_current_user()
     msg = {
         0: f"FAIL permissions: user '{user}' has no access to any study",
         1: f"FAIL permissions: user '{user}' does not have {permission_type.value} permission on {studies[0].id}",
@@ -250,26 +242,16 @@ def assert_permission_on_studies(
     infos = (PermissionInfo.from_study(study) for study in studies)
     if any(not check_permission(user, permission_info, permission_type) for permission_info in infos):
         logger.error(msg)
-        if raising:
-            raise UserHasNotPermissionError(msg)
-        return False
-    return True
+        raise UserHasNotPermissionError(msg)
 
 
-def assert_permission(
-    user: Optional[JWTUser],
-    study: Optional[Study | StudyMetadataDTO],
-    permission_type: StudyPermissionType,
-    raising: bool = True,
-) -> bool:
+def assert_permission(study: Optional[Study | StudyMetadataDTO], permission_type: StudyPermissionType) -> None:
     """
     Assert user has permission to edit or read study.
 
     Args:
-        user: user logged
         study: study asked
         permission_type: level of permission
-        raising: raise error if permission not matched
 
     Returns:
         `True` if the user has the required permissions, `False` otherwise.
@@ -279,7 +261,7 @@ def assert_permission(
             and the user does not have the required permissions.
     """
     studies = [study] if study else []
-    return assert_permission_on_studies(user, studies, permission_type, raising=raising)
+    assert_permission_on_studies(studies, permission_type)
 
 
 MATRIX_INPUT_DAYS_COUNT = 365

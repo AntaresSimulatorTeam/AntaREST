@@ -24,7 +24,6 @@ from starlette.testclient import TestClient
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.login.main import build_login
 from antarest.login.model import (
@@ -43,15 +42,6 @@ from antarest.login.model import (
     UserInfo,
 )
 from antarest.main import JwtSettings
-
-PARAMS = RequestParameters(
-    user=JWTUser(
-        id=0,
-        impersonator=0,
-        type="users",
-        groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
-    )
-)
 
 
 def create_app(service: Mock, auth_disabled=False) -> FastAPI:
@@ -234,7 +224,7 @@ def test_user_create() -> None:
     )
 
     assert res.status_code == 200
-    service.create_user.assert_called_once_with(user, PARAMS)
+    service.create_user.assert_called_once_with(user)
     assert res.json() == user_id.to_dto().model_dump()
 
 
@@ -259,7 +249,6 @@ def test_user_save() -> None:
     assert service.save_user.call_count == 1
     call = service.save_user.call_args_list[0]
     assert call[0][0].to_dto().model_dump() == user_obj
-    assert call[0][1] == PARAMS
 
 
 @pytest.mark.unit_test
@@ -271,7 +260,7 @@ def test_user_delete() -> None:
     res = client.delete("/v1/users/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_user.assert_called_once_with(0, PARAMS)
+    service.delete_user.assert_called_once_with(0)
 
 
 @pytest.mark.unit_test
@@ -326,7 +315,7 @@ def test_group_delete() -> None:
     res = client.delete("/v1/groups/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_group.assert_called_once_with("0", PARAMS)
+    service.delete_group.assert_called_once_with("0")
 
 
 @pytest.mark.unit_test
@@ -377,7 +366,7 @@ def test_role_delete() -> None:
     res = client.delete("/v1/roles/group/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_role.assert_called_once_with(0, "group", PARAMS)
+    service.delete_role.assert_called_once_with(0, "group")
 
 
 @pytest.mark.unit_test
@@ -389,7 +378,7 @@ def test_roles_delete_by_user() -> None:
     res = client.delete("/v1/users/roles/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_all_roles_from_user.assert_called_once_with(0, PARAMS)
+    service.delete_all_roles_from_user.assert_called_once_with(0)
 
 
 @pytest.mark.unit_test
@@ -457,4 +446,4 @@ def test_bot_delete() -> None:
     res = client.delete("/v1/bots/0", headers=create_auth_token(app))
 
     assert res.status_code == 200
-    service.delete_bot.assert_called_once_with(0, PARAMS)
+    service.delete_bot.assert_called_once_with(0)
