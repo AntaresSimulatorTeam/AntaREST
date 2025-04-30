@@ -286,10 +286,7 @@ class MatrixContentRepository:
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
         with FileLock(lock_file, timeout=15):
-            if content.empty:
-                matrix_path.touch()
-            else:
-                save_matrix(self.format, content, matrix_path)
+            save_matrix(self.format, content, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
             # See https://github.com/tox-dev/py-filelock/issues/31

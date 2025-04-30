@@ -12,19 +12,22 @@
 from pathlib import Path
 from typing import cast
 
+import numpy as np
 import pandas as pd
 
 from antarest.core.config import InternalMatrixFormat
 
 
 def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pd.DataFrame:
-    if path.stat().st_size == 0:
-        return pd.DataFrame()
-
     if matrix_format == InternalMatrixFormat.TSV:
         # Based on the matrix version, we assume its format
-        header = None if matrix_version == 1 else 0
-        df = pd.read_csv(path, sep="\t", header=header)
+        if matrix_version == 1:
+            df = pd.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
+        else:
+            try:
+                df = pd.read_csv(path, sep="\t", header=0)
+            except pd.errors.EmptyDataError:  # `read_csv` method can fail if the dataframe is empty
+                df = pd.DataFrame()
     elif matrix_format == InternalMatrixFormat.HDF:
         df = cast(pd.DataFrame, pd.read_hdf(path))
     elif matrix_format == InternalMatrixFormat.PARQUET:
