@@ -29,7 +29,7 @@ from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, I
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.persistence import Base
-from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.requests import MustBeAuthenticatedError, UserHasNotPermissionError
 from antarest.core.tasks.model import (
     TaskJob,
     TaskJobLog,
@@ -280,7 +280,7 @@ def test_cancel(core_config: Config, event_bus: IEventBus, admin_user: JWTUser) 
     # Create a TaskJobService
     service = TaskJobService(config=core_config, repository=task_job_repo, event_bus=event_bus)
 
-    with pytest.raises(UserHasNotPermissionError):
+    with pytest.raises(MustBeAuthenticatedError):
         service.cancel_task("a")
 
     # The event_bus fixture is actually a EventBusService with LocalEventBus backend
