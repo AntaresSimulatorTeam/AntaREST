@@ -99,16 +99,13 @@ v2.20.0 (2025-04-30)
 
 ### Chore
 
-* **release**: v2.19.0 [`2338`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2338)
 * **group**: enforce lower case for item groups [`2333`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2333)
 * **simulator**: bump simulator v8.8 version inside Desktop app [`2355`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2355)
 * **deps**: use `antares-study-version` package for study creation [`2358`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2358)
 * **patch**: remove patch service [`2359`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2359)
 * **dev**: share pre-commit configuration for local dev [`2360`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2360)
-* **release**: v2.19.1 [`2397`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2397)
 * **typing**: add TypeAlias where missing [`2401`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2401)
 * **config**: remove unused cache dict [`2404`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2404)
-* **release**: v2.19.2 [`2413`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2413)
 * **ci**: remove ubuntu20 from the ci [`2426`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2426)
 * **tests**: remove useless zip and introduce new study fixtures [`2431`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2431)
 * **variant**: remove obsolete `execute_or_add_commands` method [`2438`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2438)
