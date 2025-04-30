@@ -20,7 +20,9 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.service import IService
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.utils import current_user_context
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
@@ -87,13 +89,14 @@ class AutoArchiveService(IService):
 
     @override
     def _loop(self) -> None:
-        while True:
-            try:
-                self._try_archive_studies()
-            except Exception as e:
-                logger.error(
-                    "Unexpected error happened when processing auto archive service loop",
-                    exc_info=e,
-                )
-            finally:
-                time.sleep(self.sleep_cycle)
+        with current_user_context(DEFAULT_ADMIN_USER):
+            while True:
+                try:
+                    self._try_archive_studies()
+                except Exception as e:
+                    logger.error(
+                        "Unexpected error happened when processing auto archive service loop",
+                        exc_info=e,
+                    )
+                finally:
+                    time.sleep(self.sleep_cycle)
