@@ -16,7 +16,17 @@ import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyTreeNodeProps } from "./types";
+import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
+
+function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
+  if (folderA.name === "default") {
+    return -1;
+  } else if (folderB.name === "default") {
+    return 1;
+  } else {
+    return 0;
+  }
+}
 
 export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
   const { hasChildren, children, path, name } = node;
@@ -24,10 +34,8 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
   const hasUnloadedChildren = hasChildren && children.length === 0;
   const { t } = useTranslation();
 
-  const sortedChildren = useMemo(
-    () => R.sortBy(R.compose(R.toLower, R.prop("name")), children),
-    [children],
-  );
+  const nameSort = R.sortWith([prioritizeDefault, R.ascend(R.compose(R.toLower, R.prop("name")))]);
+  const sortedChildren = useMemo(() => nameSort(children), [children, nameSort]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
