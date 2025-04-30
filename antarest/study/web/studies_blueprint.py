@@ -28,7 +28,7 @@ from antarest.core.model import PublicMode
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.login.utils import get_current_user
+from antarest.login.utils import require_current_user
 from antarest.study.model import (
     CommentsDto,
     MatrixIndex,
@@ -270,11 +270,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info("Importing new study")
         zip_binary = io.BytesIO(study)
 
-        user = get_current_user()
-        group_ids: list[str] = []
-        if user:
-            group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
-            group_ids = [sanitize_string(gid) for gid in group_ids_raw]
+        user = require_current_user()
+        group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
+        group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         try:
             uuid = study_service.import_study(zip_binary, group_ids)
@@ -347,11 +345,9 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         """
         logger.info(f"Copying study {uuid} into new study '{dest}'")
 
-        user = get_current_user()
-        group_ids: list[str] = []
-        if user:
-            group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
-            group_ids = [sanitize_string(gid) for gid in group_ids_raw]
+        user = require_current_user()
+        group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
+        group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
