@@ -143,7 +143,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
 
   return (
     <>
-      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+      <CustomScrollbar>
         <Box
           sx={{
             display: "flex",

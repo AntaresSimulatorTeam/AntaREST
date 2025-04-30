@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { useTranslation } from "react-i18next";
 import FormDialog from "../dialogs/FormDialog";
+import SelectFE from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import type { SubmitHandlerPlus } from "../Form/types";
-import SelectFE from "../fieldEditors/SelectFE";
 import type { TRow } from "./types";
-import { useTranslation } from "react-i18next";
-import { validateString } from "@/utils/validation/string";
 
 interface Props {
   open: boolean;
