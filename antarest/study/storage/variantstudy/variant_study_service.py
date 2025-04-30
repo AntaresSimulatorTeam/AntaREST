@@ -50,7 +50,7 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_user_id, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     RawStudy,
@@ -606,7 +606,6 @@ class VariantStudyService(AbstractStorageService):
                 f"The study {study.name} is not managed. Cannot create a variant from it. It must be imported first."
             )
 
-        user = get_current_user()
         assert_permission(study, StudyPermissionType.READ)
         new_id = str(uuid4())
         study_path = str(self.config.get_workspace_path() / new_id)
@@ -630,7 +629,7 @@ class VariantStudyService(AbstractStorageService):
             version=study.version,
             folder=(re.sub(study.id, new_id, study.folder) if study.folder is not None else None),
             groups=study.groups,  # Create inherit_group boolean
-            owner_id=user.impersonator if user else None,
+            owner_id=require_current_user().impersonator,
             snapshot=None,
             additional_data=additional_data,
         )
@@ -1004,8 +1003,8 @@ class VariantStudyService(AbstractStorageService):
         Raises:
             UserHasNotPermissionError
         """
-        user = get_current_user()
-        if not user or not (user.is_site_admin() or user.is_admin_token()):
+        user = require_current_user()
+        if not (user.is_site_admin() or user.is_admin_token()):
             raise UserHasNotPermissionError()
 
         task_name = f"Cleaning all snapshot updated or accessed at least {humanize.precisedelta(retention_time)} ago."

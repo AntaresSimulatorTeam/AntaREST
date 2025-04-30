@@ -24,7 +24,6 @@ from antarest.core.model import JSON, StudyPermissionType
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.login.utils import get_user_id
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
@@ -317,10 +316,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         response_model_exclude_none=True,
     )
     def get_hydro_properties_by_area(uuid: str) -> dict[str, HydroProperties]:
-        logger.info(
-            msg=f"Getting Hydro properties for each area of study {uuid}",
-            extra={"user": get_user_id()},
-        )
+        logger.info(f"Getting Hydro properties for each area of study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.hydro_manager.get_all_hydro_properties(study_interface)

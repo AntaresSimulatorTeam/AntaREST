@@ -48,7 +48,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import is_archive_format
 from antarest.core.utils.utils import StopWatch
-from antarest.login.utils import get_current_user
+from antarest.login.utils import require_current_user
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
@@ -225,7 +225,6 @@ def assert_permission_on_studies(
     Args:
         studies: The studies for which permissions need to be verified.
         permission_type: The type of permission to be checked for the user.
-        raising: If set to `True`, raises `UserHasNotPermissionError` when the permission check fails.
 
     Returns:
         `True` if the user has the required permissions, `False` otherwise.
@@ -234,10 +233,7 @@ def assert_permission_on_studies(
         `UserHasNotPermissionError`: If the raising parameter is set to `True`
             and the user does not have the required permissions.
     """
-    user = get_current_user()
-    if not user:
-        logger.error("FAIL permission: user is not logged")
-        raise UserHasNotPermissionError()
+    user = require_current_user()
     msg = {
         0: f"FAIL permissions: user '{user}' has no access to any study",
         1: f"FAIL permissions: user '{user}' does not have {permission_type.value} permission on {studies[0].id}",
@@ -254,7 +250,6 @@ def assert_permission(study: Optional[Study | StudyMetadataDTO], permission_type
     Assert user has permission to edit or read study.
 
     Args:
-        user: user logged
         study: study asked
         permission_type: level of permission
 

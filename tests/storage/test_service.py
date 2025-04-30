@@ -219,7 +219,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(user)),
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -233,7 +233,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions.from_params(user)),
+            study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -247,7 +247,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- having an exact total of queries equals to 1
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.from_params(user)),
+            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
@@ -261,7 +261,7 @@ def test_study_listing(db_session: Session) -> None:
     # 2- the `put` method of `cache` was never used
     with DBStatementRecorder(db_session.bind) as db_recorder:
         studies = service.get_studies_information(
-            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.from_params(user)),
+            study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.for_user(user)),
         )
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
     with contextlib.suppress(AssertionError):

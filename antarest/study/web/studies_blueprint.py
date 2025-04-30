@@ -25,7 +25,6 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
-from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -134,10 +133,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         user_list = [int(v) for v in _split_comma_separated_values(users)]
 
-        user = get_current_user()
-        if not user:
-            raise UserHasNotPermissionError("FAIL permission: user is not logged")
-
         study_filter = StudyFilter(
             name=name,
             managed=managed,
@@ -151,7 +146,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
             exists=exists,
             workspace=workspace,
             folder=folder,
-            access_permissions=AccessPermissions.from_params(user),
+            access_permissions=AccessPermissions.for_current_user(),
         )
 
         matching_studies = study_service.get_studies_information(
@@ -206,10 +201,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info("Counting matching studies")
         user_list = [int(v) for v in _split_comma_separated_values(users)]
 
-        user = get_current_user()
-        if not user:
-            raise UserHasNotPermissionError("FAIL permission: user is not logged")
-
         count = study_service.count_studies(
             study_filter=StudyFilter(
                 name=name,
@@ -224,7 +215,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
                 exists=exists,
                 workspace=workspace,
                 folder=folder,
-                access_permissions=AccessPermissions.from_params(user),
+                access_permissions=AccessPermissions.for_current_user(),
             ),
         )
 

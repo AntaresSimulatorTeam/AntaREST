@@ -316,9 +316,7 @@ class LauncherService:
             studies = {
                 study.id: study
                 for study in self.study_service.repository.get_all(
-                    study_filter=StudyFilter(
-                        study_ids=study_ids, access_permissions=AccessPermissions.from_params(user)
-                    )
+                    study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions.for_user(user))
                 )
             }
         else:

@@ -302,8 +302,8 @@ class TaskJobService(ITaskService):
 
     def cancel_task(self, task_id: str, dispatch: bool = False) -> None:
         task = self.repo.get_or_raise(task_id)
-        user = get_current_user()
-        if user and (user.is_site_admin() or task.owner_id == user.impersonator):
+        user = require_current_user()
+        if user.is_site_admin() or task.owner_id == user.impersonator:
             self._cancel_task(task_id, dispatch)
         else:
             raise UserHasNotPermissionError()

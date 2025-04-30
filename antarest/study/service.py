@@ -61,7 +61,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_current_user, get_user_id, require_current_user
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -2095,12 +2095,12 @@ class StudyService:
             UserHasNotPermissionError: if params user is not admin.
 
         """
-        user = get_current_user()
-        if not user or not user.is_site_admin():
+        user = require_current_user()
+        if not user.is_site_admin():
             logger.error(f"User {get_user_id()} is not site admin")
             raise UserHasNotPermissionError()
         studies = self.repository.get_all(
-            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(user))
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_current_user())
         )
 
         for study in studies:
