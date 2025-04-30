@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -19,12 +19,11 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -43,24 +42,14 @@ class ReplaceMatrix(ICommand):
     # ==================
 
     target: str
-    matrix: t.Union[t.List[t.List[MatrixData]], str] = Field(validate_default=True)
+    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: t.Union[t.List[t.List[MatrixData]], str], values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Matrix '{self.target}' has been successfully replaced.",
-            ),
-            {},
-        )
-
-    @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, study_data)
 
@@ -88,8 +77,10 @@ class ReplaceMatrix(ICommand):
             )
 
         study_data.tree.save(replace_matrix_data)
-        output, _ = self._apply_config(study_data.config)
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Matrix '{self.target}' has been successfully replaced.",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -103,6 +94,6 @@ class ReplaceMatrix(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]

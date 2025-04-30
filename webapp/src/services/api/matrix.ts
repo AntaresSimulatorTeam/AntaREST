@@ -14,17 +14,16 @@
 
 import type { AxiosRequestConfig } from "axios";
 import client from "./client";
+
+import type { FileDownloadTask } from "./downloads";
+import { getConfig } from "../config";
 import type {
-  MatrixDTO,
   MatrixDataSetDTO,
+  MatrixDTO,
   MatrixInfoDTO,
   MatrixDataSetUpdateDTO,
   MatrixIndex,
-  MatrixEditDTO,
-} from "../../common/types";
-import type { FileDownloadTask } from "./downloads";
-import { getConfig } from "../config";
-import type { MatrixUpdateDTO } from "../../components/common/Matrix/shared/types";
+} from "@/types/types";
 
 export const getMatrixList = async (name = "", filterOwn = false): Promise<MatrixDataSetDTO[]> => {
   const res = await client.get(
@@ -39,9 +38,7 @@ export const getMatrix = async (id: string): Promise<MatrixDTO> => {
 };
 
 export const getExportMatrixUrl = (matrixId: string): string =>
-  `${
-    getConfig().downloadHostUrl || getConfig().baseUrl + getConfig().restEndpoint
-  }/v1/matrix/${matrixId}/download`;
+  `${getConfig().downloadHostUrl}/v1/matrix/${matrixId}/download`;
 
 export const exportMatrixDataset = async (datasetId: string): Promise<FileDownloadTask> => {
   const res = await client.get(`/v1/matrixdataset/${datasetId}/download`);
@@ -96,37 +93,13 @@ export const deleteDataSet = async (id: string): Promise<void> => {
   return res.data;
 };
 
-/**
- * @deprecated Use `updateMatrix` instead.
- *
- * @param sid - The study ID.
- * @param path - The path of the matrix.
- * @param matrixEdit - The matrix edit data.
- */
-export const editMatrix = async (
-  sid: string,
-  path: string,
-  matrixEdit: MatrixEditDTO[],
-): Promise<void> => {
-  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
-
-  await client.put(
-    `/v1/studies/${sid}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
-    matrixEdit,
-  );
-};
-
 export const updateMatrix = async (
   studyId: string,
   path: string,
-  updates: MatrixUpdateDTO[],
-): Promise<void> => {
-  const sanitizedPath = path.startsWith("/") ? path.substring(1) : path;
-
-  await client.put(
-    `/v1/studies/${studyId}/matrix?path=${encodeURIComponent(sanitizedPath)}`,
-    updates,
-  );
+  data: number[][],
+): Promise<number[][]> => {
+  const res = await client.post(`/v1/studies/${studyId}/raw`, data, { params: { path } });
+  return res.data;
 };
 
 export const getStudyMatrixIndex = async (sid: string, path?: string): Promise<MatrixIndex> => {

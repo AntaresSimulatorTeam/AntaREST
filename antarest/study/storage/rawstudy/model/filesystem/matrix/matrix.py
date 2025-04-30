@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import contextlib
 import io
 import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, Union, cast
+from typing import List, Optional, cast
 
 import numpy as np
 import pandas as pd
@@ -22,6 +23,7 @@ from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.exceptions import DenormalizationException
@@ -57,7 +59,21 @@ def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_forma
         )
 
 
-class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
+def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
+    """Tries to convert bytes to a numpy array when importing a matrix"""
+    str_data = data.decode("utf-8")
+    if not str_data:
+        return np.zeros(shape=(0, 0))
+    for delimiter in [",", ";", "\t"]:
+        with contextlib.suppress(Exception):
+            df = pd.read_csv(io.BytesIO(data), delimiter=delimiter, header=None).replace(",", ".", regex=True)
+            df = df.dropna(axis=1, how="all")  # We want to remove columns full of NaN at the import
+            matrix = df.to_numpy(dtype=np.float64)
+            return matrix
+    return None
+
+
+class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     def __init__(
         self,
         context: ContextServer,
@@ -92,13 +108,10 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         if self.get_link_path().exists() or self.config.archive_path:
             return
 
-        matrix = self.parse_as_json()
-
-        if "data" in matrix:
-            data = cast(List[List[float]], matrix["data"])
-            uuid = self.context.matrix.create(data)
-            self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
-            self.config.path.unlink()
+        matrix = self.parse_as_dataframe()
+        uuid = self.context.matrix.create(matrix)
+        self.get_link_path().write_text(self.context.resolver.build_matrix_uri(uuid))
+        self.config.path.unlink()
 
     @override
     def denormalize(self) -> None:
@@ -127,48 +140,35 @@ class MatrixNode(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> Union[bytes, JSON]:
-        file_path, tmp_dir = self._get_real_file_path()
+    ) -> bytes | JSON:
+        file_path, _ = self._get_real_file_path()
+
+        df = self.parse_as_dataframe(file_path)
 
         if formatted:
-            return self.parse_as_json(file_path)
+            stopwatch = StopWatch()
+            data = cast(JSON, df.to_dict(orient="split"))
+            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix to dict in {x}s"))
+            return data
 
-        if not file_path.exists():
-            logger.warning(f"Missing file {self.config.path}")
-            if tmp_dir:
-                tmp_dir.cleanup()
+        # The R scripts use the flag formatted=False
+        if df.empty:
             return b""
-
-        file_content = file_path.read_bytes()
-        if file_content != b"":
-            return file_content
-
-        # If the content is empty, we should return the default matrix to do the same as `parse_as_json()`
-        default_matrix = self.get_default_empty_matrix()
-        if default_matrix is None:
-            return b""
-        buffer = io.BytesIO()
-        np.savetxt(buffer, default_matrix, delimiter="\t")
-        return buffer.getvalue()
+        buffer = io.StringIO()
+        df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        return buffer.getvalue()  # type: ignore
 
     @abstractmethod
-    def parse_as_json(self, file_path: Optional[Path] = None) -> JSON:
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
         """
-        Parse the matrix content and return it as a JSON object
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_default_empty_matrix(self) -> Optional[npt.NDArray[np.float64]]:
-        """
-        Returns the default matrix to return when the existing one is empty
+        Parse the matrix content and return it as a DataFrame object
         """
         raise NotImplementedError()
 
     @override
     def dump(
         self,
-        data: Union[bytes, JSON],
+        data: bytes | JSON,
         url: Optional[List[str]] = None,
     ) -> None:
         """

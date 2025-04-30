@@ -2,7 +2,7 @@
 
 ## Full deployment
 
-![](../assets/media/img/deployment_architecture.png)
+![](../../assets/media/img/deployment_architecture.png)
 
 
 ## Entry points / applications
@@ -27,11 +27,11 @@ Each package/module is structured in the following way :
 - repository.py : define an utility class that will allow to query the database entities defined in the model
 - business / common / utils / ... : other directory to put business components, utility, interfaces, adapters, ...
 
-![](../assets/media/img/module_architecture.png)
+![](../../assets/media/img/module_architecture.png)
 
 ## Specific topics
 
 - [Database management](./1-database.md)
-- [Adding a new antares simulator version support](./2-add-new-antares-version.md)
+- [Adding a new antares simulator version support](../1-add-new-antares-version.md)
 
 

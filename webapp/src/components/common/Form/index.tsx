@@ -13,6 +13,26 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import RedoIcon from "@mui/icons-material/Redo";
+import SaveIcon from "@mui/icons-material/Save";
+import UndoIcon from "@mui/icons-material/Undo";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  IconButton,
+  setRef,
+  Tooltip,
+  type ButtonProps,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
+import axios from "axios";
+import clsx from "clsx";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef } from "react";
 import {
   FormProvider,
@@ -26,35 +46,16 @@ import {
   type UseFormProps,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import * as RA from "ramda-adjunct";
-import {
-  Box,
-  CircularProgress,
-  Divider,
-  IconButton,
-  setRef,
-  Tooltip,
-  type SxProps,
-  type Theme,
-} from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
-import * as R from "ramda";
-import clsx from "clsx";
-import { LoadingButton, type LoadingButtonProps } from "@mui/lab";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
-import axios from "axios";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
-import { ROOT_ERROR_KEY, getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { mergeSxProp } from "../../../utils/muiUtils";
 import FormContext from "./FormContext";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { mergeSxProp } from "../../../utils/muiUtils";
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { getDirtyValues, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -80,7 +81,7 @@ export interface FormProps<
     | ((formApi: UseFormReturnPlus<TFieldValues, TContext>) => React.ReactNode)
     | React.ReactNode;
   submitButtonText?: string;
-  submitButtonIcon?: LoadingButtonProps["startIcon"];
+  submitButtonIcon?: ButtonProps["startIcon"];
   miniSubmitButton?: boolean;
   hideSubmitButton?: boolean;
   hideFooterDivider?: boolean;
@@ -90,36 +91,36 @@ export interface FormProps<
   enableUndoRedo?: boolean;
   sx?: SxProps<Theme>;
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
+  disableStickyFooter?: boolean;
+  extraActions?: React.ReactNode;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
   return useFormContextOriginal() as UseFormReturnPlus<TFieldValues>;
 }
 
-function Form<TFieldValues extends FieldValues, TContext>(
-  props: FormProps<TFieldValues, TContext>,
-) {
-  const {
-    config,
-    onSubmit,
-    onSubmitSuccessful,
-    onInvalid,
-    children,
-    submitButtonText,
-    submitButtonIcon = <SaveIcon />,
-    miniSubmitButton,
-    hideSubmitButton,
-    hideFooterDivider,
-    onStateChange,
-    autoSubmit,
-    allowSubmitOnPristine,
-    enableUndoRedo,
-    className,
-    sx,
-    apiRef,
-    ...formProps
-  } = props;
-
+function Form<TFieldValues extends FieldValues, TContext>({
+  config,
+  onSubmit,
+  onSubmitSuccessful,
+  onInvalid,
+  children,
+  submitButtonText,
+  submitButtonIcon = <SaveIcon />,
+  miniSubmitButton,
+  hideSubmitButton,
+  hideFooterDivider,
+  onStateChange,
+  autoSubmit,
+  allowSubmitOnPristine,
+  enableUndoRedo,
+  className,
+  sx,
+  apiRef,
+  disableStickyFooter,
+  extraActions,
+  ...formProps
+}: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
   const autoSubmitConfig = toAutoSubmitConfig(autoSubmit);
@@ -171,7 +172,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
   const isSubmitAllowed = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
-  const showFooter = showSubmitButton || enableUndoRedo || rootError;
+  const showFooter = showSubmitButton || enableUndoRedo || extraActions || rootError;
 
   const formApiPlus = useFormApiPlus({
     formApi,
@@ -316,7 +317,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
         {
           display: "flex",
           flexDirection: "column",
-          height: 1,
+          height: disableStickyFooter ? "auto" : 1,
           overflow: "auto",
         },
         sx,
@@ -355,7 +356,7 @@ function Form<TFieldValues extends FieldValues, TContext>(
             display: "flex",
             flexDirection: "column",
             gap: 1.5,
-            mt: hideFooterDivider ? 0 : 1.5,
+            mt: 1.5,
           }}
         >
           {!hideFooterDivider && <Divider flexItem />}
@@ -364,12 +365,11 @@ function Form<TFieldValues extends FieldValues, TContext>(
               {rootError.message || t("form.submit.error")}
             </Box>
           )}
-          <Box className="Form__Footer__Actions" sx={{ display: "flex" }}>
+          <Box className="Form__Footer__Actions" sx={{ display: "flex", alignItems: "center" }}>
             {showSubmitButton && (
               <>
-                <LoadingButton
+                <Button
                   type="submit"
-                  size="small"
                   disabled={!isSubmitAllowed}
                   loading={isSubmitting}
                   {...(miniSubmitButton
@@ -390,19 +390,24 @@ function Form<TFieldValues extends FieldValues, TContext>(
               <>
                 <Tooltip title={t("global.undo")}>
                   <span>
-                    <IconButton size="small" onClick={undo} disabled={!canUndo || isSubmitting}>
+                    <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
                       <UndoIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
                 <Tooltip title={t("global.redo")}>
                   <span>
-                    <IconButton size="small" onClick={redo} disabled={!canRedo || isSubmitting}>
+                    <IconButton onClick={redo} disabled={!canRedo || isSubmitting}>
                       <RedoIcon />
                     </IconButton>
                   </span>
                 </Tooltip>
               </>
+            )}
+            {extraActions && (
+              <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
+                {extraActions}
+              </Box>
             )}
           </Box>
         </Box>

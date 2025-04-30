@@ -12,13 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import debug from "debug";
-import * as R from "ramda";
-import { useTranslation } from "react-i18next";
+import { validateString } from "@/utils/validation/string";
 import type { AxiosError } from "axios";
+import debug from "debug";
 import { useSnackbar } from "notistack";
+import * as R from "ramda";
 import { useMemo } from "react";
-import type { StudyMetadata } from "../../../common/types";
+import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import { updateStudy } from "../../../redux/ducks/studies";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import {
   addStudyGroup,
   changePublicMode,
@@ -26,18 +30,14 @@ import {
   updateStudyMetadata,
 } from "../../../services/api/study";
 import { getGroups } from "../../../services/api/user";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
+import type { StudyMetadata } from "../../../types/types";
 import FormDialog from "../../common/dialogs/FormDialog";
-import StringFE from "../../common/fieldEditors/StringFE";
-import SelectFE from "../../common/fieldEditors/SelectFE";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
+import SelectFE from "../../common/fieldEditors/SelectFE";
+import StringFE from "../../common/fieldEditors/StringFE";
 import Fieldset from "../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../common/Form/types";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { updateStudy } from "../../../redux/ducks/studies";
-import { validateString } from "@/utils/validation/string";
+import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -142,15 +142,14 @@ function PropertiesDialog(props: Props) {
     >
       {({ control }) => (
         <>
-          <StringFE
-            label={t("studies.studyName")}
-            name="name"
-            control={control}
-            rules={{ validate: (v) => validateString(v) }}
-            sx={{ mx: 0 }}
-            fullWidth
-          />
-
+          <Fieldset fullFieldWidth>
+            <StringFE
+              label={t("studies.studyName")}
+              name="name"
+              control={control}
+              rules={{ validate: (v) => validateString(v) }}
+            />
+          </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>
             <SelectFE
               label={t("study.publicMode")}
@@ -160,7 +159,6 @@ function PropertiesDialog(props: Props) {
               }))}
               name="publicMode"
               control={control}
-              fullWidth
             />
             <SelectFE
               label={t("global.group")}
@@ -171,17 +169,13 @@ function PropertiesDialog(props: Props) {
               name="groups"
               control={control}
               multiple
-              fullWidth
             />
           </Fieldset>
-
           <Fieldset legend="Metadata" fullFieldWidth>
             <CheckboxesTagsFE
               options={[]}
               label={t("studies.enterTag")}
               freeSolo
-              fullWidth
-              sx={{ px: 0 }}
               name="tags"
               control={control}
             />

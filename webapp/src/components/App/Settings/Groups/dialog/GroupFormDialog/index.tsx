@@ -13,22 +13,25 @@
  */
 
 import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
-import type { RoleType, UserDTO } from "../../../../../../common/types";
+import { GROUP_FORM_DEFAULT_VALUES, type GroupFormDefaultValues } from "../utils";
 import GroupForm from "./GroupForm";
 
-export interface GroupFormDialogProps extends Omit<FormDialogProps, "children"> {
-  defaultValues?: {
-    name?: string;
-    permissions?: Array<{ user: UserDTO; type: RoleType }>;
-  };
+export interface GroupFormDialogProps
+  extends Omit<FormDialogProps<GroupFormDefaultValues>, "children" | "maxWidth"> {
+  defaultValues?: GroupFormDefaultValues;
 }
 
-function GroupFormDialog(props: GroupFormDialogProps) {
-  const { defaultValues, ...dialogProps } = props;
-
+function GroupFormDialog({
+  defaultValues: defaultValuesFromProps,
+  ...dialogProps
+}: GroupFormDialogProps) {
   return (
-    <FormDialog maxWidth="sm" config={{ defaultValues }} {...dialogProps}>
-      {GroupForm}
+    <FormDialog
+      maxWidth="xs"
+      config={{ defaultValues: { ...GROUP_FORM_DEFAULT_VALUES, ...defaultValuesFromProps } }}
+      {...dialogProps}
+    >
+      <GroupForm />
     </FormDialog>
   );
 }

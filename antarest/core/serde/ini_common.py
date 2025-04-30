@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import dataclasses
-from typing import Optional
+from typing import Optional, TypeAlias
 
-PrimitiveType = str | int | float | bool
+PrimitiveType: TypeAlias = str | int | float | bool
 
 
 @dataclasses.dataclass(frozen=True)

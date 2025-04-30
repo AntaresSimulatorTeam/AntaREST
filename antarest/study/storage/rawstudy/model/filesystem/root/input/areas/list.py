@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
-class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
+class InputAreasList(INode[List[str], List[str], List[str]]):
     @override
     def normalize(self) -> None:
         pass  # no external store in this node
@@ -38,44 +38,44 @@ class InputAreasList(INode[t.List[str], t.List[str], t.List[str]]):
     @override
     def get_node(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> INode[t.List[str], t.List[str], t.List[str]]:
+    ) -> INode[List[str], List[str], List[str]]:
         return self
 
     @override
     def get(
         self,
-        url: t.Optional[t.List[str]] = None,
+        url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> t.List[str]:
+    ) -> List[str]:
         if self.config.archive_path:
             lines = extract_lines_from_archive(self.config.archive_path, AREAS_LIST_RELATIVE_PATH)
         else:
             lines = self.config.path.read_text().split("\n")
-        return [l.strip() for l in lines if l.strip()]
+        return [line.strip() for line in lines if line.strip()]
 
     @override
-    def save(self, data: t.List[str], url: t.Optional[t.List[str]] = None) -> None:
+    def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self.config.path.write_text("\n".join(data))
 
     @override
-    def delete(self, url: t.Optional[t.List[str]] = None) -> None:
+    def delete(self, url: Optional[List[str]] = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()
 
     @override
     def check_errors(
         self,
-        data: t.List[str],
-        url: t.Optional[t.List[str]] = None,
+        data: List[str],
+        url: Optional[List[str]] = None,
         raising: bool = False,
-    ) -> t.List[str]:
+    ) -> List[str]:
         errors = []
         if any(a not in data for a in [area.name for area in self.config.areas.values()]):
             errors.append(f"list.txt should have {self.config.area_names()} nodes but given {data}")

@@ -15,11 +15,11 @@ from typing import Dict, List, Union
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
 from antarest.study.business.general_management import FIELDS_INFO
-from antarest.study.business.utils import FormFieldsBaseModel, execute_or_add_commands
-from antarest.study.model import RawStudy
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 DEFAULT_WEIGHT = 1
 
@@ -30,19 +30,19 @@ class PlaylistColumns(FormFieldsBaseModel):
 
 
 class PlaylistManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
     def get_table_data(
         self,
-        study: RawStudy,
+        study: StudyInterface,
     ) -> Dict[int, PlaylistColumns]:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
+        file_study = study.get_files()
         playlist = FileStudyHelpers.get_playlist(file_study) or {}
         nb_years = file_study.tree.get(FIELDS_INFO["nb_years"]["path"].split("/")) or len(playlist)
 
         return {
-            year: PlaylistColumns.construct(
+            year: PlaylistColumns.model_construct(
                 status=year in playlist,
                 # TODO the real value for disable year
                 weight=playlist.get(year, DEFAULT_WEIGHT),
@@ -52,11 +52,9 @@ class PlaylistManager:
 
     def set_table_data(
         self,
-        study: RawStudy,
+        study: StudyInterface,
         data: Dict[int, PlaylistColumns],
     ) -> None:
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-
         years_by_bool: Dict[bool, List[int]] = {True: [], False: []}
         for year, col in data.items():
             years_by_bool[col.status].append(year - 1)
@@ -65,17 +63,11 @@ class PlaylistManager:
 
         weights = {year: col.weight for year, col in data.items() if col.weight != DEFAULT_WEIGHT}
 
-        execute_or_add_commands(
-            study,
-            file_study,
-            [
-                UpdatePlaylist(
-                    items=active_playlists,
-                    weights=weights,
-                    active=True,
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=file_study.config.version,
-                )
-            ],
-            self.storage_service,
+        command = UpdatePlaylist(
+            items=active_playlists,
+            weights=weights,
+            active=True,
+            command_context=self._command_context,
+            study_version=study.version,
         )
+        study.add_commands([command])

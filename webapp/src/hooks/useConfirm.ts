@@ -19,6 +19,8 @@ function errorFunction() {
   throw new Error("Promise is not pending.");
 }
 
+type ShowConfirmParams<TData> = TData extends undefined ? void : { data: TData };
+
 /**
  * Hook that allows to wait for a confirmation from the user with a `Promise`.
  * It is intended to be used in conjunction with a confirm view (like `ConfirmationDialog`).
@@ -58,38 +60,45 @@ function errorFunction() {
  * - `yes`: A function that resolves the promise with `true`.
  * - `no`: A function that resolves the promise with `false`.
  * - `cancel`: A function that resolves the promise with `null`.
+ * - `data`: The data passed to the `showConfirm` function.
  */
-function useConfirm() {
+function useConfirm<TData = undefined>() {
   const [isPending, setIsPending] = useState(false);
+  const [data, setData] = useState<TData>();
   const isPendingRef = useUpdatedRef(isPending);
   const yesRef = useRef<VoidFunction>(errorFunction);
   const noRef = useRef<VoidFunction>(errorFunction);
   const cancelRef = useRef<VoidFunction>(errorFunction);
 
-  const showConfirm = useCallback(() => {
-    if (isPendingRef.current) {
-      throw new Error("A promise is already pending");
-    }
+  const showConfirm = useCallback(
+    (params: ShowConfirmParams<TData>) => {
+      if (isPendingRef.current) {
+        throw new Error("A promise is already pending");
+      }
 
-    setIsPending(true);
+      setData(params?.data);
 
-    return new Promise<boolean | null>((resolve, reject) => {
-      yesRef.current = () => {
-        resolve(true);
-        setIsPending(false);
-      };
+      setIsPending(true);
 
-      noRef.current = () => {
-        resolve(false);
-        setIsPending(false);
-      };
+      return new Promise<boolean | null>((resolve, reject) => {
+        yesRef.current = () => {
+          resolve(true);
+          setIsPending(false);
+        };
 
-      cancelRef.current = () => {
-        resolve(null);
-        setIsPending(false);
-      };
-    });
-  }, []);
+        noRef.current = () => {
+          resolve(false);
+          setIsPending(false);
+        };
+
+        cancelRef.current = () => {
+          resolve(null);
+          setIsPending(false);
+        };
+      });
+    },
+    [isPendingRef],
+  );
 
   return {
     showConfirm,
@@ -97,6 +106,7 @@ function useConfirm() {
     yes: yesRef.current,
     no: noRef.current,
     cancel: cancelRef.current,
+    data,
   };
 }
 

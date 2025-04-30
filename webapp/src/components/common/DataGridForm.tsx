@@ -12,32 +12,40 @@
  * This file is part of the Antares project.
  */
 
-import {
-  GridCellKind,
-  type Item,
-  type DataEditorProps,
-  type GridColumn,
-  type FillHandleDirection,
-} from "@glideapps/glide-data-grid";
-import type { DeepPartial } from "react-hook-form";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
-import { Box, Divider, IconButton, setRef, Tooltip, type SxProps, type Theme } from "@mui/material";
-import useUndo, { type Actions } from "use-undo";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
-import SaveIcon from "@mui/icons-material/Save";
-import { useTranslation } from "react-i18next";
-import { LoadingButton } from "@mui/lab";
-import { mergeSxProp } from "@/utils/muiUtils";
-import * as R from "ramda";
-import type { SubmitHandlerPlus } from "./Form/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
-import { useUpdateEffect } from "react-use";
-import { toError } from "@/utils/fnUtils";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useSafeMemo from "@/hooks/useSafeMemo";
 import { getColumnWidth } from "@/utils/dataGridUtils";
+import { toError } from "@/utils/fnUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
+import {
+  GridCellKind,
+  type DataEditorProps,
+  type FillHandleDirection,
+  type GridColumn,
+  type Item,
+} from "@glideapps/glide-data-grid";
+import RedoIcon from "@mui/icons-material/Redo";
+import SaveIcon from "@mui/icons-material/Save";
+import UndoIcon from "@mui/icons-material/Undo";
+import {
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  setRef,
+  Tooltip,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
+import * as R from "ramda";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DeepPartial } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
+import useUndo, { type Actions } from "use-undo";
+import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
+import type { SubmitHandlerPlus } from "./Form/types";
 
 type Data = Record<string, Record<string, string | boolean | number>>;
 
@@ -181,7 +189,7 @@ function DataGridForm<TData extends Data>({
       const dataRow = data[rowName];
       const cellData = dataRow?.[columnName];
 
-      if (typeof cellData == "string") {
+      if (typeof cellData === "string") {
         return {
           kind: GridCellKind.Text,
           data: cellData,
@@ -190,7 +198,7 @@ function DataGridForm<TData extends Data>({
         };
       }
 
-      if (typeof cellData == "number") {
+      if (typeof cellData === "number") {
         return {
           kind: GridCellKind.Number,
           data: cellData,
@@ -201,7 +209,7 @@ function DataGridForm<TData extends Data>({
         };
       }
 
-      if (typeof cellData == "boolean") {
+      if (typeof cellData === "boolean") {
         return {
           kind: GridCellKind.Boolean,
           data: cellData,
@@ -306,10 +314,9 @@ function DataGridForm<TData extends Data>({
           mt: 1.5,
         }}
       >
-        <Box sx={{ display: "flex" }}>
-          <LoadingButton
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Button
             type="submit"
-            size="small"
             disabled={!isDirty}
             loading={isSubmitting}
             loadingPosition="start"
@@ -317,24 +324,26 @@ function DataGridForm<TData extends Data>({
             startIcon={<SaveIcon />}
           >
             {t("global.save")}
-          </LoadingButton>
+          </Button>
           <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
           <Tooltip title={t("global.undo")}>
             <span>
-              <IconButton size="small" onClick={undo} disabled={!canUndo || isSubmitting}>
+              <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
                 <UndoIcon />
               </IconButton>
             </span>
           </Tooltip>
           <Tooltip title={t("global.redo")}>
             <span>
-              <IconButton size="small" onClick={redo} disabled={!canRedo || isSubmitting}>
+              <IconButton onClick={redo} disabled={!canRedo || isSubmitting}>
                 <RedoIcon />
               </IconButton>
             </span>
           </Tooltip>
           {extraActions && (
-            <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>{extraActions}</Box>
+            <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
+              {extraActions}
+            </Box>
           )}
         </Box>
       </Box>

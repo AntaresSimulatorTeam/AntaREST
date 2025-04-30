@@ -13,7 +13,7 @@
 import datetime
 import uuid
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 from unittest.mock import Mock
 
 import pytest

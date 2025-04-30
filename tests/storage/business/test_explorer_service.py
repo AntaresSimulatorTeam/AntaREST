@@ -110,6 +110,9 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
         in result
     )
 
+    assert str(result[0].path) == result[0].path.as_posix()
+    assert str(result[0].parent_path) == result[0].parent_path.as_posix()
+
 
 @pytest.mark.unit_test
 def test_list_dir_in_empty_folder(config_scenario_a: Config):

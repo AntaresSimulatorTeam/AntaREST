@@ -12,26 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { StudyType, type StudyMetadata } from "@/common/types";
-
-function createStudyMetadata(folder: string, workspace: string): StudyMetadata {
-  return {
-    id: "test-study-id",
-    name: "Test Study",
-    creationDate: "2024-01-01",
-    modificationDate: "2024-01-02",
-    owner: { id: 1, name: "Owner 1" },
-    type: StudyType.RAW,
-    version: "v1",
-    workspace,
-    managed: false,
-    archived: false,
-    groups: [],
-    folder,
-    publicMode: "NONE",
-  };
-}
-
 export const FIXTURES = {
   basicTree: {
     name: "Basic tree with single level",
@@ -222,105 +202,6 @@ export const FIXTURES = {
               path: "/a/folder3",
               children: [],
               hasChildren: true,
-            },
-          ],
-        },
-      ],
-    },
-  },
-};
-
-export const FIXTURES_BUILD_STUDY_TREE = {
-  simpleCase: {
-    name: "Basic case",
-    studies: [createStudyMetadata("studies/team1/myFolder", "workspace")],
-    expected: {
-      name: "root",
-      path: "",
-      children: [
-        {
-          name: "default",
-          path: "/default",
-          children: [],
-        },
-        {
-          name: "workspace",
-          path: "/workspace",
-          children: [
-            {
-              name: "studies",
-              path: "/workspace/studies",
-              children: [
-                {
-                  name: "team1",
-                  path: "/workspace/studies/team1",
-                  children: [],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    },
-  },
-  multiplieStudies: {
-    name: "Multiple studies case",
-    studies: [
-      createStudyMetadata("studies/team1/study", "workspace"),
-      createStudyMetadata("studies/team2/study", "workspace"),
-      createStudyMetadata("studies/team3/study", "workspace"),
-      createStudyMetadata("archives/team4/study", "workspace2"),
-    ],
-    expected: {
-      name: "root",
-      path: "",
-      children: [
-        {
-          name: "default",
-          path: "/default",
-          children: [],
-        },
-        {
-          name: "workspace",
-          path: "/workspace",
-          children: [
-            {
-              name: "studies",
-              path: "/workspace/studies",
-              children: [
-                {
-                  name: "team1",
-                  path: "/workspace/studies/team1",
-                  children: [],
-                },
-                {
-                  name: "team2",
-                  path: "/workspace/studies/team2",
-                  children: [],
-                },
-                {
-                  name: "team3",
-                  path: "/workspace/studies/team3",
-                  children: [],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          name: "workspace2",
-          path: "/workspace2",
-          children: [
-            {
-              name: "archives",
-              path: "/workspace2/archives",
-              children: [
-                {
-                  name: "team4",
-                  path: "/workspace2/archives/team4",
-                  children: [],
-                },
-              ],
             },
           ],
         },

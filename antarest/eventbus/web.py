@@ -75,7 +75,7 @@ class ConnectionManager:
         if not connection:
             return
 
-        ws_message = WebsocketMessage.parse_raw(message)
+        ws_message = WebsocketMessage.model_validate_json(message)
         if ws_message.action == WebsocketMessageAction.SUBSCRIBE:
             if ws_message.payload not in connection.channel_subscriptions:
                 connection.channel_subscriptions.append(ws_message.payload)

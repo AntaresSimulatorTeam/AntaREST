@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
+import NumberFE from "@/components/common/fieldEditors/NumberFE";
+import Form from "@/components/common/Form";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getCurrentAreaId } from "@/redux/selectors";
+import type { StudyMetadata } from "@/types/types";
+import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../common/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
-import Form from "../../../../../../../common/Form";
 import {
   type InflowStructureFields,
   getInflowStructureFields,
   updateInflowStructureFields,
 } from "./utils";
-import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import { useTranslation } from "react-i18next";
 
 function InflowStructure() {
   const [t] = useTranslation();
@@ -53,7 +53,16 @@ function InflowStructure() {
       miniSubmitButton
       enableUndoRedo
       hideFooterDivider
-      sx={{ flexDirection: "row", alignItems: "center" }}
+      disableStickyFooter
+      sx={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 1,
+        overflow: "hidden",
+        ".Form__Footer": {
+          mt: 0,
+        },
+      }}
     >
       {({ control }) => (
         <NumberFE
@@ -70,9 +79,9 @@ function InflowStructure() {
               message: t("form.field.maxValue", { 0: 1 }),
             },
           }}
-          inputProps={{ step: 0.1 }}
-          size="small"
-          sx={{ width: 180 }}
+          slotProps={{ htmlInput: { step: 0.1 } }}
+          size="extra-small"
+          margin="dense"
         />
       )}
     </Form>

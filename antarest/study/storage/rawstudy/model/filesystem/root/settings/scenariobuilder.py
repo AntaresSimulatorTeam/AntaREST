@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import re
-import typing as t
+from typing import Dict, List, MutableMapping, Type
 
 import typing_extensions as te
 from typing_extensions import override
@@ -29,7 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 _TSNumber: te.TypeAlias = int
 _HydroLevel: te.TypeAlias = float
-_Rules = t.MutableMapping[str, t.Union[t.Type[_TSNumber], t.Type[_HydroLevel]]]
+_Rules = MutableMapping[str, Type[_TSNumber] | Type[_HydroLevel]]
 
 
 class ScenarioBuilder(IniFileNode):
@@ -106,7 +106,7 @@ class ScenarioBuilder(IniFileNode):
 
     def _populate_renewable_rules(self, rules: _Rules) -> None:
         for area_id in self.config.areas:
-            for cl_id in (re.lower() for re in self.config.get_renewable_ids(area_id)):
+            for cl_id in (renew.lower() for renew in self.config.get_renewable_ids(area_id)):
                 rules[f"r,{area_id},0,{cl_id}"] = _TSNumber
 
     def _populate_binding_constraints_rules(self, rules: _Rules) -> None:
@@ -126,7 +126,7 @@ class ScenarioBuilder(IniFileNode):
             rules[f"hgp,{area_id},0"] = _TSNumber
 
     @override
-    def _get_filtering_kwargs(self, url: t.List[str]) -> t.Dict[str, str]:
+    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
         # If the URL contains 2 elements, we can filter the options based on the generator type.
         if len(url) == 2:
             section, symbol = url

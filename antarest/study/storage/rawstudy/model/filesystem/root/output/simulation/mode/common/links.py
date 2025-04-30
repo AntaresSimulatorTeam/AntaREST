@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Dict, List
 
 from typing_extensions import override
 
@@ -29,7 +29,7 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         context: ContextServer,
         config: FileStudyTreeConfig,
         area_from: str,
-        link_names: t.List[str],
+        link_names: List[str],
     ):
         super().__init__(context, config)
         self.area_from = area_from
@@ -58,7 +58,7 @@ class OutputSimulationLinks(FolderNode):
     def build(self) -> TREE:
         children: TREE = {}
         links = [d.stem for d in self.config.path.iterdir()]
-        areas: t.Dict[str, t.List[str]] = {}
+        areas: Dict[str, List[str]] = {}
         for link in links:
             areas.setdefault(link.split(" - ")[0], []).append(link)
         for area_from, link_names in areas.items():

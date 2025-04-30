@@ -12,19 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { Paper } from "@mui/material";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../common/types";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import Form from "../../../../../../common/Form";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import Fields from "./Fields";
 import {
   getPropertiesFormFields,
   setPropertiesFormFields,
   type PropertiesFormFields,
 } from "./utils";
-import Fields from "./Fields";
-import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
 
 function Properties() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -44,18 +43,16 @@ function Properties() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Paper sx={{ width: 1, height: 1, padding: 2, overflow: "auto" }}>
-      <Form
-        key={study.id + currentAreaId}
-        config={{
-          defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
-        }}
-        onSubmit={handleSubmit}
-        enableUndoRedo
-      >
-        <Fields />
-      </Form>
-    </Paper>
+    <Form
+      key={study.id + currentAreaId}
+      config={{
+        defaultValues: () => getPropertiesFormFields(study.id, currentAreaId),
+      }}
+      onSubmit={handleSubmit}
+      enableUndoRedo
+    >
+      <Fields />
+    </Form>
   );
 }
 

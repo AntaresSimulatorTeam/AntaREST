@@ -13,6 +13,7 @@
 """
 Test the database model.
 """
+
 import uuid
 
 from sqlalchemy import inspect  # type: ignore

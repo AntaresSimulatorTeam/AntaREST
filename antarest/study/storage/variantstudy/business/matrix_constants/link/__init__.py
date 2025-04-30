@@ -11,3 +11,5 @@
 # This file is part of the Antares project.
 
 from . import v7, v8
+
+__all__ = ("v7", "v8")

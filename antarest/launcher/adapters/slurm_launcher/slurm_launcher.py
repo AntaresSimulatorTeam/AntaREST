@@ -19,8 +19,8 @@ import tempfile
 import threading
 import time
 import traceback
-import typing as t
 from pathlib import Path
+from typing import Awaitable, Callable, Dict, List, Optional, cast
 
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
@@ -34,8 +34,8 @@ from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitCo
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.serde.ini_reader import IniReader
-from antarest.core.serde.ini_writer import IniWriter
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
@@ -75,8 +75,8 @@ class LauncherArgs(argparse.Namespace):
         super().__init__()
 
         # known arguments
-        self.other_options: t.Optional[str] = None
-        self.xpansion_mode: t.Optional[str] = None
+        self.other_options: Optional[str] = None
+        self.xpansion_mode: Optional[str] = None
         self.time_limit: int = 0
         self.n_cpu: int = 0
         self.post_processing: bool = False
@@ -157,8 +157,8 @@ class SlurmLauncher(AbstractLauncher):
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
-        self.thread: t.Optional[threading.Thread] = None
-        self.job_list: t.List[str] = []
+        self.thread: Optional[threading.Thread] = None
+        self.job_list: List[str] = []
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
@@ -238,7 +238,7 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
         logger.info("slurm_launcher loop stopped")
 
-    def _init_launcher_arguments(self, local_workspace: t.Optional[Path] = None) -> argparse.Namespace:
+    def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.time_limit.default * 3600,
@@ -255,7 +255,7 @@ class SlurmLauncher(AbstractLauncher):
         parser.add_basic_arguments()
         parser.add_advanced_arguments()
 
-        arguments = t.cast(argparse.Namespace, parser.parse_args([]))
+        arguments = cast(argparse.Namespace, parser.parse_args([]))
         arguments.wait_mode = False
         arguments.check_queue = False
         arguments.json_ssh_config = None
@@ -267,7 +267,7 @@ class SlurmLauncher(AbstractLauncher):
 
         return arguments
 
-    def _init_launcher_parameters(self, local_workspace: t.Optional[Path] = None) -> MainParameters:
+    def _init_launcher_parameters(self, local_workspace: Optional[Path] = None) -> MainParameters:
         return MainParameters(
             json_dir=local_workspace or self.slurm_config.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
@@ -296,13 +296,13 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: t.Optional[str] = None,
-        log_dir: t.Optional[str] = None,
-    ) -> t.Optional[str]:
+        xpansion_mode: Optional[str] = None,
+        log_dir: Optional[str] = None,
+    ) -> Optional[str]:
         if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: t.Dict[str, t.List[Path]] = {}
+        launcher_logs: Dict[str, List[Path]] = {}
         if log_dir is not None:
             launcher_logs = {
                 log_name: log_path
@@ -456,17 +456,17 @@ class SlurmLauncher(AbstractLauncher):
             self.callbacks.update_status(study.name, JobStatus.SUCCESS, None, output_id)
 
     @staticmethod
-    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> t.Optional[Path]:
+    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
         log_dir = Path(study.job_log_dir)
         return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
 
     @staticmethod
-    def _find_log_dir(base_log_dir: Path, job_id: str) -> t.Optional[Path]:
+    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
         pattern = f"{job_id}*"
         return next(iter(base_log_dir.glob(pattern)), None)
 
     @staticmethod
-    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> t.Optional[Path]:
+    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
         pattern = {
             LogType.STDOUT: "antares-out-*",
             LogType.STDERR: "antares-err-*",
@@ -601,8 +601,8 @@ class SlurmLauncher(AbstractLauncher):
         thread.start()
 
     @override
-    def get_log(self, job_id: str, log_type: LogType) -> t.Optional[str]:
-        log_path: t.Optional[Path] = None
+    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
+        log_path: Optional[Path] = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
                 log_path = SlurmLauncher._get_log_path(study, log_type)
@@ -612,7 +612,7 @@ class SlurmLauncher(AbstractLauncher):
             log_path = SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
         return log_path.read_text() if log_path else None
 
-    def _create_event_listener(self) -> t.Callable[[Event], t.Awaitable[None]]:
+    def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
         async def _listen_to_kill_job(event: Event) -> None:
             self.kill_job(event.payload, dispatch=False)
 
@@ -646,13 +646,13 @@ class SlurmLauncher(AbstractLauncher):
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:
     study_info_path = study_path / "study.antares"
-    study_info = IniReader().read(study_info_path)
+    study_info = read_ini(study_info_path)
     if "antares" in study_info:
         if version.major < 9:  # should be written as XYZ
             version_to_write = f"{version:ddd}"
         else:  # should be written as X.Y
             version_to_write = f"{version:2d}"
         study_info["antares"]["solver_version"] = version_to_write
-        IniWriter().write(study_info, study_info_path)
+        write_ini_file(study_info_path, study_info)
     else:
         logger.warning("Failed to find antares study info")

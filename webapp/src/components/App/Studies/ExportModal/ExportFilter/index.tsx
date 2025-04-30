@@ -23,7 +23,7 @@ import {
   type Set as District,
   type FileStudyTreeConfigDTO,
   type StudyOutputDownloadDTO,
-} from "../../../../../common/types";
+} from "../../../../../types/types";
 import Filter from "./Filter";
 import TagSelect from "./TagSelect";
 import SelectSingle from "../../../../common/SelectSingle";

@@ -16,27 +16,26 @@ import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { createGroup, createRole } from "../../../../../services/api/user";
 import type {
   GroupDetailsDTO,
   GroupDTO,
   RoleDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createGroup, createRole } from "../../../../../services/api/user";
+} from "../../../../../types/types";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
-import GroupFormDialog, { type GroupFormDialogProps } from "./GroupFormDialog";
+import GroupFormDialog from "./GroupFormDialog";
+import type { GroupFormDefaultValues } from "./utils";
 
-type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
-
-interface Props extends Omit<GroupFormDialogProps, InheritPropsToOmit> {
+interface Props {
+  open: boolean;
   addGroup: (group: GroupDetailsDTO) => void;
   reloadFetchGroups: VoidFunction;
-  closeDialog: VoidFunction;
+  onCancel: VoidFunction;
 }
 
-function CreateGroupDialog(props: Props) {
-  const { addGroup, reloadFetchGroups, closeDialog, ...dialogProps } = props;
+function CreateGroupDialog({ open, addGroup, reloadFetchGroups, onCancel }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = usePromiseWrapper();
@@ -46,7 +45,7 @@ function CreateGroupDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<GroupFormDefaultValues>) => {
     const { name, permissions } = data.values;
     let newGroup: GroupDTO;
 
@@ -89,7 +88,7 @@ function CreateGroupDialog(props: Props) {
       enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: newGroup.name }), e as Error);
     }
 
-    closeDialog();
+    onCancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -98,11 +97,11 @@ function CreateGroupDialog(props: Props) {
 
   return (
     <GroupFormDialog
+      open={open}
       title={t("settings.createGroup")}
       titleIcon={GroupAddIcon}
       onSubmit={handleSubmit}
-      onCancel={closeDialog}
-      {...dialogProps}
+      onCancel={onCancel}
     />
   );
 }

@@ -13,17 +13,18 @@
  */
 
 import { useState } from "react";
-import { Paper, Button, Box, Divider } from "@mui/material";
+import { Button, Box, Divider } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
-import type { StudyMetadata, VariantTree } from "../../../../../common/types";
+import type { StudyMetadata, VariantTree } from "../../../../../types/types";
 import CreateVariantDialog from "./CreateVariantDialog";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 import LauncherDialog from "../../../Studies/LauncherDialog";
 import { copyStudy, unarchiveStudy as callUnarchiveStudy } from "../../../../../services/api/study";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 
 interface Props {
   study: StudyMetadata | undefined;
@@ -58,45 +59,22 @@ function InformationView(props: Props) {
   };
 
   return (
-    <Paper
-      sx={{
-        width: "80%",
-        minWidth: "400px",
-        height: "90%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        px: 2,
-        py: 1,
-      }}
-    >
+    <ViewWrapper flex={{ gap: 2 }}>
       <Box
-        width="100%"
-        height="calc(100% - 40px)"
-        display="flex"
-        flexDirection="row"
-        justifyContent="center"
-        alignItems="center"
-        py={1.5}
+        sx={{
+          display: "flex",
+          overflow: "auto",
+          flex: 1,
+        }}
       >
         <LauncherHistory study={study} />
         {study && <Notes study={study} />}
       </Box>
-      <Divider sx={{ width: "100%", height: "1px" }} />
-      <Box
-        width="100%"
-        flex="0 0 40px"
-        display="flex"
-        flexDirection="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        py={1.5}
-      >
-        <Box display="flex" flexDirection="row" justifyContent="flex-start" alignItems="center">
+      <Divider />
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Box sx={{ display: "flex", gap: 2, flex: 1 }}>
           <Button
             variant="contained"
-            color="primary"
             onClick={() => {
               if (study) {
                 navigate(`/studies/${study.id}/explore`);
@@ -107,10 +85,8 @@ function InformationView(props: Props) {
           </Button>
           {study && !study.archived && (
             <Button
-              variant="text"
-              color="primary"
+              variant="outlined"
               onClick={() => (study.managed ? setOpenVariantModal(true) : importStudy(study))}
-              sx={{ mx: 2 }}
             >
               {study.managed ? t("variants.createNewVariant") : t("studies.importcopy")}
             </Button>
@@ -118,7 +94,6 @@ function InformationView(props: Props) {
         </Box>
         <Button
           variant="contained"
-          color="primary"
           onClick={
             study?.archived
               ? () => {
@@ -145,7 +120,7 @@ function InformationView(props: Props) {
           onClose={() => setOpenLauncherModal(false)}
         />
       )}
-    </Paper>
+    </ViewWrapper>
   );
 }
 

@@ -16,21 +16,38 @@ import { Paper } from "@mui/material";
 
 export interface ViewWrapperProps {
   children: React.ReactNode;
+  flex?:
+    | boolean
+    | {
+        direction?: "row" | "column";
+        gap?: number;
+      };
+  disablePadding?: boolean;
 }
 
-function ViewWrapper({ children }: ViewWrapperProps) {
+function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWrapperProps) {
+  const flexObj = typeof flex === "boolean" ? {} : flex;
+  const flexValues = { flexDirection: flexObj.direction || "column", gap: flexObj.gap };
+
   return (
     <Paper
       className="ViewWrapper"
-      sx={{
-        width: 1,
-        height: 1,
-        p: 2,
-        ":has(.TabsView:first-of-type), :has(.TabWrapper:first-of-type)": {
-          pt: 0,
+      sx={[
+        {
+          width: 1,
+          height: 1,
+          p: 2,
+          // <TabsView> and <TabWrapper> have their own padding
+          ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+            p: 0,
+          },
+          overflow: "auto",
+          position: "relative",
+          borderRadius: 0,
         },
-        overflow: "auto",
-      }}
+        flex && { display: "flex", ...flexValues },
+        disablePadding && { p: 0 },
+      ]}
     >
       {children}
     </Paper>

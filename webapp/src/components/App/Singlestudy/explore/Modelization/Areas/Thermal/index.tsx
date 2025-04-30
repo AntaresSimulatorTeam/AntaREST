@@ -12,33 +12,33 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo, useState } from "react";
-import { createMRTColumnHelper } from "material-react-table";
 import { Box } from "@mui/material";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
+import { createMRTColumnHelper } from "material-react-table";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../../../common/types";
-import {
-  getThermalClusters,
-  createThermalCluster,
-  deleteThermalClusters,
-  THERMAL_GROUPS,
-  duplicateThermalCluster,
-  type ThermalClusterWithCapacity,
-  type ThermalGroup,
-} from "./utils";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import type { TRow } from "../../../../../../common/GroupedDataTable/types";
 import {
   addClusterCapacity,
   capacityAggregationFn,
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "../common/clustersUtils";
-import type { TRow } from "../../../../../../common/GroupedDataTable/types";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
+import {
+  createThermalCluster,
+  deleteThermalClusters,
+  duplicateThermalCluster,
+  getThermalClusters,
+  THERMAL_GROUPS,
+  type ThermalClusterWithCapacity,
+  type ThermalGroup,
+} from "./utils";
 
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
@@ -46,7 +46,6 @@ function Thermal() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
@@ -137,7 +136,7 @@ function Thermal() {
   };
 
   const handleNameClick = (row: ThermalClusterWithCapacity) => {
-    navigate(`${location.pathname}/${row.id}`);
+    navigate(row.id);
   };
 
   ////////////////////////////////////////////////////////////////

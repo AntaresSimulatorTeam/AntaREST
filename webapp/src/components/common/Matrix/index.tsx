@@ -12,27 +12,32 @@
  * This file is part of the Antares project.
  */
 
-import { Divider, Skeleton } from "@mui/material";
-import MatrixGrid from "./components/MatrixGrid";
-import { useMatrix } from "./hooks/useMatrix";
-import { useState } from "react";
+import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Skeleton, Tooltip } from "@mui/material";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../common/types";
-import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
-import MatrixActions from "./components/MatrixActions";
-import EmptyView from "../page/EmptyView";
+import type { StudyMetadata } from "../../../types/types";
 import type { fetchMatrixFn } from "../../App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import type { AggregateConfig } from "./shared/types";
-import GridOffIcon from "@mui/icons-material/GridOff";
-import MatrixUpload from "@/components/common/Matrix/components/MatrixUpload";
+import CustomScrollbar from "../CustomScrollbar";
+import EmptyView from "../page/EmptyView";
+import MatrixActions from "./components/MatrixActions";
+import MatrixGrid from "./components/MatrixGrid";
+import { MatrixProvider } from "./context/MatrixContext";
+import { useMatrixColumns } from "./hooks/useMatrixColumns";
+import { useMatrixData } from "./hooks/useMatrixData";
+import { useMatrixMutations } from "./hooks/useMatrixMutations";
+import { isNonEmptyMatrix, type AggregateConfig, type RowCountSource } from "./shared/types";
+import { getAggregateTypes } from "./shared/utils";
+import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
   url: string;
   title?: string;
   customRowHeaders?: string[];
   dateTimeColumn?: boolean;
-  timeSeriesColumns?: boolean;
+  isTimeSeries?: boolean;
   aggregateColumns?: AggregateConfig;
   rowHeaders?: boolean;
   showPercent?: boolean;
@@ -41,14 +46,15 @@ interface MatrixProps {
   colWidth?: number;
   fetchMatrixData?: fetchMatrixFn;
   canImport?: boolean;
+  rowCountSource?: RowCountSource;
 }
 
 function Matrix({
   url,
-  title = "global.timeSeries",
+  title: titleProp,
   customRowHeaders = [],
   dateTimeColumn = true,
-  timeSeriesColumns = true,
+  isTimeSeries = true,
   aggregateColumns = false,
   rowHeaders = customRowHeaders.length > 0,
   showPercent = false,
@@ -57,42 +63,61 @@ function Matrix({
   colWidth,
   fetchMatrixData,
   canImport = false,
+  rowCountSource,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
+  const title = titleProp ?? t("global.timeSeries");
 
-  // TODO: split `useMatrix` into smaller units
+  const aggregateTypes = useMemo(
+    () => getAggregateTypes(aggregateColumns || []),
+    [aggregateColumns],
+  );
+
   const {
-    data,
-    aggregates,
-    error,
-    isLoading,
-    isSubmitting,
-    columns,
+    currentState,
+    updateCount,
     dateTime,
-    handleCellEdit,
-    handleMultipleCellsEdit,
-    handleUpload,
-    handleSaveUpdates,
-    pendingUpdatesCount,
+    aggregates,
+    isLoading,
+    error,
+    setMatrixData,
     undo,
     redo,
     canUndo,
     canRedo,
+    isDirty,
     reload,
     rowCount,
-  } = useMatrix(
-    study.id,
-    url,
+  } = useMatrixData({
+    studyId: study.id,
+    path: url,
+    aggregateTypes,
+    fetchFn: fetchMatrixData,
+    rowCountSource,
+  });
+
+  const { isSubmitting, handleCellEdit, handleMultipleCellsEdit, handleUpload, handleSaveUpdates } =
+    useMatrixMutations({
+      studyId: study.id,
+      path: url,
+      currentState,
+      setMatrixData,
+      isDirty,
+      reload,
+      aggregateTypes,
+    });
+
+  const columns = useMatrixColumns({
+    data: currentState.data,
     dateTimeColumn,
-    timeSeriesColumns,
-    rowHeaders,
-    aggregateColumns,
+    enableRowHeaders: rowHeaders,
+    isTimeSeries,
     customColumns,
     colWidth,
-    fetchMatrixData,
-  );
+    aggregateTypes,
+  });
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -107,70 +132,89 @@ function Matrix({
   }
 
   return (
-    <MatrixContainer>
-      <MatrixHeader>
-        <MatrixTitle>{t(title)}</MatrixTitle>
-        <MatrixActions
-          onImport={(_, index) => {
-            setUploadType(index === 0 ? "file" : "database");
-          }}
-          onSave={handleSaveUpdates}
-          studyId={study.id}
-          path={url}
-          disabled={data.length === 0}
-          pendingUpdatesCount={pendingUpdatesCount}
-          isSubmitting={isSubmitting}
-          undo={undo}
-          redo={redo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          canImport={canImport}
-        />
-      </MatrixHeader>
-      <Divider sx={{ width: 1, mt: 1, mb: 2 }} />
-      {!data[0]?.length ? (
-        <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
-      ) : (
-        <MatrixGrid
-          data={data}
-          aggregates={aggregates}
-          columns={columns}
-          rows={rowCount ?? data.length}
-          rowHeaders={customRowHeaders}
-          dateTime={dateTime}
-          onCellEdit={handleCellEdit}
-          onMultipleCellsEdit={handleMultipleCellsEdit}
-          readOnly={isSubmitting || readOnly}
-          showPercent={showPercent}
-        />
-      )}
-      {uploadType === "file" && (
-        <MatrixUpload
-          studyId={study.id}
-          path={url}
-          type="file"
-          open={true}
-          onClose={() => setUploadType(undefined)}
-          onFileUpload={handleUpload}
-          fileOptions={{
-            accept: { "text/*": [".csv", ".tsv", ".txt"] },
-            dropzoneText: t("matrix.message.importHint"),
-          }}
-        />
-      )}
-      {uploadType === "database" && (
-        <MatrixUpload
-          studyId={study.id}
-          path={url}
-          type="database"
-          open={true}
-          onClose={() => {
-            setUploadType(undefined);
-            reload();
-          }}
-        />
-      )}
-    </MatrixContainer>
+    <MatrixProvider
+      {...{
+        data: currentState.data,
+        currentState,
+        isSubmitting,
+        updateCount,
+        setMatrixData,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
+        isDirty,
+        aggregateTypes,
+      }}
+    >
+      <MatrixContainer>
+        {/* The <Box> allows to keep the height on vertical resize */}
+        <Box>
+          <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+            <MatrixHeader>
+              <Tooltip title={title}>
+                <MatrixTitle>{title}</MatrixTitle>
+              </Tooltip>
+              <MatrixActions
+                studyId={study.id}
+                path={url}
+                disabled={currentState.data.length === 0}
+                isTimeSeries={isTimeSeries}
+                onSave={handleSaveUpdates}
+                onMatrixUpdated={reload}
+                canImport={canImport}
+                onImport={(_, index) => {
+                  setUploadType(index === 0 ? "file" : "database");
+                }}
+              />
+            </MatrixHeader>
+          </CustomScrollbar>
+        </Box>
+        {isNonEmptyMatrix(currentState.data) ? (
+          <MatrixGrid
+            key={`matrix-${url}`}
+            data={currentState.data}
+            aggregates={aggregates}
+            columns={columns}
+            rows={rowCount ?? currentState.data.length}
+            rowHeaders={customRowHeaders}
+            dateTime={dateTime}
+            onCellEdit={handleCellEdit}
+            onMultipleCellsEdit={handleMultipleCellsEdit}
+            readOnly={isSubmitting || readOnly}
+            showPercent={showPercent}
+          />
+        ) : (
+          <EmptyView title={t("matrix.message.matrixEmpty")} icon={GridOffIcon} />
+        )}
+        {uploadType === "file" && (
+          <MatrixUpload
+            studyId={study.id}
+            path={url}
+            type="file"
+            open={true}
+            onClose={() => setUploadType(undefined)}
+            onFileUpload={handleUpload}
+            fileOptions={{
+              accept: { "text/*": [".csv", ".tsv", ".txt"] },
+              dropzoneText: t("matrix.message.importHint"),
+            }}
+          />
+        )}
+        {uploadType === "database" && (
+          <MatrixUpload
+            studyId={study.id}
+            path={url}
+            type="database"
+            open={true}
+            onClose={() => {
+              setUploadType(undefined);
+              reload();
+            }}
+          />
+        )}
+      </MatrixContainer>
+    </MatrixProvider>
   );
 }
 

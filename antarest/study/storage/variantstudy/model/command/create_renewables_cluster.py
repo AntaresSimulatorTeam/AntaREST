@@ -10,20 +10,19 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
-from typing import Any, Dict, Final
+from typing import Any, Dict, Final, List, Optional, Tuple
 
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
     RenewableProperties,
     create_renewable_config,
     create_renewable_properties,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -65,8 +64,7 @@ class CreateRenewablesCluster(ICommand):
             values["parameters"] = create_renewable_properties(values["study_version"], parameters)
         return values
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, str]:
         if EnrModelling(study_data.enr_modelling) != EnrModelling.CLUSTERS:
             # Since version 8.1 of the solver, we can use renewable clusters
             # instead of "Load", "Wind" and "Solar" objects for modelling.
@@ -78,7 +76,7 @@ class CreateRenewablesCluster(ICommand):
                 f" must be set to '{EnrModelling.CLUSTERS}'"
                 f" instead of '{study_data.enr_modelling}'"
             )
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message), ""
 
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
@@ -87,7 +85,7 @@ class CreateRenewablesCluster(ICommand):
                     status=False,
                     message=f"Area '{self.area_id}' does not exist in the study configuration.",
                 ),
-                {},
+                "",
             )
         area: Area = study_data.areas[self.area_id]
 
@@ -100,7 +98,7 @@ class CreateRenewablesCluster(ICommand):
                     status=False,
                     message=f"Renewable cluster '{cluster.id}' already exists in the area '{self.area_id}'.",
                 ),
-                {},
+                "",
             )
 
         area.renewables.append(cluster)
@@ -110,16 +108,15 @@ class CreateRenewablesCluster(ICommand):
                 status=True,
                 message=f"Renewable cluster '{cluster.id}' added to area '{self.area_id}'.",
             ),
-            {"cluster_id": cluster.id},
+            cluster.id,
         )
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        output, cluster_id = self.update_in_config(study_data.config)
         if not output.status:
             return output
 
-        cluster_id = data["cluster_id"]
         config = study_data.tree.get(["input", "renewables", "clusters", self.area_id, "list"])
         config[cluster_id] = self.parameters.model_dump(mode="json", by_alias=True)
 
@@ -154,5 +151,5 @@ class CreateRenewablesCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

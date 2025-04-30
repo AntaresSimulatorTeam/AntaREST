@@ -10,17 +10,18 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional
 
 from typing_extensions import override
 
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
     remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -41,10 +42,9 @@ class RemoveCluster(ICommand):
     area_id: str
     cluster_id: str
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         """
-        Applies configuration changes to the study data: remove the thermal clusters from the storages list.
+        Remove the thermal clusters from the storages list.
 
         Args:
             study_data: The study data configuration.
@@ -56,24 +56,18 @@ class RemoveCluster(ICommand):
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             message = f"Area '{self.area_id}' does not exist in the study configuration."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
         area: Area = study_data.areas[self.area_id]
 
         # Search the Thermal cluster in the area
+        cluster_id = transform_name_to_id(self.cluster_id)
         thermal = next(
-            iter(thermal for thermal in area.thermals if thermal.id == self.cluster_id),
+            iter(thermal for thermal in area.thermals if transform_name_to_id(thermal.id) == cluster_id),
             None,
         )
         if thermal is None:
             message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
-            return CommandOutput(status=False, message=message), {}
-
-        for thermal in area.thermals:
-            if thermal.id == self.cluster_id:
-                break
-        else:
-            message = f"Thermal cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
 
         # Remove the Thermal cluster from the configuration
         area.thermals.remove(thermal)
@@ -81,7 +75,7 @@ class RemoveCluster(ICommand):
         remove_area_cluster_from_binding_constraints(study_data, self.area_id, self.cluster_id)
 
         message = f"Thermal cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
-        return CommandOutput(status=True, message=message), {}
+        return CommandOutput(status=True, message=message)
 
     def _remove_cluster_from_scenario_builder(self, study_data: FileStudy) -> None:
         """
@@ -101,7 +95,7 @@ class RemoveCluster(ICommand):
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update thermal cluster configurations and saves the changes:
         remove corresponding the configuration and remove the attached time series.
@@ -140,7 +134,7 @@ class RemoveCluster(ICommand):
 
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -151,7 +145,7 @@ class RemoveCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []
 
     def _remove_cluster_from_binding_constraints(self, study_data: FileStudy) -> None:

@@ -12,52 +12,63 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect, useMemo } from "react";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { resetTaskNotifications } from "@/redux/ducks/ui";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import type { WsEvent } from "@/services/webSocket/types";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import BlockIcon from "@mui/icons-material/Block";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import DownloadIcon from "@mui/icons-material/Download";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import InfoIcon from "@mui/icons-material/Info";
+import {
+  Box,
+  Chip,
+  CircularProgress,
+  Tooltip,
+  Typography,
+  Link as MuiLink,
+  colors,
+  useTheme,
+} from "@mui/material";
 import type { AxiosError } from "axios";
 import debug from "debug";
-import { useTranslation } from "react-i18next";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import moment from "moment";
-import { useTheme, Typography, Box, CircularProgress, Tooltip, Chip } from "@mui/material";
-import { Link } from "react-router-dom";
 import debounce from "lodash/debounce";
-import BlockIcon from "@mui/icons-material/Block";
-import InfoIcon from "@mui/icons-material/Info";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
-import DownloadIcon from "@mui/icons-material/Download";
-import { grey, indigo } from "@mui/material/colors";
-import RootPage from "../../common/page/RootPage";
-import SimpleLoader from "../../common/loaders/SimpleLoader";
-import DownloadLink from "../../common/DownloadLink";
-import LogModal from "../../common/LogModal";
-import { addWsEventListener, subscribeWsChannels } from "../../../services/webSocket/ws";
-import JobTableView from "./JobTableView";
-import { convertUTCToLocalTime } from "../../../services/utils/index";
-import { downloadJobOutput, killStudy, getStudyJobs } from "../../../services/api/study";
+import moment from "moment";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { useMount } from "react-use";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { fetchStudies } from "../../../redux/ducks/studies";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { getStudies } from "../../../redux/selectors";
 import {
   convertFileDownloadDTO,
   getDownloadUrl,
   getDownloadsList,
   type FileDownload,
 } from "../../../services/api/downloads";
-import { fetchStudies } from "../../../redux/ducks/studies";
-import type { LaunchJob, LaunchJobsProgress, TaskView } from "../../../common/types";
-import { getTask, getTasks } from "../../../services/api/tasks";
-import LaunchJobLogView from "./LaunchJobLogView";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { getStudies } from "../../../redux/selectors";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import { getJobProgress } from "../../../services/api/launcher";
+import { downloadJobOutput, getStudyJobs, killStudy } from "../../../services/api/study";
+import { getTask, getTasks } from "../../../services/api/tasks";
+import { TaskStatus } from "../../../services/api/tasks/constants";
 import type { TaskDTO } from "../../../services/api/tasks/types";
-import { TaskStatus, TaskType } from "../../../services/api/tasks/constants";
-import type { WsEvent } from "@/services/webSocket/types";
-import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import { convertUTCToLocalTime } from "../../../services/utils/index";
+import { addWsEventListener, subscribeWsChannels } from "../../../services/webSocket/ws";
+import type { LaunchJob, LaunchJobsProgress, TaskView } from "../../../types/types";
+import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
+import DownloadLink from "../../common/DownloadLink";
+import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
+import SimpleLoader from "../../common/loaders/SimpleLoader";
+import LogModal from "../../common/LogModal";
+import RootPage from "../../common/page/RootPage";
+import JobTableView from "./JobTableView";
+import LaunchJobLogView from "./LaunchJobLogView";
+import { TASK_TYPES_MANAGED } from "./utils";
 
 const logError = debug("antares:studymanagement:error");
 
@@ -75,6 +86,10 @@ function JobsListing() {
   const dispatch = useAppDispatch();
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
 
+  useMount(() => {
+    dispatch(resetTaskNotifications());
+  });
+
   const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
     try {
@@ -89,14 +104,7 @@ function JobsListing() {
 
       const allTasks = await getTasks({
         status: [TaskStatus.Running, TaskStatus.Pending, TaskStatus.Failed, TaskStatus.Completed],
-        type: [
-          TaskType.Copy,
-          TaskType.Archive,
-          TaskType.Unarchive,
-          TaskType.UpgradeStudy,
-          TaskType.ThermalClusterSeriesGeneration,
-          TaskType.Scan,
-        ],
+        type: TASK_TYPES_MANAGED,
       });
 
       const dateThreshold = moment().subtract(1, "m");
@@ -145,19 +153,12 @@ function JobsListing() {
     return (
       <Box sx={{ ml: 2 }}>
         {job.launcherParams?.xpansion && (
-          <Chip
-            key="xpansion"
-            label="Xpansion"
-            variant="filled"
-            sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
-          />
+          <Chip label="Xpansion" sx={{ m: 0.25, color: "white", bgcolor: colors.indigo[300] }} />
         )}
         {job.launcherParams?.adequacy_patch && (
           <Chip
-            key="adequacy_patch"
             label="Adequacy patch"
-            variant="filled"
-            sx={{ m: 0.25, color: "black", bgcolor: indigo[300] }}
+            sx={{ m: 0.25, color: "white", bgcolor: colors.indigo[300] }}
           />
         )}
       </Box>
@@ -254,12 +255,15 @@ function JobsListing() {
           <Box sx={{ display: "flex", justifyContent: "space-between" }}>
             <Box flexGrow={0.6} display="flex" alignItems="center" width="60%">
               {renderStatus(job)}
-              <Link style={{ textDecoration: "none" }} to={`/studies/${encodeURI(job.studyId)}`}>
-                <Typography sx={{ color: "white", fontSize: "0.95rem" }}>
-                  {studies.find((s) => s.id === job.studyId)?.name ||
-                    `${t("global.unknown")} (${job.id})`}
-                </Typography>
-              </Link>
+              <MuiLink
+                color="inherit"
+                underline="hover"
+                component={Link}
+                to={`/studies/${encodeURI(job.studyId)}`}
+              >
+                {studies.find((s) => s.id === job.studyId)?.name ||
+                  `${t("global.unknown")} (${job.id})`}
+              </MuiLink>
               {renderTags(job)}
             </Box>
             {job.status === "running" && (
@@ -278,7 +282,6 @@ function JobsListing() {
               alignItems: "flex-end",
               justifyContent: "center",
               flexDirection: "column",
-              color: grey[500],
               fontSize: "0.85rem",
             }}
           >
@@ -323,7 +326,6 @@ function JobsListing() {
                       fontSize: 22,
                       color: "action.active",
                       cursor: "pointer",
-                      "&:hover": { color: "action.hover" },
                     }}
                     onClick={() => exportJobOutput(job.id)}
                   />
@@ -346,9 +348,9 @@ function JobsListing() {
     () =>
       downloads.map((download) => ({
         id: download.id,
-        name: <Box sx={{ color: "white", fontSize: "0.95rem" }}>{download.name}</Box>,
+        name: download.name,
         dateView: (
-          <Box sx={{ color: grey[500], fontSize: "0.85rem" }}>
+          <Box sx={{ fontSize: "0.85rem" }}>
             {`(${t("downloads.expirationDate")} : ${convertUTCToLocalTime(
               download.expirationDate,
             )})`}
@@ -379,9 +381,6 @@ function JobsListing() {
                 <DownloadIcon
                   sx={{
                     fontSize: 22,
-                    color: "action.active",
-                    cursor: "pointer",
-                    "&:hover": { color: "action.hover" },
                   }}
                 />
               </DownloadLink>
@@ -403,7 +402,7 @@ function JobsListing() {
     () =>
       tasks.map((task) => ({
         id: task.id,
-        name: <Typography sx={{ color: "white", fontSize: "0.95rem" }}>{task.name}</Typography>,
+        name: task.name,
         dateView: (
           <Box
             sx={{
@@ -411,7 +410,7 @@ function JobsListing() {
               alignItems: "flex-end",
               justifyContent: "center",
               flexDirection: "column",
-              color: grey[500],
+              color: colors.grey[500],
               fontSize: "0.85rem",
             }}
           >
@@ -469,9 +468,12 @@ function JobsListing() {
 
   return (
     <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
-      <Box flexGrow={1} overflow="hidden" width="100%" display="flex" position="relative">
-        {!loaded && <SimpleLoader />}
-        {loaded && <JobTableView content={content || []} refresh={() => init(false)} />}
+      <ViewWrapper flex={{ gap: 1 }}>
+        {loaded ? (
+          <JobTableView content={content || []} refresh={() => init(false)} />
+        ) : (
+          <SimpleLoader />
+        )}
         {openConfirmationDialog && (
           <ConfirmationDialog
             title={t("dialog.title.confirmation")}
@@ -488,7 +490,7 @@ function JobsListing() {
           content={messageModalOpen}
           close={() => setMessageModalOpen(undefined)}
         />
-      </Box>
+      </ViewWrapper>
     </RootPage>
   );
 }

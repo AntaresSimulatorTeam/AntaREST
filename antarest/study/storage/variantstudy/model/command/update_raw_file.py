@@ -11,15 +11,14 @@
 # This file is part of the Antares project.
 
 import base64
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -49,10 +48,6 @@ class UpdateRawFile(ICommand):
             return f"{cls}(target={target!r}, data={data!r})"
         except (ValueError, TypeError):
             return f"{cls}(target={target!r}, b64Data={self.b64Data!r})"
-
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return CommandOutput(status=True, message="ok"), {}
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

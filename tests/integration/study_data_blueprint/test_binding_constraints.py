@@ -12,6 +12,7 @@
 
 import re
 import time
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -82,14 +83,6 @@ class TestConstraintTerm:
         assert term.data is not None
         assert term.generate_id() == term.data.generate_id()
 
-    def test_constraint_id__other(self) -> None:
-        term = ConstraintTerm(
-            id="foo",
-            weight=3.14,
-            offset=123,
-        )
-        assert term.generate_id() == "foo"
-
 
 @pytest.mark.unit_test
 class TestBindingConstraints:
@@ -144,9 +137,8 @@ class TestBindingConstraints:
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 10
-        for cmd in json_result:
-            assert cmd["action"] == "update_binding_constraint"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
         # create another variant from the parent study
         study_id = preparer.create_variant(study_id, name="var_1")
         # update 50 BCs
@@ -165,13 +157,12 @@ class TestBindingConstraints:
                 assert bc["comments"] == "New comment !"
             else:
                 assert bc["timeStep"] == "daily"
-        # asserts commands used are update_config and replace_matrix
+        # asserts commands used is update_binding_constraints
         res = client.get(f"/v1/studies/{study_id}/commands")
         assert res.status_code == 200
         json_result = res.json()
-        assert len(json_result) == 2
-        assert json_result[0]["action"] == "replace_matrix"
-        assert json_result[1]["action"] == "update_config"
+        assert len(json_result) == 1
+        assert json_result[0]["action"] == "update_binding_constraints"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
@@ -334,13 +325,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": 2,
                 "weight": 1.0,
             },
@@ -362,13 +351,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,  # updated
                 "weight": 3.0,  # updated
             },
@@ -380,12 +367,11 @@ class TestBindingConstraints:
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
             json={"id": f"{area1_id}.!!invalid#cluster%%", "weight": 4},
         )
-        assert res.status_code == 404, res.json()
+        assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "ConstraintTermNotFound"
-        assert bc_id in description
-        assert f"{area1_id}.!!invalid#cluster%%" in description
+        assert exception == "InvalidConstraintTerm"
+        assert description == "Invalid constraint term area 1.!!invalid#cluster%% Your term id is not well-formatted"
 
         # Update constraint cluster term with empty data
         res = client.put(
@@ -394,10 +380,35 @@ class TestBindingConstraints:
         )
         assert res.status_code == 422, res.json()
         assert res.json() == {
-            "body": {"data": {}, "id": f"{area1_id}.{cluster_id}"},
+            "body": {"data": {}, "id": f"{area1_id}.{cluster_id.lower()}"},
             "description": "Field required",
             "exception": "RequestValidationError",
         }
+
+        # Update constraint cluster term without giving an id. This is the behavior of the R scripts
+        res = client.put(
+            f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term",
+            json={"weight": 4, "data": {"area": area1_id, "cluster": cluster_id.lower()}},
+        )
+        assert res.status_code == 200, res.json()
+        # Checks updated terms
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}")
+        assert res.status_code == 200, res.json()
+        binding_constraint = res.json()
+        constraint_terms = binding_constraint["terms"]
+        expected_terms = [
+            {
+                "data": {"area1": area1_id, "area2": area2_id},
+                "offset": 2,
+                "weight": 1.0,
+            },
+            {
+                "data": {"area": area1_id, "cluster": cluster_id.lower()},
+                "offset": None,
+                "weight": 4.0,  # updated
+            },
+        ]
+        assert constraint_terms == expected_terms
 
         # Remove Constraint term
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/{bc_id}/term/{link_id}")
@@ -411,9 +422,8 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,
-                "weight": 3.0,
+                "weight": 4.0,
             },
         ]
         assert constraint_terms == expected
@@ -653,7 +663,7 @@ class TestBindingConstraints:
         assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
-    def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+    def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str, tmp_path: Path) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         # =============================
@@ -667,12 +677,12 @@ class TestBindingConstraints:
             study_id = preparer.create_variant(study_id, name="Variant 1")
 
         # Create Areas, link and cluster
-        area1_id = preparer.create_area(study_id, name="Area 1")["id"]
-        area2_id = preparer.create_area(study_id, name="Area 2")["id"]
+        area1_id = preparer.create_area(study_id, name="Area 1??")["id"]
+        area2_id = preparer.create_area(study_id, name="Area 2??")["id"]
         area3_id = preparer.create_area(study_id, name="Area 3")["id"]
         link_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area2_id)["id"]
-        link_2_id = preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)["id"]
-        cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1", group="Nuclear")["id"]
+        preparer.create_link(study_id, area1_id=area1_id, area2_id=area3_id)
+        cluster_id = preparer.create_thermal(study_id, area1_id, name="Cluster 1??", group="Nuclear")["id"]
 
         # =============================
         #  CREATION
@@ -759,12 +769,12 @@ class TestBindingConstraints:
         # CONSTRAINT TERM MANAGEMENT
         # =============================
 
-        # Add binding constraint terms
+        # Add binding constraint terms giving object names and not ids
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/terms",
             json=[
-                {"weight": 1, "offset": 2, "data": {"area1": area1_id, "area2": area2_id}},
-                {"weight": 1, "offset": 2, "data": {"area": area1_id, "cluster": cluster_id}},
+                {"weight": 1, "offset": 2, "data": {"area1": "Area 1??", "area2": "Area 2??"}},
+                {"weight": 1, "offset": 2, "data": {"area": "Area 1??", "cluster": "Cluster 1??"}},
             ],
         )
         assert res.status_code == 200, res.json()
@@ -776,10 +786,8 @@ class TestBindingConstraints:
         )
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
-        description = res.json()["description"]
-        assert exception == "InvalidConstraintTerm"
-        assert bc_id_w_group in description, "Error message should contain the binding constraint ID"
-        assert "term 'data' is missing" in description, "Error message should indicate the missing field"
+        assert res.json()["description"] == "Field required"
+        assert exception == "RequestValidationError"
 
         # Attempt to add a duplicate term
         res = client.post(
@@ -794,6 +802,7 @@ class TestBindingConstraints:
         assert link_id in description, "Error message should contain the duplicate term ID"
 
         # Get binding constraints list to check added terms
+        # Asserts terms are returned with area/cluster ids
         res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
         assert res.status_code == 200, res.json()
         binding_constraint = res.json()
@@ -801,18 +810,25 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 2,
                 "weight": 1.0,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": 2,
                 "weight": 1.0,
             },
         ]
         assert constraint_terms == expected
+
+        # Checks ini content
+        study_path = tmp_path / "internal_workspace" / study_id
+        if study_type == "variant":
+            study_path = study_path.joinpath("snapshot")
+        ini_path = study_path / "input" / "bindingconstraints" / "bindingconstraints.ini"
+        ini_content = ini_path.read_text().splitlines()
+        assert "area 1%area 2 = 1.0%2" in ini_content
+        assert "area 1.cluster 1 = 1.0%2" in ini_content
 
         # Update binding constraint terms
         res = client.put(
@@ -839,13 +855,11 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area2_id},
-                "id": link_id,
                 "offset": 1,
                 "weight": 4.4,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,
                 "weight": 5.1,
             },
@@ -854,7 +868,7 @@ class TestBindingConstraints:
 
         # Rename term
         # We're replacing area_1%area_2 by area_1%area_3
-        body = {"id": f"{area1_id}%{area2_id}", "data": {"area1": area1_id, "area2": area3_id}}
+        body = {"id": f"{area1_id}%{area2_id}", "data": {"area1": area1_id, "area2": area3_id}, "offset": 1}
         res = client.put(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/term", json=body)
         assert res.status_code == 200, res.json()
 
@@ -865,17 +879,32 @@ class TestBindingConstraints:
         expected = [
             {
                 "data": {"area1": area1_id, "area2": area3_id},
-                "id": link_2_id,
                 "offset": 1,
                 "weight": 4.4,
             },
             {
                 "data": {"area": area1_id, "cluster": cluster_id.lower()},
-                "id": f"{area1_id}.{cluster_id.lower()}",
                 "offset": None,
                 "weight": 5.1,
             },
         ]
+        assert constraint_terms == expected
+
+        # Write terms with area/cluster in upper case to ensure the endpoint returns them in lower case
+        with open(ini_path, "r") as f:
+            lines = f.readlines()
+            new_lines = lines
+            for k, line in enumerate(lines):
+                if line == "area 1%area 3 = 4.4%1\n":
+                    new_lines[k] = "Area 1%Area 3 = 4.4%1\n"
+                elif line == "area 1.cluster 1 = 5.1\n":
+                    new_lines[k] = "Area 1.CLUSTER 1 = 5.1"
+        with open(ini_path, "w") as f:
+            f.writelines(new_lines)
+
+        res = client.get(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}")
+        assert res.status_code == 200, res.json()
+        constraint_terms = res.json()["terms"]
         assert constraint_terms == expected
 
         # =============================
@@ -1016,7 +1045,7 @@ class TestBindingConstraints:
         # Asserts that the deletion worked
         binding_constraints_list = client.get(
             f"/v1/studies/{study_id}/raw",
-            params={"path": f"input/bindingconstraints/bindingconstraints"},  # type: ignore
+            params={"path": "input/bindingconstraints/bindingconstraints"},  # type: ignore
         ).json()
         assert len(binding_constraints_list) == 2
         actual_ids = [constraint["id"] for constraint in binding_constraints_list.values()]

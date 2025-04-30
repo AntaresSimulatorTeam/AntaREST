@@ -13,7 +13,7 @@
  */
 
 import * as R from "ramda";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import client from "../../../../../../services/api/client";
 
 ////////////////////////////////////////////////////////////////

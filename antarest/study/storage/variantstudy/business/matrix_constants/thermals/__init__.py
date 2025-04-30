@@ -10,4 +10,4 @@
 #
 # This file is part of the Antares project.
 
-from . import prepro
+from . import prepro  # noqa: F401

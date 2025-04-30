@@ -12,7 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import type { MatrixDataDTO, AggregateConfig } from "../../../../../../common/Matrix/shared/types";
+import type { SxProps, Theme } from "@mui/material";
+import type {
+  AggregateConfig,
+  MatrixDataDTO,
+  RowCountSource,
+} from "../../../../../../common/Matrix/shared/types";
 import type { SplitViewProps } from "../../../../../../common/SplitView";
 import { getAllocationMatrix } from "./Allocation/utils";
 import { getCorrelationMatrix } from "./Correlation/utils";
@@ -53,6 +58,8 @@ export interface HydroMatrixProps {
   dateTimeColumn?: boolean;
   readOnly?: boolean;
   showPercent?: boolean;
+  rowCountSource?: RowCountSource;
+  isTimeSeries?: boolean;
 }
 
 type Matrices = Record<HydroMatrixType, HydroMatrixProps>;
@@ -67,6 +74,7 @@ export interface HydroRoute {
     sizes: [number, number];
   };
   form?: React.ComponentType;
+  sx?: SxProps<Theme>;
 }
 
 export interface AreaCoefficientItem {
@@ -89,6 +97,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
       sizes: [50, 50],
     },
     form: InflowStructure,
+    sx: { display: "flex", flexDirection: "column", gap: 1 },
   },
   {
     path: "dailypower&energy",
@@ -128,7 +137,9 @@ export const MATRICES: Matrices = {
     url: "input/hydro/common/capacity/creditmodulations_{areaId}",
     columns: generateColumns("%"),
     rowHeaders: ["Generating Power", "Pumping Power"],
+    rowCountSource: "dataLength",
     dateTimeColumn: false,
+    isTimeSeries: false,
   },
   [HydroMatrix.EnergyCredits]: {
     title: "Standard Credits",
@@ -139,16 +150,20 @@ export const MATRICES: Matrices = {
       "Pumping Max Power (MW)",
       "Pumping Max Energy (Hours at Pmax)",
     ],
+    rowCountSource: "dataLength",
+    isTimeSeries: false,
   },
   [HydroMatrix.ReservoirLevels]: {
     title: "Reservoir Levels",
     url: "input/hydro/common/capacity/reservoir_{areaId}",
     columns: ["Lev Low (%)", "Lev Avg (%)", "Lev High (%)"],
+    isTimeSeries: false,
   },
   [HydroMatrix.WaterValues]: {
     title: "Water Values",
     url: "input/hydro/common/capacity/waterValues_{areaId}",
-    // columns: generateColumns("%"), // TODO this causes Runtime error to be fixed
+    columns: generateColumns("%"),
+    isTimeSeries: false,
   },
   [HydroMatrix.HydroStorage]: {
     title: "Hydro Storage",
@@ -168,6 +183,7 @@ export const MATRICES: Matrices = {
     title: "Inflow Pattern",
     url: "input/hydro/common/capacity/inflowPattern_{areaId}",
     columns: ["Inflow Pattern (X)"],
+    isTimeSeries: false,
   },
   [HydroMatrix.OverallMonthlyHydro]: {
     title: "Overall Monthly Hydro",
@@ -187,7 +203,9 @@ export const MATRICES: Matrices = {
       "November",
       "December",
     ],
+    rowCountSource: "dataLength",
     dateTimeColumn: false,
+    isTimeSeries: false,
   },
   [HydroMatrix.Allocation]: {
     title: "Allocation",

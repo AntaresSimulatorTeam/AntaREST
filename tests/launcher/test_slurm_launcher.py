@@ -214,7 +214,7 @@ def test_extra_parameters(launcher_config: Config) -> None:
     assert launcher_params.n_cpu == slurm_config.nb_cores.default  # out of range
 
     _config_time_limit = launcher_config.launcher.slurm.time_limit
-    launcher_params = apply_params(LauncherParametersDTO.construct(time_limit=None))
+    launcher_params = apply_params(LauncherParametersDTO.model_construct(time_limit=None))
     assert launcher_params.time_limit == _config_time_limit.default * 3600
 
     launcher_params = apply_params(LauncherParametersDTO(time_limit=10))  # 10 seconds

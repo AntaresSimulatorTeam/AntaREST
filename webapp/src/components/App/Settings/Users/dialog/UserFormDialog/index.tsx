@@ -12,32 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import { DialogContentText } from "@mui/material";
 import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
-import type { GroupDTO, RoleType } from "../../../../../../common/types";
+import { USER_FORM_DEFAULT_VALUES, type UserFormDefaultValues } from "../utils";
 import UserForm from "./UserForm";
 
-export interface UserFormDialogProps extends Omit<FormDialogProps, "children"> {
-  defaultValues?: {
-    username?: string;
-    password?: string;
-    permissions?: Array<{ group: GroupDTO; type: RoleType }>;
-  };
+export interface UserFormDialogProps
+  extends Omit<FormDialogProps<UserFormDefaultValues>, "children" | "maxWidth"> {
+  defaultValues?: Partial<UserFormDefaultValues>;
   onlyPermissions?: boolean;
-  subtitle?: string;
 }
 
-function UserFormDialog(props: UserFormDialogProps) {
-  const { defaultValues, onlyPermissions, subtitle, ...dialogProps } = props;
-
+function UserFormDialog({
+  defaultValues: defaultValuesFromProps,
+  onlyPermissions,
+  ...dialogProps
+}: UserFormDialogProps) {
   return (
-    <FormDialog maxWidth="sm" config={{ defaultValues }} {...dialogProps}>
-      {(formObj) => (
-        <>
-          {subtitle && <DialogContentText>{subtitle}</DialogContentText>}
-          <UserForm onlyPermissions={onlyPermissions} {...formObj} />
-        </>
-      )}
+    <FormDialog
+      maxWidth="xs"
+      config={{ defaultValues: { ...USER_FORM_DEFAULT_VALUES, ...defaultValuesFromProps } }}
+      {...dialogProps}
+    >
+      <UserForm onlyPermissions={onlyPermissions} />
     </FormDialog>
   );
 }

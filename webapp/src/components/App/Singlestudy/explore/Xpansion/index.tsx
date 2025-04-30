@@ -13,21 +13,21 @@
  */
 
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useEffect, useMemo, useState } from "react";
-import type { AxiosError } from "axios";
-import { useOutletContext } from "react-router-dom";
+import AddIcon from "@mui/icons-material/Add";
 import { Box, Button } from "@mui/material";
+import type { AxiosError } from "axios";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../common/types";
+import { useOutletContext } from "react-router-dom";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import {
   createXpansionConfiguration,
   xpansionConfigurationExist,
 } from "../../../../../services/api/xpansion";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import TabWrapper from "../TabWrapper";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import type { StudyMetadata } from "../../../../../types/types";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
-import AddIcon from "@mui/icons-material/Add";
+import TabWrapper from "../TabWrapper";
 
 function Xpansion() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -95,35 +95,27 @@ function Xpansion() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      width="100%"
-      flexGrow={1}
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
-      alignItems="center"
-      boxSizing="border-box"
-      overflow="hidden"
-    >
+    <>
       <UsePromiseCond
         response={res}
         ifFulfilled={(data) =>
           !data && !exist ? (
-            <Button
-              color="primary"
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={createXpansion}
-            >
-              {t("xpansion.newXpansionConfig")}
-            </Button>
+            <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+              <Button
+                color="primary"
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={createXpansion}
+              >
+                {t("xpansion.newXpansionConfig")}
+              </Button>
+            </Box>
           ) : (
-            <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
+            <TabWrapper study={study} tabList={tabList} disablePadding />
           )
         }
       />
-    </Box>
+    </>
   );
 }
 

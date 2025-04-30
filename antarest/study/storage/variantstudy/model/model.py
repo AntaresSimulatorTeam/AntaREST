@@ -10,9 +10,8 @@
 #
 # This file is part of the Antares project.
 import datetime
-import typing as t
 import uuid
-from typing import List, MutableSequence
+from typing import List, MutableSequence, Optional, Tuple, TypeAlias
 
 import typing_extensions as te
 
@@ -20,7 +19,7 @@ from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyMetadataDTO, StudyVersionStr
 
-LegacyDetailsDTO = t.Tuple[str, bool, str]
+LegacyDetailsDTO: TypeAlias = Tuple[str, bool, str]
 """
 Legacy details DTO: triplet of name, output status and output message.
 """
@@ -43,7 +42,7 @@ class NewDetailsDTO(te.TypedDict):
     msg: str
 
 
-DetailsDTO = t.Union[LegacyDetailsDTO, NewDetailsDTO]
+DetailsDTO: TypeAlias = LegacyDetailsDTO | NewDetailsDTO
 
 
 class GenerationResultInfoDTO(AntaresBaseModel):
@@ -56,7 +55,7 @@ class GenerationResultInfoDTO(AntaresBaseModel):
     """
 
     success: bool
-    details: t.MutableSequence[DetailsDTO]
+    details: MutableSequence[DetailsDTO]
 
 
 class CommandDTOAPI(AntaresBaseModel):
@@ -70,12 +69,12 @@ class CommandDTOAPI(AntaresBaseModel):
         version: The version of the command.
     """
 
-    id: t.Optional[str] = None
+    id: Optional[str] = None
     action: str
-    args: t.Union[t.MutableSequence[JSON], JSON]
+    args: MutableSequence[JSON] | JSON
     version: int = 1
-    user_name: t.Optional[str] = None
-    updated_at: t.Optional[datetime.datetime] = None
+    user_name: Optional[str] = None
+    updated_at: Optional[datetime.datetime] = None
 
 
 class CommandDTO(AntaresBaseModel):
@@ -92,15 +91,15 @@ class CommandDTO(AntaresBaseModel):
         updated_at: The time the command was last updated.
     """
 
-    id: t.Optional[str] = None
+    id: Optional[str] = None
     action: str
     args: List[JSON] | JSON
     version: int = 1
     study_version: StudyVersionStr
-    user_id: t.Optional[int] = None
-    updated_at: t.Optional[datetime.datetime] = None
+    user_id: Optional[int] = None
+    updated_at: Optional[datetime.datetime] = None
 
-    def to_api(self, user_name: t.Optional[str] = None) -> CommandDTOAPI:
+    def to_api(self, user_name: Optional[str] = None) -> CommandDTOAPI:
         data = self.model_dump(mode="json", exclude={"study_version", "user_id"})
         data["user_name"] = user_name
         return CommandDTOAPI.model_validate(data)
@@ -135,7 +134,7 @@ class VariantTreeDTO:
         children: A list of variant children.
     """
 
-    def __init__(self, node: StudyMetadataDTO, children: t.MutableSequence["VariantTreeDTO"]) -> None:
+    def __init__(self, node: StudyMetadataDTO, children: MutableSequence["VariantTreeDTO"]) -> None:
         # We are intentionally not using Pydantic’s `BaseModel` here to prevent potential
         # `RecursionError` exceptions that can occur with Pydantic versions before v2.
         self.node = node

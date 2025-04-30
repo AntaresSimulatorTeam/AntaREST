@@ -42,6 +42,7 @@ from antarest.login.service import LoginService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
+    STUDY_VERSION_7_2,
     ExportFormat,
     MatrixAggregationResultDTO,
     MatrixIndex,
@@ -60,7 +61,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
-from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
@@ -75,6 +76,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.utils import (
     assert_permission,
     assert_permission_on_studies,
@@ -103,6 +105,7 @@ def build_study_service(
     return StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        command_context=Mock(),
         user_service=user_service,
         repository=repository,
         event_bus=event_bus,
@@ -259,8 +262,8 @@ def test_study_listing(db_session: Session) -> None:
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
-    ma = RawStudy(id="a", path="a")
-    fa = StudyFolder(path=Path("a"), workspace="", groups=[])
+    ma = RawStudy(id="a", path="a", workspace="workspace1")
+    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
@@ -401,7 +404,7 @@ def test_create_study() -> None:
     expected = RawStudy(
         id=str(uuid.uuid4()),
         name="new-study",
-        version="VERSION",
+        version="700",
         author="AUTHOR",
         created_at=datetime.utcfromtimestamp(1234),
         updated_at=datetime.utcfromtimestamp(9876),
@@ -432,14 +435,14 @@ def test_create_study() -> None:
     with pytest.raises(UserHasNotPermissionError):
         service.create_study(
             "new-study",
-            "720",
+            STUDY_VERSION_7_2,
             ["my-group"],
             RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         )
 
     service.create_study(
         "new-study",
-        "720",
+        STUDY_VERSION_7_2,
         ["my-group"],
         RequestParameters(
             JWTUser(
@@ -552,7 +555,7 @@ def test_download_output() -> None:
         study_path=Path(input_study.path),
         path=Path(input_study.path),
         study_id=str(uuid.uuid4()),
-        version=int(input_study.version),
+        version=StudyVersion.parse(input_study.version),
         areas={"east": area},
         sets={"north": DistrictSet()},
         outputs={"output-id": sim},
@@ -563,6 +566,16 @@ def test_download_output() -> None:
     repository.get.return_value = input_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(study_service, repository, config)
+    storage = OutputStorageDispatcher(
+        service.storage_service.raw_study_service, service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        service,
+        storage,
+        service.task_service,
+        service.file_transfer_manager,
+        service.event_bus,
+    )
 
     res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
     res_study_details = {
@@ -615,7 +628,7 @@ def test_download_output() -> None:
     )
     res = t.cast(
         Response,
-        service.download_outputs(
+        output_service.download_outputs(
             "study-id",
             "output-id",
             input_data,
@@ -624,7 +637,7 @@ def test_download_output() -> None:
             params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(
@@ -641,7 +654,7 @@ def test_download_output() -> None:
 
     result = t.cast(
         FileDownloadTaskDTO,
-        service.download_outputs(
+        output_service.download_outputs(
             "study-id",
             "output-id",
             input_data,
@@ -675,7 +688,7 @@ def test_download_output() -> None:
     )
     res = t.cast(
         Response,
-        service.download_outputs(
+        output_service.download_outputs(
             "study-id",
             "output-id",
             input_data,
@@ -684,7 +697,7 @@ def test_download_output() -> None:
             params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # CLUSTER TYPE
     input_data.type = StudyDownloadType.DISTRICT
@@ -713,7 +726,7 @@ def test_download_output() -> None:
     )
     res = t.cast(
         Response,
-        service.download_outputs(
+        output_service.download_outputs(
             "study-id",
             "output-id",
             input_data,
@@ -722,7 +735,7 @@ def test_download_output() -> None:
             params=RequestParameters(JWTUser(id=0, impersonator=0, type="users")),
         ),
     )
-    assert MatrixAggregationResultDTO.parse_raw(res.body) == res_matrix
+    assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
 
 # noinspection PyArgumentList
@@ -879,22 +892,22 @@ def test_check_errors() -> None:
 @pytest.mark.unit_test
 def test_study_match() -> None:
     assert not study_matcher(name=None, folder="ab", workspace="hell")(
-        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
     )
     assert study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name=None, folder="abd", workspace="hello")(
-        StudyMetadataDTO.construct(id="1", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name=None, folder="ab", workspace="hello")(
-        StudyMetadataDTO.construct(id="1", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", workspace="hello")
     )
     assert study_matcher(name="f", folder=None, workspace="hello")(
-        StudyMetadataDTO.construct(id="1", name="foo", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
     )
     assert not study_matcher(name="foob", folder=None, workspace="hell")(
-        StudyMetadataDTO.construct(id="1", name="foo", folder="abc/de", workspace="hello")
+        StudyMetadataDTO.model_construct(id="1", name="foo", folder="abc/de", workspace="hello")
     )
 
 
@@ -1084,13 +1097,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
     study_uuid = str(uuid.uuid4())
 
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
         raw_study_service,
-        Mock(),
         Mock(),
         Mock(),
         variant_study_repository,
@@ -1148,6 +1160,7 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
         last_access=datetime.utcnow(),
     )
+    study_mock.generation_task = None
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
 
     # it freezes the mock and raise Attribute error if anything else than defined is used
@@ -1169,13 +1182,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
 # noinspection PyArgumentList
 def test_delete_recursively(tmp_path: Path) -> None:
     study_metadata_repository = Mock()
-    raw_study_service = RawStudyService(Config(), Mock(), Mock(), Mock(), Mock())
+    raw_study_service = RawStudyService(Config(), Mock(), Mock())
     variant_study_repository = Mock()
     variant_study_service = VariantStudyService(
         Mock(),
         Mock(),
         raw_study_service,
-        Mock(),
         Mock(),
         Mock(),
         variant_study_repository,
@@ -1296,19 +1308,20 @@ def test_edit_study_with_command() -> None:
     )
     command = Mock()
     service._create_edit_study_command = Mock(return_value=command)
-    file_study = Mock()
-    file_study.config.study_id = study_id
     study_service = Mock(spec=RawStudyService)
-    study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
+    raw_study = Mock(spec=RawStudy)
+    raw_study.version = "880"
+    raw_study.id = study_id
 
-    service._edit_study_using_command(study=Mock(spec=RawStudy), url="", data=[])
-    command.apply.assert_called_with(file_study, None)
+    service._edit_study_using_command(study=raw_study, url="", data=[])
+    command.apply.assert_called()
 
+    variant_study = Mock(spec=VariantStudy)
+    variant_study.version = "880"
     study_service = Mock(spec=VariantStudyService)
-    study_service.get_raw.return_value = file_study
     service.storage_service.get_storage = Mock(return_value=study_service)
-    service._edit_study_using_command(study=Mock(), url="", data=[])
+    service._edit_study_using_command(study=variant_study, url="", data=[])
     service.storage_service.variant_study_service.append_commands.assert_called_once()
 
 
@@ -1332,7 +1345,6 @@ def test_create_command(
     command_context = CommandContext(
         generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
         matrix_service=Mock(spec=MatrixService, create=Mock(return_value=matrix_id)),
-        patch_service=Mock(spec=PatchService),
     )
 
     service = build_study_service(
@@ -1382,7 +1394,17 @@ def test_unarchive_output(tmp_path: Path) -> None:
     service.task_service.add_worker_task.return_value = None  # type: ignore
     service.task_service.list_tasks.return_value = []  # type: ignore
     (tmp_path / "output" / f"{output_id}.zip").mkdir(parents=True, exist_ok=True)
-    service.unarchive_output(
+    storage = OutputStorageDispatcher(
+        service.storage_service.raw_study_service, service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        service,
+        storage,
+        service.task_service,
+        Mock(),
+        Mock(),
+    )
+    output_service.unarchive_output(
         study_id,
         output_id,
         keep_src_zip=True,
@@ -1486,9 +1508,18 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         ],
         [],
     ]
-
+    storage = OutputStorageDispatcher(
+        service.storage_service.raw_study_service, service.storage_service.variant_study_service
+    )
+    output_service = OutputService(
+        service,
+        storage,
+        service.task_service,
+        Mock(),
+        Mock(),
+    )
     with pytest.raises(TaskAlreadyRunning):
-        service.unarchive_output(
+        output_service.unarchive_output(
             study_id,
             output_zipped,
             keep_src_zip=True,
@@ -1496,7 +1527,7 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         )
 
     with pytest.raises(TaskAlreadyRunning):
-        service.unarchive_output(
+        output_service.unarchive_output(
             study_id,
             output_zipped,
             keep_src_zip=True,
@@ -1504,20 +1535,20 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         )
 
     with pytest.raises(TaskAlreadyRunning):
-        service.archive_output(
+        output_service.archive_output(
             study_id,
             output_unzipped,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
     with pytest.raises(TaskAlreadyRunning):
-        service.archive_output(
+        output_service.archive_output(
             study_id,
             output_unzipped,
             params=RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
-    service.unarchive_output(
+    output_service.unarchive_output(
         study_id,
         output_zipped,
         keep_src_zip=True,

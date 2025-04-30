@@ -10,14 +10,14 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import List, Optional
 
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -38,8 +38,7 @@ class RemoveRenewablesCluster(ICommand):
     area_id: str
     cluster_id: str
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         """
         Applies configuration changes to the study data: remove the renewable clusters from the storages list.
 
@@ -53,7 +52,7 @@ class RemoveRenewablesCluster(ICommand):
         # Search the Area in the configuration
         if self.area_id not in study_data.areas:
             message = f"Area '{self.area_id}' does not exist in the study configuration."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
         area: Area = study_data.areas[self.area_id]
 
         # Search the Renewable cluster in the area
@@ -63,20 +62,20 @@ class RemoveRenewablesCluster(ICommand):
         )
         if renewable is None:
             message = f"Renewable cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
 
         for renewable in area.renewables:
             if renewable.id == self.cluster_id:
                 break
         else:
             message = f"Renewable cluster '{self.cluster_id}' does not exist in the area '{self.area_id}'."
-            return CommandOutput(status=False, message=message), {}
+            return CommandOutput(status=False, message=message)
 
         # Remove the Renewable cluster from the configuration
         area.renewables.remove(renewable)
 
         message = f"Renewable cluster '{self.cluster_id}' removed from the area '{self.area_id}'."
-        return CommandOutput(status=True, message=message), {}
+        return CommandOutput(status=True, message=message)
 
     def _remove_cluster_from_scenario_builder(self, study_data: FileStudy) -> None:
         """
@@ -96,7 +95,7 @@ class RemoveRenewablesCluster(ICommand):
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Applies the study data to update renewable cluster configurations and saves the changes:
         remove corresponding the configuration and remove the attached time series.
@@ -132,7 +131,7 @@ class RemoveRenewablesCluster(ICommand):
 
         # Deleting the renewable cluster in the configuration must be done AFTER
         # deleting the files and folders.
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -143,5 +142,5 @@ class RemoveRenewablesCluster(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

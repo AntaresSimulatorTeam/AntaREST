@@ -12,68 +12,39 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState } from "react";
-import { styled, type SxProps, type Theme } from "@mui/material";
-import Tabs from "@mui/material/Tabs";
-import Tab from "@mui/material/Tab";
-import Box from "@mui/material/Box";
-import { Outlet, matchPath, useLocation, useNavigate } from "react-router-dom";
-import type { StudyMetadata } from "../../../../common/types";
-import { mergeSxProp } from "../../../../utils/muiUtils";
+import { Box, Link as MuiLink, Tab, Tabs, type LinkProps } from "@mui/material";
+import { forwardRef, useMemo } from "react";
+import { Link, matchPath, Outlet, useLocation } from "react-router-dom";
+import type { StudyMetadata } from "../../../../types/types";
 
-export const StyledTabs = styled(Tabs, {
-  shouldForwardProp: (prop) => prop !== "border" && prop !== "tabStyle",
-})<{ border?: boolean; tabStyle?: "normal" | "withoutBorder" }>(({ theme, border, tabStyle }) => ({
-  width: "98%",
-  height: "50px",
-  ...(border === true && {
-    borderBottom: 1,
-    borderColor: "divider",
-  }),
-  ...(tabStyle &&
-    tabStyle === "withoutBorder" && {
-      "& .MuiTabs-indicator": {
-        display: "none",
-      },
-    }),
-}));
+const LinkComponent = forwardRef<HTMLAnchorElement, LinkProps & { href: string }>(
+  function LinkComponent({ href, ...rest }, ref) {
+    return <MuiLink {...rest} component={Link} to={href} ref={ref} />;
+  },
+);
 
 interface TabItem {
   label: string;
   path: string;
-  onClick?: () => void;
   disabled?: boolean;
 }
 
 interface Props {
   study: StudyMetadata | undefined;
   tabList: TabItem[];
-  border?: boolean;
-  tabStyle?: "normal" | "withoutBorder";
-  sx?: SxProps<Theme>;
+  divider?: boolean;
+  disablePadding?: boolean;
 }
 
-function TabWrapper({ study, tabList, border, tabStyle, sx }: Props) {
+function TabWrapper({ study, tabList, divider, disablePadding = false }: Props) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [selectedTab, setSelectedTab] = useState(0);
 
-  useEffect(() => {
+  const selectedTab = useMemo(() => {
     const matchedTab = tabList.findIndex((tab) =>
       matchPath({ path: tab.path, end: false }, location.pathname),
     );
-    setSelectedTab(matchedTab >= 0 ? matchedTab : 0);
+    return matchedTab >= 0 ? matchedTab : 0;
   }, [location.pathname, tabList]);
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    setSelectedTab(newValue);
-    navigate(tabList[newValue].path);
-    tabList[newValue].onClick?.();
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -82,32 +53,44 @@ function TabWrapper({ study, tabList, border, tabStyle, sx }: Props) {
   return (
     <Box
       className="TabWrapper"
-      sx={mergeSxProp(
-        {
-          width: 1,
-          height: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          overflow: "auto",
-        },
-        sx,
-      )}
+      sx={{
+        width: 1,
+        height: 1,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        overflow: "auto",
+      }}
     >
-      <Box sx={border ? { borderBottom: 1, borderColor: "divider" } : null}>
-        <StyledTabs
-          border={border}
-          tabStyle={tabStyle}
-          value={selectedTab}
-          onChange={handleChange}
-          variant="scrollable"
-        >
-          {tabList.map((tab) => (
-            <Tab key={tab.path} label={tab.label} disabled={tab.disabled} wrapped />
+      <Box sx={divider ? { borderBottom: 1, borderColor: "divider" } : null}>
+        <Tabs value={selectedTab}>
+          {tabList.map(({ path, label, disabled }) => (
+            <Tab
+              key={path}
+              label={label}
+              disabled={disabled}
+              LinkComponent={LinkComponent}
+              href={path}
+            />
           ))}
-        </StyledTabs>
+        </Tabs>
       </Box>
-      <Outlet context={{ study }} />
+      <Box
+        sx={[
+          {
+            flex: 1,
+            p: 2,
+            position: "relative",
+            overflow: "auto",
+            ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+              p: 0,
+            },
+          },
+          disablePadding && { p: 0 },
+        ]}
+      >
+        <Outlet context={{ study }} />
+      </Box>
     </Box>
   );
 }

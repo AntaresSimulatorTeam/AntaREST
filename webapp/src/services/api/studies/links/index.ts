@@ -12,19 +12,52 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/common/types";
+import { format } from "@/utils/stringUtils";
 import client from "../../client";
-import type { CreateLinkParams, DeleteLinkParams, LinkDTO } from "./types";
+import type {
+  CreateLinkParams,
+  DeleteLinkParams,
+  GetLinkParams,
+  GetLinksParams,
+  Link,
+  LinkDTO,
+  UpdateLinkParams,
+} from "./types";
+import { _formatLinkDTO, parseLinkId } from "./utils";
 
-export async function createLink(params: CreateLinkParams) {
-  const { studyId, ...body } = params;
-  const { data } = await client.post<LinkDTO>(`/v1/studies/${params.studyId}/links`, body);
-  return data;
+const LINKS_URL = "/v1/studies/{studyId}/links";
+const LINK_URL = `${LINKS_URL}/{areaFrom}/{areaTo}`;
+
+export async function createLink({ studyId, ...body }: CreateLinkParams) {
+  const url = format(LINKS_URL, { studyId });
+  const { data } = await client.post<LinkDTO>(url, body);
+  return _formatLinkDTO(data);
 }
 
-export async function getLinks(params: { studyId: StudyMetadata["id"] }) {
-  const { data } = await client.get<LinkDTO[]>(`/v1/studies/${params.studyId}/links`);
-  return data;
+export async function getLinks({ studyId }: GetLinksParams) {
+  const url = format(LINKS_URL, { studyId });
+  const { data } = await client.get<LinkDTO[]>(url);
+  return data.map(_formatLinkDTO);
+}
+
+export async function getLink({ studyId, linkId }: GetLinkParams) {
+  const links = await getLinks({ studyId });
+  const link = links.find(({ id }) => id === linkId);
+
+  if (!link) {
+    throw new Error(`Link ${linkId} not found`);
+  }
+
+  return link;
+}
+
+export async function updateLink({ studyId, linkId, config }: UpdateLinkParams) {
+  const [areaFrom, areaTo] = parseLinkId(linkId);
+  const url = format(LINK_URL, { studyId, areaFrom, areaTo });
+
+  const { data } = await client.put<LinkDTO>(url, config);
+
+  return _formatLinkDTO(data);
 }
 
 /**
@@ -32,14 +65,14 @@ export async function getLinks(params: { studyId: StudyMetadata["id"] }) {
  *
  * @param params - The parameters.
  * @param params.studyId - The study ID.
- * @param params.areaFrom - The from area name.
- * @param params.areaTo - The to area name.
+ * @param params.linkId - The link ID.
  * @returns The deleted link id (format: `${areaFromId}%${areaToId}`)
  */
-export async function deleteLink(params: DeleteLinkParams) {
-  const { studyId, areaFrom, areaTo } = params;
-  const { data } = await client.delete<string>(
-    `/v1/studies/${studyId}/links/${areaFrom}/${areaTo}`,
-  );
+export async function deleteLink({ studyId, linkId }: DeleteLinkParams) {
+  const [areaFrom, areaTo] = parseLinkId(linkId);
+  const url = format(LINK_URL, { studyId, areaFrom, areaTo });
+
+  const { data } = await client.delete<Link["id"]>(url);
+
   return data;
 }

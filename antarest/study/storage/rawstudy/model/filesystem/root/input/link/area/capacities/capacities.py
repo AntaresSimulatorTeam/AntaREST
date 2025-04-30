@@ -15,6 +15,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly_ones
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
@@ -33,12 +34,12 @@ class InputLinkAreaCapacities(FolderNode):
         children: TREE = {}
         for area_to in self.config.get_links(self.area):
             children[f"{area_to}_direct"] = InputSeriesMatrix(
-                self.context,
-                self.config.next_file(f"{area_to}_direct.txt"),
+                self.context, self.config.next_file(f"{area_to}_direct.txt"), default_empty=default_scenario_hourly_ones
             )
             children[f"{area_to}_indirect"] = InputSeriesMatrix(
                 self.context,
                 self.config.next_file(f"{area_to}_indirect.txt"),
+                default_empty=default_scenario_hourly_ones,
             )
 
         return children

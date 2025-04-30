@@ -11,13 +11,13 @@
 # This file is part of the Antares project.
 
 import collections
-import typing as t
 from pathlib import Path
+from typing import List, Mapping, MutableMapping, MutableSequence, Sequence
 
 from antares.study.version import StudyVersion
-from pydantic import field_validator
 
 from antarest.core.exceptions import (
+    AreaNotFound,
     DuplicateThermalCluster,
     MatrixWidthMismatchError,
     ThermalClusterConfigNotFound,
@@ -25,109 +25,27 @@ from antarest.core.exceptions import (
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import STUDY_VERSION_8_7, Study
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    Thermal870Config,
-    Thermal870Properties,
-    ThermalPropertiesType,
-    create_thermal_config,
-    create_thermal_properties,
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
+    ThermalClusterCreation,
+    ThermalClusterUpdate,
+    ThermalClusterUpdates,
+    create_thermal_cluster,
+    update_thermal_cluster,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.storage_service import StudyStorageService
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_7
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-
-__all__ = (
-    "ThermalClusterInput",
-    "ThermalClusterCreation",
-    "ThermalClusterOutput",
-    "ThermalManager",
-)
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
-
-
-@all_optional_model
-@camel_case_model
-class ThermalClusterInput(Thermal870Properties):
-    """
-    Model representing the data structure required to edit an existing thermal cluster within a study.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
-            schema["example"] = ThermalClusterInput(
-                group="Gas",
-                name="Gas Cluster XY",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
-
-
-@camel_case_model
-class ThermalClusterCreation(ThermalClusterInput):
-    """
-    Model representing the data structure required to create a new thermal cluster within a study.
-    """
-
-    # noinspection Pydantic
-    @field_validator("name", mode="before")
-    @classmethod
-    def validate_name(cls, name: t.Optional[str]) -> str:
-        """
-        Validator to check if the name is not empty.
-        """
-        if not name:
-            raise ValueError("name must not be empty")
-        return name
-
-    def to_properties(self, study_version: StudyVersion) -> ThermalPropertiesType:
-        values = self.model_dump(mode="json", by_alias=False, exclude_none=True)
-        return create_thermal_properties(study_version=study_version, data=values)
-
-
-@all_optional_model
-@camel_case_model
-class ThermalClusterOutput(Thermal870Config):
-    """
-    Model representing the output data structure to display the details of a thermal cluster within a study.
-    """
-
-    class Config:
-        @staticmethod
-        def json_schema_extra(schema: t.MutableMapping[str, t.Any]) -> None:
-            schema["example"] = ThermalClusterOutput(
-                id="Gas cluster YZ",
-                group="Gas",
-                name="Gas Cluster YZ",
-                enabled=False,
-                unit_count=100,
-                nominal_capacity=1000.0,
-                gen_ts="use global",
-                co2=7.0,
-            ).model_dump(mode="json")
-
-
-def create_thermal_output(
-    study_version: StudyVersion,
-    cluster_id: str,
-    config: t.Mapping[str, t.Any],
-) -> "ThermalClusterOutput":
-    obj = create_thermal_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.model_dump(mode="json", by_alias=False)
-    return ThermalClusterOutput(**kwargs)
 
 
 class ThermalManager:
@@ -136,24 +54,15 @@ class ThermalManager:
     Provides methods for creating, retrieving, updating, and deleting thermal clusters.
 
     Attributes:
-        storage_service: The service for accessing study storage.
     """
 
-    def __init__(self, storage_service: StudyStorageService):
+    def __init__(self, command_context: CommandContext):
         """
         Initializes an instance with the service for accessing study storage.
         """
+        self._command_context = command_context
 
-        self.storage_service = storage_service
-
-    def _get_file_study(self, study: Study) -> FileStudy:
-        """
-        Helper function to get raw study data.
-        """
-
-        return self.storage_service.get_storage(study).get_raw(study)
-
-    def get_cluster(self, study: Study, area_id: str, cluster_id: str) -> ThermalClusterOutput:
+    def get_cluster(self, study: StudyInterface, area_id: str, cluster_id: str) -> ThermalCluster:
         """
         Get a cluster by ID.
 
@@ -169,20 +78,19 @@ class ThermalManager:
             ThermalClusterNotFound: If the specified cluster does not exist.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
         try:
-            cluster = file_study.tree.get(path.split("/"), depth=1)
+            cluster_data = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise ThermalClusterNotFound(path, cluster_id) from None
-        study_version = StudyVersion.parse(study.version)
-        return create_thermal_output(study_version, cluster_id, cluster)
+        return parse_thermal_cluster(study.version, cluster_data)
 
     def get_clusters(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
-    ) -> t.Sequence[ThermalClusterOutput]:
+    ) -> Sequence[ThermalCluster]:
         """
         Retrieve all thermal clusters from a specified area within a study.
 
@@ -197,19 +105,18 @@ class ThermalManager:
             ThermalClusterConfigNotFound: If no clusters are found in the specified area.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _CLUSTERS_PATH.format(area_id=area_id)
         try:
-            clusters = file_study.tree.get(path.split("/"), depth=3)
+            clusters_data = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise ThermalClusterConfigNotFound(path, area_id) from None
-        study_version = StudyVersion.parse(study.version)
-        return [create_thermal_output(study_version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
+        return [parse_thermal_cluster(study.version, c) for c in clusters_data.values()]
 
     def get_all_thermals_props(
         self,
-        study: Study,
-    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
+        study: StudyInterface,
+    ) -> Mapping[str, Mapping[str, ThermalCluster]]:
         """
         Retrieve all thermal clusters from all areas within a study.
 
@@ -223,7 +130,7 @@ class ThermalManager:
             ThermalClusterConfigNotFound: If no clusters are found in the specified area.
         """
 
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _ALL_CLUSTERS_PATH
         try:
             # may raise KeyError if the path is missing
@@ -233,60 +140,47 @@ class ThermalManager:
         except KeyError:
             raise ThermalClusterConfigNotFound(path) from None
 
-        study_version = StudyVersion.parse(study.version)
-        thermals_by_areas: t.MutableMapping[str, t.MutableMapping[str, ThermalClusterOutput]]
+        thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalCluster]]
         thermals_by_areas = collections.defaultdict(dict)
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                thermals_by_areas[area_id][cluster_id] = create_thermal_output(study_version, cluster_id, cluster)
-
+                thermals_by_areas[area_id][cluster_id] = parse_thermal_cluster(study.version, cluster)
         return thermals_by_areas
 
     def update_thermals_props(
         self,
-        study: Study,
-        update_thermals_by_areas: t.Mapping[str, t.Mapping[str, ThermalClusterInput]],
-    ) -> t.Mapping[str, t.Mapping[str, ThermalClusterOutput]]:
+        study: StudyInterface,
+        update_thermals_by_areas: ThermalClusterUpdates,
+    ) -> Mapping[str, Mapping[str, ThermalCluster]]:
         old_thermals_by_areas = self.get_all_thermals_props(study)
         new_thermals_by_areas = {area_id: dict(clusters) for area_id, clusters in old_thermals_by_areas.items()}
 
-        # Prepare the commands to update the thermal clusters.
-        commands = []
-        study_version = StudyVersion.parse(study.version)
+        # Create the command to update the thermal clusters.
+        command = UpdateThermalClusters(
+            cluster_properties=update_thermals_by_areas,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        # Prepare the return of the method
         for area_id, update_thermals_by_ids in update_thermals_by_areas.items():
             old_thermals_by_ids = old_thermals_by_areas[area_id]
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
                 old_cluster = old_thermals_by_ids[thermal_id]
-                new_cluster = old_cluster.copy(
-                    update=update_cluster.model_dump(mode="json", by_alias=False, exclude_none=True)
-                )
+                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
-                # Convert the DTO to a configuration object and update the configuration file.
-                properties = create_thermal_config(
-                    study_version,
-                    **new_cluster.model_dump(mode="json", by_alias=False, exclude_none=True),
-                )
-                path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
-                cmd = UpdateConfig(
-                    target=path,
-                    data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
-                    command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                    study_version=study_version,
-                )
-                commands.append(cmd)
-
-        file_study = self.storage_service.get_storage(study).get_raw(study)
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
-
+        study.add_commands([command])
         return new_thermals_by_areas
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return ThermalClusterOutput.schema()
+        return ThermalCluster.model_json_schema()
 
-    def create_cluster(self, study: Study, area_id: str, cluster_data: ThermalClusterCreation) -> ThermalClusterOutput:
+    def create_cluster(
+        self, study: StudyInterface, area_id: str, cluster_data: ThermalClusterCreation
+    ) -> ThermalCluster:
         """
         Create a new cluster.
 
@@ -299,20 +193,12 @@ class ThermalManager:
             The created cluster.
         """
 
-        file_study = self._get_file_study(study)
-        cluster = cluster_data.to_properties(StudyVersion.parse(study.version))
-        command = self._make_create_cluster_cmd(area_id, cluster, file_study.config.version)
-        execute_or_add_commands(
-            study,
-            file_study,
-            [command],
-            self.storage_service,
-        )
-        output = self.get_cluster(study, area_id, cluster.get_id())
-        return output
+        command = self._make_create_cluster_cmd(area_id, cluster_data, study.version)
+        study.add_commands([command])
+        return create_thermal_cluster(cluster_data, study.version)
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: ThermalPropertiesType, study_version: StudyVersion
+        self, area_id: str, cluster: ThermalClusterCreation, study_version: StudyVersion
     ) -> CreateCluster:
         # NOTE: currently, in the `CreateCluster` class, there is a confusion
         # between the cluster name and the cluster ID (which is a section name).
@@ -320,16 +206,16 @@ class ThermalManager:
             area_id=area_id,
             parameters=cluster,
             study_version=study_version,
-            command_context=self.storage_service.variant_study_service.command_factory.command_context,
+            command_context=self._command_context,
         )
 
     def update_cluster(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         cluster_id: str,
-        cluster_data: ThermalClusterInput,
-    ) -> ThermalClusterOutput:
+        cluster_data: ThermalClusterUpdate,
+    ) -> ThermalCluster:
         """
         Update a cluster with the given `cluster_id` in the given area of the given study
         with the provided cluster data (form fields).
@@ -347,43 +233,29 @@ class ThermalManager:
             ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
-
-        study_version = StudyVersion.parse(study.version)
-        file_study = self._get_file_study(study)
+        file_study = study.get_files()
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
+
         try:
-            values = file_study.tree.get(path.split("/"), depth=1)
+            area = file_study.config.areas[area_id]
         except KeyError:
-            raise ThermalClusterNotFound(path, cluster_id) from None
-        else:
-            old_config = create_thermal_config(study_version, **values)
+            raise AreaNotFound(area_id)
 
-        # Use Python values to synchronize Config and Form values
-        new_values = cluster_data.model_dump(mode="json", by_alias=False, exclude_none=True)
-        new_config = old_config.copy(exclude={"id"}, update=new_values)
-        new_data = new_config.model_dump(mode="json", by_alias=True, exclude={"id"})
+        thermal_cluster = next((thermal for thermal in area.thermals if thermal.id == cluster_id), None)
+        if thermal_cluster is None:
+            raise ThermalClusterNotFound(path, cluster_id)
 
-        # create the dict containing the new values using aliases
-        data: t.Dict[str, t.Any] = {}
-        for field_name, field in new_config.model_fields.items():
-            if field_name in new_values:
-                name = field.alias if field.alias else field_name
-                data[name] = new_data[name]
+        updated_thermal_cluster = update_thermal_cluster(thermal_cluster, cluster_data)
 
-        # create the update config commands with the modified data
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-        commands = [
-            UpdateConfig(
-                target=f"{path}/{key}", data=value, command_context=command_context, study_version=study_version
-            )
-            for key, value in data.items()
-        ]
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        command = UpdateThermalClusters(
+            cluster_properties={area_id: {cluster_id: cluster_data}},
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
+        return updated_thermal_cluster
 
-        values = {**new_config.model_dump(mode="json", by_alias=False), "id": cluster_id}
-        return ThermalClusterOutput.model_validate(values)
-
-    def delete_clusters(self, study: Study, area_id: str, cluster_ids: t.Sequence[str]) -> None:
+    def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
         Delete the clusters with the given IDs in the given area of the given study.
 
@@ -393,28 +265,25 @@ class ThermalManager:
             cluster_ids: The IDs of the clusters to delete.
         """
 
-        file_study = self._get_file_study(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
-
         commands = [
             RemoveCluster(
                 area_id=area_id,
                 cluster_id=cluster_id,
-                command_context=command_context,
-                study_version=file_study.config.version,
+                command_context=self._command_context,
+                study_version=study.version,
             )
             for cluster_id in cluster_ids
         ]
 
-        execute_or_add_commands(study, file_study, commands, self.storage_service)
+        study.add_commands(commands)
 
     def duplicate_cluster(
         self,
-        study: Study,
+        study: StudyInterface,
         area_id: str,
         source_id: str,
         new_cluster_name: str,
-    ) -> ThermalClusterOutput:
+    ) -> ThermalCluster:
         """
         Creates a duplicate cluster within the study area with a new name.
 
@@ -435,13 +304,21 @@ class ThermalManager:
         if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise DuplicateThermalCluster(area_id, new_id)
 
+        file_study = study.get_files()
+        study_version = study.version
+
         # Cluster duplication
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
-        creation_form = ThermalClusterCreation(**source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"}))
-        study_version = StudyVersion.parse(study.version)
-        new_config = creation_form.to_properties(study_version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study_version)
+        cluster_creation = ThermalClusterCreation(
+            **source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"})
+        )
+        create_cluster_cmd = CreateCluster(
+            area_id=area_id,
+            parameters=cluster_creation,
+            study_version=study_version,
+            command_context=self._command_context,
+        )
 
         # Matrix edition
         lower_source_id = source_id.lower()
@@ -455,7 +332,6 @@ class ThermalManager:
             f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
             f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
         ]
-        study_version = StudyVersion.parse(study.version)
         if study_version >= STUDY_VERSION_8_7:
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
             source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
@@ -463,31 +339,32 @@ class ThermalManager:
             new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
 
         # Prepare and execute commands
-        commands: t.List[t.Union[CreateCluster, ReplaceMatrix]] = [create_cluster_cmd]
-        storage_service = self.storage_service.get_storage(study)
-        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        commands: List[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
+        command_context = self._command_context
         for source_path, new_path in zip(source_paths, new_paths):
-            current_matrix = storage_service.get(study, source_path)["data"]
+            current_matrix = file_study.tree.get(source_path.split("/"))["data"]
             command = ReplaceMatrix(
                 target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
             )
             commands.append(command)
 
-        execute_or_add_commands(study, self._get_file_study(study), commands, self.storage_service)
+        study.add_commands(commands)
 
-        return ThermalClusterOutput(**new_config.model_dump(mode="json", by_alias=False))
+        return create_thermal_cluster(cluster_creation, study_version)
 
-    def validate_series(self, study: Study, area_id: str, cluster_id: str) -> bool:
+    def validate_series(self, study: StudyInterface, area_id: str, cluster_id: str) -> bool:
         lower_cluster_id = cluster_id.lower()
         thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
         series_path = [thermal_cluster_path / "series"]
-        if StudyVersion.parse(study.version) >= STUDY_VERSION_8_7:
+
+        file_study = study.get_files()
+        if study.version >= STUDY_VERSION_8_7:
             series_path.append(thermal_cluster_path / "CO2Cost")
             series_path.append(thermal_cluster_path / "fuelCost")
 
-        ts_widths: t.MutableMapping[int, t.MutableSequence[str]] = {}
+        ts_widths: MutableMapping[int, MutableSequence[str]] = {}
         for ts_path in series_path:
-            matrix = self.storage_service.get_storage(study).get(study, ts_path.as_posix())
+            matrix = file_study.tree.get(ts_path.as_posix().split("/"))
             matrix_data = matrix["data"]
             matrix_height = len(matrix_data)
             # We ignore empty matrices as there are default matrices for the simulator.

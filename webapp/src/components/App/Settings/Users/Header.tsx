@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
 import PersonAddAltIcon from "@mui/icons-material/PersonAddAlt";
-import { useTranslation } from "react-i18next";
+import { Box, Button } from "@mui/material";
 import { useState } from "react";
-import CreateUserDialog from "./dialog/CreateUserDialog";
-import type { UserDetailsDTO } from "../../../../common/types";
+import { useTranslation } from "react-i18next";
+import type { UserDetailsDTO } from "../../../../types/types";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
+import CreateUserDialog from "./dialog/CreateUserDialog";
 
 interface Props {
   setSearchValue: (v: string) => void;
@@ -55,7 +55,7 @@ function Header(props: Props) {
           open
           addUser={addUser}
           reloadFetchUsers={reloadFetchUsers}
-          closeDialog={() => setShowCreateUserModal(false)}
+          onCancel={() => setShowCreateUserModal(false)}
         />
       )}
     </>

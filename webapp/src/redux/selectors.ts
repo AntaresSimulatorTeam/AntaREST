@@ -12,8 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { createLinkId } from "@/services/api/studies/links/utils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
 import * as R from "ramda";
+import { F } from "ts-toolbelt";
+import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
+import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import type {
   AllClustersAndLinks,
   Area,
@@ -22,24 +26,21 @@ import type {
   LinkElement,
   StudyMetadata,
   UserDetailsDTO,
-} from "../common/types";
+} from "../types/types";
 import { filterStudies, sortStudies } from "../utils/studiesUtils";
-import { convertVersions, isGroupAdmin, isUserAdmin } from "../services/utils";
 import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
 import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
-import type { UIState } from "./ducks/ui";
-import type { UsersState } from "./ducks/users";
 import {
-  type StudyMapNode,
   type StudyMapLink,
+  type StudyMapNode,
   studyMapsAdapter,
   type StudyMapsState,
 } from "./ducks/studyMaps";
-import { makeLinkId } from "./utils";
-import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
+import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
+import type { UIState } from "./ducks/ui";
+import type { UsersState } from "./ducks/users";
 
 // TODO resultEqualityCheck
 
@@ -141,12 +142,6 @@ export const getCurrentStudy = createSelector(
   (studies, current) => studies[current],
 );
 
-export const isCurrentStudyFavorite = createSelector(
-  getFavoriteStudyIds,
-  getCurrentStudyId,
-  (favorites, current) => favorites.includes(current),
-);
-
 ////////////////////////////////////////////////////////////////
 // Users
 ////////////////////////////////////////////////////////////////
@@ -159,7 +154,10 @@ export const getUsers = usersSelectors.selectAll;
 
 export const getUsersById = usersSelectors.selectEntities;
 
-export const getUserIds = usersSelectors.selectIds;
+export const getUserIds = usersSelectors.selectIds as F.Function<
+  Parameters<typeof usersSelectors.selectIds>,
+  Array<UserDetailsDTO["id"]>
+>;
 
 export const getUser = usersSelectors.selectById;
 
@@ -175,7 +173,10 @@ export const getGroups = groupsSelectors.selectAll;
 
 export const getGroupsById = groupsSelectors.selectEntities;
 
-export const getGroupIds = groupsSelectors.selectIds;
+export const getGroupIds = groupsSelectors.selectIds as F.Function<
+  Parameters<typeof groupsSelectors.selectIds>,
+  Array<GroupDetailsDTO["id"]>
+>;
 
 export const getGroup = groupsSelectors.selectById;
 
@@ -254,11 +255,11 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
       const area1 = { id: id1, ...synthesis.areas[id1] };
       Object.keys(area1.links).forEach((id2) => {
         const area2 = { id: id2, ...synthesis.areas[id2] };
-        const id = makeLinkId(area1.id, area2.id);
+        const id = createLinkId(area1.id, area2.id);
         links.push({
           id,
           name: id,
-          label: makeLinkId(area1.name, area2.name),
+          label: `${area1.name} / ${area2.name}`,
           area1: area1.id,
           area2: area2.id,
         });
@@ -438,12 +439,12 @@ export const getStudyMapLinks = createSelector(
           linkAreas2.forEach((areaId) => {
             if (linksUI) {
               const area2 = { id: areaId, ...synthesis.areas[areaId] };
-              const id = makeLinkId(area1.id, area2.id);
+              const id = createLinkId(area1.id, area2.id);
               studyMapLinks.push({
                 ...linksUI[id],
                 id,
                 name: id,
-                label: makeLinkId(area1.name, area2.name),
+                label: `${area1.name} / ${area2.name}`,
                 area1: area1.id,
                 area2: area2.id,
               });
@@ -465,7 +466,7 @@ export const getStudyMapDistrictsById = (state: AppState): StudyMapsState["distr
 
 const getUIState = (state: AppState): AppState["ui"] => state.ui;
 
-export const getWebSocketConnected = (state: AppState): UIState["webSocketConnected"] => {
+export const isWebSocketConnected = (state: AppState): UIState["webSocketConnected"] => {
   return getUIState(state).webSocketConnected;
 };
 
@@ -481,6 +482,6 @@ export const getMessageInfo = (state: AppState): UIState["messageInfo"] => {
   return getUIState(state).messageInfo;
 };
 
-export const getMenuExtended = (state: AppState): UIState["menuCollapsed"] => {
-  return !getUIState(state).menuCollapsed;
+export const isMenuOpen = (state: AppState): UIState["menuOpen"] => {
+  return getUIState(state).menuOpen;
 };

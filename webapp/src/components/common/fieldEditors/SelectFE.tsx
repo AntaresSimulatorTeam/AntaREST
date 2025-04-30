@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { SvgIconComponent } from "@mui/icons-material";
 import {
   FormControl,
   FormHelperText,
@@ -20,16 +21,18 @@ import {
   Select,
   type SelectProps,
 } from "@mui/material";
-import { useMemo, useRef } from "react";
-import { v4 as uuidv4 } from "uuid";
-import * as RA from "ramda-adjunct";
 import startCase from "lodash/startCase";
+import * as RA from "ramda-adjunct";
+import { useMemo, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { O } from "ts-toolbelt";
+import { v4 as uuidv4 } from "uuid";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
 type OptionObj<T extends O.Object = O.Object> = {
   label: string;
   value: string | number;
+  icon?: SvgIconComponent;
 } & T;
 
 export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
@@ -49,23 +52,27 @@ function formatOptions(
   }));
 }
 
+// TODO: replace with TextField with `select` prop https://mui.com/material-ui/react-text-field/#select
+
 function SelectFE(props: SelectFEProps) {
   const {
     options,
     emptyValue,
     inputRef,
-    variant = "filled",
+    variant,
     helperText,
     error,
     label,
     className,
     size,
+    margin,
     sx,
     fullWidth,
     startCaseLabel = true,
     ...selectProps
   } = props;
 
+  const { t } = useTranslation();
   const labelId = useRef(uuidv4()).current;
 
   const optionsFormatted = useMemo(
@@ -80,20 +87,20 @@ function SelectFE(props: SelectFEProps) {
       variant={variant}
       hiddenLabel={!label}
       error={error}
-      size={size}
+      margin={margin}
       sx={sx}
       fullWidth={fullWidth}
     >
       <InputLabel id={labelId}>{label}</InputLabel>
-      <Select {...selectProps} label={label} labelId={labelId}>
+      <Select {...selectProps} size={size} label={label} labelId={labelId}>
         {emptyValue && (
           <MenuItem value="">
-            {/* TODO i18n */}
-            <em>None</em>
+            <em>{t("global.none")}</em>
           </MenuItem>
         )}
-        {optionsFormatted.map(({ id, value, label }) => (
+        {optionsFormatted.map(({ id, value, label, icon: Icon }) => (
           <MenuItem key={id} value={value}>
+            {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
             {label}
           </MenuItem>
         ))}

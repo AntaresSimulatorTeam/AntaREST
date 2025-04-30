@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import DeleteIcon from "@mui/icons-material/Delete";
+import InfoIcon from "@mui/icons-material/Info";
+import TokenIcon from "@mui/icons-material/Token";
 import {
   Box,
   CircularProgress,
@@ -25,26 +28,23 @@ import {
   Typography,
 } from "@mui/material";
 import { produce } from "immer";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
 import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import type { Action } from "redux";
-import DeleteIcon from "@mui/icons-material/Delete";
-import InfoIcon from "@mui/icons-material/Info";
-import TokenIcon from "@mui/icons-material/Token";
-import * as R from "ramda";
-import { useSnackbar } from "notistack";
-import type { BotDTO, BotDetailsDTO, UserDTO } from "../../../../common/types";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import { getAuthUser } from "../../../../redux/selectors";
 import { deleteBot, getBots, getUser, getUsers } from "../../../../services/api/user";
 import { isUserAdmin, sortByProp } from "../../../../services/utils";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import Header from "./Header";
-import { getAuthUser } from "../../../../redux/selectors";
-import TokenInfoDialog from "./dialog/TokenInfoDialog";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import type { BotDTO, BotDetailsDTO, UserDTO } from "../../../../types/types";
 import { isSearchMatching } from "../../../../utils/stringUtils";
+import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import ReadTokenDialog from "./dialog/ReadTokenDialog";
+import Header from "./Header";
 
 interface BotDetailsDtoWithUser extends BotDetailsDTO {
   user: UserDTO;
@@ -270,9 +270,9 @@ function Tokens() {
         </ConfirmationDialog>
       )}
       {tokenToDisplayInfo && (
-        <TokenInfoDialog
+        <ReadTokenDialog
           open
-          onOk={() => setTokenToDisplayInfo(undefined)}
+          onCancel={() => setTokenToDisplayInfo(undefined)}
           token={tokenToDisplayInfo}
         />
       )}

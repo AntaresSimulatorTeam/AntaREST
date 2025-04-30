@@ -12,8 +12,6 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, FastAPI
-
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -25,13 +23,15 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
-from antarest.study.storage.patch_service import PatchService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from antarest.study.web.output_blueprint import create_output_routes
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
 from antarest.study.web.study_data_blueprint import create_study_data_routes
@@ -50,7 +50,7 @@ def build_study_service(
     metadata_repository: Optional[StudyMetadataRepository] = None,
     variant_repository: Optional[VariantStudyRepository] = None,
     study_service: Optional[StudyService] = None,
-    patch_service: Optional[PatchService] = None,
+    output_service: Optional[OutputService] = None,
     generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
     event_bus: IEventBus = DummyEventBusService(),
 ) -> StudyService:
@@ -68,7 +68,7 @@ def build_study_service(
         metadata_repository: used by testing to inject mock. Let None to use true instantiation
         variant_repository: used by testing to inject mock. Let None to use true instantiation
         study_service: used by testing to inject mock. Let None to use true instantiation
-        patch_service: used by testing to inject mock. Let None to use true instantiation
+        output_service: used by testing to inject mock. Let None to use true instantiation
         generator_matrix_constants: used by testing to inject mock. Let None to use true instantiation
         event_bus: used by testing to inject mock. Let None to use true instantiation
 
@@ -76,20 +76,14 @@ def build_study_service(
 
     """
 
-    path_resources = config.resources_path
-
     resolver = UriResolverService(matrix_service=matrix_service)
     study_factory = StudyFactory(matrix=matrix_service, resolver=resolver, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
 
-    patch_service = patch_service or PatchService(metadata_repository)
-
     raw_study_service = RawStudyService(
         config=config,
         study_factory=study_factory,
-        path_resources=path_resources,
-        patch_service=patch_service,
         cache=cache,
     )
 
@@ -99,7 +93,6 @@ def build_study_service(
     command_factory = CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
         matrix_service=matrix_service,
-        patch_service=patch_service,
     )
     variant_study_service = VariantStudyService(
         task_service=task_service,
@@ -110,12 +103,12 @@ def build_study_service(
         repository=variant_repository,
         event_bus=event_bus,
         config=config,
-        patch_service=patch_service,
     )
 
     study_service = study_service or StudyService(
         raw_study_service=raw_study_service,
         variant_study_service=variant_study_service,
+        command_context=command_factory.command_context,
         user_service=user_service,
         repository=metadata_repository,
         event_bus=event_bus,
@@ -123,6 +116,14 @@ def build_study_service(
         task_service=task_service,
         cache_service=cache,
         config=config,
+    )
+
+    output_service = output_service or OutputService(
+        study_service=study_service,
+        storage=OutputStorageDispatcher(raw_study_service, variant_study_service),
+        task_service=task_service,
+        file_transfer_manager=file_transfer_manager,
+        event_bus=event_bus,
     )
 
     if app_ctxt:
@@ -137,5 +138,6 @@ def build_study_service(
             )
         )
         api_root.include_router(create_xpansion_routes(study_service, config))
+        api_root.include_router(create_output_routes(output_service, config))
 
     return study_service

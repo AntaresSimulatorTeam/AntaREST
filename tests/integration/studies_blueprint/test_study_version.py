@@ -17,6 +17,7 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
+from antarest.core.serde.ini_reader import read_ini
 from tests.integration.assets import ASSETS_DIR
 
 
@@ -82,3 +83,23 @@ author = Unknown
             # Delete the study
             res = client.delete(f"v1/studies/{study_id}")
             res.raise_for_status()
+
+    def test_create_study_new_version_format(self, client: TestClient, user_access_token: str, tmp_path: str) -> None:
+        # Checks that requesting a study in version "8.8" (not "880") works
+
+        # =============================
+        #  SET UP
+        # =============================
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # =============================
+        #  LIFECYCLE
+        # =============================
+
+        res = client.post("/v1/studies?name=my-study&version=8.8")
+        assert res.status_code == 201
+        study_id = res.json()
+
+        res = client.get(f"/v1/studies/{study_id}/raw/original-file?path=study")
+        study_antares_content = read_ini(io.StringIO(res.text))
+        assert str(study_antares_content["antares"]["version"]) == "880"

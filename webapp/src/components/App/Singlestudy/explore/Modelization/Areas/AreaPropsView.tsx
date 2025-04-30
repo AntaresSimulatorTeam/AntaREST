@@ -13,7 +13,7 @@
  */
 
 import { useEffect, useState } from "react";
-import type { Area } from "../../../../../../common/types";
+import type { Area } from "../../../../../../types/types";
 import PropertiesView from "../../../../../common/PropertiesView";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas } from "../../../../../../redux/selectors";

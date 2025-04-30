@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from http import HTTPStatus
+from pathlib import Path
 from typing import List
 
 import pytest
@@ -241,7 +242,7 @@ class TestHydroCorrelation:
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            data=area_info.json(),
+            data=area_info.model_dump_json(),
         )
         assert res.status_code == HTTPStatus.OK, res.json()
 
@@ -286,7 +287,7 @@ class TestHydroCorrelation:
             headers={"Authorization": f"Bearer {user_access_token}"},
             json=correlation_cfg,
         )
-        assert res.status_code == HTTPStatus.NO_CONTENT, res.json()
+        assert res.status_code == HTTPStatus.OK, res.json()
 
         # Then we remove the "fr" zone.
         # The deletion should update the correlation matrix of all other zones.
@@ -314,3 +315,23 @@ class TestHydroCorrelation:
             "index": ["de", "es", "it"],
         }
         assert actual == expected
+
+    def test_get_correlation_values__empty_annual(
+        self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path
+    ):
+        area_id = "it"
+
+        correlation_file_path = tmp_path.joinpath("ext_workspace/STA-mini/input/hydro/prepro/correlation.ini")
+
+        # remove the annual field and its content
+        with open(correlation_file_path, "w") as f:
+            f.write("[general]\nmode = annual")
+
+        with open(correlation_file_path) as f:
+            assert f.read() == "[general]\nmode = annual"
+
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == HTTPStatus.OK, res.json()

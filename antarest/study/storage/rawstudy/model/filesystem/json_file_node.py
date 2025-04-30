@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import json
-import typing as t
 from pathlib import Path
+from typing import Any, Dict, Optional, cast
 
 from typing_extensions import override
 
@@ -31,8 +31,8 @@ class JsonReader(IReader):
     """
 
     @override
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
-        content: t.Union[str, bytes]
+    def read(self, path: Any, **kwargs: Any) -> JSON:
+        content: str | bytes
 
         if isinstance(path, (Path, str)):
             try:
@@ -51,7 +51,7 @@ class JsonReader(IReader):
             raise TypeError(repr(type(path)))
 
         try:
-            return t.cast(JSON, from_json(content))
+            return cast(JSON, from_json(content))
         except json.JSONDecodeError as exc:
             err_msg = f"Failed to parse JSON file '{path}'"
             raise ValueError(err_msg) from exc
@@ -73,6 +73,6 @@ class JsonFileNode(IniFileNode):
         self,
         context: ContextServer,
         config: FileStudyTreeConfig,
-        types: t.Optional[t.Dict[str, t.Any]] = None,
+        types: Optional[Dict[str, Any]] = None,
     ) -> None:
         super().__init__(context, config, types, JsonReader(), JsonWriter())

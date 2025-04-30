@@ -12,7 +12,7 @@
 
 import datetime
 import enum
-import typing as t
+from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
 from sqlalchemy import and_, func, not_, or_, sql  # type: ignore
@@ -55,11 +55,11 @@ class AccessPermissions(AntaresBaseModel, frozen=True, extra="forbid"):
     """
 
     is_admin: bool = False
-    user_id: t.Optional[int] = None
-    user_groups: t.Sequence[str] = ()
+    user_id: Optional[int] = None
+    user_groups: Sequence[str] = ()
 
     @classmethod
-    def from_params(cls, params: t.Union[RequestParameters, JWTUser]) -> "AccessPermissions":
+    def from_params(cls, params: RequestParameters | JWTUser) -> "AccessPermissions":
         """
         This function makes it easier to pass on user ids and groups into the repository filtering function by
         extracting the associated `AccessPermissions` object.
@@ -105,15 +105,15 @@ class StudyFilter(AntaresBaseModel, frozen=True, extra="forbid"):
     """
 
     name: str = ""
-    managed: t.Optional[bool] = None
-    archived: t.Optional[bool] = None
-    variant: t.Optional[bool] = None
-    versions: t.Sequence[str] = ()
-    users: t.Sequence[int] = ()
-    groups: t.Sequence[str] = ()
-    tags: t.Sequence[str] = ()
-    study_ids: t.Sequence[str] = ()
-    exists: t.Optional[bool] = None
+    managed: Optional[bool] = None
+    archived: Optional[bool] = None
+    variant: Optional[bool] = None
+    versions: Sequence[str] = ()
+    users: Sequence[int] = ()
+    groups: Sequence[str] = ()
+    tags: Sequence[str] = ()
+    study_ids: Sequence[str] = ()
+    exists: Optional[bool] = None
     workspace: str = ""
     folder: str = ""
     access_permissions: AccessPermissions = AccessPermissions()
@@ -146,7 +146,7 @@ class StudyMetadataRepository:
     Database connector to manage Study entity
     """
 
-    def __init__(self, cache_service: ICache, session: t.Optional[Session] = None):
+    def __init__(self, cache_service: ICache, session: Optional[Session] = None):
         """
         Initialize the repository.
 
@@ -191,7 +191,7 @@ class StudyMetadataRepository:
     def refresh(self, metadata: Study) -> None:
         self.session.refresh(metadata)
 
-    def get(self, study_id: str) -> t.Optional[Study]:
+    def get(self, study_id: str) -> Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
         # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
         #  to make sure RawStudy and VariantStudy fields are also fetched.
@@ -224,16 +224,16 @@ class StudyMetadataRepository:
         )
         return study
 
-    def get_additional_data(self, study_id: str) -> t.Optional[StudyAdditionalData]:
+    def get_additional_data(self, study_id: str) -> Optional[StudyAdditionalData]:
         study: StudyAdditionalData = self.session.query(StudyAdditionalData).get(study_id)
         return study
 
     def get_all(
         self,
         study_filter: StudyFilter = StudyFilter(),
-        sort_by: t.Optional[StudySortBy] = None,
+        sort_by: Optional[StudySortBy] = None,
         pagination: StudyPagination = StudyPagination(),
-    ) -> t.Sequence[Study]:
+    ) -> Sequence[Study]:
         """
         Retrieve studies based on specified filters, sorting, and pagination.
 
@@ -274,7 +274,7 @@ class StudyMetadataRepository:
             if sort_by is None:
                 q = q.order_by(entity.name.asc())
             if study_filter.groups or study_filter.tags:
-                studies: t.Sequence[Study] = q.all()[offset:end]
+                studies: Sequence[Study] = q.all()[offset:end]
                 return studies
             q = q.offset(offset).limit(limit)
 
@@ -382,14 +382,14 @@ class StudyMetadataRepository:
 
         return q
 
-    def get_all_raw(self, exists: t.Optional[bool] = None) -> t.Sequence[RawStudy]:
+    def get_all_raw(self, exists: Optional[bool] = None) -> Sequence[RawStudy]:
         query = self.session.query(RawStudy)
         if exists is not None:
             if exists:
                 query = query.filter(RawStudy.missing.is_(None))
             else:
                 query = query.filter(not_(RawStudy.missing.is_(None)))
-        studies: t.Sequence[RawStudy] = query.all()
+        studies: Sequence[RawStudy] = query.all()
         return studies
 
     def delete(self, id_: str, *ids: str) -> None:
@@ -398,7 +398,7 @@ class StudyMetadataRepository:
         session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session=False)
         session.commit()
 
-    def update_tags(self, study: Study, new_tags: t.Sequence[str]) -> None:
+    def update_tags(self, study: Study, new_tags: Sequence[str]) -> None:
         """
         Updates the tags associated with a given study in the database,
         replacing existing tags with new ones (case-insensitive).
@@ -421,14 +421,14 @@ class StudyMetadataRepository:
         session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
         session.commit()
 
-    def list_duplicates(self) -> t.List[t.Tuple[str, str]]:
+    def list_duplicates(self) -> List[Tuple[str, str]]:
         """
         Get list of duplicates as tuples (id, path).
         """
         session = self.session
         subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
         query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
-        return t.cast(t.List[t.Tuple[str, str]], query.all())
+        return cast(List[Tuple[str, str]], query.all())
 
     def has_children(self, uuid: str) -> bool:
         """

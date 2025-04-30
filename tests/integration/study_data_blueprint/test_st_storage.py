@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import json
 import re
 import typing as t
 from unittest.mock import ANY
@@ -21,15 +20,16 @@ from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.business.areas.st_storage_management import create_storage_output
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
 from tests.integration.utils import wait_task_completion
 
-_ST_STORAGE_860_CONFIG = create_st_storage_config(860, name="dummy")
-_ST_STORAGE_880_CONFIG = create_st_storage_config(880, name="dummy")
+_ST_STORAGE_860_CONFIG = create_st_storage_config(STUDY_VERSION_8_6, name="dummy")
+_ST_STORAGE_880_CONFIG = create_st_storage_config(STUDY_VERSION_8_8, name="dummy")
 
-_ST_STORAGE_OUTPUT_860 = create_storage_output(860, cluster_id="dummy", config={"name": "dummy"})
-_ST_STORAGE_OUTPUT_880 = create_storage_output(880, cluster_id="dummy", config={"name": "dummy"})
+_ST_STORAGE_OUTPUT_860 = create_storage_output(STUDY_VERSION_8_6, cluster_id="dummy", config={"name": "dummy"})
+_ST_STORAGE_OUTPUT_880 = create_storage_output(STUDY_VERSION_8_8, cluster_id="dummy", config={"name": "dummy"})
 
 DEFAULT_CONFIG_860 = _ST_STORAGE_860_CONFIG.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
 DEFAULT_CONFIG_880 = _ST_STORAGE_880_CONFIG.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
@@ -682,11 +682,8 @@ class TestSTStorage:
         actual = commands[1]
         expected = {
             "id": ANY,
-            "action": "update_config",
-            "args": {
-                "data": 0.5,
-                "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
-            },
+            "action": "update_st_storages",
+            "args": {"storage_properties": {"fr": {"siemens battery": {"initial_level": 0.5}}}},
             "version": 1,
             "updated_at": ANY,
             "user_name": ANY,
@@ -708,17 +705,12 @@ class TestSTStorage:
         actual = commands[2]
         expected = {
             "id": ANY,
-            "action": "update_config",
-            "args": [
-                {
-                    "data": 1600.0,
-                    "target": "input/st-storage/clusters/fr/list/siemens battery/injectionnominalcapacity",
-                },
-                {
-                    "data": 0.0,
-                    "target": "input/st-storage/clusters/fr/list/siemens battery/initiallevel",
-                },
-            ],
+            "action": "update_st_storages",
+            "args": {
+                "storage_properties": {
+                    "fr": {"siemens battery": {"initial_level": 0.0, "injection_nominal_capacity": 1600.0}}
+                }
+            },
             "version": 1,
             "updated_at": ANY,
             "user_name": ANY,
@@ -855,7 +847,7 @@ class TestSTStorage:
         assert actions == [
             "create_area",
             "create_st_storage",
-            "update_config",
+            "update_st_storages",
             "replace_matrix",
             "create_st_storage",
             "replace_matrix",
@@ -901,7 +893,7 @@ class TestSTStorage:
         assert list(content.keys()) == ["tesla1"]
         content["Tesla1"] = content.pop("tesla1")
         res = client.post(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list", json=content)
-        assert res.status_code == 204, res.json()
+        assert res.status_code == 200, res.json()
         res = client.get(f"/v1/studies/{variant_id}/raw?path=input/st-storage/clusters/{area_id}/list")
         assert res.status_code == 200, res.json()
         assert list(res.json().keys()) == ["Tesla1"]

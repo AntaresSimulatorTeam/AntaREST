@@ -16,7 +16,7 @@ import shutil
 import uuid
 from datetime import datetime
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, call
 
 import pytest
@@ -37,6 +37,8 @@ from antarest.study.main import build_study_service
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_7_0,
+    STUDY_VERSION_8_8,
     MatrixAggregationResultDTO,
     MatrixIndex,
     OwnerInfo,
@@ -51,6 +53,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 
@@ -70,7 +73,10 @@ CONFIG = Config(
 
 
 def create_test_client(
-    service: StudyService, file_transfer_manager: FileTransferManager = Mock(), raise_server_exceptions: bool = True
+    service: StudyService,
+    output_service: OutputService | None = None,
+    file_transfer_manager: FileTransferManager = Mock(),
+    raise_server_exceptions: bool = True,
 ) -> TestClient:
     app_ctxt = create_app_ctxt(FastAPI(title=__name__))
     build_study_service(
@@ -79,6 +85,7 @@ def create_test_client(
         task_service=Mock(),
         file_transfer_manager=file_transfer_manager,
         study_service=service,
+        output_service=output_service,
         config=CONFIG,
         user_service=Mock(),
         matrix_service=Mock(spec=MatrixService),
@@ -151,7 +158,20 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", "", [], PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", None, [], PARAMS)
+    storage_service.create_study.reset_mock()
+
+    result_right = client.post("/v1/studies?name=study2&version=8.8")
+    assert result_right.status_code == HTTPStatus.CREATED
+    assert result_right.json() == "my-uuid"
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], PARAMS)
+    storage_service.create_study.reset_mock()
+
+    result_right = client.post("/v1/studies?name=study2&version=880")
+    assert result_right.status_code == HTTPStatus.CREATED
+    assert result_right.json() == "my-uuid"
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], PARAMS)
+    storage_service.create_study.reset_mock()
 
 
 @pytest.mark.unit_test
@@ -195,8 +215,10 @@ def test_copy_study(tmp_path: Path) -> None:
     storage_service.copy_study.assert_called_with(
         src_uuid=UUID,
         dest_study_name="study-copied",
+        destination_folder=PurePosixPath(),
         group_ids=["admin"],
-        with_outputs=False,
+        with_outputs=None,
+        output_ids=[],
         use_task=True,
         params=PARAMS,
     )
@@ -209,7 +231,7 @@ def test_list_studies(tmp_path: str) -> None:
         "study1": StudyMetadataDTO(
             id="a",
             name="study1",
-            version=700,
+            version=STUDY_VERSION_7_0,
             created=str(datetime.utcfromtimestamp(0)),
             updated=str(datetime.utcfromtimestamp(0)),
             type="RawStudy",
@@ -223,7 +245,7 @@ def test_list_studies(tmp_path: str) -> None:
         "study2": StudyMetadataDTO(
             id="b",
             name="study2",
-            version=700,
+            version=STUDY_VERSION_7_0,
             created=str(datetime.utcfromtimestamp(0)),
             updated=str(datetime.utcfromtimestamp(0)),
             type="RawStudy",
@@ -249,7 +271,7 @@ def test_study_metadata(tmp_path: str) -> None:
     study = StudyMetadataDTO(
         id="a",
         name="b",
-        version=700,
+        version=STUDY_VERSION_7_0,
         created=str(datetime.utcfromtimestamp(0)),
         updated=str(datetime.utcfromtimestamp(0)),
         type="RawStudy",
@@ -370,7 +392,7 @@ def test_validate() -> None:
 
 @pytest.mark.unit_test
 def test_output_download(tmp_path: Path) -> None:
-    mock_service = Mock()
+    mock_output_service = Mock(spec=OutputService)
 
     output_data = MatrixAggregationResultDTO(
         index=MatrixIndex(),
@@ -391,7 +413,7 @@ def test_output_download(tmp_path: Path) -> None:
         ],
         warnings=[],
     )
-    mock_service.download_outputs.return_value = output_data
+    mock_output_service.download_outputs.return_value = output_data
 
     study_download = StudyDownloadDTO(
         type=StudyDownloadType.AREA,
@@ -405,7 +427,8 @@ def test_output_download(tmp_path: Path) -> None:
         includeClusters=True,
     )
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    client = create_test_client(mock_service, ftm, raise_server_exceptions=False)
+    mock_output_service._file_transfer_manager = ftm
+    client = create_test_client(Mock(), mock_output_service, ftm, raise_server_exceptions=False)
     res = client.post(
         f"/v1/studies/{UUID}/outputs/my-output-id/download",
         json=study_download.model_dump(),
@@ -415,7 +438,6 @@ def test_output_download(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_output_whole_download(tmp_path: Path) -> None:
-    mock_service = Mock()
     output_id = "my_output_id"
 
     expected = FileDownloadTaskDTO(
@@ -428,10 +450,13 @@ def test_output_whole_download(tmp_path: Path) -> None:
         ),
         task="some-task",
     )
-    mock_service.export_output.return_value = expected
 
     ftm = SimpleFileTransferManager(Config(storage=StorageConfig(tmp_dir=tmp_path)))
-    client = create_test_client(mock_service, ftm, raise_server_exceptions=False)
+    output_service = Mock(spec=OutputService)
+    output_service._study_service = Mock()
+    output_service.export_output.return_value = expected
+    output_service._file_transfer_manager = ftm
+    client = create_test_client(Mock(), output_service, ftm, raise_server_exceptions=False)
     res = client.get(
         f"/v1/studies/{UUID}/outputs/{output_id}/export",
     )
@@ -439,21 +464,7 @@ def test_output_whole_download(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_sim_reference() -> None:
-    mock_service = Mock()
-    study_id = str(uuid.uuid4())
-    output_id = "my-output-id"
-
-    client = create_test_client(mock_service, raise_server_exceptions=False)
-    res = client.put(f"/v1/studies/{study_id}/outputs/{output_id}/reference")
-    mock_service.set_sim_reference.assert_called_once_with(study_id, output_id, True, PARAMS)
-    assert res.status_code == HTTPStatus.OK
-    assert res.json() == ""
-
-
-@pytest.mark.unit_test
 def test_sim_result() -> None:
-    mock_service = Mock()
     study_id = str(uuid.uuid4())
     settings = StudySimSettingsDTO(
         general={},
@@ -470,17 +481,20 @@ def test_sim_result() -> None:
             type="economy",
             settings=settings,
             completionDate="",
-            referenceStatus=True,
-            synchronized=False,
             status="",
             archived=False,
         )
     ]
-    mock_service.get_study_sim_result.return_value = result_data
 
-    client = create_test_client(mock_service, raise_server_exceptions=False)
+    output_service = Mock(spec=OutputService)
+    output_service._study_service = Mock()
+    output_service.get_study_sim_result.return_value = result_data
+    ftm = Mock(spec=FileTransferManager)
+    output_service._file_transfer_manager = ftm
+
+    client = create_test_client(Mock(), output_service, raise_server_exceptions=False)
     res = client.get(f"/v1/studies/{study_id}/outputs")
-    actual_object = [StudySimResultDTO.parse_obj(res.json()[0])]
+    actual_object = [StudySimResultDTO.model_validate(res.json()[0])]
     assert actual_object == result_data
 
 
@@ -530,4 +544,4 @@ def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == [f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES]
+    assert result.json() == sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])

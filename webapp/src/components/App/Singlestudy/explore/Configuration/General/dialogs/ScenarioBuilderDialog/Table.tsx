@@ -13,19 +13,19 @@
  */
 
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
+import type { StudyMetadata } from "../../../../../../../../types/types";
+import { toError } from "../../../../../../../../utils/fnUtils";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
+import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
 import {
   updateScenarioBuilderConfig,
+  type ClustersHandlerReturn,
   type GenericScenarioConfig,
   type ScenarioType,
-  type ClustersHandlerReturn,
 } from "./utils";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import EmptyView from "../../../../../../../common/page/EmptyView";
-import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
-import { toError } from "../../../../../../../../utils/fnUtils";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../../../common/types";
 
 interface Props {
   config: GenericScenarioConfig | ClustersHandlerReturn;
@@ -79,8 +79,7 @@ function Table({ config, type, areaId }: Props) {
         type: "numeric",
         placeholder: "rand",
         allowEmpty: true,
-        colHeaders: (index) =>
-          `${t("study.configuration.general.mcScenarioBuilder.year")} ${index + 1}`,
+        colHeaders: (index) => `${t("global.year")} ${index + 1}`,
         className: "htCenter",
       }}
       onSubmit={handleSubmit}

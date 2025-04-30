@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Typography, Grid } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 import type { FieldArrayWithId } from "react-hook-form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import type { AllocationFormFields } from "./utils";
-import { validateNumber } from "@/utils/validation/number";
 
 interface Props {
   field: FieldArrayWithId<AllocationFormFields, "allocation">;
@@ -50,8 +49,7 @@ function AllocationField({ field, index, label }: Props) {
           key={field.id}
           name={`allocation.${index}.coefficient` as const}
           control={control}
-          size="small"
-          rules={{ validate: validateNumber({ min: 0 }) }}
+          margin="dense"
         />
       </Grid>
     </>

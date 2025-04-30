@@ -1,0 +1,7 @@
+html, body, #root {
+    height: 100%;
+}
+
+#root {
+    background: url("/assets/img/top-right-background.png") top right / 30% no-repeat;
+}

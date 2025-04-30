@@ -861,10 +861,10 @@ def test_get_all__study_tags_filter(
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
 
+# fmt: off
 @pytest.mark.parametrize(
     "user_id, study_groups, expected_ids",
     [
-        # fmt: off
         (101, [], ["1", "2", "5", "6", "7", "8", "9", "10", "13", "14", "15", "16", "17", "18",
                    "21", "22", "23", "24", "25", "26", "29", "30", "31", "32", "34"]),
         (101, ["101"], ["1", "7", "8", "9", "17", "23", "24", "25"]),
@@ -901,9 +901,9 @@ def test_get_all__study_tags_filter(
         (None, ["101", "103"], []),
         (None, ["102", "103"], []),
         (None, ["101", "102", "103"], []),
-        # fmt: on
     ],
 )
+# fmt: on
 def test_get_all__non_admin_permissions_filter(
     db_session: Session,
     user_id: t.Optional[int],
@@ -974,16 +974,16 @@ def test_get_all__non_admin_permissions_filter(
     study_38 = RawStudy(id=38, name="study-X38", groups=[group_3])
 
     db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
+    # fmt: off
     db_session.add_all(
         [
-            # fmt: off
             study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8, study_9, study_10,
             study_11, study_12, study_13, study_14, study_15, study_16, study_17, study_18, study_19, study_20,
             study_21, study_22, study_23, study_24, study_25, study_26, study_27, study_28, study_29, study_30,
-            study_31, study_32, study_33, study_34, study_35, study_36, study_37, study_38,
-            # fmt: on
-        ]
+            study_31, study_32, study_33, study_34, study_35, study_36, study_37, study_38
+            ]
     )
+    # fmt: on
     db_session.commit()
 
     access_permissions = (
@@ -1019,11 +1019,10 @@ def test_get_all__non_admin_permissions_filter(
         assert sorted((s.id for s in all_studies), key=int) == expected_ids[2:4]
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
-
+# fmt: off
 @pytest.mark.parametrize(
     "is_admin, study_groups, expected_ids",
     [
-        # fmt: off
         (True, [], [str(e) for e in range(1, 39)]),
         (True, ["101"], ["1", "3", "4", "7", "8", "9", "17", "19", "20", "23", "24", "25", "33"]),
         (True, ["102"], ["2", "5", "6", "7", "8", "9", "18", "21", "22", "23", "24", "25", "34"]),
@@ -1040,9 +1039,9 @@ def test_get_all__non_admin_permissions_filter(
         (False, ["101", "102"], []),
         (False, ["101", "103"], []),
         (False, ["101", "102", "103"], []),
-        # fmt: on
     ],
 )
+# fmt: on
 def test_get_all__admin_permissions_filter(
     db_session: Session,
     is_admin: bool,
@@ -1110,16 +1109,16 @@ def test_get_all__admin_permissions_filter(
     study_38 = RawStudy(id=38, name="study-X38", groups=[group_3])
 
     db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
+    # fmt: off
     db_session.add_all(
         [
-            # fmt: off
             study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8, study_9, study_10,
             study_11, study_12, study_13, study_14, study_15, study_16, study_17, study_18, study_19, study_20,
             study_21, study_22, study_23, study_24, study_25, study_26, study_27, study_28, study_29, study_30,
-            study_31, study_32, study_33, study_34, study_35, study_36, study_37, study_38,
-            # fmt: on
-        ]
+            study_31, study_32, study_33, study_34, study_35, study_36, study_37, study_38
+            ]
     )
+    # fmt: on
     db_session.commit()
 
     access_permissions = AccessPermissions(is_admin=is_admin)
