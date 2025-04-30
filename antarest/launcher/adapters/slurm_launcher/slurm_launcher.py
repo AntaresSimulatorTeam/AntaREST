@@ -212,6 +212,9 @@ class SlurmLauncher(AbstractLauncher):
             self.start()
 
     def _loop(self) -> None:
+        # The loop is executed as admin user
+        # It could be more accurate to execute each part
+        # of the processing as the user that launched the job
         with current_user_context(DEFAULT_ADMIN_USER):
             while self.check_state:
                 # noinspection PyBroadException
