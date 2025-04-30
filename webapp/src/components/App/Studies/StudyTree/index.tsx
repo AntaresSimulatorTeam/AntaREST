@@ -17,9 +17,8 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { toError } from "@/utils/fnUtils";
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
 import * as R from "ramda";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useUpdateEffect } from "react-use";
 import { updateStudyFilters } from "../../../../redux/ducks/studies";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
@@ -27,26 +26,35 @@ import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
-import type { NonStudyFolderDTO } from "./types";
-import { insertFoldersIfNotExist } from "./utils";
+import { insertIfNotExist } from "./utils";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
-  const [subFolders, setSubFolders] = useState<NonStudyFolderDTO[]>([]);
+  const [workspaces, setWorkspaces] = useState<string[]>([]);
+  const [subFolders, setSubFolders] = useState(storage.getItem(StorageKey.StudyTreeFolders) || []);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
-  useUpdateEffect(() => {
-    const nextStudiesTree = insertFoldersIfNotExist(initialStudiesTree, subFolders);
-    setStudiesTree(nextStudiesTree);
-    // subFolders isn't a dependency because we don't want to trigger this code
+  useEffect(() => {
+    api.getWorkspaces().then((nextWorkspaces) => {
+      const nextStudyTree = insertIfNotExist(initialStudiesTree, nextWorkspaces, subFolders);
+      setStudiesTree(nextStudyTree);
+      setWorkspaces(nextWorkspaces);
+    });
+    // subFolders isn't listed as a dependency because we don't want to trigger this code
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStudiesTree]);
+
+  useUpdateEffect(() => {
+    storage.setItem(StorageKey.StudyTreeFolders, subFolders);
+  }, [subFolders]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -85,11 +93,14 @@ function StudyTree() {
 
       if (newSubFolders.length > 0) {
         // use union to prioritize new subfolders
-        const nextSubfolders = R.unionWith(R.eqBy(R.prop("path")), newSubFolders, subFolders);
+        const thisParent = ["", workspace, ...subPath].join("/");
+        const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
+        const nextSubfolders = [...newSubFolders, ...otherSubfolders];
+
         setSubFolders(nextSubfolders);
 
-        const nextStudiesTree = insertFoldersIfNotExist(studiesTree, nextSubfolders);
-        setStudiesTree(nextStudiesTree);
+        const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
+        setStudiesTree(nextStudyTree);
       }
     } catch (err) {
       enqueueErrorSnackbar(
