@@ -1001,13 +1001,13 @@ class StudyService:
 
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
-        missing_studies = {study.path: study for study in all_studies if study.missing is not None}
+        missing_studies = {(study.workspace, study.path): study for study in all_studies if study.missing is not None}
         for folder in folders:
             study_path = str(folder.path)
             workspace = folder.workspace
             if (workspace, study_path) not in study_paths:
                 try:
-                    if study_path not in missing_studies.keys():
+                    if (workspace, study_path) not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[folder.workspace].path
                         dir_name = folder.path.relative_to(base_path)
                         study = RawStudy(
@@ -1026,7 +1026,7 @@ class StudyService:
                             study.id,
                         )
                     else:
-                        study = missing_studies[study_path]
+                        study = missing_studies[(workspace, study_path)]
                         study.missing = None
                         logger.info(
                             "Study at %s re appears on disk and will be added as %s",
