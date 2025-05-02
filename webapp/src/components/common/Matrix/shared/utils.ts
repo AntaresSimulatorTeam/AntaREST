@@ -47,9 +47,10 @@ import { groupHeaderTheme } from "../styles";
  * formatGridNumber({ value: 0, maxDecimals: 6 }) // "0"
  * formatGridNumber({ value: undefined }) // ""
  * formatGridNumber({ value: NaN }) // ""
+ * formatGridNumber({ value: "1234.56", maxDecimals: 1 }) // "1 234.5"
  * ```
  * @param options - The formatting options
- * @param options.value - The number to format.
+ * @param options.value - The number or numeric string to format.
  * @param options.maxDecimals - Maximum number of decimal places to show.
  * @returns A formatted string representation of the number with proper separators.
  */
@@ -355,7 +356,6 @@ export function groupResultColumns(
 /**
  * Generates an array of ResultColumn objects from a 2D array of column titles.
  * Each title array should follow the format [variable, unit, stat] as used in result matrices.
- 
  * This function is designed to work in conjunction with groupResultColumns()
  * to create properly formatted and grouped result matrix columns.
  *

@@ -16,14 +16,12 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
-from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
@@ -84,21 +82,15 @@ def create_raw_study_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get(
         "/studies/{uuid}/raw",
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study_data(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        depth: int = 3,
-        formatted: bool = True,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_data(uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True) -> Any:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -113,13 +105,12 @@ def create_raw_study_routes(
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
-        parameters = RequestParameters(user=current_user)
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted, params=parameters)
+        output = study_service.get(uuid, path, depth=depth, formatted=formatted)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
-            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
+            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True)
             child = parent_cfg[resource_path.name]
             suffix = PurePosixPath(child).suffix
 
@@ -170,11 +161,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Any:
         """
         Fetches for a file in its original format from a study folder
 
@@ -185,8 +172,7 @@ def create_raw_study_routes(
         Returns the fetched file in its original format.
         """
         logger.info(f"📘 Fetching file at {path} from study {uuid}")
-        parameters = RequestParameters(user=current_user)
-        original_file = study_service.get_file(uuid, path, params=parameters)
+        original_file = study_service.get_file(uuid, path)
         filename = original_file.filename
         output = original_file.content
         suffix = original_file.suffix
@@ -215,11 +201,10 @@ def create_raw_study_routes(
                 },
             ),
         ] = "/",
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
-        study_service.delete_user_file_or_folder(uuid, path, current_user)
+        study_service.delete_user_file_or_folder(uuid, path)
 
     @bp.post(
         "/studies/{uuid}/raw",
@@ -227,12 +212,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
-    def edit_study(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        data: SUB_JSON = Body(default=""),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
         """
         Updates raw data for a study by posting formatted data.
 
@@ -247,8 +227,7 @@ def create_raw_study_routes(
         """
         logger.info(f"Editing data at {path} for study {uuid}")
         path = sanitize_string(path)
-        params = RequestParameters(user=current_user)
-        return study_service.edit_study(uuid, path, data, params)
+        return study_service.edit_study(uuid, path, data)
 
     @bp.put(
         "/studies/{uuid}/raw",
@@ -265,7 +244,6 @@ def create_raw_study_routes(
             description="Create file or parent directories if missing.",
         ),  # type: ignore
         resource_type: ResourceType = ResourceType.FILE,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
         Update raw data for a study by posting a raw file or by creating folder(s).
@@ -285,13 +263,12 @@ def create_raw_study_routes(
             raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
 
         path = sanitize_string(path)
-        params = RequestParameters(user=current_user)
         if resource_type == ResourceType.FOLDER and create_missing:  # type: ignore
             logger.info(f"Creating folder {path} for study {uuid}")
-            study_service.create_user_folder(uuid, path, current_user)
+            study_service.create_user_folder(uuid, path)
         else:
             logger.info(f"Uploading new data file at {path} for study {uuid}")
-            study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
+            study_service.edit_study(uuid, path, file, create_missing=create_missing)
 
     @bp.get(
         "/studies/{uuid}/raw/validate",
@@ -299,10 +276,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def validate(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[str]:
+    def validate(uuid: str) -> List[str]:
         """
         Launches test validation on the raw data of a study.
         The validation is done recursively on all the files in the study
@@ -334,7 +308,6 @@ def create_raw_study_routes(
         with_index: bool = Query(  # type: ignore
             True, alias="index", description="Whether to include the index or not", title="With Index"
         ),
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         """
         Download a matrix in a given format.
@@ -356,13 +329,8 @@ def create_raw_study_routes(
         uuid = sanitize_uuid(uuid)
         matrix_path = sanitize_string(matrix_path)
 
-        parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
-            study_id=uuid,
-            path=matrix_path,
-            with_index=with_index,
-            with_header=with_header,
-            parameters=parameters,
+            study_id=uuid, path=matrix_path, with_index=with_index, with_header=with_header
         )
 
         matrix_name = Path(matrix_path).stem
@@ -377,7 +345,6 @@ def create_raw_study_routes(
             with_header,
             download_name,
             download_log,
-            current_user,
         )
 
     return bp

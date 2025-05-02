@@ -30,7 +30,6 @@ from antarest.core.exceptions import UrlNotMatchJsonDataError
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
@@ -54,6 +53,7 @@ from antarest.study.model import (
 )
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
+from tests.helpers import with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 
@@ -63,7 +63,6 @@ ADMIN = JWTUser(
     type="users",
     groups=[JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)],
 )
-PARAMS = RequestParameters(user=ADMIN)
 
 CONFIG = Config(
     resources_path=Path(),
@@ -101,9 +100,7 @@ def test_server() -> None:
     client = create_test_client(mock_service)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
-    mock_service.get.assert_called_once_with(
-        "study1", "settings/general/params", depth=3, formatted=True, params=PARAMS
-    )
+    mock_service.get.assert_called_once_with("study1", "settings/general/params", depth=3, formatted=True)
 
 
 @pytest.mark.unit_test
@@ -127,10 +124,8 @@ def test_server_with_parameters() -> None:
     client = create_test_client(mock_storage_service)
     result = client.get("/v1/studies/study1/raw?depth=4")
 
-    parameters = RequestParameters(user=ADMIN)
-
     assert result.status_code == HTTPStatus.OK
-    mock_storage_service.get.assert_called_once_with("study1", "/", depth=4, formatted=True, params=parameters)
+    mock_storage_service.get.assert_called_once_with("study1", "/", depth=4, formatted=True)
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -138,8 +133,7 @@ def test_server_with_parameters() -> None:
     result = client.get("/v1/studies/study2/raw")
     assert result.status_code == HTTPStatus.OK
 
-    excepted_parameters = RequestParameters(user=ADMIN)
-    mock_storage_service.get.assert_called_with("study2", "/", depth=3, formatted=True, params=excepted_parameters)
+    mock_storage_service.get.assert_called_with("study2", "/", depth=3, formatted=True)
 
 
 @pytest.mark.unit_test
@@ -158,19 +152,19 @@ def test_create_study(tmp_path: str, project_path) -> None:
 
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", None, [], PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", None, [])
     storage_service.create_study.reset_mock()
 
     result_right = client.post("/v1/studies?name=study2&version=8.8")
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [])
     storage_service.create_study.reset_mock()
 
     result_right = client.post("/v1/studies?name=study2&version=880")
     assert result_right.status_code == HTTPStatus.CREATED
     assert result_right.json() == "my-uuid"
-    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [], PARAMS)
+    storage_service.create_study.assert_called_once_with("study2", STUDY_VERSION_8_8, [])
     storage_service.create_study.reset_mock()
 
 
@@ -203,6 +197,7 @@ def test_import_study_zipped(tmp_path: Path, project_path) -> None:
     mock_storage_service.import_study.assert_called_once()
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_copy_study(tmp_path: Path) -> None:
     storage_service = Mock()
@@ -220,11 +215,11 @@ def test_copy_study(tmp_path: Path) -> None:
         with_outputs=None,
         output_ids=[],
         use_task=True,
-        params=PARAMS,
     )
     assert result.status_code == HTTPStatus.CREATED
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_list_studies(tmp_path: str) -> None:
     studies = {
@@ -326,7 +321,7 @@ def test_export_files(tmp_path: Path) -> None:
 
     assert FileDownloadTaskDTO(**result).model_dump_json() == expected.model_dump_json()
 
-    mock_storage_service.export_study.assert_called_once_with(UUID, PARAMS, True)
+    mock_storage_service.export_study.assert_called_once_with(UUID, True)
 
 
 @pytest.mark.unit_test
@@ -349,8 +344,8 @@ def test_export_params(tmp_path: Path) -> None:
     client.get(f"/v1/studies/{UUID}/export?no_output=false")
     mock_storage_service.export_study.assert_has_calls(
         [
-            call(Markup(UUID), PARAMS, False),
-            call(Markup(UUID), PARAMS, True),
+            call(Markup(UUID), False),
+            call(Markup(UUID), True),
         ]
     )
 
@@ -364,7 +359,7 @@ def test_delete_study() -> None:
     study_uuid = "8319b5f8-2a35-4984-9ace-2ab072bd6eef"
     client.delete(f"/v1/studies/{study_uuid}")
 
-    mock_storage_service.delete_study.assert_called_once_with(study_uuid, False, PARAMS)
+    mock_storage_service.delete_study.assert_called_once_with(study_uuid, False)
 
 
 @pytest.mark.unit_test
@@ -375,7 +370,7 @@ def test_edit_study() -> None:
     client = create_test_client(mock_storage_service)
     client.post("/v1/studies/my-uuid/raw?path=url/to/change", json={"Hello": "World"})
 
-    mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"}, PARAMS)
+    mock_storage_service.edit_study.assert_called_once_with("my-uuid", "url/to/change", {"Hello": "World"})
 
 
 @pytest.mark.unit_test
@@ -504,35 +499,19 @@ def test_study_permission_management(tmp_path: Path) -> None:
     client = create_test_client(storage_service, raise_server_exceptions=False)
 
     result = client.put(f"/v1/studies/{UUID}/owner/2")
-    storage_service.change_owner.assert_called_with(
-        UUID,
-        2,
-        PARAMS,
-    )
+    storage_service.change_owner.assert_called_with(UUID, 2)
     assert result.status_code == HTTPStatus.OK
 
     result = client.put(f"/v1/studies/{UUID}/groups/group-a")
-    storage_service.add_group.assert_called_with(
-        UUID,
-        "group-a",
-        PARAMS,
-    )
+    storage_service.add_group.assert_called_with(UUID, "group-a")
     assert result.status_code == HTTPStatus.OK
 
     result = client.delete(f"/v1/studies/{UUID}/groups/group-b")
-    storage_service.remove_group.assert_called_with(
-        UUID,
-        "group-b",
-        PARAMS,
-    )
+    storage_service.remove_group.assert_called_with(UUID, "group-b")
     assert result.status_code == HTTPStatus.OK
 
     result = client.put(f"/v1/studies/{UUID}/public_mode/FULL")
-    storage_service.set_public_mode.assert_called_with(
-        UUID,
-        PublicMode.FULL,
-        PARAMS,
-    )
+    storage_service.set_public_mode.assert_called_with(UUID, PublicMode.FULL)
     assert result.status_code == HTTPStatus.OK
 
     result = client.put(f"/v1/studies/{UUID}/public_mode/UNKNOWN")

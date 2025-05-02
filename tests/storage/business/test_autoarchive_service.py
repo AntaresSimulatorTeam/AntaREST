@@ -17,8 +17,6 @@ from unittest.mock import Mock
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
-from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.core.requests import RequestParameters
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -90,14 +88,12 @@ def test_auto_archival(tmp_path: Path):
     auto_archive_service._try_archive_studies()
 
     # Check that the raw study "d" was about to be archived but failed because the task was already running
-    study_service.archive.assert_called_once_with("d", params=RequestParameters(DEFAULT_ADMIN_USER))
+    study_service.archive.assert_called_once_with("d")
 
     # Check that the variant outputs are deleted for the variant study "e"
-    auto_archive_service.output_service.archive_outputs.assert_called_once_with(
-        "e", params=RequestParameters(DEFAULT_ADMIN_USER)
-    )
+    auto_archive_service.output_service.archive_outputs.assert_called_once_with("e")
 
     # Check if the `clear_all_snapshots` method was called with default values
     study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
-        datetime.timedelta(days=7), params=RequestParameters(DEFAULT_ADMIN_USER)
+        datetime.timedelta(days=7)
     )

@@ -21,17 +21,17 @@ from sqlalchemy import event
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
+from antarest.login.utils import current_user_context
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import AnyUUID, with_db_context
+from tests.helpers import AnyUUID, with_admin_user, with_db_context
 
 
 class TestVariantStudyService:
@@ -87,19 +87,17 @@ class TestVariantStudyService:
             variant_study_service.repository.save(root_study)
         return root_study_id
 
+    @with_admin_user
     @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
     def test_commands_service(
         self,
         root_study_id: str,
-        jwt_user: JWTUser,
         generator_matrix_constants: GeneratorMatrixConstants,
         variant_study_service: VariantStudyService,
     ) -> None:
-        params = RequestParameters(user=jwt_user)
-
         # Create a new variant
-        variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant", params=params)
+        variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant")
         study_version = StudyVersion.parse(variant_study.version)
         saved_id = variant_study.id
         study = variant_study_service.repository.get(saved_id)
@@ -110,34 +108,34 @@ class TestVariantStudyService:
         # Append commands one at the time
         command_count = 0
         command_1 = CommandDTO(action="create_area", args={"area_name": "Yes"}, study_version=study_version)
-        variant_study_service.append_command(saved_id, command_1, params=params)
+        variant_study_service.append_command(saved_id, command_1)
         command_count += 1
 
         command_2 = CommandDTO(action="create_area", args={"area_name": "No"}, study_version=study_version)
-        variant_study_service.append_command(saved_id, command_2, params=params)
+        variant_study_service.append_command(saved_id, command_2)
         command_count += 1
 
-        commands = variant_study_service.get_commands(saved_id, params=params)
+        commands = variant_study_service.get_commands(saved_id)
         assert len(commands) == command_count
 
         # Append multiple commands
         command_3 = CommandDTO(action="create_area", args={"area_name": "Maybe"}, study_version=study_version)
         command_4 = CommandDTO(action="create_link", args={"area1": "no", "area2": "yes"}, study_version=study_version)
-        variant_study_service.append_commands(saved_id, [command_3, command_4], params=params)
+        variant_study_service.append_commands(saved_id, [command_3, command_4])
         command_count += 2
 
-        commands = variant_study_service.get_commands(saved_id, params=params)
+        commands = variant_study_service.get_commands(saved_id)
         assert len(commands) == command_count
 
         # Get command
         assert commands[0] == CommandDTOAPI.model_validate(
-            variant_study_service.get_command(saved_id, commands[0].id, params=params).model_dump(
+            variant_study_service.get_command(saved_id, commands[0].id).model_dump(
                 mode="json", exclude={"study_version"}
             )
         )
 
         # Remove command (area "Maybe")
-        variant_study_service.remove_command(saved_id, commands[2].id, params=params)
+        variant_study_service.remove_command(saved_id, commands[2].id)
         command_count -= 1
 
         # Create a thermal cluster in the area "Yes"
@@ -150,10 +148,10 @@ class TestVariantStudyService:
             },
             study_version=study_version,
         )
-        variant_study_service.append_command(saved_id, command_5, params=params)
+        variant_study_service.append_command(saved_id, command_5)
         command_count += 1
 
-        commands = variant_study_service.get_commands(saved_id, params=params)
+        commands = variant_study_service.get_commands(saved_id)
         assert len(commands) == command_count
 
         # Generate using the SnapshotGenerator
@@ -164,7 +162,7 @@ class TestVariantStudyService:
             study_factory=variant_study_service.study_factory,
             repository=variant_study_service.repository,
         )
-        results = generator.generate_snapshot(saved_id, jwt_user, denormalize=False)
+        results = generator.generate_snapshot(saved_id, denormalize=False)
         assert results.model_dump() == {
             "success": True,
             "details": [
@@ -217,24 +215,21 @@ class TestVariantStudyService:
             Test authors of the commands
         """
         # Get the owner request parameters
-        owner_params = RequestParameters(user=jwt_user)
 
         # create another user that has the write privilege
-        user2 = User(id=3, name="jane.doe", type="users")
-        db.session.add(user2)
+        other_user = User(id=3, name="jane.doe", type="users")
+        db.session.add(other_user)
         db.session.commit()
-
-        user2_params = RequestParameters(
-            user=JWTUser(
-                id=user2.id,
-                impersonator=user2.id,
-                type="users",
-                groups=[JWTGroup(id="writers", name="writers", role=RoleType.WRITER)],
-            )
+        user2 = JWTUser(
+            id=other_user.id,
+            impersonator=other_user.id,
+            type="users",
+            groups=[JWTGroup(id="writers", name="writers", role=RoleType.WRITER)],
         )
 
         # Generate a variant on a study that allow other user to edit it
-        variant_study = variant_study_service.create_variant_study(root_study_id, "new variant", params=owner_params)
+        with current_user_context(jwt_user):
+            variant_study = variant_study_service.create_variant_study(root_study_id, "new variant")
         study_version = StudyVersion.parse(variant_study.version)
         variant_id = variant_study.id
 
@@ -244,11 +239,15 @@ class TestVariantStudyService:
             action="update_comments", args={"comments": "another new comment"}, study_version=study_version
         )
 
-        variant_study_service.append_command(variant_id, command_6, params=owner_params)
-        variant_study_service.append_command(variant_id, command_7, params=user2_params)
+        with current_user_context(jwt_user):
+            variant_study_service.append_command(variant_id, command_6)
+
+        with current_user_context(user2):
+            variant_study_service.append_command(variant_id, command_7)
 
         # Make sure there are commands generated by both users
-        commands = variant_study_service.get_commands(variant_id, params=owner_params)
+        with current_user_context(jwt_user):
+            commands = variant_study_service.get_commands(variant_id)
         assert len(commands) == 2
 
         # Make sure their `user_name` and `updated_at` attributes are not None
@@ -290,10 +289,9 @@ class TestVariantStudyService:
                 nonlocal nb_queries
                 nb_queries += 1
 
-        owner_params = RequestParameters(user=jwt_user)
-
         # Generate a variant on a study that allow other user to edit it
-        variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant", params=owner_params)
+        with current_user_context(jwt_user):
+            variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant")
 
         commands = []
 
@@ -306,8 +304,10 @@ class TestVariantStudyService:
                     study_version=StudyVersion.parse(variant_study.version),
                 )
             )
-        variant_study_service.append_commands(variant_study.id, commands, params=owner_params)
+        with current_user_context(jwt_user):
+            variant_study_service.append_commands(variant_study.id, commands)
 
         nb_queries_before = nb_queries  # store initial state
-        variant_study_service.get_commands(variant_study.id, params=owner_params)  # execute database query
+        with current_user_context(jwt_user):
+            variant_study_service.get_commands(variant_study.id)  # execute database query
         assert nb_queries_before + 1 == nb_queries  # compare with initial state to make sure database was queried once
