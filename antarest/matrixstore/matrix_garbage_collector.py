@@ -22,9 +22,9 @@ from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
+from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
-from antarest.matrixstore.uri_resolver_service import extract_matrix_id
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand

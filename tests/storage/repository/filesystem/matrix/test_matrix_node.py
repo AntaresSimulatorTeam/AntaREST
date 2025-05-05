@@ -16,7 +16,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode

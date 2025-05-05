@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.common.area_matrix_list import AreaMatrixList
 from antarest.study.storage.rawstudy.model.filesystem.common.prepro import InputPrepro
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig

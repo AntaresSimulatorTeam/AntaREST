@@ -18,8 +18,8 @@ from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.matrixstore.service import MatrixService
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.model import (
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_1,

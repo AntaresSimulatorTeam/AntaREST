@@ -21,7 +21,7 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,

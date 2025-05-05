@@ -15,7 +15,7 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.core.utils.archives import extract_lines_from_archive
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 

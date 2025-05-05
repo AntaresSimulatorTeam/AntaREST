@@ -14,8 +14,8 @@ from pathlib import Path
 import pytest
 from antares.study.version.create_app import CreateApp
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface

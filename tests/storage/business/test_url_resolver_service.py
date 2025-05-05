@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper, build_matrix_uri
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, build_matrix_uri
 
 MOCK_MATRIX = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 

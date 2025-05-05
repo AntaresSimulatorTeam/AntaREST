@@ -28,6 +28,9 @@ def build_matrix_uri(id: str) -> str:
 class MatrixUriMapper:
     """
     In charge of mapping matrix URI to actual data and back.
+
+    The only actual URI schema supported is "matrix://<id>", which
+    maps to a matrix stored in the matrix service.
     """
 
     def __init__(self, matrix_service: ISimpleMatrixService):
