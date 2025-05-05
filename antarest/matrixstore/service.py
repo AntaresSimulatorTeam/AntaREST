@@ -151,14 +151,18 @@ class SimpleMatrixService(ISimpleMatrixService):
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
+        if matrix_id in self._providers:
+            return self._providers[matrix_id]()
         return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return self.matrix_content_repository.exists(matrix_id)
+        return matrix_id in self._providers or self.matrix_content_repository.exists(matrix_id)
 
     @override
     def delete(self, matrix_id: str) -> None:
+        if matrix_id in self._providers:
+            del self._providers[matrix_id]
         self.matrix_content_repository.delete(matrix_id)
 
 

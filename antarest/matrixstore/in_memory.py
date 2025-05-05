@@ -42,12 +42,16 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def get(self, matrix_id: str) -> pd.DataFrame:
+        if matrix_id in self._providers:
+            return self._providers[matrix_id]()
         return self._content[matrix_id]
 
     @override
     def exists(self, matrix_id: str) -> bool:
-        return matrix_id in self._content
+        return matrix_id in self._providers or matrix_id in self._content
 
     @override
     def delete(self, matrix_id: str) -> None:
+        if matrix_id in self._providers:
+            del self._providers[matrix_id]
         del self._content[matrix_id]
