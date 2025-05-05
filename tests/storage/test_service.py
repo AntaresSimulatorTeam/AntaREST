@@ -294,6 +294,7 @@ def test_sync_studies_from_disk() -> None:
         id="e",
         path="e",
         folder="e",
+        name="e",
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
@@ -325,25 +326,45 @@ def test_sync_studies_from_disk() -> None:
     # a and f also exist in workspace 2 so they should be added with workspace set to workspace2
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
 
-    class MockRawStudy(RawStudy):
-        def __eq__(self, other):
-            if self.path != other.path:
-                return False
-            if self.workspace != other.workspace:
-                return False
-            if self.folder != other.folder:
-                return False
-            if self.missing != other.missing:
-                return False
-            return True
-
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
         [
-            call(MockRawStudy(path="a", name="a", folder="a", workspace="workspace2", missing=None)),
-            call(MockRawStudy(path="e", name="e", folder="e", workspace="workspace1", missing=None)),
-            call(MockRawStudy(path="f", name="f", folder="f", workspace="workspace1", missing=None)),
-            call(MockRawStudy(path="f", name="f", folder="f", workspace="workspace2", missing=None)),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="a",
+                    name="a",
+                    folder="a",
+                    workspace="workspace2",
+                    missing=None,
+                    public_mode=PublicMode.FULL,
+                )
+            ),
+            call(
+                RawStudy(id="e", path="e", name="e", folder="e", workspace="workspace1", missing=None, created_at=now)
+            ),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    name="f",
+                    folder="f",
+                    workspace="workspace1",
+                    missing=None,
+                    public_mode=PublicMode.FULL,
+                )
+            ),
+            call(
+                RawStudy(
+                    id=ANY,
+                    path="f",
+                    name="f",
+                    folder="f",
+                    workspace="workspace2",
+                    missing=None,
+                    public_mode=PublicMode.FULL,
+                )
+            ),
         ]
     )
 
