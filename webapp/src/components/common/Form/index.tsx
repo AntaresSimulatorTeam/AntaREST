@@ -13,6 +13,26 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import RedoIcon from "@mui/icons-material/Redo";
+import SaveIcon from "@mui/icons-material/Save";
+import UndoIcon from "@mui/icons-material/Undo";
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Divider,
+  IconButton,
+  setRef,
+  Tooltip,
+  type ButtonProps,
+  type SxProps,
+  type Theme,
+} from "@mui/material";
+import axios from "axios";
+import clsx from "clsx";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef } from "react";
 import {
   FormProvider,
@@ -26,36 +46,16 @@ import {
   type UseFormProps,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import * as RA from "ramda-adjunct";
-import {
-  Box,
-  CircularProgress,
-  Divider,
-  IconButton,
-  setRef,
-  Tooltip,
-  type SxProps,
-  type Theme,
-  type ButtonProps,
-  Button,
-} from "@mui/material";
-import SaveIcon from "@mui/icons-material/Save";
 import { useUpdateEffect } from "react-use";
-import * as R from "ramda";
-import clsx from "clsx";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
-import axios from "axios";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useDebounce from "../../../hooks/useDebounce";
-import { ROOT_ERROR_KEY, getDirtyValues, stringToPath, toAutoSubmitConfig } from "./utils";
 import useDebouncedState from "../../../hooks/useDebouncedState";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
+import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { mergeSxProp } from "../../../utils/muiUtils";
 import FormContext from "./FormContext";
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { mergeSxProp } from "../../../utils/muiUtils";
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { getDirtyValues, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -92,6 +92,7 @@ export interface FormProps<
   sx?: SxProps<Theme>;
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
   disableStickyFooter?: boolean;
+  extraActions?: React.ReactNode;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
@@ -117,6 +118,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
   sx,
   apiRef,
   disableStickyFooter,
+  extraActions,
   ...formProps
 }: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -170,7 +172,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
   const isSubmitAllowed = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
-  const showFooter = showSubmitButton || enableUndoRedo || rootError;
+  const showFooter = showSubmitButton || enableUndoRedo || extraActions || rootError;
 
   const formApiPlus = useFormApiPlus({
     formApi,
@@ -363,7 +365,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
               {rootError.message || t("form.submit.error")}
             </Box>
           )}
-          <Box className="Form__Footer__Actions" sx={{ display: "flex" }}>
+          <Box className="Form__Footer__Actions" sx={{ display: "flex", alignItems: "center" }}>
             {showSubmitButton && (
               <>
                 <Button
@@ -401,6 +403,11 @@ function Form<TFieldValues extends FieldValues, TContext>({
                   </span>
                 </Tooltip>
               </>
+            )}
+            {extraActions && (
+              <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
+                {extraActions}
+              </Box>
             )}
           </Box>
         </Box>
