@@ -276,53 +276,74 @@ def test_study_listing(db_session: Session) -> None:
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
     ma = RawStudy(id="a", path="a", workspace="workspace1")
-    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
-    mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
         path="c",
         name="c",
         content_status=StudyContentStatus.WARNING,
-        workspace=DEFAULT_WORKSPACE_NAME,
+        workspace="workspace1",
         owner=User(id=0),
     )
     md = RawStudy(
         id="d",
         path="d",
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
+        workspace="workspace1",
     )
     me = RawStudy(
         id="e",
         path="e",
+        folder="e",
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
+        workspace="workspace1",
     )
-    fc = StudyFolder(path=Path("c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    fe = StudyFolder(path=Path("e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    ff = StudyFolder(path=Path("f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
+    fa2 = StudyFolder(path=Path("a"), workspace="workspace2", groups=[])
+    fc = StudyFolder(path=Path("c"), workspace="workspace1", groups=[])
+    fe = StudyFolder(path=Path("e"), workspace="workspace1", groups=[])
+    ff = StudyFolder(path=Path("f"), workspace="workspace1", groups=[])
+    ff2 = StudyFolder(path=Path("f"), workspace="workspace2", groups=[])
 
     repository = Mock()
-    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    # setup existing studies
+    repository.get_all_raw.side_effect = [[ma, mc, md, me]]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(),
+                "workspace1": WorkspaceConfig(),
+                "workspace2": WorkspaceConfig(),
+            }
+        )
+    )
     service = build_study_service(Mock(), repository, config)
 
-    service.sync_studies_on_disk([fa, fc, fe, ff])
+    # call function with scanned folders
+    # here d exists in DB but not on disc so it should be removed
+    # (f, workspace1) exist on disc but not in DB so it should be added
+    # a and f also exist in workspace 2 so they should be added with workspace set to workspace2
+    service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
+
+    class MockRawStudy(RawStudy):
+        def __eq__(self, other):
+            if self.path != other.path:
+                return False
+            if self.workspace != other.workspace:
+                return False
+            if self.folder != other.folder:
+                return False
+            if self.missing != other.missing:
+                return False
+            return True
 
     repository.delete.assert_called_once_with(md.id)
     repository.save.assert_has_calls(
         [
-            call(RawStudy(id="b", path="b", missing=ANY)),
-            call(RawStudy(id="e", path="e", created_at=now, missing=None)),
-            call(
-                RawStudy(
-                    id=ANY,
-                    path="f",
-                    workspace=DEFAULT_WORKSPACE_NAME,
-                    name="f",
-                    folder="f",
-                    public_mode=PublicMode.FULL,
-                )
-            ),
+            call(MockRawStudy(path="a", name="a", folder="a", workspace="workspace2", missing=None)),
+            call(MockRawStudy(path="e", name="e", folder="e", workspace="workspace1", missing=None)),
+            call(MockRawStudy(path="f", name="f", folder="f", workspace="workspace1", missing=None)),
+            call(MockRawStudy(path="f", name="f", folder="f", workspace="workspace2", missing=None)),
         ]
     )
 
