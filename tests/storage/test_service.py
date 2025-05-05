@@ -313,7 +313,6 @@ def test_sync_studies_from_disk() -> None:
     config = Config(
         storage=StorageConfig(
             workspaces={
-                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(),
                 "workspace1": WorkspaceConfig(),
                 "workspace2": WorkspaceConfig(),
             }
