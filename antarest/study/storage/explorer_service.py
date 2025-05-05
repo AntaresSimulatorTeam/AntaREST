@@ -20,7 +20,6 @@ from antarest.study.model import (
     NonStudyFolderDTO,
     WorkspaceMetadata,
 )
-from antarest.study.service import StudyService
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
@@ -32,9 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class Explorer:
-    def __init__(self, config: Config, study_service: StudyService):
+    def __init__(self, config: Config):
         self.config = config
-        self.study_service = study_service
 
     def list_dir(
         self,

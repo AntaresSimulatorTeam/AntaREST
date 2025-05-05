@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -99,7 +99,7 @@ def config_desktop_mode(tmp_path: Path) -> Config:
 
 @pytest.mark.unit_test
 def test_list_dir_empty_string(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, Mock())
+    explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "")
 
     # We don't want to see the .git folder or the $RECYCLE.BIN as they were ignored in the workspace config
@@ -109,7 +109,7 @@ def test_list_dir_empty_string(config_scenario_a: Config):
 
 @pytest.mark.unit_test
 def test_list_dir_several_subfolders(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, Mock())
+    explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "folder")
 
     assert len(result) == 3
@@ -133,7 +133,7 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
 
 @pytest.mark.unit_test
 def test_list_dir_in_empty_folder(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, Mock())
+    explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "folder/subfolder1")
 
     assert len(result) == 0
@@ -141,7 +141,7 @@ def test_list_dir_in_empty_folder(config_scenario_a: Config):
 
 @pytest.mark.unit_test
 def test_list_dir_with_permission_error(config_scenario_a: Config):
-    explorer = Explorer(config_scenario_a, Mock())
+    explorer = Explorer(config_scenario_a)
     with patch("os.listdir", side_effect=PermissionError("Permission denied")):
         # asserts the endpoint doesn't fail but rather returns an empty list
         result = explorer.list_dir("diese", "folder")
@@ -151,7 +151,7 @@ def test_list_dir_with_permission_error(config_scenario_a: Config):
 @pytest.mark.unit_test
 def test_list_workspaces(tmp_path: Path):
     config = build_config(tmp_path)
-    explorer = Explorer(config, Mock())
+    explorer = Explorer(config)
 
     result = explorer.list_workspaces()
     assert result == [WorkspaceMetadata(name="diese"), WorkspaceMetadata(name="test")]
