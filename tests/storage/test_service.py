@@ -276,6 +276,7 @@ def test_study_listing(db_session: Session) -> None:
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
     ma = RawStudy(id="a", path="a", workspace="workspace1")
+    mb = RawStudy(id="b", path="b")
     mc = RawStudy(
         id="c",
         path="c",
@@ -308,7 +309,7 @@ def test_sync_studies_from_disk() -> None:
 
     repository = Mock()
     # setup existing studies
-    repository.get_all_raw.side_effect = [[ma, mc, md, me]]
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
     config = Config(
         storage=StorageConfig(
             workspaces={
@@ -321,14 +322,17 @@ def test_sync_studies_from_disk() -> None:
     service = build_study_service(Mock(), repository, config)
 
     # call function with scanned folders
-    # here d exists in DB but not on disc so it should be removed
-    # (f, workspace1) exist on disc but not in DB so it should be added
-    # a and f also exist in workspace 2 so they should be added with workspace set to workspace2
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
 
+    # here d exists in DB but not on disc so it should be removed
+    # notice b also exists in DB but not on disk but it's not deleted yet,  rather it's marked for deletion by a save call
     repository.delete.assert_called_once_with(md.id)
+    # (f, workspace1) exist on disc but not in DB so it should be added
+    # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
+    # we check that we indeed save them in DB
     repository.save.assert_has_calls(
         [
+            call(RawStudy(id="b", path="b", missing=ANY)),
             call(
                 RawStudy(
                     id=ANY,
