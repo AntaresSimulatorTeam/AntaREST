@@ -517,6 +517,3 @@ def is_non_study_folder(path: Path, filter_in: List[str], filter_out: List[str])
     if should_ignore_folder_for_scan(path, filter_in, filter_out):
         return False
     return True
-
-
-# dzdo mount -t cifs smb://antrsprdsa008vm/per ~/my_smb_mount -o username=smailani,vers=3.0
