@@ -203,7 +203,6 @@ class StorageConfig:
             if "workspaces" in data
             else defaults.workspaces
         )
-        print("desktom_mode", desktop_mode)
         cls.validate_workspaces(workspaces, desktop_mode)
         if desktop_mode:
             workspaces = {**workspaces, **cls.system_workspaces()}

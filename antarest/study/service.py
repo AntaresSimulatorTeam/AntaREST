@@ -17,7 +17,7 @@ import http
 import logging
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 from uuid import uuid4
@@ -109,7 +109,6 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
-    EXTERNAL_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     CommentsDto,
@@ -153,7 +152,6 @@ from antarest.study.storage.study_upgrader import StudyUpgrader, check_versions_
 from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
-    is_external,
     is_managed,
     is_output_archived,
     remove_from_cache,
@@ -989,68 +987,6 @@ class StudyService:
         logger.info("study %s created by user %s", raw.id, params.get_user_id())
         return str(raw.id)
 
-    def create_external_study(
-        self,
-        study_folder: StudyFolder,
-        params: RequestParameters,
-    ) -> str:
-        """
-        Creates a study with the specified study name, version, group IDs, and user parameters.
-
-        Args:
-            study_name: The name of the study to create.
-            version: The version number of the study to choose the template for creation.
-            group_ids: A possibly empty list of user group IDs to associate with the study.
-            params:
-                The parameters of the HTTP request for creation, used to determine
-                the currently logged-in user (ID and name).
-
-        Returns:
-            str: The ID of the newly created study.
-        """
-
-        author = self.get_user_name(params)
-        now = datetime.now(timezone.utc)
-        path = str(study_folder.path)
-        folder = f"{EXTERNAL_WORKSPACE_NAME}{path}"
-        raw = RawStudy(
-            id=str(uuid4()),
-            name=study_folder.path.name,
-            folder=folder,
-            workspace=EXTERNAL_WORKSPACE_NAME,
-            path=path,
-            created_at=now,
-            updated_at=now,
-            owner=None,
-            groups=study_folder.groups,
-            public_mode=PublicMode.FULL if len(study_folder.groups) == 0 else PublicMode.NONE,
-            additional_data=StudyAdditionalData(author=author),
-            version=f"{NEW_DEFAULT_STUDY_VERSION:ddd}",
-        )
-
-        self.storage_service.raw_study_service.update_from_raw_meta(raw, fallback_on_default=True)
-        self._save_study(raw, params.user)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=raw.to_json_summary(),
-                permissions=PermissionInfo.from_study(raw),
-            )
-        )
-
-        logger.info("External study %s created by user %s", raw.id, params.get_user_id())
-        return str(raw.id)
-
-    def delete_external_study(self, study: Study) -> None:
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DELETED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        self.repository.delete(study.id)
-
     def get_user_name(self, params: RequestParameters) -> str:
         """
         Retrieves the name of a user based on the provided request parameters.
@@ -1136,9 +1072,7 @@ class StudyService:
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
 
-        all_studies = [
-            study for study in all_studies if study.workspace not in (DEFAULT_WORKSPACE_NAME, EXTERNAL_WORKSPACE_NAME)
-        ]
+        all_studies = [study for study in all_studies if study.workspace not in (DEFAULT_WORKSPACE_NAME)]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
@@ -1178,9 +1112,7 @@ class StudyService:
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
         missing_studies = {study.path: study for study in all_studies if study.missing is not None}
-        folders = [
-            folder for folder in folders if folder.workspace not in (DEFAULT_WORKSPACE_NAME, EXTERNAL_WORKSPACE_NAME)
-        ]
+        folders = [folder for folder in folders if folder.workspace not in (DEFAULT_WORKSPACE_NAME)]
         for folder in folders:
             study_path = str(folder.path)
             workspace = folder.workspace
@@ -1500,14 +1432,13 @@ class StudyService:
 
         self.repository.delete(study.id)
 
-        if not is_external(study):
-            # delete the files afterward for
-            # if the study cannot be deleted from database for foreign key reason
-            if self._assert_study_unarchived(study=study, raise_exception=False):
-                self.storage_service.get_storage(study).delete(study)
-            else:
-                if isinstance(study, RawStudy):
-                    os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
+        # delete the files afterward for
+        # if the study cannot be deleted from database for foreign key reason
+        if self._assert_study_unarchived(study=study, raise_exception=False):
+            self.storage_service.get_storage(study).delete(study)
+        else:
+            if isinstance(study, RawStudy):
+                os.unlink(self.storage_service.raw_study_service.find_archive_path(study))
 
         self.event_bus.push(
             Event(

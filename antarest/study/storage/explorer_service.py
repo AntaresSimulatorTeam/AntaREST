@@ -11,33 +11,21 @@
 # This file is part of the Antares project.
 
 import logging
-from http import HTTPStatus
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 from typing import List
 
-from fastapi import HTTPException
-
 from antarest.core.config import Config
-from antarest.core.exceptions import ExternalWorkspaceDisabled
-from antarest.core.model import StudyPermissionType
-from antarest.core.requests import RequestParameters
-from antarest.core.utils.utils import sanitize_uuid
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
-    EXTERNAL_WORKSPACE_NAME,
     NonStudyFolderDTO,
-    StudyFolder,
     WorkspaceMetadata,
-    normalize_path,
 )
-from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
     has_non_study_folder,
     is_non_study_folder,
-    is_study_folder,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,53 +84,3 @@ class Explorer:
             for workspace_name in self.config.storage.workspaces.keys()
             if workspace_name != DEFAULT_WORKSPACE_NAME
         ]
-
-    def open_external_study(self, path: Path, params: RequestParameters) -> str:
-        # check that desktop_mode is enabled in config
-        if not self.config.desktop_mode:
-            logger.warning("Called open api when desktop mode was off")
-            raise ExternalWorkspaceDisabled("Desktop mode is not enabled in the configuration")
-
-        # check path is a study folder and we have read permission
-        if not is_study_folder(path):
-            raise HTTPException(HTTPStatus.UNPROCESSABLE_ENTITY, f"Path {path} is not a study folder")
-
-        # check if path is inside the default workspace folder
-        default_workspace = get_workspace_from_config(self.config, DEFAULT_WORKSPACE_NAME, default_allowed=True)
-        if default_workspace.path in path.parents:
-            raise HTTPException(
-                HTTPStatus.UNPROCESSABLE_ENTITY,
-                f"Path {path} is inside the default workspace folder and cannot be opened as an external study",
-            )
-
-        # check study doens't already exist
-        normalized_path = normalize_path(str(path))
-        folder = f"{EXTERNAL_WORKSPACE_NAME}{normalized_path}"
-        study_count = self.study_service.count_studies(
-            StudyFilter(folder=folder, access_permissions=AccessPermissions.from_params(params))
-        )
-        if study_count > 0:
-            raise HTTPException(
-                HTTPStatus.UNPROCESSABLE_ENTITY,
-                f"Study at {path} already exists in database",
-            )
-
-        # create a study object from the path
-        study_folder = StudyFolder(path=path, workspace=EXTERNAL_WORKSPACE_NAME, groups=[])
-        study_id = self.study_service.create_external_study(study_folder, params)
-        logger.info(f"External study at {path} successfully created with study id  {study_id}")
-
-        return study_id
-
-    def close_external_study(self, uuid: str, params: RequestParameters) -> None:
-        # check that desktop_mode is enabled in config
-        if not self.config.desktop_mode:
-            logger.warning("Called open api when desktop mode was off")
-            raise ExternalWorkspaceDisabled("Study mode is not enabled in the configuration")
-
-        sanitized_uuid = sanitize_uuid(uuid)
-
-        # create a study object from the path
-        logger.info(f"Study {sanitized_uuid} will be deleted")
-        study = self.study_service.check_study_access(sanitized_uuid, StudyPermissionType.WRITE, params)
-        self.study_service.delete_external_study(study)
