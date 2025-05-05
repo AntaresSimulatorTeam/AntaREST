@@ -22,7 +22,7 @@ class InputReserves(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             a: InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file(f"{a}.txt"),
                 default_empty=default_4_fixed_hourly,
             )

@@ -14,8 +14,8 @@ from typing_extensions import override
 from antarest.core.serde.ini_common import any_section_option_matcher
 from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -27,7 +27,6 @@ _VALUE_SERIALIZERS = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER
 class ClusteredRenewableClusterConfig(IniFileNode):
     def __init__(
         self,
-        context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
     ):
@@ -42,7 +41,6 @@ class ClusteredRenewableClusterConfig(IniFileNode):
         types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
         IniFileNode.__init__(
             self,
-            context,
             config,
             types,
             reader=IniReader(value_parsers=_VALUE_PARSERS),
@@ -53,22 +51,22 @@ class ClusteredRenewableClusterConfig(IniFileNode):
 class ClusteredRenewableCluster(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
     def build(self) -> TREE:
-        return {"list": ClusteredRenewableClusterConfig(self.context, self.config.next_file("list.ini"), self.area)}
+        return {"list": ClusteredRenewableClusterConfig(self.config.next_file("list.ini"), self.area)}
 
 
 class ClusteredRenewableAreaCluster(FolderNode):
     @override
     def build(self) -> TREE:
         return {
-            area: ClusteredRenewableCluster(self.context, self.config.next_file(area), area)
+            area: ClusteredRenewableCluster(self.matrix_mapper, self.config.next_file(area), area)
             for area in self.config.area_names()
         }

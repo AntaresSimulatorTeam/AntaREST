@@ -19,5 +19,5 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 class Resources(FolderNode):
     @override
     def build(self) -> TREE:
-        children: TREE = {"study": RawFileNode(self.context, self.config.next_file("study.ico"))}
+        children: TREE = {"study": RawFileNode(self.matrix_mapper, self.config.next_file("study.ico"))}
         return children

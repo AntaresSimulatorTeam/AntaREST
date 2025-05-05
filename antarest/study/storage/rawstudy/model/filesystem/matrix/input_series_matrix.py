@@ -13,7 +13,7 @@ import io
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -25,8 +25,8 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode, dump_dataframe
 
@@ -40,13 +40,13 @@ class InputSeriesMatrix(MatrixNode):
 
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
         default_empty: Optional[npt.NDArray[np.float64]] = None,  # optional only for the capacity matrix in Xpansion
     ):
-        super().__init__(context=context, config=config, freq=freq)
+        super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
         self.nb_columns = nb_columns
         if default_empty is None:
             self.default_empty = None
@@ -65,9 +65,7 @@ class InputSeriesMatrix(MatrixNode):
             link_path = self.get_link_path()
             if link_path.exists():
                 link = link_path.read_text()
-                matrix_json = self.context.resolver.resolve(link)
-                matrix_json = cast(JSON, matrix_json)
-                matrix: pd.DataFrame = pd.DataFrame(**matrix_json)
+                matrix = self.matrix_mapper.get_matrix(link)
             else:
                 try:
                     matrix = pd.read_csv(

@@ -34,14 +34,14 @@ class InputHydroSeriesArea(FolderNode):
         default_empty = default_scenario_daily if study_version >= STUDY_VERSION_6_5 else default_scenario_monthly
         hydro_series_matrices: Dict[str, INode[Any, Any, Any]] = {
             "mod": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("mod.txt"),
                 freq=freq,
                 default_empty=default_empty,
             ),
             # Run of River
             "ror": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("ror.txt"),
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
@@ -49,7 +49,7 @@ class InputHydroSeriesArea(FolderNode):
         }
         if study_version >= STUDY_VERSION_8_6:
             hydro_series_matrices["mingen"] = InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("mingen.txt"),
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,

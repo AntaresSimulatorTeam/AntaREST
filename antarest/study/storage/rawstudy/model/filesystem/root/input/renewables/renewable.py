@@ -23,8 +23,8 @@ class ClusteredRenewables(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "clusters": ClusteredRenewableAreaCluster(self.context, self.config.next_file("clusters")),
-            "series": ClusteredRenewableAreaSeries(self.context, self.config.next_file("series")),
+            "clusters": ClusteredRenewableAreaCluster(self.matrix_mapper, self.config.next_file("clusters")),
+            "series": ClusteredRenewableAreaSeries(self.matrix_mapper, self.config.next_file("series")),
         }
 
         return children

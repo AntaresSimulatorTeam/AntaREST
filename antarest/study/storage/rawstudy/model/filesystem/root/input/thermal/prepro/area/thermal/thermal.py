@@ -40,13 +40,13 @@ class InputThermalPreproAreaThermal(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "data": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("data.txt"),
                 freq=MatrixFrequency.DAILY,
                 default_empty=default_data_matrix,
             ),
             "modulation": InputSeriesMatrix(
-                self.context, self.config.next_file("modulation.txt"), default_empty=default_modulation_matrix
+                self.matrix_mapper, self.config.next_file("modulation.txt"), default_empty=default_modulation_matrix
             ),
         }
         return children
