@@ -12,19 +12,30 @@
  * This file is part of the Antares project.
  */
 
+import TokenIcon from "@mui/icons-material/Token";
 import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
+import { TOKEN_FORM_DEFAULT_VALUES, type TokenFormDefaultValues } from "../utils";
 import TokenForm from "./TokenForm";
 
-export interface TokenFormDialogProps extends Omit<FormDialogProps, "children"> {
-  onlyPermissions?: boolean;
+export interface TokenFormDialogProps
+  extends Omit<FormDialogProps<TokenFormDefaultValues>, "children" | "maxWidth" | "titleIcon"> {
+  defaultValues?: TokenFormDefaultValues;
+  readOnly?: boolean;
 }
 
-function TokenFormDialog(props: TokenFormDialogProps) {
-  const { onlyPermissions, ...dialogProps } = props;
-
+function TokenFormDialog({
+  defaultValues: defaultValuesFromProps,
+  readOnly,
+  ...dialogProps
+}: TokenFormDialogProps) {
   return (
-    <FormDialog maxWidth="sm" {...dialogProps}>
-      {(formObj) => <TokenForm onlyPermissions={onlyPermissions} {...formObj} />}
+    <FormDialog
+      maxWidth="xs"
+      titleIcon={TokenIcon}
+      config={{ defaultValues: { ...TOKEN_FORM_DEFAULT_VALUES, ...defaultValuesFromProps } }}
+      {...dialogProps}
+    >
+      <TokenForm readOnly={readOnly} />
     </FormDialog>
   );
 }
