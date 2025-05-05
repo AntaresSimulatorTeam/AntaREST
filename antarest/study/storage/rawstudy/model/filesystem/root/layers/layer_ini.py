@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
@@ -27,9 +26,9 @@ class LayersIni(IniFileNode):
     showAllLayer = true
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         types = {
             "layers": {},
             "activeLayer": {"activeLayerID": int, "showAllLayer": bool},
         }
-        IniFileNode.__init__(self, context, config, types=types)
+        IniFileNode.__init__(self, config, types=types)

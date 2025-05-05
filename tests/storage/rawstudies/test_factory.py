@@ -13,9 +13,9 @@
 from unittest.mock import Mock
 
 from antarest.core.interfaces.cache import CacheConstants
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from tests.storage.rawstudies.samples import ASSETS_DIR
@@ -23,11 +23,11 @@ from tests.storage.rawstudies.samples import ASSETS_DIR
 
 def test_renewable_subtree() -> None:
     path = ASSETS_DIR / "v810/sample1"
-    context: ContextServer = Mock(specs=ContextServer)
+    matrix_mapper: MatrixUriMapper = Mock()
     config = build(path, "")
     assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
 
-    tree = FileStudyTree(context, config)
+    tree = FileStudyTree(matrix_mapper, config)
     json_tree = tree.get([], depth=-1)
     assert json_tree is not None
     assert json_tree["input"]["renewables"]["series"]["area"] == {
@@ -57,7 +57,7 @@ def test_factory_cache() -> None:
     path = ASSETS_DIR / "v810/sample1"
 
     cache = Mock()
-    factory = StudyFactory(matrix=Mock(), resolver=Mock(), cache=cache)
+    factory = StudyFactory(matrix_mapper=Mock(), cache=cache)
     study_id = "study-id"
     cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
     config = build(path, study_id)

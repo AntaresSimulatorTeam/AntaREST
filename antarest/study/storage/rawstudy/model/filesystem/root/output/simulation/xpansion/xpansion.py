@@ -20,6 +20,6 @@ class Xpansion(FolderNode):
     @override
     def build(self) -> TREE:
         return {
-            "out": JsonFileNode(self.context, self.config.next_file("out.json")),
-            "last_iteration": JsonFileNode(self.context, self.config.next_file("last_iteration.json")),
+            "out": JsonFileNode(self.config.next_file("out.json")),
+            "last_iteration": JsonFileNode(self.config.next_file("last_iteration.json")),
         }

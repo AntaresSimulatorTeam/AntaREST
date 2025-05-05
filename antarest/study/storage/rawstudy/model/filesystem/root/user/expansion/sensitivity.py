@@ -25,7 +25,6 @@ class SensitivityConfig(FolderNode):
         types = {"epsilon": float, "capex": bool, "projection": List[str]}
         return {
             "sensitivity_in": JsonFileNode(
-                self.context,
                 self.config.next_file("sensitivity_in.json"),
                 types,
             )
