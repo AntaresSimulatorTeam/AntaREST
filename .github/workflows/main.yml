@@ -6,7 +6,7 @@ on:
 
 jobs:
   python-lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
         uses: actions/checkout@v4
@@ -18,16 +18,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
-      - uses: isort/isort-action@v1.1.1
-        with:
-          sort-paths: antarest, tests
-          requirementsFiles: "requirements-dev.txt"
-      - name: Check with black
-        uses: psf/black@stable
-        with:
-          # Version of Black should match the versions set in `requirements-dev.txt`
-          version: "~=25.1.0"
-          options: --check --diff
+      - name: Check format (ruff)
+        run: |
+          ruff check antarest/ tests/
+          ruff format --check  antarest/ tests/
       - name: Check Typing (mypy)
         #continue-on-error: true
         run: |
@@ -38,7 +32,7 @@ jobs:
     strategy:
       max-parallel: 9
       matrix:
-        os: [windows-latest, ubuntu-20.04]
+        os: [windows-latest, ubuntu-22.04]
 
     steps:
       - name: Checkout github repo (+ download lfs dependencies)
@@ -55,14 +49,14 @@ jobs:
         run: |
           pytest --cov antarest --cov-report xml -n auto --dist=worksteal
       - name: Archive code coverage results
-        if: matrix.os == 'ubuntu-20.04'
+        if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
           name: python-code-coverage-report
           path: coverage.xml
 
   npm-setup:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v4
@@ -85,7 +79,7 @@ jobs:
 
   npm-lint:
     needs: npm-setup
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v4
@@ -105,7 +99,7 @@ jobs:
 
   npm-test:
     needs: npm-setup
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v4
@@ -125,7 +119,7 @@ jobs:
 
   npm-build:
     needs: npm-setup
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout github repo
         uses: actions/checkout@v4
@@ -147,7 +141,7 @@ jobs:
           DISABLE_ESLINT_PLUGIN: true
 
   sonarcloud:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: [python-test, npm-test]
     steps:
       - uses: actions/checkout@v4

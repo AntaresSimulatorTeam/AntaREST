@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 import uuid
 from pathlib import Path
+from typing import Optional
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -27,7 +27,15 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class VariantStudySnapshot(Base):  # type: ignore
     """
-    Variant Study Snapshot based entity implementation.
+    Metadata about a variant snapshot.
+
+    Attributes:
+        id: the variant study ID.
+        created_at: the timestamp at which the snapshot was generated.
+        last_executed_command: the ID of the last command applied when the snapshot has been generated.
+                               This information can be useful to not re-generate the snapshot from scratch
+                               (starting from the parent study), when some commands are simply appended
+                               to the list of commands.
     """
 
     __tablename__ = "variant_study_snapshot"
@@ -38,7 +46,7 @@ class VariantStudySnapshot(Base):  # type: ignore
         primary_key=True,
     )
     created_at: datetime.date = Column(DateTime)
-    last_executed_command: t.Optional[str] = Column(String(), nullable=True)
+    last_executed_command: Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variant_study_snapshot",
@@ -51,7 +59,22 @@ class VariantStudySnapshot(Base):  # type: ignore
 
 class CommandBlock(Base):  # type: ignore
     """
-    Command Block based entity implementation.
+    Storage of commands in database.
+
+    A command "block" can actually contain multiple commands of the same kind (for example several "create_cluster" commands).
+
+    Attributes:
+        id: An ID of this block of commands
+        study_id: The ID of the variant study to which those commands belong.
+        index: Needed to order the commands of a variant study.
+        version: The version of the COMMAND (not the study). The serialization of commands to database may change from
+                 one version of the application to another, we need to guarantee backwards compatibility when reading
+                 old versions.
+        args: JSON representation of the actual data of the command(s) (for example, the name of the cluster to create, etc).
+        study_version: The version of the study to which those commands belong.
+                       Having that information here allows to carry out some validation checks.
+        user_id: Who created this command.
+        updated_at: When this command was last updated.
     """
 
     __tablename__ = "commandblock"
@@ -101,7 +124,19 @@ class CommandBlock(Base):  # type: ignore
 
 class VariantStudy(Study):
     """
-    Study filesystem based entity implementation.
+    Variant study representation.
+
+    A variant study is defined by a parent study and additional commands that represent the differences from this parent.
+    The actual application of the commands on top of the parent study to generate files on disk is called a "snapshot
+    generation". The resulting generated files on disk constitue a study in antares-simulator format
+    and is called a "snapshot".
+
+    Attributes:
+        generation_task: The ID of a task currently generating a snapshot for this study, if one is ongoing.
+                         Note that only one generation task at a time is allowed, to not have concurrent writes
+                         to the snapshot.
+        snapshot: Some metadata about the last generated snapshot for this study.
+        commands: The list of commands that defined the differences between the parent study and this study.
     """
 
     __tablename__ = "variantstudy"
@@ -111,7 +146,7 @@ class VariantStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    generation_task: t.Optional[str] = Column(String(), nullable=True)
+    generation_task: Optional[str] = Column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",

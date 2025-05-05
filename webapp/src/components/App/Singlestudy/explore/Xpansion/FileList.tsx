@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 import type { AxiosError } from "axios";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Paper } from "@mui/material";
-import type { StudyMetadata } from "../../../../../common/types";
+import { useOutletContext } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import type { StudyMetadata } from "../../../../../types/types";
 import DataViewerDialog from "../../../../common/dialogs/DataViewerDialog";
 import FileTable from "../../../../common/FileTable";
-import { Title } from "./share/styles";
-import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
-import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import { Title } from "./share/styles";
 
 interface PropTypes {
   addResource: (studyId: string, file: File) => Promise<void>;
@@ -120,23 +120,19 @@ function FileList(props: PropTypes) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
+    <ViewWrapper>
       <UsePromiseCond
         response={res}
         ifFulfilled={(data) => (
-          <Box sx={{ width: "100%", height: "100%", p: 2 }}>
-            <Paper sx={{ width: "100%", height: "100%", p: 2 }}>
-              <FileTable
-                title={<Title>{t(title || "global.files")}</Title>}
-                content={data?.map((item) => ({ id: item, name: item })) || []}
-                onDelete={handleDelete}
-                onRead={handleRead}
-                uploadFile={handleAdd}
-                allowImport
-                allowDelete
-              />
-            </Paper>
-          </Box>
+          <FileTable
+            title={<Title>{t(title || "global.files")}</Title>}
+            content={data?.map((item) => ({ id: item, name: item })) || []}
+            onDelete={handleDelete}
+            onRead={handleRead}
+            uploadFile={handleAdd}
+            allowImport
+            allowDelete
+          />
         )}
       />
       {!!viewDialog && (
@@ -147,7 +143,7 @@ function FileList(props: PropTypes) {
           isMatrix={isMatrix}
         />
       )}
-    </>
+    </ViewWrapper>
   );
 }
 

@@ -20,9 +20,8 @@ This includes:
    what are the API and websocket prefixes
 """
 
-import re
 from pathlib import Path
-from typing import Any, List, Optional, Sequence
+from typing import Any, List, Optional
 
 from fastapi import FastAPI
 from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction, RequestResponseEndpoint

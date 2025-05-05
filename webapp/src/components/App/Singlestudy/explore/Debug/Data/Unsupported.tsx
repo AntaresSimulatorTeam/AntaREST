@@ -15,7 +15,7 @@
 import { useTranslation } from "react-i18next";
 import EmptyView from "../../../../../common/page/EmptyView";
 import BlockIcon from "@mui/icons-material/Block";
-import { Filename, Flex, Menubar } from "./styles";
+import { Filename, Menubar } from "./styles";
 import type { DataCompProps } from "../utils";
 import DownloadButton from "@/components/common/buttons/DownloadButton";
 import UploadFileButton from "@/components/common/buttons/UploadFileButton";
@@ -39,14 +39,14 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Flex>
+    <>
       <Menubar>
         <Filename>{filename}</Filename>
         {canEdit && <UploadFileButton studyId={studyId} path={filePath} />}
         <DownloadButton onClick={handleDownload} />
       </Menubar>
       <EmptyView icon={BlockIcon} title={t("study.debug.file.unsupported")} />
-    </Flex>
+    </>
   );
 }
 

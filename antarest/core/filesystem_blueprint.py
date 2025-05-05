@@ -13,13 +13,14 @@
 """
 Filesystem Blueprint
 """
+
 import asyncio
 import datetime
 import os
 import shutil
 import stat
-import typing as t
 from pathlib import Path
+from typing import Iterator, Mapping, Sequence, Tuple, TypeAlias
 
 import typing_extensions as te
 from fastapi import APIRouter, Depends, HTTPException
@@ -31,8 +32,8 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
-FilesystemName = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
-MountPointName = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]
+FilesystemName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Filesystem name")]
+MountPointName: TypeAlias = te.Annotated[str, Field(pattern=r"^\w+$", description="Mount point name")]
 
 
 class FilesystemDTO(
@@ -58,7 +59,7 @@ class FilesystemDTO(
     """
 
     name: FilesystemName
-    mount_dirs: t.Mapping[str, Path] = Field(description="Full path of the mount points in Antares Web Server")
+    mount_dirs: Mapping[str, Path] = Field(description="Full path of the mount points in Antares Web Server")
 
 
 class MountPointDTO(
@@ -203,7 +204,7 @@ class FileInfoDTO(
         return obj
 
 
-async def _calc_details(full_path: t.Union[str, Path]) -> t.Tuple[int, int]:
+async def _calc_details(full_path: str | Path) -> Tuple[int, int]:
     """Calculate the number of files and the total size of a directory recursively."""
 
     full_path = Path(full_path)
@@ -271,7 +272,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     # Utility functions
     # =================
 
-    def _get_mount_dirs(fs: str) -> t.Mapping[str, Path]:
+    def _get_mount_dirs(fs: str) -> Mapping[str, Path]:
         try:
             return filesystems[fs]
         except KeyError:
@@ -299,9 +300,9 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "",
         summary="Get filesystems information",
-        response_model=t.Sequence[FilesystemDTO],
+        response_model=Sequence[FilesystemDTO],
     )
-    async def list_filesystems() -> t.Sequence[FilesystemDTO]:
+    async def list_filesystems() -> Sequence[FilesystemDTO]:
         """
         Get the list of filesystems and their mount points.
 
@@ -316,9 +317,9 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "/{fs}",
         summary="Get information of a filesystem",
-        response_model=t.Sequence[MountPointDTO],
+        response_model=Sequence[MountPointDTO],
     )
-    async def list_mount_points(fs: FilesystemName) -> t.Sequence[MountPointDTO]:
+    async def list_mount_points(fs: FilesystemName) -> Sequence[MountPointDTO]:
         """
         Get the path and the disk usage of the mount points in a filesystem.
 
@@ -373,14 +374,14 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
     @bp.get(
         "/{fs}/{mount}/ls",
         summary="List files in a mount point",
-        response_model=t.Sequence[FileInfoDTO],
+        response_model=Sequence[FileInfoDTO],
     )
     async def list_files(
         fs: FilesystemName,
         mount: MountPointName,
         path: str = "",
         details: bool = False,
-    ) -> t.Sequence[FileInfoDTO]:
+    ) -> Sequence[FileInfoDTO]:
         """
         List files and directories in a mount point.
 
@@ -532,7 +533,7 @@ def create_file_system_blueprint(config: Config) -> APIRouter:
 
         elif full_path.is_file():
 
-            def iter_file() -> t.Iterator[bytes]:
+            def iter_file() -> Iterator[bytes]:
                 with full_path.open(mode="rb") as file:
                     yield from file
 

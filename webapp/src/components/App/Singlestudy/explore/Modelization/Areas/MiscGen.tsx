@@ -34,7 +34,9 @@ function MiscGen() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  return <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} />;
+  return (
+    <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} isTimeSeries={false} />
+  );
 }
 
 export default MiscGen;

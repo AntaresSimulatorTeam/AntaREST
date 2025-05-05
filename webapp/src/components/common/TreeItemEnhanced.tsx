@@ -12,14 +12,53 @@
  * This file is part of the Antares project.
  */
 
+import { Box, CircularProgress, Tooltip } from "@mui/material";
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
-import { mergeSxProp } from "../../utils/muiUtils";
 import * as R from "ramda";
+import { mergeSxProp } from "../../utils/muiUtils";
 
-export type TreeItemEnhancedProps = TreeItemProps;
+export interface TreeItemEnhancedProps extends TreeItemProps {
+  loading?: boolean;
+}
 
-function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
+function TreeItemEnhanced({
+  onClick,
+  sx,
+  label: labelFromProps,
+  loading,
+  ...rest
+}: TreeItemEnhancedProps) {
   const canExpand = rest.children && R.isNotEmpty(rest.children);
+
+  ////////////////////////////////////////////////////////////////
+  // Label
+  ////////////////////////////////////////////////////////////////
+
+  const addLabelTooltip = (label: TreeItemEnhancedProps["label"]) => {
+    return typeof label === "string" ? (
+      <Tooltip title={label}>
+        <span>{label}</span>
+      </Tooltip>
+    ) : (
+      label
+    );
+  };
+
+  const addLabelLoading = (label: TreeItemEnhancedProps["label"]) => {
+    return loading ? (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        {/* Wrapped with a <Box> to prevent display issue when item is expanded */}
+        <Box>
+          <CircularProgress size={12} color="secondary" />
+        </Box>
+        {label}
+      </Box>
+    ) : (
+      label
+    );
+  };
+
+  const enhanceLabel = R.compose(addLabelLoading, addLabelTooltip);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -44,6 +83,7 @@ function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
     <TreeItem
       {...rest}
       onClick={handleClick}
+      label={enhanceLabel(labelFromProps)}
       sx={mergeSxProp(
         {
           "& > .MuiTreeItem-content": {
@@ -60,6 +100,9 @@ function TreeItemEnhanced({ onClick, sx, ...rest }: TreeItemEnhancedProps) {
             },
             "& > .MuiTreeItem-label": {
               py: 0.5,
+              whiteSpace: "nowrap",
+              textOverflow: "ellipsis",
+              overflow: "hidden",
             },
           },
         },

@@ -13,15 +13,14 @@
  */
 
 import { useEffect, useMemo } from "react";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../../../common/types";
-import TabWrapper from "../TabWrapper";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { setCurrentArea } from "../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getAreas, getCurrentAreaId, getLinks } from "../../../../../redux/selectors";
-import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
-import { setCurrentArea } from "../../../../../redux/ducks/studySyntheses";
+import type { StudyMetadata } from "../../../../../types/types";
+import TabWrapper from "../TabWrapper";
 
 function Modelization() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -55,6 +54,8 @@ function Modelization() {
       }
     };
 
+    const areaPath = [basePath, "area", encodeURI(areaId || areas[0]?.id || "")].join("/");
+
     return [
       {
         label: t("study.modelization.map"),
@@ -62,7 +63,7 @@ function Modelization() {
       },
       {
         label: t("study.areas"),
-        path: `${basePath}/area/${encodeURI(areaId)}`,
+        path: areaPath,
         onClick: handleAreasClick,
         disabled: areas.length === 0,
       },
@@ -78,18 +79,7 @@ function Modelization() {
     ];
   }, [areaId, areas, dispatch, links, navigate, study.id, t]);
 
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flex: 1,
-        width: 1,
-        overflow: "hidden",
-      }}
-    >
-      <TabWrapper study={study} tabStyle="withoutBorder" tabList={tabList} />
-    </Box>
-  );
+  return <TabWrapper study={study} tabList={tabList} disablePadding />;
 }
 
 export default Modelization;

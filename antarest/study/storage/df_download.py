@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import http
-import typing as t
 from pathlib import Path
 
 import pandas as pd
@@ -23,6 +22,12 @@ from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.jwt import JWTUser
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+
+try:
+    import tables  # type: ignore # noqa: F401
+    import xlsxwriter  # type: ignore # noqa: F401
+except ImportError:
+    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
 
 
 class TableExportFormat(EnumIgnoreCase):
@@ -71,7 +76,7 @@ class TableExportFormat(EnumIgnoreCase):
     def export_table(
         self,
         df: pd.DataFrame,
-        export_path: t.Union[str, Path],
+        export_path: str | Path,
         *,
         with_index: bool = True,
         with_header: bool = True,

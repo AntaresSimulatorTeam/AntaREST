@@ -19,7 +19,7 @@ import type {
   StudyMetadata,
   StudyMetadataDTO,
   VariantTree,
-} from "../../common/types";
+} from "../../types/types";
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
 import type { FileDownloadTask } from "./downloads";
 import type { TaskDTO } from "./tasks/types";

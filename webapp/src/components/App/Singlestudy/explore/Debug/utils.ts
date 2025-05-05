@@ -12,15 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import DataObjectIcon from "@mui/icons-material/DataObject";
-import TextSnippetIcon from "@mui/icons-material/TextSnippet";
-import BlockIcon from "@mui/icons-material/Block";
-import FolderIcon from "@mui/icons-material/Folder";
-import DatasetIcon from "@mui/icons-material/Dataset";
-import type { SvgIconComponent } from "@mui/icons-material";
-import * as RA from "ramda-adjunct";
-import type { StudyMetadata } from "../../../../../common/types";
 import type { MatrixDataDTO } from "@/components/common/Matrix/shared/types";
+import { getStudyData } from "@/services/api/study";
+import type { SvgIconComponent } from "@mui/icons-material";
+import BlockIcon from "@mui/icons-material/Block";
+import DataObjectIcon from "@mui/icons-material/DataObject";
+import DatasetIcon from "@mui/icons-material/Dataset";
+import FolderIcon from "@mui/icons-material/Folder";
+import TextSnippetIcon from "@mui/icons-material/TextSnippet";
+import * as R from "ramda";
+import * as RA from "ramda-adjunct";
+import type { StudyMetadata } from "../../../../../types/types";
 
 ////////////////////////////////////////////////////////////////
 // Types
@@ -46,8 +48,6 @@ export interface FileInfo {
 export interface DataCompProps extends FileInfo {
   studyId: string;
   canEdit: boolean;
-  setSelectedFile: (file: FileInfo) => void;
-  reloadTreeData: () => void;
 }
 
 interface ContentParsingOptions {
@@ -65,7 +65,7 @@ const URL_SCHEMES = {
   FILE: "file://",
 } as const;
 
-const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml"] as const;
+const SUPPORTED_EXTENSIONS = [".txt", ".log", ".csv", ".tsv", ".ini", ".yml", ".json"] as const;
 
 // Maps file types to their corresponding icon components.
 const iconByFileType: Record<FileType, SvgIconComponent> = {
@@ -175,6 +175,11 @@ export function isEmptyContent(text: string | string[]): boolean {
   }
 
   return typeof text === "string" && !text.trim();
+}
+
+export async function getTreeData(studyId: StudyMetadata["id"]) {
+  const treeData = await getStudyData<TreeFolder>(studyId, "", -1);
+  return R.omit(["Desktop", "study", "logs"], treeData);
 }
 
 /**

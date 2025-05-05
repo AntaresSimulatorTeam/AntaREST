@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import DragHandleIcon from "@mui/icons-material/DragHandle";
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import {
   Autocomplete,
   Box,
@@ -28,15 +30,12 @@ import {
   setRef,
   Typography,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
-import { useEffect, useId, useState } from "react";
-import { DragDropContext, Droppable, Draggable, type DropResult } from "react-beautiful-dnd";
-import DragHandleIcon from "@mui/icons-material/DragHandle";
 import * as RA from "ramda-adjunct";
-import { useUpdateEffect } from "react-use";
+import { useEffect, useId, useState } from "react";
+import { DragDropContext, Draggable, Droppable, type DropResult } from "react-beautiful-dnd";
 import type { FieldPath, FieldValues } from "react-hook-form";
-import StringFE from "../StringFE";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
 import reactHookFormSupport, {
   type ReactHookFormSupportProps,
 } from "../../../../hoc/reactHookFormSupport";
@@ -48,6 +47,7 @@ import {
   type FakeChangeEventHandler,
   type InputObject,
 } from "../../../../utils/feUtils";
+import StringFE from "../StringFE";
 import { makeLabel, makeListItems } from "./utils";
 
 interface ListFEProps<TItem, TOption> {
@@ -142,11 +142,9 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
   return (
     <FormControl
       component={Paper}
+      elevation={2}
       sx={[
-        {
-          p: 2,
-          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
-        },
+        { p: 2 },
         !!error && {
           border: "1px solid",
           borderColor: "error.main",
@@ -166,13 +164,10 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
             setSelectedOption(value);
           }}
           autoHighlight
-          renderInput={(params) => (
-            <StringFE {...params} sx={{ m: 0 }} size="small" variant="outlined" />
-          )}
+          renderInput={(params) => <StringFE {...params} sx={{ m: 0 }} variant="outlined" />}
         />
         <Button
           variant="contained"
-          size="small"
           onClick={() => {
             setSelectedOption(null);
             if (selectedOption) {

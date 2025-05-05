@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import pathlib
 from typing import List, Optional, cast
 
 from redis.client import Redis
@@ -42,7 +43,8 @@ class RedisEventBus(IEventBusBackend):
     def pull_queue(self, queue: str) -> Optional[Event]:
         event = self.redis.lpop(queue)
         if event:
-            return cast(Optional[Event], Event.parse_raw(event))
+            event_string = pathlib.Path(event).read_text()
+            return cast(Optional[Event], Event.model_validate_json(event_string))
         return None
 
     @override

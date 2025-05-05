@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+from pathlib import PurePosixPath
 from typing import List
 
 from antarest.core.config import Config
@@ -48,7 +49,7 @@ class Explorer:
                 try:
                     if is_non_study_folder(child, workspace.filter_in, workspace.filter_out):
                         # we don't want to expose the full absolute path on the server
-                        child_rel_path = child.relative_to(workspace.path)
+                        child_rel_path = PurePosixPath(child.relative_to(workspace.path))
                         has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
                         directories.append(
                             NonStudyFolderDTO(

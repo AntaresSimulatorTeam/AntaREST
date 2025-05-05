@@ -21,7 +21,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.application import AppBuildContext, create_app_ctxt
+from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import RequestParameters
@@ -95,7 +95,7 @@ def create_auth_token(
             impersonator=0,
             type="users",
             groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
-        ).json(),
+        ).model_dump_json(),
     )
     return {"Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"}
 
@@ -179,7 +179,7 @@ def test_refresh() -> None:
     meta, b64, sign = str(data["access_token"]).split(".")
 
     data = b64 + "==="  # fix padding issue
-    identity = json.loads(base64.b64decode(data))["sub"]
+    json.loads(base64.b64decode(data))["sub"]
 
 
 @pytest.mark.unit_test

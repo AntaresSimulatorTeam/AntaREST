@@ -44,15 +44,15 @@ To upgrade your study to the latest version of Antares Web and Antares Simulator
 
 On the main page of the study, you can find the version number at the top of the menu bar:
 
-![studies-upgrade-menu_version.png](../assets/media/how-to/studies-upgrade-menu_version.png)
+![studies-upgrade-menu_version.png](../../assets/media/how-to/studies-upgrade-menu_version.png)
 
 To upgrade the study, click on the nemu and select "Upgrade Study".
 
-![studies-upgrade-menu_open.png](../assets/media/how-to/studies-upgrade-menu_open.png)
+![studies-upgrade-menu_open.png](../../assets/media/how-to/studies-upgrade-menu_open.png)
 
 The confirmation dialog box will appear, click "Yes" to start the upgrade:
 
-![studies-upgrade-menu_open.png](../assets/media/how-to/studies-upgrade-dialog_box.png)
+![studies-upgrade-menu_open.png](../../assets/media/how-to/studies-upgrade-dialog_box.png)
 
 The upgrade task is launched in the task manager.
 
@@ -61,7 +61,7 @@ The upgrade task is launched in the task manager.
 
 When the upgrade is done, you can see the version number updated:
 
-![](../assets/media/how-to/studies-upgrade-done.png)
+![](../../assets/media/how-to/studies-upgrade-done.png)
 
 Once the upgrade is complete, you can open your study and perform the manual upgrade in the configuration.
 

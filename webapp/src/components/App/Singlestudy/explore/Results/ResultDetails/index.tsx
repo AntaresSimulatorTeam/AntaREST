@@ -12,50 +12,49 @@
  * This file is part of the Antares project.
  */
 
-import {
-  Box,
-  Skeleton,
-  ToggleButton,
-  ToggleButtonGroup,
-  type ToggleButtonGroupProps,
-} from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import DataGridViewer from "@/components/common/DataGridViewer";
+import { Column } from "@/components/common/Matrix/shared/constants";
+import { isNonEmptyMatrix, type ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import GridOffIcon from "@mui/icons-material/GridOff";
+import { Box, Skeleton, Tab, Tabs } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
-import GridOffIcon from "@mui/icons-material/GridOff";
-import type { Area, LinkElement, StudyMetadata } from "../../../../../../common/types";
 import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import { getAreas, getLinks, getStudyOutput } from "../../../../../../redux/selectors";
-import { getStudyData } from "../../../../../../services/api/study";
-import { isSearchMatching } from "../../../../../../utils/stringUtils";
-import PropertiesView from "../../../../../common/PropertiesView";
-import ListElement from "../../common/ListElement";
-import { createPath, DataType, MAX_YEAR, OutputItemType, SYNTHESIS_ITEMS, Timestep } from "./utils";
-import UsePromiseCond, { mergeResponses } from "../../../../../common/utils/UsePromiseCond";
 import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
+import { getAreas, getLinks, getStudyOutput } from "../../../../../../redux/selectors";
+import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
+import { getStudyData } from "../../../../../../services/api/study";
+import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/types";
+import { toError } from "../../../../../../utils/fnUtils";
+import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
-import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index.tsx";
+import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index";
 import {
   generateCustomColumns,
   generateDateTime,
   generateResultColumns,
   groupResultColumns,
-} from "../../../../../common/Matrix/shared/utils.ts";
-import { Column } from "@/components/common/Matrix/shared/constants.ts";
-import SplitView from "../../../../../common/SplitView/index.tsx";
-import ResultFilters from "./ResultFilters.tsx";
-import { toError } from "../../../../../../utils/fnUtils.ts";
-import EmptyView from "../../../../../common/page/EmptyView.tsx";
-import { getStudyMatrixIndex } from "../../../../../../services/api/matrix.ts";
-import { MatrixGridSynthesis } from "@/components/common/Matrix/components/MatrixGridSynthesis";
-import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types.ts";
+} from "../../../../../common/Matrix/shared/utils";
+import EmptyView from "../../../../../common/page/EmptyView";
+import PropertiesView from "../../../../../common/PropertiesView";
+import SplitView from "../../../../../common/SplitView/index";
+import UsePromiseCond, { mergeResponses } from "../../../../../common/utils/UsePromiseCond";
+import ListElement from "../../common/ListElement";
+import ResultFilters from "./ResultFilters";
+import { createPath, DataType, MAX_YEAR, OutputItemType, SYNTHESIS_ITEMS, Timestep } from "./utils";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
+  const { isDarkMode } = useThemeColorScheme();
   const { outputId } = useParams();
+  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const outputRes = useStudySynthesis({
     studyId: study.id,
@@ -74,9 +73,9 @@ function ResultDetails() {
   // when some columns are filtered out
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
+
   const isSynthesis = itemType === OutputItemType.Synthesis;
-  const { t } = useTranslation();
-  const navigate = useNavigate();
+  const maxYear = output?.nbyears ?? MAX_YEAR;
 
   const items = useAppSelector((state) =>
     itemType === OutputItemType.Areas ? getAreas(state, study.id) : getLinks(state, study.id),
@@ -93,20 +92,11 @@ function ResultDetails() {
     | LinkElement
     | undefined;
 
-  const maxYear = output?.nbyears ?? MAX_YEAR;
-
-  useEffect(
-    () => {
-      const isValidSelectedItem =
-        !!selectedItemId && filteredItems.find((item) => item.id === selectedItemId);
-
-      if (!isValidSelectedItem) {
-        setSelectedItemId(filteredItems.length > 0 ? filteredItems[0].id : "");
-      }
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filteredItems],
-  );
+  useEffect(() => {
+    if (!selectedItem) {
+      setSelectedItemId(filteredItems.length > 0 ? filteredItems[0].id : "");
+    }
+  }, [filteredItems, selectedItem]);
 
   const path = useMemo(() => {
     if (output && selectedItem && !isSynthesis) {
@@ -175,7 +165,7 @@ function ResultDetails() {
       return Promise.resolve(null);
     },
     {
-      deps: [study.id, outputId, selectedItem],
+      deps: [study.id, outputId, selectedItem, isSynthesis],
     },
   );
 
@@ -183,41 +173,51 @@ function ResultDetails() {
     deps: [study.id, path],
   });
 
-  const dateTime = dateTimeMetadata && generateDateTime(dateTimeMetadata);
+  const dateTime = useMemo(
+    () => dateTimeMetadata && generateDateTime(dateTimeMetadata),
+    [dateTimeMetadata],
+  );
 
   const resultColumns = useMemo(() => {
-    if (!matrixRes.data) {
+    if (!matrixRes.data || resultColHeaders.length === 0) {
       return [];
     }
 
-    return groupResultColumns([
-      {
-        id: "date",
-        title: "Date",
-        type: Column.DateTime,
-        editable: false,
-      },
-      ...generateResultColumns(resultColHeaders),
-    ]);
-  }, [matrixRes.data, resultColHeaders]);
+    return groupResultColumns(
+      [
+        {
+          id: "date",
+          title: "Date",
+          type: Column.DateTime,
+          editable: false,
+        },
+        ...generateResultColumns({ titles: resultColHeaders }),
+      ],
+      isDarkMode,
+    );
+  }, [matrixRes.data, resultColHeaders, isDarkMode]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleItemTypeChange: ToggleButtonGroupProps["onChange"] = (
-    _,
-    newValue: OutputItemType,
-  ) => {
-    if (newValue && newValue !== itemType) {
-      setItemType(newValue);
-    }
-  };
+  const handleItemTypeChange = useCallback(
+    (_event: React.SyntheticEvent, newValue: OutputItemType) => {
+      if (newValue && newValue !== itemType) {
+        setItemType(newValue);
+      }
+    },
+    [itemType],
+  );
 
-  const handleColHeadersChange: SetResultColHeaders = (headers, indices) => {
+  const handleColHeadersChange = useCallback<SetResultColHeaders>((headers, indices) => {
     setResultColHeaders(headers);
     setHeaderIndices(indices);
-  };
+  }, []);
+
+  const handleSetSelectedItemId = useCallback((item: { id: string }) => {
+    setSelectedItemId(item.id);
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -235,24 +235,23 @@ function ResultDetails() {
           }
           mainContent={
             <>
-              <ToggleButtonGroup
-                sx={{ p: 1 }}
+              <Tabs
                 value={itemType}
-                exclusive
-                size="small"
-                orientation="vertical"
-                fullWidth
                 onChange={handleItemTypeChange}
+                size="extra-small"
+                variant="fullWidth"
               >
-                <ToggleButton value={OutputItemType.Areas}>{t("study.areas")}</ToggleButton>
-                <ToggleButton value={OutputItemType.Links}>{t("study.links")}</ToggleButton>
-                <ToggleButton value={OutputItemType.Synthesis}>{t("study.synthesis")}</ToggleButton>
-              </ToggleButtonGroup>
+                <Tab label={t("study.areas")} value={OutputItemType.Areas} />
+                <Tab label={t("study.links")} value={OutputItemType.Links} />
+                {output?.synthesis && (
+                  <Tab label={t("study.synthesis")} value={OutputItemType.Synthesis} />
+                )}
+              </Tabs>
               <ListElement
                 list={filteredItems}
                 currentElement={selectedItemId}
                 currentElementKeyToTest="id"
-                setSelectedItem={(item) => setSelectedItemId(item.id)}
+                setSelectedItem={handleSetSelectedItemId}
               />
             </>
           }
@@ -260,20 +259,14 @@ function ResultDetails() {
         />
       </Box>
       {/* Right */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          p: 1,
-        }}
-      >
+      <ViewWrapper flex>
         {isSynthesis ? (
           <UsePromiseCond
             response={synthesisRes}
             ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
             ifFulfilled={(matrix) =>
               matrix && (
-                <MatrixGridSynthesis
+                <DataGridViewer
                   data={matrix.data}
                   columns={generateCustomColumns({
                     titles: matrix.columns,
@@ -301,22 +294,21 @@ function ResultDetails() {
               response={mergeResponses(outputRes, matrixRes)}
               ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
               ifFulfilled={([, matrix]) =>
-                matrix && (
-                  <>
-                    {resultColHeaders.length === 0 ? (
-                      <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
-                    ) : (
-                      <MatrixGrid
-                        key={`grid-${resultColHeaders.length}`}
-                        data={filteredData}
-                        rows={filteredData.length}
-                        columns={resultColumns}
-                        dateTime={dateTime}
-                        readOnly
-                      />
-                    )}
-                  </>
-                )
+                matrix &&
+                (resultColHeaders.length === 0 ? (
+                  <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
+                ) : (
+                  isNonEmptyMatrix(filteredData) && (
+                    <MatrixGrid
+                      key={`grid-${resultColHeaders.length}`}
+                      data={filteredData}
+                      rows={filteredData.length}
+                      columns={resultColumns}
+                      dateTime={dateTime}
+                      readOnly
+                    />
+                  )
+                ))
               }
               ifRejected={(err) => (
                 <EmptyView
@@ -331,7 +323,7 @@ function ResultDetails() {
             />
           </>
         )}
-      </Box>
+      </ViewWrapper>
     </SplitView>
   );
 }

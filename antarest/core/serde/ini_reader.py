@@ -11,17 +11,16 @@
 # This file is part of the Antares project.
 import dataclasses
 import re
-import typing as t
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Dict, Sequence, cast
+from typing import Any, Callable, Dict, Mapping, Optional, Pattern, Sequence, TextIO, TypeAlias, cast
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.ini_common import OptionMatcher, PrimitiveType, any_section_option_matcher
 
-ValueParser = Callable[[str], PrimitiveType]
+ValueParser: TypeAlias = Callable[[str], PrimitiveType]
 
 
 def _lower_case(input: str) -> str:
@@ -76,17 +75,17 @@ class IniFilter:
         option_regex: A compiled regex for matching option names.
     """
 
-    section_regex: t.Optional[t.Pattern[str]] = None
-    option_regex: t.Optional[t.Pattern[str]] = None
+    section_regex: Optional[Pattern[str]] = None
+    option_regex: Optional[Pattern[str]] = None
 
     @classmethod
     def from_kwargs(
         cls,
         section: str = "",
         option: str = "",
-        section_regex: t.Optional[t.Union[str, t.Pattern[str]]] = None,
-        option_regex: t.Optional[t.Union[str, t.Pattern[str]]] = None,
-        **_unused: t.Any,  # ignore unknown options
+        section_regex: Optional[str | Pattern[str]] = None,
+        option_regex: Optional[str | Pattern[str]] = None,
+        **_unused: Any,  # ignore unknown options
     ) -> "IniFilter":
         """
         Create an instance from given filtering parameters.
@@ -138,7 +137,7 @@ class IReader(ABC):
     """
 
     @abstractmethod
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: Any, **kwargs: Any) -> JSON:
         """
         Parse `.ini` file to json object.
 
@@ -196,7 +195,7 @@ class IniReader(IReader):
         self._section_name = section_name
 
         # Dictionary of parsed sections and options
-        self._curr_sections: t.Dict[str, t.Dict[str, t.Any]] = {}
+        self._curr_sections: Dict[str, Dict[str, Any]] = {}
 
         # Current section name used during paring
         self._curr_section = ""
@@ -214,7 +213,7 @@ class IniReader(IReader):
         return f"{cls}(special_keys={special_keys!r}, section_name={section_name!r})"
 
     @override
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: Any, **kwargs: Any) -> JSON:
         if isinstance(path, (Path, str)):
             try:
                 with open(path, mode="r", encoding="utf-8") as f:
@@ -235,9 +234,9 @@ class IniReader(IReader):
         else:  # pragma: no cover
             raise TypeError(repr(type(path)))
 
-        return t.cast(JSON, sections)
+        return cast(JSON, sections)
 
-    def _parse_ini_file(self, ini_file: t.TextIO, **kwargs: t.Any) -> JSON:
+    def _parse_ini_file(self, ini_file: TextIO, **kwargs: Any) -> JSON:
         """
         Parse `.ini` file to JSON object.
 
@@ -362,7 +361,7 @@ class SimpleKeyValueReader(IniReader):
     """
 
     @override
-    def read(self, path: t.Any, **kwargs: t.Any) -> JSON:
+    def read(self, path: Any, **kwargs: Any) -> JSON:
         """
         Parse `.ini` file which has no section to JSON object.
 
@@ -376,5 +375,12 @@ class SimpleKeyValueReader(IniReader):
             Dictionary of parsed key/value pairs.
         """
         sections = super().read(path)
-        obj = t.cast(t.Mapping[str, JSON], sections)
+        obj = cast(Mapping[str, JSON], sections)
         return obj[self._section_name]
+
+
+def read_ini(source: Path | TextIO) -> JSON:
+    """
+    Parses the provided content as a 2-levels dictionary.
+    """
+    return IniReader().read(source)

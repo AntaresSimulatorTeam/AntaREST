@@ -90,10 +90,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         version: Optional[str] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Launching study {study_id} with options {launcher_parameters}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
 
         params = RequestParameters(user=current_user)
@@ -119,10 +116,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         latest: Optional[int] = None,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Fetching execution jobs for study {study or '<all>'}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching execution jobs for study {study or '<all>'}")
         params = RequestParameters(user=current_user)
         return [job.to_dto() for job in service.get_jobs(study, params, filter_orphans, latest)]
 
@@ -136,7 +130,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         log_type: LogType = LogType.STDOUT,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Fetching logs for job {job_id}", extra={"user": current_user.id})
+        logger.info(f"Fetching logs for job {job_id}")
         params = RequestParameters(user=current_user)
         return service.get_log(job_id, log_type, params)
 
@@ -150,10 +144,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         job_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(
-            f"Exporting output for job {job_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Exporting output for job {job_id}")
         params = RequestParameters(user=current_user)
         return service.download_output(job_id, params)
 
@@ -166,7 +157,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         job_id: str,
         current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
-        logger.info(f"Killing job {job_id}", extra={"user": current_user.id})
+        logger.info(f"Killing job {job_id}")
 
         params = RequestParameters(user=current_user)
         return service.kill_job(
@@ -181,7 +172,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         response_model=JobResultDTO,
     )
     def get_result(job_id: UUID, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
-        logger.info(f"Fetching job info {job_id}", extra={"user": current_user.id})
+        logger.info(f"Fetching job info {job_id}")
         params = RequestParameters(user=current_user)
         return service.get_result(job_id, params).to_dto()
 
@@ -192,10 +183,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         response_model=int,
     )
     def get_progress(job_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> Any:
-        logger.info(
-            f"Fetching job progress of job {job_id}",
-            extra={"user": current_user.id},
-        )
+        logger.info(f"Fetching job progress of job {job_id}")
         params = RequestParameters(user=current_user)
         return int(service.get_launch_progress(job_id, params))
 
@@ -206,7 +194,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         responses={204: {"description": "Job removed"}},
     )
     def remove_result(job_id: str, current_user: JWTUser = Depends(auth.get_current_user)) -> None:
-        logger.info(f"Removing job {job_id}", extra={"user": current_user.id})
+        logger.info(f"Removing job {job_id}")
         params = RequestParameters(user=current_user)
         service.remove_job(job_id, params)
 

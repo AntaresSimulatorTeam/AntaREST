@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Dict, List, Optional
 
 from pydantic import Field
 from typing_extensions import override
@@ -18,10 +18,10 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -72,25 +72,21 @@ class CreateArea(ICommand):
     # we choose to declare it as an empty dictionary.
     # fixme: remove this attribute in the next version if it is not used by the "Script R" team,
     #  or if we don't want to support this feature.
-    metadata: t.Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
+    metadata: Dict[str, str] = Field(default_factory=dict, description="Area metadata: country and tag list")
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
-        if self.command_context.generator_matrix_constants is None:
-            raise ValueError()
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        config = study_data.config
 
         area_id = transform_name_to_id(self.area_name)
 
-        if area_id in study_data.areas.keys():
-            return (
-                CommandOutput(
-                    status=False,
-                    message=f"Area '{self.area_name}' already exists and could not be created",
-                ),
-                {},
+        if area_id in config.areas.keys():
+            return CommandOutput(
+                status=False,
+                message=f"Area '{self.area_name}' already exists and could not be created",
             )
 
-        study_data.areas[area_id] = Area(
+        config.areas[area_id] = Area(
             name=self.area_name,
             links={},
             thermals=[],
@@ -98,19 +94,7 @@ class CreateArea(ICommand):
             filters_synthesis=[],
             filters_year=[],
         )
-        return (
-            CommandOutput(status=True, message=f"Area '{self.area_name}' created"),
-            {"area_id": area_id},
-        )
 
-    @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
-        config = study_data.config
-
-        output, data = self._apply_config(config)
-        if not output.status:
-            return output
-        area_id = data["area_id"]
         version = config.version
 
         hydro_config = study_data.tree.get(["input", "hydro", "hydro"])
@@ -253,12 +237,12 @@ class CreateArea(ICommand):
             hydro_config.setdefault("leeway up", {})[area_id] = 1
             hydro_config.setdefault("pumping efficiency", {})[area_id] = 1
 
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"creditmodulations_{area_id}"
-            ] = self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
-            new_area_data["input"]["hydro"]["common"]["capacity"][
-                f"inflowPattern_{area_id}"
-            ] = self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"creditmodulations_{area_id}"] = (
+                self.command_context.generator_matrix_constants.get_hydro_credit_modulations()
+            )
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"inflowPattern_{area_id}"] = (
+                self.command_context.generator_matrix_constants.get_hydro_inflow_pattern()
+            )
             new_area_data["input"]["hydro"]["common"]["capacity"][f"waterValues_{area_id}"] = null_matrix
 
         has_renewables = version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
@@ -287,7 +271,7 @@ class CreateArea(ICommand):
 
         study_data.tree.save(new_area_data)
 
-        return output
+        return CommandOutput(status=True, message=f"Area '{self.area_name}' created")
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -296,5 +280,5 @@ class CreateArea(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

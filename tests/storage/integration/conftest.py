@@ -22,7 +22,14 @@ import pytest
 from sqlalchemy import create_engine
 
 from antarest.core.cache.business.local_chache import LocalCache
-from antarest.core.config import CacheConfig, Config, SecurityConfig, StorageConfig, WorkspaceConfig
+from antarest.core.config import (
+    CacheConfig,
+    Config,
+    InternalMatrixFormat,
+    SecurityConfig,
+    StorageConfig,
+    WorkspaceConfig,
+)
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
@@ -32,6 +39,8 @@ from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.main import build_study_service
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
+from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
 
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
@@ -121,9 +130,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
 
     matrix_path = tmp_path / "matrices"
     matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(
-        bucket_dir=matrix_path,
-    )
+    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
     matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
     storage_service = build_study_service(
         app_ctxt=Mock(),
@@ -138,3 +145,17 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     )
 
     return storage_service
+
+
+@pytest.fixture(name="output_service")
+def output_service_fixture(storage_service: StudyService) -> OutputService:
+    storage = OutputStorageDispatcher(
+        storage_service.storage_service.raw_study_service, storage_service.storage_service.variant_study_service
+    )
+    return OutputService(
+        storage_service,
+        storage,
+        storage_service.task_service,
+        storage_service.file_transfer_manager,
+        storage_service.event_bus,
+    )

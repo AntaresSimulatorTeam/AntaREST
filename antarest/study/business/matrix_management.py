@@ -19,13 +19,11 @@ import numpy as np
 import pandas as pd
 
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
-from antarest.study.business.utils import execute_or_add_commands
-from antarest.study.model import Study
+from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.utils import is_managed
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
 
@@ -231,19 +229,18 @@ def merge_edit_instructions(
 
 
 class MatrixManager:
-    def __init__(self, storage_service: StudyStorageService) -> None:
-        self.storage_service = storage_service
+    def __init__(self, command_context: CommandContext) -> None:
+        self._command_context = command_context
 
     def update_matrix(
         self,
-        study: Study,
+        study: StudyInterface,
         path: str,
         edit_instructions: List[MatrixEditInstruction],
     ) -> None:
         logger.info(f"Starting matrix update for {study.id}...")
-        storage_service = self.storage_service.get_storage(study)
-        file_study = storage_service.get_raw(study)
-        matrix_service = self.storage_service.variant_study_service.command_factory.command_context.matrix_service
+        file_study = study.get_files()
+        matrix_service = self._command_context.matrix_service
 
         matrix_node = file_study.tree.get_node(url=path.split("/"))
 
@@ -283,29 +280,19 @@ class MatrixManager:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
         logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
-        new_matrix_id = matrix_service.create(matrix_df.to_numpy().tolist())
+        new_matrix_id = matrix_service.create(matrix_df)
 
         logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [
             ReplaceMatrix(
                 target=path,
                 matrix=strip_matrix_protocol(new_matrix_id),
-                command_context=self.storage_service.variant_study_service.command_factory.command_context,
-                study_version=file_study.config.version,
+                command_context=self._command_context,
+                study_version=study.version,
             )
         ]
 
         logger.info(f"Executing command for study '{study.id}'...")
-        execute_or_add_commands(
-            study=study,
-            file_study=file_study,
-            commands=command,
-            storage_service=self.storage_service,
-        )
-
-        if not is_managed(study):
-            logger.info(f"Denormalizing matrix for path '{path}'...")
-            matrix_node = file_study.tree.get_node(path.split("/"))
-            matrix_node.denormalize()
+        study.add_commands(command)
 
         logger.info("Matrix update done.")

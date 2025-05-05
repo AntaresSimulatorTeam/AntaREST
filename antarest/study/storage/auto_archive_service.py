@@ -13,7 +13,7 @@
 import datetime
 import logging
 import time
-import typing as t
+from typing import Sequence
 
 from typing_extensions import override
 
@@ -26,15 +26,17 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
 
 class AutoArchiveService(IService):
-    def __init__(self, study_service: StudyService, config: Config):
+    def __init__(self, study_service: StudyService, output_service: OutputService, config: Config):
         super(AutoArchiveService, self).__init__()
         self.study_service = study_service
+        self.output_service = output_service
         self.config = config
         self.sleep_cycle = self.config.storage.auto_archive_sleeping_time
         self.max_parallel = self.config.storage.auto_archive_max_parallel
@@ -47,7 +49,7 @@ class AutoArchiveService(IService):
         old_date = datetime.datetime.utcnow() - datetime.timedelta(days=self.config.storage.auto_archive_threshold_days)
         with db():
             # in this part full `Read` rights over studies are granted to this function
-            studies: t.Sequence[Study] = self.study_service.repository.get_all(
+            studies: Sequence[Study] = self.study_service.repository.get_all(
                 study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions(is_admin=True))
             )
             # list of study IDs and boolean indicating if it's a raw study (True) or a variant (False)
@@ -75,7 +77,7 @@ class AutoArchiveService(IService):
                     )
                     if not self.config.storage.auto_archive_dry_run:
                         with db():
-                            self.study_service.archive_outputs(
+                            self.output_service.archive_outputs(
                                 study_id,
                                 params=RequestParameters(DEFAULT_ADMIN_USER),
                             )

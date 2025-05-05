@@ -12,8 +12,6 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, FastAPI
-
 from antarest.core.application import AppBuildContext
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
@@ -24,12 +22,14 @@ from antarest.launcher.repository import JobResultRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.web import create_launcher_api
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
 
 
 def build_launcher(
     app_ctxt: Optional[AppBuildContext],
     config: Config,
     study_service: StudyService,
+    output_service: OutputService,
     file_transfer_manager: FileTransferManager,
     task_service: ITaskService,
     cache: ICache,
@@ -43,6 +43,7 @@ def build_launcher(
         service_launcher = LauncherService(
             config=config,
             study_service=study_service,
+            output_service=output_service,
             job_result_repository=repository,
             event_bus=event_bus,
             file_transfer_manager=file_transfer_manager,

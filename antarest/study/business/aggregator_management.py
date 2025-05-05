@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 
 import logging
-import typing as t
-from enum import StrEnum
+from enum import Enum, StrEnum
 from pathlib import Path
+from typing import Any, Dict, List, MutableSequence, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-MC_TEMPLATE_PARTS = "output/{sim_id}/economy/{mc_root}"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
@@ -62,7 +61,7 @@ DUMMY_COMPONENT = 2
 logger = logging.getLogger(__name__)
 
 
-class MCRoot(StrEnum):
+class MCRoot(Enum):
     MC_IND = "mc-ind"
     MC_ALL = "mc-all"
 
@@ -91,14 +90,7 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int) -> None:
-    maximum_size = 100  # size in Mo that corresponds to a 15 seconds task.
-    estimated_df_size = nb_files * df_bytes_size // (nb_files_checked * 10**6)
-    if estimated_df_size > maximum_size:
-        raise FileTooLargeError(estimated_df_size, maximum_size)
-
-
-def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> t.Sequence[str]:
+def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
     # original columns
     org_cols = df_cols.copy()
     if is_details:
@@ -116,12 +108,12 @@ def _columns_ordering(df_cols: t.List[str], column_name: str, is_details: bool, 
     return new_column_order
 
 
-def _infer_column_from_regex(cols: t.Sequence[str], col_regex: str) -> t.Optional[str]:
+def _infer_column_from_regex(cols: Sequence[str], col_regex: str) -> Optional[str]:
     stripped_lower_col_regex = col_regex.lower().strip()
     return next((c for c in cols if stripped_lower_col_regex in c.lower().strip()), None)
 
 
-def _infer_time_id(df: pd.DataFrame, is_details: bool) -> t.List[int]:
+def _infer_time_id(df: pd.DataFrame, is_details: bool) -> List[int]:
     if is_details:
         return df[TIME_ID_COL].tolist()
     else:
@@ -129,11 +121,11 @@ def _infer_time_id(df: pd.DataFrame, is_details: bool) -> t.List[int]:
 
 
 def _filtered_files_listing(
-    folders_to_check: t.List[Path],
+    folders_to_check: List[Path],
     query_file: str,
     frequency: str,
-) -> t.Dict[str, t.MutableSequence[str]]:
-    filtered_files: t.Dict[str, t.MutableSequence[str]] = {}
+) -> Dict[str, MutableSequence[str]]:
+    filtered_files: Dict[str, MutableSequence[str]] = {}
     for folder_path in folders_to_check:
         for file in folder_path.iterdir():
             if file.stem == f"{query_file}-{frequency}":
@@ -144,32 +136,29 @@ def _filtered_files_listing(
 class AggregatorManager:
     def __init__(
         self,
-        study_path: Path,
-        output_id: str,
-        query_file: t.Union[MCIndAreasQueryFile, MCAllAreasQueryFile, MCIndLinksQueryFile, MCAllLinksQueryFile],
+        output_path: Path,
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
-        ids_to_consider: t.Sequence[str],
-        columns_names: t.Sequence[str],
-        mc_years: t.Optional[t.Sequence[int]] = None,
+        ids_to_consider: Sequence[str],
+        columns_names: Sequence[str],
+        aggregation_results_max_size: int,
+        mc_years: Optional[Sequence[int]] = None,
     ):
-        self.study_path = study_path
-        self.output_id = output_id
+        self.output_path = output_path
+        self.output_id = self.output_path.name
         self.query_file = query_file
         self.frequency = frequency
         self.mc_years = mc_years
         self.columns_names = columns_names
         self.ids_to_consider = ids_to_consider
+        self.aggregation_results_max_size = aggregation_results_max_size
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
             else "links"
         )
-        self.mc_ind_path = self.study_path / MC_TEMPLATE_PARTS.format(
-            sim_id=self.output_id, mc_root=MCRoot.MC_IND.value
-        )
-        self.mc_all_path = self.study_path / MC_TEMPLATE_PARTS.format(
-            sim_id=self.output_id, mc_root=MCRoot.MC_ALL.value
-        )
+        self.mc_ind_path = self.output_path / "economy" / MCRoot.MC_IND.value
+        self.mc_all_path = self.output_path / "economy" / MCRoot.MC_ALL.value
         self.mc_root = (
             MCRoot.MC_IND
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCIndLinksQueryFile))
@@ -206,7 +195,7 @@ class AggregatorManager:
         df.columns = pd.Index(new_cols)
         return df
 
-    def _filter_ids(self, folder_path: Path) -> t.List[str]:
+    def _filter_ids(self, folder_path: Path) -> List[str]:
         if self.output_type == "areas":
             # Areas names filtering
             areas_ids = sorted([d.name for d in folder_path.iterdir()])
@@ -220,7 +209,7 @@ class AggregatorManager:
             return [link for link in links_ids if link in self.ids_to_consider]
         return links_ids
 
-    def _gather_all_files_to_consider(self) -> t.Sequence[Path]:
+    def _gather_all_files_to_consider(self) -> Sequence[Path]:
         if self.mc_root == MCRoot.MC_IND:
             # Monte Carlo years filtering
             all_mc_years = [d.name for d in self.mc_ind_path.iterdir()]
@@ -312,7 +301,7 @@ class AggregatorManager:
 
             # using a dictionary to build the new data frame with the base columns (NO2, production etc.)
             # and the cluster id and time id
-            new_obj: t.Dict[str, t.Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
+            new_obj: Dict[str, Any] = {k: [] for k in [CLUSTER_ID_COL, TIME_ID_COL] + actual_cols}
 
             # loop over the cluster id to extract the values of the actual columns
             for cluster_id, dummy_component in cluster_dummy_product_cols:
@@ -356,7 +345,7 @@ class AggregatorManager:
             # just extract the data frame from the file by just merging the columns components
             return self._parse_output_file(file_path)
 
-    def _build_dataframe(self, files: t.Sequence[Path]) -> pd.DataFrame:
+    def _build_dataframe(self, files: Sequence[Path]) -> pd.DataFrame:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
@@ -368,7 +357,7 @@ class AggregatorManager:
             MCAllAreasQueryFile.DETAILS_RES,
         ]
         final_df = pd.DataFrame()
-        nb_files = len(files)
+
         for k, file_path in enumerate(files):
             df = self._process_df(file_path, is_details)
 
@@ -380,12 +369,10 @@ class AggregatorManager:
             if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
                 return pd.DataFrame()
 
-            # checks if the estimated dataframe size does not exceed the limit
-            # This check is performed on 10 aggregated files to have a more accurate view of the final df.
-            if k == 10:
-                # The following formula is the more accurate one compared to the final csv file.
-                estimated_binary_size = final_df.memory_usage().sum()
-                _checks_estimated_size(nb_files, estimated_binary_size, k)
+            # The following formula is the more accurate one compared to the final csv file.
+            estimated_binary_size = final_df.memory_usage().sum()
+            if estimated_binary_size > self.aggregation_results_max_size * 10**6:
+                raise FileTooLargeError(round(estimated_binary_size / 10**6, 2), self.aggregation_results_max_size)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
@@ -442,7 +429,7 @@ class AggregatorManager:
 
         logger.info(
             f"Parsing {len(all_output_files)} {self.frequency.value} files"
-            f"to build the aggregated output for study `{self.study_path.name}`"
+            f"to build the aggregated output {self.output_id}"
         )
         # builds final dataframe
         final_df = self._build_dataframe(all_output_files)

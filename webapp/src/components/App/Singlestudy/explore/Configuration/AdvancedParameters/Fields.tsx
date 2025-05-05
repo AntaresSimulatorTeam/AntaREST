@@ -33,7 +33,7 @@ import {
   type AdvancedParamsFormFields,
 } from "./utils";
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 
 function Fields() {
   const [t] = useTranslation();

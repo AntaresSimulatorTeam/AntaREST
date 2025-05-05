@@ -13,9 +13,7 @@
 import re
 from typing import Optional, Tuple
 
-import pandas as pd
-
-from antarest.core.model import SUB_JSON
+from antarest.core.model import JSON
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -23,7 +21,7 @@ class UriResolverService:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self.matrix_service = matrix_service
 
-    def resolve(self, uri: str, formatted: bool = True) -> SUB_JSON:
+    def resolve(self, uri: str, formatted: bool = True) -> JSON | str | None:
         res = UriResolverService._extract_uri_components(uri)
         if res:
             protocol, uuid = res
@@ -49,26 +47,12 @@ class UriResolverService:
         res = UriResolverService._extract_uri_components(uri)
         return res[1] if res else None
 
-    def _resolve_matrix(self, id: str, formatted: bool = True) -> SUB_JSON:
-        data = self.matrix_service.get(id)
-        if not data:
-            raise ValueError(f"id matrix {id} not found")
-        if data.data == [[]]:
-            # Corresponds to an empty matrix, so we should return empty index and columns.
-            data.columns = []
-            data.index = []
+    def _resolve_matrix(self, id: str, formatted: bool = True) -> JSON | str:
+        df = self.matrix_service.get(id)
 
         if formatted:
-            return {
-                "data": data.data,
-                "index": data.index,
-                "columns": data.columns,
-            }
-        df = pd.DataFrame(
-            data=data.data,
-            index=data.index,
-            columns=data.columns,
-        )
+            return {"data": df.to_numpy().tolist(), "index": list(df.index), "columns": list(df.columns)}
+
         if df.empty:
             return ""
         csv = df.to_csv(

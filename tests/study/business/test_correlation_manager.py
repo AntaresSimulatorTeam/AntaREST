@@ -10,16 +10,13 @@
 #
 # This file is part of the Antares project.
 
-import datetime
-import uuid
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.core.model import PublicMode
-from antarest.login.model import Group, User
 from antarest.study.business.area_management import AreaInfoDTO, AreaType
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
@@ -27,16 +24,18 @@ from antarest.study.business.correlation_management import (
     CorrelationManager,
     CorrelationMatrix,
 )
-from antarest.study.model import STUDY_VERSION_8_8, RawStudy, Study, StudyContentStatus
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.storage_service import StudyStorageService
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+
+
+@pytest.fixture
+def correlation_manager(command_context: CommandContext) -> CorrelationManager:
+    return CorrelationManager(command_context)
 
 
 class TestCorrelationField:
@@ -152,53 +151,21 @@ class TestCorrelationMatrix:
             )
 
 
-# noinspection SpellCheckingInspection
-EXECUTE_OR_ADD_COMMANDS = "antarest.study.business.correlation_management.execute_or_add_commands"
+def create_study_interface(tree: FileStudyTree, version: StudyVersion = STUDY_VERSION_8_6) -> StudyInterface:
+    """
+    Creates a mock study interface which returns the provided study tree.
+    """
+    file_study = Mock(spec=FileStudy)
+    file_study.tree = tree
+    study = Mock(StudyInterface)
+    study.get_files.return_value = file_study
+    study.version = version
+    file_study.config.version = version
+    return study
 
 
 class TestCorrelationManager:
-    @pytest.fixture(name="study_storage_service")
-    def study_storage_service(self) -> StudyStorageService:
-        """Return a mocked StudyStorageService."""
-        return Mock(
-            spec=StudyStorageService,
-            variant_study_service=Mock(
-                spec=VariantStudyService,
-                command_factory=Mock(
-                    spec=CommandFactory,
-                    command_context=Mock(spec=CommandContext),
-                ),
-            ),
-            get_storage=Mock(return_value=Mock(spec=RawStudyService, get_raw=Mock(spec=FileStudy))),
-        )
-
-    # noinspection PyArgumentList
-    @pytest.fixture(name="study_uuid")
-    def study_uuid_fixture(self, db_session) -> str:
-        user = User(id=0, name="admin")
-        group = Group(id="my-group", name="group")
-        raw_study = RawStudy(
-            id=str(uuid.uuid4()),
-            name="Dummy",
-            version="850",
-            author="John Smith",
-            created_at=datetime.datetime.now(datetime.timezone.utc),
-            updated_at=datetime.datetime.now(datetime.timezone.utc),
-            public_mode=PublicMode.FULL,
-            owner=user,
-            groups=[group],
-            workspace="default",
-            path="/path/to/study",
-            content_status=StudyContentStatus.WARNING,
-        )
-        db_session.add(raw_study)
-        db_session.commit()
-        return raw_study.id
-
-    def test_get_correlation_matrix__nominal_case(self, db_session, study_storage_service, study_uuid):
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_uuid)
-
+    def test_get_correlation_matrix__nominal_case(self, correlation_manager):
         # Prepare the mocks
         correlation_cfg = {
             "n%n": 0.1,
@@ -208,11 +175,12 @@ class TestCorrelationManager:
             "s%w": 0.6,
             "w%w": 0.1,
         }
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=correlation_cfg),
+
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=correlation_cfg),
+            )
         )
 
         # Given the following arguments
@@ -222,10 +190,9 @@ class TestCorrelationManager:
             AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
-        manager = CorrelationManager(study_storage_service)
 
         # run
-        matrix = manager.get_correlation_matrix(all_areas=all_areas, study=study, columns=[])
+        matrix = correlation_manager.get_correlation_matrix(all_areas=all_areas, study=study, columns=[])
 
         # Check
         assert matrix == CorrelationMatrix(
@@ -239,18 +206,16 @@ class TestCorrelationManager:
             ],
         )
 
-    def test_get_field_values__nominal_case(self, db_session, study_storage_service, study_uuid):
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_uuid)
-
+    def test_get_field_values__nominal_case(self, correlation_manager):
         # Prepare the mocks
         # NOTE: "s%s" value is ignored
         correlation_cfg = {"s%s": 0.1, "n%s": 0.2, "w%n": 0.6}
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=correlation_cfg),
+
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=correlation_cfg),
+            )
         )
 
         # Given the following arguments
@@ -261,8 +226,7 @@ class TestCorrelationManager:
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
         area_id = "s"  # South
-        manager = CorrelationManager(study_storage_service)
-        fields = manager.get_correlation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
+        fields = correlation_manager.get_correlation_form_fields(all_areas=all_areas, study=study, area_id=area_id)
         assert fields == CorrelationFormFields(
             correlation=[
                 AreaCoefficientItem(area_id="s", coefficient=100.0),
@@ -270,19 +234,16 @@ class TestCorrelationManager:
             ]
         )
 
-    def test_set_field_values__nominal_case(self, db_session, study_storage_service, study_uuid):
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_uuid)
-
+    def test_set_field_values__nominal_case(self, correlation_manager):
         # Prepare the mocks: North + South
         correlation_cfg = {}
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=correlation_cfg),
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=correlation_cfg),
+            ),
+            version=STUDY_VERSION_8_8,
         )
-        file_study.config.version = STUDY_VERSION_8_8
 
         # Given the following arguments
         all_areas = [
@@ -292,44 +253,38 @@ class TestCorrelationManager:
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
         area_id = "s"  # South
-        manager = CorrelationManager(study_storage_service)
-        with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            manager.set_correlation_form_fields(
-                all_areas=all_areas,
-                study=study,
-                area_id=area_id,
-                data=CorrelationFormFields(
-                    correlation=[
-                        AreaCoefficientItem(area_id="s", coefficient=100),
-                        AreaCoefficientItem(area_id="e", coefficient=30),
-                        AreaCoefficientItem(area_id="n", coefficient=40),
-                    ]
-                ),
-            )
+        correlation_manager.set_correlation_form_fields(
+            all_areas=all_areas,
+            study=study,
+            area_id=area_id,
+            data=CorrelationFormFields(
+                correlation=[
+                    AreaCoefficientItem(area_id="s", coefficient=100),
+                    AreaCoefficientItem(area_id="e", coefficient=30),
+                    AreaCoefficientItem(area_id="n", coefficient=40),
+                ]
+            ),
+        )
 
         # check update
-        assert exe.call_count == 1
-        mock_call = exe.mock_calls[0]
-        # signature: execute_or_add_commands(study, file_study, commands, storage_service)
-        actual_study, _, actual_cmds, _ = mock_call.args
-        assert actual_study == study
+        assert study.add_commands.call_count == 1
+        mock_call = study.add_commands.mock_calls[0]
+        # signature: add_commands(commands)
+        (actual_cmds,) = mock_call.args
         assert len(actual_cmds) == 1
         cmd: UpdateConfig = actual_cmds[0]
         assert cmd.command_name == CommandName.UPDATE_CONFIG
         assert cmd.target == "input/hydro/prepro/correlation/annual"
         assert cmd.data == {"e%s": 0.3, "n%s": 0.4}
 
-    def test_set_field_values__area_not_found(self, db_session, study_storage_service, study_uuid):
-        # The study must be fetched from the database
-        study: RawStudy = db_session.query(Study).get(study_uuid)
-
+    def test_set_field_values__area_not_found(self, correlation_manager):
         # Prepare the mocks: North + South
         correlation_cfg = {}
-        storage = study_storage_service.get_storage(study)
-        file_study = storage.get_raw(study)
-        file_study.tree = Mock(
-            spec=FileStudyTree,
-            get=Mock(return_value=correlation_cfg),
+        study = create_study_interface(
+            Mock(
+                spec=FileStudyTree,
+                get=Mock(return_value=correlation_cfg),
+            ),
         )
 
         # Given the following arguments
@@ -340,19 +295,17 @@ class TestCorrelationManager:
             AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
         ]
         area_id = "n"  # South
-        manager = CorrelationManager(study_storage_service)
 
-        with patch(EXECUTE_OR_ADD_COMMANDS) as exe:
-            with pytest.raises(AreaNotFound) as ctx:
-                manager.set_correlation_form_fields(
-                    all_areas=all_areas,
-                    study=study,
-                    area_id=area_id,
-                    data=CorrelationFormFields(
-                        correlation=[
-                            AreaCoefficientItem(area_id="UNKNOWN", coefficient=3.14),
-                        ]
-                    ),
-                )
-            assert "'UNKNOWN'" in ctx.value.detail
-        exe.assert_not_called()
+        with pytest.raises(AreaNotFound) as ctx:
+            correlation_manager.set_correlation_form_fields(
+                all_areas=all_areas,
+                study=study,
+                area_id=area_id,
+                data=CorrelationFormFields(
+                    correlation=[
+                        AreaCoefficientItem(area_id="UNKNOWN", coefficient=3.14),
+                    ]
+                ),
+            )
+        assert "'UNKNOWN'" in ctx.value.detail
+        study.add_commands.assert_not_called()

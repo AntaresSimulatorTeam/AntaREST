@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
-import { useTranslation } from "react-i18next";
+import { Box, Button } from "@mui/material";
 import { useState } from "react";
-import type { GroupDetailsDTO } from "../../../../common/types";
-import CreateGroupDialog from "./dialog/CreateGroupDialog";
-import { isAuthUserAdmin } from "../../../../redux/selectors";
+import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import { isAuthUserAdmin } from "../../../../redux/selectors";
+import type { GroupDetailsDTO } from "../../../../types/types";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
+import CreateGroupDialog from "./dialog/CreateGroupDialog";
 
 interface Props {
   setSearchValue: (v: string) => void;
@@ -60,7 +60,7 @@ function Header(props: Props) {
           open
           addGroup={addGroup}
           reloadFetchGroups={reloadFetchGroups}
-          closeDialog={() => setShowCreateGroupModal(false)}
+          onCancel={() => setShowCreateGroupModal(false)}
         />
       )}
     </>

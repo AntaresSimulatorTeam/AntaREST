@@ -16,18 +16,17 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import type { AxiosError } from "axios";
-import { Box, Divider, Skeleton, styled, Typography } from "@mui/material";
+import { Box, Button, Divider, Skeleton, styled, Typography } from "@mui/material";
 import StickyNote2OutlinedIcon from "@mui/icons-material/StickyNote2Outlined";
 import LinearScaleIcon from "@mui/icons-material/LinearScale";
 import StorageIcon from "@mui/icons-material/Storage";
 import HubIcon from "@mui/icons-material/Hub";
 import { Editor, EditorState } from "draft-js";
 import "draft-js/dist/Draft.css";
-import { LoadingButton } from "@mui/lab";
 import EditIcon from "@mui/icons-material/Edit";
 import { editComments, getComments, getStudyDiskUsage } from "../../../../../../services/api/study";
 import { convertSize, convertXMLToDraftJS, getColorForSize } from "./utils";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import NoteEditorModal from "./NodeEditorModal";
 import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
@@ -165,7 +164,7 @@ function Notes({ study }: Props) {
                 />
               </EditorContainer>
               <NoteFooter>
-                <LoadingButton
+                <Button
                   variant="text"
                   color="secondary"
                   onClick={() => setEditionMode(true)}
@@ -174,13 +173,13 @@ function Notes({ study }: Props) {
                   endIcon={<EditIcon />}
                 >
                   {t("global.edit")}
-                </LoadingButton>
+                </Button>
               </NoteFooter>
             </>
           )}
         />
       </Note>
-      <Divider sx={{ width: "98%", height: "1px", bgcolor: "divider" }} />
+      <Divider flexItem variant="middle" />
       <Box
         sx={{
           display: "flex",

@@ -10,4 +10,4 @@
 #
 # This file is part of the Antares project.
 
-from . import series
+from . import series  # noqa: F401

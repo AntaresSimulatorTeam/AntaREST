@@ -28,7 +28,8 @@ from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveRenewablesCluster:
-    def test_apply(self, empty_study: FileStudy, command_context: CommandContext) -> None:
+    def test_apply(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
+        empty_study = empty_study_810
         empty_study.config.enr_modelling = str(EnrModelling.CLUSTERS)
         study_version = StudyVersion.parse(810)
         empty_study.config.version = study_version

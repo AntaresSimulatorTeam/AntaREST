@@ -22,7 +22,7 @@ import pytest
 from fastapi import HTTPException
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
+from sqlalchemy.orm import sessionmaker  # type: ignore
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -567,6 +567,7 @@ nominalcapacity = 14.0
         repository=study_service.repository,
         storage_service=study_service.storage_service,
         event_bus=study_service.event_bus,
+        study_interface_supplier=study_service.get_study_interface,
     )
 
     task_id = study_service.task_service.add_task(

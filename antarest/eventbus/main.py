@@ -12,7 +12,6 @@
 
 from typing import Optional
 
-from fastapi import APIRouter, FastAPI
 from redis import Redis
 
 from antarest.core.application import AppBuildContext

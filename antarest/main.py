@@ -48,11 +48,8 @@ from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
 from antarest.login.utils import CurrentUserMiddleware
-from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.service_creator import SESSION_ARGS, Module, create_services, init_db_engine
+from antarest.service_creator import SESSION_ARGS, Module, Services, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
-from antarest.study.storage.auto_archive_service import AutoArchiveService
-from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.tools.admin_lib import clean_locks
 
 logger = logging.getLogger(__name__)
@@ -107,7 +104,7 @@ def fastapi_app(
     resource_path: Optional[Path] = None,
     mount_front: bool = True,
     auto_upgrade_db: bool = False,
-) -> Tuple[FastAPI, Dict[str, Any]]:
+) -> Tuple[FastAPI, Services]:
     res = resource_path or get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     configure_logger(config)
@@ -282,17 +279,14 @@ def fastapi_app(
 
     application.include_router(api_root)
 
-    if config.server.services and Module.WATCHER.value in config.server.services:
-        watcher = cast(Watcher, services["watcher"])
-        watcher.start()
+    if services.watcher:
+        services.watcher.start()
 
-    if config.server.services and Module.MATRIX_GC.value in config.server.services:
-        matrix_gc = cast(MatrixGarbageCollector, services["matrix_gc"])
-        matrix_gc.start()
+    if services.matrix_gc:
+        services.matrix_gc.start()
 
-    if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services:
-        auto_archiver = cast(AutoArchiveService, services["auto_archiver"])
-        auto_archiver.start()
+    if services.auto_archiver:
+        services.auto_archiver.start()
 
     customize_openapi(application)
 
@@ -313,10 +307,7 @@ LOGGING_CONFIG = copy.deepcopy(uvicorn.config.LOGGING_CONFIG)
 LOGGING_CONFIG["formatters"]["default"]["fmt"] = "[%(asctime)s] [%(process)s] %(levelprefix)s  %(message)s"
 # noinspection SpellCheckingInspection
 LOGGING_CONFIG["formatters"]["access"]["fmt"] = (
-    "[%(asctime)s] [%(process)s] [%(name)s]"
-    " %(levelprefix)s"
-    ' %(client_addr)s - "%(request_line)s"'
-    " %(status_code)s"
+    '[%(asctime)s] [%(process)s] [%(name)s] %(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s'
 )
 
 

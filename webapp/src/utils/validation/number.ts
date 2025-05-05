@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ValidationReturn } from "@/common/types";
+import type { ValidationReturn } from "@/types/types";
 import { t } from "i18next";
 
 interface NumberValidationOptions {
@@ -55,7 +55,7 @@ export function validateNumber(
 
   const value = valueOrOpts;
 
-  if (!isFinite(value)) {
+  if (!Number.isFinite(value)) {
     return t("form.field.invalidNumber", { value });
   }
 

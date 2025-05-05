@@ -73,9 +73,13 @@ export default [
           ],
           patterns: [
             {
+              group: ["@mui/material/*"],
+              message: 'Import from "@mui/material" ',
+            },
+            {
               group: ["react"],
               importNamePattern:
-                "^(React|Function|Ref|Mutable|CSS|Component|Props|Form)|(Event|Handler|Attributes)$",
+                "^(React|Function|Ref|Mutable|CSS|Component|Props|Form|Element)|(Event|Handler|Attributes)$",
               message:
                 'Use `React.[TYPE]` (e.g. `React.ReactNode`) instead of importing it directly from "react".',
             },
@@ -134,6 +138,7 @@ export default [
         },
       ],
       "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
+      eqeqeq: ["error"],
     },
   },
 ];

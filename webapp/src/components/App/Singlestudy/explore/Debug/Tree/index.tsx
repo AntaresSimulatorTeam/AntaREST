@@ -13,9 +13,11 @@
  */
 
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import FileTreeItem from "./FileTreeItem";
-import type { TreeFolder } from "../utils";
+import { useContext } from "react";
 import { getParentPaths } from "../../../../../../utils/pathUtils";
+import DebugContext from "../DebugContext";
+import type { TreeFolder } from "../utils";
+import FileTreeItem from "./FileTreeItem";
 
 interface Props {
   data: TreeFolder;
@@ -25,8 +27,8 @@ interface Props {
   setExpandedItems: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-function Tree(props: Props) {
-  const { data, currentPath, expandedItems, setExpandedItems } = props;
+function Tree({ data, currentPath, expandedItems, setExpandedItems }: Props) {
+  const { isTreeLoading } = useContext(DebugContext);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -46,6 +48,7 @@ function Tree(props: Props) {
 
   return (
     <SimpleTreeView
+      multiSelect={false}
       selectedItems={currentPath}
       expandedItems={
         currentPath
@@ -56,7 +59,13 @@ function Tree(props: Props) {
       onExpandedItemsChange={handleExpandedItemsChange}
     >
       {Object.keys(data).map((filename) => (
-        <FileTreeItem key={filename} name={filename} treeData={data[filename]} path="" />
+        <FileTreeItem
+          key={filename}
+          name={filename}
+          treeData={data[filename]}
+          path=""
+          disabled={isTreeLoading}
+        />
       ))}
     </SimpleTreeView>
   );

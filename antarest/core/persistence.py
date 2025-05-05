@@ -15,11 +15,11 @@ import os
 from io import StringIO
 from pathlib import Path
 
+from sqlalchemy.orm import declarative_base  # type: ignore
+
 from alembic import command
 from alembic.config import Config
 from alembic.util import CommandError
-from sqlalchemy.orm import declarative_base  # type: ignore
-
 from antarest.core.utils.utils import get_local_path
 
 logger = logging.getLogger(__name__)

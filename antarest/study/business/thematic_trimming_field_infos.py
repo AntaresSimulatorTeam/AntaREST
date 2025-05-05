@@ -14,7 +14,7 @@
 List of fields of the Thematic Trimming panel
 """
 
-import typing as t
+from typing import Any, Mapping
 
 from antares.study.version import StudyVersion
 
@@ -136,8 +136,8 @@ _GENERAL = "General"
 _SHORT_TERM_STORAGES = "Short-Term Storages"
 _SHORT_TERM_STORAGES_GROUP = "Short-Term Storages - Group"
 
-FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
-    # fmt: off
+# fmt: off
+FIELDS_INFO: Mapping[str, Mapping[str, Any]] = {
     "ov_cost": {"topic": _GENERAL, "path": "OV. COST", "default_value": True},
     "op_cost": {"topic": _GENERAL, "path": "OP. COST", "default_value": True},
     "mrg_price": {"topic": _GENERAL, "path": "MRG. PRICE", "default_value": True},
@@ -237,11 +237,11 @@ FIELDS_INFO: t.Mapping[str, t.Mapping[str, t.Any]] = {
     "other5_injection": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_injection", "default_value": True, "start_version": STUDY_VERSION_8_6},
     "other5_withdrawal": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_withdrawal", "default_value": True, "start_version": STUDY_VERSION_8_6},
     "other5_level": {"topic": _SHORT_TERM_STORAGES_GROUP, "path": "Other5_level", "default_value": True, "start_version": STUDY_VERSION_8_6},
-    # fmt: on
 }
+# fmt: on
 
 
-def get_fields_info(study_version: StudyVersion) -> t.Mapping[str, t.Mapping[str, t.Any]]:
+def get_fields_info(study_version: StudyVersion) -> Mapping[str, Mapping[str, Any]]:
     return {
         key: info
         for key, info in FIELDS_INFO.items()

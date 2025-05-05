@@ -13,8 +13,8 @@
  */
 
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
-import type { UserInfo } from "../../common/types";
 import storage, { StorageKey } from "../../services/utils/localStorage";
+import type { UserInfo } from "../../types/types";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
@@ -22,7 +22,7 @@ import {
   updateStudiesFromLocalStorage,
   updateStudiesSortConf,
 } from "../ducks/studies";
-import { setMenuCollapse } from "../ducks/ui";
+import { setMenuOpen } from "../ducks/ui";
 
 const localStorageMiddleware = createListenerMiddleware<AppState>();
 
@@ -35,8 +35,7 @@ localStorageMiddleware.startListening({
   effect: (action, { dispatch }) => {
     const user = action.payload as UserInfo;
     if (user) {
-      const { expirationDate, ...toSave } = user;
-      storage.setItem(StorageKey.AuthUser, toSave);
+      storage.setItem(StorageKey.AuthUser, user);
     } else {
       storage.removeItem(StorageKey.AuthUser);
     }
@@ -52,7 +51,7 @@ localStorageMiddleware.startListening({
 
       const menuCollapsed = storage.getItem(StorageKey.UIMenuCollapsed);
       if (menuCollapsed !== null) {
-        dispatch(setMenuCollapse(menuCollapsed));
+        dispatch(setMenuOpen(menuCollapsed));
       }
     }
   },
@@ -84,7 +83,7 @@ localStorageMiddleware.startListening({
 ////////////////////////////////////////////////////////////////
 
 localStorageMiddleware.startListening({
-  actionCreator: setMenuCollapse,
+  actionCreator: setMenuOpen,
   effect: (action) => {
     storage.setItem(StorageKey.UIMenuCollapsed, action.payload);
   },

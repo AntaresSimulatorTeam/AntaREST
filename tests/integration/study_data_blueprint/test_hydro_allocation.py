@@ -12,6 +12,7 @@
 
 import http
 import typing as t
+from pathlib import Path
 
 import pytest
 from starlette.testclient import TestClient
@@ -191,7 +192,7 @@ class TestHydroAllocation:
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            data=area_info.json(),
+            data=area_info.model_dump_json(),
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
 
@@ -234,7 +235,7 @@ class TestHydroAllocation:
                 params={"path": f"input/hydro/allocation/{prod_area}"},
                 json=allocation_cfg,
             )
-            assert res.status_code == http.HTTPStatus.NO_CONTENT, res.json()
+            assert res.status_code == http.HTTPStatus.OK, res.json()
 
         # Then we remove the "fr" zone.
         # The deletion should update the allocation matrix of all other zones.
@@ -262,3 +263,30 @@ class TestHydroAllocation:
             "index": ["de", "es", "it"],
         }
         assert actual == expected
+
+    def test_get_allocation_form_values__other_format(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+    ) -> None:
+        """
+        Check if an allocation ini file can be read with only signle '[' and ']' characters.
+        """
+        all_areas = ["de", "es", "fr", "it"]
+
+        allocation_dir_path = tmp_path.joinpath("ext_workspace/STA-mini/input/hydro/allocation")
+
+        # replace double '[' by single '['
+        for area in all_areas:
+            with open(allocation_dir_path.joinpath(f"{area}.ini"), "r") as f:
+                file_content = f.read().replace("[[", "[").replace("]]", "]")
+            with open(allocation_dir_path.joinpath(f"{area}.ini"), "w") as f:
+                f.write(file_content)
+            with open(allocation_dir_path.joinpath(f"{area}.ini"), "r") as f:
+                assert f.read().find("[[") == -1
+                assert f.read().find("]]") == -1
+
+        # check if everything is correctly retrieved
+        res = client.get(
+            f"/v1/studies/{internal_study_id}/areas/{all_areas[0]}/hydro/allocation/form",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
+        assert res.status_code == http.HTTPStatus.OK, res.json()

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -36,15 +36,11 @@ class RemoveBindingConstraint(ICommand):
     # Properties of the `REMOVE_BINDING_CONSTRAINT` command:
     id: str
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         if self.id not in [bind.id for bind in study_data.bindings]:
-            return (
-                CommandOutput(status=False, message="Binding constraint not found"),
-                dict(),
-            )
+            return CommandOutput(status=False, message="Binding constraint not found")
         study_data.bindings.remove(next(iter([bind for bind in study_data.bindings if bind.id == self.id])))
-        return CommandOutput(status=True), {}
+        return CommandOutput(status=True)
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -77,7 +73,7 @@ class RemoveBindingConstraint(ICommand):
             removed_groups = old_groups - new_groups
             remove_bc_from_scenario_builder(study_data, removed_groups)
 
-        return self._apply_config(study_data.config)[0]
+        return self.remove_from_config(study_data.config)
 
     @override
     def to_dto(self) -> CommandDTO:

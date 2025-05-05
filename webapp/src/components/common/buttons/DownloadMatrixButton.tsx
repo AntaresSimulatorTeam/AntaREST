@@ -13,8 +13,8 @@
  */
 
 import { getMatrixFile, getRawFile } from "@/services/api/studies/raw";
-import { downloadFile } from "@/utils/fileUtils.ts";
-import type { StudyMetadata } from "@/common/types.ts";
+import { downloadFile } from "@/utils/fileUtils";
+import type { StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import DownloadButton from "./DownloadButton";
 import type { TableExportFormatValue } from "@/services/api/studies/raw/types";

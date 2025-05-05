@@ -19,6 +19,7 @@ from typing import Union
 from unittest.mock import Mock
 
 import numpy as np
+import pandas as pd
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -171,8 +172,9 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
     )
 
 
-buffer = io.BytesIO()
-np.savetxt(buffer, np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760), delimiter="\t")
+buffer = io.StringIO()
+df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
+df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
 expected_min_gen_response = buffer.getvalue()
 
 
@@ -533,9 +535,6 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "managed": True,
             "archived": False,
             "horizon": "2030",
-            "scenario": None,
-            "status": None,
-            "doc": None,
             "folder": None,
             "tags": [],
         }
@@ -630,8 +629,8 @@ def test_sta_mini_filter(storage_service, url: str, expected_output: dict):
     )
 
 
-def test_sta_mini_output_variables_nominal_case(storage_service):
-    variables = storage_service.output_variables_information(
+def test_sta_mini_output_variables_nominal_case(output_service):
+    variables = output_service.output_variables_information(
         UUID,
         "20201014-1422eco-hello",
         RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -687,20 +686,20 @@ def test_sta_mini_output_variables_nominal_case(storage_service):
     ]
 
 
-def test_sta_mini_output_variables_no_mc_ind(storage_service):
+def test_sta_mini_output_variables_no_mc_ind(output_service):
     with pytest.raises(BadOutputFormat, match=r"Not a year by year simulation"):
-        storage_service.output_variables_information(
+        output_service.output_variables_information(
             UUID,
             "20201014-1427eco",
             RequestParameters(user=DEFAULT_ADMIN_USER),
         )
 
 
-def test_sta_mini_output_variables_no_links(storage_service):
-    study_path = Path(storage_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_links(output_service):
+    study_path = Path(output_service._study_service.get_study(UUID).path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
-    variables = storage_service.output_variables_information(
+    variables = output_service.output_variables_information(
         UUID,
         "20201014-1422eco-hello",
         RequestParameters(user=DEFAULT_ADMIN_USER),
@@ -709,13 +708,13 @@ def test_sta_mini_output_variables_no_links(storage_service):
     assert variables["link"] == []
 
 
-def test_sta_mini_output_variables_no_areas(storage_service):
-    study_path = Path(storage_service.get_study(UUID).path)
+def test_sta_mini_output_variables_no_areas(output_service):
+    study_path = Path(output_service._study_service.get_study(UUID).path)
     areas_mc_ind_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "areas"
     areas_mc_all_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-all" / "areas"
     shutil.rmtree(areas_mc_ind_folder)
     shutil.rmtree(areas_mc_all_folder)
-    variables = storage_service.output_variables_information(
+    variables = output_service.output_variables_information(
         UUID,
         "20201014-1422eco-hello",
         RequestParameters(user=DEFAULT_ADMIN_USER),

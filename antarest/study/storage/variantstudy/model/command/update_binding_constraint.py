@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-import typing as t
+from typing import Mapping, Optional, Tuple
 
 from typing_extensions import override
 
@@ -29,9 +29,9 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
     TermMatrices,
-    create_binding_constraint_config,
+    create_binding_constraint_properties,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -113,8 +113,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
         existing_constraint = study_data.bindings[index]
         areas_set = existing_constraint.areas
@@ -140,9 +139,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step,
         )
         study_data.bindings[index] = new_constraint
-        return CommandOutput(status=True), {}
+        return CommandOutput(status=True)
 
-    def _find_binding_config(self, binding_constraints: t.Mapping[str, JSON]) -> t.Optional[t.Tuple[str, JSON]]:
+    def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:
         """
         Find the binding constraint with the given ID in the list of binding constraints,
         and returns its index and configuration, or `None` if it does not exist.
@@ -154,7 +153,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return None
 
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
         # When all BC of a given group are removed, the group should be removed from the scenario builder
@@ -176,7 +175,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             new_operator = self.operator
             update_matrices_names(study_data, self.id, existing_operator, new_operator)
 
-        self._apply_config(study_data.config)
+        self.update_in_config(study_data.config)
 
         updated_matrices = [
             term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
@@ -187,7 +186,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
             time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
         )
 
-        props = create_binding_constraint_config(**self.model_dump())
+        props = create_binding_constraint_properties(**self.model_dump())
         obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
         updated_cfg = binding_constraints[index]

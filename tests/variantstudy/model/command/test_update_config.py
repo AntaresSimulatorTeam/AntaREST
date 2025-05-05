@@ -14,7 +14,7 @@ import json
 
 import pytest
 
-from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_reader import read_ini
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -23,7 +23,8 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 @pytest.mark.unit_test
-def test_update_config(empty_study: FileStudy, command_context: CommandContext):
+def test_update_config(empty_study_880: FileStudy, command_context: CommandContext):
+    empty_study = empty_study_880
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version
     area1 = "Area1"
@@ -41,7 +42,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
-    generaldata = IniReader().read(study_path / "settings/generaldata.ini")
+    generaldata = read_ini(study_path / "settings/generaldata.ini")
     assert generaldata["optimization"]["simplex-range"] == "day"
     assert generaldata["optimization"]["transmission-capacities"]
 
@@ -53,7 +54,7 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
     )
     output = update_settings_command.apply(empty_study)
     assert output.status
-    area_config = IniReader().read(study_path / f"input/areas/{area1_id}/optimization.ini")
+    area_config = read_ini(study_path / f"input/areas/{area1_id}/optimization.ini")
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
 
     # test UpdateConfig with byte object which is necessary with the API PUT /v1/studies/{uuid}/raw
@@ -62,12 +63,12 @@ def test_update_config(empty_study: FileStudy, command_context: CommandContext):
         target="layers/layers", data=data, command_context=command_context, study_version=study_version
     )
     command.apply(empty_study)
-    layers = IniReader().read(study_path / "layers/layers.ini")
+    layers = read_ini(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"0": "Nothing"}}
     new_data = json.dumps({"1": False}).encode("utf-8")
     command = UpdateConfig(
         target="layers/layers/first_layer", data=new_data, command_context=command_context, study_version=study_version
     )
     command.apply(empty_study)
-    layers = IniReader().read(study_path / "layers/layers.ini")
+    layers = read_ini(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"1": False}}

@@ -15,16 +15,26 @@
 import debug from "debug";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { LaunchJobDTO, UserInfo } from "../../common/types";
+import type { LaunchJobDTO, UserInfo } from "../../types/types";
 import { getConfig } from "../config";
 import { isStringEmpty, isUserExpired } from "../utils";
 import type { AppDispatch } from "../../redux/store";
 import { refresh as refreshUser } from "../../redux/ducks/auth";
 import { deleteStudy, setStudy } from "../../redux/ducks/studies";
-import { setMaintenanceMode, setMessageInfo, setWebSocketConnected } from "../../redux/ducks/ui";
+import {
+  incrementTaskNotifications,
+  setMaintenanceMode,
+  setMessageInfo,
+  setWebSocketConnected,
+} from "../../redux/ducks/ui";
 import { refreshStudySynthesis } from "../../redux/ducks/studySyntheses";
 import type { WsEvent, WsEventListener } from "./types";
 import { WsChannel, WsEventType } from "./constants";
+import { TASK_TYPES_MANAGED } from "@/components/App/Tasks/utils";
+import i18n from "@/i18n";
+import { enqueueSnackbar, type VariantType } from "notistack";
+import { TaskType } from "../api/tasks/constants";
+import { includes } from "@/utils/tsUtils";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -54,6 +64,7 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
       makeStudyJobStatusListener(dispatch),
       makeMaintenanceListener(dispatch),
       makeStudyDataListener(dispatch),
+      makeNotificationListener(dispatch),
     );
     globalListenerAdded = true;
   }
@@ -239,6 +250,47 @@ function makeMaintenanceListener(dispatch: AppDispatch): WsEventListener {
       case WsEventType.MessageInfo:
         dispatch(setMessageInfo(isStringEmpty(e.payload) ? "" : (e.payload as string)));
         break;
+    }
+  };
+}
+
+function makeNotificationListener(dispatch: AppDispatch): WsEventListener {
+  const TASK_MESSAGES = {
+    [TaskType.Copy]: i18n.t("studies.studycopying"),
+    [TaskType.Archive]: i18n.t("studies.studyarchiving"),
+    [TaskType.Unarchive]: i18n.t("studies.studyunarchiving"),
+    [TaskType.Scan]: i18n.t("studies.success.scanFolder"),
+    [TaskType.UpgradeStudy]: "",
+    [TaskType.ThermalClusterSeriesGeneration]: "",
+  } as const;
+
+  const notif = (message?: string, variant: VariantType = "info") => {
+    if (location.pathname !== "/tasks") {
+      dispatch(incrementTaskNotifications());
+    }
+    if (message) {
+      enqueueSnackbar(message, { variant });
+    }
+  };
+
+  return function listener(e: WsEvent) {
+    switch (e.type) {
+      case WsEventType.DownloadCreated:
+        notif(i18n.t("downloads.newDownload"));
+        break;
+      case WsEventType.DownloadReady:
+        notif(i18n.t("downloads.downloadReady"), "success");
+        break;
+      case WsEventType.DownloadFailed:
+        notif(i18n.t("study.error.exportOutput"), "error");
+        break;
+      case WsEventType.TaskAdded: {
+        const type = e.payload.type;
+        if (includes(type, TASK_TYPES_MANAGED)) {
+          notif(TASK_MESSAGES[type]);
+        }
+        break;
+      }
     }
   };
 }

@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import datetime
-import typing as t
 import uuid
+from typing import Any, List, TypeAlias
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
@@ -41,6 +41,7 @@ class Matrix(Base):  # type: ignore
     width: int = Column(Integer)
     height: int = Column(Integer)
     created_at: datetime.datetime = Column(DateTime)
+    version: int = Column(Integer)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -48,7 +49,7 @@ class Matrix(Base):  # type: ignore
         return f"Matrix(id={self.id}, shape={(self.height, self.width)}, created_at={self.created_at})"
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Matrix):
             return False
 
@@ -69,9 +70,9 @@ class MatrixInfoDTO(AntaresBaseModel):
 class MatrixDataSetDTO(AntaresBaseModel):
     id: str
     name: str
-    matrices: t.List[MatrixInfoDTO]
+    matrices: List[MatrixInfoDTO]
     owner: UserInfo
-    groups: t.List[GroupDTO]
+    groups: List[GroupDTO]
     public: bool
     created_at: str
     updated_at: str
@@ -110,7 +111,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         return f"MatrixDataSetRelation(dataset_id={self.dataset_id}, matrix_id={self.matrix_id}, name={self.name})"
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MatrixDataSetRelation):
             return False
 
@@ -190,7 +191,7 @@ class MatrixDataSet(Base):  # type: ignore
         )
 
     @override
-    def __eq__(self, other: t.Any) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if not isinstance(other, MatrixDataSet):
             return False
 
@@ -213,35 +214,10 @@ class MatrixDataSet(Base):  # type: ignore
 # Reverting to only float because Any cause problem retrieving data from a node
 # will have pandas forcing all to float anyway...
 # this cause matrix dump on disk (and then hash id) to be different for basically the same matrices
-MatrixData = float
-
-
-class MatrixDTO(AntaresBaseModel):
-    width: int
-    height: int
-    index: t.List[str]
-    columns: t.List[str]
-    data: t.List[t.List[MatrixData]]
-    created_at: int = 0
-    id: str = ""
-
-
-class MatrixContent(AntaresBaseModel):
-    """
-    Matrix content (Data Frame array)
-
-    Attributes:
-        data: A 2D-array matrix of floating point values.
-        index: A list of row indexes or names.
-        columns: A list of columns indexes or names.
-    """
-
-    data: t.List[t.List[MatrixData]]
-    index: t.List[t.Union[int, str]]
-    columns: t.List[t.Union[int, str]]
+MatrixData: TypeAlias = float
 
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):
     name: str
-    groups: t.List[str]
+    groups: List[str]
     public: bool

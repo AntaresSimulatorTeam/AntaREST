@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABCMeta
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, field_validator, model_validator
@@ -25,9 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import FileSt
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
-from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -156,8 +154,7 @@ class CreateLink(AbstractLinkCommand):
             ],
         )
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         if self.area1 not in study_data.areas:
             return (
                 CommandOutput(
@@ -214,7 +211,7 @@ class CreateLink(AbstractLinkCommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         version = study_data.config.version
-        output, data = self._apply_config(study_data.config)
+        output, data = self.update_in_config(study_data.config)
         if not output.status:
             return output
 

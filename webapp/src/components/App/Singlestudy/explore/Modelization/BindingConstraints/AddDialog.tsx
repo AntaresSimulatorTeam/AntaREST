@@ -24,7 +24,7 @@ import { createBindingConstraint } from "../../../../../../services/api/studydat
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { useOutletContext } from "react-router";

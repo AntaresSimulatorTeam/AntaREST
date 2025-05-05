@@ -14,18 +14,18 @@
 Object model used to read and update area configuration.
 """
 
-import typing as t
+from typing import Any, Dict, Mapping, MutableMapping, Optional, Set
 
 from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import (
+from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_color_rgb,
     validate_colors,
     validate_filtering,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 
 
 # noinspection SpellCheckingInspection
@@ -91,7 +91,7 @@ class OptimizationProperties(IniProperties):
         filter_year_by_year: str = Field("", alias="filter-year-by-year")
 
         @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
-        def _validate_filtering(cls, v: t.Any) -> str:
+        def _validate_filtering(cls, v: Any) -> str:
             return validate_filtering(v)
 
     # noinspection SpellCheckingInspection
@@ -101,8 +101,8 @@ class OptimizationProperties(IniProperties):
         non_dispatchable_power: bool = Field(default=True, alias="non-dispatchable-power")
         dispatchable_hydro_power: bool = Field(default=True, alias="dispatchable-hydro-power")
         other_dispatchable_power: bool = Field(default=True, alias="other-dispatchable-power")
-        spread_unsupplied_energy_cost: float = Field(default=0.0, ge=0, alias="spread-unsupplied-energy-cost")
-        spread_spilled_energy_cost: float = Field(default=0.0, ge=0, alias="spread-spilled-energy-cost")
+        spread_unsupplied_energy_cost: float = Field(default=0.0, alias="spread-unsupplied-energy-cost")
+        spread_spilled_energy_cost: float = Field(default=0.0, alias="spread-spilled-energy-cost")
 
     filtering: FilteringSection = Field(
         default_factory=FilteringSection,
@@ -179,15 +179,15 @@ class AreaUI(IniProperties):
     )
 
     @field_validator("color_rgb", mode="before")
-    def _validate_color_rgb(cls, v: t.Any) -> str:
+    def _validate_color_rgb(cls, v: Any) -> str:
         return validate_color_rgb(v)
 
     @model_validator(mode="before")
-    def _validate_colors(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    def _validate_colors(cls, values: MutableMapping[str, Any]) -> Mapping[str, Any]:
         return validate_colors(values)
 
     @override
-    def to_config(self) -> t.Dict[str, t.Any]:
+    def to_config(self) -> Dict[str, Any]:
         """
         Convert the object to a dictionary for writing to a configuration file:
 
@@ -262,18 +262,18 @@ class UIProperties(IniProperties):
         default_factory=AreaUI,
         description="style of the area in the map: coordinates and color",
     )
-    layers: t.Set[int] = Field(
+    layers: Set[int] = Field(
         default_factory=lambda: {0},
         description="layers where the area is visible",
     )
-    layer_styles: t.Dict[int, AreaUI] = Field(
+    layer_styles: Dict[int, AreaUI] = Field(
         default_factory=dict,
         description="style of the area in each layer",
         alias="layerStyles",
     )
 
     @staticmethod
-    def _set_default_style(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    def _set_default_style(values: MutableMapping[str, Any]) -> Mapping[str, Any]:
         """Defined the default style if missing."""
         style = values.get("style", None)
         if style is None:
@@ -285,7 +285,7 @@ class UIProperties(IniProperties):
         return values
 
     @staticmethod
-    def _set_default_layer_styles(values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    def _set_default_layer_styles(values: MutableMapping[str, Any]) -> Mapping[str, Any]:
         """Define the default layer styles if missing."""
         layer_styles = values.get("layer_styles")
         if layer_styles is None:
@@ -303,7 +303,7 @@ class UIProperties(IniProperties):
         return values
 
     @model_validator(mode="before")
-    def _validate_layers(cls, values: t.MutableMapping[str, t.Any]) -> t.Mapping[str, t.Any]:
+    def _validate_layers(cls, values: MutableMapping[str, Any]) -> Mapping[str, Any]:
         cls._set_default_style(values)
         cls._set_default_layer_styles(values)
         # Parse the `[ui]` section (if any)
@@ -345,7 +345,7 @@ class UIProperties(IniProperties):
         return values
 
     @override
-    def to_config(self) -> t.Dict[str, t.Dict[str, t.Any]]:
+    def to_config(self) -> Dict[str, Dict[str, Any]]:
         """
         Convert the object to a dictionary for writing to a configuration file:
 
@@ -373,7 +373,7 @@ class UIProperties(IniProperties):
                 'x': 1148,
                 'y': 144}}
         """
-        obj: t.Dict[str, t.Dict[str, t.Any]] = {
+        obj: Dict[str, Dict[str, Any]] = {
             "ui": {},
             "layerX": {},
             "layerY": {},
@@ -468,7 +468,7 @@ class AreaFolder(IniProperties):
         default_factory=OptimizationProperties,
         description="optimization configuration",
     )
-    adequacy_patch: t.Optional[AdequacyPathProperties] = Field(
+    adequacy_patch: Optional[AdequacyPathProperties] = Field(
         None,
         description="adequacy patch configuration",
     )
@@ -533,20 +533,20 @@ class ThermalAreasProperties(IniProperties):
      'unserverdenergycost': {'at': 6500.0, 'be': 3500.0, 'de': 1250.0, 'fr': 0.0}}
     """
 
-    unserverd_energy_cost: t.MutableMapping[str, float] = Field(
+    unserverd_energy_cost: MutableMapping[str, float] = Field(
         default_factory=dict,
         alias="unserverdenergycost",
         description="unserverd energy cost (€/MWh) of each area",
     )
 
-    spilled_energy_cost: t.MutableMapping[str, float] = Field(
+    spilled_energy_cost: MutableMapping[str, float] = Field(
         default_factory=dict,
         alias="spilledenergycost",
         description="spilled energy cost (€/MWh) of each area",
     )
 
     @field_validator("unserverd_energy_cost", "spilled_energy_cost", mode="before")
-    def _validate_energy_cost(cls, v: t.Any) -> t.MutableMapping[str, float]:
+    def _validate_energy_cost(cls, v: Any) -> MutableMapping[str, float]:
         if isinstance(v, dict):
             return {str(k): float(v) for k, v in v.items()}
         raise TypeError(f"Invalid type for energy cost: {type(v)}")

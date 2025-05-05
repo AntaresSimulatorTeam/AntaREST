@@ -13,7 +13,7 @@
  */
 
 import { useState } from "react";
-import type { StudyMetadata } from "../../common/types";
+import type { StudyMetadata } from "../../types/types";
 import type { AppState } from "../ducks";
 import useAppDispatch from "./useAppDispatch";
 import useAppSelector from "./useAppSelector";

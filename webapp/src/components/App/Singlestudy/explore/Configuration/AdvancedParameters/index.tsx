@@ -13,7 +13,7 @@
  */
 
 import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../common/types";
+import type { StudyMetadata } from "../../../../../../types/types";
 import { updateStudySynthesis } from "../../../../../../redux/ducks/studySyntheses";
 import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import Form from "../../../../../common/Form";

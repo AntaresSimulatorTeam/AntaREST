@@ -15,10 +15,10 @@ import json
 import logging
 import re
 import tempfile
-import typing as t
 import zipfile
 from enum import Enum
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 
 from antares.study.version import StudyVersion
 
@@ -26,6 +26,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     DEFAULT_GROUP,
@@ -36,7 +37,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.field_validators import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -54,7 +54,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfigType, create_thermal_config
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 
 logger = logging.getLogger(__name__)
@@ -70,7 +71,7 @@ def extract_data_from_archive(
     root: Path,
     posix_path: str,
     reader: IniReader,
-) -> t.Dict[str, t.Any]:
+) -> Dict[str, Any]:
     """
     Extract and process data from various types of files.
 
@@ -91,7 +92,7 @@ def extract_data_from_archive(
         return {}
 
 
-def build(study_path: Path, study_id: str, output_path: t.Optional[Path] = None) -> "FileStudyTreeConfig":
+def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -> "FileStudyTreeConfig":
     """
     Extracts data from the filesystem to build a study config.
 
@@ -132,8 +133,8 @@ def _extract_data_from_file(
     root: Path,
     inside_root_path: Path,
     file_type: FileType,
-    multi_ini_keys: t.Sequence[str] = (),
-) -> t.Any:
+    multi_ini_keys: Sequence[str] = (),
+) -> Any:
     """
     Extract and process data from various types of files.
 
@@ -190,7 +191,7 @@ def _parse_version(path: Path) -> StudyVersion:
     return StudyVersion.parse(version)
 
 
-def _parse_parameters(path: Path) -> t.Tuple[bool, t.List[str], str]:
+def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
     general = _extract_data_from_file(
         root=path,
         inside_root_path=Path("settings/generaldata.ini"),
@@ -198,14 +199,14 @@ def _parse_parameters(path: Path) -> t.Tuple[bool, t.List[str], str]:
     )
 
     store_new_set: bool = general.get("output", {}).get("storenewset", False)
-    archive_input_series: t.List[str] = [
+    archive_input_series: List[str] = [
         e.strip() for e in general.get("output", {}).get("archives", "").strip().split(",") if e.strip()
     ]
     enr_modelling: str = general.get("other preferences", {}).get("renewable-generation-modelling", "aggregated")
     return store_new_set, archive_input_series, enr_modelling
 
 
-def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
+def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
     bindings = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
@@ -240,7 +241,7 @@ def _parse_bindings(root: Path) -> t.List[BindingConstraintDTO]:
     return output_list
 
 
-def _parse_sets(root: Path) -> t.Dict[str, DistrictSet]:
+def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
@@ -258,7 +259,7 @@ def _parse_sets(root: Path) -> t.Dict[str, DistrictSet]:
     }
 
 
-def _parse_areas(root: Path) -> t.Dict[str, Area]:
+def _parse_areas(root: Path) -> Dict[str, Area]:
     areas = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/list.txt"),
@@ -268,7 +269,7 @@ def _parse_areas(root: Path) -> t.Dict[str, Area]:
     return {transform_name_to_id(a): parse_area(root, a) for a in areas}
 
 
-def parse_outputs(output_path: Path) -> t.Dict[str, Simulation]:
+def parse_outputs(output_path: Path) -> Dict[str, Simulation]:
     if not output_path.is_dir():
         return {}
     sims = {}
@@ -375,10 +376,10 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
     )
 
 
-def get_playlist(config: JSON) -> t.Optional[t.Dict[int, float]]:
+def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
     general_config = config.get("general", {})
-    nb_years = t.cast(int, general_config.get("nbyears"))
-    playlist_activated = t.cast(bool, general_config.get("user-playlist", False))
+    nb_years = cast(int, general_config.get("nbyears"))
+    playlist_activated = cast(bool, general_config.get("user-playlist", False))
     if not playlist_activated:
         return None
     playlist_config = config.get("playlist", {})
@@ -429,26 +430,26 @@ def parse_area(root: Path, area: str) -> "Area":
     )
 
 
-def _parse_thermal(root: Path, area: str) -> t.List[ThermalConfigType]:
+def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     """
     Parse the thermal INI file, return an empty list if missing.
     """
     version = _parse_version(root)
     relpath = Path(f"input/thermal/clusters/{area}/list.ini")
-    config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
+    config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root, inside_root_path=relpath, file_type=FileType.SIMPLE_INI
     )
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(create_thermal_config(version, **values, id=section))
+            config_list.append(parse_thermal_cluster(version, values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid thermal configuration: '{section}' in '{config_path}'", exc_info=exc)
     return config_list
 
 
-def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
+def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
     """
     Parse the renewables INI file, return an empty list if missing.
     """
@@ -461,7 +462,7 @@ def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
 
     # Since version 8.1 of the solver, we can use "renewable clusters" objects.
     relpath = Path(f"input/renewables/clusters/{area}/list.ini")
-    config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
+    config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
@@ -476,7 +477,7 @@ def _parse_renewables(root: Path, area: str) -> t.List[RenewableConfigType]:
     return config_list
 
 
-def _parse_st_storage(root: Path, area: str) -> t.List[STStorageConfigType]:
+def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
@@ -487,7 +488,7 @@ def _parse_st_storage(root: Path, area: str) -> t.List[STStorageConfigType]:
         return []
 
     relpath = Path(f"input/st-storage/clusters/{area}/list.ini")
-    config_dict: t.Dict[str, t.Any] = _extract_data_from_file(
+    config_dict: Dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
@@ -502,7 +503,7 @@ def _parse_st_storage(root: Path, area: str) -> t.List[STStorageConfigType]:
     return config_list
 
 
-def _parse_links_filtering(root: Path, area: str) -> t.Dict[str, Link]:
+def _parse_links_filtering(root: Path, area: str) -> Dict[str, Link]:
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),

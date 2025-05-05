@@ -20,7 +20,7 @@ import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
 import { getStudyJobLog } from "../../../services/api/study";
 import LogModal from "../../common/LogModal";
-import type { LaunchJob } from "../../../common/types";
+import type { LaunchJob } from "../../../types/types";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 
 interface PropsType {
@@ -67,11 +67,6 @@ function LaunchJobLogView(props: PropsType) {
               "& svg:first-of-type": {
                 color: "action.active",
               },
-              "&:hover": {
-                "& svg:first-of-type": {
-                  color: "action.hover",
-                },
-              },
             }}
           >
             <InsertDriveFileIcon sx={{ fontSize: 22 }} onClick={() => openLogView(job.id)} />
@@ -96,14 +91,6 @@ function LaunchJobLogView(props: PropsType) {
                 right: 0,
                 fontSize: 12,
                 color: "error.light",
-              },
-              "&:hover": {
-                "& svg:first-of-type": {
-                  color: "action.hover",
-                },
-                "& svg:last-of-type": {
-                  color: "error.dark",
-                },
               },
             }}
             onClick={() => openLogView(job.id, true)}

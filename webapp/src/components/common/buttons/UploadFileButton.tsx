@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { LoadingButton } from "@mui/lab";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { toError } from "../../../utils/fnUtils";
 import { useDropzone, type Accept } from "react-dropzone";
-import type { StudyMetadata } from "../../../common/types";
+import type { StudyMetadata } from "../../../types/types";
 import { useSnackbar } from "notistack";
 import { uploadFile } from "../../../services/api/studies/raw";
+import { Button } from "@mui/material";
 
 type ValidateResult = boolean | null | undefined;
 type Validate = (file: File) => ValidateResult | Promise<ValidateResult>;
@@ -115,9 +115,8 @@ function UploadFileButton(props: UploadFileButtonProps) {
     <>
       {/* `open()` no working without the `<input>` in Firefox */}
       <input {...getInputProps()} />
-      <LoadingButton
+      <Button
         variant="outlined"
-        size="small"
         onClick={open}
         startIcon={<FileDownloadIcon />}
         loadingPosition="start"
@@ -125,7 +124,7 @@ function UploadFileButton(props: UploadFileButtonProps) {
         disabled={disabled}
       >
         {label}
-      </LoadingButton>
+      </Button>
     </>
   );
 }

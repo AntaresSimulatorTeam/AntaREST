@@ -304,6 +304,12 @@ default:
 - **Default value:** 5
 - **Description:** Max auto archival tasks in parallel.
 
+## **aggregation_results_max_size**
+
+- **Type**: Integer
+- **Default value:** 200
+- **Description:** Size in Mo of maximum size of results of aggregation.
+
 ## **snapshot_retention_days**
 
 - **Type:** Integer
@@ -329,6 +335,15 @@ default:
 - **Default value:** 1440 (corresponds to 1 day)
 - **Description:** Minutes before your study download will be cleared. The value could be less than the default one as a
   user should download his study pretty soon after the download becomes available.
+
+## **matrixstore_format**
+
+- **Type:** String, possible values: `tsv`, `hdf`, `parquet` or `feather`
+- **Default value:** `tsv`
+- **Description:** Matrixstore internal storage format. `tsv` is the Antares studies format but to improve performance
+and to reduce the disk space allocated to these matrices, you can choose other formats supported by the app. 
+It doesn't impact users as it's for internal usage only, matrices will be displayed the same way no matter the format.
+
 
 ```yaml
 # example for storage settings

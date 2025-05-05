@@ -13,6 +13,7 @@
 """
 Record SQL statements in memory to diagnose the queries performed by the application.
 """
+
 import contextlib
 import types
 import typing as t

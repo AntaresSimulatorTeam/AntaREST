@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { IconButton, InputAdornment } from "@mui/material";
+import { IconButton, InputAdornment, type SxProps, type Theme } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useTranslation } from "react-i18next";
@@ -21,17 +21,25 @@ import { useState } from "react";
 import { useUpdateEffect } from "react-use";
 import * as RA from "ramda-adjunct";
 import StringFE, { type StringFEProps } from "./StringFE";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
-  InputProps?: Omit<StringFEProps["InputProps"], "startAdornment">;
   onSearchValueChange?: (value: string) => void;
   useLabel?: boolean;
   onClear?: VoidFunction;
+  sx?: SxProps<Theme>;
 }
 
-function SearchFE(props: SearchFE) {
-  const { onSearchValueChange, onChange, onClear, InputProps, useLabel, className, ...rest } =
-    props;
+function SearchFE({
+  onSearchValueChange,
+  onChange,
+  onClear,
+  slotProps,
+  useLabel,
+  className,
+  sx,
+  ...rest
+}: SearchFE) {
   const { t } = useTranslation();
   const placeholderOrLabel = {
     [useLabel ? "label" : "placeholder"]: t("global.search"),
@@ -50,21 +58,40 @@ function SearchFE(props: SearchFE) {
       {...rest}
       {...placeholderOrLabel}
       className={clsx("SearchFE", className)}
-      InputProps={{
-        ...InputProps,
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon />
-          </InputAdornment>
-        ),
-        endAdornment:
-          onClear && isFieldFilled ? (
-            <InputAdornment position="end">
-              <IconButton onClick={onClear} edge="end">
-                <ClearIcon />
-              </IconButton>
+      sx={mergeSxProp(
+        {
+          minWidth: isFieldFilled ? 78 : 38,
+          transition: "min-width 0.2s ease",
+          ":focus-within": {
+            minWidth: 150,
+          },
+        },
+        sx,
+      )}
+      slotProps={{
+        ...slotProps,
+        input: {
+          ...slotProps?.input,
+          startAdornment: (
+            <InputAdornment
+              position="start"
+              sx={{
+                // Allow to focus the input when clicking on the icon
+                pointerEvents: "none",
+              }}
+            >
+              <SearchIcon />
             </InputAdornment>
-          ) : null,
+          ),
+          endAdornment:
+            onClear && isFieldFilled ? (
+              <InputAdornment position="end">
+                <IconButton onClick={() => onClear()} edge="end">
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
+        },
       }}
       onChange={(event) => {
         const newValue = event.target.value;

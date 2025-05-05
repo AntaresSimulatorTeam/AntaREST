@@ -16,28 +16,27 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { createRole, createUser } from "../../../../../services/api/user";
 import type {
   GroupDTO,
   RoleDetailsDTO,
   RoleType,
   UserDetailsDTO,
   UserDTO,
-} from "../../../../../common/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { createRole, createUser } from "../../../../../services/api/user";
+} from "../../../../../types/types";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
-import UserFormDialog, { type UserFormDialogProps } from "./UserFormDialog";
+import UserFormDialog from "./UserFormDialog";
+import type { UserFormDefaultValues } from "./utils";
 
-type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
-
-interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
+interface Props {
+  open: boolean;
   addUser: (user: UserDetailsDTO) => void;
   reloadFetchUsers: VoidFunction;
-  closeDialog: VoidFunction;
+  onCancel: VoidFunction;
 }
 
-function CreateUserDialog(props: Props) {
-  const { addUser, reloadFetchUsers, closeDialog, ...dialogProps } = props;
+function CreateUserDialog({ open, addUser, reloadFetchUsers, onCancel }: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const mounted = usePromiseWrapper();
@@ -47,7 +46,7 @@ function CreateUserDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<UserFormDefaultValues>) => {
     const { username, password, permissions } = data.values;
     let newUser: UserDTO;
 
@@ -91,7 +90,7 @@ function CreateUserDialog(props: Props) {
       enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: newUser.name }), e as Error);
     }
 
-    closeDialog();
+    onCancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -100,11 +99,11 @@ function CreateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
+      open={open}
       title={t("settings.createUser")}
       titleIcon={PersonAddIcon}
       onSubmit={handleSubmit}
-      onCancel={closeDialog}
-      {...dialogProps}
+      onCancel={onCancel}
     />
   );
 }

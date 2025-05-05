@@ -13,7 +13,7 @@
  */
 
 import { useTranslation } from "react-i18next";
-import { Box, useTheme } from "@mui/material";
+import { useTheme } from "@mui/material";
 import { getStudyData } from "../../../../../../services/api/study";
 import usePromiseWithSnackbarError from "../../../../../../hooks/usePromiseWithSnackbarError";
 import UsePromiseCond from "../../../../../common/utils/UsePromiseCond";
@@ -26,7 +26,7 @@ import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
 import { isEmptyContent, parseContent, type DataCompProps } from "../utils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import { downloadFile } from "../../../../../../utils/fileUtils";
-import { Filename, Flex, Menubar } from "./styles";
+import { Filename, Menubar } from "./styles";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import EmptyView from "@/components/common/page/EmptyView";
 import GridOffIcon from "@mui/icons-material/GridOff";
@@ -99,7 +99,7 @@ function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps)
     <UsePromiseCond
       response={textRes}
       ifFulfilled={(text) => (
-        <Flex>
+        <>
           <Menubar>
             <Filename>{filename}</Filename>
             {canEdit && (
@@ -115,32 +115,22 @@ function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps)
           {isEmptyContent(text) ? ( // TODO remove when files become editable
             <EmptyView icon={GridOffIcon} title={t("study.results.noData")} />
           ) : (
-            <Box
-              sx={{
-                overflow: "auto",
-                height: 1,
-                display: "flex",
-                flexDirection: "column",
+            <SyntaxHighlighter
+              style={atomOneDark}
+              lineNumberStyle={{
+                opacity: 0.5,
+                paddingRight: theme.spacing(3),
               }}
-            >
-              <SyntaxHighlighter
-                style={atomOneDark}
-                lineNumberStyle={{
-                  opacity: 0.5,
-                  paddingRight: theme.spacing(3),
-                }}
-                customStyle={{
-                  margin: 0,
-                  padding: theme.spacing(2),
-                  borderRadius: theme.shape.borderRadius,
-                  fontSize: theme.typography.body2.fontSize,
-                  flex: 1,
-                }}
-                {...getSyntaxProps(text)}
-              />
-            </Box>
+              customStyle={{
+                margin: 0,
+                padding: theme.spacing(2),
+                borderRadius: theme.shape.borderRadius,
+                fontSize: theme.typography.body2.fontSize,
+              }}
+              {...getSyntaxProps(text)}
+            />
           )}
-        </Flex>
+        </>
       )}
     />
   );

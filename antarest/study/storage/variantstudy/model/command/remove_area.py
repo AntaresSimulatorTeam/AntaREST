@@ -12,7 +12,7 @@
 
 import contextlib
 import logging
-import typing as t
+from typing import List, Optional
 
 from typing_extensions import override
 
@@ -31,7 +31,7 @@ from antarest.study.storage.variantstudy.business.utils_binding_constraint impor
     remove_area_cluster_from_binding_constraints,
 )
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
-from antarest.study.storage.variantstudy.model.command.icommand import MATCH_SIGNATURE_SEPARATOR, ICommand
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -65,19 +65,13 @@ class RemoveArea(ICommand):
                     set_.areas.remove(self.id)
                     study_data_config.sets[id_] = set_
 
-    @override
-    def _apply_config(self, study_data_config: FileStudyTreeConfig) -> t.Tuple[CommandOutput, t.Dict[str, t.Any]]:
+    def remove_from_config(self, study_data_config: FileStudyTreeConfig) -> None:
         del study_data_config.areas[self.id]
 
         self._remove_area_from_links_in_config(study_data_config)
         self._remove_area_from_sets_in_config(study_data_config)
 
         remove_area_cluster_from_binding_constraints(study_data_config, self.id)
-
-        return (
-            CommandOutput(status=True, message=f"Area '{self.id}' deleted"),
-            {},
-        )
 
     def _remove_area_from_links(self, study_data: FileStudy) -> None:
         for area_name, area in study_data.config.areas.items():
@@ -226,7 +220,7 @@ class RemoveArea(ICommand):
 
     # noinspection SpellCheckingInspection
     @override
-    def _apply(self, study_data: FileStudy, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
@@ -277,12 +271,12 @@ class RemoveArea(ICommand):
         self._remove_area_from_districts(study_data)
         self._remove_area_from_scenario_builder(study_data)
 
-        output, _ = self._apply_config(study_data.config)
+        self.remove_from_config(study_data.config)
 
         new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
         study_data.tree.save(new_area_data)
 
-        return output
+        return CommandOutput(status=True, message=f"Area '{self.id}' deleted")
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -295,5 +289,5 @@ class RemoveArea(ICommand):
         )
 
     @override
-    def get_inner_matrices(self) -> t.List[str]:
+    def get_inner_matrices(self) -> List[str]:
         return []

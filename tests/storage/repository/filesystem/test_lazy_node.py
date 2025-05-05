@@ -62,26 +62,6 @@ def test_get_no_expanded_txt(tmp_path: Path):
     assert "Mock Matrix Content" == node.get(expanded=False)
 
 
-def test_get_no_expanded_link(tmp_path: Path):
-    uri = "matrix://my-link"
-
-    file = tmp_path / "my-study/lazy.txt"
-    file.parent.mkdir()
-    (file.parent / "lazy.txt.link").write_text(uri)
-
-    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
-
-    resolver = Mock()
-    resolver.resolve.return_value = "Mock Matrix Content"
-
-    node = MockLazyNode(
-        context=ContextServer(matrix=Mock(), resolver=resolver),
-        config=config,
-    )
-    assert "Mock Matrix Content" == node.get(expanded=False)
-    resolver.resolve.assert_called_once_with(uri, True)
-
-
 def test_get_expanded_txt(tmp_path: Path):
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
