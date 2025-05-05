@@ -13,12 +13,9 @@
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import SimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, SimpleMatrixService
 from antarest.study.storage.variantstudy.business import matrix_constants
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
-    MATRIX_PROTOCOL_PREFIX,
-    GeneratorMatrixConstants,
-)
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 DEFAULT_INTERNAL_FORMAT = InternalMatrixFormat.TSV
 

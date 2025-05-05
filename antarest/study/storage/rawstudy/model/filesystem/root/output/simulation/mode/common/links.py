@@ -14,8 +14,8 @@ from typing import Dict, List
 
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.link import (
@@ -26,12 +26,12 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class _OutputSimulationModeMcAllLinksBis(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area_from: str,
         link_names: List[str],
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area_from = area_from
         self.link_names = link_names
 
@@ -41,7 +41,7 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
         for link_name in self.link_names:
             link = link_name.split(" - ")[1]
             children[link] = OutputSimulationLinkItem(
-                self.context, self.config.next_file(link_name), self.area_from, link
+                self.matrix_mapper, self.config.next_file(link_name), self.area_from, link
             )
         return children
 
@@ -49,10 +49,10 @@ class _OutputSimulationModeMcAllLinksBis(FolderNode):
 class OutputSimulationLinks(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
 
     @override
     def build(self) -> TREE:
@@ -62,6 +62,8 @@ class OutputSimulationLinks(FolderNode):
         for link in links:
             areas.setdefault(link.split(" - ")[0], []).append(link)
         for area_from, link_names in areas.items():
-            children[area_from] = _OutputSimulationModeMcAllLinksBis(self.context, self.config, area_from, link_names)
+            children[area_from] = _OutputSimulationModeMcAllLinksBis(
+                self.matrix_mapper, self.config, area_from, link_names
+            )
 
         return children

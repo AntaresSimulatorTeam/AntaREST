@@ -28,7 +28,6 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 DUPLICATE_KEYS = [
@@ -120,7 +119,7 @@ class GeneralData(IniFileNode):
         },
     }
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         types = deepcopy(GeneralData.TYPES)
         general = types["general"]
         optimization = types["optimization"]
@@ -169,7 +168,6 @@ class GeneralData(IniFileNode):
 
         IniFileNode.__init__(
             self,
-            context,
             config,
             types=types,
             reader=IniReader(DUPLICATE_KEYS),

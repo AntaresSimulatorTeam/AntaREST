@@ -65,6 +65,8 @@ EXCLUDED_FILES = {
 
 logger = logging.getLogger(__name__)
 
+MATRIX_PROTOCOL_PREFIX = "matrix://"
+
 LEGACY_MATRIX_VERSION = 1
 NEW_MATRIX_VERSION = 2
 """
@@ -114,7 +116,7 @@ class ISimpleMatrixService(ABC):
         """
         # noinspection SpellCheckingInspection
         if isinstance(matrix, str):
-            return matrix.removeprefix("matrix://")
+            return matrix.removeprefix(MATRIX_PROTOCOL_PREFIX)
         elif isinstance(matrix, list):
             return self.create(pd.DataFrame(data=matrix))
         else:

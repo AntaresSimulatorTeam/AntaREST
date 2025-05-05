@@ -33,9 +33,9 @@ from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import MatrixService, SimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -186,7 +186,7 @@ def generator_matrix_constants_fixture(
 @pytest.fixture(name="uri_resolver_service", scope="session")
 def uri_resolver_service_fixture(
     simple_matrix_service: SimpleMatrixService,
-) -> UriResolverService:
+) -> MatrixUriMapper:
     """
     Fixture that creates an UriResolverService instance with a session-level scope.
 
@@ -196,7 +196,7 @@ def uri_resolver_service_fixture(
     Returns:
         An instance of the UriResolverService class representing the URI resolver service.
     """
-    return UriResolverService(matrix_service=simple_matrix_service)
+    return MatrixUriMapper(matrix_service=simple_matrix_service)
 
 
 @pytest.fixture(name="core_cache", scope="session")
@@ -216,7 +216,7 @@ def core_cache_fixture() -> ICache:
 @pytest.fixture(name="study_factory", scope="session")
 def study_factory_fixture(
     simple_matrix_service: SimpleMatrixService,
-    uri_resolver_service: UriResolverService,
+    uri_resolver_service: MatrixUriMapper,
     core_cache: ICache,
 ) -> StudyFactory:
     """
@@ -231,8 +231,7 @@ def study_factory_fixture(
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
     return StudyFactory(
-        matrix=simple_matrix_service,
-        resolver=uri_resolver_service,
+        matrix_mapper=uri_resolver_service,
         cache=core_cache,
     )
 

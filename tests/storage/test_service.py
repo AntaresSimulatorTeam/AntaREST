@@ -1611,7 +1611,7 @@ def test_get_save_logs(tmp_path: Path) -> None:
     file_study_config.outputs = {"output_id": output_config}
 
     context = Mock()
-    context.resolver.resolve.return_value = None
+    context.resolver.get_matrix.return_value = None
     service.storage_service.raw_study_service.get_raw.return_value = FileStudy(  # type: ignore
         config=file_study_config,
         tree=FileStudyTree(context, file_study_config),

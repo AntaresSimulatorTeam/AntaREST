@@ -19,8 +19,8 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
 from antarest.login.service import LoginService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -76,8 +76,8 @@ def build_study_service(
 
     """
 
-    resolver = UriResolverService(matrix_service=matrix_service)
-    study_factory = StudyFactory(matrix=matrix_service, resolver=resolver, cache=cache)
+    resolver = MatrixUriMapper(matrix_service=matrix_service)
+    study_factory = StudyFactory(matrix_mapper=resolver, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
 

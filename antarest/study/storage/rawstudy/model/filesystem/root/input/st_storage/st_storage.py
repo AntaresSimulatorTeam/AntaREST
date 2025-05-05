@@ -26,7 +26,7 @@ class InputSTStorage(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "clusters": InputSTStorageClusters(self.context, self.config.next_file("clusters")),
-            "series": InputSTStorageSeries(self.context, self.config.next_file("series")),
+            "clusters": InputSTStorageClusters(self.matrix_mapper, self.config.next_file("clusters")),
+            "series": InputSTStorageSeries(self.matrix_mapper, self.config.next_file("series")),
         }
         return children

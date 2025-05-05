@@ -24,11 +24,11 @@ class OutputSimulationAbout(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "areas": RawFileNode(self.context, self.config.next_file("areas.txt")),
-            "comments": RawFileNode(self.context, self.config.next_file("comments.txt")),
-            "links": RawFileNode(self.context, self.config.next_file("links.txt")),
+            "areas": RawFileNode(self.matrix_mapper, self.config.next_file("areas.txt")),
+            "comments": RawFileNode(self.matrix_mapper, self.config.next_file("comments.txt")),
+            "links": RawFileNode(self.matrix_mapper, self.config.next_file("links.txt")),
             # TODO "map": OutputSimulationAboutMap(self.context, self.config.next_file("map")),
-            "study": OutputSimulationAboutStudy(self.context, self.config.next_file("study.ini")),
-            "parameters": GeneralData(self.context, self.config.next_file("parameters.ini")),
+            "study": OutputSimulationAboutStudy(self.config.next_file("study.ini")),
+            "parameters": GeneralData(self.config.next_file("parameters.ini")),
         }
         return children
