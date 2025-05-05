@@ -12,59 +12,60 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { useMemo, useRef, useState } from "react";
+import PasswordFE from "@/components/common/fieldEditors/PasswordFE";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+import { validatePassword, validateString } from "@/utils/validation/string";
+import DeleteIcon from "@mui/icons-material/Delete";
+import GroupIcon from "@mui/icons-material/Group";
 import {
-  TextField,
-  Typography,
-  Paper,
-  Select,
-  MenuItem,
   Box,
   Button,
-  InputLabel,
+  CircularProgress,
   FormControl,
-  ListItem,
   IconButton,
+  InputLabel,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  CircularProgress,
+  MenuItem,
+  Paper,
+  Select,
+  Tooltip,
+  Typography,
   type SelectChangeEvent,
 } from "@mui/material";
-import { Controller, useFieldArray } from "react-hook-form";
+import { useMemo, useRef, useState } from "react";
+import { Controller, useFieldArray, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
-import DeleteIcon from "@mui/icons-material/Delete";
-import GroupIcon from "@mui/icons-material/Group";
-import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { RoleType, type GroupDTO } from "../../../../../../types/types";
-import { roleToString, sortByName } from "../../../../../../services/utils";
+import type { UserFormDialogProps } from ".";
 import usePromise from "../../../../../../hooks/usePromise";
 import { getGroups, getUsers } from "../../../../../../services/api/user";
-import type { UserFormDialogProps } from ".";
-import type { UseFormReturnPlus } from "../../../../../common/Form/types";
-import { validatePassword, validateString } from "@/utils/validation/string";
+import { roleToString, sortByName } from "../../../../../../services/utils";
+import { RoleType, type GroupDTO } from "../../../../../../types/types";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
+import type { UserFormDefaultValues } from "../utils";
 
-interface Props extends UseFormReturnPlus {
+interface Props {
   onlyPermissions?: UserFormDialogProps["onlyPermissions"];
 }
 
-function UserForm(props: Props) {
+function UserForm({ onlyPermissions }: Props) {
   const {
     control,
-    register,
     getValues,
-    formState: { errors },
-    onlyPermissions,
-  } = props;
+    formState: { defaultValues },
+  } = useFormContextPlus<UserFormDefaultValues>();
 
   const { t } = useTranslation();
   const groupLabelId = useRef(uuidv4()).current;
   const [selectedGroup, setSelectedGroup] = useState<GroupDTO>();
   const { data: groups, isLoading: isGroupsLoading } = usePromise(getGroups);
   const { data: users } = usePromise(getUsers);
-
   const existingUsers = useMemo(() => users?.map(({ name }) => name), [users]);
 
   const { fields, append, remove } = useFieldArray({
@@ -72,16 +73,10 @@ function UserForm(props: Props) {
     name: "permissions",
   });
 
-  const commonTextFieldProps = {
-    required: true,
-    sx: { mx: 0 },
-    fullWidth: true,
-  };
-  const allowToAddPermission =
-    selectedGroup &&
-    !getValues("permissions").some(
-      ({ group }: { group: GroupDTO }) => group.id === selectedGroup.id,
-    );
+  const permissions = useWatch({ control, name: "permissions" });
+
+  const canAddPermission =
+    selectedGroup && !permissions.some(({ group }) => group.id === selectedGroup.id);
 
   const filteredAndSortedGroups = useMemo(() => {
     if (!groups) {
@@ -106,54 +101,45 @@ function UserForm(props: Props) {
 
   return (
     <>
-      {/* Login credentials */}
-      {!onlyPermissions && (
-        <>
-          <TextField
-            autoFocus
-            label={t("global.username")}
-            error={!!errors.username}
-            helperText={errors.username?.message?.toString()}
-            {...commonTextFieldProps}
-            {...register("username", {
-              validate: (v) =>
-                validateString(v, {
-                  existingValues: existingUsers,
-                  excludedValues: RESERVED_USER_NAMES,
-                }),
-            })}
-          />
-          <TextField
-            label={t("global.password")}
-            type="password"
-            error={!!errors.password}
-            helperText={errors.password?.message?.toString()}
-            {...commonTextFieldProps}
-            {...register("password", {
-              validate: (v) => validatePassword(v),
-            })}
-          />
-          <TextField
-            label={t("settings.user.form.confirmPassword")}
-            type="password"
-            spellCheck
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword?.message?.toString()}
-            {...commonTextFieldProps}
-            {...register("confirmPassword", {
-              validate: (v) =>
-                v === getValues("password") || t("settings.user.form.error.passwordMismatch"),
-            })}
-          />
-        </>
-      )}
+      <Fieldset fullFieldWidth>
+        <StringFE
+          autoFocus
+          label={t("global.username")}
+          name="username"
+          control={control}
+          disabled={onlyPermissions}
+          rules={{
+            validate: validateString({
+              existingValues: existingUsers,
+              excludedValues: RESERVED_USER_NAMES,
+              editedValue: defaultValues?.username,
+            }),
+          }}
+        />
+        {!onlyPermissions && (
+          <>
+            <PasswordFE
+              label={t("global.password")}
+              name="password"
+              control={control}
+              rules={{
+                validate: validatePassword,
+              }}
+            />
+            <PasswordFE
+              label={t("settings.user.form.confirmPassword")}
+              name="confirmPassword"
+              control={control}
+              rules={{
+                validate: (v) =>
+                  v === getValues("password") || t("settings.user.form.error.passwordMismatch"),
+              }}
+            />
+          </>
+        )}
+      </Fieldset>
       {/* Permissions */}
-      <Paper
-        sx={{
-          p: 2,
-          mt: 2,
-        }}
-      >
+      <Paper sx={{ p: 2 }}>
         <Typography>{t("global.permissions")}</Typography>
         {isGroupsLoading && (
           <Box
@@ -187,9 +173,11 @@ function UserForm(props: Props) {
               </FormControl>
               <Button
                 variant="contained"
-                disabled={!allowToAddPermission}
+                disabled={!canAddPermission}
                 onClick={() => {
-                  append({ group: selectedGroup, type: RoleType.READER });
+                  if (canAddPermission) {
+                    append({ group: selectedGroup, type: RoleType.READER });
+                  }
                 }}
               >
                 {t("button.add")}
@@ -227,13 +215,16 @@ function UserForm(props: Props) {
                       <GroupIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary={getValues(`permissions.${index}.group.name`)}
-                      title={getValues(`permissions.${index}.group.name`)}
+                      primary={
+                        <Tooltip title={getValues(`permissions.${index}.group.name`)}>
+                          <span>{getValues(`permissions.${index}.group.name`)}</span>
+                        </Tooltip>
+                      }
                       sx={{
                         ".MuiTypography-root": {
                           textOverflow: "ellipsis",
                           overflow: "hidden",
-                          maxWidth: "325px",
+                          maxWidth: 185,
                           whiteSpace: "nowrap",
                         },
                       }}

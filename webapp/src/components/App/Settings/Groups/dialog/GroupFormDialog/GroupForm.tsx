@@ -12,48 +12,50 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { useMemo, useRef, useState } from "react";
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import Fieldset from "@/components/common/Fieldset";
+import { useFormContextPlus } from "@/components/common/Form";
+import { validateString } from "@/utils/validation/string";
+import DeleteIcon from "@mui/icons-material/Delete";
+import GroupIcon from "@mui/icons-material/Group";
 import {
-  TextField,
-  Typography,
-  Paper,
-  Select,
-  MenuItem,
   Box,
   Button,
-  InputLabel,
+  CircularProgress,
   FormControl,
-  ListItem,
   IconButton,
+  InputLabel,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  CircularProgress,
+  MenuItem,
+  Paper,
+  Select,
+  Tooltip,
+  Typography,
   type SelectChangeEvent,
 } from "@mui/material";
-import { Controller, useFieldArray } from "react-hook-form";
+import { useMemo, useRef, useState } from "react";
+import { Controller, useFieldArray, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { v4 as uuidv4 } from "uuid";
-import DeleteIcon from "@mui/icons-material/Delete";
-import GroupIcon from "@mui/icons-material/Group";
-import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
-import { RoleType, type UserDTO } from "../../../../../../types/types";
-import { roleToString, sortByName } from "../../../../../../services/utils";
 import usePromise from "../../../../../../hooks/usePromise";
-import { getGroups, getUsers } from "../../../../../../services/api/user";
-import { getAuthUser } from "../../../../../../redux/selectors";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
-import type { UseFormReturnPlus } from "../../../../../common/Form/types";
-import { validateString } from "@/utils/validation/string";
+import { getAuthUser } from "../../../../../../redux/selectors";
+import { getGroups, getUsers } from "../../../../../../services/api/user";
+import { roleToString, sortByName } from "../../../../../../services/utils";
+import { RoleType, type UserDTO } from "../../../../../../types/types";
+import { RESERVED_GROUP_NAMES, RESERVED_USER_NAMES, ROLE_TYPE_KEYS } from "../../../utils";
+import type { GroupFormDefaultValues } from "../utils";
 
-function GroupForm(props: UseFormReturnPlus) {
+function GroupForm() {
   const {
     control,
-    register,
     getValues,
-    formState: { errors, defaultValues },
-  } = props;
+    formState: { defaultValues },
+  } = useFormContextPlus<GroupFormDefaultValues>();
 
   const { t } = useTranslation();
   const authUser = useAppSelector(getAuthUser);
@@ -69,9 +71,10 @@ function GroupForm(props: UseFormReturnPlus) {
     name: "permissions",
   });
 
-  const allowToAddPermission =
-    selectedUser &&
-    !getValues("permissions").some(({ user }: { user: UserDTO }) => user.id === selectedUser.id);
+  const permissions = useWatch({ control, name: "permissions" });
+
+  const canAddPermission =
+    selectedUser && !permissions.some(({ user }) => user.id === selectedUser.id);
 
   const filteredAndSortedUsers = useMemo(() => {
     if (!users) {
@@ -99,36 +102,23 @@ function GroupForm(props: UseFormReturnPlus) {
 
   return (
     <>
-      {/* Name */}
-      <TextField
-        sx={{ mx: 0 }}
-        autoFocus
-        label={t("global.name")}
-        error={!!errors.name}
-        helperText={errors.name?.message?.toString()}
-        placeholder={defaultValues?.name}
-        InputLabelProps={
-          // Allow to show placeholder when field is empty
-          defaultValues?.name ? { shrink: true } : {}
-        }
-        fullWidth
-        {...register("name", {
-          validate: (v) =>
-            validateString(v, {
+      <Fieldset fullFieldWidth>
+        <StringFE
+          autoFocus
+          label={t("global.name")}
+          name="name"
+          control={control}
+          rules={{
+            validate: validateString({
               existingValues: existingGroups,
               excludedValues: RESERVED_GROUP_NAMES,
-              editedValue: defaultValues?.name, // prevent false duplicates on update form
+              editedValue: defaultValues?.name,
             }),
-        })}
-      />
+          }}
+        />
+      </Fieldset>
       {/* Permissions */}
-      <Paper
-        sx={{
-          p: 2,
-          mt: 2,
-          backgroundImage: "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
-        }}
-      >
+      <Paper sx={{ p: 2 }}>
         <Typography>{t("global.permissions")}</Typography>
         {isUsersLoading && (
           <Box
@@ -162,9 +152,11 @@ function GroupForm(props: UseFormReturnPlus) {
               </FormControl>
               <Button
                 variant="contained"
-                disabled={!allowToAddPermission}
+                disabled={!canAddPermission}
                 onClick={() => {
-                  append({ user: selectedUser, type: RoleType.READER });
+                  if (canAddPermission) {
+                    append({ user: selectedUser, type: RoleType.READER });
+                  }
                 }}
               >
                 {t("button.add")}
@@ -202,13 +194,16 @@ function GroupForm(props: UseFormReturnPlus) {
                       <GroupIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary={getValues(`permissions.${index}.user.name`)}
-                      title={getValues(`permissions.${index}.user.name`)}
+                      primary={
+                        <Tooltip title={getValues(`permissions.${index}.user.name`)}>
+                          <span>{getValues(`permissions.${index}.user.name`)}</span>
+                        </Tooltip>
+                      }
                       sx={{
                         ".MuiTypography-root": {
                           textOverflow: "ellipsis",
                           overflow: "hidden",
-                          maxWidth: "325px",
+                          maxWidth: 185,
                           whiteSpace: "nowrap",
                         },
                       }}
