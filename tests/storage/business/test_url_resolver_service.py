@@ -14,14 +14,13 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from antarest.matrixstore.uri_resolver_service import MatrixUriMapper
+from antarest.matrixstore.uri_resolver_service import MatrixUriMapper, build_matrix_uri
 
 MOCK_MATRIX = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 
 
 def test_build_matrix_uri():
-    resolver = MatrixUriMapper(matrix_service=Mock())
-    assert "matrix://my-id" == resolver.build_matrix_uri("my-id")
+    assert "matrix://my-id" == build_matrix_uri("my-id")
 
 
 def test_resolve_matrix():

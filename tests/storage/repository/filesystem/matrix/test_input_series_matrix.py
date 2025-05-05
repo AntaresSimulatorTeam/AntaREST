@@ -84,9 +84,8 @@ class TestInputSeriesMatrix:
             link_path.touch()
             resolver = Mock(spec=MatrixUriMapper)
             resolver.get_matrix.return_value = pd.DataFrame()
-            resolver.build_matrix_uri.return_value = "matrix://my-id"
             matrix_service = Mock()
-            matrix_service.create.return_value = "my-id"
+            matrix_service.create.return_value = "matrix://my-id"
             resolver.matrix_service = matrix_service
             node = InputSeriesMatrix(matrix_mapper=resolver, config=my_study_config, default_empty=default_matrix)
 
