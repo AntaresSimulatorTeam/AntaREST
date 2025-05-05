@@ -121,7 +121,7 @@
     "prettier": "3.4.2",
     "typescript": "5.4.5",
     "typescript-eslint": "8.19.1",
-    "vite": "5.4.14",
+    "vite": "5.4.19",
     "vitest": "2.1.1"
   },
   "engines": {
