@@ -77,7 +77,7 @@ def build_study_service(
     """
 
     resolver = MatrixUriMapper(matrix_service=matrix_service)
-    study_factory = StudyFactory(resolver=resolver, cache=cache)
+    study_factory = StudyFactory(matrix_mapper=resolver, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
 
