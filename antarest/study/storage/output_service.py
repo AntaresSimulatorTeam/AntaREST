@@ -55,6 +55,54 @@ from antarest.worker.archive_worker import ArchiveTaskArgs
 logger = logging.getLogger(__name__)
 
 
+class AggregateOutputTask:
+    def __init__(
+        self,
+        study: Study,
+        storage_service: IOutputStorage,
+        output_id: str,
+        query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
+        frequency: MatrixFrequency,
+        columns_names: Sequence[str],
+        ids_to_consider: Sequence[str],
+        aggregation_results_max_size: int,
+        mc_years: Optional[Sequence[int]] = None,
+    ) -> None:
+        self.study = study
+        self.storage_service = storage_service
+        self.output_id = output_id
+        self.query_file = query_file
+        self.frequency = frequency
+        self.columns_names = columns_names
+        self.ids_to_consider = ids_to_consider
+        self.aggregation_results_max_size = aggregation_results_max_size
+        self.mc_years = mc_years
+
+    def _aggregate_output_data(self) -> pd.DataFrame:
+        output_path = self.storage_service.get_output_path(self.study, self.output_id)
+        aggregator_manager = AggregatorManager(
+            output_path,
+            self.query_file,
+            self.frequency,
+            self.ids_to_consider,
+            self.columns_names,
+            self.aggregation_results_max_size,
+            self.mc_years,
+        )
+
+        return aggregator_manager.aggregate_output_data()
+
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
+        msg = f"Aggregate output data for study '{self.study.id}'"
+        notifier.notify_message(msg)
+        self._aggregate_output_data()
+        msg = f"Successfully aggregated output data for study '{self.study.id}'"
+        notifier.notify_message(msg)
+        return TaskResult(success=True, message=msg)
+
+    __call__ = run_task
+
+
 class OutputService:
     def __init__(
         self,
@@ -475,7 +523,7 @@ class OutputService:
         ids_to_consider: Sequence[str],
         aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> pd.DataFrame:
+    ) -> str:
         """
         Aggregates output data based on several filtering conditions
 
@@ -494,8 +542,25 @@ class OutputService:
         """
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
-        output_path = self._storage.get_output_path(study, output_id)
-        aggregator_manager = AggregatorManager(
-            output_path, query_file, frequency, ids_to_consider, columns_names, aggregation_results_max_size, mc_years
+
+        aggregate_output_task = AggregateOutputTask(
+            study,
+            self._storage,
+            output_id,
+            query_file,
+            frequency,
+            columns_names,
+            ids_to_consider,
+            aggregation_results_max_size,
+            mc_years,
         )
-        return aggregator_manager.aggregate_output_data()
+
+        task_id = self._task_service.add_task(
+            aggregate_output_task,
+            "Aggregate output",
+            task_type=TaskType.OUTPUT_AGGREGATION,
+            ref_id=study.id,
+            progress=None,
+            custom_event_messages=None,
+        )
+        return task_id
