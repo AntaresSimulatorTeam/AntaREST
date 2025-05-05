@@ -12,30 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import TokenIcon from "@mui/icons-material/Token";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { IconButton, Paper, Tooltip } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import type { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "../../../../../types/types";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createBot } from "../../../../../services/api/user";
+import type { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "../../../../../types/types";
 import OkDialog from "../../../../common/dialogs/OkDialog";
-import TokenFormDialog, { type TokenFormDialogProps } from "./TokenFormDialog";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import TokenFormDialog from "./TokenFormDialog";
+import type { TokenFormDefaultValues } from "./utils";
 
-type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
-
-interface Props extends Omit<TokenFormDialogProps, InheritPropsToOmit> {
+interface Props {
+  open: boolean;
+  onCancel: VoidFunction;
   addToken: (token: BotDTO) => void;
   reloadFetchTokens: VoidFunction;
-  closeDialog: VoidFunction;
 }
 
-function CreateTokenDialog(props: Props) {
-  const { addToken, reloadFetchTokens, closeDialog, ...dialogProps } = props;
+function CreateTokenDialog({ open, addToken, reloadFetchTokens, onCancel }: Props) {
   const [tokenValueToDisplay, setTokenValueToDisplay] = useState("");
   const [showCopiedTooltip, setShowCopiedTooltip] = useState(false);
   const { t } = useTranslation();
@@ -47,7 +45,7 @@ function CreateTokenDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus) => {
+  const handleSubmit = async (data: SubmitHandlerPlus<TokenFormDefaultValues>) => {
     const { name, permissions } = data.values;
 
     try {
@@ -65,7 +63,7 @@ function CreateTokenDialog(props: Props) {
       });
     } catch (e) {
       enqueueErrorSnackbar(t("settings.error.tokenSave", { 0: name }), e as Error);
-      closeDialog();
+      onCancel();
     } finally {
       reloadFetchTokens();
     }
@@ -82,11 +80,10 @@ function CreateTokenDialog(props: Props) {
   return (
     <>
       <TokenFormDialog
+        open={open}
         title={t("settings.createToken")}
-        titleIcon={TokenIcon}
         onSubmit={handleSubmit}
-        onCancel={closeDialog}
-        {...dialogProps}
+        onCancel={onCancel}
       />
       {tokenValueToDisplay && (
         <OkDialog
@@ -94,7 +91,7 @@ function CreateTokenDialog(props: Props) {
           title={t("settings.message.printToken") as string}
           onOk={() => {
             setTokenValueToDisplay("");
-            closeDialog();
+            onCancel();
           }}
         >
           <Paper
@@ -111,9 +108,7 @@ function CreateTokenDialog(props: Props) {
             <IconButton sx={{ position: "absolute", right: 3, bottom: 3 }} size="large">
               <Tooltip
                 open={showCopiedTooltip}
-                PopperProps={{
-                  disablePortal: true,
-                }}
+                slotProps={{ popper: { disablePortal: true } }}
                 onClose={() => setShowCopiedTooltip(false)}
                 disableFocusListener
                 disableHoverListener

@@ -28,7 +28,6 @@ import pytest
 from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
@@ -78,7 +77,6 @@ class SynchTaskService(ITaskService):
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
         name: t.Optional[str],
         ref_id: t.Optional[str],
-        request_params: RequestParameters,
     ) -> t.Optional[str]:
         raise NotImplementedError()
 
@@ -90,17 +88,11 @@ class SynchTaskService(ITaskService):
         ref_id: t.Optional[str],
         progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
-        request_params: RequestParameters,
     ) -> str:
         self._task_result = action(NoopNotifier())
         return str(uuid.uuid4())
 
-    def status_task(
-        self,
-        task_id: str,
-        request_params: RequestParameters,
-        with_logs: bool = False,
-    ) -> TaskDTO:
+    def status_task(self, task_id: str, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
             id=task_id,
             name="mock",
@@ -112,7 +104,7 @@ class SynchTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> t.List[TaskDTO]:
         return []
 
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:

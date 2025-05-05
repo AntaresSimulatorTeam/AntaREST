@@ -25,7 +25,8 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.maintenance.model import MaintenanceMode
 from antarest.core.maintenance.repository import MaintenanceRepository
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
+from antarest.login.utils import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -97,14 +98,9 @@ class MaintenanceService:
             logger.error(f"Failed to put {cache_id} in cache", exc_info=e)
         return data
 
-    def _set_maintenance_data(
-        self,
-        data: str,
-        cache_id: str,
-        db_call: Callable[[str], None],
-        request_params: RequestParameters,
-    ) -> None:
-        if not request_params.user or not request_params.user.is_site_admin():
+    def _set_maintenance_data(self, data: str, cache_id: str, db_call: Callable[[str], None]) -> None:
+        user = get_current_user()
+        if not user or not user.is_site_admin():
             raise UserHasNotPermissionError()
 
         try:
@@ -122,17 +118,12 @@ class MaintenanceService:
                 detail=cache_save_error,
             ) from e
 
-    def set_maintenance_status(
-        self,
-        data: bool,
-        request_params: RequestParameters,
-    ) -> None:
+    def set_maintenance_status(self, data: bool) -> None:
         maintenance_mode = MaintenanceMode.from_bool(data)
         self._set_maintenance_data(
             data=maintenance_mode.value,
             cache_id=ConfigDataAppKeys.MAINTENANCE_MODE.value,
             db_call=lambda x: self.repo.save_maintenance_mode(x),
-            request_params=request_params,
         )
         self.event_bus.push(
             Event(
@@ -150,17 +141,12 @@ class MaintenanceService:
         )
         return bool(MaintenanceMode(data))
 
-    def set_message_info(
-        self,
-        data: str,
-        request_params: RequestParameters,
-    ) -> None:
+    def set_message_info(self, data: str) -> None:
         message = data.strip()
         self._set_maintenance_data(
             data=message,
             cache_id=ConfigDataAppKeys.MESSAGE_INFO.value,
             db_call=lambda x: self.repo.save_message_info(x),
-            request_params=request_params,
         )
         self.event_bus.push(
             Event(
