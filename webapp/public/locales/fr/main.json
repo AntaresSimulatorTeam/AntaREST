@@ -666,8 +666,6 @@
   "studies.importcopy": "Copier en base",
   "studies.importNewStudy": "Import d'une nouvelle étude",
   "studies.importHint": "Cliquer ou glisser une étude zippée ici",
-  "studies.openExternal": "Ouvrir une étude externe",
-  "studies.openExternalHint": "Cliquer ou glisser un fichier .antares ici",
   "studies.studycopying": "Étude en cours de copie...",
   "studies.studyarchiving": "Étude en cours d'archivage...",
   "studies.studyunarchiving": "Étude en cours de désarchivage...",

@@ -663,8 +663,6 @@
   "studies.importcopy": "Copy to database",
   "studies.importNewStudy": "Import a new study",
   "studies.importHint": "Click or drag and drop a zipped study here",
-  "studies.openExternal": "Open external study",
-  "studies.openExternalHint": "Click or drag an .antarest file here",
   "studies.studycopying": "Copying study...",
   "studies.studyarchiving": "Archiving study...",
   "studies.studyunarchiving": "Unarchiving study...",

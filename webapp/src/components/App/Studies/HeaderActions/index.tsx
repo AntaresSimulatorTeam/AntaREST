@@ -83,7 +83,6 @@ function HeaderActions({ onOpenFilterClick }: Props) {
         sx={{ maxWidth: 200 }}
       />
       <Divider flexItem orientation="vertical" variant="middle" />
-
       <Button
         variant="outlined"
         startIcon={<UploadOutlinedIcon />}
