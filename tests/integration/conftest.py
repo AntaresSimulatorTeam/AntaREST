@@ -14,7 +14,6 @@ import os
 import typing as t
 import zipfile
 from pathlib import Path
-from shutil import rmtree
 
 import jinja2
 import pytest
@@ -103,25 +102,6 @@ def client_fixture(app: FastAPI) -> TestClient:
 def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
     # Rename the last part of tmp_path to add the suffix "desktop"
     yield from build_app(tmp_path, "config.template.yml")
-
-
-@pytest.fixture
-def tmp_path_desktop(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
-    root = tmp_path.with_name(f"{tmp_path.name}_desktop")
-    root.mkdir(parents=True)
-    yield root
-    rmtree(root)
-
-
-@pytest.fixture
-def app_desktop(tmp_path_desktop: Path) -> t.Generator[FastAPI, None, None]:
-    yield from build_app(tmp_path_desktop, "config-desktop.template.yml")
-
-
-@pytest.fixture(name="client_desktop")
-def client_fixture_desktop(app_desktop: FastAPI) -> TestClient:
-    """Get the webservice client used for unit testing, using the config template for desktop version"""
-    return TestClient(app_desktop, raise_server_exceptions=False)
 
 
 @pytest.fixture(name="admin_access_token")
