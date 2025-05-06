@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
 import type { NonStudyFolderDTO, StudyTreeNode } from "./types";
@@ -27,12 +28,12 @@ export function buildStudyTree(studies: StudyMetadata[]) {
   // Otherwise we won't see the default workspace if no study has a path (which only
   // happens when a user moves a study to another folder)
   const tree: StudyTreeNode = {
-    name: "root",
+    name: ROOT_NODE_NAME,
     children: [
       {
-        name: "default",
+        name: DEFAULT_WORKSPACE_NAME,
         children: [],
-        path: "/default",
+        path: `/${DEFAULT_WORKSPACE_NAME}`,
       },
     ],
     path: "",
@@ -149,7 +150,8 @@ export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
   folders: NonStudyFolderDTO[],
 ): StudyTreeNode {
-  return folders.reduce(insertFolderIfNotExist, studiesTree);
+  const sortedFolders = [...folders].sort((a, b) => a.path.localeCompare(b.path));
+  return sortedFolders.reduce(insertFolderIfNotExist, { ...studiesTree });
 }
 
 /**
@@ -185,17 +187,16 @@ function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string):
  * The workspaces are inserted in the order they are given.
  *
  * @param workspaces - workspaces to insert into the tree
- * @param stydyTree - study tree to insert the workspaces into
+ * @param studyTree - study tree to insert the workspaces into
  * @returns study tree with the empty workspaces inserted if they weren't already there.
  */
 export function insertWorkspacesIfNotExist(
-  stydyTree: StudyTreeNode,
+  studyTree: StudyTreeNode,
   workspaces: string[],
 ): StudyTreeNode {
-  return workspaces.reduce(
-    (acc, workspace) => insertWorkspaceIfNotExist(acc, workspace),
-    stydyTree,
-  );
+  return workspaces.reduce((acc, workspace) => insertWorkspaceIfNotExist(acc, workspace), {
+    ...studyTree,
+  });
 }
 
 /**
@@ -211,4 +212,23 @@ export function insertWorkspacesIfNotExist(
 export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promise<StudyTreeNode> {
   const workspaces = await api.getWorkspaces();
   return insertWorkspacesIfNotExist(studyTree, workspaces);
+}
+/**
+ * Insert workspaces and folders into the study tree if they don't exist already.
+ *
+ * This function doesn't mutate the tree, it returns a new tree with the workspaces and folders inserted.
+ *
+ * @param studyTree - study tree to insert the workspaces and folders into
+ * @param workspaces - workspaces to insert into the tree
+ * @param folders - folders to insert into the tree
+ * @returns study tree with the workspaces and folders inserted if they weren't already there.
+ */
+export function insertIfNotExist(
+  studyTree: StudyTreeNode,
+  workspaces: string[],
+  folders: NonStudyFolderDTO[],
+) {
+  const treeWithWorkspaces = insertWorkspacesIfNotExist(studyTree, workspaces);
+  const treeWithFolders = insertFoldersIfNotExist(treeWithWorkspaces, folders);
+  return treeWithFolders;
 }
