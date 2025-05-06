@@ -33,6 +33,7 @@ from typing_extensions import override
 from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
@@ -41,6 +42,7 @@ from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.login.utils import current_user_context
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
@@ -211,18 +213,22 @@ class SlurmLauncher(AbstractLauncher):
             self.start()
 
     def _loop(self) -> None:
-        while self.check_state:
-            # noinspection PyBroadException
-            try:
-                self._check_studies_state()
-            except Exception:
-                # To keep the SLURM processing monitoring loop active, exceptions
-                # are caught and a message is simply displayed in the logs.
-                logger.error(
-                    "An uncaught exception occurred in slurm_launcher loop",
-                    exc_info=True,
-                )
-            time.sleep(2)
+        # The loop is executed as admin user
+        # It could be more accurate to execute each part
+        # of the processing as the user that launched the job
+        with current_user_context(DEFAULT_ADMIN_USER):
+            while self.check_state:
+                # noinspection PyBroadException
+                try:
+                    self._check_studies_state()
+                except Exception:
+                    # To keep the SLURM processing monitoring loop active, exceptions
+                    # are caught and a message is simply displayed in the logs.
+                    logger.error(
+                        "An uncaught exception occurred in slurm_launcher loop",
+                        exc_info=True,
+                    )
+                time.sleep(2)
 
     def start(self) -> None:
         logger.info("Starting slurm_launcher loop")

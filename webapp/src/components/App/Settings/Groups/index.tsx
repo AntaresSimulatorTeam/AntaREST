@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import GroupIcon from "@mui/icons-material/Group";
 import {
   Box,
   CircularProgress,
@@ -25,27 +28,24 @@ import {
   Typography,
 } from "@mui/material";
 import { produce } from "immer";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
 import { useMemo, useReducer, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
 import type { Action } from "redux";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import * as R from "ramda";
-import GroupIcon from "@mui/icons-material/Group";
-import { useSnackbar } from "notistack";
-import type { GroupDetailsDTO } from "../../../../types/types";
+import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import { getAuthUser } from "../../../../redux/selectors";
 import { deleteGroup, getGroups } from "../../../../services/api/user";
 import { sortByName } from "../../../../services/utils";
+import type { GroupDetailsDTO } from "../../../../types/types";
+import { isSearchMatching } from "../../../../utils/stringUtils";
 import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
 import { RESERVED_GROUP_NAMES } from "../utils";
 import Header from "./Header";
 import UpdateGroupDialog from "./dialog/UpdateGroupDialog";
-import { getAuthUser } from "../../../../redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { isSearchMatching } from "../../../../utils/stringUtils";
 
 enum GroupActionKind {
   ADD = "ADD",
@@ -265,7 +265,7 @@ function Groups() {
           group={groupToEdit}
           editGroup={editGroup}
           reloadFetchGroups={reloadFetchGroups}
-          closeDialog={() => setGroupToEdit(undefined)}
+          onCancel={() => setGroupToEdit(undefined)}
         />
       )}
     </Box>

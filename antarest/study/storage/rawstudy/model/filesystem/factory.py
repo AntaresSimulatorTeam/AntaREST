@@ -21,15 +21,13 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
     validate_config,
 )
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 logger = logging.getLogger(__name__)
@@ -55,12 +53,11 @@ class StudyFactory:
 
     def __init__(
         self,
-        matrix: ISimpleMatrixService,
-        resolver: UriResolverService,
+        matrix_mapper: MatrixUriMapper,
         cache: ICache,
     ) -> None:
-        self.context = ContextServer(matrix=matrix, resolver=resolver)
-        self.cache = cache
+        self._matrix_mapper = matrix_mapper
+        self._cache = cache
         # It is better to store lock files in the temporary directory,
         # because it is possible that there not deleted when the web application is stopped.
         # Cleaning up lock files is thus easier.
@@ -106,7 +103,7 @@ class StudyFactory:
     ) -> FileStudy:
         cache_id = study_config_cache_key(study_id)
         if study_id and use_cache:
-            from_cache = self.cache.get(cache_id)
+            from_cache = self._cache.get(cache_id)
             if from_cache is not None:
                 logger.info(f"Study {study_id} read from cache")
                 version = StudyVersion.parse(from_cache["version"])
@@ -114,19 +111,19 @@ class StudyFactory:
                 if output_path:
                     config.output_path = output_path
                     config.outputs = parse_outputs(output_path)
-                return FileStudy(config, FileStudyTree(self.context, config))
+                return FileStudy(config, FileStudyTree(self._matrix_mapper, config))
         start_time = time.time()
         config = build(path, study_id, output_path)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
-        result = FileStudy(config, FileStudyTree(self.context, config))
+        result = FileStudy(config, FileStudyTree(self._matrix_mapper, config))
         if study_id and use_cache:
             logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
-            self.cache.put(
+            self._cache.put(
                 cache_id,
                 FileStudyTreeConfigDTO.from_build_config(config).model_dump(),
             )
         return result
 
     def create_from_config(self, config: FileStudyTreeConfig) -> FileStudyTree:
-        return FileStudyTree(self.context, config)
+        return FileStudyTree(self._matrix_mapper, config)

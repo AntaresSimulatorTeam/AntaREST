@@ -33,7 +33,7 @@ def build_tree() -> INode[t.Any, t.Any, t.Any]:
     config.path.exist.return_value = True
     config.archive_path = None
     return TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={
             "input": CheckSubNode(config, value=100),
@@ -61,7 +61,7 @@ def test_get_input_areas_sets(tmp_path: Path) -> None:
     for the case where the subdirectories or the INI file do not exist.
     """
 
-    study_factory = StudyFactory(Mock(), Mock(), Mock())
+    study_factory = StudyFactory(Mock(), Mock())
     study_id = "c5633166-afe1-4ce5-9305-75bc2779aad6"
     file_study = study_factory.create_from_fs(tmp_path, study_id, use_cache=False)
     url = ["input", "areas", "sets"]  # sets.ini
@@ -111,7 +111,7 @@ def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
     for the case where the subdirectories or the JSON file do not exist.
     """
 
-    study_factory = StudyFactory(Mock(), Mock(), Mock())
+    study_factory = StudyFactory(Mock(), Mock())
     study_id = "616ac707-c108-47af-9e02-c37cc043511a"
     file_study = study_factory.create_from_fs(tmp_path, study_id, use_cache=False)
     url = ["user", "expansion", "sensitivity", "sensitivity_in"]
@@ -148,7 +148,7 @@ def test_get_depth() -> None:
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )
@@ -165,7 +165,7 @@ def test_validate() -> None:
     config = Mock()
     config.path.exist.return_value = True
     tree = TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={"childA": build_tree(), "childB": build_tree()},
     )
@@ -233,33 +233,31 @@ def test_delete(tmp_path: Path) -> None:
 
     config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=-1)
     tree_node = TestMiddleNode(
-        context=Mock(),
+        matrix_mapper=Mock(),
         config=config,
         children={
             "sub_folder": TestMiddleNode(
-                context=Mock(),
+                matrix_mapper=Mock(),
                 config=config.next_file("sub_folder"),
                 children={
                     "ini_node1": IniFileNode(
-                        context=Mock(),
                         config=config.next_file("sub_folder").next_file("ini_node1.txt"),
                         types={},
                     ),
                     "ini_node2": IniFileNode(
-                        context=Mock(),
                         config=config.next_file("sub_folder").next_file("ini_node2.txt"),
                         types={},
                     ),
                     "area_list": InputAreasList(
-                        context=Mock(),
+                        matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("area_list.ini"),
                     ),
                     "data_node": RawFileNode(
-                        context=Mock(),
+                        matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("data.txt"),
                     ),
                     "data_link_node": RawFileNode(
-                        context=Mock(),
+                        matrix_mapper=Mock(),
                         config=config.next_file("sub_folder").next_file("data_link.txt"),
                     ),
                 },

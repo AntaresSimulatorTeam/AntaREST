@@ -28,8 +28,8 @@ class InputHydroPreproArea(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "energy": InputSeriesMatrix(
-                self.context, self.config.next_file("energy.txt"), default_empty=default_energy
+                self.matrix_mapper, self.config.next_file("energy.txt"), default_empty=default_energy
             ),
-            "prepro": InputHydroPreproAreaPrepro(self.context, self.config.next_file("prepro.ini")),
+            "prepro": InputHydroPreproAreaPrepro(self.config.next_file("prepro.ini")),
         }
         return children

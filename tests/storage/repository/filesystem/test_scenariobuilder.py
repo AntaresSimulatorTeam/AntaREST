@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from unittest.mock import Mock
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
@@ -122,7 +121,6 @@ def test_get(tmp_path: Path) -> None:
     }
 
     node = ScenarioBuilder(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=path,
             path=path,

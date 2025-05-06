@@ -21,8 +21,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters
+from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.launcher.main import build_launcher
 from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
@@ -64,7 +63,7 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), RequestParameters(ADMIN), None)
+    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None)
 
 
 @pytest.mark.unit_test
@@ -88,7 +87,7 @@ def test_result() -> None:
 
     assert res.status_code == 200
     assert JobResultDTO.model_validate(res.json()) == result.to_dto()
-    service.get_result.assert_called_once_with(job, RequestParameters(DEFAULT_ADMIN_USER))
+    service.get_result.assert_called_once_with(job)
 
 
 @pytest.mark.unit_test
@@ -120,11 +119,10 @@ def test_jobs() -> None:
         [
             call(
                 str(study_id),
-                RequestParameters(DEFAULT_ADMIN_USER),
                 True,
                 None,
             ),
-            call(None, RequestParameters(DEFAULT_ADMIN_USER), True, None),
+            call(None, True, None),
         ]
     )
 
@@ -184,7 +182,7 @@ def test_get_job_log() -> None:
     client = TestClient(app)
     res = client.get(f"/v1/launcher/jobs/{job_id}/logs")
     assert res.status_code == 200
-    service.get_log.assert_called_once_with(job_id, LogType.STDOUT, RequestParameters(user=DEFAULT_ADMIN_USER))
+    service.get_log.assert_called_once_with(job_id, LogType.STDOUT)
 
 
 @pytest.mark.unit_test
@@ -197,4 +195,4 @@ def test_kill_job() -> None:
     client = TestClient(app)
     res = client.post(f"/v1/launcher/jobs/{job_id}/kill")
     assert res.status_code == 200
-    service.kill_job.assert_called_once_with(job_id=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER))
+    service.kill_job.assert_called_once_with(job_id=job_id)

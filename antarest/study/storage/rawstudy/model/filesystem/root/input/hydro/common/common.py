@@ -21,5 +21,5 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.ca
 class InputHydroCommon(FolderNode):
     @override
     def build(self) -> TREE:
-        children: TREE = {"capacity": InputHydroCommonCapacity(self.context, self.config.next_file("capacity"))}
+        children: TREE = {"capacity": InputHydroCommonCapacity(self.matrix_mapper, self.config.next_file("capacity"))}
         return children

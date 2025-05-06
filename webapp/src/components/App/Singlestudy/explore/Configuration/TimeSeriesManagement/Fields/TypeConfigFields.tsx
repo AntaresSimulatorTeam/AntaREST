@@ -14,11 +14,11 @@
 
 import { useFormContextPlus } from "@/components/common/Form";
 import NumberFE from "@/components/common/fieldEditors/NumberFE";
-import { TableCell } from "@mui/material";
-import type { TimeSeriesConfigValues } from "../utils";
-import { validateNumber } from "@/utils/validation/number";
 import type { TimeSeriesTypeValue } from "@/services/api/studies/timeseries/types";
+import { validateNumber } from "@/utils/validation/number";
+import { TableCell } from "@mui/material";
 import { useWatch } from "react-hook-form";
+import type { TimeSeriesConfigValues } from "../utils";
 
 interface Props {
   type: TimeSeriesTypeValue;
@@ -37,10 +37,11 @@ function TypeConfigFields({ type }: Props) {
       <NumberFE
         name={`${type}.number` as const}
         control={control}
-        size="small"
         disabled={!isEnabled}
         rules={{ validate: validateNumber({ min: 1 }) }}
         sx={{ width: 110 }}
+        size="extra-small"
+        margin="dense"
       />
     </TableCell>
   );

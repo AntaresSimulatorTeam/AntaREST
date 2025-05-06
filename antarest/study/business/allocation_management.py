@@ -49,14 +49,14 @@ class AllocationFormFields(FormFieldsBaseModel):
             raise ValueError("allocation must not contain duplicate area IDs")
 
         for a in allocation:
-            if a.coefficient < 0:
-                raise ValueError("allocation must not contain negative coefficients")
-
             if numpy.isnan(a.coefficient):
                 raise ValueError("allocation must not contain NaN coefficients")
 
+        if all(a.coefficient == 0 for a in allocation):
+            raise ValueError("at least one allocation coefficient must be non-zero")
+
         if sum(a.coefficient for a in allocation) <= 0:
-            raise ValueError("sum of allocation coefficients must be positive")
+            raise ValueError("sum of coefficients must be positive")
 
         return self
 
@@ -99,8 +99,6 @@ class AllocationMatrix(FormFieldsBaseModel):
             raise ValueError("allocation matrix must not be empty")
         if array.shape != (rows, cols):
             raise ValueError("allocation matrix must have square shape")
-        if np.any(array < 0):
-            raise ValueError("allocation matrix must not contain negative coefficients")
         if np.any(np.isnan(array)):
             raise ValueError("allocation matrix must not contain NaN coefficients")
         if np.all(array == 0):
@@ -197,7 +195,7 @@ class AllocationManager:
             # sort for deterministic error message and testing
             raise AreaNotFound(*sorted(invalid_ids))
 
-        filtered_allocations = [f for f in data.allocation if f.coefficient > 0 and f.area_id in areas_ids]
+        filtered_allocations = [f for f in data.allocation if f.area_id in areas_ids]
 
         command = UpdateConfig(
             target=f"input/hydro/allocation/{area_id}/[allocation]",

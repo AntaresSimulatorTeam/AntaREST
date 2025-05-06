@@ -14,7 +14,6 @@ import shutil
 import textwrap
 import typing as t
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 
@@ -65,7 +64,6 @@ def test_get(tmp_path: Path) -> None:
         "part2": {"key_bool": True, "key_bool2": False},
     }
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=ini_path,
             path=ini_path,
@@ -90,7 +88,6 @@ def test_get(tmp_path: Path) -> None:
     )
 
     zipped_node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=tmp_path.joinpath("archived", ini_path.name),
             path=tmp_path.joinpath("archived", ini_path.name),
@@ -118,7 +115,6 @@ def test_get_depth(tmp_path: Path) -> None:
         "part2": {},
     }
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=ini_path,
             path=ini_path,
@@ -141,7 +137,6 @@ def test_get_depth(tmp_path: Path) -> None:
     )
 
     zipped_node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=tmp_path.joinpath("archived", ini_path.name),
             path=tmp_path.joinpath("archived", ini_path.name),
@@ -161,7 +156,6 @@ def test_validate_section():
     data = {"section": {"params": 42}}
 
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
         types={"wrong-section": {}},
     )
@@ -170,7 +164,6 @@ def test_validate_section():
         node.check_errors(data, raising=True)
 
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
         types={"section": {"wrong-params": 42}},
     )
@@ -179,7 +172,6 @@ def test_validate_section():
         node.check_errors(data, raising=True)
 
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
         types={"section": {"params": str}},
     )
@@ -206,7 +198,6 @@ def test_save(tmp_path: Path) -> None:
     }
 
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=tmp_path,
             path=ini_path,
@@ -318,7 +309,6 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
     )
     ini_path.write_text(ini_content)
     node = IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=tmp_path,
             path=ini_path,
@@ -336,7 +326,6 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
 
 def create_ini_node(study_path: Path, ini_path: Path) -> IniFileNode:
     return IniFileNode(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=study_path,
             path=ini_path,

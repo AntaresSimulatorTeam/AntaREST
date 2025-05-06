@@ -47,7 +47,6 @@ from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.front import add_front_app
 from antarest.login.auth import Auth, JwtSettings
 from antarest.login.model import init_admin_user
-from antarest.login.utils import CurrentUserMiddleware
 from antarest.service_creator import SESSION_ARGS, Module, Services, create_services, init_db_engine
 from antarest.singleton_services import start_all_services
 from antarest.tools.admin_lib import clean_locks
@@ -271,8 +270,6 @@ def fastapi_app(
         ),
         config=RATE_LIMIT_CONFIG,
     )
-
-    application.add_middleware(CurrentUserMiddleware, auth=auth_manager)
 
     init_admin_user(engine=engine, session_args=SESSION_ARGS, admin_password=config.security.admin_pwd)
     services = create_services(config, app_ctxt)

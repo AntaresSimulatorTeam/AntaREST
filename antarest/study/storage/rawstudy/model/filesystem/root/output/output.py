@@ -22,7 +22,7 @@ class Output(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             str(s.get_file()): OutputSimulation(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file(s.get_file(), is_output=True),
                 s,
             )
@@ -30,5 +30,5 @@ class Output(FolderNode):
         }
 
         if (self.config.path / "logs").exists():
-            children["logs"] = BucketNode(self.context, self.config.next_file("logs"))
+            children["logs"] = BucketNode(self.matrix_mapper, self.config.next_file("logs"))
         return children

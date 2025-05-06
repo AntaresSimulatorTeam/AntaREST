@@ -26,7 +26,6 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.jwt import JWTUser
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.model import RawStudy, StudyAdditionalData
@@ -69,7 +68,6 @@ class SnapshotGenerator:
     def generate_snapshot(
         self,
         variant_study_id: str,
-        jwt_user: JWTUser,
         *,
         denormalize: bool = True,
         from_scratch: bool = False,
@@ -87,7 +85,7 @@ class SnapshotGenerator:
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
-        assert_permission_on_studies(jwt_user, [root_study, *descendants], StudyPermissionType.READ, raising=True)
+        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
         search_result = search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
         ref_study = search_result.ref_study

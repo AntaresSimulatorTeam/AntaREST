@@ -17,10 +17,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import AreaOutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common import set
@@ -40,9 +37,6 @@ class TestOutputSimulationSet:
             tmp_path.joinpath(file).touch()
             name = Path(file).stem
             expected[name] = {"freq": MatrixFrequency(name.split("-")[1])}
-        matrix = Mock(spec=ISimpleMatrixService)
-        resolver = Mock(spec=UriResolverService)
-        context = ContextServer(matrix=matrix, resolver=resolver)
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
             study_path=Path("study_path"),
@@ -52,7 +46,7 @@ class TestOutputSimulationSet:
             areas={},
         )
 
-        node = set.OutputSimulationSet(context=context, config=config, set="foo")
+        node = set.OutputSimulationSet(matrix_mapper=Mock(), config=config, set="foo")
         actual = node.build()
 
         # check the result

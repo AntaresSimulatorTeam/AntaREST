@@ -26,9 +26,11 @@ from typing_extensions import override
 from antarest.core.config import Config, LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
+from antarest.login.utils import current_user_context, require_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -85,13 +87,7 @@ class LocalLauncher(AbstractLauncher):
 
         job = threading.Thread(
             target=LocalLauncher._compute,
-            args=(
-                self,
-                antares_solver_path,
-                study_uuid,
-                job_id,
-                launcher_parameters,
-            ),
+            args=(self, antares_solver_path, study_uuid, job_id, launcher_parameters, require_current_user()),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         job.start()
@@ -102,69 +98,71 @@ class LocalLauncher(AbstractLauncher):
         study_uuid: str,
         job_id: str,
         launcher_parameters: LauncherParametersDTO,
+        current_user: JWTUser,
     ) -> None:
-        export_path = self.local_workspace / job_id
-        logs_path = self.log_directory / job_id
-        logs_path.mkdir()
-        try:
-            self.callbacks.export_study(job_id, study_uuid, export_path, launcher_parameters)
+        with current_user_context(current_user):
+            export_path = self.local_workspace / job_id
+            logs_path = self.log_directory / job_id
+            logs_path.mkdir()
+            try:
+                self.callbacks.export_study(job_id, study_uuid, export_path, launcher_parameters)
 
-            simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters)
-            new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
+                simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters)
+                new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
 
-            std_err_file = logs_path / f"{job_id}-err.log"
-            std_out_file = logs_path / f"{job_id}-out.log"
-            with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
-                process = subprocess.Popen(
-                    new_args,
-                    env=environment_variables,
-                    stdout=out_file,
-                    stderr=err_file,
-                    universal_newlines=True,
-                    encoding="utf-8",
-                )
-            self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
-            self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
-
-            self.log_tail_manager.track(std_out_file, self.create_update_log(job_id))
-
-            while process.poll() is None:
-                time.sleep(1)
-
-            if launcher_parameters is not None and (
-                launcher_parameters.post_processing or launcher_parameters.adequacy_patch is not None
-            ):
-                subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
-
-            output_id: Optional[str] = None
-            if process.returncode == 0:
-                # The job succeed we need to import the output
-                try:
-                    launcher_logs = self._import_launcher_logs(job_id)
-                    output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
-                except Exception as e:
-                    logger.error(
-                        f"Failed to import output for study {study_uuid} located at {export_path}",
-                        exc_info=e,
+                std_err_file = logs_path / f"{job_id}-err.log"
+                std_out_file = logs_path / f"{job_id}-out.log"
+                with open(std_err_file, "w") as err_file, open(std_out_file, "w") as out_file:
+                    process = subprocess.Popen(
+                        new_args,
+                        env=environment_variables,
+                        stdout=out_file,
+                        stderr=err_file,
+                        universal_newlines=True,
+                        encoding="utf-8",
                     )
-            del self.job_id_to_study_id[job_id]
-            self.callbacks.update_status(
-                job_id,
-                JobStatus.FAILED if process.returncode != 0 or not output_id else JobStatus.SUCCESS,
-                None,
-                output_id,
-            )
-        except Exception as e:
-            logger.error(f"Unexpected error happened during launch {job_id}", exc_info=e)
-            self.callbacks.update_status(
-                job_id,
-                JobStatus.FAILED,
-                str(e),
-                None,
-            )
-        finally:
-            logger.info(f"Removing launch {job_id} export path at {export_path}")
-            shutil.rmtree(export_path, ignore_errors=True)
+                self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
+                self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
+
+                self.log_tail_manager.track(std_out_file, self.create_update_log(job_id))
+
+                while process.poll() is None:
+                    time.sleep(1)
+
+                if launcher_parameters is not None and (
+                    launcher_parameters.post_processing or launcher_parameters.adequacy_patch is not None
+                ):
+                    subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
+
+                output_id: Optional[str] = None
+                if process.returncode == 0:
+                    # The job succeed we need to import the output
+                    try:
+                        launcher_logs = self._import_launcher_logs(job_id)
+                        output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to import output for study {study_uuid} located at {export_path}",
+                            exc_info=e,
+                        )
+                del self.job_id_to_study_id[job_id]
+                self.callbacks.update_status(
+                    job_id,
+                    JobStatus.FAILED if process.returncode != 0 or not output_id else JobStatus.SUCCESS,
+                    None,
+                    output_id,
+                )
+            except Exception as e:
+                logger.error(f"Unexpected error happened during launch {job_id}", exc_info=e)
+                self.callbacks.update_status(
+                    job_id,
+                    JobStatus.FAILED,
+                    str(e),
+                    None,
+                )
+            finally:
+                logger.info(f"Removing launch {job_id} export path at {export_path}")
+                shutil.rmtree(export_path, ignore_errors=True)
 
     def _import_launcher_logs(self, job_id: str) -> Dict[str, List[Path]]:
         logs_path = self.log_directory / job_id
