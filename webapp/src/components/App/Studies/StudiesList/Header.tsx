@@ -164,7 +164,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
                     key={path}
                     underline={isRoot ? "none" : "hover"}
                     color="inherit"
-                    onClick={() => setFolder(isRoot ? "root" : path)}
+                    onClick={() => setFolder(isRoot ? "" : path)}
                     sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
                   >
                     {isRoot ? <HomeIcon fontSize="inherit" /> : folder}
@@ -228,11 +228,13 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               open
             >
               {`${t("studies.scanFolder")} ${folder}?`}
-              <CheckBoxFE
-                label={t("studies.recursiveScan")}
-                value={isRecursiveScan}
-                onChange={handleRecursiveScan}
-              />
+              {import.meta.env.MODE !== "desktop" && (
+                <CheckBoxFE
+                  label={t("studies.recursiveScan")}
+                  value={isRecursiveScan}
+                  onChange={handleRecursiveScan}
+                />
+              )}
             </ConfirmationDialog>
           )}
           <RefreshButton mini />

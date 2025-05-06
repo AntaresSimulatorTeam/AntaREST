@@ -399,11 +399,13 @@ def test_partial_sync_studies_from_disk() -> None:
     )
     fc = StudyFolder(path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
     fe = StudyFolder(path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    ff = StudyFolder(path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    ff = StudyFolder(path=Path("directory/f"), workspace="workspace1", groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    config = Config(
+        storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(), "workspace1": WorkspaceConfig()})
+    )
     service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
@@ -418,7 +420,7 @@ def test_partial_sync_studies_from_disk() -> None:
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
-            workspace=DEFAULT_WORKSPACE_NAME,
+            workspace="workspace1",
         )
     )
 

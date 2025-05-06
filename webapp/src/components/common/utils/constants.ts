@@ -23,3 +23,4 @@ export const PUBLIC_MODE_LIST: GenericInfo[] = [
 ];
 
 export const DEFAULT_WORKSPACE_NAME = "default";
+export const ROOT_NODE_NAME = "root";
