@@ -280,7 +280,7 @@ class MatrixManager:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
         logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
-        new_matrix_id = matrix_service.create(matrix_df.to_numpy().tolist())
+        new_matrix_id = matrix_service.create(matrix_df)
 
         logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [

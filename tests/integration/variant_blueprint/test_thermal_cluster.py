@@ -146,7 +146,7 @@ class TestThermalCluster:
             "id": task_id,
             "logs": None,
             "name": f"Generation of {variant_id} study",
-            "owner": 1,
+            "owner": 2,
             "ref_id": variant_id,
             "result": {
                 "message": f"{variant_id} generated successfully",

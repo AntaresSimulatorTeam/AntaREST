@@ -16,7 +16,7 @@ import { useState } from "react";
 import { Box, Button, TextField, Tooltip } from "@mui/material";
 import { useUpdateEffect } from "react-use";
 import Transform from "@mui/icons-material/Transform";
-import { resizeMatrix } from "../shared/utils";
+import { calculateMatrixAggregates, resizeMatrix } from "../shared/utils";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { toError } from "@/utils/fnUtils";
@@ -24,7 +24,12 @@ import { useMatrixContext } from "../context/MatrixContext";
 import { clamp } from "ramda";
 
 function MatrixResize() {
-  const { currentState, setMatrixData, isSubmitting: isMatrixSubmitting } = useMatrixContext();
+  const {
+    currentState,
+    setMatrixData,
+    isSubmitting: isMatrixSubmitting,
+    aggregateTypes,
+  } = useMatrixContext();
   const { t } = useTranslation();
   const errorSnackBar = useEnqueueErrorSnackbar();
   const currentColumnCount = currentState.data[0].length;
@@ -52,6 +57,7 @@ function MatrixResize() {
       setMatrixData({
         ...currentState,
         data: updatedMatrix,
+        aggregates: calculateMatrixAggregates({ matrix: updatedMatrix, types: aggregateTypes }),
       });
     } catch (error) {
       errorSnackBar(t("matrix.error.matrixUpdate"), toError(error));

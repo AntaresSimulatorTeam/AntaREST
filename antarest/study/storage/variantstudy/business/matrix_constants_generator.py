@@ -14,10 +14,11 @@ import tempfile
 from pathlib import Path
 from typing import Dict
 
+import pandas as pd
 from antares.study.version import StudyVersion
 from filelock import FileLock
 
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
@@ -62,7 +63,6 @@ ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
 ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
-MATRIX_PROTOCOL_PREFIX = "matrix://"
 _LOCK_FILE_NAME = "matrix_constant_init.lock"
 
 
@@ -111,20 +111,24 @@ class GeneratorMatrixConstants:
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
-        self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.create(series_before_87.default_bc_hourly)
+        self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.create(
+            pd.DataFrame(series_before_87.default_bc_hourly)
+        )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86] = self.matrix_service.create(
-            series_before_87.default_bc_weekly_daily
+            pd.DataFrame(series_before_87.default_bc_weekly_daily)
         )
 
         series_after_87 = matrix_constants.binding_constraint.series_after_v87
-        self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.create(series_after_87.default_bc_hourly)
+        self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.create(
+            pd.DataFrame(series_after_87.default_bc_hourly)
+        )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87] = self.matrix_service.create(
-            series_after_87.default_bc_weekly_daily
+            pd.DataFrame(series_after_87.default_bc_weekly_daily)
         )
 
         # Some short-term storage matrices use np.ones((8760, 1))
         self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.create(
-            matrix_constants.st_storage.series.pmax_injection
+            pd.DataFrame(matrix_constants.st_storage.series.pmax_injection)
         )
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:

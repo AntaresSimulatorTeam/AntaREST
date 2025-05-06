@@ -23,22 +23,22 @@ DEFAULT_INTERNAL_FORMAT = InternalMatrixFormat.TSV
 
 @pytest.fixture(name="matrix_repo")
 def matrix_repo_fixture() -> MatrixRepository:
-    yield MatrixRepository()
+    return MatrixRepository()
 
 
 @pytest.fixture(name="dataset_repo")
 def dataset_repo_fixture() -> MatrixDataSetRepository:
-    yield MatrixDataSetRepository()
+    return MatrixDataSetRepository()
 
 
 @pytest.fixture(name="content_repo")
 def content_repo_fixture(tmp_path) -> MatrixContentRepository:
-    yield MatrixContentRepository(tmp_path.joinpath("content_repo"), format=DEFAULT_INTERNAL_FORMAT)
+    return MatrixContentRepository(tmp_path.joinpath("content_repo"), format=DEFAULT_INTERNAL_FORMAT)
 
 
 @pytest.fixture(name="matrix_service")
 def matrix_service_fixture(matrix_repo, dataset_repo, content_repo) -> MatrixService:
-    yield MatrixService(
+    return MatrixService(
         repo=matrix_repo,
         repo_dataset=dataset_repo,
         matrix_content_repository=content_repo,

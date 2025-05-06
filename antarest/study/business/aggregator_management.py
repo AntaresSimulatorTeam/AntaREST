@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer imp
 )
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 
-MC_TEMPLATE_PARTS = "economy/{mc_root}"
 # noinspection SpellCheckingInspection
 MCYEAR_COL = "mcYear"
 """Column name for the Monte Carlo year."""
@@ -91,13 +90,6 @@ class MCAllLinksQueryFile(StrEnum):
     ID = "id"
 
 
-def _checks_estimated_size(nb_files: int, df_bytes_size: int, nb_files_checked: int) -> None:
-    maximum_size = 100  # size in Mo that corresponds to a 15 seconds task.
-    estimated_df_size = nb_files * df_bytes_size // (nb_files_checked * 10**6)
-    if estimated_df_size > maximum_size:
-        raise FileTooLargeError(estimated_df_size, maximum_size)
-
-
 def _columns_ordering(df_cols: List[str], column_name: str, is_details: bool, mc_root: MCRoot) -> Sequence[str]:
     # original columns
     org_cols = df_cols.copy()
@@ -149,6 +141,7 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
+        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -158,6 +151,7 @@ class AggregatorManager:
         self.mc_years = mc_years
         self.columns_names = columns_names
         self.ids_to_consider = ids_to_consider
+        self.aggregation_results_max_size = aggregation_results_max_size
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
@@ -363,7 +357,7 @@ class AggregatorManager:
             MCAllAreasQueryFile.DETAILS_RES,
         ]
         final_df = pd.DataFrame()
-        nb_files = len(files)
+
         for k, file_path in enumerate(files):
             df = self._process_df(file_path, is_details)
 
@@ -375,12 +369,10 @@ class AggregatorManager:
             if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
                 return pd.DataFrame()
 
-            # checks if the estimated dataframe size does not exceed the limit
-            # This check is performed on 10 aggregated files to have a more accurate view of the final df.
-            if k == 10:
-                # The following formula is the more accurate one compared to the final csv file.
-                estimated_binary_size = final_df.memory_usage().sum()
-                _checks_estimated_size(nb_files, estimated_binary_size, k)
+            # The following formula is the more accurate one compared to the final csv file.
+            estimated_binary_size = final_df.memory_usage().sum()
+            if estimated_binary_size > self.aggregation_results_max_size * 10**6:
+                raise FileTooLargeError(round(estimated_binary_size / 10**6, 2), self.aggregation_results_max_size)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)

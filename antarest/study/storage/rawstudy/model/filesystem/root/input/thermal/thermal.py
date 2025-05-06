@@ -23,9 +23,9 @@ class InputThermal(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "clusters": InputThermalClusters(self.context, self.config.next_file("clusters")),
-            "prepro": InputThermalPrepro(self.context, self.config.next_file("prepro")),
-            "series": InputThermalSeries(self.context, self.config.next_file("series")),
-            "areas": InputThermalAreasIni(self.context, self.config.next_file("areas.ini")),
+            "clusters": InputThermalClusters(self.matrix_mapper, self.config.next_file("clusters")),
+            "prepro": InputThermalPrepro(self.matrix_mapper, self.config.next_file("prepro")),
+            "series": InputThermalSeries(self.matrix_mapper, self.config.next_file("series")),
+            "areas": InputThermalAreasIni(self.config.next_file("areas.ini")),
         }
         return children
