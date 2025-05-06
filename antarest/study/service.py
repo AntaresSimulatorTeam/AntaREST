@@ -1072,7 +1072,7 @@ class StudyService:
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
 
-        all_studies = [study for study in all_studies if study.workspace not in (DEFAULT_WORKSPACE_NAME)]
+        all_studies = [study for study in all_studies if study.workspace not in (DEFAULT_WORKSPACE_NAME,)]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
@@ -1112,7 +1112,7 @@ class StudyService:
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
         missing_studies = {study.path: study for study in all_studies if study.missing is not None}
-        folders = [folder for folder in folders if folder.workspace not in (DEFAULT_WORKSPACE_NAME)]
+        folders = [folder for folder in folders if folder.workspace not in (DEFAULT_WORKSPACE_NAME,)]
         for folder in folders:
             study_path = str(folder.path)
             workspace = folder.workspace
