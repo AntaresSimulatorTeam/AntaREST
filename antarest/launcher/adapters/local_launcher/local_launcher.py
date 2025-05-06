@@ -23,7 +23,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from antares.study.version import SolverVersion
 from typing_extensions import override
 
-from antarest.core.config import Config
+from antarest.core.config import Config, LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
@@ -43,14 +43,14 @@ class LocalLauncher(AbstractLauncher):
     def __init__(
         self,
         config: Config,
+        launcher_id: str,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        if self.config.launcher.local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        self.local_workspace = self.config.launcher.local.local_workspace
+        launcher = config.launcher.get_launcher_by_id(launcher_id)
+        self.local_workspace = launcher.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
@@ -58,11 +58,13 @@ class LocalLauncher(AbstractLauncher):
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
-    def _select_best_binary(self, version: str) -> Path:
-        local = self.config.launcher.local
-        if local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        elif version in local.binaries:
+    def _select_best_binary(self, version: str, launcher_id: str) -> Path:
+        local = self.config.launcher.get_launcher_by_id(launcher_id)
+
+        if not isinstance(local, LocalConfig):
+            raise LauncherInitException(f"Invalid parameter {launcher_id}")
+
+        if version in local.binaries:
             antares_solver_path = local.binaries[version]
         else:
             # sourcery skip: extract-method, max-min-default
@@ -81,7 +83,7 @@ class LocalLauncher(AbstractLauncher):
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
-        antares_solver_path = self._select_best_binary(f"{version:ddd}")
+        antares_solver_path = self._select_best_binary(f"{version:ddd}", launcher_parameters.launcher_id)
 
         job = threading.Thread(
             target=LocalLauncher._compute,
@@ -176,7 +178,9 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.local.xpress_dir:  # type: ignore
+                if xpress_dir_path := self.config.launcher.get_launcher_by_id(
+                    launcher_parameters.launcher_id
+                ).xpress_dir:  # type: ignore
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:

@@ -15,7 +15,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError, Launcher
@@ -49,25 +49,6 @@ class UnknownSolverConfig(HTTPException):
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
             f"Unknown solver configuration: '{solver}'",
         )
-
-
-LauncherQuery = Query(
-    default=Launcher.DEFAULT,
-    openapi_examples={
-        "Default launcher": {
-            "description": "Default solver (auto-detected)",
-            "value": "default",
-        },
-        "SLURM launcher": {
-            "description": "SLURM solver configuration",
-            "value": "slurm",
-        },
-        "Local launcher": {
-            "description": "Local solver configuration",
-            "value": "local",
-        },
-    },
-)
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
@@ -185,10 +166,10 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get the SLURM cluster or local machine load",
         response_model=LauncherLoadDTO,
     )
-    def get_load() -> LauncherLoadDTO:
+    def get_load(launcher_id: str = "local") -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
-            return service.get_load()
+            return service.get_load(launcher_id)
         except SlurmError as e:
             logger.warning(e, exc_info=e)
             args = {
@@ -205,7 +186,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get list of supported solver versions",
         response_model=List[str],
     )
-    def get_solver_versions(solver: Launcher = Launcher.DEFAULT) -> List[str]:
+    def get_solver_versions(solver: str = Launcher.DEFAULT) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.
 
@@ -222,7 +203,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Retrieving Min, Default, and Max Core Count",
         response_model=Dict[str, int],
     )
-    def get_nb_cores(launcher: Launcher = Launcher.DEFAULT) -> Dict[str, int]:
+    def get_nb_cores(launcher: str = Launcher.DEFAULT) -> Dict[str, int]:
         """
         Retrieve the numer of cores of the launcher.
 
@@ -247,7 +228,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Retrieve the time limit for a job (in hours)",
     )
-    def get_time_limit(launcher: Launcher = LauncherQuery) -> Dict[str, int]:
+    def get_time_limit(launcher: str = Launcher.LOCAL) -> Dict[str, int]:
         """
         Retrieve the time limit for a job (in hours) of the given launcher: "local" or "slurm".
 

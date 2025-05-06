@@ -284,6 +284,9 @@ class TimeLimitConfig:
 class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
+    id: str = ""
+    name: str = ""
+    type: Launcher = Launcher.LOCAL
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
@@ -300,6 +303,9 @@ class LocalConfig:
         Returns: object NbCoresConfig
         """
         defaults = cls()
+        _id = data.get("id", "id")
+        _type = data.get("type", Launcher.LOCAL)
+        name = data.get("name", "local")
         binaries = data.get("binaries", defaults.binaries)
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
@@ -308,6 +314,9 @@ class LocalConfig:
         xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
         local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
         return cls(
+            id=_id,
+            type=_type,
+            name=name,
             binaries={str(v): Path(p) for v, p in binaries.items()},
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
@@ -333,6 +342,9 @@ class SlurmConfig:
     Sub config object dedicated to launcher module (slurm)
     """
 
+    id: str = ""
+    name: str = ""
+    type: Launcher = Launcher.SLURM
     local_workspace: Path = Path()
     username: str = ""
     hostname: str = ""
@@ -342,13 +354,13 @@ class SlurmConfig:
     password: str = ""
     default_wait_time: int = 0
     time_limit: TimeLimitConfig = TimeLimitConfig()
+    nb_cores: NbCoresConfig = NbCoresConfig()
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
-    nb_cores: NbCoresConfig = NbCoresConfig()
 
     @classmethod
     def from_dict(cls, data: JSON) -> "SlurmConfig":
@@ -360,6 +372,9 @@ class SlurmConfig:
         Returns: object SlurmConfig
         """
         defaults = cls()
+        _id = data.get("id", "id")
+        _type = data.get("type", Launcher.SLURM)
+        name = data.get("name", "local")
         enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
         nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
         if "default_n_cpu" in data:
@@ -373,6 +388,9 @@ class SlurmConfig:
         max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
+            id=_id,
+            type=_type,
+            name=name,
             local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
             username=data.get("username", defaults.username),
             hostname=data.get("hostname", defaults.hostname),
@@ -417,38 +435,36 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: Optional[LocalConfig] = None
-    slurm: Optional[SlurmConfig] = None
+    configs: Optional[List[LocalConfig | SlurmConfig]] = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
+        launchers: List[LocalConfig | SlurmConfig] = []
         defaults = cls()
         default = data.get("default", cls.default)
-        local = LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
-        slurm = SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
         batch_size = data.get("batch_size", defaults.batch_size)
+        for launcher in data["launchers"]:
+            if launcher["type"] == Launcher.LOCAL:
+                launchers.append(LocalConfig.from_dict(launcher))
+            elif launcher["type"] == Launcher.SLURM:
+                launchers.append(SlurmConfig.from_dict(launcher))
+            else:
+                continue
+
         return cls(
             default=default,
-            local=local,
-            slurm=slurm,
+            configs=launchers,
             batch_size=batch_size,
         )
 
-    def __post_init__(self) -> None:
-        possible = {"local", "slurm"}
-        if self.default in possible:
-            return
-        msg = f"Invalid configuration: {self.default=} must be one of {possible!r}"
-        raise ValueError(msg)
-
-    def get_nb_cores(self, launcher: Launcher) -> "NbCoresConfig":
+    def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
         """
         Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
 
         Args:
-            launcher: type of launcher "local", "slurm" or "default".
+            launcher: id of launcher.
 
         Returns:
             Number of cores of the given launcher.
@@ -457,20 +473,16 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 the number of cores of a launcher that doesn't exist in the configuration.
         """
-        config_map = {"local": self.local, "slurm": self.slurm}
-        config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher.value)
-        if launcher_config is None:
-            raise InvalidConfigurationError(launcher.value)
-        return launcher_config.nb_cores
+        config = self.get_launcher_by_id(launcher)
+        return config.nb_cores
 
-    def get_time_limit(self, launcher: Launcher) -> TimeLimitConfig:
+    def get_time_limit(self, launcher: str) -> TimeLimitConfig:
         """
-        Retrieve the time limit for a job of the given launcher: "local" or "slurm".
+        Retrieve the time limit for a job of the given launcher.
         If "default" is specified, retrieve the configuration of the default launcher.
 
         Args:
-            launcher: type of launcher "local", "slurm" or "default".
+            launcher: id of launcher.
 
         Returns:
             Time limit for a job of the given launcher (in seconds).
@@ -479,12 +491,19 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 a property of a launcher that doesn't exist in the configuration.
         """
-        config_map = {"local": self.local, "slurm": self.slurm}
-        config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher.value)
-        if launcher_config is None:
-            raise InvalidConfigurationError(launcher)
-        return launcher_config.time_limit
+        config = self.get_launcher_by_id(launcher)
+        return config.time_limit
+
+    def get_slurm_configs(self) -> List[SlurmConfig]:
+        return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
+
+    def get_launcher_by_id(self, launcher_id: str) -> LocalConfig | SlurmConfig:
+        if launcher_id == "default":
+            launcher_id = self.default
+        try:
+            return next((launcher for launcher in self.configs or [] if launcher.id == launcher_id))
+        except StopIteration:
+            raise InvalidConfigurationError(launcher_id)
 
 
 @dataclass(frozen=True)
