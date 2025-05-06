@@ -151,7 +151,7 @@ export function insertFoldersIfNotExist(
   folders: NonStudyFolderDTO[],
 ): StudyTreeNode {
   const sortedFolders = [...folders].sort((a, b) => a.path.localeCompare(b.path));
-  return sortedFolders.reduce(insertFolderIfNotExist, studiesTree);
+  return sortedFolders.reduce(insertFolderIfNotExist, { ...studiesTree });
 }
 
 /**
@@ -194,10 +194,9 @@ export function insertWorkspacesIfNotExist(
   studyTree: StudyTreeNode,
   workspaces: string[],
 ): StudyTreeNode {
-  return workspaces.reduce(
-    (acc, workspace) => insertWorkspaceIfNotExist(acc, workspace),
-    studyTree,
-  );
+  return workspaces.reduce((acc, workspace) => insertWorkspaceIfNotExist(acc, workspace), {
+    ...studyTree,
+  });
 }
 
 /**
