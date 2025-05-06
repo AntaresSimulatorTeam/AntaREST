@@ -19,9 +19,7 @@ from unittest.mock import Mock, call
 import pytest
 
 from antarest.core.config import Config, InvalidConfigurationError, LauncherConfig, LocalConfig
-from antarest.core.config import Config, LauncherConfig, LocalConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
-from antarest.launcher.adapters.abstractlauncher import LauncherInitException
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
 

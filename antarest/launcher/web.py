@@ -15,8 +15,7 @@ import logging
 from typing import Any, Dict, List, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Query
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 
 from antarest.core.config import Config, InvalidConfigurationError, Launcher
