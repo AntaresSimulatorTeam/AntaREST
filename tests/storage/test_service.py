@@ -275,6 +275,8 @@ def test_study_listing(db_session: Session) -> None:
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
+
+    # Studies in DB
     ma = RawStudy(id="a", path="a", workspace="workspace1")
     mb = RawStudy(id="b", path="b")
     mc = RawStudy(
@@ -300,6 +302,17 @@ def test_sync_studies_from_disk() -> None:
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
+    mg = RawStudy(
+        id="g",
+        path="g",
+        folder="g",
+        name="g",
+        created_at=now,
+        missing=None,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+
+    # Folders scanned
     fa = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
     fa2 = StudyFolder(path=Path("a"), workspace="workspace2", groups=[])
     fc = StudyFolder(path=Path("c"), workspace="workspace1", groups=[])
@@ -307,9 +320,9 @@ def test_sync_studies_from_disk() -> None:
     ff = StudyFolder(path=Path("f"), workspace="workspace1", groups=[])
     ff2 = StudyFolder(path=Path("f"), workspace="workspace2", groups=[])
 
-    repository = Mock()
     # setup existing studies
-    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, md, me, mg]]
     config = Config(
         storage=StorageConfig(
             workspaces={
@@ -383,7 +396,7 @@ def test_partial_sync_studies_from_disk() -> None:
         path=f"directory{os.sep}c",
         name="c",
         content_status=StudyContentStatus.WARNING,
-        workspace=DEFAULT_WORKSPACE_NAME,
+        workspace="workspace1",
         owner=User(id=0),
     )
     md = RawStudy(
@@ -397,13 +410,13 @@ def test_partial_sync_studies_from_disk() -> None:
         created_at=now,
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
     )
-    fc = StudyFolder(path=Path("directory/c"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    fe = StudyFolder(path=Path("directory/e"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
-    ff = StudyFolder(path=Path("directory/f"), workspace=DEFAULT_WORKSPACE_NAME, groups=[])
+    fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
+    fe = StudyFolder(path=Path("directory/e"), workspace="workspace1", groups=[])
+    ff = StudyFolder(path=Path("directory/f"), workspace="workspace1", groups=[])
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, md, me]]
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
+    config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config)
 
     service.sync_studies_on_disk([fc, fe, ff], directory=Path("directory"))
@@ -418,7 +431,7 @@ def test_partial_sync_studies_from_disk() -> None:
             created_at=ANY,
             missing=None,
             public_mode=PublicMode.FULL,
-            workspace=DEFAULT_WORKSPACE_NAME,
+            workspace="workspace1",
         )
     )
 
