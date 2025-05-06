@@ -56,8 +56,7 @@ class CreateDistrict(ICommand):
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
+    def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.sets:
             return (
@@ -84,7 +83,7 @@ class CreateDistrict(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        output, data = self._apply_config(study_data.config)
+        output, data = self.update_in_config(study_data.config)
         if not output.status:
             return output
         district_id = data["district_id"]

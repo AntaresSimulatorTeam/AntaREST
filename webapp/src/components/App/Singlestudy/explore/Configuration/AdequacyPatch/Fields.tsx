@@ -86,6 +86,7 @@ function Fields() {
               <span>
                 <SwitchFE
                   label={t("study.configuration.adequacyPatch.includeHurdleCostCsr")}
+                  sx={{ textWrap: "nowrap" }}
                   name="includeHurdleCostCsr"
                   control={control}
                 />

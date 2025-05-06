@@ -12,7 +12,7 @@
 
 import logging
 from datetime import timedelta
-from typing import Any, Callable, Coroutine, Dict, Optional, Tuple, Union
+from typing import Annotated, Any, AsyncGenerator, Callable, Coroutine, Optional, Tuple, TypeAlias, Union
 
 from fastapi import Depends
 from ratelimit.types import Scope  # type: ignore
@@ -23,8 +23,17 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
 from antarest.fastapi_jwt_auth import AuthJWT
+from antarest.login.utils import current_user_context
 
 logger = logging.getLogger(__name__)
+
+
+IdentityValidator: TypeAlias = Callable[[AuthJWT], JWTUser]
+
+
+def _validate_jwt(auth_jwt: AuthJWT) -> JWTUser:
+    auth_jwt.jwt_required()
+    return JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
 
 
 class Auth:
@@ -38,24 +47,22 @@ class Auth:
     def __init__(
         self,
         config: Config,
-        verify: Callable[[], None] = AuthJWT().jwt_required,  # Test only
-        get_identity: Callable[[], Dict[str, Any]] = AuthJWT().get_raw_jwt,  # Test only
+        validate_identity: IdentityValidator = _validate_jwt,
     ):
         self.disabled = config.security.disabled
-        self.verify = verify
-        self.get_identity = get_identity
+        self.validate_identity = validate_identity
 
     def create_auth_function(
         self,
     ) -> Callable[[Scope], Coroutine[Any, Any, Tuple[str, str]]]:
         async def auth(scope: Scope) -> Tuple[str, str]:
             auth_jwt = AuthJWT(Request(scope))
-            user = self.get_current_user(auth_jwt)
+            user = self._get_current_user(auth_jwt)
             return str(user.id), "admin" if user.is_site_admin() else "default"
 
         return auth
 
-    def get_current_user(self, auth_jwt: AuthJWT = Depends()) -> JWTUser:
+    def _get_current_user(self, auth_jwt: AuthJWT) -> JWTUser:
         """
         Get logged user.
         Returns: jwt user data
@@ -63,11 +70,25 @@ class Auth:
         """
         if self.disabled:
             return DEFAULT_ADMIN_USER
+        return self.validate_identity(auth_jwt)
 
-        auth_jwt.jwt_required()
+    def required(self) -> Any:
+        """
+        A FastAPI dependency to require authentication.
+        Depends itself on AuthJWT dependency.
+        Will also set the logged-in user context for the current request.
 
-        user = JWTUser.model_validate(from_json(auth_jwt.get_jwt_subject()))
-        return user
+        Notes:
+            Implementation note:
+            The dependency MUST be async, otherwise it's executed in a thread which will
+            generally not be the same as the one of the request.
+        """
+        return Depends(self._yield_current_user)
+
+    async def _yield_current_user(self, auth_jwt: Annotated[AuthJWT, Depends(AuthJWT)]) -> AsyncGenerator[None, None]:
+        user = self._get_current_user(auth_jwt)
+        with current_user_context(user):
+            yield
 
     @staticmethod
     def get_user_from_token(token: str, jwt_manager: AuthJWT) -> Optional[JWTUser]:

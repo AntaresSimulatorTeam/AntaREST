@@ -23,10 +23,9 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import StudyDeletionNotAllowed
+from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -45,7 +44,25 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-class RawStudyService(AbstractStorageService[RawStudy]):
+def copy_output_folders(
+    src_output_path: Path, dest_output_path: Path, with_outputs: bool | None, selected_outputs: List[str]
+) -> None:
+    if with_outputs or (with_outputs is None and selected_outputs):
+        if selected_outputs:  # if some outputs are selected, we copy only them
+            for file_name in selected_outputs:
+                src_folder = src_output_path / file_name
+                dest_folder = dest_output_path / file_name
+
+                if src_folder.exists():
+                    shutil.copytree(src_folder, dest_folder)
+                else:
+                    raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
+
+        else:  # we copy all the outputs if none is selected
+            shutil.copytree(src_output_path, dest_output_path)
+
+
+class RawStudyService(AbstractStorageService):
     """
     Manage set of raw studies stored in the workspaces.
     Instantiate and manage tree struct for each request
@@ -176,7 +193,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
 
     @override
-    def get_synthesis(self, metadata: RawStudy, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: RawStudy) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)
@@ -218,7 +235,8 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         dest_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
-        with_outputs: bool = False,
+        output_ids: List[str],
+        with_outputs: bool | None,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -228,6 +246,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             dest_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
+            output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
 
         Returns:
@@ -240,11 +259,9 @@ class RawStudyService(AbstractStorageService[RawStudy]):
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
 
-        shutil.copytree(src_path, dest_path)
+        shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
-        output = dest_path / "output"
-        if not with_outputs and output.exists():
-            shutil.rmtree(output)
+        copy_output_folders(src_path / "output", dest_path / "output", with_outputs, output_ids)
 
         study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
@@ -492,3 +509,7 @@ class RawStudyService(AbstractStorageService[RawStudy]):
             }
             logger.info(f"Cleaned lazy node zipfilelist cache ({len(LazyNode.ZIP_FILELIST_CACHE)} items)")
             time.sleep(600)
+
+    @override
+    def get_output_path(self, study: Study, output_id: str) -> Path:
+        return self.get_study_path(study) / "output" / output_id

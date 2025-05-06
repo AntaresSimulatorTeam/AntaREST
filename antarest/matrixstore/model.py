@@ -41,6 +41,7 @@ class Matrix(Base):  # type: ignore
     width: int = Column(Integer)
     height: int = Column(Integer)
     created_at: datetime.datetime = Column(DateTime)
+    version: int = Column(Integer)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -214,31 +215,6 @@ class MatrixDataSet(Base):  # type: ignore
 # will have pandas forcing all to float anyway...
 # this cause matrix dump on disk (and then hash id) to be different for basically the same matrices
 MatrixData: TypeAlias = float
-
-
-class MatrixDTO(AntaresBaseModel):
-    width: int
-    height: int
-    index: List[int | str]
-    columns: List[int | str]
-    data: List[List[MatrixData]]
-    created_at: int = 0
-    id: str = ""
-
-
-class MatrixContent(AntaresBaseModel):
-    """
-    Matrix content (Data Frame array)
-
-    Attributes:
-        data: A 2D-array matrix of floating point values.
-        index: A list of row indexes or names.
-        columns: A list of columns indexes or names.
-    """
-
-    data: List[List[MatrixData]]
-    index: List[int | str]
-    columns: List[int | str]
 
 
 class MatrixDataSetUpdateDTO(AntaresBaseModel):

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
@@ -19,7 +19,6 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
@@ -50,16 +49,6 @@ class ReplaceMatrix(ICommand):
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Matrix '{self.target}' has been successfully replaced.",
-            ),
-            {},
-        )
-
-    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.target[0] == "@":
             self.target = AliasDecoder.decode(self.target, study_data)
@@ -88,8 +77,10 @@ class ReplaceMatrix(ICommand):
             )
 
         study_data.tree.save(replace_matrix_data)
-        output, _ = self._apply_config(study_data.config)
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Matrix '{self.target}' has been successfully replaced.",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

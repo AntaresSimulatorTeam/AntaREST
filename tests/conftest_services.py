@@ -28,15 +28,14 @@ import pytest
 from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
-from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import MatrixService, SimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -78,7 +77,6 @@ class SynchTaskService(ITaskService):
         task_args: t.Dict[str, t.Union[int, float, bool, str]],
         name: t.Optional[str],
         ref_id: t.Optional[str],
-        request_params: RequestParameters,
     ) -> t.Optional[str]:
         raise NotImplementedError()
 
@@ -90,17 +88,11 @@ class SynchTaskService(ITaskService):
         ref_id: t.Optional[str],
         progress: t.Optional[int],
         custom_event_messages: t.Optional[CustomTaskEventMessages],
-        request_params: RequestParameters,
     ) -> str:
         self._task_result = action(NoopNotifier())
         return str(uuid.uuid4())
 
-    def status_task(
-        self,
-        task_id: str,
-        request_params: RequestParameters,
-        with_logs: bool = False,
-    ) -> TaskDTO:
+    def status_task(self, task_id: str, with_logs: bool = False) -> TaskDTO:
         return TaskDTO(
             id=task_id,
             name="mock",
@@ -112,7 +104,7 @@ class SynchTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> t.List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> t.List[TaskDTO]:
         return []
 
     def await_task(self, task_id: str, timeout_sec: t.Optional[int] = None) -> None:
@@ -194,7 +186,7 @@ def generator_matrix_constants_fixture(
 @pytest.fixture(name="uri_resolver_service", scope="session")
 def uri_resolver_service_fixture(
     simple_matrix_service: SimpleMatrixService,
-) -> UriResolverService:
+) -> MatrixUriMapper:
     """
     Fixture that creates an UriResolverService instance with a session-level scope.
 
@@ -204,7 +196,7 @@ def uri_resolver_service_fixture(
     Returns:
         An instance of the UriResolverService class representing the URI resolver service.
     """
-    return UriResolverService(matrix_service=simple_matrix_service)
+    return MatrixUriMapper(matrix_service=simple_matrix_service)
 
 
 @pytest.fixture(name="core_cache", scope="session")
@@ -224,7 +216,7 @@ def core_cache_fixture() -> ICache:
 @pytest.fixture(name="study_factory", scope="session")
 def study_factory_fixture(
     simple_matrix_service: SimpleMatrixService,
-    uri_resolver_service: UriResolverService,
+    uri_resolver_service: MatrixUriMapper,
     core_cache: ICache,
 ) -> StudyFactory:
     """
@@ -239,8 +231,7 @@ def study_factory_fixture(
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
     return StudyFactory(
-        matrix=simple_matrix_service,
-        resolver=uri_resolver_service,
+        matrix_mapper=uri_resolver_service,
         cache=core_cache,
     )
 

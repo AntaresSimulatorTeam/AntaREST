@@ -15,12 +15,9 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
 from antarest.core.config import Config
-from antarest.core.exceptions import ScanDisabled
-from antarest.core.jwt import JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.storage.rawstudy.watcher import Watcher
@@ -46,8 +43,8 @@ def create_watcher_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.post(
         "/watcher/_scan",
@@ -55,14 +52,7 @@ def create_watcher_routes(
         tags=[APITag.study_raw_data],
         response_model=str,
     )
-    def scan_dir(
-        path: str,
-        recursive: bool = True,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
-        params = RequestParameters(user=current_user)
-        if config.desktop_mode and recursive:
-            raise ScanDisabled("Recursive scan disables when desktop mode is on")
+    def scan_dir(path: str, recursive: bool = True) -> str:
         if path:
             # The front actually sends <workspace>/<path/to/folder>
             try:
@@ -80,6 +70,6 @@ def create_watcher_routes(
             logger.info("Scanning all workspaces")
             relative_path = None
             workspace = None
-        return watcher.oneshot_scan(params=params, recursive=recursive, workspace=workspace, path=relative_path)
+        return watcher.oneshot_scan(recursive=recursive, workspace=workspace, path=relative_path)
 
     return bp

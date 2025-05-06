@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.area import (
@@ -26,10 +26,10 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class OutputSimulationAreas(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
     ) -> None:
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
 
     @override
     def build(self) -> TREE:
@@ -41,8 +41,8 @@ class OutputSimulationAreas(FolderNode):
                 sets.add(name)
             else:
                 areas.add(name)
-        children: TREE = {a: Area(self.context, self.config.next_file(a), area=a) for a in areas}
+        children: TREE = {a: Area(self.matrix_mapper, self.config.next_file(a), area=a) for a in areas}
 
         for s in sets:
-            children[s] = Set(self.context, self.config.next_file(s), set=s)
+            children[s] = Set(self.matrix_mapper, self.config.next_file(s), set=s)
         return children

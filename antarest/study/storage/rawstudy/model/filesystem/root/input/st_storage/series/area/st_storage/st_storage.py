@@ -22,27 +22,27 @@ class InputSTStorageAreaStorage(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "pmax_injection": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("PMAX-injection.txt"),
                 default_empty=series.pmax_injection,
             ),
             "pmax_withdrawal": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("PMAX-withdrawal.txt"),
                 default_empty=series.pmax_withdrawal,
             ),
             "inflows": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("inflows.txt"),
                 default_empty=series.inflows,
             ),
             "lower_rule_curve": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("lower-rule-curve.txt"),
                 default_empty=series.lower_rule_curve,
             ),
             "upper_rule_curve": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("upper-rule-curve.txt"),
                 default_empty=series.upper_rule_curve,
             ),

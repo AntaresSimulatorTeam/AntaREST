@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import contextlib
-from typing import Any, Tuple
 
 from antarest.core.exceptions import (
     AreaNotFound,
@@ -39,18 +38,6 @@ def get_resource_dir(resource_type: XpansionResourceFileType) -> list[str]:
     raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
 
 
-def apply_config_create_resource_commands(
-    filename: str, resource_type: XpansionResourceFileType
-) -> Tuple[CommandOutput, dict[str, Any]]:
-    return (
-        CommandOutput(
-            status=True,
-            message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created.",
-        ),
-        {},
-    )
-
-
 def apply_create_resource_commands(
     filename: str, data: list[list[float]] | str | bytes, study_data: FileStudy, resource_type: XpansionResourceFileType
 ) -> CommandOutput:
@@ -60,8 +47,10 @@ def apply_create_resource_commands(
         raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
     study_data.tree.save(data=data, url=url + [filename])
-    output, _ = apply_config_create_resource_commands(filename, resource_type)
-    return output
+    return CommandOutput(
+        status=True,
+        message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created.",
+    )
 
 
 def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:

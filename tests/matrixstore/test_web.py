@@ -13,6 +13,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -22,7 +23,9 @@ from antarest.core.config import Config, SecurityConfig
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
-from antarest.matrixstore.model import MatrixDTO, MatrixInfoDTO
+from antarest.matrixstore.model import MatrixInfoDTO
+from antarest.matrixstore.web import MatrixDTO
+from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
 
 
@@ -51,33 +54,24 @@ def create_app(service: Mock, auth_disabled=False) -> FastAPI:
     return build_ctxt.build()
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_create() -> None:
-    matrix = MatrixDTO(
-        id="id",
-        width=2,
-        height=2,
-        created_at=0,
-        index=["1", "2"],
-        columns=["a", "b"],
-        data=[[1, 2], [3, 4]],
-    )
-    matrix_data = [[1, 2], [3, 4]]
-
     service = Mock()
-    service.create.return_value = matrix
+    service.create.return_value = "matrix_hash"
 
     app = create_app(service)
     client = TestClient(app)
     res = client.post(
         "/v1/matrix",
         headers=create_auth_token(app),
-        json=matrix_data,
+        json=[[1]],
     )
     assert res.status_code == 200
-    assert res.json() == matrix.model_dump()
+    assert res.json() == "matrix_hash"
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_get() -> None:
     matrix = MatrixDTO(
@@ -91,7 +85,7 @@ def test_get() -> None:
     )
 
     service = Mock()
-    service.get.return_value = matrix
+    service.get.return_value = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 
     app = create_app(service)
     client = TestClient(app)
@@ -113,6 +107,7 @@ def test_delete() -> None:
     assert res.status_code == 200
 
 
+@with_admin_user
 @pytest.mark.unit_test
 def test_import() -> None:
     matrix_info = [MatrixInfoDTO(id="123", name="Matrix/matrix.txt")]

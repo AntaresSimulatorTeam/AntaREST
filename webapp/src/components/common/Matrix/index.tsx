@@ -144,6 +144,7 @@ function Matrix({
         canUndo,
         canRedo,
         isDirty,
+        aggregateTypes,
       }}
     >
       <MatrixContainer>
@@ -171,6 +172,7 @@ function Matrix({
         </Box>
         {isNonEmptyMatrix(currentState.data) ? (
           <MatrixGrid
+            key={`matrix-${url}`}
             data={currentState.data}
             aggregates={aggregates}
             columns={columns}

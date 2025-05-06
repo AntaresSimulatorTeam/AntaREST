@@ -17,8 +17,8 @@ from typing_extensions import override
 
 from antarest.core.exceptions import MustNotModifyOutputException
 from antarest.core.model import JSON
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -32,13 +32,13 @@ class OutputSimulationModeMcAllGrid(FolderNode):
         children: TREE = {}
         for file in files:
             synthesis_class = DigestSynthesis if file == "digest" else OutputSynthesis
-            children[file] = synthesis_class(self.context, self.config.next_file(f"{file}.txt"))
+            children[file] = synthesis_class(self.matrix_mapper, self.config.next_file(f"{file}.txt"))
         return children
 
 
 class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
-        super().__init__(context, config)
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config)
 
     @override
     def get_lazy_content(

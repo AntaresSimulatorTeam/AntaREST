@@ -809,3 +809,8 @@ class CandidateNotFoundError(HTTPException):
 class FileAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class IncorrectArgumentsForCopy(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)

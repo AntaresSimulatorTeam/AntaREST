@@ -19,7 +19,6 @@ import typing_extensions as te
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyVersionStr
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -47,32 +46,6 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
     command_name: CommandName
     command_context: CommandContext
     study_version: StudyVersionStr
-
-    @abstractmethod
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
-        """
-        Applies configuration changes to the study data.
-
-        Args:
-            study_data: The study data configuration.
-
-        Returns:
-            A tuple containing the command output and a dictionary of extra data.
-        """
-        raise NotImplementedError()
-
-    def apply_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        """
-        Applies configuration changes to the study data.
-
-        Args:
-            study_data: The study data configuration.
-
-        Returns:
-            The command output.
-        """
-        output, _ = self._apply_config(study_data)
-        return output
 
     @abstractmethod
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
