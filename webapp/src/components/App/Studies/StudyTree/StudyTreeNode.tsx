@@ -17,11 +17,12 @@ import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
+import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 
 function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
-  if (folderA.name === "default") {
+  if (folderA.name === DEFAULT_WORKSPACE_NAME) {
     return -1;
-  } else if (folderB.name === "default") {
+  } else if (folderB.name === DEFAULT_WORKSPACE_NAME) {
     return 1;
   } else {
     return 0;
@@ -39,11 +40,10 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
 
   const sortedChildren = useMemo(() => {
     const sortedByName = nameSort(children);
-    if (node.name === "root") {
+    if (node.name === ROOT_NODE_NAME) {
       return defaultFirstSort(sortedByName);
-    } else {
-      return sortedByName;
     }
+    return sortedByName;
   }, [children, node.name]);
 
   ////////////////////////////////////////////////////////////////
