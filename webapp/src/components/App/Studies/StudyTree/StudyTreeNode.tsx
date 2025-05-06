@@ -28,14 +28,23 @@ function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): numb
   }
 }
 
+const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
+const defaultFirstSort = R.sortWith([prioritizeDefault]);
+
 export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
   const { hasChildren, children, path, name } = node;
   const isLoading = itemsLoading.includes(node.path);
   const hasUnloadedChildren = hasChildren && children.length === 0;
   const { t } = useTranslation();
 
-  const nameSort = R.sortWith([prioritizeDefault, R.ascend(R.compose(R.toLower, R.prop("name")))]);
-  const sortedChildren = useMemo(() => nameSort(children), [children, nameSort]);
+  const sortedChildren = useMemo(() => {
+    const sortedByName = nameSort(children);
+    if (node.name === "root") {
+      return defaultFirstSort(sortedByName);
+    } else {
+      return sortedByName;
+    }
+  }, [children, node.name]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
