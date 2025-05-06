@@ -242,27 +242,6 @@ export const importStudy = async (
   return res.data;
 };
 
-export const openExternalStudy = async (
-  path: string,
-  onProgress?: (progress: number) => void,
-): Promise<StudyMetadata["id"]> => {
-  const options: AxiosRequestConfig = {};
-  if (onProgress) {
-    options.onUploadProgress = (progressEvent): void => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / (progressEvent.total || 1),
-      );
-      onProgress(percentCompleted);
-    };
-  }
-  const restconfig = {
-    ...options,
-    params: { path },
-  };
-  const res = await client.post("/v1/private/explorer/external/_open", {}, restconfig);
-  return res.data;
-};
-
 export const launchStudy = async (
   sid: string,
   options: LaunchOptions = {},

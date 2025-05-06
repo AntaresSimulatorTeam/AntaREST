@@ -79,11 +79,6 @@ function StudyTree() {
     if (!isAbsolutePath || !isValidWorkspace) {
       return null;
     }
-    if (itemId.startsWith("root/external")) {
-      // we don't update the tree if the user clicks on the default workspace
-      // api doesn't allow to fetch the subfolders of the default workspace
-      return;
-    }
 
     setItemsLoading((prev) => [...prev, itemId]);
 
