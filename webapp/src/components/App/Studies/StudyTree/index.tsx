@@ -42,18 +42,11 @@ function StudyTree() {
   const [t] = useTranslation();
 
   useEffect(() => {
-    // Only on desktop mode it make sense to fetch the workspaces
-    // as they are generated dynamically based on mounted discs
-    // On web mode this case is almost neved used, so we'd rather save the API call
-    if (import.meta.env.MODE !== "desktop") {
-      api.getWorkspaces().then((nextWorkspaces) => {
-        const nextStudyTree = insertIfNotExist(initialStudiesTree, nextWorkspaces, subFolders);
-        setStudiesTree(nextStudyTree);
-        setWorkspaces(nextWorkspaces);
-      });
-    } else {
-      insertIfNotExist(initialStudiesTree, workspaces, subFolders);
-    }
+    getWorkspaces().then((nextWorkspaces) => {
+      const nextStudyTree = insertIfNotExist(initialStudiesTree, nextWorkspaces, subFolders);
+      setStudiesTree(nextStudyTree);
+      setWorkspaces(nextWorkspaces);
+    });
     // subFolders isn't listed as a dependency because we don't want to trigger this code
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -120,6 +113,22 @@ function StudyTree() {
     }
 
     setItemsLoading((prev) => prev.filter((id) => id !== itemId));
+  }
+
+  /**
+   *
+   * Only on desktop mode it make sense to fetch the workspaces
+   * as they are generated dynamically based on mounted discs
+   * On web mode this case is almost neved used, so we'd rather save the API call
+   *
+   * @returns The list of workspaces
+   */
+  // eslint-disable-next-line require-await
+  async function getWorkspaces() {
+    if (import.meta.env.MODE === "desktop") {
+      return api.getWorkspaces();
+    }
+    return workspaces;
   }
 
   ////////////////////////////////////////////////////////////////
