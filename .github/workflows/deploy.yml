@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "fix/update-solver-installer-desktop-mode"
 
 jobs:
   binary:
