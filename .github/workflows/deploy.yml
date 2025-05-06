@@ -4,7 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
-      - "fix/study-tree-several-fixes"
+      - "feature/2983-system-workspaces"
 
 jobs:
   binary:
