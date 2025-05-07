@@ -20,7 +20,7 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.storage.df_download import TableExportFormat
+from antarest.core.serde.matrix_export import TableExportFormat
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 

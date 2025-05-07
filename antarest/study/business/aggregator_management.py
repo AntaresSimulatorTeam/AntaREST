@@ -367,6 +367,7 @@ class AggregatorManager:
             list_of_df_columns = df.columns.tolist()
             if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
                 yield pd.DataFrame()
+                return
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
