@@ -18,7 +18,7 @@ from typing_extensions import override
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 try:
-    import openpyxl  # type: ignore # noqa: F401
+    import openpyxl  # noqa: F401
     import tables  # type: ignore # noqa: F401
     import xlsxwriter  # type: ignore # noqa: F401
 except ImportError:
