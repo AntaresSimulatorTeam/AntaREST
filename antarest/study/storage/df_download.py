@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import http
 from pathlib import Path
+from typing import Callable, Generator, Literal, Protocol, TypeAlias
 
 import pandas as pd
 from fastapi import HTTPException
@@ -27,6 +27,66 @@ try:
     import xlsxwriter  # type: ignore # noqa: F401
 except ImportError:
     raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
+
+
+class DataframeStreamWriter(Protocol):
+    """
+    A writer which can write down a partitioned table.
+
+    This allows to not need to hold the full dataframe in memory, but only
+    one chunk at a time.
+    All provided dataframes must have same columns.
+    """
+
+    def __call__(self, path: Path, dataframes: Generator[pd.DataFrame]) -> None: ...
+
+
+def _checked_dataframes_generator(dataframes: Generator[pd.DataFrame]) -> Generator[pd.DataFrame]:
+    """
+    Checks consistency between subsequent dataframes
+    """
+    columns = None
+    for df in dataframes:
+        if columns is None:
+            columns = df.columns
+        else:
+            if columns != df.columns:
+                raise ValueError("Cannot append dataframe to file, columns are different from initial dataframe.")
+        yield df
+
+
+def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes: Generator[pd.DataFrame]) -> None:
+    headers = True
+    mode: Literal["w", "a"] = "w"
+    for df in _checked_dataframes_generator(dataframes):
+        df.to_csv(path, mode=mode, sep=sep, decimal=decimal, index=False, header=headers, float_format="%.6f")
+        headers = False
+        mode = "a"
+
+
+def _csv_stream_writer(sep: str, decimal: str) -> DataframeStreamWriter:
+    def writer(path: Path, dataframes: Generator[pd.DataFrame]) -> None:
+        _write_dataframes_stream_csv(path, sep, decimal, dataframes)
+
+    return writer
+
+
+def write_dataframes_stream_excel(path: Path, dataframes: Generator[pd.DataFrame]) -> None:
+    mode: Literal["w", "a"] = "w"
+    row = 0
+    headers = True
+    for df in _checked_dataframes_generator(dataframes):
+        with pd.ExcelWriter(path, mode=mode, if_sheet_exists="overlay", engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, header=headers, startcol=0, startrow=row)
+        row += df.shape[0]
+        headers = False
+
+
+def write_dataframes_stream_hdf5(path: Path, dataframes: Generator[pd.DataFrame]) -> None:
+    append = False
+    for df in _checked_dataframes_generator(dataframes):
+        df.to_hdf(path, key="data", append=append, index=False, format="table", mode="r+" if append else "w")
+        append = True
 
 
 class TableExportFormat(EnumIgnoreCase):
@@ -71,6 +131,21 @@ class TableExportFormat(EnumIgnoreCase):
             return ".h5"
         else:  # pragma: no cover
             raise NotImplementedError(f"Export format '{self}' is not implemented")
+
+    def get_stream_writer(self) -> DataframeStreamWriter:
+        match self:
+            case TableExportFormat.XLSX:
+                return write_dataframes_stream_excel
+            case TableExportFormat.CSV:
+                return _csv_stream_writer(sep=",", decimal=".")
+            case TableExportFormat.CSV_SEMICOLON:
+                return _csv_stream_writer(sep=";", decimal=",")
+            case TableExportFormat.TSV:
+                return _csv_stream_writer(sep="\t", decimal=".")
+            case TableExportFormat.HDF5:
+                return write_dataframes_stream_hdf5
+            case _:
+                raise NotImplementedError(f"Export format '{self}' does not support stream writing.")
 
     def export_table(
         self,
@@ -153,17 +228,50 @@ def export_file(
         HTTPException: If there is an error during the export operation.
     """
 
+    def file_writer(path: Path) -> None:
+        export_format.export_table(df_matrix, path, with_index=with_index, with_header=with_header)
+
+    return _export_file(file_transfer_manager, download_name, download_log, 10, file_writer, export_format.media_type)
+
+
+def export_df_chunks(
+    df_chunks: Generator[pd.DataFrame],
+    file_transfer_manager: FileTransferManager,
+    export_format: TableExportFormat,
+    download_name: str,
+    download_log: str,
+) -> FileResponse:
+    stream_writer = export_format.get_stream_writer()
+
+    def file_writer(path: Path) -> None:
+        stream_writer(path, df_chunks)
+
+    return _export_file(file_transfer_manager, download_name, download_log, 10, file_writer, export_format.media_type)
+
+
+FileWriter: TypeAlias = Callable[[Path], None]
+
+
+def _export_file(
+    file_transfer_manager: FileTransferManager,
+    download_name: str,
+    download_log: str,
+    expiration_time_in_minutes: int,
+    writer: FileWriter,
+    media_type: str,
+) -> FileResponse:
+    """ """
     export_file_download = file_transfer_manager.request_download(
         download_name,
         download_log,
         use_notification=False,
-        expiration_time_in_minutes=10,
+        expiration_time_in_minutes=expiration_time_in_minutes,
     )
     export_path = Path(export_file_download.path)
     export_id = export_file_download.id
 
     try:
-        export_format.export_table(df_matrix, export_path, with_index=with_index, with_header=with_header)
+        writer(export_path)
         file_transfer_manager.set_ready(export_id, use_notification=False)
     except ValueError as e:
         file_transfer_manager.fail(export_id, str(e))
@@ -182,7 +290,7 @@ def export_file(
         export_path,
         headers={
             "Content-Disposition": f'attachment; filename="{export_file_download.filename}"',
-            "Content-Type": f"{export_format.media_type}; charset=utf-8",
+            "Content-Type": f"{media_type}; charset=utf-8",
         },
-        media_type=export_format.media_type,
+        media_type=media_type,
     )
