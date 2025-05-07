@@ -30,7 +30,7 @@ from antarest.study.business.aggregator_management import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, StudyDownloadDTO, StudySimResultDTO
-from antarest.study.storage.df_download import TableExportFormat, export_file
+from antarest.study.storage.df_download import TableExportFormat, export_df_chunks
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -234,7 +234,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_matrix = output_service.aggregate_output_data(
+        df_chunks = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -248,8 +248,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return export_file(
-            df_matrix, output_service._file_transfer_manager, export_format, False, True, download_name, download_log
+        return export_df_chunks(
+            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
         )
 
     @bp.get(
@@ -313,7 +313,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_matrix = output_service.aggregate_output_data(
+        df_chunks = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -327,14 +327,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return export_file(
-            df_matrix,
-            output_service._file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
+        return export_df_chunks(
+            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
         )
 
     @bp.get(
@@ -397,7 +391,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_matrix = output_service.aggregate_output_data(
+        df_chunks = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -410,14 +404,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return export_file(
-            df_matrix,
-            output_service._file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
+        return export_df_chunks(
+            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
         )
 
     @bp.get(
@@ -478,7 +466,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_matrix = output_service.aggregate_output_data(
+        df_chunks = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -491,8 +479,8 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        return export_file(
-            df_matrix, output_service._file_transfer_manager, export_format, False, True, download_name, download_log
+        return export_df_chunks(
+            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
         )
 
     @bp.get(

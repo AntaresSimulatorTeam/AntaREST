@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import http
 from pathlib import Path
-from typing import Callable, Generator, Literal, Protocol, TypeAlias
+from typing import Callable, Iterator, Literal, Protocol, TypeAlias
 
 import pandas as pd
 from fastapi import HTTPException
@@ -38,10 +38,10 @@ class DataframeStreamWriter(Protocol):
     All provided dataframes must have same columns.
     """
 
-    def __call__(self, path: Path, dataframes: Generator[pd.DataFrame]) -> None: ...
+    def __call__(self, path: Path, dataframes: Iterator[pd.DataFrame]) -> None: ...
 
 
-def _checked_dataframes_generator(dataframes: Generator[pd.DataFrame]) -> Generator[pd.DataFrame]:
+def _checked_dataframes_generator(dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
     """
     Checks consistency between subsequent dataframes
     """
@@ -49,13 +49,16 @@ def _checked_dataframes_generator(dataframes: Generator[pd.DataFrame]) -> Genera
     for df in dataframes:
         if columns is None:
             columns = df.columns
+            if columns.empty:
+                yield pd.DataFrame()
+                break
         else:
-            if columns != df.columns:
+            if any(columns != df.columns):
                 raise ValueError("Cannot append dataframe to file, columns are different from initial dataframe.")
         yield df
 
 
-def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes: Generator[pd.DataFrame]) -> None:
+def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes: Iterator[pd.DataFrame]) -> None:
     headers = True
     mode: Literal["w", "a"] = "w"
     for df in _checked_dataframes_generator(dataframes):
@@ -65,24 +68,27 @@ def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes:
 
 
 def _csv_stream_writer(sep: str, decimal: str) -> DataframeStreamWriter:
-    def writer(path: Path, dataframes: Generator[pd.DataFrame]) -> None:
+    def writer(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
         _write_dataframes_stream_csv(path, sep, decimal, dataframes)
 
     return writer
 
 
-def write_dataframes_stream_excel(path: Path, dataframes: Generator[pd.DataFrame]) -> None:
-    mode: Literal["w", "a"] = "w"
+def write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     row = 0
-    headers = True
+    is_first = True
     for df in _checked_dataframes_generator(dataframes):
-        with pd.ExcelWriter(path, mode=mode, if_sheet_exists="overlay", engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, header=headers, startcol=0, startrow=row)
+        with pd.ExcelWriter(
+            path, mode="w" if is_first else "a", if_sheet_exists=None if is_first else "overlay", engine="openpyxl"
+        ) as writer:
+            df.to_excel(writer, index=False, header=is_first, startcol=0, startrow=row)
         row += df.shape[0]
-        headers = False
+        if is_first:  # account for headers
+            row += 1
+        is_first = False
 
 
-def write_dataframes_stream_hdf5(path: Path, dataframes: Generator[pd.DataFrame]) -> None:
+def write_dataframes_stream_hdf5(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     append = False
     for df in _checked_dataframes_generator(dataframes):
         df.to_hdf(path, key="data", append=append, index=False, format="table", mode="r+" if append else "w")
@@ -235,7 +241,7 @@ def export_file(
 
 
 def export_df_chunks(
-    df_chunks: Generator[pd.DataFrame],
+    df_chunks: Iterator[pd.DataFrame],
     file_transfer_manager: FileTransferManager,
     export_format: TableExportFormat,
     download_name: str,

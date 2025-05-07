@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO, Iterator, Optional, Sequence
 
 import pandas as pd
 from starlette.responses import FileResponse, Response
@@ -475,7 +475,7 @@ class OutputService:
         ids_to_consider: Sequence[str],
         aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> pd.DataFrame:
+    ) -> Iterator[pd.DataFrame]:
         """
         Aggregates output data based on several filtering conditions
 

@@ -531,6 +531,7 @@ class TestRawDataAggregationMCInd:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
+            print(f"Testing format {export_format}")
             pd.testing.assert_frame_equal(df, expected_df)
 
     def test_aggregation_errors(
