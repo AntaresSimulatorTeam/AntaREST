@@ -20,15 +20,16 @@ import DataGridForm, {
 } from "@/components/common/DataGridForm";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import useConfirm from "@/hooks/useConfirm";
-import useUpdateEffectOnce from "@/hooks/useUpdateEffectOnce";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
 import type { Playlist, PlaylistData } from "@/services/api/studies/config/playlist/types";
+import { translateWithColon } from "@/utils/i18nUtils";
 import { Box, Button, ButtonGroup } from "@mui/material";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
 import usePromise from "../../../../../../../../hooks/usePromise";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
@@ -59,7 +60,7 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
         title: t("global.status"),
         grow: 1,
         trailingRowOptions: {
-          hint: `Selected: ${totals.selected}`,
+          hint: `${translateWithColon(t("study.configuration.general.mcScenarioPlaylist.totalSelected.label"))} ${totals.selected}`,
         },
       },
       {
@@ -67,13 +68,13 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
         title: t("global.weight"),
         grow: 1,
         trailingRowOptions: {
-          hint: `Sum: ${totals.sumWeights}`,
+          hint: `${translateWithColon(t("study.configuration.general.mcScenarioPlaylist.totalWeight.label"))} ${totals.sumWeights}`,
         },
       },
     ];
   }, [t, totals]);
 
-  useUpdateEffectOnce(() => {
+  useUpdateEffect(() => {
     if (res.data) {
       updateTotals(res.data);
     }

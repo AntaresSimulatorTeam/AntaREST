@@ -42,13 +42,11 @@ export function changeLanguage(lang: Lang) {
 }
 
 /**
- * Translates the given key and appends a colon (:) at the end
- * with the appropriate spacing for the current language.
+ * Appends a colon (:) at the end with the appropriate spacing for the current language.
  *
- * @param key - The translation key.
- * @returns The translated string with a colon (:) appended.
+ * @param text - The text.
+ * @returns The text with a colon (:) appended.
  */
-export function translateWithColon(key: string): string {
-  const lang = i18n.language;
-  return `${i18n.t(key)}${lang.startsWith("fr") ? " " : ""}:`;
+export function translateWithColon(text: string): string {
+  return `${text}${i18n.language.startsWith("fr") ? " " : ""}:`;
 }

@@ -103,7 +103,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
         size: 50,
         filterVariant: "autocomplete",
         filterSelectOptions: groups,
-        footer: translateWithColon("global.total"),
+        footer: translateWithColon(t("global.total")),
         ...getTableOptionsForAlign("left"),
       },
       {

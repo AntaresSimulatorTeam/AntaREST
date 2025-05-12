@@ -58,7 +58,7 @@ export function setValueAsNumber(
   const value = valueOrOpts;
   const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER } = options;
 
-  // Returning empty string allow empty the field with backspace
+  // Returning empty string allow to clear the field with backspace
   // and allow to write a negative number
   return value === "" ? "" : R.clamp(min, max, Number(value));
 }
