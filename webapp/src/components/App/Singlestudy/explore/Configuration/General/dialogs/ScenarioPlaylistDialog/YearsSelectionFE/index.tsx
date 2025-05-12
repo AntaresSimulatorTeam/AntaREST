@@ -64,7 +64,15 @@ function YearsSelectionFE({ maxYears, onChange }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Tooltip title={selectionsValue.trim()} placement="top" disableFocusListener>
+    <Tooltip
+      title={
+        error
+          ? t("study.configuration.general.mcScenarioPlaylist.yearsSelection.error")
+          : selectionsValue.trim()
+      }
+      placement="top"
+      disableFocusListener
+    >
       <span>
         <StringFE
           label={t("study.configuration.general.mcScenarioPlaylist.yearsSelection.label")}

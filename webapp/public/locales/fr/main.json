@@ -379,6 +379,7 @@
   "study.configuration.general.mcScenarioPlaylist.action.resetWeights": "Réinitialiser les poids",
   "study.configuration.general.mcScenarioPlaylist.yearsSelection.label": "Scénarios",
   "study.configuration.general.mcScenarioPlaylist.yearsSelection.placeholder": "ex. 1-5, 8, 11-13",
+  "study.configuration.general.mcScenarioPlaylist.yearsSelection.error": "Utiliser une plage d'années valide, ex. 1-5, 8, 11-13",
   "study.configuration.general.mcScenarioPlaylist.totalSelected.label": "Sélectionné(s)",
   "study.configuration.general.mcScenarioPlaylist.totalWeight.label": "Poids de la sélection",
   "study.configuration.general.geographicTrimming": "Geographic trimming",
