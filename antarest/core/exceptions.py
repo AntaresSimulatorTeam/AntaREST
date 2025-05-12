@@ -336,6 +336,12 @@ class TaskAlreadyRunning(HTTPException):
         super(TaskAlreadyRunning, self).__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
 
 
+class TaskResultNotReady(HTTPException):
+    def __init__(self, task_id: str, info: Optional[str]) -> None:
+        message = f"Cannot retrieve results for task '{task_id}'. Task results are not ready yet: {info}"
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
 class StudyDeletionNotAllowed(HTTPException):
     def __init__(self, uuid: str, message: Optional[str] = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"

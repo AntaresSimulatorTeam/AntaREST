@@ -223,7 +223,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated areas raw data
+            id of the task that generates a dataframe with the aggregated areas raw data
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -234,29 +234,22 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
+
         task_id = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
+            download_name=download_name,
+            download_log=download_log,
         )
-
-        # download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        # download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        # return export_file(
-        #     df_matrix,
-        #     output_service._file_transfer_manager,
-        #     export_format,
-        #     False,
-        #     True,
-        #     download_name,
-        #     download_log,
-        # )
 
         return task_id
 
@@ -310,7 +303,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated links raw data
+            id of the task that generates a dataframe with the aggregated links raw data
         """
         logger.info(
             f"Aggregating links output data for study {uuid}, output {output_id},"
@@ -320,30 +313,22 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
         task_id = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
+            download_name=download_name,
+            download_log=download_log,
         )
-
-        # download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        # download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        # return export_file(
-        #     df_matrix,
-        #     output_service._file_transfer_manager,
-        #     export_format,
-        #     False,
-        #     True,
-        #     download_name,
-        #     download_log,
-        # )
 
         return task_id
 
@@ -396,7 +381,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated areas raw data
+            id of the task that generates a dataframe with the aggregated areas raw data
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -407,28 +392,22 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
+
         task_id = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
+            download_name=download_name,
+            download_log=download_log,
         )
 
-        # download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        # download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        # return export_file(
-        #     df_matrix,
-        #     output_service._file_transfer_manager,
-        #     export_format,
-        #     False,
-        #     True,
-        #     download_name,
-        #     download_log,
-        # )
         return task_id
 
     @bp.get(
@@ -478,7 +457,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated links raw data
+            id of the task that generates a dataframe with the aggregated links raw data
         """
         logger.info(
             f"Aggregating links mc-all data for study {uuid}, output {output_id},"
@@ -489,22 +468,22 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
+
         task_id = output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             aggregation_results_max_size=config.storage.aggregation_results_max_size,
+            download_name=download_name,
+            download_log=download_log,
         )
 
-        # download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        # download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        # return export_file(
-        #     df_matrix, output_service._file_transfer_manager, export_format, False, True, download_name, download_log
-        # )
         return task_id
 
     @bp.get(
@@ -527,12 +506,11 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         )
 
     @bp.get(
-        "",
-        tags=[],
-        summary="",
-        include_in_schema=False,
+        "/studies/{study_id}/outputs/aggregate/task/{task_id}",
+        tags=[APITag.study_outputs],
+        summary="Retrieve aggregated output file from Study based on the task that ran it",
     )
-    def get_aggregated_matrix(task_id: str) -> FileResponse:
-        return FileResponse("")
+    def get_aggregated_output_task(task_id: str) -> FileResponse:
+        return output_service.get_aggregated_output(task_id)
 
     return bp
