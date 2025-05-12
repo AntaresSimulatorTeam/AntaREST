@@ -57,7 +57,7 @@ export function selectionsToNumbers(selections: Selection[]) {
  * @param selections - An array of numbers and ranges.
  * @returns The formalized selections.
  */
-export function formalizeSelections(selections: Selection[]) {
+function formalizeSelections(selections: Selection[]) {
   const formalizeSelections: Selection[] = R.groupWith(
     (a, b) => a + 1 === b,
     selectionsToNumbers(selections),
@@ -76,6 +76,7 @@ export function stringToSelection(selectionString: string) {
   return formalizeSelections(
     selectionString
       .split(SELECTIONS_SEPARATOR)
+      .map((v) => v.trim())
       .filter(Boolean)
       .map((v) => {
         const [start, end] = v.split(RANGE_SEPARATOR);
@@ -84,7 +85,7 @@ export function stringToSelection(selectionString: string) {
   );
 }
 
-export function isSelectionValid(value: string, maxValue: number) {
+function isSelectionValid(value: string, maxValue: number) {
   if (value.includes(RANGE_SEPARATOR)) {
     const splittedValue = value.split(RANGE_SEPARATOR);
 
@@ -104,4 +105,13 @@ export function isSelectionValid(value: string, maxValue: number) {
   }
 
   return isNumericValue(value) && RA.inRange(1, maxValue + 1, Number(value));
+}
+
+export function isSelectionsValid(value: string, maxValue: number) {
+  const trimmedValue = value.trim();
+
+  return (
+    trimmedValue === "" ||
+    R.all((str) => isSelectionValid(str, maxValue), trimmedValue.split(SELECTIONS_SEPARATOR))
+  );
 }

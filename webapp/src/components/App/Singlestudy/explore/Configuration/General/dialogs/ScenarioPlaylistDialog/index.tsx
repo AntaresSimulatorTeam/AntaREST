@@ -34,23 +34,23 @@ import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
-import YearsSelectionFE from "./YearsSelectionFE";
+import ScenariosSelectionFE from "./YearsSelectionFE";
 interface Props {
   study: StudyMetadata;
   open: boolean;
   onClose: VoidFunction;
 }
 
-function ScenarioPlaylistDialog(props: Props) {
-  const { study, open, onClose } = props;
+function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const dataGridApiRef = useRef<DataGridFormApi<PlaylistData>>(null);
-  const yearsSelectionValueRef = useRef<number[]>([]);
+  const [yearsSelection, setYearsSelection] = useState<number[] | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [totals, setTotals] = useState({ selected: 0, sumWeights: 0 });
   const closeAction = useConfirm();
   const res = usePromise(() => getPlaylistData({ studyId: study.id }), [study.id]);
+  const disableBtnGroup = isSubmitting || (yearsSelection !== null && yearsSelection.length === 0);
 
   const columns = useMemo<DataGridFormProps<PlaylistData>["columns"]>(() => {
     return [
@@ -84,10 +84,8 @@ function ScenarioPlaylistDialog(props: Props) {
   ////////////////////////////////////////////////////////////////
 
   const mapSelectedYears = (fn: (item: Playlist) => Playlist, data: PlaylistData): PlaylistData => {
-    const years = yearsSelectionValueRef.current;
-
     return RA.mapIndexed((item, index) => {
-      if (years.length === 0 || years.includes(index + 1)) {
+      if (yearsSelection === null || yearsSelection.includes(index + 1)) {
         return fn(item);
       }
       return item;
@@ -177,12 +175,19 @@ function ScenarioPlaylistDialog(props: Props) {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflow: "auto" }}>
               <Box>
                 <CustomScrollbar>
-                  <Box sx={{ display: "flex", gap: 1, pt: 0.5 }}>
-                    <YearsSelectionFE
-                      valueRef={yearsSelectionValueRef}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: 1,
+                      pt: 0.5,
+                    }}
+                  >
+                    <ScenariosSelectionFE
+                      onChange={setYearsSelection}
                       maxYears={Object.keys(defaultData).length}
                     />
-                    <ButtonGroup disabled={isSubmitting} color="secondary">
+                    <ButtonGroup disabled={disableBtnGroup} color="secondary">
                       <Button onClick={handleUpdateStatus(R.T)}>{t("global.enable")}</Button>
                       <Button onClick={handleUpdateStatus(R.F)}>{t("global.disable")}</Button>
                       <Button onClick={handleUpdateStatus(R.not)}>
