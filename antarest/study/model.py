@@ -383,6 +383,17 @@ class StudyFolder:
     groups: List[Group]
 
 
+class OutputAggregation(Base):  # type:ignore
+    __tablename__ = "output_aggregation"
+
+    task_id: str = Column(
+        String(36), ForeignKey("taskjob.id", name="fk_oa_taskjob_id", ondelete="CASCADE"), primary_key=True
+    )
+    download_id: str = Column(
+        String(36), ForeignKey("file_download.id", name="fk_oa_fd", ondelete="CASCADE"), nullable=False
+    )
+
+
 class NonStudyFolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
