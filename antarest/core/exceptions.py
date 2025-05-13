@@ -336,9 +336,17 @@ class TaskAlreadyRunning(HTTPException):
         super(TaskAlreadyRunning, self).__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
 
 
-class TaskResultNotReady(HTTPException):
+class AggregatedOutputNotReady(HTTPException):
     def __init__(self, task_id: str, info: Optional[str]) -> None:
-        message = f"Cannot retrieve results for task '{task_id}'. Task results are not ready yet: {info}"
+        message = f"Cannot retrieve results for task '{task_id}'. Task results are not ready yet"
+        message += f": {info}" if info else "."
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class AggregatedOutputNotProcessed(HTTPException):
+    def __init__(self, info: Optional[str]) -> None:
+        message = "Aggregated output was not processed"
+        message += f": {info}" if info else "."
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 

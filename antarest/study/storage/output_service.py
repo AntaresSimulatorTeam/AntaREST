@@ -18,11 +18,12 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
+    AggregatedOutputNotProcessed,
+    AggregatedOutputNotReady,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
     TaskAlreadyRunning,
-    TaskResultNotReady,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -564,11 +565,15 @@ class OutputService:
         task_id: id of the task that aggregated output data
         """
         task = self._task_service.status_task(task_id)
-        if task.status != TaskStatus.COMPLETED:
-            msg = task.result.message if task.result else "No results"
-            raise TaskResultNotReady(task_id, msg)
-        else:
+
+        if task.status == TaskStatus.COMPLETED:
             with db():
                 output_aggregation = db.session.get(OutputAggregation, task_id)
             download_file = self._file_transfer_manager.fetch_download(output_aggregation.download_id)
             return FileResponse(path=download_file.path, status_code=200)
+        elif task.status == TaskStatus.RUNNING:
+            msg = task.result.message if task.result else ""
+            raise AggregatedOutputNotReady(task_id, msg)
+        else:
+            msg = task.result.message if task.result else ""
+            raise AggregatedOutputNotProcessed(msg)
