@@ -100,6 +100,7 @@ function Matrix({
     isDirty,
     reload,
     rowCount,
+    matrixTimeFrequency,
   } = useMatrixData({
     studyId: study.id,
     path: url,
@@ -172,6 +173,7 @@ function Matrix({
                 disabled={currentState.data.length === 0}
                 dateTime={dateTime}
                 isTimeSeries={isTimeSeries}
+                timeFrequency={matrixTimeFrequency}
                 onSave={handleSaveUpdates}
                 onMatrixUpdated={reload}
                 canImport={canImport}

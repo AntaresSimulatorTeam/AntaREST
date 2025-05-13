@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Operation } from "../../shared/constants";
+import { TimeFrequency, Operation } from "../../shared/constants";
 import type { FilterState, TemporalOption } from "./types";
+import type { TimeFrequencyType } from "../../shared/types";
 
 export const FILTER_TYPES = {
   RANGE: "range",
@@ -29,6 +30,35 @@ export const TIME_INDEXING = {
   MONTH: "month",
   WEEK: "week",
   WEEKDAY: "weekday",
+};
+
+// Maps time frequency to appropriate indexing options
+export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, string[]> = {
+  [TimeFrequency.Annual]: [TIME_INDEXING.MONTH], // Annual data typically just uses sequential indices
+  [TimeFrequency.Monthly]: [TIME_INDEXING.MONTH],
+  [TimeFrequency.Weekly]: [TIME_INDEXING.WEEK, TIME_INDEXING.WEEKDAY],
+  [TimeFrequency.Daily]: [
+    TIME_INDEXING.DAY_OF_MONTH,
+    TIME_INDEXING.DAY_OF_YEAR,
+    TIME_INDEXING.WEEKDAY,
+    TIME_INDEXING.MONTH,
+  ],
+  [TimeFrequency.Hourly]: [
+    TIME_INDEXING.DAY_HOUR,
+    TIME_INDEXING.HOUR_YEAR,
+    TIME_INDEXING.DAY_OF_MONTH,
+    TIME_INDEXING.WEEKDAY,
+  ],
+};
+
+// Get default indexing type based on time frequency
+export const getDefaultIndexingType = (timeFrequency?: TimeFrequencyType): string => {
+  if (!timeFrequency) {
+    return TIME_INDEXING.DAY_OF_MONTH;
+  }
+
+  const options = TIME_FREQUENCY_INDEXING_MAP[timeFrequency];
+  return options && options.length > 0 ? options[0] : TIME_INDEXING.DAY_OF_MONTH;
 };
 
 export const TEMPORAL_OPTIONS: TemporalOption[] = [
@@ -69,14 +99,18 @@ export const TEMPORAL_OPTIONS: TemporalOption[] = [
   },
 ];
 
-export const getDefaultFilterState = (rowCount: number, columnCount: number): FilterState => ({
+export const getDefaultFilterState = (
+  rowCount: number,
+  columnCount: number,
+  timeFrequency?: TimeFrequencyType,
+): FilterState => ({
   active: false,
   columnsFilter: {
     type: FILTER_TYPES.RANGE,
     range: { min: 1, max: columnCount || 1 },
   },
   rowsFilter: {
-    indexingType: TIME_INDEXING.DAY_OF_MONTH,
+    indexingType: getDefaultIndexingType(timeFrequency),
     type: FILTER_TYPES.RANGE,
     range: { min: 1, max: rowCount || 1 },
   },

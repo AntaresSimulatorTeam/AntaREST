@@ -12,24 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { FILTER_TYPES, TIME_INDEXING } from "./constants";
-import type { FilterState, FilterCriteria, TemporalIndexingParams } from "./types";
-import { getLocale } from "../../shared/utils";
-import { parse, parseISO, format } from "date-fns";
+import { FILTER_TYPES, TIME_INDEXING, TIME_FREQUENCY_INDEXING_MAP } from "./constants";
+import type { FilterState, TemporalIndexingParams, TemporalOption } from "./types";
+import { TimeFrequency } from "../../shared/constants";
 
-/**
- * Gets indices of rows that match temporal filter criteria
- *
- * @param root0
- * @param root0.filter
- * @param root0.dateTime
- * @param root0.isTimeSeries
- * @param root0.totalRows
- */
 export function getTemporalIndices({
   filter,
   dateTime,
   isTimeSeries,
+  timeFrequency,
   totalRows,
 }: TemporalIndexingParams): number[] {
   // If not time series or no date data, use simple row indices
@@ -48,6 +39,12 @@ export function getTemporalIndices({
     const { indexingType } = filter.rowsFilter;
 
     try {
+      // Handle annual frequency differently
+      if (timeFrequency === TimeFrequency.Annual) {
+        // For annual data, we typically just use the index as is
+        return { index, value: index + 1 };
+      }
+
       // Time indexing based on string patterns - prevents parsing errors
       if (indexingType === TIME_INDEXING.MONTH) {
         // Look for month names in the string - simplistic approach
@@ -112,13 +109,19 @@ export function getTemporalIndices({
         // Extract day number using regex - finds numbers 1-31
         const match = dateStr.match(/\b([1-9]|[12]\d|3[01])\b/);
         if (match) {
-          return { index, value: parseInt(match[0]) };
+          return { index, value: Number.parseInt(match[0]) };
         }
       } else if (indexingType === TIME_INDEXING.DAY_HOUR) {
         // Extract hour using regex - finds times like 13:00
         const match = dateStr.match(/(\d{1,2})[:h]/);
         if (match) {
-          return { index, value: parseInt(match[1]) + 1 }; // Convert 0-23 to 1-24
+          return { index, value: Number.parseInt(match[1]) + 1 }; // Convert 0-23 to 1-24
+        }
+      } else if (indexingType === TIME_INDEXING.WEEK) {
+        // Extract week number - finds "W. 01" pattern or numbers after "W"
+        const match = dateStr.match(/[Ww]\.?\s*(\d{1,2})/);
+        if (match) {
+          return { index, value: Number.parseInt(match[1]) };
         }
       }
 
@@ -166,4 +169,29 @@ function applyRowFilter(
 
   // Return the row indices (not the temporal values)
   return matchingIndices.map(({ index }) => index).filter((idx) => idx >= 0 && idx < totalRows);
+}
+
+/**
+ * Filter the temporal options based on time frequency
+ *
+ * @param timeFrequency - The time frequency of the matrix
+ * @param options - The full list of temporal options
+ * @returns -
+ */
+export function getFilteredTemporalOptions(
+  timeFrequency: string | undefined,
+  options: TemporalOption[],
+): TemporalOption[] {
+  if (!timeFrequency) {
+    return options;
+  }
+
+  const validOptions =
+    TIME_FREQUENCY_INDEXING_MAP[timeFrequency as keyof typeof TIME_FREQUENCY_INDEXING_MAP] || [];
+
+  if (validOptions.length === 0) {
+    return options;
+  }
+
+  return options.filter((option) => validOptions.includes(option.value));
 }
