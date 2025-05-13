@@ -137,13 +137,6 @@ export function getTemporalIndices({
   return applyRowFilter(filter, timeIndices, totalRows);
 }
 
-/**
- * Applies the row filter criteria to the temporal indices
- *
- * @param filter
- * @param indices
- * @param totalRows
- */
 function applyRowFilter(
   filter: FilterState,
   indices: Array<{ index: number; value: number }>,
@@ -160,7 +153,11 @@ function applyRowFilter(
   } else if (rowsFilter.type === FILTER_TYPES.MODULO && rowsFilter.modulo) {
     const { divisor, remainder } = rowsFilter.modulo;
     matchingIndices = indices.filter(({ value }) => value % divisor === remainder);
-  } else if (rowsFilter.type === FILTER_TYPES.LIST && rowsFilter.list) {
+  } else if (
+    rowsFilter.type === FILTER_TYPES.LIST &&
+    rowsFilter.list &&
+    rowsFilter.list.length > 0
+  ) {
     matchingIndices = indices.filter(({ value }) => rowsFilter.list?.includes(value));
   } else {
     // Default to all indices

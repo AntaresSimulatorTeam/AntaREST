@@ -37,6 +37,13 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState<number>(filter.operation.value);
 
+  // Check if we have valid filters to apply operations
+  const hasValidFilters =
+    filter.active &&
+    (filter.columnsFilter.range ||
+      filter.columnsFilter.modulo ||
+      (filter.columnsFilter.list && filter.columnsFilter.list.length > 0));
+
   const handleOperationTypeChange = (e: { target: { value: string } }) => {
     setFilter({
       ...filter,
@@ -113,6 +120,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
                 size="small"
                 onClick={() => applyQuickOperation(op.op, op.value)}
                 sx={{ minWidth: 40 }}
+                disabled={!hasValidFilters}
               >
                 {op.label}
               </Button>
@@ -126,6 +134,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             value={filter.operation.type}
             label={t("matrix.filter.operationType")}
             onChange={handleOperationTypeChange}
+            disabled={!filter.active}
           >
             <MenuItem value={Operation.Eq}>{t("matrix.operation.equal")}</MenuItem>
             <MenuItem value={Operation.Add}>{t("matrix.operation.add")}</MenuItem>
@@ -145,6 +154,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
               onChange={handleValueChange}
               fullWidth
               margin="dense"
+              disabled={!filter.active}
             />
 
             {/* Slider for common ranges */}
@@ -157,6 +167,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
                   max={100}
                   step={0.1}
                   valueLabelDisplay="auto"
+                  disabled={!filter.active}
                   marks={[
                     { value: -100, label: "-100 " },
                     { value: -50, label: "-50 " },
@@ -176,7 +187,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             color="primary"
             onClick={onApplyOperation}
             startIcon={<PlayArrowIcon />}
-            disabled={!filter.active}
+            disabled={!hasValidFilters}
           >
             {t("matrix.filter.applyOperation")}
           </Button>
