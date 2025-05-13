@@ -105,7 +105,7 @@ function MatrixActions({
         ButtonProps={{
           startIcon: <FileUploadIcon />,
         }}
-        disabled={isSubmitting || canImport}
+        disabled={isSubmitting || !canImport}
       >
         {t("global.import")}
       </SplitButton>

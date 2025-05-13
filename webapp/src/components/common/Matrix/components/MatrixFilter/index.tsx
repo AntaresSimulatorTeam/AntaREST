@@ -90,11 +90,12 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
       filter,
       dateTime,
       isTimeSeries,
+      timeFrequency,
       totalRows: currentState.data.length,
     });
 
     return { columnsIndices, rowsIndices };
-  }, [currentState.data, filter, dateTime, isTimeSeries]);
+  }, [currentState.data, filter, dateTime, isTimeSeries, timeFrequency]);
 
   // Enable preview mode, allowing users to preview the filtered data before applying operations on it.
   const togglePreviewMode = () => {
@@ -170,7 +171,13 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
   };
 
   const resetFilters = () => {
-    setFilter(getDefaultFilterState(currentState.data.length, currentState.data[0]?.length || 0));
+    setFilter(
+      getDefaultFilterState(
+        currentState.data.length,
+        currentState.data[0]?.length || 0,
+        timeFrequency,
+      ),
+    );
     setFilterPreview({
       active: false,
       criteria: {
