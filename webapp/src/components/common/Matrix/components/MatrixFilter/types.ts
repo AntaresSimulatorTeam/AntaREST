@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { TimeFrequencyType } from "../../shared/types";
+
 export interface FilterState {
   active: boolean;
   columnsFilter: {
@@ -41,6 +43,7 @@ export interface FilterCriteria {
 export interface MatrixFilterProps {
   dateTime?: string[];
   isTimeSeries: boolean;
+  timeFrequency?: TimeFrequencyType;
 }
 
 export interface FilterSectionProps {
@@ -51,6 +54,7 @@ export interface FilterSectionProps {
 export interface RowFilterProps extends FilterSectionProps {
   dateTime?: string[];
   isTimeSeries: boolean;
+  timeFrequency?: TimeFrequencyType;
 }
 
 export interface OperationsProps extends FilterSectionProps {
@@ -65,6 +69,7 @@ export interface TemporalIndexingParams {
   filter: FilterState;
   dateTime?: string[];
   isTimeSeries: boolean;
+  timeFrequency?: TimeFrequencyType;
   totalRows: number;
 }
 

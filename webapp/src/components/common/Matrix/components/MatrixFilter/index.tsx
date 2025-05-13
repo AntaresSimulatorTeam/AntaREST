@@ -42,13 +42,17 @@ import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
 import { getTemporalIndices } from "./utils";
 
-function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
+function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterProps) {
   const { t } = useTranslation();
   const { currentState, setMatrixData, aggregateTypes, setFilterPreview, filterPreview } =
     useMatrixContext();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<FilterState>(
-    getDefaultFilterState(currentState.data.length, currentState.data[0]?.length || 0),
+    getDefaultFilterState(
+      currentState.data.length,
+      currentState.data[0]?.length || 0,
+      timeFrequency,
+    ),
   );
 
   // Calculate the filtered data based on current filter settings
@@ -309,6 +313,7 @@ function MatrixFilter({ dateTime, isTimeSeries }: MatrixFilterProps) {
           setFilter={setFilter}
           dateTime={dateTime}
           isTimeSeries={isTimeSeries}
+          timeFrequency={timeFrequency}
         />
 
         <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
