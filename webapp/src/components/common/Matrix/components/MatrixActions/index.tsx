@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import MatrixResize from "../MatrixResize";
 import MatrixFilter from "../MatrixFilter";
+import type { TimeFrequencyType } from "../../shared/types";
 
 interface MatrixActionsProps {
   studyId: string;
@@ -32,6 +33,7 @@ interface MatrixActionsProps {
   disabled: boolean;
   dateTime: string[];
   isTimeSeries: boolean;
+  timeFrequency?: TimeFrequencyType;
   onMatrixUpdated: VoidFunction;
   canImport?: boolean;
 }
@@ -44,6 +46,7 @@ function MatrixActions({
   disabled,
   dateTime,
   isTimeSeries,
+  timeFrequency,
   canImport = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
@@ -88,11 +91,14 @@ function MatrixActions({
       {isTimeSeries && (
         <>
           <MatrixResize />
-          <MatrixFilter dateTime={dateTime} isTimeSeries={isTimeSeries} />
+          <MatrixFilter
+            dateTime={dateTime}
+            isTimeSeries={isTimeSeries}
+            timeFrequency={timeFrequency}
+          />
           <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
         </>
       )}
-
       <SplitButton
         options={[t("global.import.fromFile"), t("global.import.fromDatabase")]}
         onClick={onImport}

@@ -36,10 +36,16 @@ import { useTranslation } from "react-i18next";
 import type { RowFilterProps } from "./types";
 import { FILTER_TYPES, TIME_INDEXING, TEMPORAL_OPTIONS } from "./constants";
 import { useMemo } from "react";
-import { getMonth, getDate, getDay } from "date-fns";
+import { getFilteredTemporalOptions } from "./utils";
 
-function RowFilter({ filter, setFilter, dateTime, isTimeSeries }: RowFilterProps) {
+function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }: RowFilterProps) {
   const { t } = useTranslation();
+
+  // Filter temporal options based on the current time frequency
+  const filteredOptions = useMemo(
+    () => getFilteredTemporalOptions(timeFrequency, TEMPORAL_OPTIONS),
+    [timeFrequency],
+  );
 
   const availableValues = useMemo(() => {
     if (!dateTime || !isTimeSeries) {
@@ -110,12 +116,12 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries }: RowFilterProps
         } else if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
           const match = dateStr.match(/\b([1-9]|[12]\d|3[01])\b/);
           if (match) {
-            return parseInt(match[0]);
+            return Number.parseInt(match[0]);
           }
         } else if (indexingType === TIME_INDEXING.DAY_HOUR) {
           const match = dateStr.match(/(\d{1,2})[:h]/);
           if (match) {
-            return parseInt(match[1]) + 1;
+            return Number.parseInt(match[1]) + 1;
           }
         }
 
@@ -163,7 +169,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries }: RowFilterProps
       console.error("Error processing dates:", error);
       return { min: 1, max: 100 };
     }
-  }, [dateTime, isTimeSeries, filter.rowsFilter.indexingType]);
+  }, [dateTime, isTimeSeries, filter.rowsFilter]);
 
   const handleIndexingTypeChange = (e: SelectChangeEvent) => {
     const newType = e.target.value;
@@ -550,7 +556,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries }: RowFilterProps
             label={t("matrix.filter.indexingType")}
             onChange={handleIndexingTypeChange}
           >
-            {TEMPORAL_OPTIONS.map((option: { value: string; label: string }) => (
+            {filteredOptions.map((option: { value: string; label: string }) => (
               <MenuItem key={option.value} value={option.value}>
                 {t(`matrix.filter.indexing.${option.value}`)}
               </MenuItem>
