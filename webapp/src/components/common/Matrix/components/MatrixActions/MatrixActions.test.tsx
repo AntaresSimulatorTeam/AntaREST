@@ -54,7 +54,7 @@ const defaultProps = {
   path: "/path/to/matrix",
   disabled: false,
   isTimeSeries: true,
-  canImport: false,
+  canImport: true,
 };
 
 type RenderOptions = Partial<typeof defaultProps>;
@@ -211,6 +211,18 @@ describe("MatrixActions", () => {
       renderMatrixActions({}, { isSubmitting: true });
       expect(getButton("global.import")).toBeDisabled();
       expect(getButton("global.export")).toBeDisabled();
+    });
+
+    test("manages import button state based on canImport prop", () => {
+      const { rerender } = renderMatrixActions();
+      expect(getButton("global.import")).not.toBeDisabled();
+
+      rerender(
+        <MatrixProvider {...defaultContext}>
+          <MatrixActions {...defaultProps} canImport={false} />
+        </MatrixProvider>,
+      );
+      expect(getButton("global.import")).toBeDisabled();
     });
 
     test("manages export button state based on disabled prop", () => {
