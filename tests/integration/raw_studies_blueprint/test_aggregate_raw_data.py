@@ -12,6 +12,7 @@
 
 import io
 import shutil
+import time
 import zipfile
 from pathlib import Path
 
@@ -455,6 +456,12 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
@@ -483,6 +490,11 @@ class TestRawDataAggregationMCInd:
         for params, expected_result_filename in LINKS_REQUESTS__IND:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+            assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+
             assert res.status_code == 200, res.json()
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
@@ -513,6 +525,11 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
@@ -544,6 +561,11 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
             assert res.content.strip() == b""
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
@@ -562,8 +584,12 @@ class TestRawDataAggregationMCInd:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
+        task_id = res.json()
+        time.sleep(1.0)
+
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+        assert res.status_code == 422, res.json()
+        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
         # for links
@@ -574,8 +600,12 @@ class TestRawDataAggregationMCInd:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
+        task_id = res.json()
+        time.sleep(1.0)
+
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+        assert res.status_code == 422, res.json()
+        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
         # Asserts that requests with non-existing folders send an HTTP 404 Exception
@@ -587,9 +617,13 @@ class TestRawDataAggregationMCInd:
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
             params={"query_file": "values", "frequency": "hourly"},
         )
-        assert res.status_code == 404, res.json()
+        task_id = res.json()
+        time.sleep(1.0)  # wait for results
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+
+        assert res.status_code == 422, res.json()
         assert "economy/mc-ind" in res.json()["description"]
-        assert res.json()["exception"] == "OutputSubFolderNotFound"
+        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -606,6 +640,10 @@ class TestRawDataAggregationMCInd:
                 "columns_names": "fake_col",
             },
         )
+        task_id = res.json()
+        time.sleep(1.0)
+
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -618,6 +656,10 @@ class TestRawDataAggregationMCInd:
                 "columns_names": "fake_col",
             },
         )
+        task_id = res.json()
+        time.sleep(1.0)
+
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -643,6 +685,11 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(2.0)
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
@@ -672,6 +719,11 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
@@ -701,6 +753,11 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
@@ -761,6 +818,11 @@ class TestRawDataAggregationMCAll:
         for uuid, output_id in [(study_id, raw_output_id), (variant_id, variant_output_id)]:
             res = client.get(f"/v1/studies/{uuid}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+            res = client.get(f"v1/studies/{uuid}/outputs/aggregate/task/{task_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             for col in expected_df.columns:
@@ -776,6 +838,11 @@ class TestRawDataAggregationMCAll:
         for params in INCOHERENT_REQUESTS_BODIES__ALL:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+            assert res.status_code == 200, res.json()
+            task_id = res.json()
+            time.sleep(1.0)
+            res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+
             assert res.status_code == 200, res.json()
             assert res.content.strip() == b""
 
@@ -795,9 +862,13 @@ class TestRawDataAggregationMCAll:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
-        assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+        task_id = res.json()
+        time.sleep(1.0)
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+
+        assert res.status_code == 422, res.json()
+        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert "Output 'unknown_id' not found" in res.json()["description"], "The output_id should be in the message"
 
         # for links
         res = client.get(
@@ -807,11 +878,17 @@ class TestRawDataAggregationMCAll:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
-        assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+        task_id = res.json()
+        time.sleep(1.0)
 
-        # Asserts that an error 404 is raised when the `economy/mc-all` folder does not exist
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+        assert res.status_code == 422, res.json()
+        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert "Output 'unknown_id' not found" in res.json()["description"], (
+            "The output_id that wasn't found should be in the message"
+        )
+
+        # Asserts that a 404 error is raised when the `economy/mc-all` folder does not exist
         mc_all_path = tmp_path.joinpath("ext_workspace/STA-mini/output/20241807-1540eco-extra-outputs/economy/mc-all")
         # delete the folder
         shutil.rmtree(mc_all_path)
@@ -819,9 +896,13 @@ class TestRawDataAggregationMCAll:
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
             params={"query_file": "values", "frequency": "daily"},
         )
-        assert res.status_code == 404, res.json()
+        task_id = res.json()
+        time.sleep(1.0)
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+
+        assert res.status_code == 422, res.json()
         assert "economy/mc-all" in res.json()["description"]
-        assert res.json()["exception"] == "OutputSubFolderNotFound"
+        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -839,6 +920,10 @@ class TestRawDataAggregationMCAll:
                 "columns_names": "fake_col",
             },
         )
+        task_id = res.json()
+        time.sleep(1.0)
+
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -851,6 +936,10 @@ class TestRawDataAggregationMCAll:
                 "columns_names": "fake_col",
             },
         )
+        task_id = res.json()
+        time.sleep(1.0)
+
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -881,9 +970,71 @@ class TestRawDataAggregationColumnsFormatting:
                 "frequency": "annual",
             },
         )
+        task_id = res.json()
+        time.sleep(1.0)  # wait for results
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         actual_df = pd.read_csv(content, sep=",")
         expected_df_path = ASSETS_DIR / "aggregate_areas_raw_data" / "expected_result_sts.csv"
         expected_df = pd.read_csv(expected_df_path, sep=",")
         assert actual_df.equals(expected_df)
+
+
+@pytest.mark.integration
+class TestDataAggregationCreationOperations:
+    def test_get_aggregated_output_task_result(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+    ) -> None:
+        """
+        Test all return values when requesting the results of aggregation operations
+
+        - test the results of an aggregation operation with a bad task_id: HTTPException, 404
+        - test the results of an aggregation operation with a bad output_id: AggregatedOutputNotProcessed, 422
+        - try to request the results of an aggregation operation
+            while the task is not completed yet: AggregatedOutputNotReady, 422
+        - request the results of a correct aggregation operation: Success, 200
+        """
+        fake_task_id = "fake_task_id"
+        output_id = "20201014-1422eco-hello"
+        params = {
+            "query_file": "values",
+            "frequency": "hourly",
+        }
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # try to retrieve task results with a bad task_id
+        # must fail
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{fake_task_id}")
+        assert res.status_code == 404, res.json()["exception"] == "HTTPException"
+
+        # create a bad aggregated output task and get its id
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/fake_output_id/aggregate/areas/mc-ind", params=params)
+        assert res.status_code == 200
+        failed_task_id = res.json()
+
+        # get error from task results
+        # must return a 422 status code and AggregatedOutputNotProcessed exception
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{failed_task_id}")
+        assert res.status_code == 422, res.json()["exception"] == "AggregatedOutputNotProcessed"
+
+        # create a correct aggregated output task and get its id
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+        assert res.status_code == 200
+        task_id = res.json()
+
+        # get aggregated output too early
+        # must fail with 422 error
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+        assert res.status_code == 422, res.json()["exception"] == "AggregatedOutputNotReady"
+
+        # wait for the task to be completed
+        time.sleep(1.0)
+
+        # get successful results
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
+        assert res.status_code == 200, res.text

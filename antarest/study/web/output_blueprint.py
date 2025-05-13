@@ -515,7 +515,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         tags=[APITag.study_outputs],
         summary="Retrieve aggregated output file from Study based on the task that ran it",
     )
-    def get_aggregated_output_task(task_id: str) -> FileResponse:
+    def get_aggregated_output_task_result(task_id: str) -> FileResponse:
         return output_service.get_aggregated_output(task_id)
 
     return bp
