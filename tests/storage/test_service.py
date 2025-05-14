@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import logging
 import os
 import textwrap
 import typing as t
@@ -321,20 +322,8 @@ def test_sync_studies_from_disk() -> None:
     raw_service = Mock(spec=RawStudyService)
     service = build_study_service(raw_service, repository, config)
 
-    def fake_compatibility_check(study: Study):
-        if not hasattr(fake_compatibility_check, "call_count"):
-            fake_compatibility_check.call_count = 0
-
-        fake_compatibility_check.call_count += 1
-
-        if fake_compatibility_check.call_count >= 3:
-            raise Exception("fail")
-
     # call function with scanned folders
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
-    service.storage_service.raw_study_service.checks_antares_web_compatibility.side_effect = fake_compatibility_check
-
-    service.sync_studies_on_disk([fa, fc, fe, ff])
 
     # here d exists in DB but not on disc so it should be removed
     # notice b also exists in DB but not on disk but it's not deleted yet,  rather it's marked for deletion by a save call
@@ -383,22 +372,49 @@ def test_sync_studies_from_disk() -> None:
             ),
         ]
     )
-    # Asserts the scanner didn't scan the last study as the method `checks_antares_web_compatibility` failed
-    with pytest.raises(AssertionError):
-        repository.save.assert_has_calls(
-            [
-                call(
-                    RawStudy(
-                        id=ANY,
-                        path="g",
-                        workspace=DEFAULT_WORKSPACE_NAME,
-                        name="g",
-                        folder="g",
-                        public_mode=PublicMode.FULL,
-                    )
-                )
-            ]
+
+
+@pytest.mark.unit_test
+def test_sync_unsuppported_study_from_disk(caplog) -> None:
+    folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
+    folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[]]
+    config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
+    raw_service = Mock(spec=RawStudyService)
+    service = build_study_service(raw_service, repository, config)
+
+    def fake_compatibility_check(study: Study):
+        if not hasattr(fake_compatibility_check, "call_count"):
+            fake_compatibility_check.call_count = 0
+
+        fake_compatibility_check.call_count += 1
+
+        if fake_compatibility_check.call_count >= 2:
+            raise RecursionError("Custom message")
+
+    raw_service.checks_antares_web_compatibility.side_effect = fake_compatibility_check
+
+    with caplog.at_level(level=logging.ERROR):
+        service.sync_studies_on_disk([folder_a, folder_b])
+
+    # Ensures the 2nd study wasn't added and went through the mock method
+    assert len(caplog.records) == 1
+    assert caplog.records[0].msg == "Failed to add study b"
+    assert isinstance(caplog.records[0].exc_info[1], RecursionError)
+
+    repository.save.assert_called_once_with(
+        RawStudy(
+            id=ANY,
+            path="a",
+            name="a",
+            folder="a",
+            workspace="workspace1",
+            missing=None,
+            public_mode=PublicMode.FULL,
         )
+    )
 
 
 # noinspection PyArgumentList
