@@ -212,12 +212,12 @@ class TestSTStorage:
             "parameters": {
                 "name": "Bad Storage",
                 "group": "Wonderland",  # Oops!
-                "injection_nominal_capacity": -2000,  # Oops!
+                "injection_nominal_capacity": 2000,
                 "withdrawal_nominal_capacity": 1500,
                 "reservoir_capacity": 20000,
                 "efficiency": 0.78,
                 "initial_level": 0.91,
-                "initial_level_optim": "BlurBool",  # Oops!
+                "initial_level_optim": False,
             },
             "pmax_injection": pmax_injection.tolist(),
             "pmax_withdrawal": pmax_withdrawal.tolist(),
@@ -230,5 +230,14 @@ class TestSTStorage:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
         description = res.json()["description"]
+        assert "Input should be 'psp_open'," in description
+
+        args["parameters"]["group"] = "psp_open"
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/commands",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json=[{"action": "create_st_storage", "args": args}],
+        )
+        assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
+        description = res.json()["description"]
         assert "Matrix values should be between 0 and 1" in description
-        assert "1 validation error for CreateSTStorage" in description

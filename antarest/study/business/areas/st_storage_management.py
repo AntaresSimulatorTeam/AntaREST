@@ -37,7 +37,7 @@ from antarest.study.business.model.sts_model import (
     STStorageUpdates,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStoragePropertiesType,
@@ -470,6 +470,17 @@ class STStorageManager:
         lower_source_id = source_id.lower()
         # noinspection SpellCheckingInspection
         ts_names = ["pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"]
+        if study.version >= STUDY_VERSION_9_2:
+            ts_names.extend(
+                [
+                    "cost_injection",
+                    "cost_withdrawal",
+                    "cost_level",
+                    "cost_variation_injection",
+                    "cost_variation_withdrawal",
+                ]
+            )
+
         source_paths = [
             _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
             for ts_name in ts_names
