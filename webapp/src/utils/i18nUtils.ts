@@ -47,6 +47,6 @@ export function changeLanguage(lang: Lang) {
  * @param text - The text.
  * @returns The text with a colon (:) appended.
  */
-export function translateWithColon(text: string): string {
+export function appendColon(text: string): string {
   return `${text}${i18n.language.startsWith("fr") ? " " : ""}:`;
 }

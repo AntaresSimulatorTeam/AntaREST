@@ -23,7 +23,7 @@ import useConfirm from "@/hooks/useConfirm";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
 import type { Playlist, PlaylistData } from "@/services/api/studies/config/playlist/types";
-import { translateWithColon } from "@/utils/i18nUtils";
+import { appendColon } from "@/utils/i18nUtils";
 import { Box, Button, ButtonGroup } from "@mui/material";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
@@ -35,7 +35,7 @@ import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
-import ScenariosSelectionFE from "./YearsSelectionFE";
+import YearsSelectionFE from "./YearsSelectionFE";
 interface Props {
   study: StudyMetadata;
   open: boolean;
@@ -60,7 +60,7 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
         title: t("global.status"),
         grow: 1,
         trailingRowOptions: {
-          hint: `${translateWithColon(t("study.configuration.general.mcScenarioPlaylist.totalSelected.label"))} ${totals.selected}`,
+          hint: `${appendColon(t("study.configuration.general.mcScenarioPlaylist.totalSelected.label"))} ${totals.selected}`,
         },
       },
       {
@@ -68,7 +68,7 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
         title: t("global.weight"),
         grow: 1,
         trailingRowOptions: {
-          hint: `${translateWithColon(t("study.configuration.general.mcScenarioPlaylist.totalWeight.label"))} ${totals.sumWeights}`,
+          hint: `${appendColon(t("study.configuration.general.mcScenarioPlaylist.totalWeight.label"))} ${totals.sumWeights}`,
         },
       },
     ];
@@ -94,18 +94,18 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   };
 
   function updateTotals(data: PlaylistData) {
-    setTotals(
-      Object.entries(data).reduce(
-        (acc, [_, { status, weight }]) => {
-          if (status) {
-            acc.selected += 1;
-            acc.sumWeights += weight;
-          }
-          return acc;
-        },
-        { selected: 0, sumWeights: 0 },
-      ),
+    const newTotals = Object.entries(data).reduce(
+      (acc, [_, { status, weight }]) => {
+        if (status) {
+          acc.selected += 1;
+          acc.sumWeights += weight;
+        }
+        return acc;
+      },
+      { selected: 0, sumWeights: 0 },
     );
+
+    setTotals(newTotals);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -184,7 +184,7 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
                       pt: 0.5,
                     }}
                   >
-                    <ScenariosSelectionFE
+                    <YearsSelectionFE
                       onChange={setYearsSelection}
                       maxYears={Object.keys(defaultData).length}
                     />

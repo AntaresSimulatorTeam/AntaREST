@@ -20,8 +20,6 @@ import * as RA from "ramda-adjunct";
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type SelectionType = "all" | "range" | "advanced";
-
 export type Range = [number, number];
 export type Selection = number | Range;
 
@@ -42,7 +40,7 @@ export function selectionsToNumbers(selections: Selection[]) {
   selections.forEach((selection) => {
     if (Array.isArray(selection)) {
       const [start, end] = selection;
-      R.range(start, end + 1).map((num) => numbersSet.add(num));
+      R.range(start, end + 1).forEach((num) => numbersSet.add(num));
     } else {
       numbersSet.add(selection);
     }

@@ -47,16 +47,18 @@ function YearsSelectionFE({ maxYears, onChange }: Props) {
 
     setError(!isValid);
 
-    if (isValid) {
-      const selections = stringToSelection(selectionsValue);
-      const years =
-        selections.length === 0 ? R.range(1, maxYears + 1) : selectionsToNumbers(selections);
-
-      setSelectionsValue(selectionsToString(selections));
-      onChange(years);
-    } else {
+    if (!isValid) {
       onChange([]);
+      return;
     }
+
+    const selections = stringToSelection(selectionsValue);
+    // If no selections, we return all years
+    const years =
+      selections.length === 0 ? R.range(1, maxYears + 1) : selectionsToNumbers(selections);
+
+    setSelectionsValue(selectionsToString(selections));
+    onChange(years);
   };
 
   ////////////////////////////////////////////////////////////////

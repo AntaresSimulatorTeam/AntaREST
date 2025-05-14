@@ -76,7 +76,7 @@ function RadioGroupFE({
             value={value}
             control={<Radio size={size} />}
             label={label}
-            disableTypography={typeof label === "string" ? false : true}
+            disableTypography={typeof label !== "string"}
             disabled={disabled}
             inputRef={inputRef}
           />
