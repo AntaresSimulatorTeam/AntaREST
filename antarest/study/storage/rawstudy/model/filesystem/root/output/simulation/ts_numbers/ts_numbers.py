@@ -75,17 +75,17 @@ class OutputSimulationTsNumbers(FolderNode):
         for output_type in ["hydro", "load", "solar", "wind"]:
             if (self.config.path / output_type).exists():
                 children[output_type] = AreaMatrixList(
-                    self.context,
+                    self.matrix_mapper,
                     self.config.next_file(output_type),
                     matrix_class=TsNumbersVector,
                 )
         if (self.config.path / "bindingconstraints").exists():
             children["bindingconstraints"] = BindingConstraintMatrixList(
-                self.context, self.config.next_file("bindingconstraints"), matrix_class=TsNumbersVector
+                self.matrix_mapper, self.config.next_file("bindingconstraints"), matrix_class=TsNumbersVector
             )
         if (self.config.path / "thermal").exists():
             children["thermal"] = AreaMultipleMatrixList(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("thermal"),
                 ThermalMatrixList,
                 TsNumbersVector,

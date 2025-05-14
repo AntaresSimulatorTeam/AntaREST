@@ -20,6 +20,6 @@ class InputHydroSeries(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputHydroSeriesArea(self.context, self.config.next_file(a)) for a in self.config.area_names()
+            a: InputHydroSeriesArea(self.matrix_mapper, self.config.next_file(a)) for a in self.config.area_names()
         }
         return children

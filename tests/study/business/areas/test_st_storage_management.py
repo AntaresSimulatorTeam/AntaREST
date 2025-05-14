@@ -345,7 +345,7 @@ class TestSTStorageManager:
         manager = st_storage_manager
 
         # Prepare the mocks
-        ini_file_node = IniFileNode(context=Mock(), config=Mock())
+        ini_file_node = IniFileNode(config=Mock())
         file_study = Mock(spec=FileStudy)
         file_study.tree = Mock(
             spec=FileStudyTree,

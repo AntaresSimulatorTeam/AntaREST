@@ -20,7 +20,6 @@ from typing_extensions import override
 
 from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.jwt import JWTUser
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 try:
@@ -134,7 +133,6 @@ def export_file(
     with_header: bool,
     download_name: str,
     download_log: str,
-    current_user: JWTUser,
 ) -> FileResponse:
     """
     Exports a DataFrame to a file in the specified format and prepares it for download.
@@ -147,7 +145,6 @@ def export_file(
         with_header: Whether to include the DataFrame's header in the exported file.
         download_name: The name of the file to be downloaded (file name with suffix)
         download_log: The log message for the download operation for the end-user.
-        current_user: The current user performing the operation.
 
     Returns:
         A FileResponse object representing the file to be downloaded.
@@ -159,7 +156,6 @@ def export_file(
     export_file_download = file_transfer_manager.request_download(
         download_name,
         download_log,
-        current_user,
         use_notification=False,
         expiration_time_in_minutes=10,
     )

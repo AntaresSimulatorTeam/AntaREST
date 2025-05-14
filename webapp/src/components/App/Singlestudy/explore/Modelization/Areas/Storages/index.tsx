@@ -12,28 +12,28 @@
  * This file is part of the Antares project.
  */
 
+import { Box, Tooltip } from "@mui/material";
+import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { createMRTColumnHelper } from "material-react-table";
-import { Box, Tooltip } from "@mui/material";
-import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
-import type { StudyMetadata } from "../../../../../../../types/types";
+import { useNavigate, useOutletContext } from "react-router-dom";
+import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../types/types";
 import GroupedDataTable from "../../../../../../common/GroupedDataTable";
+import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
+import type { TRow } from "../../../../../../common/GroupedDataTable/types";
 import {
-  getStorages,
-  deleteStorages,
   createStorage,
-  STORAGE_GROUPS,
+  deleteStorages,
   duplicateStorage,
+  getStorages,
   getStoragesTotals,
+  STORAGE_GROUPS,
   type Storage,
   type StorageGroup,
 } from "./utils";
-import usePromiseWithSnackbarError from "../../../../../../../hooks/usePromiseWithSnackbarError";
-import type { TRow } from "../../../../../../common/GroupedDataTable/types";
-import BooleanCell from "../../../../../../common/GroupedDataTable/cellRenderers/BooleanCell";
 
 const columnHelper = createMRTColumnHelper<Storage>();
 
@@ -41,7 +41,6 @@ function Storages() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
   const areaId = useAppSelector(getCurrentAreaId);
   const studyVersion = parseInt(study.version, 10);
 
@@ -160,7 +159,7 @@ function Storages() {
   };
 
   const handleNameClick = (row: Storage) => {
-    navigate(`${location.pathname}/${row.id}`);
+    navigate(row.id);
   };
 
   ////////////////////////////////////////////////////////////////

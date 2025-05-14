@@ -21,7 +21,6 @@ from antarest.core.serde.ini_reader import IReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.serde.json import from_json, to_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
@@ -71,8 +70,7 @@ class JsonWriter(IniWriter):
 class JsonFileNode(IniFileNode):
     def __init__(
         self,
-        context: ContextServer,
         config: FileStudyTreeConfig,
         types: Optional[Dict[str, Any]] = None,
     ) -> None:
-        super().__init__(context, config, types, JsonReader(), JsonWriter())
+        super().__init__(config, types, JsonReader(), JsonWriter())

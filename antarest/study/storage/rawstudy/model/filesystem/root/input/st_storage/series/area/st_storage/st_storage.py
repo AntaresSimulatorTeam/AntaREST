@@ -23,27 +23,27 @@ class InputSTStorageAreaStorage(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "pmax_injection": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("PMAX-injection.txt"),
                 default_empty=series.pmax_injection,
             ),
             "pmax_withdrawal": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("PMAX-withdrawal.txt"),
                 default_empty=series.pmax_withdrawal,
             ),
             "inflows": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("inflows.txt"),
                 default_empty=series.inflows,
             ),
             "lower_rule_curve": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("lower-rule-curve.txt"),
                 default_empty=series.lower_rule_curve,
             ),
             "upper_rule_curve": InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file("upper-rule-curve.txt"),
                 default_empty=series.upper_rule_curve,
             ),
@@ -51,19 +51,19 @@ class InputSTStorageAreaStorage(FolderNode):
 
         if self.config.version >= STUDY_VERSION_9_2:
             children["cost_injection"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-injection.txt"), default_empty=series.costs
+                self.matrix_mapper, self.config.next_file("cost-injection.txt"), default_empty=series.costs
             )
             children["cost_withdrawal"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-withdrawal.txt"), default_empty=series.costs
+                self.matrix_mapper, self.config.next_file("cost-withdrawal.txt"), default_empty=series.costs
             )
             children["cost_level"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-level.txt"), default_empty=series.costs
+                self.matrix_mapper, self.config.next_file("cost-level.txt"), default_empty=series.costs
             )
             children["cost_variation_injection"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-variation-injection.txt"), default_empty=series.costs
+                self.matrix_mapper, self.config.next_file("cost-variation-injection.txt"), default_empty=series.costs
             )
             children["cost_variation_withdrawal"] = InputSeriesMatrix(
-                self.context, self.config.next_file("cost-variation-withdrawal.txt"), default_empty=series.costs
+                self.matrix_mapper, self.config.next_file("cost-variation-withdrawal.txt"), default_empty=series.costs
             )
 
         return children

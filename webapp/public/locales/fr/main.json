@@ -200,8 +200,6 @@
   "settings.createGroup": "Créer un groupe",
   "settings.updateUser": "Modifier un utilisateur",
   "settings.updateGroup": "Modifier un groupe",
-  "settings.currentUser": "Utilisateur: {{0}}",
-  "settings.currentToken": "Token: {{0}}",
   "settings.roleLabel": "Role",
   "settings.readerRole": "LECTURE",
   "settings.writerRole": "ECRITURE",

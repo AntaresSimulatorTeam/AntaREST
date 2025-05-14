@@ -42,5 +42,5 @@ class OutputSimulationModeCommon(FolderNode):
         children: TREE = {}
         for key, simulation_class in OUTPUT_MAPPING.items():
             if (self.config.path / key).exists():
-                children[key] = simulation_class(self.context, self.config.next_file(key))
+                children[key] = simulation_class(self.matrix_mapper, self.config.next_file(key))
         return children

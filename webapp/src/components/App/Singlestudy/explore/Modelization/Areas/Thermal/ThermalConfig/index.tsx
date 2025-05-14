@@ -16,7 +16,6 @@ import BackButton from "@/components/common/buttons/BackButton";
 import { Chip, Divider } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import useNavigateOnCondition from "../../../../../../../../hooks/useNavigateOnCondition";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import { getCurrentAreaId } from "../../../../../../../../redux/selectors";
 import { nameToId } from "../../../../../../../../services/utils";
@@ -30,11 +29,6 @@ function ThermalConfig() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { clusterId = "" } = useParams();
   const { t } = useTranslation();
-
-  useNavigateOnCondition({
-    deps: [areaId],
-    to: "../thermal",
-  });
 
   ////////////////////////////////////////////////////////////////
   // JSX

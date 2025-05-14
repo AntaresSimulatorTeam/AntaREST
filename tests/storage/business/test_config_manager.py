@@ -45,7 +45,7 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
         areas={},
         sets={},
     )
-    file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
+    file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
     file_tree_mock.get.side_effect = [
         # For study version < 800:
         {},

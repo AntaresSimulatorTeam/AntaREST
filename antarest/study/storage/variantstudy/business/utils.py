@@ -16,10 +16,9 @@ import pandas as pd
 
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import MATRIX_PROTOCOL_PREFIX
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 

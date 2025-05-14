@@ -18,7 +18,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from filelock import FileLock
 
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
@@ -63,7 +63,6 @@ ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
 ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
-MATRIX_PROTOCOL_PREFIX = "matrix://"
 _LOCK_FILE_NAME = "matrix_constant_init.lock"
 
 
