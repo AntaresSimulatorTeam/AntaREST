@@ -22,4 +22,5 @@ export interface VersionInfoDTO {
   version: string;
   gitcommit: string;
   dependencies: Record<string, string>;
+  desktop_mode: boolean;
 }

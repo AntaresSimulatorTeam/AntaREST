@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "feature/2983-system-workspaces"
 
 jobs:
   binary:

@@ -16,7 +16,21 @@ import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyTreeNodeProps } from "./types";
+import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
+import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
+
+function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
+  if (folderA.name === DEFAULT_WORKSPACE_NAME) {
+    return -1;
+  } else if (folderB.name === DEFAULT_WORKSPACE_NAME) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
+const defaultFirstSort = R.sortWith([prioritizeDefault]);
 
 export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
   const { hasChildren, children, path, name } = node;
@@ -24,10 +38,13 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
   const hasUnloadedChildren = hasChildren && children.length === 0;
   const { t } = useTranslation();
 
-  const sortedChildren = useMemo(
-    () => R.sortBy(R.compose(R.toLower, R.prop("name")), children),
-    [children],
-  );
+  const sortedChildren = useMemo(() => {
+    const sortedByName = nameSort(children);
+    if (node.name === ROOT_NODE_NAME) {
+      return defaultFirstSort(sortedByName);
+    }
+    return sortedByName;
+  }, [children, node.name]);
 
   ////////////////////////////////////////////////////////////////
   // JSX

@@ -16,31 +16,33 @@ from unittest.mock import patch
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.jwt import JWTUser
+from antarest.core.requests import RequestParameters
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
 
-def build_config(root: Path) -> Config:
+def build_config(root: Path, desktop_mode=False) -> Config:
     return Config(
+        desktop_mode=desktop_mode,
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
                 "diese": WorkspaceConfig(path=root / "diese", filter_out=[".git", ".*RECYCLE.BIN"]),
                 "test": WorkspaceConfig(path=root / "test"),
             }
-        )
+        ),
     )
 
 
-@pytest.fixture
-def config_scenario_a(tmp_path: Path) -> Config:
-    default = tmp_path / "default"
+def build_tree(root: Path) -> None:
+    default = root / "default"
     default.mkdir()
     a = default / "studyA"
     a.mkdir()
     (a / "study.antares").touch()
 
-    diese = tmp_path / "diese"
+    diese = root / "diese"
     diese.mkdir()
     c = diese / "folder/studyC"
     c.mkdir(parents=True)
@@ -75,8 +77,23 @@ def config_scenario_a(tmp_path: Path) -> Config:
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-    config = build_config(tmp_path)
 
+@pytest.fixture
+def config_scenario_a(tmp_path: Path) -> Config:
+    build_tree(tmp_path)
+    config = build_config(tmp_path)
+    return config
+
+
+@pytest.fixture
+def request_params() -> Config:
+    return RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
+
+
+def config_desktop_mode(tmp_path: Path) -> Config:
+    config = build_config(tmp_path, desktop_mode=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
     return config
 
 
