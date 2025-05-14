@@ -110,7 +110,7 @@ class TestSTStorage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"dest": "default", "with_outputs": False, "use_task": False},  # type: ignore
+            params={"study_name": "default", "with_outputs": False, "use_task": False},  # type: ignore
         )
         assert res.status_code == 201, res.json()
         internal_study_id = res.json()
