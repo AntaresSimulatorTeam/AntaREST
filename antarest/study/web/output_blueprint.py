@@ -472,7 +472,9 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         output_id = sanitize_string(output_id)
 
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
+        download_log = (
+            f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
+        )
 
         task_id = output_service.aggregate_output_data(
             uuid,
