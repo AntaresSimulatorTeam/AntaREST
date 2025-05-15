@@ -18,7 +18,7 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from antarest.core.config import Config, InvalidConfigurationError, LauncherConfig, LocalConfig
+from antarest.core.config import Config, InvalidConfigurationError, Launcher, LauncherConfig, LocalConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
@@ -32,7 +32,14 @@ def launcher_config(tmp_path: Path) -> Config:
     Fixture to create a launcher config with a local launcher.
     """
     solver_path = tmp_path.joinpath(SOLVER_NAME)
-    data = {"binaries": {"700": solver_path}, "enable_nb_cores_detection": True, "local_workspace": tmp_path}
+    data = {
+        "id": "id",
+        "name": "name",
+        "type": "local",
+        "binaries": {"700": solver_path},
+        "enable_nb_cores_detection": True,
+        "local_workspace": tmp_path,
+    }
     return Config(launcher=LauncherConfig(configs=[LocalConfig.from_dict(data)]))
 
 
@@ -150,7 +157,7 @@ def test_parse_launcher_arguments(launcher_config: Config):
 
 @pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path):
-    data = {"xpress_dir": "fake_path_for_test"}
+    data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = Config(launcher=LauncherConfig(configs=[LocalConfig.from_dict(data)]))
     local_launcher = LocalLauncher(launcher_config, launcher_id="id", callbacks=Mock(), event_bus=Mock(), cache=Mock())
     _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO())
@@ -166,7 +173,9 @@ def test_select_best_binary():
         "1000": Path("1000"),
     }
     local_launcher = LocalLauncher(
-        Config(launcher=LauncherConfig(configs=[LocalConfig(id="id", binaries=binaries)])),
+        Config(
+            launcher=LauncherConfig(configs=[LocalConfig(id="id", name="name", type=Launcher.LOCAL, binaries=binaries)])
+        ),
         launcher_id="id",
         callbacks=Mock(),
         event_bus=Mock(),

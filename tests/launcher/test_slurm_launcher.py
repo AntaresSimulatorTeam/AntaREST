@@ -27,6 +27,7 @@ from antareslauncher.study_dto import StudyDTO
 from antarest.core.config import (
     Config,
     InvalidConfigurationError,
+    Launcher,
     LauncherConfig,
     NbCoresConfig,
     SlurmConfig,
@@ -90,6 +91,8 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
             configs=[
                 SlurmConfig(
                     id="slurm_id",
+                    name="slurm",
+                    type=Launcher.SLURM,
                     default_wait_time=42,
                     time_limit=TimeLimitConfig(),
                     nb_cores=NbCoresConfig(min=1, default=30, max=36),
@@ -128,6 +131,8 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
             configs=[
                 SlurmConfig(
                     id="slurm_id",
+                    name="slurm",
+                    type=Launcher.SLURM,
                     local_workspace=tmp_path,
                     default_json_db_name="default_json_db_name",
                     slurm_script_path="slurm_script_path",
@@ -169,7 +174,11 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
 
 @pytest.mark.unit_test
 def test_slurm_launcher_delete_function(tmp_path: str) -> None:
-    config = Config(launcher=LauncherConfig(configs=[SlurmConfig(id="slurm_id", local_workspace=Path(tmp_path))]))
+    config = Config(
+        launcher=LauncherConfig(
+            configs=[SlurmConfig(id="slurm_id", name="slurm", type=Launcher.SLURM, local_workspace=Path(tmp_path))]
+        )
+    )
     slurm_launcher = SlurmLauncher(
         config=config,
         launcher_id="slurm_id",

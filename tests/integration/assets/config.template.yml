@@ -27,6 +27,7 @@ launcher:
   launchers:
     - id: local_id
       type: local
+      name: local
       binaries:
         700: {{launcher_mock}}
       enable_nb_cores_detection: True

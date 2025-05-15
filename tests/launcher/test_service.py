@@ -309,8 +309,8 @@ class TestLauncherService:
                 {
                     "default": "local_id",
                     "launchers": [
-                        {"id": "local_id", "type": "local", "binaries": {}},
-                        {"id": "slurm_id", "type": "slurm", "antares_versions_on_remote_server": []},
+                        {"id": "local_id", "type": "local", "name": "name", "binaries": {}},
+                        {"id": "slurm_id", "type": "slurm", "name": "name", "antares_versions_on_remote_server": []},
                     ],
                 },
                 "default",
@@ -324,6 +324,7 @@ class TestLauncherService:
                         {
                             "id": "local_id",
                             "type": "local",
+                            "name": "name",
                             "binaries": {"456": "path", "123": "path", "798": "path"},
                         }
                     ],
@@ -339,6 +340,7 @@ class TestLauncherService:
                         {
                             "id": "local_id",
                             "type": "local",
+                            "name": "name",
                             "binaries": {"456": "path", "123": "path", "798": "path"},
                         }
                     ],
@@ -359,6 +361,7 @@ class TestLauncherService:
                         {
                             "id": "local_id",
                             "type": "local",
+                            "name": "name",
                             "binaries": {"456": "path", "123": "path", "798": "path"},
                         }
                     ],
@@ -379,6 +382,7 @@ class TestLauncherService:
                         {
                             "id": "slurm_id",
                             "type": "slurm",
+                            "name": "name",
                             "antares_versions_on_remote_server": ["258", "147", "369"],
                         }
                     ],
@@ -394,6 +398,7 @@ class TestLauncherService:
                         {
                             "id": "slurm_id",
                             "type": "slurm",
+                            "name": "name",
                             "antares_versions_on_remote_server": ["258", "147", "369"],
                         }
                     ],
@@ -414,6 +419,7 @@ class TestLauncherService:
                         {
                             "id": "slurm_id",
                             "type": "slurm",
+                            "name": "name",
                             "antares_versions_on_remote_server": ["258", "147", "369"],
                         }
                     ],
@@ -434,11 +440,13 @@ class TestLauncherService:
                         {
                             "id": "local_id",
                             "type": "local",
+                            "name": "name",
                             "binaries": {"456": "path", "123": "path", "798": "path"},
                         },
                         {
                             "id": "slurm_id",
                             "type": "slurm",
+                            "name": "name",
                             "antares_versions_on_remote_server": ["258", "147", "369"],
                         },
                     ],
@@ -460,13 +468,18 @@ class TestLauncherService:
             if launcher["type"] == "local":
                 launcher_configs.append(
                     LocalConfig(
-                        id=launcher["id"], binaries={k: Path(f"solver-{k}.exe") for k in launcher.get("binaries", {})}
+                        id=launcher["id"],
+                        name=launcher["name"],
+                        type=Launcher.LOCAL,
+                        binaries={k: Path(f"solver-{k}.exe") for k in launcher.get("binaries", {})},
                     )
                 )
             elif launcher["type"] == "slurm":
                 launcher_configs.append(
                     SlurmConfig(
                         id=launcher["id"],
+                        name=launcher["name"],
+                        type=Launcher.SLURM,
                         antares_versions_on_remote_server=list(launcher.get("antares_versions_on_remote_server", [])),
                     )
                 )
@@ -631,6 +644,8 @@ class TestLauncherService:
                     LocalConfig.from_dict(
                         {
                             "id": launcher_dict["id"],
+                            "type": "local",
+                            "name": "name",
                             "enable_nb_cores_detection": False,
                             "nb_cores": launcher_dict.get("nb_cores", {}),
                         }
@@ -641,6 +656,8 @@ class TestLauncherService:
                     SlurmConfig.from_dict(
                         {
                             "id": launcher_dict["id"],
+                            "type": "slurm",
+                            "name": "name",
                             "enable_nb_cores_detection": False,
                             "nb_cores": launcher_dict.get("nb_cores", {}),
                         }
@@ -1070,7 +1087,9 @@ class TestLauncherService:
 
         config = Config(
             storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local")]),
+            launcher=LauncherConfig(
+                default=default_launcher, configs=[LocalConfig(id="local", type=Launcher.LOCAL, name="name")]
+            ),
         )
         launcher_service = LauncherService(
             config=config,

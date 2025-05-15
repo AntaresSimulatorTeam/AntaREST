@@ -284,9 +284,9 @@ class TimeLimitConfig:
 class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
-    id: str = ""
-    name: str = ""
-    type: Launcher = Launcher.LOCAL
+    id: str
+    name: str
+    type: Launcher
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
@@ -302,22 +302,18 @@ class LocalConfig:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        defaults = cls()
-        _id = data.get("id", "id")
-        _type = data.get("type", Launcher.LOCAL)
-        name = data.get("name", "local")
-        binaries = data.get("binaries", defaults.binaries)
-        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
-        nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
+        binaries = {str(k): Path(v) for k, v in data.get("binaries", {}).items()}
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", True)
+        nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
-        xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
-        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
+        xpress_dir = data.get("xpress_dir")
+        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else Path("./local_workspace")
         return cls(
-            id=_id,
-            type=_type,
-            name=name,
-            binaries={str(v): Path(p) for v, p in binaries.items()},
+            id=data["id"],
+            name=data["name"],
+            type=data["type"],
+            binaries=binaries,
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
             xpress_dir=xpress_dir,
@@ -342,9 +338,9 @@ class SlurmConfig:
     Sub config object dedicated to launcher module (slurm)
     """
 
-    id: str = ""
-    name: str = ""
-    type: Launcher = Launcher.SLURM
+    id: str
+    name: str
+    type: Launcher
     local_workspace: Path = Path()
     username: str = ""
     hostname: str = ""
@@ -371,12 +367,8 @@ class SlurmConfig:
              data: Parsed config from dict.
         Returns: object SlurmConfig
         """
-        defaults = cls()
-        _id = data.get("id", "id")
-        _type = data.get("type", Launcher.SLURM)
-        name = data.get("name", "local")
-        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
-        nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", False)
+        nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if "default_n_cpu" in data:
             # Use the old way to configure the NB cores for backward compatibility
             nb_cores["default"] = int(data["default_n_cpu"])
@@ -385,29 +377,29 @@ class SlurmConfig:
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
         # In the configuration file, the default time limit is in seconds, so we convert it to hours
-        max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
+        max_time_limit = data.get("default_time_limit", TimeLimitConfig().max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
-            id=_id,
-            type=_type,
-            name=name,
-            local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
-            username=data.get("username", defaults.username),
-            hostname=data.get("hostname", defaults.hostname),
-            port=data.get("port", defaults.port),
-            private_key_file=data.get("private_key_file", defaults.private_key_file),
-            key_password=data.get("key_password", defaults.key_password),
-            password=data.get("password", defaults.password),
-            default_wait_time=data.get("default_wait_time", defaults.default_wait_time),
+            id=data["id"],
+            type=data["type"],
+            name=data["name"],
+            local_workspace=Path(data.get("local_workspace", Path())),
+            username=data.get("username", ""),
+            hostname=data.get("hostname", ""),
+            port=data.get("port", 0),
+            private_key_file=data.get("private_key_file", Path()),
+            key_password=data.get("key_password", ""),
+            password=data.get("password", ""),
+            default_wait_time=data.get("default_wait_time", 0),
             time_limit=time_limit,
-            default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
-            slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
-            partition=data.get("partition", defaults.partition),
+            default_json_db_name=data.get("default_json_db_name", ""),
+            slurm_script_path=data.get("slurm_script_path", ""),
+            partition=data.get("partition", ""),
             antares_versions_on_remote_server=data.get(
                 "antares_versions_on_remote_server",
-                defaults.antares_versions_on_remote_server,
+                [],
             ),
-            max_cores=data.get("max_cores", defaults.max_cores),
+            max_cores=data.get("max_cores", 64),
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
         )

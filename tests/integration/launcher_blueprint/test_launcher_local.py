@@ -31,7 +31,9 @@ class TestLauncherNbCores:
         user_access_token: str,
     ) -> None:
         # NOTE: we have `enable_nb_cores_detection: True` in `tests/integration/assets/config.template.yml`.
-        local_nb_cores = LocalConfig.from_dict({"enable_nb_cores_detection": True}).nb_cores
+        local_nb_cores = LocalConfig.from_dict(
+            {"id": "id", "type": "local", "name": "name", "enable_nb_cores_detection": True}
+        ).nb_cores
         nb_cores_expected = local_nb_cores.to_json()
         res = client.get(
             "/v1/launcher/nbcores",
