@@ -224,7 +224,7 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView id="results" sizes={[15, 85]}>
+    <SplitView id="results" sizes={[15, 85]} minSize={[200, 300]}>
       {/* Left */}
       <Box>
         <PropertiesView

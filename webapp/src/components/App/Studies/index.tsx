@@ -50,7 +50,7 @@ function Studies() {
       titleIcon={TravelExploreOutlinedIcon}
       headerActions={<HeaderActions onOpenFilterClick={() => setOpenFilter(true)} />}
     >
-      <SplitView id="studies" direction="horizontal" sizes={[30, 70]}>
+      <SplitView id="studies" direction="horizontal" sizes={[30, 70]} minSize={[200, 400]}>
         {/* Left */}
         <SideNav />
         {/* Right */}
