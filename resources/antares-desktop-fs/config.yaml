@@ -20,7 +20,7 @@ storage:
 
 launcher:
   launchers:
-    - id: local_id
+    - id: local
       type: local
       binaries:
         VER: ANTARES_SOLVER_PATH
