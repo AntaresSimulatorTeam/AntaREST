@@ -49,7 +49,7 @@ class LocalLauncher(AbstractLauncher):
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        launcher = config.launcher.get_launcher_by_id(launcher_id)
+        launcher = config.launcher.get_launcher(launcher_id)
         self.local_workspace = launcher.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
@@ -59,7 +59,7 @@ class LocalLauncher(AbstractLauncher):
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str, launcher_id: str) -> Path:
-        local = self.config.launcher.get_launcher_by_id(launcher_id)
+        local = self.config.launcher.get_launcher(launcher_id)
 
         if not isinstance(local, LocalConfig):
             raise LauncherInitException(f"Invalid parameter {launcher_id}")
@@ -178,7 +178,7 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.get_launcher_by_id(
+                if xpress_dir_path := self.config.launcher.get_launcher(
                     launcher_parameters.launcher_id
                 ).xpress_dir:  # type: ignore
                     environment_variables["XPRESSDIR"] = xpress_dir_path

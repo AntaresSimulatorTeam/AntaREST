@@ -153,7 +153,7 @@ class SlurmLauncher(AbstractLauncher):
         retrieve_existing_jobs: bool = False,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        slurm_config = config.launcher.get_launcher_by_id(launcher_id)
+        slurm_config = config.launcher.get_launcher(launcher_id)
         if not isinstance(slurm_config, SlurmConfig):
             raise TypeError(f"Launcher {launcher_id} is not a SlurmConfig")
         self.slurm_config: SlurmConfig = slurm_config

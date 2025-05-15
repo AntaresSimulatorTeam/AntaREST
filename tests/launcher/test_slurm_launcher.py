@@ -117,7 +117,7 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
     assert not arguments.xpansion_mode
     assert not arguments.version
     assert not arguments.post_processing
-    slurm_config = config.launcher.get_launcher_by_id("slurm_id")
+    slurm_config = config.launcher.get_launcher("slurm_id")
     assert slurm_config is not None
     assert Path(arguments.studies_in) == slurm_config.local_workspace / "STUDIES_IN"
     assert Path(arguments.output_dir) == slurm_config.local_workspace / "OUTPUT"
@@ -154,7 +154,7 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     )
 
     main_parameters = slurm_launcher._init_launcher_parameters()
-    slurm_config = config.launcher.get_launcher_by_id("slurm_id")
+    slurm_config = config.launcher.get_launcher("slurm_id")
     assert slurm_config is not None
     assert main_parameters.json_dir == slurm_config.local_workspace
     assert main_parameters.default_json_db_name == slurm_config.default_json_db_name
@@ -222,7 +222,7 @@ def test_extra_parameters(launcher_config: Config) -> None:
 
     apply_params = slurm_launcher._apply_params
     launcher_params = apply_params(LauncherParametersDTO())
-    slurm_config = slurm_launcher.config.launcher.get_launcher_by_id("slurm_id")
+    slurm_config = slurm_launcher.config.launcher.get_launcher("slurm_id")
     assert slurm_config is not None
     assert launcher_params.n_cpu == slurm_config.nb_cores.default
     assert launcher_params.time_limit == slurm_config.time_limit.default * 3600
@@ -319,7 +319,7 @@ def test_run_study(
     slurm_launcher._delete_workspace_file = Mock()
 
     job_id = str(uuid.uuid4())
-    config = launcher_config.launcher.get_launcher_by_id("slurm_id")
+    config = launcher_config.launcher.get_launcher("slurm_id")
     studies_in = config.local_workspace / "studies_in"
     study_dir = studies_in / job_id
     study_dir.mkdir(parents=True)
@@ -410,7 +410,7 @@ def test_clean_local_workspace(tmp_path: Path, launcher_config: Config) -> None:
         use_private_workspace=False,
         cache=Mock(),
     )
-    config = launcher_config.launcher.get_launcher_by_id("slurm_id")
+    config = launcher_config.launcher.get_launcher("slurm_id")
     (config.local_workspace / "machin.txt").touch()
 
     assert os.listdir(config.local_workspace)
@@ -431,7 +431,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     )
     slurm_launcher.callbacks.import_output.return_value = "output"
     res = slurm_launcher._import_study_output("1")
-    config = launcher_config.launcher.get_launcher_by_id("slurm_id")
+    config = launcher_config.launcher.get_launcher("slurm_id")
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
         config.local_workspace / "OUTPUT" / "1" / "output",
@@ -499,7 +499,7 @@ def test_kill_job(
 
     slurm_launcher.kill_job(job_id=launch_id)
 
-    slurm_config = launcher_config.launcher.get_launcher_by_id("slurm_id")
+    slurm_config = launcher_config.launcher.get_launcher("slurm_id")
     launcher_arguments = Namespace(
         antares_version=0,
         check_queue=False,

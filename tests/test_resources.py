@@ -110,6 +110,6 @@ def test_resources_config():
     config_path = RESOURCES_DIR.joinpath("deploy/config.yaml")
     config = Config.from_yaml_file(config_path, res=RESOURCES_DIR)
     assert config.launcher.default == "local_id"
-    config = config.launcher.get_launcher_by_id("local_id")
+    config = config.launcher.get_launcher("local_id")
     assert config is not None
     assert config.enable_nb_cores_detection is True

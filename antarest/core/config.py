@@ -465,7 +465,7 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 the number of cores of a launcher that doesn't exist in the configuration.
         """
-        config = self.get_launcher_by_id(launcher)
+        config = self.get_launcher(launcher)
         return config.nb_cores
 
     def get_time_limit(self, launcher: str) -> TimeLimitConfig:
@@ -483,13 +483,13 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 a property of a launcher that doesn't exist in the configuration.
         """
-        config = self.get_launcher_by_id(launcher)
+        config = self.get_launcher(launcher)
         return config.time_limit
 
     def get_slurm_configs(self) -> List[SlurmConfig]:
         return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
 
-    def get_launcher_by_id(self, launcher_id: str) -> LocalConfig | SlurmConfig:
+    def get_launcher(self, launcher_id: str) -> LocalConfig | SlurmConfig:
         if launcher_id == "default":
             launcher_id = self.default
         try:

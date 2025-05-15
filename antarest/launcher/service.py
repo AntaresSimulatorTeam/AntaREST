@@ -607,7 +607,7 @@ class LauncherService:
         """
         Get the load of the SLURM cluster or the local machine.
         """
-        launcher = self.config.launcher.get_launcher_by_id(launcher_id)
+        launcher = self.config.launcher.get_launcher(launcher_id)
 
         if isinstance(launcher, SlurmConfig):
             # SLURM load calculation
@@ -661,7 +661,7 @@ class LauncherService:
         Raises:
             KeyError: if the configuration is not "default", "slurm" or "local".
         """
-        config = self.config.launcher.get_launcher_by_id(solver)
+        config = self.config.launcher.get_launcher(solver)
         if isinstance(config, SlurmConfig):
             return sorted(config.antares_versions_on_remote_server)
         else:
