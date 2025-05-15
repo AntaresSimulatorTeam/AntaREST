@@ -18,7 +18,7 @@ from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
-    AggregatedOutputNotProcessed,
+    AggregatedOutputFailed,
     AggregatedOutputNotReady,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
@@ -574,4 +574,4 @@ class OutputService:
         elif task.status in (TaskStatus.RUNNING, TaskStatus.PENDING):
             raise AggregatedOutputNotReady(task_id)
         else:
-            raise AggregatedOutputNotProcessed(task_id, task.result.message)  # type: ignore[union-attr]
+            raise AggregatedOutputFailed(task_id, task.result.message)  # type: ignore[union-attr]
