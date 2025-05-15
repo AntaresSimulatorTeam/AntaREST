@@ -73,6 +73,16 @@ export default {
         minWidth: "auto",
       },
     },
+    variants: [
+      {
+        props: { size: "extra-small" },
+        style: {
+          padding: 4,
+          fontSize: "0.75rem",
+          lineHeight: "initial",
+        },
+      },
+    ],
   },
   MuiToggleButton: {
     variants: [
@@ -107,6 +117,11 @@ export default {
       },
     ],
   },
+  MuiRadio: {
+    defaultProps: {
+      size: "small",
+    },
+  },
   MuiInputBase: {
     defaultProps: {
       size: "small",
@@ -137,7 +152,7 @@ export default {
           ".MuiInputBase-root": {
             padding: "0 9px",
           },
-          input: {
+          "input, textarea": {
             padding: "4px 0",
           },
         },

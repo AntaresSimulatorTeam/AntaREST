@@ -23,6 +23,7 @@ export interface SplitViewProps {
   children: React.ReactNode[];
   direction?: SplitProps["direction"];
   sizes?: SplitProps["sizes"];
+  minSize?: SplitProps["minSize"];
   gutterSize?: SplitProps["gutterSize"];
 }
 
@@ -41,6 +42,7 @@ export interface SplitViewProps {
  * @param props.children - Child components to be rendered within the split views.
  * @param [props.direction=horizontal] - The orientation of the split view ("horizontal" or "vertical").
  * @param [props.sizes] - Initial sizes of each view in percentages. The array must sum to 100 and match the number of children.
+ * @param [props.minSize=[150, 150]] - Minimum sizes of the elements, specified as pixel values.
  * @param [props.gutterSize=3] - The size of the gutter between split views.
  * @returns A React component displaying a split layout view with resizable panes.
  */
@@ -49,6 +51,7 @@ function SplitView({
   children,
   direction = "horizontal",
   sizes,
+  minSize = [150, 150],
   gutterSize = 3,
 }: SplitViewProps) {
   const numberOfChildren = Children.count(children);
@@ -82,6 +85,7 @@ function SplitView({
         className="split"
         direction={direction}
         sizes={activeSizes ?? defaultSizes}
+        minSize={minSize}
         onDragEnd={setActiveSizes} // Update sizes on drag end.
         gutterSize={gutterSize}
         style={{

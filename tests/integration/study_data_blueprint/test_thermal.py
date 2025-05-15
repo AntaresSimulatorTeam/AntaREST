@@ -928,7 +928,7 @@ class TestThermal:
             f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal",
             json={
                 "name": cluster_name,
-                "group": "Nuclear",
+                "group": "HARD Coal",
                 "unitCount": 13,
                 "nominalCapacity": 42500,
                 "marginalCost": 0.1,
@@ -966,7 +966,7 @@ class TestThermal:
         res = client.get(f"/v1/studies/{variant_id}/areas/{area_id}/clusters/thermal/{new_id}")
         assert res.status_code == 200, res.json()
         cluster_cfg = res.json()
-        assert cluster_cfg["group"] == "nuclear"
+        assert cluster_cfg["group"] == "hard coal"
         assert cluster_cfg["unitCount"] == 13
         assert cluster_cfg["nominalCapacity"] == 42500
         assert cluster_cfg["marginalCost"] == 0.2

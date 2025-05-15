@@ -87,7 +87,7 @@ class ThermalClusterGroup(EnumIgnoreCase):
 
     NUCLEAR = "nuclear"
     LIGNITE = "lignite"
-    HARD_COAL = "hard Coal"
+    HARD_COAL = "hard coal"
     GAS = "gas"
     OIL = "oil"
     MIXED_FUEL = "mixed fuel"

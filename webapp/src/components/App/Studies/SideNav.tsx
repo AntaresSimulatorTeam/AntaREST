@@ -29,7 +29,7 @@ function SideNav() {
   const { t } = useTranslation();
 
   return (
-    <Box sx={{ minWidth: 200, overflow: "auto" }}>
+    <Box sx={{ overflow: "auto" }}>
       {favorites.length > 0 && (
         <ListCollapse title={t("studies.favorites")} titleIcon={<StarBorderIcon />}>
           <List disablePadding dense>

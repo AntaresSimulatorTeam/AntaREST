@@ -21,7 +21,6 @@ import { mergeSxProp } from "@/utils/muiUtils";
 import {
   GridCellKind,
   type DataEditorProps,
-  type FillHandleDirection,
   type GridColumn,
   type Item,
 } from "@glideapps/glide-data-grid";
@@ -64,13 +63,16 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   defaultData: TData;
   columns: ReadonlyArray<GridColumn & { id: keyof TData[string] }>;
   rowMarkers?: DataGridProps["rowMarkers"];
-  allowedFillDirections?: FillHandleDirection;
+  allowedFillDirections?: DataGridProps["allowedFillDirections"];
+  onRowAppended?: DataGridProps["onRowAppended"];
+  trailingRowOptions?: DataGridProps["trailingRowOptions"];
   enableColumnResize?: boolean;
   onSubmit: (
     data: SubmitHandlerPlus<TData>,
     event?: React.BaseSyntheticEvent,
   ) => void | Promise<SubmitReturnValue>;
   onSubmitSuccessful?: (data: SubmitHandlerPlus<TData>, submitResult: SubmitReturnValue) => void;
+  onDataChange?: (data: TData) => void;
   onStateChange?: (state: DataGridFormState) => void;
   sx?: SxProps<Theme>;
   extraActions?: React.ReactNode;
@@ -81,10 +83,13 @@ function DataGridForm<TData extends Data>({
   defaultData,
   columns,
   allowedFillDirections = "vertical",
+  onRowAppended,
+  trailingRowOptions,
   enableColumnResize,
   rowMarkers: rowMarkersFromProps,
   onSubmit,
   onSubmitSuccessful,
+  onDataChange,
   onStateChange,
   sx,
   extraActions,
@@ -110,6 +115,8 @@ function DataGridForm<TData extends Data>({
   );
 
   useFormCloseProtection({ isSubmitting, isDirty });
+
+  useUpdateEffect(() => onDataChange?.(data), [data]);
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
@@ -302,6 +309,8 @@ function DataGridForm<TData extends Data>({
         rowMarkers={rowMarkers}
         fillHandle
         allowedFillDirections={allowedFillDirections}
+        onRowAppended={onRowAppended}
+        trailingRowOptions={trailingRowOptions}
         enableColumnResize={enableColumnResize}
         getCellsForSelection
         onPaste

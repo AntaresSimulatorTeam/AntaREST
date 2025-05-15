@@ -32,7 +32,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import useOperationInProgressCount from "../../../hooks/useOperationInProgressCount";
 import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import { toError } from "../../../utils/fnUtils";
-import { translateWithColon } from "../../../utils/i18nUtils";
+import { appendColon } from "../../../utils/i18nUtils";
 import type { PromiseAny } from "../../../utils/tsUtils";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import CreateDialog from "./CreateDialog";
@@ -103,7 +103,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
         size: 50,
         filterVariant: "autocomplete",
         filterSelectOptions: groups,
-        footer: translateWithColon("global.total"),
+        footer: appendColon(t("global.total")),
         ...getTableOptionsForAlign("left"),
       },
       {
