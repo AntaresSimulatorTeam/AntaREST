@@ -544,7 +544,7 @@ class OutputService:
 
         task_id = self._task_service.add_task(
             aggregate_output_task,
-            "Aggregate output",
+            f"Aggregate output {output_id} of study {study.id}.",
             task_type=TaskType.OUTPUT_AGGREGATION,
             ref_id=study.id,
             progress=None,
@@ -568,12 +568,10 @@ class OutputService:
 
         if task.status == TaskStatus.COMPLETED:
             with db():
-                output_aggregation = db.session.get(OutputAggregation, task_id)
+                output_aggregation = db.session.query(OutputAggregation).get(task_id)
             download_file = self._file_transfer_manager.fetch_download(output_aggregation.download_id)
             return FileResponse(path=download_file.path, status_code=200)
-        elif task.status == TaskStatus.RUNNING:
-            msg = task.result.message if task.result else ""
-            raise AggregatedOutputNotReady(task_id, msg)
+        elif task.status in (TaskStatus.RUNNING, TaskStatus.PENDING):
+            raise AggregatedOutputNotReady(task_id)
         else:
-            msg = task.result.message if task.result else ""
-            raise AggregatedOutputNotProcessed(msg)
+            raise AggregatedOutputNotProcessed(task_id, task.result.message)  # type: ignore[union-attr]

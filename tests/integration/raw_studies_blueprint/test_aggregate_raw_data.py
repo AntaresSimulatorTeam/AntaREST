@@ -12,7 +12,6 @@
 
 import io
 import shutil
-import time
 import zipfile
 from pathlib import Path
 
@@ -457,7 +456,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
@@ -492,7 +491,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
             assert res.status_code == 200, res.json()
@@ -526,7 +525,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
 
@@ -562,7 +561,7 @@ class TestRawDataAggregationMCInd:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
@@ -585,7 +584,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 422, res.json()
@@ -601,7 +600,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 422, res.json()
@@ -618,7 +617,7 @@ class TestRawDataAggregationMCInd:
             params={"query_file": "values", "frequency": "hourly"},
         )
         task_id = res.json()
-        time.sleep(1.0)  # wait for results
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")  # wait for results
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
         assert res.status_code == 422, res.json()
@@ -641,7 +640,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
@@ -657,7 +656,7 @@ class TestRawDataAggregationMCInd:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
@@ -686,7 +685,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(2.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
 
@@ -720,7 +719,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
 
@@ -754,7 +753,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
 
@@ -819,7 +818,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{uuid}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{uuid}/outputs/aggregate/task/{task_id}")
             assert res.status_code == 200, res.json()
 
@@ -840,7 +839,7 @@ class TestRawDataAggregationMCAll:
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             task_id = res.json()
-            time.sleep(1.0)
+            client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
             res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
             assert res.status_code == 200, res.json()
@@ -863,7 +862,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
         assert res.status_code == 422, res.json()
@@ -879,7 +878,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 422, res.json()
@@ -897,7 +896,7 @@ class TestRawDataAggregationMCAll:
             params={"query_file": "values", "frequency": "daily"},
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
         assert res.status_code == 422, res.json()
@@ -921,7 +920,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
@@ -937,7 +936,7 @@ class TestRawDataAggregationMCAll:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 200, res.json()
@@ -971,7 +970,7 @@ class TestRawDataAggregationColumnsFormatting:
             },
         )
         task_id = res.json()
-        time.sleep(1.0)  # wait for results
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")  # wait for results
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
         assert res.status_code == 200
@@ -1033,7 +1032,7 @@ class TestDataAggregationCreationOperations:
         assert res.status_code == 422, res.json()["exception"] == "AggregatedOutputNotReady"
 
         # wait for the task to be completed
-        time.sleep(1.0)
+        client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
 
         # get successful results
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
