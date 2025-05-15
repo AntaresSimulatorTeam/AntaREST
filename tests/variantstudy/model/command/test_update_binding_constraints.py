@@ -183,13 +183,21 @@ def test_to_dto(update_binding_constraints_command):
 
 def test_update_time_step_via_table_mode(empty_study_880, command_context):
     study_version = empty_study_880.config.version
-    # Create a bc (default timestep is hourly)
-    cmd = CreateBindingConstraint(name="bc1", command_context=command_context, study_version=study_version)
+    # Create a bc with an hourly timestep and a less operator
+    args = {
+        "name": "bc1",
+        "time_step": BindingConstraintFrequency.HOURLY,
+        "operator": BindingConstraintOperator.LESS,
+        "command_context": command_context,
+        "study_version": study_version,
+    }
+    cmd = CreateBindingConstraint(**args)
     output = cmd.apply(empty_study_880)
     assert output.status
-    # Checks the timestep
+    # Checks the timestep and the operator
     data = empty_study_880.tree.get(["input", "bindingconstraints", "bindingconstraints"])
     assert data["0"]["type"] == "hourly"
+    assert data["0"]["operator"] == "less"
     # Update the timestep to daily with the UpdateBindingConstraintS command
     new_props = {"bc1": BindingConstraintProperties870(**{"time_step": BindingConstraintFrequency.DAILY})}
     cmd = UpdateBindingConstraints(
@@ -202,6 +210,7 @@ def test_update_time_step_via_table_mode(empty_study_880, command_context):
     # Checks the timestep
     data = empty_study_880.tree.get(["input", "bindingconstraints", "bindingconstraints"])
     assert data["0"]["type"] == "daily"
+    assert data["0"]["operator"] == "less"
 
 
 def test_generate_replacement_matrices():
