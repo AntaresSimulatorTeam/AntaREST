@@ -2,7 +2,7 @@ name: main
 on:
   push:
     branches:
-      - "**"
+      - "a"
 
 jobs:
   python-lint:
