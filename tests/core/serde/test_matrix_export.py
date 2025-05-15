@@ -62,6 +62,11 @@ def dataframes() -> Iterator[pd.DataFrame]:
     )
 
 
+@pytest.fixture
+def expected_concatenation() -> pd.DataFrame:
+    return pd.DataFrame(data=[(10, 11), (12, 13), (12, 13), (14, 15)], columns=["A", "B"])
+
+
 @pytest.mark.parametrize(
     "format,expected_delimiter",
     [
@@ -71,35 +76,35 @@ def dataframes() -> Iterator[pd.DataFrame]:
     ],
 )
 def test_csv_stream_writer(
-    tmp_path: Path, dataframes: Iterator[pd.DataFrame], format: TableExportFormat, expected_delimiter: str
+    tmp_path: Path,
+    dataframes: Iterator[pd.DataFrame],
+    format: TableExportFormat,
+    expected_delimiter: str,
+    expected_concatenation: pd.DataFrame,
 ) -> None:
     export_path = tmp_path / "export.csv"
     writer = format.get_stream_writer()
     writer(path=export_path, dataframes=dataframes)
     parsed = pd.read_csv(export_path, delimiter=expected_delimiter)
 
-    expected = pd.DataFrame(data=[(10, 11), (12, 13), (12, 13), (14, 15)], columns=["A", "B"])
-
-    pd.testing.assert_frame_equal(parsed, expected)
+    pd.testing.assert_frame_equal(parsed, expected_concatenation)
 
 
-def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame]):
+def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame):
     export_path = tmp_path / "export.xlsx"
     writer = TableExportFormat.XLSX.get_stream_writer()
     writer(path=export_path, dataframes=dataframes)
     parsed = pd.read_excel(export_path)
-    expected = pd.DataFrame(data=[(10, 11), (12, 13), (12, 13), (14, 15)], columns=["A", "B"])
 
-    pd.testing.assert_frame_equal(parsed, expected)
+    pd.testing.assert_frame_equal(parsed, expected_concatenation)
 
 
-def test_hdf5_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame]):
+def test_hdf5_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame):
     export_path = tmp_path / "export.hdf5"
     writer = TableExportFormat.HDF5.get_stream_writer()
     writer(path=export_path, dataframes=dataframes)
 
     parsed = pd.read_hdf(export_path)
     parsed = parsed.reset_index(drop=True)
-    expected = pd.DataFrame(data=[(10, 11), (12, 13), (12, 13), (14, 15)], columns=["A", "B"])
 
-    pd.testing.assert_frame_equal(parsed, expected)
+    pd.testing.assert_frame_equal(parsed, expected_concatenation)
