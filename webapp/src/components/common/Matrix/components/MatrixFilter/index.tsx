@@ -24,9 +24,10 @@ import {
   Tooltip,
   Typography,
   Badge,
+  Paper,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import DeleteIcon from "@mui/icons-material/Delete";
+import CloseIcon from "@mui/icons-material/Close";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
@@ -73,11 +74,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
       const { min, max } = filter.columnsFilter.range;
       columnsIndices = Array.from({ length: totalColumns }, (_, i) => i + 1)
         .filter((idx) => idx >= min && idx <= max)
-        .map((idx) => idx - 1); // Convert to 0-based index
-    } else if (filter.columnsFilter.type === FILTER_TYPES.MODULO && filter.columnsFilter.modulo) {
-      const { divisor, remainder } = filter.columnsFilter.modulo;
-      columnsIndices = Array.from({ length: totalColumns }, (_, i) => i + 1)
-        .filter((idx) => idx % divisor === remainder)
         .map((idx) => idx - 1); // Convert to 0-based index
     } else if (filter.columnsFilter.type === FILTER_TYPES.LIST && filter.columnsFilter.list) {
       columnsIndices = filter.columnsFilter.list
@@ -132,7 +128,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     // Create a deep copy of the matrix data
     const newData = currentState.data.map((row) => [...row]);
 
-    // Apply the operation to each filtered cell - using for...of instead of forEach
+    // Apply the operation to each filtered cell
     for (const rowIdx of rowsIndices) {
       for (const colIdx of columnsIndices) {
         const currentValue = newData[rowIdx][colIdx];
@@ -178,6 +174,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         timeFrequency,
       ),
     );
+
     setFilterPreview({
       active: false,
       criteria: {
@@ -200,9 +197,9 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     ? filteredData.columnsIndices.length * filteredData.rowsIndices.length
     : 0;
 
-  const renderFilterSummary = () => {
+  const getFilterSummary = () => {
     if (!filter.active) {
-      return null;
+      return { columnFilterText: "", rowFilterText: "" };
     }
 
     const { columnsFilter, rowsFilter } = filter;
@@ -212,8 +209,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     // Column filter summary
     if (columnsFilter.type === FILTER_TYPES.RANGE && columnsFilter.range) {
       columnFilterText = `${t("matrix.filter.columns")}: ${columnsFilter.range.min} - ${columnsFilter.range.max}`;
-    } else if (columnsFilter.type === FILTER_TYPES.MODULO && columnsFilter.modulo) {
-      columnFilterText = `${t("matrix.filter.columns")}: ${t("matrix.filter.modulo")} ${columnsFilter.modulo.divisor}/${columnsFilter.modulo.remainder}`;
     } else if (columnsFilter.type === FILTER_TYPES.LIST && columnsFilter.list) {
       columnFilterText = `${t("matrix.filter.columns")}: [${columnsFilter.list.join(", ")}]`;
     }
@@ -222,47 +217,27 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     const indexType = t(`matrix.filter.indexing.${rowsFilter.indexingType}`);
     if (rowsFilter.type === FILTER_TYPES.RANGE && rowsFilter.range) {
       rowFilterText = `${t("matrix.filter.rows")} (${indexType}): ${rowsFilter.range.min} - ${rowsFilter.range.max}`;
-    } else if (rowsFilter.type === FILTER_TYPES.MODULO && rowsFilter.modulo) {
-      rowFilterText = `${t("matrix.filter.rows")} (${indexType}): ${t("matrix.filter.modulo")} ${rowsFilter.modulo.divisor}/${rowsFilter.modulo.remainder}`;
     } else if (rowsFilter.type === FILTER_TYPES.LIST && rowsFilter.list) {
       rowFilterText = `${t("matrix.filter.rows")} (${indexType}): [${rowsFilter.list.join(", ")}]`;
     }
 
-    return (
-      <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-        {columnFilterText && (
-          <Chip label={columnFilterText} size="small" color="primary" variant="outlined" />
-        )}
-        {rowFilterText && (
-          <Chip label={rowFilterText} size="small" color="primary" variant="outlined" />
-        )}
-      </Stack>
-    );
+    return { columnFilterText, rowFilterText };
   };
 
   return (
     <>
       <Tooltip title={t("matrix.filter.filterData")}>
-        <Badge
-          badgeContent={selectedCount > 0 ? selectedCount : null}
-          color="primary"
-          overlap="circular"
-          max={999}
-        >
-          <IconButton onClick={toggleDrawer} color={filter.active ? "primary" : "default"}>
-            <FilterListIcon />
-          </IconButton>
-        </Badge>
+        <IconButton onClick={toggleDrawer} color={filter.active ? "primary" : "default"}>
+          <FilterListIcon />
+        </IconButton>
       </Tooltip>
-
-      {renderFilterSummary()}
 
       <Drawer
         anchor="right"
         open={open}
         onClose={toggleDrawer}
         PaperProps={{
-          sx: { width: { xs: "85%", sm: "450px" }, p: 2, maxWidth: "500px" },
+          sx: { p: 2, maxWidth: "400px" },
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
@@ -275,7 +250,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
             </Tooltip>
             <Tooltip title={t("matrix.filter.close")}>
               <IconButton onClick={toggleDrawer} size="small">
-                <DeleteIcon />
+                <CloseIcon />
               </IconButton>
             </Tooltip>
           </Box>
@@ -312,6 +287,43 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         </Box>
 
         <Divider sx={{ mb: 2 }} />
+
+        {filter.active && (
+          <Box sx={{ mb: 2 }}>
+            <Paper variant="outlined" sx={{ p: 1.5, backgroundColor: "background.paper" }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                {t("matrix.filter.activeFilters")}
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {(() => {
+                  const { columnFilterText, rowFilterText } = getFilterSummary();
+                  return (
+                    <>
+                      {columnFilterText && (
+                        <Chip
+                          label={columnFilterText}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ m: 0.5 }}
+                        />
+                      )}
+                      {rowFilterText && (
+                        <Chip
+                          label={rowFilterText}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ m: 0.5 }}
+                        />
+                      )}
+                    </>
+                  );
+                })()}
+              </Stack>
+            </Paper>
+          </Box>
+        )}
 
         <ColumnFilter filter={filter} setFilter={setFilter} />
 
