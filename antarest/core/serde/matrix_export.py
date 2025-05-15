@@ -121,7 +121,7 @@ class TableExportFormat(EnumIgnoreCase):
                 return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             case TableExportFormat.TSV:
                 return "text/tab-separated-values"
-            case TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON:
+            case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return "text/csv"
             case TableExportFormat.HDF5:
                 return "application/x-hdf5"
@@ -136,7 +136,7 @@ class TableExportFormat(EnumIgnoreCase):
                 return ".xlsx"
             case TableExportFormat.TSV:
                 return ".tsv"
-            case TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON:
+            case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return ".csv"
             case TableExportFormat.HDF5:
                 return ".h5"
