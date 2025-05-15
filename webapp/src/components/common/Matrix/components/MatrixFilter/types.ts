@@ -19,14 +19,12 @@ export interface FilterState {
   columnsFilter: {
     type: string;
     range?: { min: number; max: number };
-    modulo?: { divisor: number; remainder: number };
     list?: number[];
   };
   rowsFilter: {
     indexingType: string;
     type: string;
     range?: { min: number; max: number };
-    modulo?: { divisor: number; remainder: number };
     list?: number[];
   };
   operation: {
