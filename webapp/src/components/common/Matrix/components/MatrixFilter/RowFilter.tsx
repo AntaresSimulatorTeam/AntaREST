@@ -30,12 +30,15 @@ import {
   Stack,
   Chip,
   type SelectChangeEvent,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
 import type { RowFilterProps } from "./types";
 import { FILTER_TYPES, TIME_INDEXING, TEMPORAL_OPTIONS } from "./constants";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getFilteredTemporalOptions } from "./utils";
 
 function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }: RowFilterProps) {
@@ -165,8 +168,8 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
 
       const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
       return { min, max, uniqueValues };
-    } catch (error) {
-      console.error("Error processing dates:", error);
+    } catch {
+      // Error processing dates
       return { min: 1, max: 100 };
     }
   }, [dateTime, isTimeSeries, filter.rowsFilter]);
@@ -265,19 +268,45 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
     });
   };
 
-  const handleListChange = (value: string) => {
-    const values = value
-      .split(",")
-      .map((val) => Number.parseInt(val.trim()))
-      .filter((val) => !Number.isNaN(val));
+  const [inputValue, setInputValue] = useState<string>("");
 
+  const handleListChange = (value: string) => {
+    setInputValue(value);
+  };
+
+  const addValueToList = () => {
+    const newValue = Number.parseInt(inputValue.trim());
+    if (!Number.isNaN(newValue)) {
+      // Only add if the value is not already in the list
+      if (!filter.rowsFilter.list?.includes(newValue)) {
+        setFilter({
+          ...filter,
+          rowsFilter: {
+            ...filter.rowsFilter,
+            list: [...(filter.rowsFilter.list || []), newValue].sort((a, b) => a - b),
+          },
+        });
+      }
+      // Clear the input field after adding
+      setInputValue("");
+    }
+  };
+
+  const removeValueFromList = (valueToRemove: number) => {
     setFilter({
       ...filter,
       rowsFilter: {
         ...filter.rowsFilter,
-        list: values,
+        list: (filter.rowsFilter.list || []).filter((value) => value !== valueToRemove),
       },
     });
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      addValueToList();
+    }
   };
 
   const handleCheckboxChange = (value: number) => {
@@ -527,16 +556,54 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
         );
       }
 
-      // For other indexing types, use a text field
+      // For other indexing types, use a text field with chips display
       return (
-        <TextField
-          label={t("matrix.filter.listValues")}
-          placeholder="e.g., 1,3,5,7"
-          fullWidth
-          margin="dense"
-          value={filter.rowsFilter.list?.join(",") || ""}
-          onChange={(e) => handleListChange(e.target.value)}
-        />
+        <>
+          <TextField
+            label={t("matrix.filter.listValues")}
+            placeholder={t("matrix.filter.enterValue")}
+            fullWidth
+            margin="dense"
+            value={inputValue}
+            onChange={(e) => handleListChange(e.target.value)}
+            onKeyDown={handleKeyPress}
+            type="number"
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={addValueToList}
+                    disabled={!inputValue.trim()}
+                    edge="end"
+                    size="small"
+                  >
+                    <AddIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+            helperText={t("matrix.filter.pressEnterOrComma")}
+          />
+          {(filter.rowsFilter.list?.length || 0) > 0 && (
+            <Box sx={{ mt: 1 }}>
+              <Typography variant="caption" display="block" gutterBottom>
+                {t("matrix.filter.selectedValues")}:
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {filter.rowsFilter.list?.map((value) => (
+                  <Chip
+                    key={value}
+                    label={value}
+                    size="small"
+                    color="primary"
+                    onDelete={() => removeValueFromList(value)}
+                    sx={{ m: 0.5 }}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          )}
+        </>
       );
     }
 

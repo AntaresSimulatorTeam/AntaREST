@@ -23,21 +23,28 @@ import {
   MenuItem,
   Box,
   TextField,
+  Chip,
+  Stack,
+  IconButton,
+  InputAdornment,
+  type SelectChangeEvent,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import type { FilterSectionProps } from "./types";
 import { FILTER_TYPES } from "./constants";
 
 const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
   const { t } = useTranslation();
 
-  const handleTypeChange = (e: React.ChangeEvent<{ value: unknown }>) => {
+  const handleTypeChange = (e: SelectChangeEvent) => {
     setFilter({
       ...filter,
       columnsFilter: {
         ...filter.columnsFilter,
-        type: e.target.value as string,
+        type: e.target.value,
       },
     });
   };
@@ -71,19 +78,45 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
     });
   };
 
-  const handleListChange = (value: string) => {
-    const values = value
-      .split(",")
-      .map((val) => Number.parseInt(val.trim()))
-      .filter((val) => !Number.isNaN(val));
+  const [inputValue, setInputValue] = useState<string>("");
 
+  const handleListChange = (value: string) => {
+    setInputValue(value);
+  };
+
+  const addValueToList = () => {
+    const newValue = Number.parseInt(inputValue.trim());
+    if (!Number.isNaN(newValue)) {
+      // Only add if the value is not already in the list
+      if (!filter.columnsFilter.list?.includes(newValue)) {
+        setFilter({
+          ...filter,
+          columnsFilter: {
+            ...filter.columnsFilter,
+            list: [...(filter.columnsFilter.list || []), newValue].sort((a, b) => a - b),
+          },
+        });
+      }
+      // Clear the input field after adding
+      setInputValue("");
+    }
+  };
+
+  const removeValueFromList = (valueToRemove: number) => {
     setFilter({
       ...filter,
       columnsFilter: {
         ...filter.columnsFilter,
-        list: values,
+        list: (filter.columnsFilter.list || []).filter((value) => value !== valueToRemove),
       },
     });
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" || event.key === ",") {
+      event.preventDefault();
+      addValueToList();
+    }
   };
 
   return (
@@ -144,14 +177,52 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
         )}
 
         {filter.columnsFilter.type === FILTER_TYPES.LIST && (
-          <TextField
-            label={t("matrix.filter.listValues")}
-            placeholder="e.g., 1,3,5,7"
-            fullWidth
-            margin="dense"
-            value={filter.columnsFilter.list?.join(",") || ""}
-            onChange={(e) => handleListChange(e.target.value)}
-          />
+          <>
+            <TextField
+              label={t("matrix.filter.listValues")}
+              placeholder={t("matrix.filter.enterValue")}
+              fullWidth
+              margin="dense"
+              value={inputValue}
+              onChange={(e) => handleListChange(e.target.value)}
+              onKeyDown={handleKeyPress}
+              type="number"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={addValueToList}
+                      disabled={!inputValue.trim()}
+                      edge="end"
+                      size="small"
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+              helperText={t("matrix.filter.pressEnterOrComma")}
+            />
+            {(filter.columnsFilter.list?.length || 0) > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="caption" display="block" gutterBottom>
+                  {t("matrix.filter.selectedValues")}:
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {filter.columnsFilter.list?.map((value) => (
+                    <Chip
+                      key={value}
+                      label={value}
+                      size="small"
+                      color="primary"
+                      onDelete={() => removeValueFromList(value)}
+                      sx={{ m: 0.5 }}
+                    />
+                  ))}
+                </Stack>
+              </Box>
+            )}
+          </>
         )}
       </AccordionDetails>
     </Accordion>
