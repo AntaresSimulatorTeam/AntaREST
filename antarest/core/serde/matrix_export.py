@@ -69,7 +69,7 @@ def _csv_stream_writer(sep: str, decimal: str) -> DataframeStreamWriter:
     return writer
 
 
-def write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
+def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     row = 0
     is_first = True
     for df in _checked_dataframes_generator(dataframes):
@@ -83,7 +83,7 @@ def write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame]
         is_first = False
 
 
-def write_dataframes_stream_hdf5(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
+def _write_dataframes_stream_hdf5(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     append = False
     for df in _checked_dataframes_generator(dataframes):
         df.to_hdf(path, key="data", append=append, index=False, format="table", mode="r+" if append else "w")
@@ -107,36 +107,38 @@ class TableExportFormat(EnumIgnoreCase):
     @property
     def media_type(self) -> str:
         """Return the media type used for the HTTP response."""
-        if self == TableExportFormat.XLSX:
-            # noinspection SpellCheckingInspection
-            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        elif self == TableExportFormat.TSV:
-            return "text/tab-separated-values"
-        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
-            return "text/csv"
-        elif self == TableExportFormat.HDF5:
-            return "application/x-hdf5"
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Export format '{self}' is not implemented")
+        match self:
+            case TableExportFormat.XLSX:
+                # noinspection SpellCheckingInspection
+                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            case TableExportFormat.TSV:
+                return "text/tab-separated-values"
+            case TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON:
+                return "text/csv"
+            case TableExportFormat.HDF5:
+                return "application/x-hdf5"
+            case _:
+                raise NotImplementedError(f"Export format '{self}' is not implemented")
 
     @property
     def suffix(self) -> str:
         """Return the file suffix for the format."""
-        if self == TableExportFormat.XLSX:
-            return ".xlsx"
-        elif self == TableExportFormat.TSV:
-            return ".tsv"
-        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
-            return ".csv"
-        elif self == TableExportFormat.HDF5:
-            return ".h5"
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Export format '{self}' is not implemented")
+        match self:
+            case TableExportFormat.XLSX:
+                return ".xlsx"
+            case TableExportFormat.TSV:
+                return ".tsv"
+            case TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON:
+                return ".csv"
+            case TableExportFormat.HDF5:
+                return ".h5"
+            case _:
+                raise NotImplementedError(f"Export format '{self}' is not implemented")
 
     def get_stream_writer(self) -> DataframeStreamWriter:
         match self:
             case TableExportFormat.XLSX:
-                return write_dataframes_stream_excel
+                return _write_dataframes_stream_excel
             case TableExportFormat.CSV:
                 return _csv_stream_writer(sep=",", decimal=".")
             case TableExportFormat.CSV_SEMICOLON:
@@ -144,7 +146,7 @@ class TableExportFormat(EnumIgnoreCase):
             case TableExportFormat.TSV:
                 return _csv_stream_writer(sep="\t", decimal=".")
             case TableExportFormat.HDF5:
-                return write_dataframes_stream_hdf5
+                return _write_dataframes_stream_hdf5
             case _:
                 raise NotImplementedError(f"Export format '{self}' does not support stream writing.")
 
@@ -157,45 +159,46 @@ class TableExportFormat(EnumIgnoreCase):
         with_header: bool = True,
     ) -> None:
         """Export a table to a file in the given format."""
-        if self == TableExportFormat.XLSX:
-            return df.to_excel(
-                export_path,
-                index=with_index,
-                header=with_header,
-                engine="xlsxwriter",
-            )
-        elif self == TableExportFormat.TSV:
-            return df.to_csv(
-                export_path,
-                sep="\t",
-                index=with_index,
-                header=with_header,
-                float_format="%.6f",
-            )
-        elif self == TableExportFormat.CSV:
-            return df.to_csv(
-                export_path,
-                sep=",",
-                index=with_index,
-                header=with_header,
-                float_format="%.6f",
-            )
-        elif self == TableExportFormat.CSV_SEMICOLON:
-            return df.to_csv(
-                export_path,
-                sep=";",
-                decimal=",",
-                index=with_index,
-                header=with_header,
-                float_format="%.6f",
-            )
-        elif self == TableExportFormat.HDF5:
-            return df.to_hdf(
-                export_path,
-                key="data",
-                mode="w",
-                format="table",
-                data_columns=True,
-            )
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Export format '{self}' is not implemented")
+        match self:
+            case TableExportFormat.XLSX:
+                return df.to_excel(
+                    export_path,
+                    index=with_index,
+                    header=with_header,
+                    engine="xlsxwriter",
+                )
+            case TableExportFormat.TSV:
+                return df.to_csv(
+                    export_path,
+                    sep="\t",
+                    index=with_index,
+                    header=with_header,
+                    float_format="%.6f",
+                )
+            case TableExportFormat.CSV:
+                return df.to_csv(
+                    export_path,
+                    sep=",",
+                    index=with_index,
+                    header=with_header,
+                    float_format="%.6f",
+                )
+            case TableExportFormat.CSV_SEMICOLON:
+                return df.to_csv(
+                    export_path,
+                    sep=";",
+                    decimal=",",
+                    index=with_index,
+                    header=with_header,
+                    float_format="%.6f",
+                )
+            case TableExportFormat.HDF5:
+                return df.to_hdf(
+                    export_path,
+                    key="data",
+                    mode="w",
+                    format="table",
+                    data_columns=True,
+                )
+            case _:
+                raise NotImplementedError(f"Export format '{self}' is not implemented")
