@@ -41,7 +41,6 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const hasValidFilters =
     filter.active &&
     (filter.columnsFilter.range ||
-      filter.columnsFilter.modulo ||
       (filter.columnsFilter.list && filter.columnsFilter.list.length > 0));
 
   const handleOperationTypeChange = (e: { target: { value: string } }) => {

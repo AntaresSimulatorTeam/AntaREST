@@ -62,22 +62,6 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
     });
   };
 
-  const handleModuloChange = (field: "divisor" | "remainder", value: string) => {
-    const parsedValue =
-      field === "divisor" ? Number.parseInt(value) || 1 : Number.parseInt(value) || 0;
-
-    setFilter({
-      ...filter,
-      columnsFilter: {
-        ...filter.columnsFilter,
-        modulo: {
-          ...filter.columnsFilter.modulo,
-          [field]: parsedValue,
-        } as { divisor: number; remainder: number },
-      },
-    });
-  };
-
   const [inputValue, setInputValue] = useState<string>("");
 
   const handleListChange = (value: string) => {
@@ -133,7 +117,6 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
             onChange={handleTypeChange}
           >
             <MenuItem value={FILTER_TYPES.RANGE}>{t("matrix.filter.range")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.MODULO}>{t("matrix.filter.modulo")}</MenuItem>
             <MenuItem value={FILTER_TYPES.LIST}>{t("matrix.filter.list")}</MenuItem>
           </Select>
         </FormControl>
@@ -152,25 +135,6 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
               type="number"
               value={filter.columnsFilter.range?.max || 1}
               onChange={(e) => handleRangeChange("max", e.target.value)}
-              fullWidth
-            />
-          </Box>
-        )}
-
-        {filter.columnsFilter.type === FILTER_TYPES.MODULO && (
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <TextField
-              label={t("matrix.filter.divisor")}
-              type="number"
-              value={filter.columnsFilter.modulo?.divisor || 1}
-              onChange={(e) => handleModuloChange("divisor", e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label={t("matrix.filter.remainder")}
-              type="number"
-              value={filter.columnsFilter.modulo?.remainder || 0}
-              onChange={(e) => handleModuloChange("remainder", e.target.value)}
               fullWidth
             />
           </Box>

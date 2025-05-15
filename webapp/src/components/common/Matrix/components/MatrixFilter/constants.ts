@@ -18,7 +18,6 @@ import type { TimeFrequencyType } from "../../shared/types";
 
 export const FILTER_TYPES = {
   RANGE: "range",
-  MODULO: "modulo",
   LIST: "list",
 };
 
@@ -108,11 +107,13 @@ export const getDefaultFilterState = (
   columnsFilter: {
     type: FILTER_TYPES.RANGE,
     range: { min: 1, max: columnCount || 1 },
+    list: [],
   },
   rowsFilter: {
     indexingType: getDefaultIndexingType(timeFrequency),
     type: FILTER_TYPES.RANGE,
     range: { min: 1, max: rowCount || 1 },
+    list: [],
   },
   operation: {
     type: Operation.Eq,

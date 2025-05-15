@@ -150,9 +150,6 @@ function applyRowFilter(
   if (rowsFilter.type === FILTER_TYPES.RANGE && rowsFilter.range) {
     const { min, max } = rowsFilter.range;
     matchingIndices = indices.filter(({ value }) => value >= min && value <= max);
-  } else if (rowsFilter.type === FILTER_TYPES.MODULO && rowsFilter.modulo) {
-    const { divisor, remainder } = rowsFilter.modulo;
-    matchingIndices = indices.filter(({ value }) => value % divisor === remainder);
   } else if (
     rowsFilter.type === FILTER_TYPES.LIST &&
     rowsFilter.list &&

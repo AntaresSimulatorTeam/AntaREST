@@ -867,6 +867,7 @@
       "selectedValues": "Selected values",
       "selectMonths": "Select months",
       "selectDays": "Select days", 
+      "activeFilters": "Active filters",
       "indexingType": "Time indexing",
       "operation": "Operation",
       "operationType": "Operation type",
