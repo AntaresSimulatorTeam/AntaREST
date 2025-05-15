@@ -27,6 +27,10 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
     default_bc_hourly as default_bc_hourly_86,
 )
+from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
+    BindingConstraintProperties870,
+    CreateBindingConstraint,
+)
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import (
     UpdateBindingConstraints,
     generate_replacement_matrices,
@@ -175,6 +179,29 @@ def test_to_dto(update_binding_constraints_command):
     assert dto.action == "update_binding_constraints"
     assert dto.version == 1
     assert dto.study_version == STUDY_VERSION_8_7
+
+
+def test_update_time_step_via_table_mode(empty_study_880, command_context):
+    study_version = empty_study_880.config.version
+    # Create a bc (default timestep is hourly)
+    cmd = CreateBindingConstraint(name="bc1", command_context=command_context, study_version=study_version)
+    output = cmd.apply(empty_study_880)
+    assert output.status
+    # Checks the timestep
+    data = empty_study_880.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+    assert data["0"]["type"] == "hourly"
+    # Update the timestep to daily with the UpdateBindingConstraintS command
+    new_props = {"bc1": BindingConstraintProperties870(**{"time_step": BindingConstraintFrequency.DAILY})}
+    cmd = UpdateBindingConstraints(
+        study_version=study_version,
+        bc_props_by_id=new_props,
+        command_context=command_context,
+    )
+    output = cmd.apply(empty_study_880)
+    assert output.status
+    # Checks the timestep
+    data = empty_study_880.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+    assert data["0"]["type"] == "daily"
 
 
 def test_generate_replacement_matrices():
