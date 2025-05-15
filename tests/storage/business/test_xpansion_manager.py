@@ -515,9 +515,9 @@ def test_add_resources(
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[2.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "weights", filename3])
 
     settings = xpansion_manager.get_xpansion_settings(study)
@@ -615,16 +615,16 @@ def test_add_capa(
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[0.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename1])
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[1.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename2])
 
 
@@ -671,9 +671,9 @@ def test_get_single_capa(
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
     assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[0.0]],
-        "index": ["0"],
+        "index": [0],
     }
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)

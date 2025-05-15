@@ -51,9 +51,9 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTGroup, JWTUser
+from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -61,7 +61,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user
+from antarest.login.utils import get_current_user, get_user_id, require_current_user
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -249,7 +249,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 task_service = variant_service.task_service
                 generation_task_id = variant_service.generate_task(study, True, False, listener)
                 task_service.await_task(generation_task_id)
-                result = task_service.status_task(generation_task_id, RequestParameters(DEFAULT_ADMIN_USER))
+                result = task_service.status_task(generation_task_id)
                 assert result.result is not None
                 if not result.result.success:
                     raise ValueError(result.result.message)
@@ -462,12 +462,7 @@ class VariantStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         # get current user if not in session, otherwise get session user
-        current_user = get_current_user()
-        self._variant_service.append_commands(
-            self._study.id,
-            transform_command_to_dto(commands, force_aggregate=True),
-            RequestParameters(user=current_user),
-        )
+        self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
 
 class StudyService:
@@ -536,14 +531,7 @@ class StudyService:
         for callback in self.on_deletion_callbacks:
             callback(uuid)
 
-    def get(
-        self,
-        uuid: str,
-        url: str,
-        depth: int,
-        formatted: bool,
-        params: RequestParameters,
-    ) -> JSON:
+    def get(self, uuid: str, url: str, depth: int, formatted: bool) -> JSON:
         """
         Get study data inside filesystem
         Args:
@@ -557,16 +545,11 @@ class StudyService:
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
 
         return self.storage_service.get_storage(study).get(study, url, depth, formatted)
 
-    def get_file(
-        self,
-        uuid: str,
-        url: str,
-        params: RequestParameters,
-    ) -> OriginalFile:
+    def get_file(self, uuid: str, url: str) -> OriginalFile:
         """
         retrieve a file from a study folder
 
@@ -579,22 +562,15 @@ class StudyService:
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
 
         output = self.storage_service.get_storage(study).get_file(study, url)
 
         return output
 
-    def get_logs(
-        self,
-        study_id: str,
-        output_id: str,
-        job_id: str,
-        err_log: bool,
-        params: RequestParameters,
-    ) -> Optional[str]:
+    def get_logs(self, study_id: str, output_id: str, job_id: str, err_log: bool) -> Optional[str]:
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         log_locations = {
             False: [
@@ -650,18 +626,17 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str, params: RequestParameters) -> str | JSON:
+    def get_comments(self, study_id: str) -> str | JSON:
         """
         Get the comments of a study.
 
         Args:
             study_id: The ID of the study.
-            params: The parameters of the HTTP request containing the user information.
 
         Returns: textual comments of the study.
         """
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
 
         output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
 
@@ -670,34 +645,23 @@ class StudyService:
 
         return output
 
-    def edit_comments(
-        self,
-        uuid: str,
-        data: CommentsDto,
-        params: RequestParameters,
-    ) -> None:
+    def edit_comments(self, uuid: str, data: CommentsDto) -> None:
         """
         Replace data inside study.
 
         Args:
             uuid: study id
             data: new data to replace
-            params: request parameters
 
         Returns: new data replaced
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
         if isinstance(study, RawStudy):
-            self.edit_study(
-                uuid=uuid,
-                url="settings/comments",
-                new=bytes(data.comments, "utf-8"),
-                params=params,
-            )
+            self.edit_study(uuid=uuid, url="settings/comments", new=bytes(data.comments, "utf-8"))
         else:
             variant_study_service = self.storage_service.variant_study_service
             command = [
@@ -708,11 +672,7 @@ class StudyService:
                     study_version=study.version,
                 )
             ]
-            variant_study_service.append_commands(
-                study.id,
-                transform_command_to_dto(command, force_aggregate=True),
-                RequestParameters(user=params.user),
-            )
+            variant_study_service.append_commands(study.id, transform_command_to_dto(command, force_aggregate=True))
 
     def get_studies_information(
         self,
@@ -771,7 +731,7 @@ class StudyService:
             )
         return None
 
-    def get_study_information(self, uuid: str, params: RequestParameters) -> StudyMetadataDTO:
+    def get_study_information(self, uuid: str) -> StudyMetadataDTO:
         """
         Retrieve study information.
 
@@ -783,19 +743,14 @@ class StudyService:
             Information about the study.
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
-        logger.info("Study metadata requested for study %s by user %s", uuid, params.get_user_id())
+        assert_permission(study, StudyPermissionType.READ)
+        logger.info("Study metadata requested for study %s by user %s", uuid, get_user_id())
         # TODO: Debounce this with an "update_study_last_access" method updating only every few seconds.
         study.last_access = datetime.utcnow()
         self.repository.save(study)
         return self.storage_service.get_storage(study).get_study_information(study)
 
-    def update_study_information(
-        self,
-        uuid: str,
-        metadata_patch: StudyMetadataPatchDTO,
-        params: RequestParameters,
-    ) -> StudyMetadataDTO:
+    def update_study_information(self, uuid: str, metadata_patch: StudyMetadataPatchDTO) -> StudyMetadataDTO:
         """
         Update study metadata
         Args:
@@ -806,10 +761,10 @@ class StudyService:
         logger.info(
             "updating study %s metadata for user %s",
             uuid,
-            params.get_user_id(),
+            get_user_id(),
         )
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
@@ -844,16 +799,11 @@ class StudyService:
         )
 
         remove_from_cache(cache=self.cache_service, root_id=study.id)
-        return self.get_study_information(study.id, params)
+        return self.get_study_information(study.id)
 
-    def check_study_access(
-        self,
-        uuid: str,
-        permission: StudyPermissionType,
-        params: RequestParameters,
-    ) -> Study:
+    def check_study_access(self, uuid: str, permission: StudyPermissionType) -> Study:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, permission)
+        assert_permission(study, permission)
         self.assert_study_unarchived(study)
         return study
 
@@ -878,7 +828,7 @@ class StudyService:
     def get_file_study(self, study: Study) -> FileStudy:
         return self.storage_service.get_storage(study).get_raw(study)
 
-    def get_study_path(self, uuid: str, params: RequestParameters) -> Path:
+    def get_study_path(self, uuid: str) -> Path:
         """
         Retrieve study path
         Args:
@@ -889,18 +839,12 @@ class StudyService:
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.RUN)
+        assert_permission(study, StudyPermissionType.RUN)
 
-        logger.info("study %s path asked by user %s", uuid, params.get_user_id())
+        logger.info("study %s path asked by user %s", uuid, get_user_id())
         return self.storage_service.get_storage(study).get_study_path(study)
 
-    def create_study(
-        self,
-        study_name: str,
-        version: Optional[StudyVersion],
-        group_ids: List[str],
-        params: RequestParameters,
-    ) -> str:
+    def create_study(self, study_name: str, version: Optional[StudyVersion], group_ids: List[str]) -> str:
         """
         Creates a study with the specified study name, version, group IDs, and user parameters.
 
@@ -918,7 +862,7 @@ class StudyService:
         sid = str(uuid4())
         study_path = self.config.get_workspace_path() / sid
 
-        author = self.get_user_name(params)
+        author = self.get_user_name()
 
         raw = RawStudy(
             id=sid,
@@ -932,7 +876,7 @@ class StudyService:
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
-        self._save_study(raw, params.user, group_ids)
+        self._save_study(raw, group_ids)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -941,10 +885,10 @@ class StudyService:
             )
         )
 
-        logger.info("study %s created by user %s", raw.id, params.get_user_id())
+        logger.info("study %s created by user %s", raw.id, get_user_id())
         return str(raw.id)
 
-    def get_user_name(self, params: RequestParameters) -> str:
+    def get_user_name(self) -> str:
         """
         Retrieves the name of a user based on the provided request parameters.
 
@@ -955,13 +899,14 @@ class StudyService:
             Returns the user's name or, if the logged user is a "bot"
             (i.e., an application's token), it returns the token's author name.
         """
-        if params.user:
-            user_id = params.user.impersonator if params.user.type == "bots" else params.user.id
-            if curr_user := self.user_service.get_user(user_id, params):
+        user = get_current_user()
+        if user:
+            user_id = user.impersonator if user.type == "bots" else user.id
+            if curr_user := self.user_service.get_user(user_id):
                 return curr_user.to_dto().name
         return "Unknown"
 
-    def get_study_synthesis(self, study_id: str, params: RequestParameters) -> FileStudyTreeConfigDTO:
+    def get_study_synthesis(self, study_id: str) -> FileStudyTreeConfigDTO:
         """
         Get the synthesis of a study.
 
@@ -972,15 +917,15 @@ class StudyService:
         Returns: study synthesis
         """
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         study.last_access = datetime.utcnow()
         self.repository.save(study)
         study_storage_service = self.storage_service.get_storage(study)
-        return study_storage_service.get_synthesis(study, params)
+        return study_storage_service.get_synthesis(study)
 
-    def get_input_matrix_startdate(self, study_id: str, path: Optional[str], params: RequestParameters) -> MatrixIndex:
+    def get_input_matrix_startdate(self, study_id: str, path: Optional[str]) -> MatrixIndex:
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         output_id = None
         level = StudyDownloadLevelDTO.HOURLY
@@ -1066,13 +1011,13 @@ class StudyService:
 
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
-        missing_studies = {study.path: study for study in all_studies if study.missing is not None}
+        missing_studies = {(study.workspace, study.path): study for study in all_studies if study.missing is not None}
         for folder in folders:
             study_path = str(folder.path)
             workspace = folder.workspace
             if (workspace, study_path) not in study_paths:
                 try:
-                    if study_path not in missing_studies.keys():
+                    if (workspace, study_path) not in missing_studies.keys():
                         base_path = self.config.storage.workspaces[folder.workspace].path
                         dir_name = folder.path.relative_to(base_path)
                         study = RawStudy(
@@ -1091,7 +1036,7 @@ class StudyService:
                             study.id,
                         )
                     else:
-                        study = missing_studies[study_path]
+                        study = missing_studies[(workspace, study_path)]
                         study.missing = None
                         logger.info(
                             "Study at %s re appears on disk and will be added as %s",
@@ -1126,7 +1071,6 @@ class StudyService:
         dest_study_name: str,
         group_ids: List[str],
         use_task: bool,
-        params: RequestParameters,
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
@@ -1149,7 +1093,6 @@ class StudyService:
             dest_study_name: The name for the destination study.
             group_ids: A list of groups to assign to the destination study.
             use_task: indicate if the task job service should be used
-            params: request parameters
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
@@ -1161,7 +1104,7 @@ class StudyService:
             raise IncorrectArgumentsForCopy("output_ids can only be used with with_outputs=True")
 
         src_study = self.get_study(src_uuid)
-        assert_permission(params.user, src_study, StudyPermissionType.READ)
+        assert_permission(src_study, StudyPermissionType.READ)
         self.assert_study_unarchived(src_study)
 
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
@@ -1169,7 +1112,7 @@ class StudyService:
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
             )
-            self._save_study(study, params.user, group_ids)
+            self._save_study(study, group_ids)
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_CREATED,
@@ -1182,7 +1125,7 @@ class StudyService:
                 "study %s copied to %s by user %s",
                 origin_study,
                 study.id,
-                params.get_user_id(),
+                get_user_id(),
             )
             return TaskResult(
                 success=True,
@@ -1198,7 +1141,6 @@ class StudyService:
                 ref_id=src_study.id,
                 progress=None,
                 custom_event_messages=None,
-                request_params=params,
             )
         else:
             res = copy_task(NoopNotifier())
@@ -1206,9 +1148,9 @@ class StudyService:
 
         return task_or_study_id
 
-    def move_study(self, study_id: str, folder_dest: str, params: RequestParameters) -> None:
+    def move_study(self, study_id: str, folder_dest: str) -> None:
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
         if folder_dest:
@@ -1228,7 +1170,6 @@ class StudyService:
     def export_study(
         self,
         uuid: str,
-        params: RequestParameters,
         outputs: bool = True,
     ) -> FileDownloadTaskDTO:
         """
@@ -1240,13 +1181,13 @@ class StudyService:
 
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
-            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name, params.user
+            f"{study.name}-{uuid}{ArchiveFormat.ZIP}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -1268,7 +1209,6 @@ class StudyService:
             ref_id=study.id,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
@@ -1276,20 +1216,18 @@ class StudyService:
     def export_study_flat(
         self,
         uuid: str,
-        params: RequestParameters,
         dest: Path,
         output_list: Optional[List[str]] = None,
     ) -> None:
         logger.info(f"Flat exporting study {uuid}")
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
         return self.storage_service.get_storage(study).export_study_flat(
             study, dest, len(output_list or []) > 0, output_list
         )
 
-    def delete_study(self, uuid: str, children: bool, params: RequestParameters) -> None:
+    def delete_study(self, uuid: str, children: bool) -> None:
         """
         Delete study and all its children
 
@@ -1299,7 +1237,7 @@ class StudyService:
             params: request parameters
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         study_info = study.to_json_summary()
 
@@ -1313,7 +1251,7 @@ class StudyService:
             if children:
                 self.storage_service.variant_study_service.walk_children(
                     study.id,
-                    lambda v: self.delete_study(v.id, True, params),
+                    lambda v: self.delete_study(v.id, True),
                     bottom_first=True,
                 )
                 return
@@ -1342,7 +1280,7 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
-        logger.info("study %s deleted by user %s", uuid, params.get_user_id())
+        logger.info("study %s deleted by user %s", uuid, get_user_id())
 
         self._on_study_delete(uuid=uuid)
 
@@ -1350,7 +1288,6 @@ class StudyService:
         self,
         stream: BinaryIO,
         group_ids: List[str],
-        params: RequestParameters,
     ) -> str:
         """
         Import a compressed study.
@@ -1379,7 +1316,7 @@ class StudyService:
         study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
 
-        self._save_study(study, params.user, group_ids)
+        self._save_study(study, group_ids)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1388,7 +1325,7 @@ class StudyService:
             )
         )
 
-        logger.info("study %s imported by user %s", study.id, params.get_user_id())
+        logger.info("study %s imported by user %s", study.id, get_user_id())
         return str(study.id)
 
     def _create_edit_study_command(
@@ -1493,12 +1430,12 @@ class StudyService:
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: List[CommandDTO], params: RequestParameters) -> Optional[List[str]]:
+    def apply_commands(self, uuid: str, commands: List[CommandDTO]) -> Optional[List[str]]:
         study = self.get_study(uuid)
         if isinstance(study, VariantStudy):
-            return self.storage_service.variant_study_service.append_commands(uuid, commands, params)
+            return self.storage_service.variant_study_service.append_commands(uuid, commands)
         else:
-            assert_permission(params.user, study, StudyPermissionType.WRITE)
+            assert_permission(study, StudyPermissionType.WRITE)
             self.assert_study_unarchived(study)
             parsed_commands: List[ICommand] = []
             for command in commands:
@@ -1515,7 +1452,7 @@ class StudyService:
         logger.info(
             "Study %s updated by user %s",
             uuid,
-            params.get_user_id(),
+            get_user_id(),
         )
         return None
 
@@ -1524,7 +1461,6 @@ class StudyService:
         uuid: str,
         url: str,
         new: SUB_JSON,
-        params: RequestParameters,
         *,
         create_missing: bool = False,
     ) -> JSON:
@@ -1541,7 +1477,7 @@ class StudyService:
         Returns: new data replaced
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
         self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new, create_missing=create_missing)
@@ -1557,11 +1493,11 @@ class StudyService:
             "data %s on study %s updated by user %s",
             url,
             uuid,
-            params.get_user_id(),
+            get_user_id(),
         )
         return cast(JSON, new)
 
-    def change_owner(self, study_id: str, owner_id: int, params: RequestParameters) -> None:
+    def change_owner(self, study_id: str, owner_id: int) -> None:
         """
         Change study owner
         Args:
@@ -1573,9 +1509,9 @@ class StudyService:
 
         """
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.MANAGE_PERMISSIONS)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         self.assert_study_unarchived(study)
-        new_owner = self.user_service.get_user(owner_id, params)
+        new_owner = self.user_service.get_user(owner_id)
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
@@ -1591,12 +1527,12 @@ class StudyService:
 
         logger.info(
             "user %s change study %s owner to %d",
-            params.get_user_id(),
+            get_user_id(),
             study_id,
             owner_id,
         )
 
-    def add_group(self, study_id: str, group_id: str, params: RequestParameters) -> None:
+    def add_group(self, study_id: str, group_id: str) -> None:
         """
         Attach new group on study.
 
@@ -1609,8 +1545,8 @@ class StudyService:
 
         """
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.MANAGE_PERMISSIONS)
-        group = self.user_service.get_group(group_id, params)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
+        group = self.user_service.get_group(group_id)
         if group not in study.groups:
             study.groups = study.groups + [group]
         self.repository.save(study)
@@ -1626,10 +1562,10 @@ class StudyService:
             "adding group %s to study %s by user %s",
             group_id,
             study_id,
-            params.get_user_id(),
+            get_user_id(),
         )
 
-    def remove_group(self, study_id: str, group_id: str, params: RequestParameters) -> None:
+    def remove_group(self, study_id: str, group_id: str) -> None:
         """
         Detach group on study
         Args:
@@ -1641,7 +1577,7 @@ class StudyService:
 
         """
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.MANAGE_PERMISSIONS)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         study.groups = [group for group in study.groups if group.id != group_id]
         self.repository.save(study)
         self.event_bus.push(
@@ -1656,10 +1592,10 @@ class StudyService:
             "removing group %s to study %s by user %s",
             group_id,
             study_id,
-            params.get_user_id(),
+            get_user_id(),
         )
 
-    def set_public_mode(self, study_id: str, mode: PublicMode, params: RequestParameters) -> None:
+    def set_public_mode(self, study_id: str, mode: PublicMode) -> None:
         """
         Update public mode permission on study
         Args:
@@ -1671,7 +1607,7 @@ class StudyService:
 
         """
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.MANAGE_PERMISSIONS)
+        assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         study.public_mode = mode
         self.repository.save(study)
         self.event_bus.push(
@@ -1684,7 +1620,7 @@ class StudyService:
         logger.info(
             "updated public mode of study %s by user %s",
             study_id,
-            params.get_user_id(),
+            get_user_id(),
         )
 
     def check_errors(self, uuid: str) -> List[str]:
@@ -1697,10 +1633,9 @@ class StudyService:
         uuid: str,
         area_type: Optional[AreaType],
         ui: bool,
-        params: RequestParameters,
     ) -> List[AreaInfoDTO] | Dict[str, Any]:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return (
             self.area_manager.get_all_areas_ui_info(study_interface)
@@ -1711,20 +1646,18 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-        params: RequestParameters,
     ) -> List[Link]:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
 
     def create_area(
         self,
         uuid: str,
         area_creation_dto: AreaCreationDTO,
-        params: RequestParameters,
     ) -> AreaInfoDTO:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
         self.event_bus.push(
@@ -1740,10 +1673,9 @@ class StudyService:
         self,
         uuid: str,
         link_creation_dto: Link,
-        params: RequestParameters,
     ) -> Link:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
         self.event_bus.push(
@@ -1761,10 +1693,9 @@ class StudyService:
         area_from: str,
         area_to: str,
         link_update_dto: LinkUpdate,
-        params: RequestParameters,
     ) -> Link:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         updated_link = self.links_manager.update_link(
             self.get_study_interface(study), area_from, area_to, link_update_dto
@@ -1784,14 +1715,13 @@ class StudyService:
         area_id: str,
         area_ui: UpdateAreaUi,
         layer: str,
-        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
 
-    def delete_area(self, uuid: str, area_id: str, params: RequestParameters) -> None:
+    def delete_area(self, uuid: str, area_id: str) -> None:
         """
         Delete area from study if it is not referenced by a binding constraint,
         otherwise raise an HTTP 403 Forbidden error.
@@ -1805,7 +1735,7 @@ class StudyService:
             ReferencedObjectDeletionNotAllowed: If the area is referenced by a binding constraint.
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         study_interface = self.get_study_interface(study)
         self.assert_study_unarchived(study)
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
@@ -1828,7 +1758,6 @@ class StudyService:
         uuid: str,
         area_from: str,
         area_to: str,
-        params: RequestParameters,
     ) -> None:
         """
         Delete link from study if it is not referenced by a binding constraint,
@@ -1844,7 +1773,7 @@ class StudyService:
             ReferencedObjectDeletionNotAllowed: If the link is referenced by a binding constraint.
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         link_id = LinkTerm(area1=area_from, area2=area_to).generate_id()
@@ -1863,10 +1792,10 @@ class StudyService:
             )
         )
 
-    def archive(self, uuid: str, params: RequestParameters) -> str:
+    def archive(self, uuid: str) -> str:
         logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         self.assert_study_unarchived(study)
 
@@ -1881,8 +1810,7 @@ class StudyService:
                 ref_id=uuid,
                 type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
         ):
             raise TaskAlreadyRunning()
 
@@ -1907,10 +1835,9 @@ class StudyService:
             ref_id=study.id,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
-    def unarchive(self, uuid: str, params: RequestParameters) -> str:
+    def unarchive(self, uuid: str) -> str:
         study = self.get_study(uuid)
         if not study.archived:
             raise HTTPException(http.HTTPStatus.BAD_REQUEST, "Study is not archived")
@@ -1920,12 +1847,11 @@ class StudyService:
                 ref_id=uuid,
                 type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
         ):
             raise TaskAlreadyRunning()
 
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         if not isinstance(study, RawStudy):
             raise StudyTypeUnsupported(study.id, study.type)
@@ -1954,13 +1880,11 @@ class StudyService:
             ref_id=study.id,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
     def _save_study(
         self,
         study: Study,
-        owner: Optional[JWTUser] = None,
         group_ids: Sequence[str] = (),
     ) -> None:
         """
@@ -1978,13 +1902,14 @@ class StudyService:
             UserHasNotPermissionError:
                 If the owner or the group role is not specified.
         """
+        owner = get_current_user()
         if not owner:
             raise UserHasNotPermissionError("owner is not specified or has invalid authentication")
 
         if isinstance(study, RawStudy):
             study.content_status = StudyContentStatus.VALID
 
-        study.owner = self.user_service.get_user(owner.impersonator, params=RequestParameters(user=owner))
+        study.owner = self.user_service.get_user(owner.impersonator)
 
         study.groups.clear()
         for gid in group_ids:
@@ -2047,30 +1972,29 @@ class StudyService:
 
     # noinspection PyUnusedLocal
     @staticmethod
-    def get_studies_versions(params: RequestParameters) -> List[str]:
+    def get_studies_versions() -> List[str]:
         return sorted([f"{v:ddd}" for v in STUDY_REFERENCE_TEMPLATES])
 
     def create_xpansion_configuration(
         self,
         uuid: str,
-        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.create_xpansion_configuration(study_interface)
 
-    def delete_xpansion_configuration(self, uuid: str, params: RequestParameters) -> None:
+    def delete_xpansion_configuration(self, uuid: str) -> None:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.delete_xpansion_configuration(study_interface)
 
-    def get_xpansion_settings(self, uuid: str, params: RequestParameters) -> GetXpansionSettings:
+    def get_xpansion_settings(self, uuid: str) -> GetXpansionSettings:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_xpansion_settings(study_interface)
 
@@ -2078,10 +2002,9 @@ class StudyService:
         self,
         uuid: str,
         xpansion_settings_dto: XpansionSettingsUpdate,
-        params: RequestParameters,
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_settings(study_interface, xpansion_settings_dto)
@@ -2090,23 +2013,22 @@ class StudyService:
         self,
         uuid: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
-        params: RequestParameters,
     ) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate_dto)
 
-    def get_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> XpansionCandidateDTO:
+    def get_candidate(self, uuid: str, candidate_name: str) -> XpansionCandidateDTO:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
-    def get_candidates(self, uuid: str, params: RequestParameters) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, uuid: str) -> List[XpansionCandidateDTO]:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidates(study_interface)
 
@@ -2115,17 +2037,16 @@ class StudyService:
         uuid: str,
         candidate_name: str,
         xpansion_candidate_dto: XpansionCandidateDTO,
-        params: RequestParameters,
     ) -> None:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate_dto)
 
-    def delete_xpansion_candidate(self, uuid: str, candidate_name: str, params: RequestParameters) -> None:
+    def delete_xpansion_candidate(self, uuid: str, candidate_name: str) -> None:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.delete_candidate(study_interface, candidate_name)
@@ -2134,10 +2055,9 @@ class StudyService:
         self,
         uuid: str,
         constraints_file_name: str,
-        params: RequestParameters,
     ) -> GetXpansionSettings:
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
@@ -2147,7 +2067,6 @@ class StudyService:
         uuid: str,
         path: str,
         matrix_edit_instruction: List[MatrixEditInstruction],
-        params: RequestParameters,
     ) -> None:
         """
         Updates a matrix in a study based on the provided edit instructions.
@@ -2165,7 +2084,7 @@ class StudyService:
             - User must have WRITE permission on the study.
         """
         study = self.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         try:
@@ -2173,7 +2092,7 @@ class StudyService:
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
 
-    def check_and_update_all_study_versions_in_database(self, params: RequestParameters) -> None:
+    def check_and_update_all_study_versions_in_database(self) -> None:
         """
         This function updates studies version on the db.
 
@@ -2186,26 +2105,26 @@ class StudyService:
             UserHasNotPermissionError: if params user is not admin.
 
         """
-        if params.user and not params.user.is_site_admin():
-            logger.error(f"User {params.user.id} is not site admin")
+        user = require_current_user()
+        if not user.is_site_admin():
+            logger.error(f"User {get_user_id()} is not site admin")
             raise UserHasNotPermissionError()
         studies = self.repository.get_all(
-            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.from_params(params))
+            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_current_user())
         )
 
         for study in studies:
             storage = self.storage_service.raw_study_service
             storage.check_and_update_study_version_in_database(study)
 
-    def generate_timeseries(self, study: Study, params: RequestParameters) -> str:
+    def generate_timeseries(self, study: Study) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
         study_tasks = self.task_service.list_tasks(
             TaskListFilter(
                 ref_id=study.id,
                 type=[TaskType.THERMAL_CLUSTER_SERIES_GENERATION],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
         )
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
@@ -2225,17 +2144,15 @@ class StudyService:
             ref_id=study.id,
             progress=0,
             custom_event_messages=None,
-            request_params=params,
         )
 
     def upgrade_study(
         self,
         study_id: str,
         target_version: str,
-        params: RequestParameters,
     ) -> str:
         study = self.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
         # The upgrade of a study variant requires the use of a command specifically dedicated to the upgrade.
@@ -2263,8 +2180,7 @@ class StudyService:
                 ref_id=study_id,
                 type=[TaskType.UPGRADE_STUDY],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
         )
         if len(study_tasks) > 0:
             raise TaskAlreadyRunning()
@@ -2285,10 +2201,9 @@ class StudyService:
             ref_id=study.id,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
-    def get_disk_usage(self, uuid: str, params: RequestParameters) -> int:
+    def get_disk_usage(self, uuid: str) -> int:
         """
         Calculates the size of the disk used to store the study if the user has permissions.
 
@@ -2306,19 +2221,13 @@ class StudyService:
             UserHasNotPermissionError: If the user does not have the READ permissions (HTTP status 403).
         """
         study = self.get_study(uuid=uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         study_path = self.storage_service.raw_study_service.get_study_path(study)
         # If the study is a variant, it's possible that it only exists in DB and not on disk. If so, we return 0.
         return get_disk_usage(study_path) if study_path.exists() else 0
 
     def get_matrix_with_index_and_header(
-        self,
-        *,
-        study_id: str,
-        path: str,
-        with_index: bool,
-        with_header: bool,
-        parameters: RequestParameters,
+        self, *, study_id: str, path: str, with_index: bool, with_header: bool
     ) -> pd.DataFrame:
         """
         Retrieves a matrix from a study with the option to include the index and header.
@@ -2344,7 +2253,7 @@ class StudyService:
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
             all_areas = cast(
                 List[AreaInfoDTO],
-                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False, params=parameters),
+                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False),
             )
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
@@ -2353,11 +2262,11 @@ class StudyService:
             return pd.DataFrame(data=hydro_matrix.data, columns=hydro_matrix.columns, index=hydro_matrix.index)
 
         # Gets the data and checks given path existence
-        matrix_obj = self.get(study_id, path, depth=3, formatted=True, params=parameters)
+        matrix_obj = self.get(study_id, path, depth=3, formatted=True)
 
         # Checks that the provided path refers to a matrix
         url = path.split("/")
-        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True, params=parameters)
+        parent_dir = self.get(study_id, "/".join(url[:-1]), depth=3, formatted=True)
         target_path = parent_dir[url[-1]]
         if not isinstance(target_path, str) or not target_path.startswith(("matrix://", "matrixfile://")):
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
@@ -2367,7 +2276,7 @@ class StudyService:
             return pd.DataFrame()
         df_matrix = pd.DataFrame(**matrix_obj)
         if with_index:
-            matrix_index = self.get_input_matrix_startdate(study_id, path, parameters)
+            matrix_index = self.get_input_matrix_startdate(study_id, path)
             time_column = pd.date_range(
                 start=matrix_index.start_date, periods=len(df_matrix), freq=matrix_index.level.value[0]
             )
@@ -2405,7 +2314,7 @@ class StudyService:
                 binding_ids = [bc.id for bc in ref_bcs]
                 raise ReferencedObjectDeletionNotAllowed(cluster_id, binding_ids, object_type="Cluster")
 
-    def delete_user_file_or_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def delete_user_file_or_folder(self, study_id: str, path: str) -> None:
         """
         Deletes a file or a folder of the study.
         The data must be located inside the 'User' folder.
@@ -2414,16 +2323,15 @@ class StudyService:
         Args:
             study_id: UUID of the concerned study
             path: Path corresponding to the resource to be deleted
-            current_user: User that called the endpoint
 
         Raises:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
         args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
         cmd_data = RemoveUserResourceData(**args)
-        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed, current_user)
+        self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed)
 
-    def create_user_folder(self, study_id: str, path: str, current_user: JWTUser) -> None:
+    def create_user_folder(self, study_id: str, path: str) -> None:
         """
         Creates a folder inside the study.
         The data must be located inside the 'User' folder.
@@ -2432,7 +2340,6 @@ class StudyService:
         Args:
             study_id: UUID of the concerned study
             path: Path corresponding to the resource to be deleted
-            current_user: User that called the endpoint
 
         Raises:
             FolderCreationNotAllowed: if the path does not comply with the above rules
@@ -2442,7 +2349,7 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
         }
         command_data = CreateUserResourceData.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed, current_user)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed)
 
     def _alter_user_folder(
         self,
@@ -2450,10 +2357,9 @@ class StudyService:
         command_data: CreateUserResourceData | RemoveUserResourceData,
         command_class: Type[CreateUserResource | RemoveUserResource],
         exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
-        current_user: JWTUser,
     ) -> None:
         study = self.get_study(study_id)
-        assert_permission(current_user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         args = {
             "data": command_data,

@@ -72,7 +72,7 @@ class TestOutputSeriesMatrix:
         )
 
         node = OutputSeriesMatrix(
-            context=Mock(),
+            matrix_mapper=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
             date_serializer=serializer,
@@ -82,7 +82,7 @@ class TestOutputSeriesMatrix:
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(
-            context=Mock(),
+            matrix_mapper=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
             date_serializer=Mock(),
@@ -97,7 +97,7 @@ class TestOutputSeriesMatrix:
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
         node = OutputSeriesMatrix(
-            context=Mock(),
+            matrix_mapper=Mock(),
             config=my_study_config,
             freq=MatrixFrequency.DAILY,
             date_serializer=Mock(),

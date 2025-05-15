@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pandas as pd
 
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -42,7 +43,7 @@ class TestReplaceMatrix:
         assert output.status
 
         # check the matrices links
-        matrix_id = command_context.matrix_service.create([[0]])
+        matrix_id = command_context.matrix_service.create(pd.DataFrame([[0]]))
         target_path = study_path / f"{target_element}.txt.link"
         assert matrix_id in target_path.read_text()
 

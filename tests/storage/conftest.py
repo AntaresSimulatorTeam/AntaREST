@@ -23,7 +23,6 @@ from antarest.core.filetransfer.model import FileDownload
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import JSON
-from antarest.core.requests import RequestParameters
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 
@@ -264,7 +263,6 @@ class SimpleSyncTaskService(ITaskService):
         task_args: Dict[str, Union[int, float, bool, str]],
         name: Optional[str],
         ref_id: Optional[str],
-        request_params: RequestParameters,
     ) -> Optional[str]:
         raise NotImplementedError()
 
@@ -276,7 +274,6 @@ class SimpleSyncTaskService(ITaskService):
         ref_id: Optional[str],
         progress: Optional[int],
         custom_event_messages: Optional[CustomTaskEventMessages],
-        request_params: RequestParameters,
     ) -> str:
         action(NoopNotifier())
         return str(uuid.uuid4())
@@ -284,7 +281,6 @@ class SimpleSyncTaskService(ITaskService):
     def status_task(
         self,
         task_id: str,
-        request_params: RequestParameters,
         with_logs: bool = False,
     ) -> TaskDTO:
         return TaskDTO(
@@ -298,7 +294,7 @@ class SimpleSyncTaskService(ITaskService):
             logs=None,
         )
 
-    def list_tasks(self, task_filter: TaskListFilter, request_params: RequestParameters) -> List[TaskDTO]:
+    def list_tasks(self, task_filter: TaskListFilter) -> List[TaskDTO]:
         return []
 
     def await_task(self, task_id: str, timeout_sec: Optional[int] = None) -> None:

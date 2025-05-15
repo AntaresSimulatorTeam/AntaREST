@@ -22,12 +22,24 @@ from numpy import typing as npt
 
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.utils import current_user_context
+from tests.conftest_instances import create_admin_user
 
 
 def with_db_context(f: Callable[..., Any]) -> Callable[..., Any]:
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
         with db():
+            return f(*args, **kwargs)
+
+    return wrapper
+
+
+def with_admin_user(f: Callable[..., Any]) -> Callable[..., Any]:
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        user = create_admin_user()
+        with current_user_context(user):
             return f(*args, **kwargs)
 
     return wrapper

@@ -11,12 +11,11 @@
 # This file is part of the Antares project.
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
 class OutputSimulationAboutStudy(IniFileNode):
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         types = {
             "antares": {
                 "version": int,
@@ -26,4 +25,4 @@ class OutputSimulationAboutStudy(IniFileNode):
                 "author": str,
             }
         }
-        IniFileNode.__init__(self, context, config, types)
+        IniFileNode.__init__(self, config, types)

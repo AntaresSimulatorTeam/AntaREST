@@ -12,40 +12,39 @@
  * This file is part of the Antares project.
  */
 
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useSafeMemo from "@/hooks/useSafeMemo";
+import { getColumnWidth } from "@/utils/dataGridUtils";
+import { toError } from "@/utils/fnUtils";
+import { mergeSxProp } from "@/utils/muiUtils";
 import {
   GridCellKind,
-  type Item,
   type DataEditorProps,
   type GridColumn,
-  type FillHandleDirection,
+  type Item,
 } from "@glideapps/glide-data-grid";
-import type { DeepPartial } from "react-hook-form";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
+import RedoIcon from "@mui/icons-material/Redo";
+import SaveIcon from "@mui/icons-material/Save";
+import UndoIcon from "@mui/icons-material/Undo";
 import {
   Box,
+  Button,
   Divider,
   IconButton,
   setRef,
   Tooltip,
   type SxProps,
   type Theme,
-  Button,
 } from "@mui/material";
-import useUndo, { type Actions } from "use-undo";
-import UndoIcon from "@mui/icons-material/Undo";
-import RedoIcon from "@mui/icons-material/Redo";
-import SaveIcon from "@mui/icons-material/Save";
-import { useTranslation } from "react-i18next";
-import { mergeSxProp } from "@/utils/muiUtils";
 import * as R from "ramda";
-import type { SubmitHandlerPlus } from "./Form/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { DeepPartial } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import { toError } from "@/utils/fnUtils";
-import useSafeMemo from "@/hooks/useSafeMemo";
-import { getColumnWidth } from "@/utils/dataGridUtils";
+import useUndo, { type Actions } from "use-undo";
+import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
+import type { SubmitHandlerPlus } from "./Form/types";
 
 type Data = Record<string, Record<string, string | boolean | number>>;
 
@@ -64,13 +63,16 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   defaultData: TData;
   columns: ReadonlyArray<GridColumn & { id: keyof TData[string] }>;
   rowMarkers?: DataGridProps["rowMarkers"];
-  allowedFillDirections?: FillHandleDirection;
+  allowedFillDirections?: DataGridProps["allowedFillDirections"];
+  onRowAppended?: DataGridProps["onRowAppended"];
+  trailingRowOptions?: DataGridProps["trailingRowOptions"];
   enableColumnResize?: boolean;
   onSubmit: (
     data: SubmitHandlerPlus<TData>,
     event?: React.BaseSyntheticEvent,
   ) => void | Promise<SubmitReturnValue>;
   onSubmitSuccessful?: (data: SubmitHandlerPlus<TData>, submitResult: SubmitReturnValue) => void;
+  onDataChange?: (data: TData) => void;
   onStateChange?: (state: DataGridFormState) => void;
   sx?: SxProps<Theme>;
   extraActions?: React.ReactNode;
@@ -81,10 +83,13 @@ function DataGridForm<TData extends Data>({
   defaultData,
   columns,
   allowedFillDirections = "vertical",
+  onRowAppended,
+  trailingRowOptions,
   enableColumnResize,
   rowMarkers: rowMarkersFromProps,
   onSubmit,
   onSubmitSuccessful,
+  onDataChange,
   onStateChange,
   sx,
   extraActions,
@@ -110,6 +115,8 @@ function DataGridForm<TData extends Data>({
   );
 
   useFormCloseProtection({ isSubmitting, isDirty });
+
+  useUpdateEffect(() => onDataChange?.(data), [data]);
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
@@ -302,6 +309,8 @@ function DataGridForm<TData extends Data>({
         rowMarkers={rowMarkers}
         fillHandle
         allowedFillDirections={allowedFillDirections}
+        onRowAppended={onRowAppended}
+        trailingRowOptions={trailingRowOptions}
         enableColumnResize={enableColumnResize}
         getCellsForSelection
         onPaste
@@ -314,7 +323,7 @@ function DataGridForm<TData extends Data>({
           mt: 1.5,
         }}
       >
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           <Button
             type="submit"
             disabled={!isDirty}
@@ -341,7 +350,9 @@ function DataGridForm<TData extends Data>({
             </span>
           </Tooltip>
           {extraActions && (
-            <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>{extraActions}</Box>
+            <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
+              {extraActions}
+            </Box>
           )}
         </Box>
       </Box>

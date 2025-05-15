@@ -60,7 +60,7 @@ export interface DataColumnsConfig {
 }
 
 export interface FormatGridNumberOptions {
-  value?: number;
+  value?: number | string;
   maxDecimals?: number;
 }
 

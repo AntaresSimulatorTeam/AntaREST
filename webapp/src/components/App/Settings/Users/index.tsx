@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import PersonIcon from "@mui/icons-material/Person";
 import {
   Box,
   CircularProgress,
@@ -24,26 +27,23 @@ import {
   Skeleton,
   Typography,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
-import { useMemo, useReducer, useState } from "react";
-import { useTranslation } from "react-i18next";
-import PersonIcon from "@mui/icons-material/Person";
 import { produce } from "immer";
-import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
-import type { Action } from "redux";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
-import { deleteUser, getUsers } from "../../../../services/api/user";
-import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
+import { useMemo, useReducer, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { usePromise as usePromiseWrapper, useUpdateEffect } from "react-use";
+import type { Action } from "redux";
 import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import Header from "./Header";
-import { RESERVED_USER_NAMES } from "../utils";
-import type { UserDetailsDTO } from "../../../../types/types";
-import UpdateUserDialog from "./dialog/UpdateUserDialog";
+import usePromiseWithSnackbarError from "../../../../hooks/usePromiseWithSnackbarError";
+import { deleteUser, getUsers } from "../../../../services/api/user";
 import { sortByName } from "../../../../services/utils";
+import type { UserDetailsDTO } from "../../../../types/types";
 import { isSearchMatching } from "../../../../utils/stringUtils";
+import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
+import { RESERVED_USER_NAMES } from "../utils";
+import UpdateUserDialog from "./dialog/UpdateUserDialog";
+import Header from "./Header";
 
 enum UserActionKind {
   ADD = "ADD",
@@ -252,7 +252,7 @@ function Users() {
           user={userToEdit}
           editUser={editUser}
           reloadFetchUsers={reloadFetchUsers}
-          closeDialog={() => setUserToEdit(undefined)}
+          onCancel={() => setUserToEdit(undefined)}
         />
       )}
     </Box>

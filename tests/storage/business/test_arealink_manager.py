@@ -105,7 +105,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         },
         sets={"s1": DistrictSet(areas=["a1"])},
     )
-    file_tree_mock = Mock(spec=FileStudyTree, context=Mock(), config=config)
+    file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
 
     study_interface = FileStudyInterface(FileStudy(config, file_tree_mock))
     file_tree_mock.get.side_effect = [

@@ -365,6 +365,12 @@ class RawStudy(Study):
             and other.missing == self.missing
         )
 
+    @override
+    def __repr__(self) -> str:
+        return (
+            f'RawStudy(id="{self.id}", workspace="{self.workspace}", folder="{self.folder}", missing="{self.missing}")'
+        )
+
 
 @dataclasses.dataclass
 class StudyFolder:

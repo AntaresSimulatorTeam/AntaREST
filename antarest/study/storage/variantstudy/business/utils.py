@@ -12,12 +12,13 @@
 
 from typing import Any, Dict, List, Optional, Sequence
 
+import pandas as pd
+
 from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import MATRIX_PROTOCOL_PREFIX
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -45,7 +46,7 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=matrix)
+        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(data=pd.DataFrame(matrix))
     elif isinstance(matrix, str):
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")
