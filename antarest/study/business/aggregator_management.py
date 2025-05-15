@@ -141,7 +141,6 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -151,7 +150,6 @@ class AggregatorManager:
         self.mc_years = mc_years
         self.columns_names = columns_names
         self.ids_to_consider = ids_to_consider
-        self.aggregation_results_max_size = aggregation_results_max_size
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))

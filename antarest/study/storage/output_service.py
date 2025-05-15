@@ -473,7 +473,6 @@ class OutputService:
         frequency: MatrixFrequency,
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
-        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
     ) -> Iterator[pd.DataFrame]:
         """
@@ -486,7 +485,6 @@ class OutputService:
             frequency: yearly, monthly, weekly, daily or hourly.
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
-            aggregation_results_max_size: maximum size of results that can be aggregated
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
         Returns: the aggregated data as a DataFrame
@@ -496,6 +494,6 @@ class OutputService:
         assert_permission(study, StudyPermissionType.READ)
         output_path = self._storage.get_output_path(study, output_id)
         aggregator_manager = AggregatorManager(
-            output_path, query_file, frequency, ids_to_consider, columns_names, aggregation_results_max_size, mc_years
+            output_path, query_file, frequency, ids_to_consider, columns_names, mc_years
         )
         return aggregator_manager.aggregate_output_data()
