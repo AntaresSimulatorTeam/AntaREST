@@ -588,7 +588,7 @@ class TestRawDataAggregationMCInd:
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.json()["exception"] == "AggregatedOutputFailed"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
         # for links
@@ -604,10 +604,10 @@ class TestRawDataAggregationMCInd:
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.json()["exception"] == "AggregatedOutputFailed"
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
-        # Asserts that requests with non-existing folders send an HTTP 404 Exception
+        # Asserts that requests with non-existing folders send an HTTP 422 Exception
         # the mc-ind folder
         mc_ind_folder = tmp_path.joinpath("ext_workspace/STA-mini/output/20201014-1425eco-goodbye/economy/mc-ind")
         # delete the folder
@@ -622,7 +622,7 @@ class TestRawDataAggregationMCInd:
 
         assert res.status_code == 422, res.json()
         assert "economy/mc-ind" in res.json()["description"]
-        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.json()["exception"] == "AggregatedOutputFailed"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -866,7 +866,7 @@ class TestRawDataAggregationMCAll:
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
 
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.json()["exception"] == "AggregatedOutputFailed"
         assert "Output 'unknown_id' not found" in res.json()["description"], "The output_id should be in the message"
 
         # for links
@@ -882,12 +882,12 @@ class TestRawDataAggregationMCAll:
 
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{task_id}")
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.json()["exception"] == "AggregatedOutputFailed"
         assert "Output 'unknown_id' not found" in res.json()["description"], (
             "The output_id that wasn't found should be in the message"
         )
 
-        # Asserts that a 404 error is raised when the `economy/mc-all` folder does not exist
+        # Asserts that a 422 error is raised when the `economy/mc-all` folder does not exist
         mc_all_path = tmp_path.joinpath("ext_workspace/STA-mini/output/20241807-1540eco-extra-outputs/economy/mc-all")
         # delete the folder
         shutil.rmtree(mc_all_path)
@@ -901,7 +901,7 @@ class TestRawDataAggregationMCAll:
 
         assert res.status_code == 422, res.json()
         assert "economy/mc-all" in res.json()["description"]
-        assert res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.json()["exception"] == "AggregatedOutputFailed"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -993,7 +993,7 @@ class TestDataAggregationCreationOperations:
         Test all return values when requesting the results of aggregation operations
 
         - test the results of an aggregation operation with a bad task_id: HTTPException, 404
-        - test the results of an aggregation operation with a bad output_id: AggregatedOutputNotProcessed, 422
+        - test the results of an aggregation operation with a bad output_id: AggregatedOutputFailed, 422
         - try to request the results of an aggregation operation
             while the task is not completed yet: AggregatedOutputNotReady, 422
         - request the results of a correct aggregation operation: Success, 200
@@ -1017,9 +1017,9 @@ class TestDataAggregationCreationOperations:
         failed_task_id = res.json()
 
         # get error from task results
-        # must return a 422 status code and AggregatedOutputNotProcessed exception
+        # must return a 422 status code and AggregatedOutputFailed exception
         res = client.get(f"v1/studies/{internal_study_id}/outputs/aggregate/task/{failed_task_id}")
-        assert res.status_code == 422, res.json()["exception"] == "AggregatedOutputNotProcessed"
+        assert res.status_code == 422, res.json()["exception"] == "AggregatedOutputFailed"
 
         # create a correct aggregated output task and get its id
         res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
