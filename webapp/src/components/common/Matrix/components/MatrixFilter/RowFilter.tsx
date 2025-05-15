@@ -252,22 +252,6 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
     }
   };
 
-  const handleModuloChange = (field: "divisor" | "remainder", value: string) => {
-    const parsedValue =
-      field === "divisor" ? Number.parseInt(value) || 1 : Number.parseInt(value) || 0;
-
-    setFilter({
-      ...filter,
-      rowsFilter: {
-        ...filter.rowsFilter,
-        modulo: {
-          ...filter.rowsFilter.modulo,
-          [field]: parsedValue,
-        } as { divisor: number; remainder: number },
-      },
-    });
-  };
-
   const [inputValue, setInputValue] = useState<string>("");
 
   const handleListChange = (value: string) => {
@@ -432,28 +416,6 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
         </Box>
       );
     }
-
-    if (type === FILTER_TYPES.MODULO) {
-      return (
-        <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-          <TextField
-            label={t("matrix.filter.divisor")}
-            type="number"
-            value={filter.rowsFilter.modulo?.divisor || 1}
-            onChange={(e) => handleModuloChange("divisor", e.target.value)}
-            fullWidth
-          />
-          <TextField
-            label={t("matrix.filter.remainder")}
-            type="number"
-            value={filter.rowsFilter.modulo?.remainder || 0}
-            onChange={(e) => handleModuloChange("remainder", e.target.value)}
-            fullWidth
-          />
-        </Box>
-      );
-    }
-
     if (type === FILTER_TYPES.LIST) {
       // For list type, we'll use different controls based on the indexing type
       if (indexingType === TIME_INDEXING.WEEKDAY) {
@@ -639,7 +601,6 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
             onChange={handleTypeChange}
           >
             <MenuItem value={FILTER_TYPES.RANGE}>{t("matrix.filter.range")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.MODULO}>{t("matrix.filter.modulo")}</MenuItem>
             <MenuItem value={FILTER_TYPES.LIST}>{t("matrix.filter.list")}</MenuItem>
           </Select>
         </FormControl>
