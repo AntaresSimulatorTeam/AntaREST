@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Iterator, Literal, Protocol
+from typing import Iterator, Protocol
 
 import pandas as pd
 from typing_extensions import override
@@ -55,11 +55,19 @@ def _checked_dataframes_generator(dataframes: Iterator[pd.DataFrame]) -> Iterato
 
 def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes: Iterator[pd.DataFrame]) -> None:
     headers = True
-    mode: Literal["w", "a"] = "w"
+    append = False
     for df in _checked_dataframes_generator(dataframes):
-        df.to_csv(path, mode=mode, sep=sep, decimal=decimal, index=False, header=headers, float_format="%.6f")
+        df.to_csv(
+            path,
+            mode="a" if append else "w",
+            sep=sep,
+            decimal=decimal,
+            index=False,
+            header=headers,
+            float_format="%.6f",
+        )
         headers = False
-        mode = "a"
+        append = True
 
 
 def _csv_stream_writer(sep: str, decimal: str) -> DataframeStreamWriter:
