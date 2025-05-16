@@ -574,16 +574,14 @@ class LoginService:
             )
             raise UserHasNotPermissionError()
 
+        # Get all users
         all_users = self.identities.get_all_users()
 
         if user.is_site_admin() and not details:
             return [user.to_dto() for user in all_users]
 
-        if user.is_site_admin():
-            groups = None
-        else:
-            roles = self.roles.get_all_by_user(user.id)
-            groups = [r.group for r in roles]
+        # Get roles
+        groups = None if user.is_site_admin() else [r.group for r in self.roles.get_all_by_user(user.id)]
         all_roles = self.roles.get_all(details=details, groups=groups)
         roles_per_user: dict[int, List[RoleDTO]] = {}
         for role in all_roles:
