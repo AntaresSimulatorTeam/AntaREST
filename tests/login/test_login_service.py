@@ -683,22 +683,76 @@ class TestLoginService:
         assert jwt_user is None
 
     @with_db_context
-    def test_get_all_groups(self, login_service: LoginService) -> None:
+    def test_get_all_groups(self, login_service: LoginService, db_session: Session) -> None:
         # The site admin can get all groups
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
-            actual = login_service.get_all_groups()
-        assert [g.model_dump() for g in actual] == [
-            {"id": "admin", "name": "X-Men"},
-            {"id": "superman", "name": "Superman"},
-            {"id": "metropolis", "name": "Metropolis"},
-        ]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups()
+                assert len(db_recorder.sql_statements) == 1  # Only one request to get all groups
+                assert [g.model_dump() for g in actual] == [
+                    {"id": "admin", "name": "X-Men"},
+                    {"id": "superman", "name": "Superman"},
+                    {"id": "metropolis", "name": "Metropolis"},
+                ]
+
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups(details=True)
+                assert len(db_recorder.sql_statements) == 2
+                # 1 request to get all users
+                # 1 request to get all roles
+                assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "admin",
+                        "name": "X-Men",
+                        "users": [{"id": 1, "name": "Professor Xavier", "role": RoleType.ADMIN}],
+                    },
+                    {
+                        "id": "superman",
+                        "name": "Superman",
+                        "users": [
+                            {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
+                            {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
+                        ],
+                    },
+                    {
+                        "id": "metropolis",
+                        "name": "Metropolis",
+                        "users": [
+                            {"id": 4, "name": "Joh Fredersen", "role": RoleType.ADMIN},
+                            {"id": 5, "name": "Freder Fredersen", "role": RoleType.READER},
+                        ],
+                    },
+                ]
 
         # The group admin can its own groups
         group_admin = get_user(login_service, user_id=2, group_id="superman")
         with current_user_context(group_admin):
-            actual = login_service.get_all_groups()
-        assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups()
+                assert len(db_recorder.sql_statements) == 1
+                assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
+
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups(details=True)
+                assert len(db_recorder.sql_statements) == 3
+                # One request to get the current user groups
+                # One request for users
+                # One request for roles
+                assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "superman",
+                        "name": "Superman",
+                        "users": [
+                            {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
+                            {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
+                        ],
+                    }
+                ]
 
         # The user can get its own groups
         user = get_user(login_service, user_id=3, group_id="superman")
