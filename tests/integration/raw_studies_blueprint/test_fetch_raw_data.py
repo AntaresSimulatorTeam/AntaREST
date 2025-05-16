@@ -107,7 +107,7 @@ class TestFetchRawData:
             res = client.post(
                 f"/v1/studies/{internal_study_id}/copy",
                 headers={"Authorization": f"Bearer {user_access_token}"},
-                params={"dest": "default", "with_outputs": False, "use_task": False},
+                params={"study_name": "default", "with_outputs": False, "use_task": False},
             )
             assert res.status_code == 201
             parent_id = res.json()
@@ -330,7 +330,7 @@ class TestFetchRawData:
             res = client.post(
                 f"/v1/studies/{internal_study_id}/copy",
                 headers={"Authorization": f"Bearer {user_access_token}"},
-                params={"dest": "default", "with_outputs": False, "use_task": False},
+                params={"study_name": "default", "with_outputs": False, "use_task": False},
             )
             assert res.status_code == 201
             parent_id = res.json()
@@ -412,7 +412,7 @@ class TestFetchRawData:
             res = client.post(
                 f"/v1/studies/{internal_study_id}/copy",
                 headers={"Authorization": f"Bearer {user_access_token}"},
-                params={"dest": "default", "with_outputs": False, "use_task": False},
+                params={"study_name": "default", "with_outputs": False, "use_task": False},
             )
             assert res.status_code == 201
             parent_id = res.json()

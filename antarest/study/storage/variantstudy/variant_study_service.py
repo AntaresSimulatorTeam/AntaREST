@@ -779,7 +779,7 @@ class VariantStudyService(AbstractStorageService):
     def copy(
         self,
         src_study: VariantStudy,
-        dest_name: str,
+        dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],
@@ -790,7 +790,7 @@ class VariantStudyService(AbstractStorageService):
 
         Args:
             src_study: The source study that you want to copy.
-            dest_name: The name for the destination study.
+            dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
             output_ids: A list of output names that you want to include in the destination study.
@@ -800,7 +800,7 @@ class VariantStudyService(AbstractStorageService):
             The newly created study.
         """
 
-        dest_study = self.raw_study_service.build_raw_study(dest_name, groups, src_study, destination_folder)
+        dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
 
         file_study = self.get_raw(metadata=src_study)
 

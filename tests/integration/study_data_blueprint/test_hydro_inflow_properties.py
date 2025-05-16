@@ -64,7 +64,8 @@ class TestHydroInflowProperties:
 
         # Create a managed study from the RAW study.
         res = client.post(
-            f"/v1/studies/{internal_study_id}/copy", params={"dest": "Clone", "with_outputs": False, "use_task": False}
+            f"/v1/studies/{internal_study_id}/copy",
+            params={"study_name": "Clone", "with_outputs": False, "use_task": False},
         )
         res.raise_for_status()
         managed_id = res.json()
