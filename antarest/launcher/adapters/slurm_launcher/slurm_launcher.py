@@ -30,7 +30,7 @@ from antareslauncher.study_dto import StudyDTO
 from filelock import FileLock
 from typing_extensions import override
 
-from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitConfig
+from antarest.core.config import NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -144,19 +144,17 @@ class LauncherArgs(argparse.Namespace):
 class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
-        config: Config,
-        launcher_id: str,
+        config: SlurmConfig,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
     ) -> None:
+        if not isinstance(config, SlurmConfig):
+            raise TypeError(f"Launcher {config.id} is not a SlurmConfig")
         super().__init__(config, callbacks, event_bus, cache)
-        slurm_config = config.launcher.get_launcher(launcher_id)
-        if not isinstance(slurm_config, SlurmConfig):
-            raise TypeError(f"Launcher {launcher_id} is not a SlurmConfig")
-        self.slurm_config: SlurmConfig = slurm_config
+        self.config: SlurmConfig = self.config
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
@@ -166,7 +164,7 @@ class SlurmLauncher(AbstractLauncher):
         self.antares_launcher_lock = threading.Lock()
 
         # use an absolute path instead of `LOCK_FILE_NAME`:
-        local_workspace_dir = Path(self.slurm_config.local_workspace)
+        local_workspace_dir = Path(self.config.local_workspace)
         with FileLock(local_workspace_dir.joinpath(LOCK_FILE_NAME)):
             self.local_workspace = self._init_workspace(use_private_workspace)
         self.log_tail_manager = LogTailManager(local_workspace_dir)
@@ -183,25 +181,25 @@ class SlurmLauncher(AbstractLauncher):
 
     def _check_config(self) -> None:
         assert_this(
-            self.slurm_config.local_workspace.exists() and self.slurm_config.local_workspace.is_dir()
+            self.config.local_workspace.exists() and self.config.local_workspace.is_dir()
         )  # and check write permission
 
     def _init_workspace(self, use_private_workspace: bool) -> Path:
         if not use_private_workspace:
-            return Path(self.slurm_config.local_workspace)
+            return Path(self.config.local_workspace)
 
-        for existing_workspace in self.slurm_config.local_workspace.iterdir():
+        for existing_workspace in self.config.local_workspace.iterdir():
             lock_file = existing_workspace / WORKSPACE_LOCK_FILE_NAME
             if (
                 existing_workspace.is_dir()
-                and existing_workspace != self.slurm_config.local_workspace / LOG_DIR_NAME
+                and existing_workspace != self.config.local_workspace / LOG_DIR_NAME
                 and not lock_file.exists()
             ):
                 logger.info(f"Initiating slurm workspace into existing directory {existing_workspace}")
                 lock_file.touch()
                 return existing_workspace
 
-        new_workspace = Path(tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace)))
+        new_workspace = Path(tempfile.mkdtemp(dir=str(self.config.local_workspace)))
         lock_file = new_workspace / WORKSPACE_LOCK_FILE_NAME
         lock_file.touch()
         logger.info(f"Initiating slurm workspace in new directory {new_workspace}")
@@ -247,12 +245,12 @@ class SlurmLauncher(AbstractLauncher):
 
     def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
-            default_wait_time=self.slurm_config.default_wait_time,
-            default_time_limit=self.slurm_config.time_limit.default * 3600,
-            default_n_cpu=self.slurm_config.nb_cores.default,
-            studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
-            log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),
-            finished_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_OUTPUT_DIR_NAME)),
+            default_wait_time=self.config.default_wait_time,
+            default_time_limit=self.config.time_limit.default * 3600,
+            default_n_cpu=self.config.nb_cores.default,
+            studies_in_dir=str((Path(local_workspace or self.config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
+            log_dir=str((Path(self.config.local_workspace) / LOG_DIR_NAME)),
+            finished_dir=str((Path(local_workspace or self.config.local_workspace) / STUDIES_OUTPUT_DIR_NAME)),
             ssh_config_file_is_required=False,
             ssh_configfile_path_alternate1=None,
             ssh_configfile_path_alternate2=None,
@@ -276,18 +274,18 @@ class SlurmLauncher(AbstractLauncher):
 
     def _init_launcher_parameters(self, local_workspace: Optional[Path] = None) -> MainParameters:
         return MainParameters(
-            json_dir=local_workspace or self.slurm_config.local_workspace,
-            default_json_db_name=self.slurm_config.default_json_db_name,
-            slurm_script_path=self.slurm_config.slurm_script_path,
-            partition=self.slurm_config.partition,
-            antares_versions_on_remote_server=self.slurm_config.antares_versions_on_remote_server,
+            json_dir=local_workspace or self.config.local_workspace,
+            default_json_db_name=self.config.default_json_db_name,
+            slurm_script_path=self.config.slurm_script_path,
+            partition=self.config.partition,
+            antares_versions_on_remote_server=self.config.antares_versions_on_remote_server,
             default_ssh_dict={
-                "username": self.slurm_config.username,
-                "hostname": self.slurm_config.hostname,
-                "port": self.slurm_config.port,
-                "private_key_file": self.slurm_config.private_key_file,
-                "key_password": self.slurm_config.key_password,
-                "password": self.slurm_config.password,
+                "username": self.config.username,
+                "hostname": self.config.hostname,
+                "port": self.config.port,
+                "private_key_file": self.config.private_key_file,
+                "key_password": self.config.key_password,
+                "password": self.config.password,
             },
             db_primary_key="name",
         )
@@ -520,7 +518,7 @@ class SlurmLauncher(AbstractLauncher):
                 self.callbacks.export_study(launch_uuid, study_uuid, study_path, launcher_params)
 
                 append_log(launch_uuid, "Checking study version...")
-                available_versions = self.slurm_config.antares_versions_on_remote_server
+                available_versions = self.config.antares_versions_on_remote_server
                 if f"{version:ddd}" not in available_versions:
                     raise VersionNotSupportedError(
                         f"Study version '{version}' is not supported. Currently supported versions are"
@@ -588,9 +586,9 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args = LauncherArgs(self.launcher_args)
             launcher_args.apply_other_options(launcher_params)
             launcher_args.apply_xpansion_mode(launcher_params)
-            launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
+            launcher_args.apply_time_limit(launcher_params, self.config.time_limit)
             launcher_args.apply_post_processing(launcher_params)
-            launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
+            launcher_args.apply_nb_cpu(launcher_params, self.config.nb_cores)
             launcher_args.apply_adequacy_patch(launcher_params)
             return launcher_args
 

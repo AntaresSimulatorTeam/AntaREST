@@ -35,14 +35,13 @@ class FactoryLauncher:
         for cfg in config.launcher.configs or []:
             if isinstance(cfg, SlurmConfig):
                 dict_launchers[cfg.id] = SlurmLauncher(
-                    config,
-                    cfg.id,
+                    cfg,
                     callbacks,
                     event_bus,
                     cache,
                     retrieve_existing_jobs=True,
                 )
             elif isinstance(cfg, LocalConfig):
-                dict_launchers[cfg.id] = LocalLauncher(config, cfg.id, callbacks, event_bus, cache)
+                dict_launchers[cfg.id] = LocalLauncher(cfg, callbacks, event_bus, cache)
 
         return dict_launchers

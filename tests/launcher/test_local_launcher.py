@@ -18,7 +18,7 @@ from unittest.mock import Mock, call
 
 import pytest
 
-from antarest.core.config import Config, InvalidConfigurationError, Launcher, LauncherConfig, LocalConfig
+from antarest.core.config import LocalConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import JobStatus, LauncherParametersDTO
@@ -27,7 +27,7 @@ SOLVER_NAME = "solver.bat" if os.name == "nt" else "solver.sh"
 
 
 @pytest.fixture
-def launcher_config(tmp_path: Path) -> Config:
+def launcher_config(tmp_path: Path) -> LocalConfig:
     """
     Fixture to create a launcher config with a local launcher.
     """
@@ -40,27 +40,12 @@ def launcher_config(tmp_path: Path) -> Config:
         "enable_nb_cores_detection": True,
         "local_workspace": tmp_path,
     }
-    return Config(launcher=LauncherConfig(configs=[LocalConfig.from_dict(data)]))
+    return LocalConfig.from_dict(data)
 
 
 @pytest.mark.unit_test
-def test_local_launcher__launcher_init_exception():
-    with pytest.raises(
-        InvalidConfigurationError,
-        match="Configuration is not available for the 'local_id' launcher",
-    ):
-        LocalLauncher(
-            config=Config(launcher=LauncherConfig(configs=None)),
-            launcher_id="local_id",
-            callbacks=Mock(),
-            event_bus=Mock(),
-            cache=Mock(),
-        )
-
-
-@pytest.mark.unit_test
-def test_compute(tmp_path: Path, launcher_config: Config):
-    local_launcher = LocalLauncher(launcher_config, launcher_id="id", callbacks=Mock(), event_bus=Mock(), cache=Mock())
+def test_compute(tmp_path: Path, launcher_config: LocalConfig):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     # prepare a dummy executable to simulate Antares Solver
     if os.name == "nt":
@@ -121,8 +106,8 @@ def test_compute(tmp_path: Path, launcher_config: Config):
 
 
 @pytest.mark.unit_test
-def test_parse_launcher_arguments(launcher_config: Config):
-    local_launcher = LocalLauncher(launcher_config, launcher_id="id", callbacks=Mock(), event_bus=Mock(), cache=Mock())
+def test_parse_launcher_arguments(launcher_config: LocalConfig):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launcher_parameters = LauncherParametersDTO(launcher_id="id", nb_cpu=4)
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
     assert sim_args == ["--force-parallel=4"]
@@ -158,8 +143,8 @@ def test_parse_launcher_arguments(launcher_config: Config):
 @pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path):
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
-    launcher_config = Config(launcher=LauncherConfig(configs=[LocalConfig.from_dict(data)]))
-    local_launcher = LocalLauncher(launcher_config, launcher_id="id", callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    launcher_config = LocalConfig.from_dict(data)
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO())
     assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
 
@@ -173,16 +158,13 @@ def test_select_best_binary():
         "1000": Path("1000"),
     }
     local_launcher = LocalLauncher(
-        Config(
-            launcher=LauncherConfig(configs=[LocalConfig(id="id", name="name", type=Launcher.LOCAL, binaries=binaries)])
-        ),
-        launcher_id="id",
+        LocalConfig.from_dict({"id": "id", "name": "name", "type": "local", "binaries": binaries}),
         callbacks=Mock(),
         event_bus=Mock(),
         cache=Mock(),
     )
 
-    assert local_launcher._select_best_binary("600", "id") == binaries["700"]
-    assert local_launcher._select_best_binary("700", "id") == binaries["700"]
-    assert local_launcher._select_best_binary("710", "id") == binaries["800"]
-    assert local_launcher._select_best_binary("1100", "id") == binaries["1000"]
+    assert local_launcher._select_best_binary("600") == binaries["700"]
+    assert local_launcher._select_best_binary("700") == binaries["700"]
+    assert local_launcher._select_best_binary("710") == binaries["800"]
+    assert local_launcher._select_best_binary("1100") == binaries["1000"]

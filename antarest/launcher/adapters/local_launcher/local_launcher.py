@@ -23,11 +23,11 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from antares.study.version import SolverVersion
 from typing_extensions import override
 
-from antarest.core.config import Config, LocalConfig
+from antarest.core.config import LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
@@ -42,15 +42,14 @@ class LocalLauncher(AbstractLauncher):
 
     def __init__(
         self,
-        config: Config,
-        launcher_id: str,
+        config: LocalConfig,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        launcher = config.launcher.get_launcher(launcher_id)
-        self.local_workspace = launcher.local_workspace
+        self.config: LocalConfig = self.config
+        self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
@@ -58,22 +57,17 @@ class LocalLauncher(AbstractLauncher):
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
-    def _select_best_binary(self, version: str, launcher_id: str) -> Path:
-        local = self.config.launcher.get_launcher(launcher_id)
-
-        if not isinstance(local, LocalConfig):
-            raise LauncherInitException(f"Invalid parameter {launcher_id}")
-
-        if version in local.binaries:
-            antares_solver_path = local.binaries[version]
+    def _select_best_binary(self, version: str) -> Path:
+        if version in self.config.binaries:
+            antares_solver_path = self.config.binaries[version]
         else:
             # sourcery skip: extract-method, max-min-default
             # fixme: `version` must remain a string, consider using a `Version` class
             version_int = int(version)
-            keys = list(map(int, local.binaries.keys()))
+            keys = list(map(int, self.config.binaries.keys()))
             keys_sup = [k for k in keys if k > version_int]
             best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = local.binaries[str(best_existing_version)]
+            antares_solver_path = self.config.binaries[str(best_existing_version)]
             logger.warning(
                 f"Version {version} is not available. Version {best_existing_version} has been selected instead"
             )
@@ -83,7 +77,7 @@ class LocalLauncher(AbstractLauncher):
     def run_study(
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
-        antares_solver_path = self._select_best_binary(f"{version:ddd}", launcher_parameters.launcher_id)
+        antares_solver_path = self._select_best_binary(f"{version:ddd}")
 
         job = threading.Thread(
             target=LocalLauncher._compute,
@@ -178,9 +172,7 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.get_launcher(
-                    launcher_parameters.launcher_id
-                ).xpress_dir:  # type: ignore
+                if xpress_dir_path := self.config.xpress_dir:
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:

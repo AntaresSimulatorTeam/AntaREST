@@ -44,7 +44,7 @@ from antarest.tools.admin_lib import clean_locks_from_config
 
 
 @pytest.fixture
-def launcher_config(tmp_path: Path) -> Config:
+def launcher_config(tmp_path: Path) -> SlurmConfig:
     data = {
         "id": "slurm_id",
         "type": "slurm",
@@ -66,30 +66,12 @@ def launcher_config(tmp_path: Path) -> Config:
         "enable_nb_cores_detection": False,
         "nb_cores": {"min": 1, "default": 34, "max": 36},
     }
-    return Config(launcher=LauncherConfig(configs=[SlurmConfig.from_dict(data)]))
-
-
-@pytest.mark.unit_test
-def test_slurm_launcher__launcher_init_exception() -> None:
-    with pytest.raises(
-        InvalidConfigurationError,
-        match="Configuration is not available for the '' launcher",
-    ):
-        SlurmLauncher(
-            config=Config(launcher=LauncherConfig(configs=None)),
-            launcher_id="",
-            callbacks=Mock(),
-            event_bus=Mock(),
-            cache=Mock(),
-        )
+    return SlurmConfig.from_dict(data)
 
 
 @pytest.mark.unit_test
 def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
-    config = Config(
-        launcher=LauncherConfig(
-            configs=[
-                SlurmConfig(
+    config = SlurmConfig(
                     id="slurm_id",
                     name="slurm",
                     type=Launcher.SLURM,
@@ -97,13 +79,10 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
                     time_limit=TimeLimitConfig(),
                     nb_cores=NbCoresConfig(min=1, default=30, max=36),
                     local_workspace=tmp_path,
-                )
-            ]
-        )
     )
 
     slurm_launcher = SlurmLauncher(
-        config=config, launcher_id="slurm_id", callbacks=Mock(), event_bus=Mock(), cache=Mock()
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock()
     )
 
     arguments = slurm_launcher._init_launcher_arguments()
@@ -117,19 +96,16 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
     assert not arguments.xpansion_mode
     assert not arguments.version
     assert not arguments.post_processing
-    slurm_config = config.launcher.get_launcher("slurm_id")
-    assert slurm_config is not None
-    assert Path(arguments.studies_in) == slurm_config.local_workspace / "STUDIES_IN"
-    assert Path(arguments.output_dir) == slurm_config.local_workspace / "OUTPUT"
-    assert Path(arguments.log_dir) == slurm_config.local_workspace / "LOGS"
+
+    assert config is not None
+    assert Path(arguments.studies_in) == config.local_workspace / "STUDIES_IN"
+    assert Path(arguments.output_dir) == config.local_workspace / "OUTPUT"
+    assert Path(arguments.log_dir) == config.local_workspace / "LOGS"
 
 
 @pytest.mark.unit_test
 def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
-    config = Config(
-        launcher=LauncherConfig(
-            configs=[
-                SlurmConfig(
+    config = SlurmConfig(
                     id="slurm_id",
                     name="slurm",
                     type=Launcher.SLURM,
@@ -144,44 +120,35 @@ def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
                     private_key_file=Path("private_key_file"),
                     key_password="key_password",
                     password="password",
-                )
-            ]
-        )
     )
 
     slurm_launcher = SlurmLauncher(
-        config=config, launcher_id="slurm_id", callbacks=Mock(), event_bus=Mock(), cache=Mock()
+        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock()
     )
 
     main_parameters = slurm_launcher._init_launcher_parameters()
-    slurm_config = config.launcher.get_launcher("slurm_id")
-    assert slurm_config is not None
-    assert main_parameters.json_dir == slurm_config.local_workspace
-    assert main_parameters.default_json_db_name == slurm_config.default_json_db_name
-    assert main_parameters.slurm_script_path == slurm_config.slurm_script_path
-    assert main_parameters.partition == slurm_config.partition
-    assert main_parameters.antares_versions_on_remote_server == slurm_config.antares_versions_on_remote_server
+    assert config is not None
+    assert main_parameters.json_dir == config.local_workspace
+    assert main_parameters.default_json_db_name == config.default_json_db_name
+    assert main_parameters.slurm_script_path == config.slurm_script_path
+    assert main_parameters.partition == config.partition
+    assert main_parameters.antares_versions_on_remote_server == config.antares_versions_on_remote_server
     assert main_parameters.default_ssh_dict == {
-        "username": slurm_config.username,
-        "hostname": slurm_config.hostname,
-        "port": slurm_config.port,
-        "private_key_file": slurm_config.private_key_file,
-        "key_password": slurm_config.key_password,
-        "password": slurm_config.password,
+        "username": config.username,
+        "hostname": config.hostname,
+        "port": config.port,
+        "private_key_file": config.private_key_file,
+        "key_password": config.key_password,
+        "password": config.password,
     }
     assert main_parameters.db_primary_key == "name"
 
 
 @pytest.mark.unit_test
 def test_slurm_launcher_delete_function(tmp_path: str) -> None:
-    config = Config(
-        launcher=LauncherConfig(
-            configs=[SlurmConfig(id="slurm_id", name="slurm", type=Launcher.SLURM, local_workspace=Path(tmp_path))]
-        )
-    )
+    config = SlurmConfig(id="slurm_id", name="slurm", type=Launcher.SLURM, local_workspace=Path(tmp_path))
     slurm_launcher = SlurmLauncher(
         config=config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
@@ -202,7 +169,7 @@ def test_slurm_launcher_delete_function(tmp_path: str) -> None:
     assert not file_path.exists()
 
 
-def test_extra_parameters(launcher_config: Config) -> None:
+def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     """
     The goal of this unit test is to control the protected method `_check_and_apply_launcher_params`,
     which is called by the `SlurmLauncher.run_study` function, in a separate thread.
@@ -214,7 +181,6 @@ def test_extra_parameters(launcher_config: Config) -> None:
     """
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         cache=Mock(),
@@ -222,10 +188,9 @@ def test_extra_parameters(launcher_config: Config) -> None:
 
     apply_params = slurm_launcher._apply_params
     launcher_params = apply_params(LauncherParametersDTO())
-    slurm_config = slurm_launcher.config.launcher.get_launcher("slurm_id")
-    assert slurm_config is not None
-    assert launcher_params.n_cpu == slurm_config.nb_cores.default
-    assert launcher_params.time_limit == slurm_config.time_limit.default * 3600
+    assert launcher_config is not None
+    assert launcher_params.n_cpu == launcher_config.nb_cores.default
+    assert launcher_params.time_limit == launcher_config.time_limit.default * 3600
     assert not launcher_params.xpansion_mode
     assert not launcher_params.post_processing
 
@@ -242,9 +207,9 @@ def test_extra_parameters(launcher_config: Config) -> None:
     assert launcher_params.n_cpu == 12
 
     launcher_params = apply_params(LauncherParametersDTO(nb_cpu=999))
-    assert launcher_params.n_cpu == slurm_config.nb_cores.default  # out of range
+    assert launcher_params.n_cpu == launcher_config.nb_cores.default  # out of range
 
-    _config_time_limit = slurm_config.time_limit
+    _config_time_limit = launcher_config.time_limit
     launcher_params = apply_params(LauncherParametersDTO.model_construct(time_limit=None))
     assert launcher_params.time_limit == _config_time_limit.default * 3600
 
@@ -301,14 +266,13 @@ def test_extra_parameters(launcher_config: Config) -> None:
 )
 @pytest.mark.unit_test
 def test_run_study(
-    launcher_config: Config,
+    launcher_config: SlurmConfig,
     version: int,
     launcher_called: bool,
     job_status: JobStatus,
 ) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         cache=Mock(),
@@ -319,8 +283,7 @@ def test_run_study(
     slurm_launcher._delete_workspace_file = Mock()
 
     job_id = str(uuid.uuid4())
-    config = launcher_config.launcher.get_launcher("slurm_id")
-    studies_in = config.local_workspace / "studies_in"
+    studies_in = launcher_config.local_workspace / "studies_in"
     study_dir = studies_in / job_id
     study_dir.mkdir(parents=True)
     study_antares_path = study_dir.joinpath("study.antares")
@@ -346,7 +309,7 @@ def test_run_study(
 
     # Check the results
     assert (
-        version not in config.antares_versions_on_remote_server
+        version not in launcher_config.antares_versions_on_remote_server
         or f"solver_version = {version}" in study_antares_path.read_text(encoding="utf-8")
     )
 
@@ -358,10 +321,9 @@ def test_run_study(
 
 
 @pytest.mark.unit_test
-def test_check_state(tmp_path: Path, launcher_config: Config) -> None:
+def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         cache=Mock(),
@@ -401,29 +363,26 @@ def test_check_state(tmp_path: Path, launcher_config: Config) -> None:
 
 
 @pytest.mark.unit_test
-def test_clean_local_workspace(tmp_path: Path, launcher_config: Config) -> None:
+def test_clean_local_workspace(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
         cache=Mock(),
     )
-    config = launcher_config.launcher.get_launcher("slurm_id")
-    (config.local_workspace / "machin.txt").touch()
+    (launcher_config.local_workspace / "machin.txt").touch()
 
-    assert os.listdir(config.local_workspace)
+    assert os.listdir(launcher_config.local_workspace)
     slurm_launcher._clean_local_workspace()
-    assert not os.listdir(config.local_workspace)
+    assert not os.listdir(launcher_config.local_workspace)
 
 
 # noinspection PyUnresolvedReferences
 @pytest.mark.unit_test
-def test_import_study_output(launcher_config, tmp_path) -> None:
+def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> None:
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
@@ -431,23 +390,22 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     )
     slurm_launcher.callbacks.import_output.return_value = "output"
     res = slurm_launcher._import_study_output("1")
-    config = launcher_config.launcher.get_launcher("slurm_id")
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
-        config.local_workspace / "OUTPUT" / "1" / "output",
+        launcher_config.local_workspace / "OUTPUT" / "1" / "output",
         {},
     )
     assert res == "output"
 
-    link_dir = config.local_workspace / "OUTPUT" / "1" / "input" / "links"
+    link_dir = launcher_config.local_workspace / "OUTPUT" / "1" / "input" / "links"
     link_dir.mkdir(parents=True)
     link_file = link_dir / "something"
     link_file.write_text("hello")
-    xpansion_dir = Path(config.local_workspace / "OUTPUT" / "1" / "user" / "expansion")
+    xpansion_dir = Path(launcher_config.local_workspace / "OUTPUT" / "1" / "user" / "expansion")
     xpansion_dir.mkdir(parents=True)
     xpansion_test_file = xpansion_dir / "something_else"
     xpansion_test_file.write_text("world")
-    output_dir = config.local_workspace / "OUTPUT" / "1" / "output" / "output_name"
+    output_dir = launcher_config.local_workspace / "OUTPUT" / "1" / "output" / "output_name"
     output_dir.mkdir(parents=True)
 
     slurm_launcher._import_study_output("1", "r")
@@ -464,7 +422,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
     slurm_launcher._import_study_output("1", None, str(log_dir))
     slurm_launcher.callbacks.import_output.assert_called_once_with(
         "1",
-        config.local_workspace / "OUTPUT" / "1" / "output",
+        launcher_config.local_workspace / "OUTPUT" / "1" / "output",
         {
             "antares-out.log": [log_info],
             "antares-err.log": [log_error],
@@ -477,7 +435,7 @@ def test_import_study_output(launcher_config, tmp_path) -> None:
 def test_kill_job(
     run_with_mock,
     tmp_path: Path,
-    launcher_config: Config,
+    launcher_config: SlurmConfig,
 ) -> None:
     launch_id = "launch_id"
     mock_study = Mock()
@@ -489,7 +447,6 @@ def test_kill_job(
 
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=Mock(),
         event_bus=Mock(),
         use_private_workspace=False,
@@ -499,37 +456,36 @@ def test_kill_job(
 
     slurm_launcher.kill_job(job_id=launch_id)
 
-    slurm_config = launcher_config.launcher.get_launcher("slurm_id")
     launcher_arguments = Namespace(
         antares_version=0,
         check_queue=False,
         job_id_to_kill=mock_study.job_id,
         json_ssh_config=None,
         log_dir=str(tmp_path / "LOGS"),
-        n_cpu=slurm_config.nb_cores.default,
+        n_cpu=launcher_config.nb_cores.default,
         output_dir=str(tmp_path / "OUTPUT"),
         post_processing=False,
         studies_in=str(tmp_path / "STUDIES_IN"),
-        time_limit=slurm_config.time_limit.default * 3600,
+        time_limit=launcher_config.time_limit.default * 3600,
         version=False,
         wait_mode=False,
-        wait_time=slurm_config.default_wait_time,
+        wait_time=launcher_config.default_wait_time,
         xpansion_mode=None,
         other_options=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),
-        default_json_db_name=slurm_config.default_json_db_name,
-        slurm_script_path=slurm_config.slurm_script_path,
+        default_json_db_name=launcher_config.default_json_db_name,
+        slurm_script_path=launcher_config.slurm_script_path,
         partition="fake_partition",
-        antares_versions_on_remote_server=slurm_config.antares_versions_on_remote_server,
+        antares_versions_on_remote_server=launcher_config.antares_versions_on_remote_server,
         default_ssh_dict={
-            "username": slurm_config.username,
-            "hostname": slurm_config.hostname,
-            "port": slurm_config.port,
-            "private_key_file": slurm_config.private_key_file,
-            "key_password": slurm_config.key_password,
-            "password": slurm_config.password,
+            "username": launcher_config.username,
+            "hostname": launcher_config.hostname,
+            "port": launcher_config.port,
+            "private_key_file": launcher_config.private_key_file,
+            "key_password": launcher_config.key_password,
+            "password": launcher_config.password,
         },
         db_primary_key="name",
     )
@@ -538,13 +494,12 @@ def test_kill_job(
 
 
 @patch("antarest.launcher.adapters.slurm_launcher.slurm_launcher.run_with")
-def test_launcher_workspace_init(run_with_mock, tmp_path: Path, launcher_config: Config) -> None:
+def test_launcher_workspace_init(run_with_mock, tmp_path: Path, launcher_config: SlurmConfig) -> None:
     callbacks = Mock()
     (tmp_path / LOG_DIR_NAME).mkdir()
 
     slurm_launcher = SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
@@ -554,30 +509,12 @@ def test_launcher_workspace_init(run_with_mock, tmp_path: Path, launcher_config:
     assert len(workspaces) == 1
     assert (workspaces[0] / WORKSPACE_LOCK_FILE_NAME).exists()
 
-    clean_locks_from_config(launcher_config)
-    assert not (workspaces[0] / WORKSPACE_LOCK_FILE_NAME).exists()
-
     slurm_launcher.data_repo_tinydb.save_study(StudyDTO(path="some_path"))
     run_with_mock.assert_not_called()
 
     # will use existing private workspace
     SlurmLauncher(
         config=launcher_config,
-        launcher_id="slurm_id",
-        callbacks=callbacks,
-        event_bus=Mock(),
-        retrieve_existing_jobs=True,
-        cache=Mock(),
-    )
-    workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
-    assert len(workspaces) == 1
-    run_with_mock.assert_called()
-
-    run_with_mock.reset_mock()
-    # will create a new one since there is a lock on previous one
-    SlurmLauncher(
-        config=launcher_config,
-        launcher_id="slurm_id",
         callbacks=callbacks,
         event_bus=Mock(),
         retrieve_existing_jobs=True,
@@ -585,4 +522,16 @@ def test_launcher_workspace_init(run_with_mock, tmp_path: Path, launcher_config:
     )
     workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
     assert len(workspaces) == 2
+
+    run_with_mock.reset_mock()
+    # will create a new one since there is a lock on previous one
+    SlurmLauncher(
+        config=launcher_config,
+        callbacks=callbacks,
+        event_bus=Mock(),
+        retrieve_existing_jobs=True,
+        cache=Mock(),
+    )
+    workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
+    assert len(workspaces) == 3
     run_with_mock.assert_not_called()
