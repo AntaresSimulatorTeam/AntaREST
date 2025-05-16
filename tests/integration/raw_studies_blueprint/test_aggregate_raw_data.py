@@ -20,7 +20,7 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.storage.df_download import TableExportFormat
+from antarest.core.serde.matrix_export import TableExportFormat
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
@@ -531,6 +531,7 @@ class TestRawDataAggregationMCInd:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
+            print(f"Testing format {export_format}")
             pd.testing.assert_frame_equal(df, expected_df)
 
     def test_aggregation_errors(
