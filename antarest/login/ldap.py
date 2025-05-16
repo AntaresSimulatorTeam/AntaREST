@@ -12,7 +12,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 import httpx
 
@@ -198,15 +198,6 @@ class LdapService:
             return None
 
         return self._save_or_update(user)
-
-    def get_all(self) -> List[UserLdap]:
-        """
-        Get all users in DB.
-
-        Returns: list of users
-
-        """
-        return self.users.get_all()
 
     def delete(self, id: int) -> None:
         """

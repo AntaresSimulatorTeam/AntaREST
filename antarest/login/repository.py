@@ -17,7 +17,7 @@ from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session, joinedload  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Bot, Group, Role, User, UserLdap
+from antarest.login.model import Bot, Group, Identity, Role, User, UserLdap
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,29 @@ class GroupRepository:
         logger.debug(f"Group {id} deleted")
 
 
+class IdentityRepository:
+    """
+    Database connector to manage Identity table.
+    """
+
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
+
+    def get_all_users(self) -> list[Identity]:
+        identities: list[Identity] = self.session.query(Identity).where(Identity.type == "users").all()
+        return identities
+
+
 class UserRepository:
     """
     Database connector to manage User entity.
@@ -107,10 +130,6 @@ class UserRepository:
     def get_by_name(self, name: str) -> Optional[User]:
         user: User = self.session.query(User).filter_by(name=name).first()
         return user
-
-    def get_all(self) -> List[User]:
-        users: List[User] = self.session.query(User).all()
-        return users
 
     def delete(self, id: int) -> None:
         u: User = self.session.query(User).get(id)
@@ -160,12 +179,6 @@ class UserLdapRepository:
     def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
         user: UserLdap = self.session.query(UserLdap).filter_by(external_id=external_id).first()
         return user
-
-    def get_all(
-        self,
-    ) -> List[UserLdap]:
-        users_ldap: List[UserLdap] = self.session.query(UserLdap).all()
-        return users_ldap
 
     def delete(self, id_number: int) -> None:
         u: UserLdap = self.session.query(UserLdap).get(id_number)
@@ -265,6 +278,18 @@ class RoleRepository:
     def get(self, user: int, group: str) -> Optional[Role]:
         role: Role = self.session.query(Role).get((user, group))
         return role
+
+    def get_all(self, details: bool, groups: Optional[list[Group]] = None) -> list[Role]:
+        q = self.session.query(Role)
+        if details:
+            q = q.options(joinedload(Role.group))
+
+        if groups:
+            group_mapping = [group.id for group in groups]
+            q = q.filter(Role.group_id.in_(group_mapping))
+
+        roles: list[Role] = q.all()
+        return roles
 
     def get_all_by_user(self, /, user_id: int) -> List[Role]:
         """
