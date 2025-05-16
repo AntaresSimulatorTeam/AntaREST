@@ -14,6 +14,8 @@ import typing as t
 from unittest.mock import patch
 
 import pytest
+from db_statement_recorder import DBStatementRecorder
+from sqlalchemy.orm import Session
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
@@ -705,18 +707,67 @@ class TestLoginService:
         assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
 
     @with_db_context
-    def test_get_all_users(self, login_service: LoginService) -> None:
+    def test_get_all_users(self, login_service: LoginService, db_session: Session) -> None:
         # The site admin can get all users
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
-            actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [
-            {"id": 1, "name": "Professor Xavier"},
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-            {"id": 4, "name": "Joh Fredersen"},
-            {"id": 5, "name": "Freder Fredersen"},
-        ]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users()
+            assert len(db_recorder.sql_statements) == 1  # Only one request to get all users
+            assert [u.model_dump() for u in actual] == [
+                {"id": 1, "name": "Professor Xavier"},
+                {"id": 2, "name": "Clark Kent"},
+                {"id": 3, "name": "Lois Lane"},
+                {"id": 4, "name": "Joh Fredersen"},
+                {"id": 5, "name": "Freder Fredersen"},
+            ]
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users(details=True)
+            assert len(db_recorder.sql_statements) == 2
+            # One request to get all users
+            # One request to get all roles
+            assert [u.model_dump() for u in actual] == [
+                {
+                    "id": 1,
+                    "name": "Professor Xavier",
+                    "roles": [{"group_id": "admin", "group_name": "X-Men", "identity_id": 1, "type": RoleType.ADMIN}],
+                },
+                {
+                    "id": 2,
+                    "name": "Clark Kent",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 2, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 3,
+                    "name": "Lois Lane",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 3, "type": RoleType.READER}
+                    ],
+                },
+                {
+                    "id": 4,
+                    "name": "Joh Fredersen",
+                    "roles": [
+                        {"group_id": "metropolis", "group_name": "Metropolis", "identity_id": 4, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 5,
+                    "name": "Freder Fredersen",
+                    "roles": [
+                        {
+                            "group_id": "metropolis",
+                            "group_name": "Metropolis",
+                            "identity_id": 5,
+                            "type": RoleType.READER,
+                        }
+                    ],
+                },
+            ]
 
         # The group admin can get its own users, and that's all
         group_admin = get_user(login_service, user_id=2, group_id="superman")
