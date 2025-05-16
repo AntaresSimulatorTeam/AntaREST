@@ -602,7 +602,11 @@ class LoginService:
                 for identity in all_users
             ]
         user_mapping_id_to_name = {user.id: user.name for user in all_users}
-        return [IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user[id]) for id in roles_per_user]
+        if details:
+            return [
+                IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user[id]) for id in roles_per_user
+            ]
+        return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]
 
     def get_all_bots(self) -> List[Bot]:
         """

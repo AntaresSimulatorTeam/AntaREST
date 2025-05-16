@@ -718,27 +718,17 @@ class TestLoginService:
             {"id": 5, "name": "Freder Fredersen"},
         ]
 
-        # The group admin can get its own users, but also the users of the other groups
-        # note: I don't know why the group admin can get all users -- Laurent
+        # The group admin can get its own users, and that's all
         group_admin = get_user(login_service, user_id=2, group_id="superman")
         with current_user_context(group_admin):
             actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [
-            {"id": 1, "name": "Professor Xavier"},
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-            {"id": 4, "name": "Joh Fredersen"},
-            {"id": 5, "name": "Freder Fredersen"},
-        ]
+        assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
 
         # The user can get its own users
         user = get_user(login_service, user_id=3, group_id="superman")
         with current_user_context(user):
             actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-        ]
+        assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
 
     @with_db_context
     def test_get_all_bots(self, login_service: LoginService) -> None:

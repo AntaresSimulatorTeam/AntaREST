@@ -296,7 +296,7 @@ class RoleRepository:
 
         if groups:
             group_mapping = [group.id for group in groups]
-            q = q.filter(Role.group_id in group_mapping)
+            q = q.filter(Role.group_id.in_(group_mapping))
 
         roles: list[Role] = q.all()
         return roles
