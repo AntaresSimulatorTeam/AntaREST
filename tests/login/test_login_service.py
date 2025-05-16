@@ -14,7 +14,6 @@ import typing as t
 from unittest.mock import patch
 
 import pytest
-from db_statement_recorder import DBStatementRecorder
 from sqlalchemy.orm import Session
 
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -35,6 +34,7 @@ from antarest.login.model import (
 )
 from antarest.login.service import GroupNotFoundError, LoginService
 from antarest.login.utils import current_user_context
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 # For the unit tests, we will define several fictitious users, groups and roles.
