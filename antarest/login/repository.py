@@ -131,10 +131,6 @@ class UserRepository:
         user: User = self.session.query(User).filter_by(name=name).first()
         return user
 
-    def get_all(self) -> List[User]:
-        users: List[User] = self.session.query(User).all()
-        return users
-
     def delete(self, id: int) -> None:
         u: User = self.session.query(User).get(id)
         self.session.delete(u)
@@ -183,12 +179,6 @@ class UserLdapRepository:
     def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
         user: UserLdap = self.session.query(UserLdap).filter_by(external_id=external_id).first()
         return user
-
-    def get_all(
-        self,
-    ) -> List[UserLdap]:
-        users_ldap: List[UserLdap] = self.session.query(UserLdap).all()
-        return users_ldap
 
     def delete(self, id_number: int) -> None:
         u: UserLdap = self.session.query(UserLdap).get(id_number)
