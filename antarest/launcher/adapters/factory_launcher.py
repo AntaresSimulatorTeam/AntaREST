@@ -13,7 +13,7 @@
 import logging
 from typing import Dict
 
-from antarest.core.config import Config
+from antarest.core.config import Config, LocalConfig, SlurmConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
@@ -32,14 +32,16 @@ class FactoryLauncher:
         cache: ICache,
     ) -> Dict[str, AbstractLauncher]:
         dict_launchers: Dict[str, AbstractLauncher] = dict()
-        if config.launcher.local is not None:
-            dict_launchers["local"] = LocalLauncher(config, callbacks, event_bus, cache)
-        if config.launcher.slurm is not None:
-            dict_launchers["slurm"] = SlurmLauncher(
-                config,
-                callbacks,
-                event_bus,
-                cache,
-                retrieve_existing_jobs=True,
-            )
+        for cfg in config.launcher.configs or []:
+            if isinstance(cfg, SlurmConfig):
+                dict_launchers[cfg.id] = SlurmLauncher(
+                    cfg,
+                    callbacks,
+                    event_bus,
+                    cache,
+                    retrieve_existing_jobs=True,
+                )
+            elif isinstance(cfg, LocalConfig):
+                dict_launchers[cfg.id] = LocalLauncher(cfg, callbacks, event_bus, cache)
+
         return dict_launchers
