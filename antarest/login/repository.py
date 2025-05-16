@@ -17,7 +17,7 @@ from sqlalchemy import exists  # type: ignore
 from sqlalchemy.orm import Session, joinedload  # type: ignore
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.login.model import Bot, Group, Role, User, UserLdap
+from antarest.login.model import Bot, Group, Identity, Role, User, UserLdap
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,29 @@ class GroupRepository:
         self.session.commit()
 
         logger.debug(f"Group {id} deleted")
+
+
+class IdentityRepository:
+    """
+    Database connector to manage Identity table.
+    """
+
+    def __init__(
+        self,
+        session: Optional[Session] = None,
+    ) -> None:
+        self._session = session
+
+    @property
+    def session(self) -> Session:
+        """Get the SqlAlchemy session or create a new one on the fly if not available in the current thread."""
+        if self._session is None:
+            return db.session
+        return self._session
+
+    def get_all_users(self) -> list[Identity]:
+        identities: list[Identity] = self.session.query(Identity).where(Identity.type == "users").all()
+        return identities
 
 
 class UserRepository:
@@ -265,6 +288,18 @@ class RoleRepository:
     def get(self, user: int, group: str) -> Optional[Role]:
         role: Role = self.session.query(Role).get((user, group))
         return role
+
+    def get_all(self, details: bool, groups: Optional[list[Group]] = None) -> list[Role]:
+        q = self.session.query(Role)
+        if details:
+            q = q.options(joinedload(Role.group))
+
+        if groups:
+            group_mapping = [group.id for group in groups]
+            q = q.filter(Role.group_id in group_mapping)
+
+        roles: list[Role] = q.all()
+        return roles
 
     def get_all_by_user(self, /, user_id: int) -> List[Role]:
         """
