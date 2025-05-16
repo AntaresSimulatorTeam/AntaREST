@@ -16,6 +16,9 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import CommandApplicationError
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -57,6 +60,46 @@ class StudyInterface(ABC):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        raise NotImplementedError()
+
+
+class InMemoryStudyInterface(StudyInterface):
+    """
+    In memory implementation of study interface.
+    Only used for test purposes, currently.
+    """
+
+    def __init__(self, id: str, version: StudyVersion):
+        self._id = id
+        self._study_dao = InMemoryStudyDao(version)
+
+    @override
+    @property
+    def id(self) -> str:
+        return self._id
+
+    @override
+    @property
+    def version(self) -> StudyVersion:
+        return self._study_dao.get_version()
+
+    @override
+    def get_files(self) -> FileStudy:
+        raise NotImplementedError("In memory studies cannot be converted to file study.")
+
+    @override
+    def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
+        for command in commands:
+            result = command.apply(self._study_dao, listener)
+            if not result.status:
+                raise CommandApplicationError(result.message)
+
+    @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return self._study_dao.read_only()
+
 
 class FileStudyInterface(StudyInterface):
     """
@@ -84,6 +127,10 @@ class FileStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         for command in commands:
-            result = command.apply(self.file_study)
+            result = command.apply(FileStudyTreeDao(self.file_study))
             if not result.status:
                 raise CommandApplicationError(result.message)
+
+    @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.file_study).read_only()

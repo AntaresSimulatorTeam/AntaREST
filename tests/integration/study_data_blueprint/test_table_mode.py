@@ -14,11 +14,9 @@ import copy
 import typing as t
 
 import pytest
-from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.model import STUDY_VERSION_8_2
 from tests.integration.utils import wait_task_completion
 
 # noinspection SpellCheckingInspection
@@ -220,6 +218,8 @@ class TestTableMode:
                 "linkWidth": 2,
                 "loopFlow": False,
                 "transmissionCapacities": "ignore",
+                "filterSynthesis": "hourly",
+                "filterYearByYear": "annual",
             },
             "es / fr": {
                 "assetType": "ac",
@@ -233,6 +233,8 @@ class TestTableMode:
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": True,
+                "filterSynthesis": "monthly",
+                "filterYearByYear": "weekly",
             },
             "fr / it": {
                 "assetType": "dc",  # case-insensitive
@@ -255,6 +257,8 @@ class TestTableMode:
                 "loopFlow": False,
                 "transmissionCapacities": "ignore",
                 "usePhaseShifter": False,
+                "filterSynthesis": "hourly",
+                "filterYearByYear": "annual",
             },
             "de / it": {
                 "area1": "de",
@@ -271,6 +275,8 @@ class TestTableMode:
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": False,
+                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                "filterYearByYear": "hourly, daily, weekly, monthly, annual",
             },
             "es / fr": {
                 "area1": "es",
@@ -287,6 +293,8 @@ class TestTableMode:
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": True,
+                "filterSynthesis": "monthly",
+                "filterYearByYear": "weekly",
             },
             "fr / it": {
                 "area1": "fr",
@@ -303,25 +311,10 @@ class TestTableMode:
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": False,
+                "filterSynthesis": "",
+                "filterYearByYear": "hourly",
             },
         }
-
-        # Add filters for versions > 8.2
-        if StudyVersion.parse(study_version) > STUDY_VERSION_8_2:
-            for link in json_input.values():
-                link.update(
-                    {
-                        "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-                        "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-                    }
-                )
-            for link in expected_links.values():
-                link.update(
-                    {
-                        "filterSynthesis": "hourly, daily, weekly, monthly, annual",
-                        "filterYearByYear": "hourly, daily, weekly, monthly, annual",
-                    }
-                )
 
         res = client.put(f"/v1/studies/{internal_study_id}/table-mode/links", json=json_input)
         assert res.status_code == 200, res.json()

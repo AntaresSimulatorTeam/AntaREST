@@ -15,12 +15,17 @@ from unittest.mock import Mock
 
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
-from antarest.study.business.link_management import LinkDTO, LinkManager
-from antarest.study.business.model.link_model import AssetType, TransmissionCapacity
+from antarest.study.business.link_management import LinkManager
+from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet, FileStudyTreeConfig, Link
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    Area,
+    DistrictSet,
+    FileStudyTreeConfig,
+    LinkConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.common import FilteringOptions
@@ -49,7 +54,7 @@ def test_area_crud(
 
     link_manager.create_link(
         study,
-        LinkDTO(
+        Link(
             area1="test",
             area2="test2",
         ),
@@ -73,8 +78,8 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "a1": Area(
                 name="a1",
                 links={
-                    "a2": Link(filters_synthesis=[], filters_year=[]),
-                    "a3": Link(filters_synthesis=[], filters_year=[]),
+                    "a2": LinkConfig(filters_synthesis=[], filters_year=[]),
+                    "a3": LinkConfig(filters_synthesis=[], filters_year=[]),
                 },
                 thermals=[ThermalCluster(name="a", enabled=True)],
                 renewables=[],
@@ -83,7 +88,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             ),
             "a2": Area(
                 name="a2",
-                links={"a3": Link(filters_synthesis=[], filters_year=[])},
+                links={"a3": LinkConfig(filters_synthesis=[], filters_year=[])},
                 thermals=[],
                 renewables=[],
                 filters_synthesis=[],
@@ -102,9 +107,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
     )
     file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
 
-    study_interface = Mock(spec=StudyInterface)
-    study_interface.get_files.return_value = FileStudy(config, file_tree_mock)
-    study_interface.version = config.version
+    study_interface = FileStudyInterface(FileStudy(config, file_tree_mock))
     file_tree_mock.get.side_effect = [
         {
             "a": {
@@ -265,18 +268,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
             }
         },
-        {
-            "a3": {
-                "hurdles-cost": False,
-                "loop-flow": False,
-                "use-phase-shifter": False,
-                "transmission-capacities": TransmissionCapacity.ENABLED,
-                "asset-type": AssetType.AC,
-                "display-comments": False,
-                "filter-synthesis": FilteringOptions.FILTER_SYNTHESIS,
-                "filter-year-by-year": FilteringOptions.FILTER_YEAR_BY_YEAR,
-            }
-        },
+        {},
     ]
     links = link_manager.get_all_links(study_interface)
     assert [

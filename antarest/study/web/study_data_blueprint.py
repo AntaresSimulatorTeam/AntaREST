@@ -61,7 +61,7 @@ from antarest.study.business.model.hydro_model import (
     InflowStructure,
     InflowStructureUpdate,
 )
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterOutput,
@@ -137,13 +137,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         areas_list = study_service.get_all_areas(uuid, type, ui)
         return areas_list
 
-    @bp.get(
-        "/studies/{uuid}/links",
-        tags=[APITag.study_data],
-        summary="Get all links",
-        response_model=List[LinkDTO],
-    )
-    def get_links(uuid: str) -> List[LinkDTO]:
+    @bp.get("/studies/{uuid}/links", tags=[APITag.study_data], summary="Get all links")
+    def get_links(uuid: str) -> List[Link]:
         logger.info(f"Fetching link list for study {uuid}")
         areas_list = study_service.get_all_links(uuid)
         return areas_list
@@ -158,23 +153,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Creating new area for study {uuid}")
         return study_service.create_area(uuid, area_creation_info)
 
-    @bp.post(
-        "/studies/{uuid}/links",
-        tags=[APITag.study_data],
-        summary="Create a link",
-        response_model=LinkDTO,
-    )
-    def create_link(uuid: str, link_creation_info: LinkDTO) -> LinkDTO:
+    @bp.post("/studies/{uuid}/links", tags=[APITag.study_data], summary="Create a link")
+    def create_link(
+        uuid: str,
+        link_creation_info: Link,
+    ) -> Link:
         logger.info(f"Creating new link for study {uuid}")
         return study_service.create_link(uuid, link_creation_info)
 
-    @bp.put(
-        "/studies/{uuid}/links/{area_from}/{area_to}",
-        tags=[APITag.study_data],
-        summary="Update a link",
-        response_model=LinkDTO,
-    )
-    def update_link(uuid: str, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> Any:
+    @bp.put("/studies/{uuid}/links/{area_from}/{area_to}", tags=[APITag.study_data], summary="Update a link")
+    def update_link(uuid: str, area_from: str, area_to: str, link_update_dto: LinkUpdate) -> Link:
         logger.info(f"Updating link {area_from} -> {area_to} for study {uuid}")
         return study_service.update_link(uuid, area_from, area_to, link_update_dto)
 

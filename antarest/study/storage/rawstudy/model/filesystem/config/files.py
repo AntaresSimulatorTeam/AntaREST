@@ -43,7 +43,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
-    Link,
+    LinkConfig,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
@@ -503,13 +503,13 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     return config_list
 
 
-def _parse_links_filtering(root: Path, area: str) -> Dict[str, Link]:
+def _parse_links_filtering(root: Path, area: str) -> Dict[str, LinkConfig]:
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: Link(**obj) for link_id, obj in properties_ini.items()}
+    links_by_ids = {link_id: LinkConfig(**obj) for link_id, obj in properties_ini.items()}
     return links_by_ids
 
 
