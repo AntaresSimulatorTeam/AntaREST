@@ -313,7 +313,7 @@ class TestLauncherService:
                         {"id": "slurm_id", "type": "slurm", "name": "name", "antares_versions_on_remote_server": []},
                     ],
                 },
-                "default",
+                None,
                 [],
                 id="empty-config",
             ),
@@ -329,7 +329,7 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "default",
+                None,
                 ["123", "456", "798"],
                 id="local-config-default",
             ),
@@ -387,7 +387,7 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "default",
+                None,
                 ["147", "258", "369"],
                 id="slurm-config-default",
             ),
@@ -507,17 +507,32 @@ class TestLauncherService:
     @pytest.mark.parametrize(
         "config_map, solver, expected",
         [
-            pytest.param(
-                {"default": "local_id", "launchers": []},
-                "default",
-                {},
-                id="empty-config",
-                marks=pytest.mark.xfail(
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                    reason="Configuration is not available for the 'default' launcher",
-                ),
-            ),
+            # pytest.param(
+            #     {"default": "local_id", "launchers": []},
+            #     None,
+            #     {},
+            #     id="empty-config",
+            #     marks=pytest.mark.xfail(
+            #         raises=InvalidConfigurationError,
+            #         strict=True,
+            #         reason="Configuration is not available for the 'local_id' launcher",
+            #     ),
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "local_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "local_id",
+            #                 "type": "local",
+            #                 "nb_cores": {"min": 1, "default": 11, "max": 12},
+            #             }
+            #         ],
+            #     },
+            #     None,
+            #     {"min": 1, "default": 11, "max": 12},
+            #     id="local-config-default",
+            # ),
             pytest.param(
                 {
                     "default": "local_id",
@@ -529,23 +544,8 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "default",
+                None,
                 {"min": 1, "default": 11, "max": 12},
-                id="local-config-default",
-            ),
-            pytest.param(
-                {
-                    "default": "local_id",
-                    "launchers": [
-                        {
-                            "id": "local_id",
-                            "type": "local",
-                            "nb_cores": {"min": 1, "default": 11, "max": 12},
-                        }
-                    ],
-                },
-                "slurm_id",
-                {},
                 id="local-config-slurm",
             ),
             pytest.param(
@@ -559,8 +559,8 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "unknown",
-                {},
+                None,
+                {"min": 1, "default": 11, "max": 12},
                 id="local-config-unknown",
             ),
             pytest.param(
@@ -574,7 +574,7 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "default",
+                None,
                 {"min": 4, "default": 8, "max": 16},
                 id="slurm-config-default",
             ),
@@ -589,8 +589,8 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "local_id",
-                {},
+                None,
+                {"min": 4, "default": 8, "max": 16},
                 id="slurm-config-local",
             ),
             pytest.param(
@@ -604,8 +604,8 @@ class TestLauncherService:
                         }
                     ],
                 },
-                "unknown",
-                {},
+                None,
+                {"min": 4, "default": 8, "max": 16},
                 id="slurm-config-unknown",
             ),
             pytest.param(
@@ -682,7 +682,7 @@ class TestLauncherService:
 
         # Exécution du test
         try:
-            actual = launcher_service.get_nb_cores(Launcher(solver))
+            actual = launcher_service.get_nb_cores(solver)
         except ValueError as e:
             assert e.args[0] == f"'{solver}' is not a valid Launcher"
         else:

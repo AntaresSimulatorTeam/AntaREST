@@ -44,7 +44,7 @@ class TestLauncherNbCores:
         assert actual == nb_cores_expected
 
         res = client.get(
-            "/v1/launcher/nbcores?launcher=default",
+            "/v1/launcher/nbcores",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -96,7 +96,7 @@ class TestLauncherNbCores:
         assert actual == expected
 
         res = client.get(
-            "/v1/launcher/time-limit?launcher=default",
+            "/v1/launcher/time-limit",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()

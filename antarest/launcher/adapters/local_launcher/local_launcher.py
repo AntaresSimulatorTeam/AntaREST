@@ -18,7 +18,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 from antares.study.version import SolverVersion
 from typing_extensions import override
@@ -48,7 +48,7 @@ class LocalLauncher(AbstractLauncher):
         cache: ICache,
     ) -> None:
         super().__init__(config, callbacks, event_bus, cache)
-        self.config: LocalConfig = self.config
+        self.local_config: LocalConfig = cast(LocalConfig, self.config)
         self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
@@ -58,16 +58,16 @@ class LocalLauncher(AbstractLauncher):
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
-        if version in self.config.binaries:
-            antares_solver_path = self.config.binaries[version]
+        if version in self.local_config.binaries:
+            antares_solver_path = self.local_config.binaries[version]
         else:
             # sourcery skip: extract-method, max-min-default
             # fixme: `version` must remain a string, consider using a `Version` class
             version_int = int(version)
-            keys = list(map(int, self.config.binaries.keys()))
+            keys = list(map(int, self.local_config.binaries.keys()))
             keys_sup = [k for k in keys if k > version_int]
             best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = self.config.binaries[str(best_existing_version)]
+            antares_solver_path = self.local_config.binaries[str(best_existing_version)]
             logger.warning(
                 f"Version {version} is not available. Version {best_existing_version} has been selected instead"
             )
@@ -172,7 +172,7 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.xpress_dir:
+                if xpress_dir_path := self.local_config.xpress_dir:
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:

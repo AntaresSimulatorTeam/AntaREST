@@ -18,7 +18,7 @@ from uuid import UUID
 from fastapi import APIRouter
 from fastapi.exceptions import HTTPException
 
-from antarest.core.config import Config, InvalidConfigurationError, Launcher
+from antarest.core.config import Config, InvalidConfigurationError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
@@ -44,7 +44,7 @@ class UnknownSolverConfig(HTTPException):
     the name of the launcher is not "default", "slurm" or "local".
     """
 
-    def __init__(self, solver: str) -> None:
+    def __init__(self, solver: str | None) -> None:
         super().__init__(
             http.HTTPStatus.UNPROCESSABLE_ENTITY,
             f"Unknown solver configuration: '{solver}'",
@@ -166,7 +166,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get the SLURM cluster or local machine load",
         response_model=LauncherLoadDTO,
     )
-    def get_load(launcher_id: str = "local") -> LauncherLoadDTO:
+    def get_load(launcher_id: Optional[str] = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)
@@ -186,30 +186,31 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         summary="Get list of supported solver versions",
         response_model=List[str],
     )
-    def get_solver_versions(solver: str = Launcher.DEFAULT) -> List[str]:
+    def get_solver_versions(solver: Optional[str] = None) -> List[str]:
         """
         Get list of supported solver versions defined in the configuration.
 
         Args:
-        - `solver`: name of the configuration to read: "default", "slurm" or "local".
+        - `solver`: name of the configuration to read.
+          If no solver is specified, retrieve the configuration of the default launcher.
         """
         logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
         return service.get_solver_versions(solver)
 
     # noinspection SpellCheckingInspection
     @bp.get(
-        "/nbcores",  # We avoid "nb_cores" and "nb-cores" in endpoints
+        "/nbcores",
         tags=[APITag.launcher],
         summary="Retrieving Min, Default, and Max Core Count",
         response_model=Dict[str, int],
     )
-    def get_nb_cores(launcher: str = Launcher.DEFAULT) -> Dict[str, int]:
+    def get_nb_cores(launcher: Optional[str] = None) -> Dict[str, int]:
         """
         Retrieve the numer of cores of the launcher.
 
         Args:
-        - `launcher`: name of the configuration to read: "slurm" or "local".
-          If "default" is specified, retrieve the configuration of the default launcher.
+        - `launcher`: name of the configuration to read.
+          If no launcher is specified, retrieve the configuration of the default launcher.
 
         Returns:
         - "min": min number of cores
@@ -228,15 +229,15 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         tags=[APITag.launcher],
         summary="Retrieve the time limit for a job (in hours)",
     )
-    def get_time_limit(launcher: str = Launcher.LOCAL) -> Dict[str, int]:
+    def get_time_limit(launcher: Optional[str] = None) -> Dict[str, int]:
         """
-        Retrieve the time limit for a job (in hours) of the given launcher: "local" or "slurm".
+        Retrieve the time limit for a job (in hours) of the given launcher.
 
         If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
 
         Args:
-        - `launcher`: name of the configuration to read: "slurm" or "local".
-          If "default" is specified, retrieve the configuration of the default launcher.
+        - `launcher`: name of the configuration to read.
+          If no launcher is specified, retrieve the configuration of the default launcher.
 
         Returns:
         - "min": min allowed time limit

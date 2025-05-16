@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, Launcher, NbCoresConfig, SlurmConfig
+from antarest.core.config import Config, NbCoresConfig, SlurmConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -118,7 +118,7 @@ class LauncherService:
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def get_nb_cores(self, launcher: Launcher) -> NbCoresConfig:
+    def get_nb_cores(self, launcher: Optional[str]) -> NbCoresConfig:
         """
         Retrieve the configuration of the launcher's nb of cores.
 
@@ -603,7 +603,7 @@ class LauncherService:
             return self.output_service.export_output(job_result.study_id, job_result.output_id)
         raise JobNotFound()
 
-    def get_load(self, launcher_id: str) -> LauncherLoadDTO:
+    def get_load(self, launcher_id: Optional[str]) -> LauncherLoadDTO:
         """
         Get the load of the SLURM cluster or the local machine.
         """
@@ -647,7 +647,7 @@ class LauncherService:
             }
             return LauncherLoadDTO(**args)
 
-    def get_solver_versions(self, solver: str) -> List[str]:
+    def get_solver_versions(self, solver: Optional[str]) -> List[str]:
         """
         Fetch the list of solver versions from the configuration.
 

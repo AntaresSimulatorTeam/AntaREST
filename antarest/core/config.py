@@ -452,7 +452,7 @@ class LauncherConfig:
             batch_size=batch_size,
         )
 
-    def get_nb_cores(self, launcher: str) -> "NbCoresConfig":
+    def get_nb_cores(self, launcher: Optional[str]) -> "NbCoresConfig":
         """
         Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
@@ -470,7 +470,7 @@ class LauncherConfig:
         config = self.get_launcher(launcher)
         return config.nb_cores
 
-    def get_time_limit(self, launcher: str) -> TimeLimitConfig:
+    def get_time_limit(self, launcher: Optional[str]) -> TimeLimitConfig:
         """
         Retrieve the time limit for a job of the given launcher.
         If "default" is specified, retrieve the configuration of the default launcher.
@@ -491,8 +491,8 @@ class LauncherConfig:
     def get_slurm_configs(self) -> List[SlurmConfig]:
         return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
 
-    def get_launcher(self, launcher_id: str) -> LocalConfig | SlurmConfig:
-        if launcher_id == "default":
+    def get_launcher(self, launcher_id: Optional[str]) -> LocalConfig | SlurmConfig:
+        if launcher_id is None:
             launcher_id = self.default
         try:
             return next((launcher for launcher in self.configs or [] if launcher.id == launcher_id))

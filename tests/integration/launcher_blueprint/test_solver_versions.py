@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Sequence
-from unittest.mock import patch
 
 import pytest
 from starlette.testclient import TestClient
@@ -39,7 +37,7 @@ class TestSolverVersions:
         assert actual == ["700"]
 
         res = client.get(
-            "/v1/launcher/versions?solver=default",
+            "/v1/launcher/versions",
             headers={"Authorization": f"Bearer {user_access_token}"},
         )
         res.raise_for_status()
@@ -74,20 +72,10 @@ class TestSolverVersions:
         of the `solver` parameter is indeed "default".
         """
 
-        def get_versions(_: Any, solver: str) -> Sequence[str]:
-            # To distinguish between the default value and the local value,
-            # we use a different value for each `solver` value.
-            versions = {"default": ["123"], "local": ["456"], "slurm": ["798"]}
-            return versions[solver]
-
-        with patch(
-            "antarest.launcher.service.LauncherService.get_solver_versions",
-            new=get_versions,
-        ):
-            res = client.get(
-                "/v1/launcher/versions",
-                headers={"Authorization": f"Bearer {user_access_token}"},
-            )
+        res = client.get(
+            "/v1/launcher/versions",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+        )
         res.raise_for_status()
         actual = res.json()
-        assert actual == ["123"]
+        assert actual == ["700"]
