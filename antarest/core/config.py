@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import yaml
+from pip._internal.exceptions import ConfigurationError
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
@@ -437,12 +438,13 @@ class LauncherConfig:
         default = data.get("default", cls.default)
         batch_size = data.get("batch_size", defaults.batch_size)
         for launcher in data["launchers"]:
-            if launcher["type"] == Launcher.LOCAL:
-                launchers.append(LocalConfig.from_dict(launcher))
-            elif launcher["type"] == Launcher.SLURM:
-                launchers.append(SlurmConfig.from_dict(launcher))
-            else:
-                continue
+            match launcher["type"]:
+                case Launcher.LOCAL:
+                    launchers.append(LocalConfig.from_dict(launcher))
+                case Launcher.SLURM:
+                    launchers.append(SlurmConfig.from_dict(launcher))
+                case _:
+                    raise ConfigurationError(f"Unknown launcher type: {launcher['type']}")
 
         return cls(
             default=default,
