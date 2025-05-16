@@ -520,31 +520,34 @@ class LoginService:
 
         """
         user = get_current_user()
-        if user:
-            group_list = []
-
-            if user.is_site_admin():
-                group_list = self.groups.get_all()
-            else:
-                roles_by_user = self.roles.get_all_by_user(user.id)
-
-                for role in roles_by_user:
-                    if not details or role.type == RoleType.ADMIN:
-                        tmp = self.groups.get(role.group_id)
-                        if tmp:
-                            group_list.append(tmp)
-        else:
+        if not user:
             logger.error(
                 "user %s has not permission to get all groups",
                 get_user_id(),
             )
             raise UserHasNotPermissionError()
 
-        return (
-            [grp for grp in [self.get_group_info(group.id) for group in group_list] if grp is not None]
-            if details
-            else [group.to_dto() for group in group_list]
-        )
+        # No details needed
+        if not details:
+            if user.is_site_admin():
+                group_list = self.groups.get_all()
+            else:
+                group_list = [r.group for r in self.roles.get_all_by_user(user.id)]
+            return [group.to_dto() for group in group_list]
+
+        # User details needed
+        users_by_group: dict[tuple[str, str], List[UserRoleDTO]] = {}
+        all_users = self.get_all_users(details=True)
+        for identity in all_users:
+            assert isinstance(identity, IdentityDTO)
+            for role in identity.roles:
+                group_id, group_name = role.group_id, role.group_name
+                assert group_id is not None
+                users_by_group.setdefault((group_id, group_name), []).append(
+                    UserRoleDTO(id=identity.id, name=identity.name, role=role.type)
+                )
+
+        return [GroupDetailDTO(id=key[0], name=key[1], users=users) for key, users in users_by_group.items()]
 
     def _get_user_by_group(self, group: str) -> List[Identity]:
         roles = self.roles.get_all_by_group(group)
