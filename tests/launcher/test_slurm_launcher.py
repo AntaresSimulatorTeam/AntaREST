@@ -25,10 +25,7 @@ from antareslauncher.main import MainParameters
 from antareslauncher.study_dto import StudyDTO
 
 from antarest.core.config import (
-    Config,
-    InvalidConfigurationError,
     Launcher,
-    LauncherConfig,
     NbCoresConfig,
     SlurmConfig,
     TimeLimitConfig,
@@ -40,7 +37,6 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     VersionNotSupportedError,
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, XpansionParametersDTO
-from antarest.tools.admin_lib import clean_locks_from_config
 
 
 @pytest.fixture
@@ -72,18 +68,16 @@ def launcher_config(tmp_path: Path) -> SlurmConfig:
 @pytest.mark.unit_test
 def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
     config = SlurmConfig(
-                    id="slurm_id",
-                    name="slurm",
-                    type=Launcher.SLURM,
-                    default_wait_time=42,
-                    time_limit=TimeLimitConfig(),
-                    nb_cores=NbCoresConfig(min=1, default=30, max=36),
-                    local_workspace=tmp_path,
+        id="slurm_id",
+        name="slurm",
+        type=Launcher.SLURM,
+        default_wait_time=42,
+        time_limit=TimeLimitConfig(),
+        nb_cores=NbCoresConfig(min=1, default=30, max=36),
+        local_workspace=tmp_path,
     )
 
-    slurm_launcher = SlurmLauncher(
-        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock()
-    )
+    slurm_launcher = SlurmLauncher(config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     arguments = slurm_launcher._init_launcher_arguments()
 
@@ -106,25 +100,23 @@ def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
 @pytest.mark.unit_test
 def test_init_slurm_launcher_parameters(tmp_path: Path) -> None:
     config = SlurmConfig(
-                    id="slurm_id",
-                    name="slurm",
-                    type=Launcher.SLURM,
-                    local_workspace=tmp_path,
-                    default_json_db_name="default_json_db_name",
-                    slurm_script_path="slurm_script_path",
-                    partition="fake_partition",
-                    antares_versions_on_remote_server=["42"],
-                    username="username",
-                    hostname="hostname",
-                    port=42,
-                    private_key_file=Path("private_key_file"),
-                    key_password="key_password",
-                    password="password",
+        id="slurm_id",
+        name="slurm",
+        type=Launcher.SLURM,
+        local_workspace=tmp_path,
+        default_json_db_name="default_json_db_name",
+        slurm_script_path="slurm_script_path",
+        partition="fake_partition",
+        antares_versions_on_remote_server=["42"],
+        username="username",
+        hostname="hostname",
+        port=42,
+        private_key_file=Path("private_key_file"),
+        key_password="key_password",
+        password="password",
     )
 
-    slurm_launcher = SlurmLauncher(
-        config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock()
-    )
+    slurm_launcher = SlurmLauncher(config=config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
 
     main_parameters = slurm_launcher._init_launcher_parameters()
     assert config is not None
