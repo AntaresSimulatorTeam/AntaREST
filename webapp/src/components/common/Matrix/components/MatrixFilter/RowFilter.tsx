@@ -35,13 +35,22 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslation } from "react-i18next";
-import type { RowFilterProps } from "./types";
+import type { RowFilterProps, RowFilter as RowFilterType } from "./types";
 import { FILTER_TYPES, TIME_INDEXING, TEMPORAL_OPTIONS } from "./constants";
 import { useMemo, useState } from "react";
 import { getFilteredTemporalOptions } from "./utils";
 
-function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }: RowFilterProps) {
+function RowFilterComponent({
+  filter,
+  setFilter,
+  dateTime,
+  isTimeSeries,
+  timeFrequency,
+  onRemoveFilter,
+  filterId,
+}: RowFilterProps) {
   const { t } = useTranslation();
 
   // Filter temporal options based on the current time frequency
@@ -49,6 +58,11 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
     () => getFilteredTemporalOptions(timeFrequency, TEMPORAL_OPTIONS),
     [timeFrequency],
   );
+
+  // Find the specific row filter we're editing
+  const rowFilter = useMemo(() => {
+    return filter.rowsFilters.find((rf) => rf.id === filterId) || filter.rowsFilters[0];
+  }, [filter.rowsFilters, filterId]);
 
   const availableValues = useMemo(() => {
     if (!dateTime || !isTimeSeries) {
@@ -58,7 +72,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
     try {
       // Extract values using the same pattern matching approach as in utils.ts
       const values = dateTime.map((dateStr, index) => {
-        const { indexingType } = filter.rowsFilter;
+        const { indexingType } = rowFilter;
 
         if (indexingType === TIME_INDEXING.MONTH) {
           const months = [
@@ -141,7 +155,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
         max = Math.max(...values);
       } else {
         // Set appropriate defaults based on the indexing type
-        switch (filter.rowsFilter.indexingType) {
+        switch (rowFilter.indexingType) {
           case TIME_INDEXING.DAY_OF_MONTH:
             max = 31;
             break;
@@ -172,82 +186,102 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
       // Error processing dates
       return { min: 1, max: 100 };
     }
-  }, [dateTime, isTimeSeries, filter.rowsFilter]);
+  }, [dateTime, isTimeSeries, rowFilter]);
 
   const handleIndexingTypeChange = (e: SelectChangeEvent) => {
     const newType = e.target.value;
 
-    // Reset the filter values when changing indexing type
-    const newFilter = {
-      ...filter,
-      rowsFilter: {
-        ...filter.rowsFilter,
-        indexingType: newType,
-      },
+    // Create updated row filter with new indexing type
+    const updatedRowFilter: RowFilterType = {
+      ...rowFilter,
+      indexingType: newType,
     };
 
     // Set appropriate default ranges based on the indexing type
     switch (newType) {
       case TIME_INDEXING.DAY_OF_MONTH:
-        newFilter.rowsFilter.range = { min: 1, max: 31 };
+        updatedRowFilter.range = { min: 1, max: 31 };
         break;
       case TIME_INDEXING.MONTH:
-        newFilter.rowsFilter.range = { min: 1, max: 12 };
+        updatedRowFilter.range = { min: 1, max: 12 };
         break;
       case TIME_INDEXING.WEEKDAY:
-        newFilter.rowsFilter.range = { min: 1, max: 7 };
+        updatedRowFilter.range = { min: 1, max: 7 };
         break;
       case TIME_INDEXING.DAY_HOUR:
-        newFilter.rowsFilter.range = { min: 1, max: 24 };
+        updatedRowFilter.range = { min: 1, max: 24 };
         break;
       case TIME_INDEXING.DAY_OF_YEAR:
-        newFilter.rowsFilter.range = { min: 1, max: 366 };
+        updatedRowFilter.range = { min: 1, max: 366 };
         break;
       case TIME_INDEXING.WEEK:
-        newFilter.rowsFilter.range = { min: 1, max: 53 };
+        updatedRowFilter.range = { min: 1, max: 53 };
         break;
       case TIME_INDEXING.HOUR_YEAR:
-        newFilter.rowsFilter.range = { min: 1, max: 8760 };
+        updatedRowFilter.range = { min: 1, max: 8760 };
         break;
     }
 
-    setFilter(newFilter);
+    // Update the filter state with the modified row filter
+    const updatedFilters = filter.rowsFilters.map((rf) =>
+      rf.id === rowFilter.id ? updatedRowFilter : rf,
+    );
+
+    setFilter({
+      ...filter,
+      rowsFilters: updatedFilters,
+    });
   };
 
   const handleTypeChange = (e: SelectChangeEvent) => {
+    const updatedFilters = filter.rowsFilters.map((rf) =>
+      rf.id === rowFilter.id ? { ...rf, type: e.target.value } : rf,
+    );
+
     setFilter({
       ...filter,
-      rowsFilter: {
-        ...filter.rowsFilter,
-        type: e.target.value,
-      },
+      rowsFilters: updatedFilters,
     });
   };
 
   const handleRangeChange = (field: "min" | "max", value: string) => {
+    const updatedFilters = filter.rowsFilters.map((rf) => {
+      if (rf.id === rowFilter.id) {
+        return {
+          ...rf,
+          range: {
+            ...rf.range,
+            [field]: Number.parseInt(value) || 1,
+          } as { min: number; max: number },
+        };
+      }
+      return rf;
+    });
+
     setFilter({
       ...filter,
-      rowsFilter: {
-        ...filter.rowsFilter,
-        range: {
-          ...filter.rowsFilter.range,
-          [field]: Number.parseInt(value) || 1,
-        } as { min: number; max: number },
-      },
+      rowsFilters: updatedFilters,
     });
   };
 
   const handleSliderChange = (_event: Event, newValue: number | number[]) => {
     if (Array.isArray(newValue)) {
+      const updatedFilters = filter.rowsFilters.map((rf) => {
+        if (rf.id === rowFilter.id) {
+          return {
+            ...rf,
+            range: {
+              min: newValue[0],
+              max: newValue[1],
+            },
+          };
+        }
+        return rf;
+      });
+
       setFilter({
         ...filter,
-        rowsFilter: {
-          ...filter.rowsFilter,
-          range: {
-            min: newValue[0],
-            max: newValue[1],
-          },
-        },
+        rowsFilters: updatedFilters,
       });
     }
   };
@@ -262,13 +296,20 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
     const newValue = Number.parseInt(inputValue.trim());
     if (!Number.isNaN(newValue)) {
       // Only add if the value is not already in the list
-      if (!filter.rowsFilter.list?.includes(newValue)) {
+      if (!rowFilter.list?.includes(newValue)) {
+        const updatedFilters = filter.rowsFilters.map((rf) => {
+          if (rf.id === rowFilter.id) {
+            return {
+              ...rf,
+              list: [...(rf.list || []), newValue].sort((a, b) => a - b),
+            };
+          }
+          return rf;
+        });
+
         setFilter({
           ...filter,
-          rowsFilter: {
-            ...filter.rowsFilter,
-            list: [...(filter.rowsFilter.list || []), newValue].sort((a, b) => a - b),
-          },
+          rowsFilters: updatedFilters,
         });
       }
       // Clear the input field after adding
@@ -277,12 +318,19 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
   };
 
   const removeValueFromList = (valueToRemove: number) => {
+    const updatedFilters = filter.rowsFilters.map((rf) => {
+      if (rf.id === rowFilter.id) {
+        return {
+          ...rf,
+          list: (rf.list || []).filter((value) => value !== valueToRemove),
+        };
+      }
+      return rf;
+    });
+
     setFilter({
       ...filter,
-      rowsFilter: {
-        ...filter.rowsFilter,
-        list: (filter.rowsFilter.list || []).filter((value) => value !== valueToRemove),
-      },
+      rowsFilters: updatedFilters,
     });
   };
 
@@ -294,22 +342,29 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
   };
 
   const handleCheckboxChange = (value: number) => {
-    const currentList = filter.rowsFilter.list || [];
+    const currentList = rowFilter.list || [];
     const newList = currentList.includes(value)
-      ? currentList.filter((item) => item !== value)
+      ? currentList.filter((item: number) => item !== value)
       : [...currentList, value];
+
+    const updatedFilters = filter.rowsFilters.map((rf) => {
+      if (rf.id === rowFilter.id) {
+        return {
+          ...rf,
+          list: newList,
+        };
+      }
+      return rf;
+    });
 
     setFilter({
       ...filter,
-      rowsFilter: {
-        ...filter.rowsFilter,
-        list: newList,
-      },
+      rowsFilters: updatedFilters,
     });
   };
 
   const renderFilterControls = () => {
-    const { type, indexingType } = filter.rowsFilter;
+    const { type, indexingType } = rowFilter;
 
     if (type === FILTER_TYPES.RANGE) {
       // For range type, we'll use different controls based on the indexing type
@@ -323,7 +378,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
         ].includes(indexingType)
       ) {
         // Use a slider for these types
-        const { min, max } = filter.rowsFilter.range || { min: 1, max: 100 };
+        const { min, max } = rowFilter.range || { min: 1, max: 100 };
         const marks = [];
 
         // Create appropriate marks based on indexing type
@@ -402,14 +457,14 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
           <TextField
             label={t("matrix.filter.min")}
             type="number"
-            value={filter.rowsFilter.range?.min || 1}
+            value={rowFilter.range?.min || 1}
             onChange={(e) => handleRangeChange("min", e.target.value)}
             fullWidth
           />
           <TextField
             label={t("matrix.filter.max")}
             type="number"
-            value={filter.rowsFilter.range?.max || 1}
+            value={rowFilter.range?.max || 1}
             onChange={(e) => handleRangeChange("max", e.target.value)}
             fullWidth
           />
@@ -437,7 +492,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
                 key={day.value}
                 control={
                   <Checkbox
-                    checked={(filter.rowsFilter.list || []).includes(day.value)}
+                    checked={(rowFilter.list || []).includes(day.value)}
                     onChange={() => handleCheckboxChange(day.value)}
                   />
                 }
@@ -472,7 +527,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
             </Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
               {months.map((month) => {
-                const isSelected = (filter.rowsFilter.list || []).includes(month.value);
+                const isSelected = (rowFilter.list || []).includes(month.value);
                 return (
                   <Chip
                     key={month.value}
@@ -500,7 +555,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
             </Typography>
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
               {days.map((day) => {
-                const isSelected = (filter.rowsFilter.list || []).includes(day);
+                const isSelected = (rowFilter.list || []).includes(day);
                 return (
                   <Chip
                     key={day}
@@ -546,13 +601,13 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
             }}
             helperText={t("matrix.filter.pressEnterOrComma")}
           />
-          {(filter.rowsFilter.list?.length || 0) > 0 && (
+          {(rowFilter.list?.length || 0) > 0 && (
             <Box sx={{ mt: 1 }}>
               <Typography variant="caption" display="block" gutterBottom>
                 {t("matrix.filter.selectedValues")}:
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                {filter.rowsFilter.list?.map((value) => (
+                {rowFilter.list?.map((value) => (
                   <Chip
                     key={value}
                     label={value}
@@ -575,13 +630,34 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
   return (
     <Accordion defaultExpanded>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">{t("matrix.filter.rowsFilter")}</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            width: "100%",
+          }}
+        >
+          <Typography variant="subtitle1">{t("matrix.filter.rowsFilter")}</Typography>
+          {onRemoveFilter && filter.rowsFilters.length > 1 && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemoveFilter(rowFilter.id);
+              }}
+              sx={{ ml: 1 }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Box>
       </AccordionSummary>
       <AccordionDetails>
         <FormControl fullWidth margin="dense">
           <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
           <Select
-            value={filter.rowsFilter.indexingType}
+            value={rowFilter.indexingType}
             label={t("matrix.filter.indexingType")}
             onChange={handleIndexingTypeChange}
           >
@@ -596,7 +672,7 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
         <FormControl fullWidth margin="dense">
           <InputLabel>{t("matrix.filter.type")}</InputLabel>
           <Select
-            value={filter.rowsFilter.type}
+            value={rowFilter.type}
             label={t("matrix.filter.type")}
             onChange={handleTypeChange}
           >
@@ -611,4 +687,4 @@ function RowFilter({ filter, setFilter, dateTime, isTimeSeries, timeFrequency }:
   );
 }
 
-export default RowFilter;
+export default RowFilterComponent;

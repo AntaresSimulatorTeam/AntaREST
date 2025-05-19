@@ -14,6 +14,14 @@
 
 import type { TimeFrequencyType } from "../../shared/types";
 
+export interface RowFilter {
+  id: string;
+  indexingType: string;
+  type: string;
+  range?: { min: number; max: number };
+  list?: number[];
+}
+
 export interface FilterState {
   active: boolean;
   columnsFilter: {
@@ -21,12 +29,7 @@ export interface FilterState {
     range?: { min: number; max: number };
     list?: number[];
   };
-  rowsFilter: {
-    indexingType: string;
-    type: string;
-    range?: { min: number; max: number };
-    list?: number[];
-  };
+  rowsFilters: RowFilter[];
   operation: {
     type: string;
     value: number;
@@ -53,6 +56,10 @@ export interface RowFilterProps extends FilterSectionProps {
   dateTime?: string[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
+  onAddFilter?: () => void;
+  onRemoveFilter?: (id: string) => void;
+  filter: FilterState;
+  filterId?: string;
 }
 
 export interface OperationsProps extends FilterSectionProps {
@@ -65,6 +72,7 @@ export interface SelectionSummaryProps {
 
 export interface TemporalIndexingParams {
   filter: FilterState;
+  rowFilter: RowFilter;
   dateTime?: string[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
