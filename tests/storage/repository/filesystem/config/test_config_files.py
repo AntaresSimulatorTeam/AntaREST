@@ -35,6 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     Link,
+    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
@@ -155,7 +156,7 @@ def test_parse_outputs(study_path: Path) -> None:
             "20201220-1456eco-hello": Simulation(
                 name="hello",
                 date="20201220-1456",
-                mode="economy",
+                mode=Mode.ECONOMY,
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
@@ -177,7 +178,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230127-1550eco": Simulation(
                     name="",
                     date="20230127-1550",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=True,
                     by_year=False,
@@ -189,7 +190,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230203-1530eco": Simulation(
                     name="",
                     date="20230203-1530",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=False,
                     by_year=False,
@@ -201,7 +202,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230203-1531eco": Simulation(
                     name="",
                     date="20230203-1531",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=False,
                     by_year=False,
@@ -213,7 +214,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230203-1600eco": Simulation(
                     name="",
                     date="20230203-1600",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=True,
                     by_year=False,
