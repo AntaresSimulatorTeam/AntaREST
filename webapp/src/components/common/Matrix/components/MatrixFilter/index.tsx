@@ -23,7 +23,6 @@ import {
   Chip,
   Tooltip,
   Typography,
-  Badge,
   Paper,
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -38,10 +37,10 @@ import { calculateMatrixAggregates } from "../../shared/utils";
 import type { FilterState, FilterCriteria, MatrixFilterProps } from "./types";
 import { FILTER_TYPES, getDefaultFilterState } from "./constants";
 import ColumnFilter from "./ColumnFilter";
-import RowFilter from "./RowFilter";
+import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
-import { getTemporalIndices } from "./utils";
+import { processRowFilters } from "./utils";
 
 function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterProps) {
   const { t } = useTranslation();
@@ -81,14 +80,14 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         .filter((idx) => idx >= 0 && idx < totalColumns);
     }
 
-    // Filter rows based on time indexing
-    const rowsIndices: number[] = getTemporalIndices({
+    // Process multiple row filters and get combined indices
+    const rowsIndices: number[] = processRowFilters(
       filter,
       dateTime,
       isTimeSeries,
       timeFrequency,
-      totalRows: currentState.data.length,
-    });
+      currentState.data.length,
+    );
 
     return { columnsIndices, rowsIndices };
   }, [currentState.data, filter, dateTime, isTimeSeries, timeFrequency]);
@@ -192,19 +191,14 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     setFilter({ ...filter, active: !filter.active });
   };
 
-  // Count selected items for badge
-  const selectedCount = filter.active
-    ? filteredData.columnsIndices.length * filteredData.rowsIndices.length
-    : 0;
-
   const getFilterSummary = () => {
     if (!filter.active) {
-      return { columnFilterText: "", rowFilterText: "" };
+      return { columnFilterText: "", rowFilterTexts: [] };
     }
 
-    const { columnsFilter, rowsFilter } = filter;
+    const { columnsFilter, rowsFilters } = filter;
     let columnFilterText = "";
-    let rowFilterText = "";
+    const rowFilterTexts: string[] = [];
 
     // Column filter summary
     if (columnsFilter.type === FILTER_TYPES.RANGE && columnsFilter.range) {
@@ -213,15 +207,21 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
       columnFilterText = `${t("matrix.filter.columns")}: [${columnsFilter.list.join(", ")}]`;
     }
 
-    // Row filter summary
-    const indexType = t(`matrix.filter.indexing.${rowsFilter.indexingType}`);
-    if (rowsFilter.type === FILTER_TYPES.RANGE && rowsFilter.range) {
-      rowFilterText = `${t("matrix.filter.rows")} (${indexType}): ${rowsFilter.range.min} - ${rowsFilter.range.max}`;
-    } else if (rowsFilter.type === FILTER_TYPES.LIST && rowsFilter.list) {
-      rowFilterText = `${t("matrix.filter.rows")} (${indexType}): [${rowsFilter.list.join(", ")}]`;
+    // Row filters summary (multiple)
+    for (const rowFilter of rowsFilters) {
+      const indexType = t(`matrix.filter.indexing.${rowFilter.indexingType}`);
+      if (rowFilter.type === FILTER_TYPES.RANGE && rowFilter.range) {
+        rowFilterTexts.push(
+          `${t("matrix.filter.rows")} (${indexType}): ${rowFilter.range.min} - ${rowFilter.range.max}`,
+        );
+      } else if (rowFilter.type === FILTER_TYPES.LIST && rowFilter.list) {
+        rowFilterTexts.push(
+          `${t("matrix.filter.rows")} (${indexType}): [${rowFilter.list.join(", ")}]`,
+        );
+      }
     }
 
-    return { columnFilterText, rowFilterText };
+    return { columnFilterText, rowFilterTexts };
   };
 
   return (
@@ -296,7 +296,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {(() => {
-                  const { columnFilterText, rowFilterText } = getFilterSummary();
+                  const { columnFilterText, rowFilterTexts } = getFilterSummary();
                   return (
                     <>
                       {columnFilterText && (
@@ -308,15 +308,16 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                           sx={{ m: 0.5 }}
                         />
                       )}
-                      {rowFilterText && (
+                      {rowFilterTexts.map((text) => (
                         <Chip
-                          label={rowFilterText}
+                          key={`row-filter-${text}`}
+                          label={text}
                           size="small"
                           color="primary"
                           variant="outlined"
                           sx={{ m: 0.5 }}
                         />
-                      )}
+                      ))}
                     </>
                   );
                 })()}
@@ -327,7 +328,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
         <ColumnFilter filter={filter} setFilter={setFilter} />
 
-        <RowFilter
+        <MultiRowFilter
           filter={filter}
           setFilter={setFilter}
           dateTime={dateTime}
