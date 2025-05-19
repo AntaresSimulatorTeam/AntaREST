@@ -148,12 +148,12 @@ class UpdateBindingConstraints(ICommand):
             new_time_step = BindingConstraintFrequency(bc_props_as_dict.get("type", current_properties["type"]))
             if new_time_step != existing_time_step:
                 # The user changed the time step, we need to update the matrix accordingly
-                for [target, next_matrix] in generate_replacement_matrices(
+                for [target, new_matrix] in generate_replacement_matrices(
                     bc_id, self.study_version, new_time_step, current_operator
                 ):
                     # prepare matrix as a dict to save it in the tree
                     matrix_url = target.split("/")
-                    file_study.tree.save(data={"data": next_matrix}, url=matrix_url)
+                    file_study.tree.save(data={"data": new_matrix}, url=matrix_url)
 
             if self.study_version >= STUDY_VERSION_8_7:
                 # Groups
