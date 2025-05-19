@@ -13,11 +13,13 @@
  */
 
 import { FILTER_TYPES, TIME_INDEXING, TIME_FREQUENCY_INDEXING_MAP } from "./constants";
-import type { FilterState, TemporalIndexingParams, TemporalOption } from "./types";
+import type { FilterState, TemporalIndexingParams, TemporalOption, RowFilter } from "./types";
 import { TimeFrequency } from "../../shared/constants";
+import type { TimeFrequencyType } from "../../shared/types";
 
 export function getTemporalIndices({
   filter,
+  rowFilter,
   dateTime,
   isTimeSeries,
   timeFrequency,
@@ -26,7 +28,7 @@ export function getTemporalIndices({
   // If not time series or no date data, use simple row indices
   if (!isTimeSeries || !dateTime || dateTime.length === 0) {
     return applyRowFilter(
-      filter,
+      rowFilter,
       Array.from({ length: totalRows }, (_, i) => ({ index: i, value: i + 1 })),
       totalRows,
     );
@@ -36,7 +38,7 @@ export function getTemporalIndices({
   const timeIndices = dateTime.map((dateStr, index) => {
     // For many indexing types, we don't need to fully parse the date
     // We can extract the needed values directly from the date string patterns
-    const { indexingType } = filter.rowsFilter;
+    const { indexingType } = rowFilter;
 
     try {
       // Handle annual frequency differently
@@ -127,35 +129,29 @@ export function getTemporalIndices({
 
       // Fallback: use row index as the value
       return { index, value: index + 1 };
-    } catch (error) {
-      console.warn(`Error processing date string: ${dateStr}`, error);
+    } catch {
+      // Silently handle date processing errors
       return { index, value: index + 1 };
     }
   });
 
   // Apply filter to temporal indices
-  return applyRowFilter(filter, timeIndices, totalRows);
+  return applyRowFilter(rowFilter, timeIndices, totalRows);
 }
 
 function applyRowFilter(
-  filter: FilterState,
+  rowFilter: RowFilter,
   indices: Array<{ index: number; value: number }>,
   totalRows: number,
 ): number[] {
-  const { rowsFilter } = filter;
-
   // Apply filter based on type
   let matchingIndices: typeof indices = [];
 
-  if (rowsFilter.type === FILTER_TYPES.RANGE && rowsFilter.range) {
-    const { min, max } = rowsFilter.range;
+  if (rowFilter.type === FILTER_TYPES.RANGE && rowFilter.range) {
+    const { min, max } = rowFilter.range;
     matchingIndices = indices.filter(({ value }) => value >= min && value <= max);
-  } else if (
-    rowsFilter.type === FILTER_TYPES.LIST &&
-    rowsFilter.list &&
-    rowsFilter.list.length > 0
-  ) {
-    matchingIndices = indices.filter(({ value }) => rowsFilter.list?.includes(value));
+  } else if (rowFilter.type === FILTER_TYPES.LIST && rowFilter.list && rowFilter.list.length > 0) {
+    matchingIndices = indices.filter(({ value }) => rowFilter.list?.includes(value));
   } else {
     // Default to all indices
     matchingIndices = indices;
@@ -188,4 +184,49 @@ export function getFilteredTemporalOptions(
   }
 
   return options.filter((option) => validOptions.includes(option.value));
+}
+
+/**
+ * Processes all row filters and returns the combined set of matching row indices
+ *
+ * @param filter - The filter state containing all row filters
+ * @param dateTime - Array of date/time strings
+ * @param isTimeSeries - Whether the data is a time series
+ * @param timeFrequency - The frequency of the time data
+ * @param totalRows - Total number of rows in the matrix
+ * @returns Array of row indices that match ANY of the row filters
+ */
+export function processRowFilters(
+  filter: FilterState,
+  dateTime: string[] | undefined,
+  isTimeSeries: boolean,
+  timeFrequency: TimeFrequencyType | undefined,
+  totalRows: number,
+): number[] {
+  // If no row filters, return all rows
+  if (!filter.rowsFilters || filter.rowsFilters.length === 0) {
+    return Array.from({ length: totalRows }, (_, i) => i);
+  }
+
+  // Process each row filter and collect matching indices
+  const allIndices = new Set<number>();
+
+  for (const rowFilter of filter.rowsFilters) {
+    const indices = getTemporalIndices({
+      filter,
+      rowFilter,
+      dateTime,
+      isTimeSeries,
+      timeFrequency,
+      totalRows,
+    });
+
+    // Add all matching indices to the set
+    for (const index of indices) {
+      allIndices.add(index);
+    }
+  }
+
+  // Convert set back to array and sort
+  return Array.from(allIndices).sort((a, b) => a - b);
 }
