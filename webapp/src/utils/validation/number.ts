@@ -37,6 +37,7 @@ interface NumberValidationOptions {
  * @param [options] - Configuration options for validation.
  * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value.
  * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value.
+ * @param [options.integer=false] - Whether the number must be an integer.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
 export function validateNumber(value: number, options?: NumberValidationOptions): ValidationReturn;
