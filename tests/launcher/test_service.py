@@ -27,7 +27,6 @@ from sqlalchemy import create_engine
 from antarest.core.config import (
     Config,
     InvalidConfigurationError,
-    Launcher,
     LauncherConfig,
     LocalConfig,
     NbCoresConfig,
@@ -470,7 +469,6 @@ class TestLauncherService:
                     LocalConfig(
                         id=launcher["id"],
                         name=launcher["name"],
-                        type=Launcher.LOCAL,
                         binaries={k: Path(f"solver-{k}.exe") for k in launcher.get("binaries", {})},
                     )
                 )
@@ -479,7 +477,6 @@ class TestLauncherService:
                     SlurmConfig(
                         id=launcher["id"],
                         name=launcher["name"],
-                        type=Launcher.SLURM,
                         antares_versions_on_remote_server=list(launcher.get("antares_versions_on_remote_server", [])),
                     )
                 )
@@ -1087,9 +1084,7 @@ class TestLauncherService:
 
         config = Config(
             storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(
-                default=default_launcher, configs=[LocalConfig(id="local", type=Launcher.LOCAL, name="name")]
-            ),
+            launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
         )
         launcher_service = LauncherService(
             config=config,

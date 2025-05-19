@@ -15,7 +15,7 @@ import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import ClassVar, Dict, List, Optional
 
 import yaml
 from pip._internal.exceptions import ConfigurationError
@@ -26,10 +26,9 @@ from antarest.core.roles import RoleType
 DEFAULT_WORKSPACE_NAME = "default"
 
 
-class Launcher(StrEnum):
+class LauncherType(StrEnum):
     SLURM = "slurm"
     LOCAL = "local"
-    DEFAULT = "default"
 
 
 class InternalMatrixFormat(StrEnum):
@@ -283,7 +282,7 @@ class LocalConfig:
 
     id: str
     name: str
-    type: Launcher
+    type: ClassVar[LauncherType] = LauncherType.LOCAL
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
@@ -309,7 +308,6 @@ class LocalConfig:
         return cls(
             id=data["id"],
             name=data["name"],
-            type=data["type"],
             binaries=binaries,
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
@@ -337,7 +335,7 @@ class SlurmConfig:
 
     id: str
     name: str
-    type: Launcher
+    type: ClassVar[LauncherType] = LauncherType.SLURM
     local_workspace: Path = Path()
     username: str = ""
     hostname: str = ""
@@ -378,7 +376,6 @@ class SlurmConfig:
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
             id=data["id"],
-            type=data["type"],
             name=data["name"],
             local_workspace=Path(data.get("local_workspace", Path())),
             username=data.get("username", ""),
@@ -435,9 +432,9 @@ class LauncherConfig:
         batch_size = data.get("batch_size", defaults.batch_size)
         for launcher in data["launchers"]:
             match launcher["type"]:
-                case Launcher.LOCAL:
+                case LauncherType.LOCAL:
                     launchers.append(LocalConfig.from_dict(launcher))
-                case Launcher.SLURM:
+                case LauncherType.SLURM:
                     launchers.append(SlurmConfig.from_dict(launcher))
                 case _:
                     raise ConfigurationError(f"Unknown launcher type: {launcher['type']}")
