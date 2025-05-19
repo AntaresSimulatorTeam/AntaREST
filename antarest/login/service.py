@@ -514,7 +514,8 @@ class LoginService:
         Get all groups.
         Permission: SADMIN
         Args:
-            details: get all user information, including users
+            details: If False, only get group name and id.
+            If True, for each group, fetch every user in the group with their role
 
         Returns: list of groups
 
@@ -563,7 +564,8 @@ class LoginService:
         Get all users.
         Permission: SADMIN
         Args:
-            details: get all user information, including roles
+            details: If False, only get user's name and id.
+            If True, for each user, fetch all his groups and his role inside it
 
         Returns: list of groups
 
@@ -578,14 +580,18 @@ class LoginService:
             raise UserHasNotPermissionError()
 
         # Get all users
+        # WARNING: This list contains all users, so we should filter it afterward to avoid accessing info we shouldn't
         all_users = self.identities.get_all_users()
 
+        # Easy case: we don't need more information
         if user.is_site_admin() and not details:
             return [user.to_dto() for user in all_users]
 
         # Get roles
         groups = None if user.is_site_admin() else [r.group for r in self.roles.get_all_by_user(user.id)]
         all_roles = self.roles.get_all(details=details, groups=groups)
+
+        # Builds a map from a user to all his roles
         roles_per_user: dict[int, List[RoleDTO]] = {}
         for role in all_roles:
             roles_per_user.setdefault(role.identity_id, []).append(
@@ -597,11 +603,14 @@ class LoginService:
                 )
             )
 
+        # For the admin, loop through every user and build the return containing role information
         if user.is_site_admin():
             return [
                 IdentityDTO(id=identity.id, name=identity.name, roles=roles_per_user.get(identity.id, []))
                 for identity in all_users
             ]
+
+        # For other users, we need to loop on the map we built earlier to avoid accessing info the user shouldn't have
         user_mapping_id_to_name = {user.id: user.name for user in all_users}
         if details:
             return [
