@@ -12,7 +12,7 @@
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Mode, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -73,19 +73,20 @@ class OutputSimulation(FolderNode):
                     self.matrix_mapper, self.config.next_file("ts-generator")
                 )
 
-            if self.simulation.mode == "economy":
+            if self.simulation.mode in {Mode.ECONOMY, Mode.EXPANSION}:
                 children["economy"] = OutputSimulationMode(
                     self.matrix_mapper,
                     self.config.next_file("economy"),
                     self.simulation,
                 )
-
-            elif self.simulation.mode == "adequacy":
+            elif self.simulation.mode == Mode.ADEQUACY:
                 children["adequacy"] = OutputSimulationMode(
                     self.matrix_mapper,
                     self.config.next_file("adequacy"),
                     self.simulation,
                 )
+            else:
+                raise NotImplementedError(f"Unknown mode {self.simulation.mode}")
 
             if self.simulation.xpansion:
                 children["lp"] = Lp(self.matrix_mapper, self.config.next_file("lp"))

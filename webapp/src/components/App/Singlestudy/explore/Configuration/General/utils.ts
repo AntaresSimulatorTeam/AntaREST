@@ -23,7 +23,7 @@ import client from "../../../../../../services/api/client";
 enum Mode {
   Economy = "Economy",
   Adequacy = "Adequacy",
-  Draft = "draft",
+  Expansion = "Expansion",
 }
 
 export enum BuildingMode {
