@@ -659,7 +659,7 @@ class LauncherService:
             This list is empty if the configuration is not available.
 
         Raises:
-            KeyError: if the configuration is not "default", "slurm" or "local".
+            KeyError: if the solver doesn't exist in the configuration.
         """
         config = self.config.launcher.get_launcher(solver)
         if isinstance(config, SlurmConfig):
