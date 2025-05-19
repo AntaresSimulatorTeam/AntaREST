@@ -306,7 +306,7 @@ class StudyDownloader:
         if file_study.config.outputs and output_id in file_study.config.outputs:
             sim = file_study.config.outputs[output_id]
             if sim:
-                url += f"/{sim.mode.value}"
+                url += f"/{sim.mode}"
 
                 if data.synthesis:
                     url += "/mc-all"
@@ -453,7 +453,7 @@ def get_output_variables_information(study: FileStudy, output_name: str) -> Dict
                     [
                         "output",
                         output_name,
-                        study.config.outputs[output_name].mode,
+                        study.config.outputs[output_name].mode.value.lower(),
                         "mc-ind",
                     ]
                 ),
@@ -466,7 +466,7 @@ def get_output_variables_information(study: FileStudy, output_name: str) -> Dict
             [
                 "output",
                 output_name,
-                study.config.outputs[output_name].mode,
+                study.config.outputs[output_name].mode.value.lower(),
                 "mc-all",
             ]
         ),
