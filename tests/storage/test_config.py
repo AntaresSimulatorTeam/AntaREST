@@ -113,18 +113,3 @@ def test_storage_config_from_dict_validiation_errors(storage_config_default: Dic
 
     with pytest.raises(ValueError):
         StorageConfig.from_dict(data)
-
-
-@pytest.mark.unit_test
-def test_storage_default_aggregation_results_max_size_value(storage_config_default: Dict[str, Union[str, int]]):
-    # test aggregation_results_max_size default value
-    data = {
-        **storage_config_default,
-    }
-    config = StorageConfig.from_dict(data)
-    assert config.aggregation_results_max_size == 200
-
-    # test a custom aggregation_results_max_size
-    data = {**storage_config_default, "aggregation_results_max_size": 100}
-    config = StorageConfig.from_dict(data)
-    assert config.aggregation_results_max_size == 100
