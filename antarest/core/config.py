@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import ClassVar, Dict, List, Optional
 
 import yaml
-from pip._internal.exceptions import ConfigurationError
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
@@ -437,7 +436,10 @@ class LauncherConfig:
                 case LauncherType.SLURM:
                     launchers.append(SlurmConfig.from_dict(launcher))
                 case _:
-                    raise ConfigurationError(f"Unknown launcher type: {launcher['type']}")
+                    raise InvalidConfigurationError(f"Unknown launcher type: {launcher['type']}")
+
+        if not any(launcher.id == default for launcher in launchers):
+            raise InvalidConfigurationError(f"Default launcher id '{default}' not found in launcher configs")
 
         return cls(
             default=default,

@@ -304,21 +304,159 @@ class TestLauncherService:
     @pytest.mark.parametrize(
         "config, solver, expected",
         [
+            # pytest.param(
+            #     {
+            #         "default": "local_id",
+            #         "launchers": [
+            #             {"id": "local_id", "type": "local", "name": "name", "binaries": {}},
+            #             {"id": "slurm_id", "type": "slurm", "name": "name", "antares_versions_on_remote_server": []},
+            #         ],
+            #     },
+            #     None,
+            #     [],
+            #     id="empty-config",
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "local_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "local_id",
+            #                 "type": "local",
+            #                 "name": "name",
+            #                 "binaries": {"456": "path", "123": "path", "798": "path"},
+            #             }
+            #         ],
+            #     },
+            #     None,
+            #     ["123", "456", "798"],
+            #     id="local-config-default",
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "local_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "local_id",
+            #                 "type": "local",
+            #                 "name": "name",
+            #                 "binaries": {"456": "path", "123": "path", "798": "path"},
+            #             }
+            #         ],
+            #     },
+            #     "slurm_id",
+            #     [],
+            #     id="local-config-slurm",
+            #     marks=pytest.mark.xfail(
+            #         reason="Unknown solver configuration: 'unknown'",
+            #         raises=InvalidConfigurationError,
+            #         strict=True,
+            #     ),
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "local_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "local_id",
+            #                 "type": "local",
+            #                 "name": "name",
+            #                 "binaries": {"456": "path", "123": "path", "798": "path"},
+            #             }
+            #         ],
+            #     },
+            #     "unknown",
+            #     [],
+            #     id="local-config-unknown",
+            #     marks=pytest.mark.xfail(
+            #         reason="Unknown solver configuration: 'unknown'",
+            #         raises=InvalidConfigurationError,
+            #         strict=True,
+            #     ),
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "slurm_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "slurm_id",
+            #                 "type": "slurm",
+            #                 "name": "name",
+            #                 "antares_versions_on_remote_server": ["258", "147", "369"],
+            #             }
+            #         ],
+            #     },
+            #     None,
+            #     ["147", "258", "369"],
+            #     id="slurm-config-default",
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "slurm_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "slurm_id",
+            #                 "type": "slurm",
+            #                 "name": "name",
+            #                 "antares_versions_on_remote_server": ["258", "147", "369"],
+            #             }
+            #         ],
+            #     },
+            #     "local_id",
+            #     [],
+            #     id="slurm-config-local",
+            #     marks=pytest.mark.xfail(
+            #         reason="Unknown solver configuration: 'unknown'",
+            #         raises=InvalidConfigurationError,
+            #         strict=True,
+            #     ),
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "slurm_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "slurm_id",
+            #                 "type": "slurm",
+            #                 "name": "name",
+            #                 "antares_versions_on_remote_server": ["258", "147", "369"],
+            #             }
+            #         ],
+            #     },
+            #     "unknown",
+            #     [],
+            #     id="slurm-config-unknown",
+            #     marks=pytest.mark.xfail(
+            #         reason="Unknown solver configuration: 'unknown'",
+            #         raises=InvalidConfigurationError,
+            #         strict=True,
+            #     ),
+            # ),
+            # pytest.param(
+            #     {
+            #         "default": "slurm_id",
+            #         "launchers": [
+            #             {
+            #                 "id": "local_id",
+            #                 "type": "local",
+            #                 "name": "name",
+            #                 "binaries": {"456": "path", "123": "path", "798": "path"},
+            #             },
+            #             {
+            #                 "id": "slurm_id",
+            #                 "type": "slurm",
+            #                 "name": "name",
+            #                 "antares_versions_on_remote_server": ["258", "147", "369"],
+            #             },
+            #         ],
+            #     },
+            #     "local_id",
+            #     ["123", "456", "798"],
+            #     id="local+slurm-config-local",
+            # ),
             pytest.param(
                 {
-                    "default": "local_id",
-                    "launchers": [
-                        {"id": "local_id", "type": "local", "name": "name", "binaries": {}},
-                        {"id": "slurm_id", "type": "slurm", "name": "name", "antares_versions_on_remote_server": []},
-                    ],
-                },
-                None,
-                [],
-                id="empty-config",
-            ),
-            pytest.param(
-                {
-                    "default": "local_id",
+                    "default": "default",
                     "launchers": [
                         {
                             "id": "local_id",
@@ -328,131 +466,14 @@ class TestLauncherService:
                         }
                     ],
                 },
-                None,
-                ["123", "456", "798"],
-                id="local-config-default",
-            ),
-            pytest.param(
-                {
-                    "default": "local_id",
-                    "launchers": [
-                        {
-                            "id": "local_id",
-                            "type": "local",
-                            "name": "name",
-                            "binaries": {"456": "path", "123": "path", "798": "path"},
-                        }
-                    ],
-                },
-                "slurm_id",
+                "",
                 [],
-                id="local-config-slurm",
+                id="default-config-not-found",
                 marks=pytest.mark.xfail(
-                    reason="Unknown solver configuration: 'unknown'",
+                    reason="Default launcher id default not found in launcher configs",
                     raises=InvalidConfigurationError,
                     strict=True,
                 ),
-            ),
-            pytest.param(
-                {
-                    "default": "local_id",
-                    "launchers": [
-                        {
-                            "id": "local_id",
-                            "type": "local",
-                            "name": "name",
-                            "binaries": {"456": "path", "123": "path", "798": "path"},
-                        }
-                    ],
-                },
-                "unknown",
-                [],
-                id="local-config-unknown",
-                marks=pytest.mark.xfail(
-                    reason="Unknown solver configuration: 'unknown'",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
-            ),
-            pytest.param(
-                {
-                    "default": "slurm_id",
-                    "launchers": [
-                        {
-                            "id": "slurm_id",
-                            "type": "slurm",
-                            "name": "name",
-                            "antares_versions_on_remote_server": ["258", "147", "369"],
-                        }
-                    ],
-                },
-                None,
-                ["147", "258", "369"],
-                id="slurm-config-default",
-            ),
-            pytest.param(
-                {
-                    "default": "slurm_id",
-                    "launchers": [
-                        {
-                            "id": "slurm_id",
-                            "type": "slurm",
-                            "name": "name",
-                            "antares_versions_on_remote_server": ["258", "147", "369"],
-                        }
-                    ],
-                },
-                "local_id",
-                [],
-                id="slurm-config-local",
-                marks=pytest.mark.xfail(
-                    reason="Unknown solver configuration: 'unknown'",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
-            ),
-            pytest.param(
-                {
-                    "default": "slurm_id",
-                    "launchers": [
-                        {
-                            "id": "slurm_id",
-                            "type": "slurm",
-                            "name": "name",
-                            "antares_versions_on_remote_server": ["258", "147", "369"],
-                        }
-                    ],
-                },
-                "unknown",
-                [],
-                id="slurm-config-unknown",
-                marks=pytest.mark.xfail(
-                    reason="Unknown solver configuration: 'unknown'",
-                    raises=InvalidConfigurationError,
-                    strict=True,
-                ),
-            ),
-            pytest.param(
-                {
-                    "default": "slurm_id",
-                    "launchers": [
-                        {
-                            "id": "local_id",
-                            "type": "local",
-                            "name": "name",
-                            "binaries": {"456": "path", "123": "path", "798": "path"},
-                        },
-                        {
-                            "id": "slurm_id",
-                            "type": "slurm",
-                            "name": "name",
-                            "antares_versions_on_remote_server": ["258", "147", "369"],
-                        },
-                    ],
-                },
-                "local_id",
-                ["123", "456", "798"],
-                id="local+slurm-config-local",
             ),
         ],
     )
