@@ -69,6 +69,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     Link,
+    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -585,7 +586,7 @@ def test_download_output() -> None:
     sim = Simulation(
         name="",
         date="",
-        mode="",
+        mode=Mode.ECONOMY,
         nbyears=1,
         synthesis=True,
         by_year=True,
