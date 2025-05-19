@@ -13,7 +13,7 @@
  */
 
 import { TimeFrequency, Operation } from "../../shared/constants";
-import type { FilterState, TemporalOption } from "./types";
+import type { FilterState, TemporalOption, RowFilter } from "./types";
 import type { TimeFrequencyType } from "../../shared/types";
 
 export const FILTER_TYPES = {
@@ -98,6 +98,17 @@ export const TEMPORAL_OPTIONS: TemporalOption[] = [
   },
 ];
 
+export const createDefaultRowFilter = (
+  rowCount: number,
+  timeFrequency?: TimeFrequencyType,
+): RowFilter => ({
+  id: crypto.randomUUID(),
+  indexingType: getDefaultIndexingType(timeFrequency),
+  type: FILTER_TYPES.RANGE,
+  range: { min: 1, max: rowCount || 1 },
+  list: [],
+});
+
 export const getDefaultFilterState = (
   rowCount: number,
   columnCount: number,
@@ -109,12 +120,7 @@ export const getDefaultFilterState = (
     range: { min: 1, max: columnCount || 1 },
     list: [],
   },
-  rowsFilter: {
-    indexingType: getDefaultIndexingType(timeFrequency),
-    type: FILTER_TYPES.RANGE,
-    range: { min: 1, max: rowCount || 1 },
-    list: [],
-  },
+  rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],
   operation: {
     type: Operation.Eq,
     value: 0,
