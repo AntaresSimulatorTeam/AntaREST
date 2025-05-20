@@ -82,3 +82,18 @@ class TestupdateStudyMetadata:
         assert res.status_code == 422, res.json()
         description = res.json()["description"]
         assert "Tag is too long" in description
+
+    def test_update_tags__remove_all_tags(
+        self, client: TestClient, user_access_token: str, internal_study_id: str
+    ) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        study_tags = ["Tag1", "Tag2"]
+        client.put(f"/v1/studies/{internal_study_id}", json={"tags": study_tags})
+
+        updated_study_tags = []
+        res = client.put(f"/v1/studies/{internal_study_id}", json={"tags": updated_study_tags})
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        assert set(actual["tags"]) == set(updated_study_tags)  # not the same case
+        assert set(tag.upper() for tag in actual["tags"]) == set()
