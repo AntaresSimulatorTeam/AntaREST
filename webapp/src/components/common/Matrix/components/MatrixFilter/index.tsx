@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   Button,
@@ -41,6 +41,7 @@ import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
 import { processRowFilters } from "./utils";
+import { useUpdateEffect } from "react-use";
 
 function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterProps) {
   const { t } = useTranslation();
@@ -92,7 +93,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     return { columnsIndices, rowsIndices };
   }, [currentState.data, filter, dateTime, isTimeSeries, timeFrequency]);
 
-  // Enable preview mode, allowing users to preview the filtered data before applying operations on it.
   const togglePreviewMode = () => {
     setFilterPreview({
       active: !filterPreview.active,
@@ -101,7 +101,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
   };
 
   // Update the filter preview when filter criteria changes
-  useEffect(() => {
+  useUpdateEffect(() => {
     if (filter.active) {
       setFilterPreview({
         ...filterPreview,
@@ -123,8 +123,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
     const { columnsIndices, rowsIndices } = filteredData;
     const { type: opType, value } = filter.operation;
-
-    // Create a deep copy of the matrix data
     const newData = currentState.data.map((row) => [...row]);
 
     // Apply the operation to each filtered cell
@@ -158,7 +156,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
       }
     }
 
-    // Update the matrix data
     setMatrixData({
       data: newData,
       aggregates: calculateMatrixAggregates({ matrix: newData, types: aggregateTypes }),
@@ -256,7 +253,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
           </Box>
         </Box>
 
-        {/* Side-by-side buttons container */}
         <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
           {/* Main filter toggle button */}
           <Button
@@ -269,10 +265,14 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
             {filter.active ? t("matrix.filter.active") : t("matrix.filter.inactive")}
           </Button>
 
-          {/* Preview toggle button - smaller and side-by-side */}
+          {/* Preview toggle button */}
           {filter.active && (
             <Tooltip
-              title={t(filterPreview.active ? "matrix.preview.active" : "matrix.preview.inactive")}
+              title={t(
+                filterPreview.active
+                  ? "matrix.filter.preview.active"
+                  : "matrix.filter.preview.inactive",
+              )}
             >
               <Button
                 variant={filterPreview.active ? "contained" : "outlined"}

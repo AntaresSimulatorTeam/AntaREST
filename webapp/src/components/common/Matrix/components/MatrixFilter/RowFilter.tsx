@@ -312,6 +312,7 @@ function RowFilterComponent({
           rowsFilters: updatedFilters,
         });
       }
+
       // Clear the input field after adding
       setInputValue("");
     }
