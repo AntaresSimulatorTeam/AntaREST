@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { FILTER_TYPES, TIME_INDEXING, TIME_FREQUENCY_INDEXING_MAP } from "./constants";
+import { FILTER_TYPES, TIME_FREQUENCY_INDEXING_MAP } from "./constants";
 import type { FilterState, TemporalIndexingParams, TemporalOption, RowFilter } from "./types";
 import { TimeFrequency } from "../../shared/constants";
 import type { TimeFrequencyType } from "../../shared/types";
+import { extractValueFromDate } from "./dateUtils";
 
 export function getTemporalIndices({
   filter,
@@ -34,105 +35,19 @@ export function getTemporalIndices({
     );
   }
 
-  // Extract temporal indices directly from date strings without parsing
+  // Extract temporal indices using our utility function
   const timeIndices = dateTime.map((dateStr, index) => {
-    // For many indexing types, we don't need to fully parse the date
-    // We can extract the needed values directly from the date string patterns
     const { indexingType } = rowFilter;
 
-    try {
-      // Handle annual frequency differently
-      if (timeFrequency === TimeFrequency.Annual) {
-        // For annual data, we typically just use the index as is
-        return { index, value: index + 1 };
-      }
-
-      // Time indexing based on string patterns - prevents parsing errors
-      if (indexingType === TIME_INDEXING.MONTH) {
-        // Look for month names in the string - simplistic approach
-        const months = [
-          "jan",
-          "feb",
-          "mar",
-          "apr",
-          "may",
-          "jun",
-          "jul",
-          "aug",
-          "sep",
-          "oct",
-          "nov",
-          "dec",
-          "jan",
-          "fév",
-          "mar",
-          "avr",
-          "mai",
-          "juin",
-          "juil",
-          "aoû",
-          "sep",
-          "oct",
-          "nov",
-          "déc",
-        ];
-
-        for (let i = 0; i < months.length; i++) {
-          if (dateStr.toLowerCase().includes(months[i])) {
-            return { index, value: (i % 12) + 1 }; // 1-12
-          }
-        }
-      } else if (indexingType === TIME_INDEXING.WEEKDAY) {
-        // Look for day names in the string
-        const days = [
-          "mon",
-          "tue",
-          "wed",
-          "thu",
-          "fri",
-          "sat",
-          "sun",
-          "lun",
-          "mar",
-          "mer",
-          "jeu",
-          "ven",
-          "sam",
-          "dim",
-        ];
-
-        for (let i = 0; i < days.length; i++) {
-          if (dateStr.toLowerCase().includes(days[i])) {
-            const dayValue = (i % 7) + 1; // 1-7 (Mon-Sun)
-            return { index, value: dayValue };
-          }
-        }
-      } else if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
-        // Extract day number using regex - finds numbers 1-31
-        const match = dateStr.match(/\b([1-9]|[12]\d|3[01])\b/);
-        if (match) {
-          return { index, value: Number.parseInt(match[0]) };
-        }
-      } else if (indexingType === TIME_INDEXING.DAY_HOUR) {
-        // Extract hour using regex - finds times like 13:00
-        const match = dateStr.match(/(\d{1,2})[:h]/);
-        if (match) {
-          return { index, value: Number.parseInt(match[1]) + 1 }; // Convert 0-23 to 1-24
-        }
-      } else if (indexingType === TIME_INDEXING.WEEK) {
-        // Extract week number - finds "W. 01" pattern or numbers after "W"
-        const match = dateStr.match(/[Ww]\.?\s*(\d{1,2})/);
-        if (match) {
-          return { index, value: Number.parseInt(match[1]) };
-        }
-      }
-
-      // Fallback: use row index as the value
-      return { index, value: index + 1 };
-    } catch {
-      // Silently handle date processing errors
+    // Handle annual frequency differently
+    if (timeFrequency === TimeFrequency.Annual) {
+      // For annual data, we typically just use the index as is
       return { index, value: index + 1 };
     }
+
+    // Use the utility function to extract the appropriate value
+    const value = extractValueFromDate(dateStr, indexingType, index);
+    return { index, value };
   });
 
   // Apply filter to temporal indices
@@ -166,7 +81,7 @@ function applyRowFilter(
  *
  * @param timeFrequency - The time frequency of the matrix
  * @param options - The full list of temporal options
- * @returns -
+ * @returns The filtered list of temporal options valid for the given time frequency
  */
 export function getFilteredTemporalOptions(
   timeFrequency: string | undefined,
@@ -194,7 +109,7 @@ export function getFilteredTemporalOptions(
  * @param isTimeSeries - Whether the data is a time series
  * @param timeFrequency - The frequency of the time data
  * @param totalRows - Total number of rows in the matrix
- * @returns Array of row indices that match ANY of the row filters
+ * @returns Array of row indices that match ANY of the row filters (using OR logic between filters)
  */
 export function processRowFilters(
   filter: FilterState,
