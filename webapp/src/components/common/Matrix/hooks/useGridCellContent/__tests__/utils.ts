@@ -13,7 +13,7 @@
  */
 
 import { renderHook } from "@testing-library/react";
-import { type Item } from "@glideapps/glide-data-grid";
+import type { Item } from "@glideapps/glide-data-grid";
 import { useColumnMapping } from "../../useColumnMapping";
 import { useGridCellContent } from "..";
 import type { RenderOptions } from "../types";
