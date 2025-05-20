@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import multiprocessing
-import os
 import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
@@ -22,9 +21,6 @@ import yaml
 
 from antarest.core.model import JSON
 from antarest.core.roles import RoleType
-from antarest.launcher.model import JobResult, LauncherLoadDTO, LauncherParametersDTO
-from antarest.launcher.ssh_client import calculates_slurm_load
-from antarest.launcher.ssh_config import SSHConfigDTO
 
 DEFAULT_WORKSPACE_NAME = "default"
 
@@ -497,69 +493,6 @@ class LauncherConfig:
             return next((launcher for launcher in self.configs or [] if launcher.id == launcher_id))
         except StopIteration:
             raise InvalidConfigurationError(launcher_id)
-
-    def get_load(self, running_jobs: List[JobResult], launcher_id: Optional[str]) -> LauncherLoadDTO:
-        """
-        Get the load of the SLURM cluster or the local machine.
-        """
-        launcher = self.get_launcher(launcher_id)
-
-        if isinstance(launcher, SlurmConfig):
-            # SLURM load calculation
-            ssh_config = SSHConfigDTO(
-                config_path=Path(),
-                username=launcher.username,
-                hostname=launcher.hostname,
-                port=launcher.port,
-                private_key_file=launcher.private_key_file,
-                key_password=launcher.key_password,
-                password=launcher.password,
-            )
-            partition = launcher.partition
-            allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
-            args = {
-                "allocatedCpuRate": allocated_cpus,
-                "clusterLoadRate": cluster_load,
-                "nbQueuedJobs": queued_jobs,
-                "launcherStatus": "SUCCESS",
-            }
-            return LauncherLoadDTO(**args)
-        else:
-            # local load calculation
-            local_used_cpus = sum(
-                LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1 for job in running_jobs
-            )
-
-            # The cluster load is approximated by the percentage of used CPUs.
-            cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
-
-            args = {
-                "allocatedCpuRate": cluster_load_approx,
-                "clusterLoadRate": cluster_load_approx,
-                "nbQueuedJobs": 0,
-                "launcherStatus": "SUCCESS",
-            }
-            return LauncherLoadDTO(**args)
-
-    def get_solver_versions(self, launcher_id: Optional[str]) -> List[str]:
-        """
-        Fetch the list of solver versions from the configuration.
-
-        Args:
-            launcher_id: id of the configuration to read.
-
-        Returns:
-            The list of solver versions.
-            This list is empty if the configuration is not available.
-
-        Raises:
-            InvalidConfigurationError: if the launcher doesn't exist in the configuration.
-        """
-        config = self.get_launcher(launcher_id)
-        if isinstance(config, SlurmConfig):
-            return sorted(config.antares_versions_on_remote_server)
-        else:
-            return sorted(config.binaries)
 
 
 @dataclass(frozen=True)

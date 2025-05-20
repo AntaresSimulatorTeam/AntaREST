@@ -41,7 +41,9 @@ from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.launcher.ssh_client import calculates_slurm_load
+from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.login.utils import current_user_context
 
 logger = logging.getLogger(__name__)
@@ -646,6 +648,30 @@ class SlurmLauncher(AbstractLauncher):
                 None,
             )
 
+    @override
+    def get_solver_versions(self) -> List[str]:
+        return sorted(self.slurm_config.antares_versions_on_remote_server)
+
+    @override
+    def get_load(self) -> LauncherLoadDTO:
+        ssh_config = SSHConfigDTO(
+            config_path=Path(),
+            username=self.slurm_config.username,
+            hostname=self.slurm_config.hostname,
+            port=self.slurm_config.port,
+            private_key_file=self.slurm_config.private_key_file,
+            key_password=self.slurm_config.key_password,
+            password=self.slurm_config.password,
+        )
+        partition = self.slurm_config.partition
+        allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
+        args = {
+            "allocatedCpuRate": allocated_cpus,
+            "clusterLoadRate": cluster_load,
+            "nbQueuedJobs": queued_jobs,
+            "launcherStatus": "SUCCESS",
+        }
+        return LauncherLoadDTO(**args)
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:
     study_info_path = study_path / "study.antares"

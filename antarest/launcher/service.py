@@ -606,7 +606,7 @@ class LauncherService:
         Get the load of the specified launcher.
         """
 
-        return self.config.launcher.get_load(self.job_result_repository.get_running(), launcher_id)
+        return self.launchers.get(launcher_id).get_load()
 
     def get_solver_versions(self, launcher_id: Optional[str]) -> List[str]:
         """
@@ -622,7 +622,7 @@ class LauncherService:
         Raises:
             InvalidConfigurationError: if the launcher doesn't exist in the configuration.
         """
-        return self.config.launcher.get_solver_versions(launcher_id)
+        return self.launchers.get(launcher_id).get_solver_versions()
 
     def get_launch_progress(self, job_id: str) -> float:
         job_result = self.job_result_repository.get(job_id)

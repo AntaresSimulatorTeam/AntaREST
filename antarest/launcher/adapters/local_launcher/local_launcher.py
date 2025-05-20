@@ -29,7 +29,7 @@ from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -214,3 +214,24 @@ class LocalLauncher(AbstractLauncher):
                 None,
                 None,
             )
+
+    @override
+    def get_solver_versions(self) -> List[str]:
+        return sorted(self.local_config.binaries)
+
+    @override
+    def get_load(self) -> LauncherLoadDTO:
+        local_used_cpus = sum(
+            LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1 for job in running_jobs
+        )
+
+        # The cluster load is approximated by the percentage of used CPUs.
+        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
+
+        args = {
+            "allocatedCpuRate": cluster_load_approx,
+            "clusterLoadRate": cluster_load_approx,
+            "nbQueuedJobs": 0,
+            "launcherStatus": "SUCCESS",
+        }
+        return LauncherLoadDTO(**args)
