@@ -326,7 +326,11 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
           </Box>
         )}
 
-        <ColumnFilter filter={filter} setFilter={setFilter} />
+        <ColumnFilter
+          filter={filter}
+          setFilter={setFilter}
+          columnCount={currentState.data[0]?.length || 0}
+        />
 
         <MultiRowFilter
           filter={filter}
