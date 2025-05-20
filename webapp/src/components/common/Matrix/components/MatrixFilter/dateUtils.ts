@@ -58,6 +58,7 @@ export function parseFlexibleDate(dateStr: string): Date | null {
   // Try each format until we find one that works
   for (const format of DATE_FORMATS) {
     const parsedDate = parse(dateStr, format, new Date());
+
     if (isValid(parsedDate)) {
       return parsedDate;
     }
@@ -102,7 +103,6 @@ export function extractValueFromDate(
         case TIME_INDEXING.DAY_OF_YEAR:
           return getDayOfYear(parsedDate);
         case TIME_INDEXING.HOUR_YEAR:
-          // Calculate hour of year
           return (getDayOfYear(parsedDate) - 1) * 24 + getHours(parsedDate) + 1;
         default:
           return fallbackIndex + 1;
@@ -116,6 +116,7 @@ export function extractValueFromDate(
       // Try to match month abbreviations
       for (const lang of Object.keys(MONTH_ABBREVIATIONS)) {
         const abbrs = MONTH_ABBREVIATIONS[lang as keyof typeof MONTH_ABBREVIATIONS];
+
         for (let i = 0; i < abbrs.length; i++) {
           if (lowerDateStr.includes(abbrs[i])) {
             return i + 1; // Month values are 1-12
@@ -136,18 +137,21 @@ export function extractValueFromDate(
     } else if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
       // Extract day number using regex - finds numbers 1-31
       const match = dateStr.match(/\b([1-9]|[12]\d|3[01])\b/);
+
       if (match) {
         return Number.parseInt(match[0]);
       }
     } else if (indexingType === TIME_INDEXING.DAY_HOUR) {
       // Extract hour using regex - finds times like 13:00 or 13h
       const match = dateStr.match(/(\d{1,2})[:h]/);
+
       if (match) {
         return Number.parseInt(match[1]) + 1; // Convert 0-23 to 1-24
       }
     } else if (indexingType === TIME_INDEXING.WEEK) {
       // Extract week number - finds "W. 01" pattern or numbers after "W"
       const match = dateStr.match(/[Ww]\.?\s*(\d{1,2})/);
+
       if (match) {
         return Number.parseInt(match[1]);
       }

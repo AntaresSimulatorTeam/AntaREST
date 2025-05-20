@@ -117,7 +117,7 @@ export const getDefaultFilterState = (
   active: false,
   columnsFilter: {
     type: FILTER_TYPES.RANGE,
-    range: { min: 1, max: columnCount || 1 },
+    range: { min: 1, max: Math.max(columnCount, 1) },
     list: [],
   },
   rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],
