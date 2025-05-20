@@ -151,10 +151,8 @@ class SlurmLauncher(AbstractLauncher):
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
     ) -> None:
-        if not isinstance(config, SlurmConfig):
-            raise TypeError(f"Launcher {config.id} is not a SlurmConfig")
-        super().__init__(config, callbacks, event_bus, cache)
-        self.slurm_config: SlurmConfig = cast(SlurmConfig, self.config)
+        super().__init__(callbacks, event_bus, cache)
+        self.slurm_config: SlurmConfig = config
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])

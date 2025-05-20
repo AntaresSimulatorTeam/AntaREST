@@ -18,7 +18,7 @@ import subprocess
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from antares.study.version import SolverVersion
 from typing_extensions import override
@@ -47,8 +47,8 @@ class LocalLauncher(AbstractLauncher):
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
-        super().__init__(config, callbacks, event_bus, cache)
-        self.local_config: LocalConfig = cast(LocalConfig, self.config)
+        super().__init__(callbacks, event_bus, cache)
+        self.local_config: LocalConfig = config
         self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)

@@ -17,7 +17,6 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
 
 from antares.study.version import SolverVersion
 
-from antarest.core.config import LocalConfig, SlurmConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
@@ -62,12 +61,10 @@ class LauncherCallbacks(NamedTuple):
 class AbstractLauncher(ABC):
     def __init__(
         self,
-        config: LocalConfig | SlurmConfig,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ):
-        self.config = config
         self.callbacks = callbacks
         self.event_bus = event_bus
         self.cache = cache
