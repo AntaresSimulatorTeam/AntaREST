@@ -55,6 +55,7 @@ const defaultProps = {
   disabled: false,
   isTimeSeries: true,
   canImport: true,
+  dateTime: ["2023-01-01", "2023-01-02"],
 };
 
 type RenderOptions = Partial<typeof defaultProps>;
@@ -79,6 +80,14 @@ const defaultContext = {
   canRedo: true,
   isDirty: false,
   aggregateTypes: [],
+  filterPreview: {
+    active: false,
+    criteria: {
+      columnsIndices: [],
+      rowsIndices: [],
+    },
+  },
+  setFilterPreview: vi.fn(),
 };
 
 const renderMatrixActions = (

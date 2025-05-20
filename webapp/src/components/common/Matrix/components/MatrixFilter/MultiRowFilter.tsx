@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import AddIcon from "@mui/icons-material/Add";
 import RowFilter from "./RowFilter";
@@ -33,6 +33,7 @@ function MultiRowFilter({
       filter.rowsFilters[0]?.range?.max || 100,
       timeFrequency,
     );
+
     setFilter({
       ...filter,
       rowsFilters: [...filter.rowsFilters, newFilter],
@@ -53,13 +54,6 @@ function MultiRowFilter({
 
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom sx={{ mb: 1 }}>
-        {t("matrix.filter.rowsFilters")}
-      </Typography>
-      <Typography variant="caption" color="text.secondary" paragraph>
-        {t("matrix.filter.rowsFiltersDescription")}
-      </Typography>
-
       {filter.rowsFilters.map((rowFilter) => (
         <Box key={rowFilter.id} sx={{ mb: 2 }}>
           <RowFilter

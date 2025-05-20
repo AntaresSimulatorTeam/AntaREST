@@ -78,7 +78,6 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
     }
   };
 
-  // Common operations with predefined values
   const quickOperations = [
     { label: "+1", op: Operation.Add, value: 1 },
     { label: "-1", op: Operation.Sub, value: 1 },
@@ -96,6 +95,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
         value: val,
       },
     });
+
     // Immediately apply the operation
     setTimeout(onApplyOperation, 0);
   };
