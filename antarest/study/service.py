@@ -758,24 +758,24 @@ class StudyService:
         if metadata_patch.author or metadata_patch.horizon:
             self.assert_study_unarchived(study)
 
-        if metadata_patch.horizon is not None:
+        if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
             study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
             study_settings["horizon"] = metadata_patch.horizon
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
 
-        if metadata_patch.author is not None:
+        if metadata_patch.author:
             study_antares_url = "study/antares"
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
             study_antares["author"] = metadata_patch.author
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
         study.additional_data = study.additional_data or StudyAdditionalData()
-        if metadata_patch.name is not None:
+        if metadata_patch.name:
             study.name = metadata_patch.name
-        if metadata_patch.author is not None:
+        if metadata_patch.author:
             study.additional_data.author = metadata_patch.author
-        if metadata_patch.horizon is not None:
+        if metadata_patch.horizon:
             study.additional_data.horizon = metadata_patch.horizon
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
