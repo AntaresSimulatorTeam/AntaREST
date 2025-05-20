@@ -1,6 +1,5 @@
 Antares-Launcher==1.4.2
-git+https://github.com/AntaresSimulatorTeam/antares-study-version.git@fix/use-pyinstaller-specefic-dir-on-desktop
-# antares-study-version==1.0.9
+antares-study-version==1.0.9
 antares-timeseries-generation==0.1.7
 
 # When you install `fastapi[all]`, you get FastAPI along with additional dependencies:
