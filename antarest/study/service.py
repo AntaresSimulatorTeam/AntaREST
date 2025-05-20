@@ -963,6 +963,8 @@ class StudyService:
                 all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
+        all_studies = [study for study in all_studies if study.workspace != DEFAULT_WORKSPACE_NAME]
+        folders = [folder for folder in folders if folder.workspace != DEFAULT_WORKSPACE_NAME]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
@@ -973,7 +975,7 @@ class StudyService:
             if (
                 isinstance(study, RawStudy)
                 and not study.archived
-                and (study.workspace != DEFAULT_WORKSPACE_NAME and (study.workspace, study.path) not in workspace_paths)
+                and (study.workspace, study.path) not in workspace_paths
             ):
                 if not study.missing:
                     logger.info(
