@@ -525,32 +525,32 @@ class TestLauncherService:
     @pytest.mark.parametrize(
         "config_map, solver, expected",
         [
-            # pytest.param(
-            #     {"default": "local_id", "launchers": []},
-            #     None,
-            #     {},
-            #     id="empty-config",
-            #     marks=pytest.mark.xfail(
-            #         raises=InvalidConfigurationError,
-            #         strict=True,
-            #         reason="Configuration is not available for the 'local_id' launcher",
-            #     ),
-            # ),
-            # pytest.param(
-            #     {
-            #         "default": "local_id",
-            #         "launchers": [
-            #             {
-            #                 "id": "local_id",
-            #                 "type": "local",
-            #                 "nb_cores": {"min": 1, "default": 11, "max": 12},
-            #             }
-            #         ],
-            #     },
-            #     None,
-            #     {"min": 1, "default": 11, "max": 12},
-            #     id="local-config-default",
-            # ),
+            pytest.param(
+                {"default": "local_id", "launchers": []},
+                None,
+                {},
+                id="empty-config",
+                marks=pytest.mark.xfail(
+                    raises=InvalidConfigurationError,
+                    strict=True,
+                    reason="Configuration is not available for the 'local_id' launcher",
+                ),
+            ),
+            pytest.param(
+                {
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "nb_cores": {"min": 1, "default": 11, "max": 12},
+                        }
+                    ],
+                },
+                None,
+                {"min": 1, "default": 11, "max": 12},
+                id="local-config-default",
+            ),
             pytest.param(
                 {
                     "default": "local_id",
