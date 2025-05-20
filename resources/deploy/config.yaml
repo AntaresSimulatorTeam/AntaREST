@@ -19,9 +19,9 @@ storage:
       path: ./examples/studies/
 
 launcher:
-  default: local_id
+  default: local
   launchers:
-    - id: local_id
+    - id: local
       name: my_local
       type: local
       local_workspace: ./local_workspace
