@@ -52,6 +52,10 @@ export interface FilterSectionProps {
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
 }
 
+export interface ColumnFilterProps extends FilterSectionProps {
+  columnCount: number;
+}
+
 export interface RowFilterProps extends FilterSectionProps {
   dateTime?: string[];
   isTimeSeries: boolean;
