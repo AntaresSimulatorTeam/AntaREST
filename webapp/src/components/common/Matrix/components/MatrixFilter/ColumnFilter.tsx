@@ -27,16 +27,17 @@ import {
   Stack,
   IconButton,
   InputAdornment,
+  Slider,
   type SelectChangeEvent,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import type { FilterSectionProps } from "./types";
+import type { ColumnFilterProps } from "./types";
 import { FILTER_TYPES } from "./constants";
 
-const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
+const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => {
   const { t } = useTranslation();
 
   const handleTypeChange = (e: SelectChangeEvent) => {
@@ -49,17 +50,19 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
     });
   };
 
-  const handleRangeChange = (field: "min" | "max", value: string) => {
-    setFilter({
-      ...filter,
-      columnsFilter: {
-        ...filter.columnsFilter,
-        range: {
-          ...filter.columnsFilter.range,
-          [field]: Number.parseInt(value) || 1,
-        } as { min: number; max: number },
-      },
-    });
+  const handleSliderChange = (_event: Event, newValue: number | number[]) => {
+    if (Array.isArray(newValue)) {
+      setFilter({
+        ...filter,
+        columnsFilter: {
+          ...filter.columnsFilter,
+          range: {
+            min: newValue[0],
+            max: newValue[1],
+          },
+        },
+      });
+    }
   };
 
   const [inputValue, setInputValue] = useState<string>("");
@@ -122,20 +125,25 @@ const ColumnFilter = ({ filter, setFilter }: FilterSectionProps) => {
         </FormControl>
 
         {filter.columnsFilter.type === FILTER_TYPES.RANGE && (
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <TextField
-              label={t("matrix.filter.min")}
-              type="number"
-              value={filter.columnsFilter.range?.min || 1}
-              onChange={(e) => handleRangeChange("min", e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label={t("matrix.filter.max")}
-              type="number"
-              value={filter.columnsFilter.range?.max || 1}
-              onChange={(e) => handleRangeChange("max", e.target.value)}
-              fullWidth
+          <Box sx={{ px: 2, pt: 3, pb: 1 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "flex", justifyContent: "space-between" }}
+            >
+              <span>{filter.columnsFilter.range?.min || 1}</span>
+              <span>{filter.columnsFilter.range?.max || columnCount}</span>
+            </Typography>
+            <Slider
+              value={[
+                filter.columnsFilter.range?.min || 1,
+                filter.columnsFilter.range?.max || columnCount,
+              ]}
+              onChange={handleSliderChange}
+              valueLabelDisplay="auto"
+              min={1}
+              max={columnCount || 100}
+              sx={{ mt: 1 }}
             />
           </Box>
         )}
