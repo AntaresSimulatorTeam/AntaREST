@@ -5,7 +5,4 @@ pytest-xdist~=3.6.0
 pytest-cov~=4.0.0
 pytest-mock~=3.14.0
 
-# In this version DataFrame conversion to Excel is done using 'xlsxwriter' library.
-# But Excel files reading is done using 'openpyxl' library, during testing only.
-openpyxl~=3.1.2
 jinja2~=3.1.3

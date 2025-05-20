@@ -23,12 +23,13 @@ from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, R
 from antarest.core.config import Config
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
+from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.service import StudyService
-from antarest.study.storage.df_download import TableExportFormat, export_file
+from antarest.study.storage.df_download import export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
 logger = logging.getLogger(__name__)
