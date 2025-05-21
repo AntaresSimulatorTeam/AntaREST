@@ -81,7 +81,7 @@ def test_storage_config_from_dict(storage_config_default: Dict[str, Union[str, i
                 "workspace2": {"path": "./workspace2"},
             },
             False,
-            False,  # multuple workspaces allowed when desktop_mode is False
+            False,  # multiple workspaces allowed when desktop_mode is False
         ),
         (
             {
@@ -89,7 +89,7 @@ def test_storage_config_from_dict(storage_config_default: Dict[str, Union[str, i
                 "workspace2": {"path": "./workspace2"},
             },
             True,
-            True,  # multuple workspace not allowed when desktop_mode is True
+            True,  # multiple workspace not allowed when desktop_mode is True
         ),
         (
             {
