@@ -39,7 +39,7 @@ from antarest.login.model import (
     UserLdap,
     UserRoleDTO,
 )
-from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserRepository
+from antarest.login.repository import BotRepository, GroupRepository, IdentityRepository, RoleRepository, UserRepository
 from antarest.login.utils import get_current_user, get_user_id
 
 logger = logging.getLogger(__name__)
@@ -63,6 +63,7 @@ class LoginService:
     def __init__(
         self,
         user_repo: UserRepository,
+        identity_repo: IdentityRepository,
         bot_repo: BotRepository,
         group_repo: GroupRepository,
         role_repo: RoleRepository,
@@ -70,6 +71,7 @@ class LoginService:
         event_bus: IEventBus,
     ):
         self.users = user_repo
+        self.identities = identity_repo
         self.bots = bot_repo
         self.groups = group_repo
         self.roles = role_repo
@@ -512,37 +514,41 @@ class LoginService:
         Get all groups.
         Permission: SADMIN
         Args:
-            details: get all user information, including users
+            details: If False, only get group name and id.
+            If True, for each group, fetch every user in the group with their role
 
         Returns: list of groups
 
         """
         user = get_current_user()
-        if user:
-            group_list = []
-
-            if user.is_site_admin():
-                group_list = self.groups.get_all()
-            else:
-                roles_by_user = self.roles.get_all_by_user(user.id)
-
-                for role in roles_by_user:
-                    if not details or role.type == RoleType.ADMIN:
-                        tmp = self.groups.get(role.group_id)
-                        if tmp:
-                            group_list.append(tmp)
-        else:
+        if not user:
             logger.error(
                 "user %s has not permission to get all groups",
                 get_user_id(),
             )
             raise UserHasNotPermissionError()
 
-        return (
-            [grp for grp in [self.get_group_info(group.id) for group in group_list] if grp is not None]
-            if details
-            else [group.to_dto() for group in group_list]
-        )
+        # No details needed
+        if not details:
+            if user.is_site_admin():
+                group_list = self.groups.get_all()
+            else:
+                group_list = [r.group for r in self.roles.get_all_by_user(user.id)]
+            return [group.to_dto() for group in group_list]
+
+        # User details needed
+        users_by_group: dict[tuple[str, str], List[UserRoleDTO]] = {}
+        all_users = self.get_all_users(details=True)
+        for identity in all_users:
+            assert isinstance(identity, IdentityDTO)
+            for role in identity.roles:
+                group_id, group_name = role.group_id, role.group_name
+                assert group_id is not None
+                users_by_group.setdefault((group_id, group_name), []).append(
+                    UserRoleDTO(id=identity.id, name=identity.name, role=role.type)
+                )
+
+        return [GroupDetailDTO(id=key[0], name=key[1], users=users) for key, users in users_by_group.items()]
 
     def _get_user_by_group(self, group: str) -> List[Identity]:
         roles = self.roles.get_all_by_group(group)
@@ -553,43 +559,64 @@ class LoginService:
                 user_list.append(user)
         return user_list
 
-    def get_all_users(self, details: Optional[bool] = False) -> List[Union[UserInfo, IdentityDTO]]:
+    def get_all_users(self, details: bool = False) -> List[Union[UserInfo, IdentityDTO]]:
         """
         Get all users.
         Permission: SADMIN
         Args:
-            details: get all user information, including roles
+            details: If False, only get user's name and id.
+            If True, for each user, fetch all his groups and his role inside it
 
         Returns: list of groups
 
         """
         user = get_current_user()
-        if user:
-            user_list = []
-            roles = self.roles.get_all_by_user(user.id)
-            groups = [r.group for r in roles]
-            if any(
-                (
-                    user.is_site_admin(),
-                    user.is_group_admin(groups),
-                )
-            ):
-                user_list = self.ldap.get_all() + self.users.get_all()
-            else:
-                for group in groups:
-                    user_list.extend([usr for usr in self._get_user_by_group(group.id) if usr not in user_list])
 
-            return (
-                [usr for usr in [self.get_user_info(user.id) for user in user_list] if usr is not None]
-                if details
-                else [user.to_dto() for user in user_list]
-            )
-        else:
+        if not user:
             logger.error(
                 "user %s has not permission to get all users",
                 get_user_id(),
             )
             raise UserHasNotPermissionError()
+
+        # Get all users
+        # WARNING: This list contains all users, so we should filter it afterward to avoid accessing info we shouldn't
+        all_users = self.identities.get_all_users()
+
+        # Easy case: we don't need more information
+        if user.is_site_admin() and not details:
+            return [user.to_dto() for user in all_users]
+
+        # Get roles
+        groups = None if user.is_site_admin() else [r.group for r in self.roles.get_all_by_user(user.id)]
+        all_roles = self.roles.get_all(details=details, groups=groups)
+
+        # Builds a map from a user to all his roles
+        roles_per_user: dict[int, List[RoleDTO]] = {}
+        for role in all_roles:
+            roles_per_user.setdefault(role.identity_id, []).append(
+                RoleDTO(
+                    group_id=role.group_id,
+                    group_name=role.group.name,
+                    identity_id=role.identity_id,
+                    type=role.type,
+                )
+            )
+
+        # For the admin, loop through every user and build the return containing role information
+        if user.is_site_admin():
+            return [
+                IdentityDTO(id=identity.id, name=identity.name, roles=roles_per_user.get(identity.id, []))
+                for identity in all_users
+            ]
+
+        # For other users, we need to loop on the map we built earlier to avoid accessing info the user shouldn't have
+        user_mapping_id_to_name = {user.id: user.name for user in all_users}
+        if details:
+            return [
+                IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user[id]) for id in roles_per_user
+            ]
+        return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]
 
     def get_all_bots(self) -> List[Bot]:
         """

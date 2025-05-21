@@ -13,12 +13,12 @@
 import logging
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Dict, List, MutableSequence, Optional, Sequence
+from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
 
 import numpy as np
 import pandas as pd
 
-from antarest.core.exceptions import FileTooLargeError, MCRootNotHandled, OutputNotFound, OutputSubFolderNotFound
+from antarest.core.exceptions import MCRootNotHandled, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
     rename_unnamed,
@@ -141,7 +141,6 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
     ):
         self.output_path = output_path
@@ -151,7 +150,6 @@ class AggregatorManager:
         self.mc_years = mc_years
         self.columns_names = columns_names
         self.ids_to_consider = ids_to_consider
-        self.aggregation_results_max_size = aggregation_results_max_size
         self.output_type = (
             "areas"
             if (isinstance(query_file, MCIndAreasQueryFile) or isinstance(query_file, MCAllAreasQueryFile))
@@ -345,7 +343,7 @@ class AggregatorManager:
             # just extract the data frame from the file by just merging the columns components
             return self._parse_output_file(file_path)
 
-    def _build_dataframe(self, files: Sequence[Path]) -> pd.DataFrame:
+    def _build_dataframes(self, files: Sequence[Path]) -> Iterator[pd.DataFrame]:
         if self.mc_root not in [MCRoot.MC_IND, MCRoot.MC_ALL]:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
         is_details = self.query_file in [
@@ -356,7 +354,6 @@ class AggregatorManager:
             MCIndAreasQueryFile.DETAILS_RES,
             MCAllAreasQueryFile.DETAILS_RES,
         ]
-        final_df = pd.DataFrame()
 
         for k, file_path in enumerate(files):
             df = self._process_df(file_path, is_details)
@@ -367,12 +364,8 @@ class AggregatorManager:
             # if no columns, no need to continue
             list_of_df_columns = df.columns.tolist()
             if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
-                return pd.DataFrame()
-
-            # The following formula is the more accurate one compared to the final csv file.
-            estimated_binary_size = final_df.memory_usage().sum()
-            if estimated_binary_size > self.aggregation_results_max_size * 10**6:
-                raise FileTooLargeError(round(estimated_binary_size / 10**6, 2), self.aggregation_results_max_size)
+                yield pd.DataFrame()
+                return
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
@@ -393,12 +386,11 @@ class AggregatorManager:
             # Reorganize the columns
             df = df.reindex(columns=pd.Index(new_column_order))
 
-            final_df = pd.concat([final_df, df], ignore_index=True)
+            # replace np.nan by None
+            # TODO: should be done at serialization time if really needed, not here since it converts to object ...
+            df = df.replace({np.nan: None})
 
-        # replace np.nan by None
-        final_df = final_df.replace({np.nan: None})
-
-        return final_df
+            yield df
 
     def _check_mc_root_folder_exists(self) -> None:
         if self.mc_root == MCRoot.MC_IND:
@@ -410,7 +402,7 @@ class AggregatorManager:
         else:
             raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
 
-    def aggregate_output_data(self) -> pd.DataFrame:
+    def aggregate_output_data(self) -> Iterator[pd.DataFrame]:
         """
         Aggregates the output data of a study and returns it as a DataFrame
         """
@@ -432,6 +424,4 @@ class AggregatorManager:
             f"to build the aggregated output {self.output_id}"
         )
         # builds final dataframe
-        final_df = self._build_dataframe(all_output_files)
-
-        return final_df
+        return self._build_dataframes(all_output_files)

@@ -17,7 +17,7 @@ import { Skeleton } from "@mui/material";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { useContext, useMemo } from "react";
+import React, { useContext, useMemo } from "react";
 import {
   Controller,
   type ControllerRenderProps,
@@ -48,8 +48,8 @@ interface FieldEditorProps<TValue> {
   name?: string;
   disabled?: boolean;
   helperText?: React.ReactNode;
-  // inputRef?: any;
-  // error?: boolean;
+  error?: boolean;
+  inputRef?: React.Ref<any>;
 }
 
 export type ReactHookFormSupportProps<
@@ -66,7 +66,6 @@ export type ReactHookFormSupportProps<
         | "valueAsDate"
         | "disabled"
         // Not necessary
-        | "onChange"
         | "onBlur"
       >;
       shouldUnregister?: boolean;
@@ -97,7 +96,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
    * @param FieldEditor - The field editor component to wrap.
    * @returns The wrapped component with added React Hook Form support.
    */
-  function wrapWithReactHookFormSupport<TProps extends FieldEditorProps<TValue>>(
+  function withReactHookFormSupport<TProps extends FieldEditorProps<TValue>>(
     FieldEditor: React.ComponentType<TProps>,
   ) {
     /**
@@ -107,7 +106,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
      * @param props - The props of the field editor, extended with React Hook Form and custom options.
      * @returns The field editor component wrapped with React Hook Form functionality.
      */
-    function ReactHookFormSupport<
+    function WithReactHookFormSupport<
       TFieldValues extends FieldValues = FieldValues,
       TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
       TContext = any,
@@ -242,14 +241,14 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
       return <FieldEditor {...(feProps as TProps)} />;
     }
 
-    ReactHookFormSupport.displayName = `ReactHookFormSupport(${getComponentDisplayName(
+    WithReactHookFormSupport.displayName = `WithReactHookFormSupport(${getComponentDisplayName(
       FieldEditor,
     )})`;
 
-    return hoistNonReactStatics(ReactHookFormSupport, FieldEditor);
+    return hoistNonReactStatics(WithReactHookFormSupport, FieldEditor);
   }
 
-  return wrapWithReactHookFormSupport;
+  return withReactHookFormSupport;
 }
 
 export default reactHookFormSupport;

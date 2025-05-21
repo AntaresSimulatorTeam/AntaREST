@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.core.config import Config, InternalMatrixFormat, StorageConfig
+from antarest.core.config import InternalMatrixFormat, StorageConfig
 
 
 @pytest.fixture
@@ -129,13 +129,8 @@ def test_storage_config_from_dict_validation_errors(storage_config_default, work
         "workspaces": workspaces,
     }
 
-    config_data = {
-        "storage": data,
-        "desktop_mode": desktop_mode,
-    }
-
     if should_raise:
         with pytest.raises(ValueError):
-            Config.from_dict(config_data)
+            StorageConfig.from_dict(data, desktop_mode=desktop_mode)
     else:
-        Config.from_dict(config_data)
+        StorageConfig.from_dict(data, desktop_mode=desktop_mode)

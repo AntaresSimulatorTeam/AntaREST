@@ -14,6 +14,7 @@ import typing as t
 from unittest.mock import patch
 
 import pytest
+from sqlalchemy.orm import Session
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.requests import UserHasNotPermissionError
@@ -33,6 +34,7 @@ from antarest.login.model import (
 )
 from antarest.login.service import GroupNotFoundError, LoginService
 from antarest.login.utils import current_user_context
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 # For the unit tests, we will define several fictitious users, groups and roles.
@@ -681,22 +683,76 @@ class TestLoginService:
         assert jwt_user is None
 
     @with_db_context
-    def test_get_all_groups(self, login_service: LoginService) -> None:
+    def test_get_all_groups(self, login_service: LoginService, db_session: Session) -> None:
         # The site admin can get all groups
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
-            actual = login_service.get_all_groups()
-        assert [g.model_dump() for g in actual] == [
-            {"id": "admin", "name": "X-Men"},
-            {"id": "superman", "name": "Superman"},
-            {"id": "metropolis", "name": "Metropolis"},
-        ]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups()
+                assert len(db_recorder.sql_statements) == 1  # Only one request to get all groups
+                assert [g.model_dump() for g in actual] == [
+                    {"id": "admin", "name": "X-Men"},
+                    {"id": "superman", "name": "Superman"},
+                    {"id": "metropolis", "name": "Metropolis"},
+                ]
+
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups(details=True)
+                assert len(db_recorder.sql_statements) == 2
+                # 1 request to get all users
+                # 1 request to get all roles
+                assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "admin",
+                        "name": "X-Men",
+                        "users": [{"id": 1, "name": "Professor Xavier", "role": RoleType.ADMIN}],
+                    },
+                    {
+                        "id": "superman",
+                        "name": "Superman",
+                        "users": [
+                            {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
+                            {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
+                        ],
+                    },
+                    {
+                        "id": "metropolis",
+                        "name": "Metropolis",
+                        "users": [
+                            {"id": 4, "name": "Joh Fredersen", "role": RoleType.ADMIN},
+                            {"id": 5, "name": "Freder Fredersen", "role": RoleType.READER},
+                        ],
+                    },
+                ]
 
         # The group admin can its own groups
         group_admin = get_user(login_service, user_id=2, group_id="superman")
         with current_user_context(group_admin):
-            actual = login_service.get_all_groups()
-        assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups()
+                assert len(db_recorder.sql_statements) == 1
+                assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
+
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups(details=True)
+                assert len(db_recorder.sql_statements) == 3
+                # One request to get the current user groups
+                # One request for users
+                # One request for roles
+                assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "superman",
+                        "name": "Superman",
+                        "users": [
+                            {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
+                            {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
+                        ],
+                    }
+                ]
 
         # The user can get its own groups
         user = get_user(login_service, user_id=3, group_id="superman")
@@ -705,40 +761,106 @@ class TestLoginService:
         assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
 
     @with_db_context
-    def test_get_all_users(self, login_service: LoginService) -> None:
+    def test_get_all_users(self, login_service: LoginService, db_session: Session) -> None:
         # The site admin can get all users
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
-            actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [
-            {"id": 1, "name": "Professor Xavier"},
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-            {"id": 4, "name": "Joh Fredersen"},
-            {"id": 5, "name": "Freder Fredersen"},
-        ]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users()
+            assert len(db_recorder.sql_statements) == 1  # Only one request to get all users
+            assert [u.model_dump() for u in actual] == [
+                {"id": 1, "name": "Professor Xavier"},
+                {"id": 2, "name": "Clark Kent"},
+                {"id": 3, "name": "Lois Lane"},
+                {"id": 4, "name": "Joh Fredersen"},
+                {"id": 5, "name": "Freder Fredersen"},
+            ]
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users(details=True)
+            assert len(db_recorder.sql_statements) == 2
+            # One request to get all users
+            # One request to get all roles
+            assert [u.model_dump() for u in actual] == [
+                {
+                    "id": 1,
+                    "name": "Professor Xavier",
+                    "roles": [{"group_id": "admin", "group_name": "X-Men", "identity_id": 1, "type": RoleType.ADMIN}],
+                },
+                {
+                    "id": 2,
+                    "name": "Clark Kent",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 2, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 3,
+                    "name": "Lois Lane",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 3, "type": RoleType.READER}
+                    ],
+                },
+                {
+                    "id": 4,
+                    "name": "Joh Fredersen",
+                    "roles": [
+                        {"group_id": "metropolis", "group_name": "Metropolis", "identity_id": 4, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 5,
+                    "name": "Freder Fredersen",
+                    "roles": [
+                        {
+                            "group_id": "metropolis",
+                            "group_name": "Metropolis",
+                            "identity_id": 5,
+                            "type": RoleType.READER,
+                        }
+                    ],
+                },
+            ]
 
-        # The group admin can get its own users, but also the users of the other groups
-        # note: I don't know why the group admin can get all users -- Laurent
+        # The group admin can get its own users, and that's all
         group_admin = get_user(login_service, user_id=2, group_id="superman")
         with current_user_context(group_admin):
-            actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [
-            {"id": 1, "name": "Professor Xavier"},
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-            {"id": 4, "name": "Joh Fredersen"},
-            {"id": 5, "name": "Freder Fredersen"},
-        ]
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users()
+            assert len(db_recorder.sql_statements) == 3
+            # One request to get the current user groups
+            # One request for users
+            # One request for roles
+            assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
 
-        # The user can get its own users
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users(details=True)
+            assert len(db_recorder.sql_statements) == 3  # Same requests
+            assert [u.model_dump() for u in actual] == [
+                {
+                    "id": 2,
+                    "name": "Clark Kent",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 2, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 3,
+                    "name": "Lois Lane",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 3, "type": RoleType.READER}
+                    ],
+                },
+            ]
+
+        # Same check as group owner
         user = get_user(login_service, user_id=3, group_id="superman")
         with current_user_context(user):
             actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-        ]
+        assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
 
     @with_db_context
     def test_get_all_bots(self, login_service: LoginService) -> None:

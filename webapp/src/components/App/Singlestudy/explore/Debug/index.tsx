@@ -104,8 +104,8 @@ function Debug() {
 
   return (
     <DebugContext.Provider value={contextValue}>
-      <SplitView id="debug" sizes={[20, 80]}>
-        <Box sx={{ minWidth: 150, p: 1, overflow: "auto", position: "relative" }}>
+      <SplitView id="debug" sizes={[20, 80]} minSize={150}>
+        <Box sx={{ p: 1, overflow: "auto", position: "relative" }}>
           <UsePromiseCond
             keepLastResolvedOnReload
             response={treeDataResponse}
