@@ -594,7 +594,10 @@ def test_parse_links(study_path: Path) -> None:
     assert _parse_links_filtering(study_path, "fr") == {"l1": link}
 
 
-def test_build_output(empty_study_880: FileStudy) -> None:
+def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
+    """
+    Ensures we're able to parse an `expansion` simulation
+    """
     study_path = empty_study_880.config.path
     output_path = study_path / "output"
     output_id = "20250521-1009exp-fake_output"
