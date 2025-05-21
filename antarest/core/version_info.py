@@ -27,7 +27,6 @@ class VersionInfoDTO(AntaresBaseModel):
     version: str
     gitcommit: str
     dependencies: Dict[str, str]
-    desktop_mode: bool
 
     class Config:
         json_schema_extra = {
@@ -42,7 +41,6 @@ class VersionInfoDTO(AntaresBaseModel):
                     "Flask": "2.1.3",
                     "gunicorn": "20.1.0",
                 },
-                "desktop_mode": False,
             }
         }
 

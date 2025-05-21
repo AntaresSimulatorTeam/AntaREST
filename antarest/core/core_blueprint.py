@@ -63,7 +63,6 @@ def create_utils_routes(config: Config) -> APIRouter:
             version=antarest_version,
             gitcommit=get_commit_id(config.resources_path),
             dependencies=get_dependencies(),
-            desktop_mode=config.desktop_mode,
         )
 
     @bp.get(
