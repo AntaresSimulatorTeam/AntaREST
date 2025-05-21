@@ -25,6 +25,7 @@ import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants
 import type { Playlist, PlaylistData } from "@/services/api/studies/config/playlist/types";
 import { appendColon } from "@/utils/i18nUtils";
 import { Box, Button, ButtonGroup } from "@mui/material";
+import { Decimal } from "decimal.js-light";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useRef, useState } from "react";
@@ -36,6 +37,7 @@ import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import YearsSelectionFE from "./YearsSelectionFE";
+
 interface Props {
   study: StudyMetadata;
   open: boolean;
@@ -98,7 +100,8 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
       (acc, [_, { status, weight }]) => {
         if (status) {
           acc.selected += 1;
-          acc.sumWeights += weight;
+          // Vanilla JS has imprecision with floats, so we use Decimal.js to handle it
+          acc.sumWeights = new Decimal(acc.sumWeights).plus(weight).toNumber();
         }
         return acc;
       },
@@ -165,9 +168,12 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
           {t("global.close")}
         </Button>
       }
-      maxWidth="md"
-      fullWidth
       sx={{ ".MuiDialogContent-root": { pb: 0 } }}
+      slotProps={{
+        paper: {
+          sx: { maxWidth: 680 },
+        },
+      }}
     >
       <UsePromiseCond
         response={res}
@@ -179,9 +185,8 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
                   <Box
                     sx={{
                       display: "flex",
-                      alignItems: "flex-start",
                       gap: 1,
-                      pt: 0.5,
+                      pt: 1,
                     }}
                   >
                     <YearsSelectionFE
