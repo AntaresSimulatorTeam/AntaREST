@@ -221,9 +221,7 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def get_load(self) -> LauncherLoadDTO:
-        local_used_cpus = sum(
-            LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1 for job in running_jobs
-        )
+        local_used_cpus = len(self.job_id_to_study_id)
 
         # The cluster load is approximated by the percentage of used CPUs.
         cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
