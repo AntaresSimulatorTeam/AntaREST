@@ -332,7 +332,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         Args:
         - `uuid`: The identifier of the study you wish to duplicate.
-        - `study_name`: The destination workspace where the study will be copied.
+        - `study_name`: The name of the new study.
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
