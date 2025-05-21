@@ -746,7 +746,6 @@ class StudyService:
         Args:
             uuid: study uuid
             metadata_patch: metadata patch
-            params: request parameters
         """
         logger.info(
             "updating study %s metadata for user %s",
@@ -756,16 +755,17 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
 
+        if metadata_patch.author or metadata_patch.horizon:
+            self.assert_study_unarchived(study)
+
         if metadata_patch.horizon:
             study_settings_url = "settings/generaldata/general"
-            self.assert_study_unarchived(study)
             study_settings = self.storage_service.get_storage(study).get(study, study_settings_url)
             study_settings["horizon"] = metadata_patch.horizon
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
 
         if metadata_patch.author:
             study_antares_url = "study/antares"
-            self.assert_study_unarchived(study)
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
             study_antares["author"] = metadata_patch.author
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
@@ -777,7 +777,7 @@ class StudyService:
             study.additional_data.author = metadata_patch.author
         if metadata_patch.horizon:
             study.additional_data.horizon = metadata_patch.horizon
-        if metadata_patch.tags:
+        if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
         self.event_bus.push(
@@ -963,8 +963,8 @@ class StudyService:
                 all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
             else:
                 all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
-
-        all_studies = [study for study in all_studies if study.workspace not in (DEFAULT_WORKSPACE_NAME,)]
+        all_studies = [study for study in all_studies if study.workspace != DEFAULT_WORKSPACE_NAME]
+        folders = [folder for folder in folders if folder.workspace != DEFAULT_WORKSPACE_NAME]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
         # delete orphan studies on database
