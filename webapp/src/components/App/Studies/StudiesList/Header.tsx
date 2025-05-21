@@ -141,7 +141,6 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  console.log("import.meta.env.MODE", import.meta.env.MODE, desktopMode);
   return (
     <>
       <CustomScrollbar>

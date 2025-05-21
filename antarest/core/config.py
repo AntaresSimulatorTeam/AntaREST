@@ -168,7 +168,7 @@ class StorageConfig:
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
 
     @classmethod
-    def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
+    def from_dict(cls, data: JSON) -> "StorageConfig":
         defaults = cls()
         workspaces = (
             {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
