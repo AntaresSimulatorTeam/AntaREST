@@ -52,6 +52,8 @@ function RowFilterComponent({
   timeFrequency,
   onRemoveFilter,
   filterId,
+  expanded = true,
+  onToggleExpanded,
 }: RowFilterProps) {
   const { t } = useTranslation();
 
@@ -718,7 +720,7 @@ function RowFilterComponent({
   };
 
   return (
-    <Accordion defaultExpanded>
+    <Accordion expanded={expanded} onChange={() => onToggleExpanded?.(rowFilter.id)}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Box
           sx={{

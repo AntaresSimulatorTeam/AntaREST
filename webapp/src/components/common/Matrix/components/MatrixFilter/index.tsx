@@ -275,12 +275,25 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
               )}
             >
               <Button
-                variant={filterPreview.active ? "contained" : "outlined"}
-                color={filterPreview.active ? "secondary" : "inherit"}
+                variant="outlined"
+                color={filterPreview.active ? "info" : "inherit"}
                 onClick={togglePreviewMode}
-                sx={{ minWidth: "unset", width: "48px" }}
+                sx={{
+                  minWidth: "unset",
+                  width: "42px",
+                  height: "36px",
+                  borderRadius: 1.5,
+                  ...(filterPreview.active && {
+                    borderWidth: 1,
+                    backgroundColor: "rgba(33, 150, 243, 0.08)",
+                  }),
+                }}
               >
-                {filterPreview.active ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                {filterPreview.active ? (
+                  <VisibilityIcon fontSize="small" />
+                ) : (
+                  <VisibilityOffIcon fontSize="small" />
+                )}
               </Button>
             </Tooltip>
           )}
@@ -290,7 +303,31 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
         {filter.active && (
           <Box sx={{ mb: 2 }}>
-            <Paper variant="outlined" sx={{ p: 1.5, backgroundColor: "background.paper" }}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                backgroundColor: "background.paper",
+                position: "relative",
+                ...(filterPreview.active && {
+                  boxShadow: "0 0 0 1px rgba(33, 150, 243, 0.2)",
+                  borderColor: "rgba(33, 150, 243, 0.3)",
+                }),
+              }}
+            >
+              {filterPreview.active && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "2px",
+                    height: "100%",
+                    bgcolor: "info.main",
+                    opacity: 0.7,
+                  }}
+                />
+              )}
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 {t("matrix.filter.activeFilters")}
               </Typography>
@@ -305,17 +342,31 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                           size="small"
                           color="primary"
                           variant="outlined"
-                          sx={{ m: 0.5 }}
+                          sx={{
+                            m: 0.5,
+                            ...(filterPreview.active && {
+                              borderColor: "info.main",
+                              color: "info.main",
+                              borderWidth: 1,
+                            }),
+                          }}
                         />
                       )}
-                      {rowFilterTexts.map((text) => (
+                      {rowFilterTexts.map((text, index) => (
                         <Chip
-                          key={`row-filter-${text}`}
+                          key={`row-filter-${index}-${filter.rowsFilters[index]?.id || crypto.randomUUID()}`}
                           label={text}
                           size="small"
                           color="primary"
                           variant="outlined"
-                          sx={{ m: 0.5 }}
+                          sx={{
+                            m: 0.5,
+                            ...(filterPreview.active && {
+                              borderColor: "info.main",
+                              color: "info.main",
+                              borderWidth: 1,
+                            }),
+                          }}
                         />
                       ))}
                     </>
@@ -342,7 +393,31 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
         <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
 
-        <SelectionSummary filteredData={filteredData} />
+        <Box sx={{ position: "relative" }}>
+          {filterPreview.active && (
+            <Box
+              sx={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                display: "flex",
+                alignItems: "center",
+                color: "info.dark",
+                py: 0.5,
+                px: 1,
+                borderRadius: 1,
+                fontSize: "0.75rem",
+                bgcolor: "rgba(33, 150, 243, 0.07)",
+                border: "1px solid rgba(33, 150, 243, 0.15)",
+                zIndex: 1,
+              }}
+            >
+              <VisibilityIcon sx={{ fontSize: 14, mr: 0.5, opacity: 0.7 }} />
+              {t("matrix.filter.previewMode")}
+            </Box>
+          )}
+          <SelectionSummary filteredData={filteredData} previewMode={filterPreview.active} />
+        </Box>
       </Drawer>
     </>
   );

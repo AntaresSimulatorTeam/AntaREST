@@ -64,6 +64,8 @@ export interface RowFilterProps extends FilterSectionProps {
   onRemoveFilter?: (id: string) => void;
   filter: FilterState;
   filterId?: string;
+  expanded?: boolean;
+  onToggleExpanded?: (id: string) => void;
 }
 
 export interface OperationsProps extends FilterSectionProps {
@@ -72,6 +74,7 @@ export interface OperationsProps extends FilterSectionProps {
 
 export interface SelectionSummaryProps {
   filteredData: FilterCriteria;
+  previewMode?: boolean;
 }
 
 export interface TemporalIndexingParams {
