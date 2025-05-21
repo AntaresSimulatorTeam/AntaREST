@@ -16,8 +16,6 @@ from unittest.mock import patch
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.jwt import JWTUser
-from antarest.core.requests import RequestParameters
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
@@ -83,11 +81,6 @@ def config_scenario_a(tmp_path: Path) -> Config:
     build_tree(tmp_path)
     config = build_config(tmp_path)
     return config
-
-
-@pytest.fixture
-def request_params() -> Config:
-    return RequestParameters(user=JWTUser(id=1, impersonator=1, type="users"))
 
 
 def config_desktop_mode(tmp_path: Path) -> Config:
