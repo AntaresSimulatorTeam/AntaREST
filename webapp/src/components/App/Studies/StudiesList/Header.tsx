@@ -98,7 +98,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const isInDefaultWorkspace = folderList.length > 1 && folderList[1] === DEFAULT_WORKSPACE_NAME;
   const isRootFolder = folderList.length === 1;
   const canScan = !isRootFolder && !isInDefaultWorkspace;
-  const desktopMode = import.meta.env.MODE !== "desktop";
+  const desktopMode = import.meta.env.MODE === "desktop";
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -246,7 +246,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
           open
         >
           {`${t("studies.scanFolder")} ${folder}?`}
-          {desktopMode && (
+          {!desktopMode && (
             <CheckBoxFE
               label={t("studies.recursiveScan")}
               value={isRecursiveScan}
