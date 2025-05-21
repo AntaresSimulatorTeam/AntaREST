@@ -21,6 +21,8 @@ from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.matrix_export import TableExportFormat
 
+FileWriter: TypeAlias = Callable[[Path], None]
+
 
 def export_file(
     df_matrix: pd.DataFrame,
@@ -65,8 +67,8 @@ def export_df_chunks(
 ) -> FileWriter:
     stream_writer = export_format.get_stream_writer()
 
-    def file_writer(path: Path) -> None:
-        stream_writer(path, df_chunks)
+    def file_writer(export_path: Path) -> None:
+        stream_writer(export_path, df_chunks)
 
     return file_writer
 
