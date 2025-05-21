@@ -1,4 +1,4 @@
-Antares-Launcher==1.4.2
+Antares-Launcher==1.4.3
 antares-study-version==1.0.17
 antares-timeseries-generation==0.1.7
 
