@@ -24,6 +24,10 @@ class StatusDTO(AntaresBaseModel):
     status: str
 
 
+class DesktopModeDTO(AntaresBaseModel):
+    desktop_mode: bool
+
+
 def create_utils_routes(config: Config) -> APIRouter:
     """
     Utility endpoints
@@ -60,5 +64,20 @@ def create_utils_routes(config: Config) -> APIRouter:
             gitcommit=get_commit_id(config.resources_path),
             dependencies=get_dependencies(),
         )
+
+    @bp.get(
+        "/desktop_mode",
+        tags=[APITag.misc],
+        summary="Get if application is running on desktop mode",
+        response_model=DesktopModeDTO,
+    )
+    def desktop_mode() -> Any:
+        """
+        Returns weither the application is running on desktop mode.
+
+        - `desktop_mode`: boolean.
+        """
+
+        return DesktopModeDTO(desktop_mode=config.desktop_mode)
 
     return bp
