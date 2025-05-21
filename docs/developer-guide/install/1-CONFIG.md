@@ -552,26 +552,31 @@ port: 22
 # example for launcher settings
 launcher:
   default: local
-  local:
-    binaries:
-      860: /home/jon/opt/antares-solver_ubuntu20.04/antares-8.6-solver
-  slurm:
-    local_workspace: /home/jon/Projects/antarest_data/slurm_workspace
-    username: jon
-    hostname: localhost
-    port: 22
-    private_key_file: /home/jon/.ssh/id_rsa
-    key_password:
-    default_wait_time: 900
-    default_time_limit: 172800
-    default_n_cpu: 20
-    default_json_db_name: launcher_db.json
-    slurm_script_path: /applis/antares/launchAntares.sh
-    partition: calin1
-    db_primary_key: name
-    antares_versions_on_remote_server:
-      - '610'
-      - '700'
+  launchers:
+    - id: local
+      name: my_local
+      type: local
+      binaries:
+        860: /home/jon/opt/antares-solver_ubuntu20.04/antares-8.6-solver
+    - id: slurm
+      name: my_slurm
+      type: slurm
+      local_workspace: /home/jon/Projects/antarest_data/slurm_workspace
+      username: jon
+      hostname: localhost
+      port: 22
+      private_key_file: /home/jon/.ssh/id_rsa
+      key_password:
+      default_wait_time: 900
+      default_time_limit: 172800
+      default_n_cpu: 20
+      default_json_db_name: launcher_db.json
+      slurm_script_path: /applis/antares/launchAntares.sh
+      partition: calin1
+      db_primary_key: name
+      antares_versions_on_remote_server:
+        - '610'
+        - '700'
 ```
 
 # Logging

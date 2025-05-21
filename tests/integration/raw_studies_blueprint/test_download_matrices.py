@@ -39,7 +39,7 @@ class PreparerProxy(Proxy):
         # Prepare a managed study to test specific matrices for version 8.2
         res = self.client.post(
             f"/v1/studies/{ref_study_id}/copy",
-            params={"dest": "copied-820", "use_task": False},
+            params={"study_name": "copied-820", "use_task": False},
             headers=self.headers,
         )
         res.raise_for_status()

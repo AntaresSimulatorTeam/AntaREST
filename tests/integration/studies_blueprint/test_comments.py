@@ -80,7 +80,7 @@ class TestStudyComments:
         # First, we create a copy of the study, and we convert it to a managed study.
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",
-            params={"dest": "default", "with_outputs": False, "use_task": False},  # type: ignore
+            params={"study_name": "default", "with_outputs": False, "use_task": False},  # type: ignore
         )
         assert res.status_code == 201, res.json()
         base_study_id = res.json()
