@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
+
 import pytest
 from pydantic import ValidationError
 
@@ -184,7 +186,7 @@ class TestUpdateShortTermSorage:
         # Try to give a parameter that only exist since v9.2
         with pytest.raises(
             ValidationError,
-            match="You provided v9.2 field(s): `efficiency_withdrawal` but your study is in version 8.7",
+            match=re.escape("You provided v9.2 field(s): `efficiency_withdrawal` but your study is in version 8.7"),
         ):
             UpdateSTStorages(
                 storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},
