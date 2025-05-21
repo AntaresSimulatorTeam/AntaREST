@@ -12,39 +12,49 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Tooltip, Typography, Chip, Button, Divider } from "@mui/material";
-import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { unarchiveStudy } from "@/services/api/study";
+import { type StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
+import { Box, Button, Chip, Divider, IconButton, Tooltip, Typography } from "@mui/material";
+import { enqueueSnackbar } from "notistack";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import { StudyType, type StudyMetadata } from "@/types/types";
-import FavoriteStudyToggle from "../../../common/studies/FavoriteStudyToggle";
+import FavoriteStudyToggle from "../../shared/studies/FavoriteStudyToggle";
+import StudyActionsMenu from "../../shared/studies/StudyActionsMenu";
+import CommandsDrawer from "../CommandsDrawer";
+
+export type DialogType = "commands";
 
 interface Props {
-  study: StudyMetadata | undefined;
-  isExplorer: boolean | undefined;
-  onCopyId: () => Promise<void>;
-  onUnarchive: () => Promise<void>;
-  onLaunch: VoidFunction;
-  onOpenCommands: VoidFunction;
-  onOpenMenu: React.MouseEventHandler;
+  study: StudyMetadata;
+  parentStudy?: StudyMetadata;
+  isExplorer?: boolean;
 }
 
-function Actions({
-  study,
-  isExplorer,
-  onCopyId,
-  onUnarchive,
-  onLaunch,
-  onOpenCommands,
-  onOpenMenu,
-}: Props) {
-  const [t] = useTranslation();
+function Actions({ study, parentStudy, isExplorer }: Props) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
-  const isManaged = study?.managed;
-  const isArchived = study?.archived;
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
+
+  const isManaged = study.managed;
+  const isArchived = study.archived;
+  const isVariant = study.type === "variantstudy";
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const closeDialog = () => setOpenDialog(null);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -52,9 +62,28 @@ function Actions({
 
   const handleClickBack = () => {
     if (isExplorer) {
-      navigate(`/studies/${study?.id}`);
+      navigate(`/studies/${study.id}`);
     } else {
       navigate("/studies");
+    }
+  };
+
+  const handleCopyId = async () => {
+    try {
+      await navigator.clipboard.writeText(study.id);
+      enqueueSnackbar(t("study.success.studyIdCopy"), {
+        variant: "success",
+      });
+    } catch (err) {
+      enqueueErrorSnackbar(t("study.error.studyIdCopy"), toError(err));
+    }
+  };
+
+  const handleUnarchive = async () => {
+    try {
+      await unarchiveStudy(study.id);
+    } catch (err) {
+      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
     }
   };
 
@@ -62,87 +91,85 @@ function Actions({
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (!study) {
-    return null;
-  }
-
   return (
-    <Box
-      sx={{
-        width: 1,
-        display: "flex",
-        flexDirection: "row",
-        justifyContent: "flex-start",
-        alignItems: "center",
-        boxSizing: "border-box",
-        gap: 2,
-      }}
-    >
-      <Box>
-        <Button variant="text" color="secondary" onClick={handleClickBack} sx={{ p: 0 }}>
-          <ArrowBackIcon
-            color="secondary"
-            onClick={handleClickBack}
-            sx={{ cursor: "pointer", mr: 1 }}
-          />
-          <Tooltip title={isExplorer ? study?.name : t("global.studies")} followCursor>
-            <Typography variant="button">
-              {isExplorer ? t("button.back") : t("global.studies")}
-            </Typography>
-          </Tooltip>
+    <>
+      <Box
+        sx={{
+          width: 1,
+          display: "flex",
+          flexDirection: "row",
+          justifyContent: "flex-start",
+          alignItems: "center",
+          boxSizing: "border-box",
+          gap: 2,
+        }}
+      >
+        <Button onClick={handleClickBack} startIcon={<ArrowBackIcon />} color="secondary">
+          {isExplorer ? t("button.back") : t("global.studies")}
+        </Button>
+        <Divider flexItem orientation="vertical" />
+        <Box sx={{ flex: 1, overflow: "auto" }}>
+          <CustomScrollbar>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "nowrap" }}>
+              <Tooltip title={study.name} placement="bottom-start">
+                <Typography
+                  variant="h6"
+                  noWrap
+                  sx={{
+                    flex: 1,
+                    minWidth: 50,
+                  }}
+                >
+                  {study.name}
+                </Typography>
+              </Tooltip>
+              <FavoriteStudyToggle studyId={study.id} />
+              <Tooltip title={t("study.copyId")}>
+                <IconButton onClick={handleCopyId}>
+                  <ContentCopyIcon />
+                </IconButton>
+              </Tooltip>
+              {isManaged ? (
+                <Chip label={t("study.managedStudy")} color="info" />
+              ) : (
+                <Chip label={study.workspace} />
+              )}
+              {study.tags?.map((tag) => <Chip key={tag} label={tag} />)}
+            </Box>
+          </CustomScrollbar>
+        </Box>
+        <Divider flexItem orientation="vertical" />
+        {isVariant && (
+          <IconButton color="primary" onClick={() => setOpenDialog("commands")}>
+            <HistoryOutlinedIcon />
+          </IconButton>
+        )}
+        {isExplorer && isArchived && (
+          <Button
+            onClick={handleUnarchive}
+            startIcon={<UnarchiveOutlinedIcon />}
+            variant="contained"
+          >
+            {t("global.unarchive")}
+          </Button>
+        )}
+        <Button
+          variant="outlined"
+          onClick={(event) => setAnchorEl(event.currentTarget)}
+          sx={{ px: 0 }}
+        >
+          <MoreVertIcon />
         </Button>
       </Box>
-      <Divider flexItem orientation="vertical" />
-      <Tooltip title={study.folder} placement="bottom-start">
-        <Typography
-          variant="h6"
-          noWrap
-          sx={{
-            flex: 1,
-          }}
-        >
-          {study.name}
-        </Typography>
-      </Tooltip>
-      <FavoriteStudyToggle studyId={study.id} />
-      <Tooltip title={t("study.copyId")}>
-        <ContentCopyIcon
-          sx={{
-            cursor: "pointer",
-            width: 16,
-            height: 16,
-            color: "text.secondary",
-            "&:hover": { color: "primary.main" },
-          }}
-          onClick={onCopyId}
-        />
-      </Tooltip>
-      {isManaged ? (
-        <Chip label={t("study.managedStudy")} color="info" />
-      ) : (
-        <Chip label={study.workspace} />
-      )}
-      {study.tags?.map((tag) => <Chip key={tag} label={tag} />)}
-      {isExplorer && (
-        <Button variant="contained" onClick={isArchived ? onUnarchive : onLaunch}>
-          {isArchived ? t("global.unarchive") : t("global.launch")}
-        </Button>
-      )}
-      <Divider flexItem orientation="vertical" />
-      {study.type === StudyType.VARIANT && (
-        <Button variant="outlined" onClick={onOpenCommands} sx={{ minWidth: 0 }}>
-          <HistoryOutlinedIcon />
-        </Button>
-      )}
-      <Button
-        variant="outlined"
-        color="primary"
-        sx={{ width: "auto", minWidth: 0, px: 0 }}
-        onClick={onOpenMenu}
-      >
-        <MoreVertIcon />
-      </Button>
-    </Box>
+      <StudyActionsMenu
+        open={!!anchorEl}
+        anchorEl={anchorEl}
+        study={study}
+        parentStudy={parentStudy}
+        onClose={() => setAnchorEl(null)}
+      />
+      <CommandsDrawer open={openDialog === "commands"} studyId={study.id} onClose={closeDialog} />
+    </>
   );
 }
 

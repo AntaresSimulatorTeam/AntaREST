@@ -17,7 +17,10 @@ import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
-import { BindingConstraintOperator, TimeStep } from "../../../Commands/Edition/commandTypes";
+import {
+  BindingConstraintOperator,
+  TimeStep,
+} from "../../../CommandsDrawer/EditionView/commandTypes";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import { OPERATORS, TIME_STEPS, type BindingConstraint } from "./BindingConstView/utils";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
