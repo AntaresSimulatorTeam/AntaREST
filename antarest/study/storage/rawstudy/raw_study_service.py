@@ -23,7 +23,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed
+from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
@@ -359,6 +359,11 @@ class RawStudyService(AbstractStorageService):
         except Exception:
             shutil.rmtree(study_path)
             raise
+
+        try:
+            self.checks_antares_web_compatibility(metadata)
+        except NotImplementedError as e:
+            raise StudyImportFailed(metadata.name, e.args[0]) from e
 
         metadata.path = str(study_path)
         return metadata

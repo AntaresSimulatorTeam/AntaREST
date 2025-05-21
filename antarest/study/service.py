@@ -41,7 +41,6 @@ from antarest.core.exceptions import (
     ReferencedObjectDeletionNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
-    StudyImportFailed,
     StudyNotFoundError,
     StudyTypeUnsupported,
     StudyVariantUpgradeError,
@@ -1308,11 +1307,6 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-
-        try:
-            self.storage_service.raw_study_service.checks_antares_web_compatibility(study)
-        except NotImplementedError as e:
-            raise StudyImportFailed(study.name, e.args[0]) from e
 
         study.updated_at = datetime.utcnow()
 
