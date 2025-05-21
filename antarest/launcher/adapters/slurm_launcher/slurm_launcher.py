@@ -673,6 +673,7 @@ class SlurmLauncher(AbstractLauncher):
         }
         return LauncherLoadDTO(**args)
 
+
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:
     study_info_path = study_path / "study.antares"
     study_info = read_ini(study_info_path)

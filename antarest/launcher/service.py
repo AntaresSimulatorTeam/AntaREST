@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, NbCoresConfig
+from antarest.core.config import Config, InvalidConfigurationError, NbCoresConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -605,8 +605,14 @@ class LauncherService:
         """
         Get the load of the specified launcher.
         """
+        if launcher_id is None:
+            launcher_id = self.config.launcher.default
 
-        return self.launchers.get(launcher_id).get_load()
+        launcher = self.launchers.get(launcher_id)
+        if launcher is None:
+            raise InvalidConfigurationError(launcher_id)
+
+        return launcher.get_load()
 
     def get_solver_versions(self, launcher_id: Optional[str]) -> List[str]:
         """
@@ -622,7 +628,14 @@ class LauncherService:
         Raises:
             InvalidConfigurationError: if the launcher doesn't exist in the configuration.
         """
-        return self.launchers.get(launcher_id).get_solver_versions()
+        if launcher_id is None:
+            launcher_id = self.config.launcher.default
+
+        launcher = self.launchers.get(launcher_id)
+        if launcher is None:
+            raise InvalidConfigurationError(launcher_id)
+
+        return launcher.get_solver_versions()
 
     def get_launch_progress(self, job_id: str) -> float:
         job_result = self.job_result_repository.get(job_id)
