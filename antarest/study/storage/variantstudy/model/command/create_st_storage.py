@@ -187,7 +187,7 @@ class CreateSTStorage(ICommand):
         # pragma: no cover
         raise TypeError(repr(v))
 
-    def get_9_2_matrices(self) -> dict[str, MatrixType]:
+    def _get_9_2_matrices(self) -> dict[str, MatrixType]:
         return {
             "cost_injection": self.cost_injection,
             "cost_withdrawal": self.cost_withdrawal,
@@ -196,7 +196,7 @@ class CreateSTStorage(ICommand):
             "cost_variation_withdrawal": self.cost_variation_withdrawal,
         }
 
-    def get_matrices(self) -> dict[str, MatrixType]:
+    def _get_matrices(self) -> dict[str, MatrixType]:
         matrices = {
             "pmax_injection": self.pmax_injection,
             "pmax_withdrawal": self.pmax_withdrawal,
@@ -205,19 +205,19 @@ class CreateSTStorage(ICommand):
             "inflows": self.inflows,
         }
         if self.study_version >= STUDY_VERSION_9_2:
-            matrices.update(self.get_9_2_matrices())
+            matrices.update(self._get_9_2_matrices())
         return matrices
 
     @model_validator(mode="after")
     def validate_matrices(self) -> "CreateSTStorage":
         if self.study_version < STUDY_VERSION_9_2:
-            for matrix_name, data in self.get_9_2_matrices().items():
+            for matrix_name, data in self._get_9_2_matrices().items():
                 if data is not None:
                     raise ValueError(
                         f"You gave a 9.2 matrix: '{matrix_name}' for a study in version {self.study_version}"
                     )
 
-        for matrix_name, matrix_data in self.get_matrices().items():
+        for matrix_name, matrix_data in self._get_matrices().items():
             setattr(self, matrix_name, self.validate_field(matrix_data, matrix_name))
 
         return self
@@ -298,7 +298,7 @@ class CreateSTStorage(ICommand):
                         self.area_id: {
                             storage_id: {
                                 matrix_name: matrix_data or {}
-                                for matrix_name, matrix_data in self.get_matrices().items()
+                                for matrix_name, matrix_data in self._get_matrices().items()
                             }
                         }
                     },
@@ -319,7 +319,7 @@ class CreateSTStorage(ICommand):
             The DTO object representing the current command.
         """
         args = {"area_id": self.area_id, "parameters": self.parameters.model_dump(mode="json", by_alias=True)}
-        for matrix_name, matrix_data in self.get_matrices().items():
+        for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 args[matrix_name] = strip_matrix_protocol(matrix_data)
         return CommandDTO(
@@ -335,7 +335,7 @@ class CreateSTStorage(ICommand):
         Retrieves the list of matrix IDs.
         """
         matrices: List[str] = []
-        for matrix_name, matrix_data in self.get_matrices().items():
+        for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 matrices.append(strip_matrix_protocol(matrix_data))
         return matrices

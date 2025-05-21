@@ -182,7 +182,10 @@ class TestUpdateShortTermSorage:
         assert output.message == "The short-term storage 'fake_storage' in the area 'fr' is not found."
 
         # Try to give a parameter that only exist since v9.2
-        with pytest.raises(ValidationError, match="You gave a v9.2 field but your study is in version 8.7"):
+        with pytest.raises(
+            ValidationError,
+            match="You provided v9.2 field(s): `efficiency_withdrawal` but your study is in version 8.7",
+        ):
             UpdateSTStorages(
                 storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},
                 command_context=command_context,

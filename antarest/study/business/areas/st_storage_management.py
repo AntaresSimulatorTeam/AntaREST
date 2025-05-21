@@ -24,7 +24,6 @@ from antarest.core.exceptions import (
     ChildNotFoundError,
     DuplicateSTStorage,
     STStorageConfigNotFound,
-    STStorageMatrixNotFound,
     STStorageNotFound,
 )
 from antarest.core.model import JSON
@@ -506,125 +505,6 @@ class STStorageManager:
         study.add_commands(commands)
 
         return STStorageOutput(**new_config.model_dump(mode="json", by_alias=False))
-
-    def get_matrix(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        storage_id: str,
-        ts_name: STStorageTimeSeries,
-    ) -> STStorageMatrix:
-        """
-        Get the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
-
-        Args:
-            study: The study object.
-            area_id: The area ID of the short-term storage.
-            storage_id: The ID of the short-term storage.
-            ts_name: Name of the time series to get.
-
-        Returns:
-            STStorageMatrix object containing the short-term storage time series.
-        """
-        matrix = self._get_matrix_obj(study, area_id, storage_id, ts_name)
-        return STStorageMatrix(**matrix)
-
-    def _get_matrix_obj(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        storage_id: str,
-        ts_name: STStorageTimeSeries,
-    ) -> MutableMapping[str, Any]:
-        file_study = study.get_files()
-        path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
-        try:
-            matrix = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise STStorageMatrixNotFound(path) from None
-        return matrix
-
-    def update_matrix(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        storage_id: str,
-        ts_name: STStorageTimeSeries,
-        ts: STStorageMatrix,
-    ) -> None:
-        """
-        Update the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
-
-        Args:
-            study: The study object.
-            area_id: The area ID of the short-term storage.
-            storage_id: The ID of the short-term storage.
-            ts_name: Name of the time series to update.
-            ts: Matrix of the time series to update.
-        """
-        self._save_matrix_obj(study, area_id, storage_id, ts_name, ts.data)
-
-    def _save_matrix_obj(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        storage_id: str,
-        ts_name: STStorageTimeSeries,
-        matrix_data: List[List[float]],
-    ) -> None:
-        path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
-        command = ReplaceMatrix(
-            target=path,
-            matrix=matrix_data,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
-
-    def validate_matrices(
-        self,
-        study: StudyInterface,
-        area_id: str,
-        storage_id: str,
-    ) -> bool:
-        """
-        Validate the short-term storage matrices.
-
-        This function validates the integrity of various matrices
-        associated with a short-term storage in a given study and area.
-
-        Note:
-            - All matrices except "inflows" should have values between 0 and 1 (inclusive).
-            - The values in the "lower_rule_curve" matrix should be less than or equal to
-              the corresponding values in the "upper_rule_curve" matrix.
-
-        Args:
-            study: The study object.
-            area_id: The area ID of the short-term storage.
-            storage_id: The ID of the short-term storage to validate.
-
-        Raises:
-            ValidationError: If any of the matrices is invalid.
-
-        Returns:
-            bool: True if validation is successful.
-        """
-
-        def validate_matrix(matrix_type: STStorageTimeSeries) -> STStorageMatrix:
-            return STStorageMatrix.model_validate(self._get_matrix_obj(study, area_id, storage_id, matrix_type))
-
-        # Validate matrices by constructing the `STStorageMatrices` object
-        # noinspection SpellCheckingInspection
-        STStorageMatrices(
-            pmax_injection=validate_matrix("pmax_injection"),
-            pmax_withdrawal=validate_matrix("pmax_withdrawal"),
-            lower_rule_curve=validate_matrix("lower_rule_curve"),
-            upper_rule_curve=validate_matrix("upper_rule_curve"),
-            inflows=validate_matrix("inflows"),
-        )
-
-        # Validation successful
-        return True
 
     @staticmethod
     def get_table_schema() -> JSON:

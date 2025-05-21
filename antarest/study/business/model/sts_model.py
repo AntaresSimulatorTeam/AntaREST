@@ -36,14 +36,18 @@ class STStorageUpdate(STStorage920Properties):
         populate_by_name = True
 
     def validate_model_against_version(self, study_version: StudyVersion) -> None:
-        if study_version < STUDY_VERSION_9_2 and (
-            self.efficiency_withdrawal is not None
-            or self.penalize_variation_withdrawal is not None
-            or self.penalize_variation_injection is not None
-        ):
-            raise ValueError(f"You gave a v9.2 field but your study is in version {study_version}")
+        if study_version < STUDY_VERSION_9_2:
+            wrong_fields = []
+            for field in ["efficiency_withdrawal", "penalize_variation_withdrawal", "penalize_variation_injection"]:
+                if getattr(self, field) is not None:
+                    wrong_fields.append(field)
+            if wrong_fields:
+                raise ValueError(
+                    f"You provided v9.2 field(s): `{', '.join(wrong_fields)}` but your study is in version {study_version}"
+                )
+
         if study_version < STUDY_VERSION_8_8 and self.enabled is not None:
-            raise ValueError(f"You gave a v8.8 field but your study is in version {study_version}")
+            raise ValueError(f"You provided a v8.8 field: `enabled` but your study is in version {study_version}")
 
 
 STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]
