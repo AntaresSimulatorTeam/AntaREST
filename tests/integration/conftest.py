@@ -32,7 +32,8 @@ RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 RUN_ON_WINDOWS = os.name == "nt"
 
 
-def build_app(tmp_path: Path, config_file_name: str):
+@pytest.fixture(name="app")
+def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -69,7 +70,7 @@ def build_app(tmp_path: Path, config_file_name: str):
     # Generate a "config.yml" file for the app
     template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
     template_env = jinja2.Environment(loader=template_loader)
-    template = template_env.get_template(config_file_name)
+    template = template_env.get_template("config.template.yml")
 
     config_path = tmp_path / "config.yml"
     launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
@@ -95,12 +96,6 @@ def build_app(tmp_path: Path, config_file_name: str):
 def client_fixture(app: FastAPI) -> TestClient:
     """Get the webservice client used for unit testing"""
     return TestClient(app, raise_server_exceptions=False)
-
-
-@pytest.fixture(name="app")
-def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
-    # Rename the last part of tmp_path to add the suffix "desktop"
-    yield from build_app(tmp_path, "config.template.yml")
 
 
 @pytest.fixture(name="admin_access_token")

@@ -20,9 +20,9 @@ from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, Work
 from antarest.study.storage.explorer_service import Explorer
 
 
-def build_config(root: Path, desktop_mode=False) -> Config:
+def build_config(root: Path) -> Config:
     return Config(
-        desktop_mode=desktop_mode,
+        desktop_mode=False,
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
@@ -80,13 +80,6 @@ def build_tree(root: Path) -> None:
 def config_scenario_a(tmp_path: Path) -> Config:
     build_tree(tmp_path)
     config = build_config(tmp_path)
-    return config
-
-
-def config_desktop_mode(tmp_path: Path) -> Config:
-    config = build_config(tmp_path, desktop_mode=True)
-    outside = tmp_path / "outside"
-    outside.mkdir()
     return config
 
 

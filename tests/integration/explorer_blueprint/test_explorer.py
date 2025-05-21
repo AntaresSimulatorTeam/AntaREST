@@ -16,8 +16,6 @@ from starlette.testclient import TestClient
 
 from antarest.study.model import NonStudyFolderDTO, WorkspaceMetadata
 
-OK_STATUS_CODE = 200
-NOT_FOUND_STATUS_CODE = 404
 BAD_REQUEST_STATUS_CODE = 400
 # Status code for directory listing with invalid parameters
 INVALID_PARAMS_STATUS_CODE = 422
@@ -54,24 +52,6 @@ def study_tree(tmp_path: Path) -> Path:
     (f / "study.antares").touch()
 
     return tmp_path
-
-
-@pytest.fixture
-def study_tree_desktop(tmp_path_desktop: Path) -> Path:
-    """
-    Create this hierarchy
-
-    tmp_path_desktop
-    └── out_folder
-        └── studyG
-            └── study.antares
-    """
-
-    g = tmp_path_desktop / Path("out_folder") / Path("studyG")
-    g.mkdir(parents=True)
-    (g / "study.antares").touch()
-
-    return tmp_path_desktop
 
 
 def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path):
