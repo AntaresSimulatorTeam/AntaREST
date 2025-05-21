@@ -54,6 +54,7 @@ class LocalLauncher(AbstractLauncher):
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
         self.log_tail_manager = LogTailManager(self.local_workspace)
+        self.submitted_jobs: set[str] = set()
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
@@ -78,6 +79,7 @@ class LocalLauncher(AbstractLauncher):
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         antares_solver_path = self._select_best_binary(f"{version:ddd}")
+        self.submitted_jobs.add(job_id)
 
         job = threading.Thread(
             target=LocalLauncher._compute,
@@ -155,6 +157,7 @@ class LocalLauncher(AbstractLauncher):
                     None,
                 )
             finally:
+                self.submitted_jobs.remove(job_id)
                 logger.info(f"Removing launch {job_id} export path at {export_path}")
                 shutil.rmtree(export_path, ignore_errors=True)
 
@@ -221,7 +224,7 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def get_load(self) -> LauncherLoadDTO:
-        local_used_cpus = len(self.job_id_to_study_id) or 1
+        local_used_cpus = len(self.submitted_jobs)
 
         # The cluster load is approximated by the percentage of used CPUs.
         cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
