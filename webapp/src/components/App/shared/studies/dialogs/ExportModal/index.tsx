@@ -12,14 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState } from "react";
-import * as R from "ramda";
-import type { AxiosError } from "axios";
 import { Box, Button } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useSnackbar } from "notistack";
+import type { AxiosError } from "axios";
 import debug from "debug";
 import debounce from "lodash/debounce";
+import { useSnackbar } from "notistack";
+import * as R from "ramda";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "../../../../../../hooks/useEnqueueErrorSnackbar";
+import {
+  exportOutput as callExportOutput,
+  downloadOutput,
+  exportStudy,
+  getStudyOutputs,
+  getStudySynthesis,
+} from "../../../../../../services/api/study";
 import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
@@ -28,17 +36,9 @@ import {
   type StudyMetadata,
   type StudyOutput,
   type StudyOutputDownloadDTO,
-} from "../../../../types/types";
-import BasicDialog, { type BasicDialogProps } from "../../../common/dialogs/BasicDialog";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import SelectSingle from "../../../common/SelectSingle";
-import {
-  exportStudy,
-  exportOutput as callExportOutput,
-  getStudyOutputs,
-  getStudySynthesis,
-  downloadOutput,
-} from "../../../../services/api/study";
+} from "../../../../../../types/types";
+import BasicDialog, { type BasicDialogProps } from "../../../../../common/dialogs/BasicDialog";
+import SelectSingle from "../../../../../common/SelectSingle";
 import ExportFilter from "./ExportFilter";
 
 const logError = debug("antares:studies:card:error");

@@ -15,18 +15,18 @@
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../types/types";
-import type { SubmitHandlerPlus } from "../../common/Form/types";
-import Fieldset from "../../common/Fieldset";
-import SelectFE from "../../common/fieldEditors/SelectFE";
-import FormDialog from "../../common/dialogs/FormDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudyVersionsFormatted } from "../../../redux/selectors";
-import { upgradeStudy } from "../../../services/api/study";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { getStudyVersionsFormatted } from "../../../../../redux/selectors";
+import { upgradeStudy } from "../../../../../services/api/study";
+import type { StudyMetadata } from "../../../../../types/types";
+import Fieldset from "../../../../common/Fieldset";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import FormDialog from "../../../../common/dialogs/FormDialog";
+import SelectFE from "../../../../common/fieldEditors/SelectFE";
 
 interface Props {
   study: StudyMetadata;
-  onClose: () => void;
+  onClose: VoidFunction;
   open: boolean;
 }
 
@@ -35,8 +35,9 @@ const defaultValues = {
 };
 
 function UpgradeDialog({ study, onClose, open }: Props) {
-  const [t] = useTranslation();
+  const { t } = useTranslation();
   const versions = useAppSelector(getStudyVersionsFormatted);
+
   const versionOptions = useMemo(() => {
     return versions
       .filter((version) => version.id > study.version)
@@ -51,8 +52,8 @@ function UpgradeDialog({ study, onClose, open }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    return upgradeStudy(study.id, data.values.version).then(onClose);
+  const handleSubmit = ({ values: { version } }: SubmitHandlerPlus<typeof defaultValues>) => {
+    return upgradeStudy(study.id, version);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -63,10 +64,12 @@ function UpgradeDialog({ study, onClose, open }: Props) {
     <FormDialog
       title={t("study.upgrade")}
       titleIcon={UpgradeIcon}
+      submitButtonIcon={null}
       submitButtonText={t("study.upgrade")}
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={onClose}
       config={{ defaultValues }}
     >
       {({ control }) => (

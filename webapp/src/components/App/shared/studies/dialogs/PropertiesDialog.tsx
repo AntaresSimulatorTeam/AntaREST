@@ -19,25 +19,25 @@ import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import { updateStudy } from "../../../redux/ducks/studies";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import { updateStudy } from "../../../../../redux/ducks/studies";
+import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 import {
   addStudyGroup,
   changePublicMode,
   deleteStudyGroup,
   updateStudyMetadata,
-} from "../../../services/api/study";
-import { getGroups } from "../../../services/api/user";
-import type { StudyMetadata } from "../../../types/types";
-import FormDialog from "../../common/dialogs/FormDialog";
-import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import SelectFE from "../../common/fieldEditors/SelectFE";
-import StringFE from "../../common/fieldEditors/StringFE";
-import Fieldset from "../../common/Fieldset";
-import type { SubmitHandlerPlus } from "../../common/Form/types";
-import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
+} from "../../../../../services/api/study";
+import { getGroups } from "../../../../../services/api/user";
+import type { StudyMetadata } from "../../../../../types/types";
+import FormDialog from "../../../../common/dialogs/FormDialog";
+import CheckboxesTagsFE from "../../../../common/fieldEditors/CheckboxesTagsFE";
+import SelectFE from "../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../common/fieldEditors/StringFE";
+import Fieldset from "../../../../common/Fieldset";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import { PUBLIC_MODE_LIST } from "../../../../common/utils/constants";
 
 const logErr = debug("antares:createstudyform:error");
 
@@ -45,12 +45,10 @@ interface Props {
   open: boolean;
   onClose: () => void;
   study: StudyMetadata;
-  updateStudyData?: VoidFunction;
 }
 
-function PropertiesDialog(props: Props) {
-  const [t] = useTranslation();
-  const { open, onClose, study, updateStudyData } = props;
+function PropertiesDialog({ open, onClose, study }: Props) {
+  const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
@@ -103,19 +101,15 @@ function PropertiesDialog(props: Props) {
         await Promise.all(toAdd.map((id) => addStudyGroup(studyId, id as string)));
       }
 
-      if (updateStudyData) {
-        updateStudyData();
-      } else {
-        dispatch(
-          updateStudy({
-            id: study.id,
-            changes: {
-              name: data.values.name,
-              tags: data.values.tags,
-            },
-          }),
-        );
-      }
+      dispatch(
+        updateStudy({
+          id: study.id,
+          changes: {
+            name: data.values.name,
+            tags: data.values.tags,
+          },
+        }),
+      );
 
       enqueueSnackbar(t("studies.success.saveData"), {
         variant: "success",

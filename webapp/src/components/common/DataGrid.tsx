@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import { voidFn } from "@/utils/fnUtils";
 import {
   CompactSelection,
   DataEditor,
   GridCellKind,
-  type EditListItem,
-  type GridSelection,
   type DataEditorProps,
+  type EditListItem,
   type GridCell,
+  type GridSelection,
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
 import { useCallback, useMemo, useState } from "react";
-import { voidFn } from "@/utils/fnUtils";
-import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 import { useUpdateEffect } from "react-use";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
@@ -304,6 +304,7 @@ function DataGrid({
       gridSelection={gridSelection}
       onGridSelectionChange={handleGridSelectionChange}
       freezeColumns={adjustedFreezeColumns}
+      copyHeaders
       {...rest}
     />
   );
