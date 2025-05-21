@@ -11,15 +11,11 @@
 # This file is part of the Antares project.
 
 from collections import OrderedDict
-from dataclasses import dataclass
-from typing import Any, Generator, Mapping, MutableMapping, Optional, Tuple
+from typing import Any, Generator, Mapping, MutableMapping, Tuple
 
 from fastapi import HTTPException
-from markupsafe import escape
 from ratelimit import Rule  # type: ignore
 from typing_extensions import override
-
-from antarest.core.jwt import JWTUser
 
 RATE_LIMIT_CONFIG = {
     r"^/v1/launcher/run": [
@@ -75,18 +71,6 @@ class CaseInsensitiveDict(MutableMapping[str, Any]):  # copy of the requests cla
     @override
     def __repr__(self) -> str:
         return str(dict(self.items()))
-
-
-@dataclass
-class RequestParameters:
-    """
-    DTO object to handle data inside request to send to service
-    """
-
-    user: Optional[JWTUser] = None
-
-    def get_user_id(self) -> str:
-        return str(escape(str(self.user.id))) if self.user else "Unknown"
 
 
 class UserHasNotPermissionError(HTTPException):

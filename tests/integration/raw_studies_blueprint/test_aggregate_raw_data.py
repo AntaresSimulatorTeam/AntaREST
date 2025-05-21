@@ -12,6 +12,7 @@
 
 import io
 import shutil
+import zipfile
 from pathlib import Path
 
 import numpy as np
@@ -19,7 +20,8 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.storage.df_download import TableExportFormat
+from antarest.core.serde.matrix_export import TableExportFormat
+from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
 # define the requests parameters for the `economy/mc-ind` outputs aggregation
@@ -529,6 +531,7 @@ class TestRawDataAggregationMCInd:
             # cast types of expected_df to match df
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
+            print(f"Testing format {export_format}")
             pd.testing.assert_frame_equal(df, expected_df)
 
     def test_aggregation_errors(
@@ -714,6 +717,52 @@ class TestRawDataAggregationMCAll:
             expected_df = pd.read_csv(resource_file, sep="\t", header=0)
             expected_df = expected_df.replace({np.nan: None})
             # cast types of expected_df to match df
+            for col in expected_df.columns:
+                expected_df[col] = expected_df[col].astype(df[col].dtype)
+            pd.testing.assert_frame_equal(df, expected_df)
+
+    def test_with_variant(self, client: TestClient, user_access_token: str, tmp_path: Path) -> None:
+        """
+        Imports the STA-mini study and create a variant from it. Then imports the parent output inside it
+        Then asserts the aggregation endpoint works the same for parent and variant
+        """
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Imports STA-mini
+        sta_mini_zip_path = INTEGRATION_ASSETS_DIR.joinpath("STA-mini.zip")
+        res = client.post("/v1/studies/_import", files={"study": io.BytesIO(sta_mini_zip_path.read_bytes())})
+        study_id = res.json()
+        # Create a variant from it
+        variant_id = client.post(f"/v1/studies/{study_id}/variants?name=Variant_Study").json()
+        res = client.get(f"/v1/studies/{variant_id}/comments")  # used to generate the study
+        res.raise_for_status()
+
+        # Build the zip output of STA-mini to import inside the variant
+        raw_output_id = "20241807-1540eco-extra-outputs"
+        with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
+            zip_output.extractall(path=tmp_path)
+        output_path = tmp_path.joinpath(f"STA-mini/output/{raw_output_id}")
+
+        sta_mini_output_zip_path = Path(
+            shutil.make_archive(base_name=str(output_path), format="zip", root_dir=output_path)
+        )
+        output_data = io.BytesIO(sta_mini_output_zip_path.read_bytes())
+
+        # Import the STA-mini output inside the variant
+        res = client.post(f"/v1/studies/{variant_id}/output", files={"output": output_data})
+        assert res.status_code == 202, res.json()
+        variant_output_id = res.json()
+
+        params = {"query_file": "values", "frequency": "daily", "format": "csv"}
+        resource_file = ASSETS_DIR.joinpath("aggregate_links_raw_data/test-01-all.result.tsv")
+        expected_df = pd.read_csv(resource_file, sep="\t", header=0)
+        expected_df = expected_df.replace({np.nan: None})
+
+        for uuid, output_id in [(study_id, raw_output_id), (variant_id, variant_output_id)]:
+            res = client.get(f"/v1/studies/{uuid}/links/aggregate/mc-all/{output_id}", params=params)
+            assert res.status_code == 200, res.json()
+            content = io.BytesIO(res.content)
+            df = pd.read_csv(content, sep=",")
             for col in expected_df.columns:
                 expected_df[col] = expected_df[col].astype(df[col].dtype)
             pd.testing.assert_frame_equal(df, expected_df)

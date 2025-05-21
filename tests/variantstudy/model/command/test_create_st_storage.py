@@ -13,6 +13,7 @@ import copy
 import re
 
 import numpy as np
+import pandas as pd
 import pytest
 from pydantic import ValidationError
 
@@ -36,7 +37,7 @@ GEN = np.random.default_rng(1000)
 
 
 @pytest.fixture(name="recent_study")
-def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
+def recent_study_fixture(empty_study_720: FileStudy) -> FileStudy:
     """
     Fixture for creating a recent version of the FileStudy object.
 
@@ -46,9 +47,9 @@ def recent_study_fixture(empty_study: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    StudyUpgrader(empty_study.config.study_path, str(REQUIRED_VERSION)).upgrade()
-    empty_study.config.version = REQUIRED_VERSION
-    return empty_study
+    StudyUpgrader(empty_study_720.config.study_path, str(REQUIRED_VERSION)).upgrade()
+    empty_study_720.config.version = REQUIRED_VERSION
+    return empty_study_720
 
 
 # The parameter names to be used are those in the INI file.
@@ -203,7 +204,8 @@ class TestCreateSTStorage:
         assert raised_error["msg"] == "Value error, Invalid matrix shape (3,), expected (8760, 1)"
         assert "pmax_injection" in raised_error["input"]
 
-    def test_apply_config__invalid_version(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_720
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -212,7 +214,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=empty_study.config.version,
         )
-        command_output = create_st_storage.apply_config(empty_study.config)
+        command_output = create_st_storage.apply(empty_study)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -222,7 +224,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply__missing_area(self, recent_study: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
         create_st_storage = CreateSTStorage(
@@ -231,7 +233,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -241,7 +243,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__duplicate_storage(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply__duplicate_storage(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
@@ -255,7 +257,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
         assert command_output.status is True
 
         # Then, apply the config a second time
@@ -266,7 +268,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**parameters),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
 
         # Then, the output should be an error
         assert command_output.status is False
@@ -276,7 +278,7 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_config__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
+    def test_apply_create__nominal_case(self, recent_study: FileStudy, command_context: CommandContext):
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
@@ -290,7 +292,7 @@ class TestCreateSTStorage:
             parameters=STStorageProperties(**PARAMETERS),
             study_version=recent_study.config.version,
         )
-        command_output = create_st_storage.apply_config(recent_study.config)
+        command_output = create_st_storage.apply(recent_study)
 
         # Check the command output and extra dict
         assert command_output.status is True
@@ -342,8 +344,8 @@ class TestCreateSTStorage:
         config = recent_study.tree.get(["input", "st-storage", "series", cmd.area_id])
         constants = command_context.generator_matrix_constants
         service = command_context.matrix_service
-        pmax_injection_id = service.create(pmax_injection)
-        inflows_id = service.create(inflows)
+        pmax_injection_id = service.create(pd.DataFrame(pmax_injection))
+        inflows_id = service.create(pd.DataFrame(inflows))
         expected = {
             "storage1": {
                 "pmax_injection": f"matrix://{pmax_injection_id}",
@@ -355,7 +357,8 @@ class TestCreateSTStorage:
         }
         assert config == expected
 
-    def test_apply__invalid_apply_config(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_apply__invalid_apply_config(self, empty_study_810: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_810
         # First, prepare a new Area
         create_area = CreateArea(
             area_name="Area FR", command_context=command_context, study_version=empty_study.config.version

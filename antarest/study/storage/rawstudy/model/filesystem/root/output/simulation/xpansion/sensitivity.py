@@ -21,6 +21,6 @@ class Sensitivity(FolderNode):
     @override
     def build(self) -> TREE:
         return {
-            "out": JsonFileNode(self.context, self.config.next_file("sensitivity_out.json")),
-            "log": RawFileNode(self.context, self.config.next_file("sensitivity_log.txt")),
+            "out": JsonFileNode(self.config.next_file("sensitivity_out.json")),
+            "log": RawFileNode(self.matrix_mapper, self.config.next_file("sensitivity_log.txt")),
         }

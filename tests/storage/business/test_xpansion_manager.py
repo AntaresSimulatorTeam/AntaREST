@@ -11,11 +11,7 @@
 # This file is part of the Antares project.
 
 import io
-import os
-import uuid
-import zipfile
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 from fastapi import UploadFile
@@ -28,7 +24,6 @@ from antarest.core.exceptions import (
     MatrixImportFailed,
     XpansionFileNotFoundError,
 )
-from antarest.core.model import JSON
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
@@ -45,19 +40,7 @@ from antarest.study.business.xpansion_management import (
     XpansionCandidateDTO,
     XpansionManager,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from tests.storage.business.assets import ASSETS_DIR
-
-
-def make_empty_study(tmpdir: Path, version: int) -> StudyInterface:
-    study_path = Path(tmpdir / str(uuid.uuid4()))
-    os.mkdir(study_path)
-    with zipfile.ZipFile(ASSETS_DIR / f"empty_study_{version}.zip") as zip_output:
-        zip_output.extractall(path=study_path)
-    config = build(study_path, "1")
-    return FileStudyInterface(FileStudy(config, FileStudyTree(Mock(), config)))
 
 
 def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
@@ -69,69 +52,52 @@ def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
     link_manager.create_link(study, link_creation_dto=LinkDTO(area1="area1", area2="area2"))
 
 
-@pytest.fixture
-def empty_study_810(tmp_path: Path) -> StudyInterface:
-    return make_empty_study(tmp_path, 810)
-
-
-@pytest.fixture
-def empty_study_880(tmp_path: Path) -> StudyInterface:
-    return make_empty_study(tmp_path, 880)
-
-
 @pytest.mark.unit_test
-@pytest.mark.parametrize(
-    "version, expected_output",
-    [
-        (
-            810,
-            {
-                "candidates": {},
-                "capa": {},
-                "constraints": {},
-                "sensitivity": {"sensitivity_in": {}},
-                "settings": {
-                    "master": "integer",
-                    "uc_type": "expansion_fast",
-                    "optimality_gap": 1,
-                    "relative_gap": 1e-06,
-                    "relaxed_optimality_gap": 1e-05,
-                    "max_iteration": 1000,
-                    "solver": "Xpress",
-                    "log_level": 0,
-                    "separation_parameter": 0.5,
-                    "batch_size": 96,
-                    "timelimit": int(1e12),
-                },
-                "weights": {},
-            },
-        ),
-    ],
-)
 def test_create_configuration(
-    xpansion_manager: XpansionManager, tmp_path: Path, version: int, expected_output: JSON
+    xpansion_manager: XpansionManager,
+    tmp_path: Path,
+    empty_study_810: FileStudy,
 ) -> None:
     """
     Test the creation of a configuration.
     """
-    empty_study = make_empty_study(tmp_path, version)
-
+    study = FileStudyInterface(empty_study_810)
     with pytest.raises(ChildNotFoundError):
-        empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+        study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
-    xpansion_manager.create_xpansion_configuration(empty_study)
+    xpansion_manager.create_xpansion_configuration(study)
 
-    actual = empty_study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
-    assert actual == expected_output
+    actual = study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
+    assert actual == {
+        "candidates": {},
+        "capa": {},
+        "constraints": {},
+        "sensitivity": {"sensitivity_in": {}},
+        "settings": {
+            "master": "integer",
+            "uc_type": "expansion_fast",
+            "optimality_gap": 1,
+            "relative_gap": 1e-06,
+            "relaxed_optimality_gap": 1e-05,
+            "max_iteration": 1000,
+            "solver": "Xpress",
+            "log_level": 0,
+            "separation_parameter": 0.5,
+            "batch_size": 96,
+            "timelimit": int(1e12),
+        },
+        "weights": {},
+    }
 
 
 @pytest.mark.unit_test
-def test_delete_xpansion_configuration(xpansion_manager: XpansionManager, tmp_path: Path) -> None:
+def test_delete_xpansion_configuration(
+    xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: FileStudy
+) -> None:
     """
     Test the deletion of a configuration.
     """
-    study = make_empty_study(tmp_path, 810)
-
+    study = FileStudyInterface(empty_study_810)
     with pytest.raises(ChildNotFoundError):
         study.get_files().tree.get(["user", "expansion"], expanded=True, depth=9)
 
@@ -146,52 +112,38 @@ def test_delete_xpansion_configuration(xpansion_manager: XpansionManager, tmp_pa
 
 
 @pytest.mark.unit_test
-@pytest.mark.parametrize(
-    "version, expected_output",
-    [
-        (
-            810,
-            {
-                "master": Master.INTEGER,
-                "uc_type": UcType.EXPANSION_FAST,
-                "optimality_gap": 1.0,
-                "relative_gap": 1e-06,
-                "relaxed_optimality_gap": 1e-05,
-                "max_iteration": 1000,
-                "solver": Solver.XPRESS,
-                "log_level": 0,
-                "separation_parameter": 0.5,
-                "batch_size": 96,
-                "yearly-weights": "",
-                "additional-constraints": "",
-                "timelimit": int(1e12),
-                "sensitivity_config": {"epsilon": 0, "projection": [], "capex": False},
-            },
-        ),
-    ],
-)
-@pytest.mark.unit_test
-def test_get_xpansion_settings(
-    xpansion_manager: XpansionManager, tmp_path: Path, version: int, expected_output: JSON
-) -> None:
+def test_get_xpansion_settings(xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: FileStudy) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
-
-    study = make_empty_study(tmp_path, version)
-
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
 
     actual = xpansion_manager.get_xpansion_settings(study)
-    assert actual.model_dump(by_alias=True) == expected_output
+    assert actual.model_dump(by_alias=True) == {
+        "master": Master.INTEGER,
+        "uc_type": UcType.EXPANSION_FAST,
+        "optimality_gap": 1.0,
+        "relative_gap": 1e-06,
+        "relaxed_optimality_gap": 1e-05,
+        "max_iteration": 1000,
+        "solver": Solver.XPRESS,
+        "log_level": 0,
+        "separation_parameter": 0.5,
+        "batch_size": 96,
+        "yearly-weights": "",
+        "additional-constraints": "",
+        "timelimit": int(1e12),
+        "sensitivity_config": {"epsilon": 0, "projection": [], "capex": False},
+    }
 
 
 @pytest.mark.unit_test
-def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: StudyInterface) -> None:
+def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
 
     new_settings_obj = {
@@ -237,9 +189,9 @@ def test_add_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
 
     actual = study.get_files().tree.get(["user", "expansion", "candidates"])
@@ -292,9 +244,9 @@ def test_get_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -331,9 +283,9 @@ def test_get_candidates(
     link_manager: LinkManager,
     area_manager: AreaManager,
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -372,9 +324,9 @@ def test_update_candidates(
     link_manager: LinkManager,
     area_manager: AreaManager,
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -409,9 +361,9 @@ def test_delete_candidate(
     link_manager: LinkManager,
     area_manager: AreaManager,
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -446,9 +398,9 @@ def test_delete_candidate(
 @pytest.mark.unit_test
 def test_update_constraints(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_810: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
 
     with pytest.raises(
@@ -468,9 +420,9 @@ def test_update_constraints(
 @pytest.mark.unit_test
 def test_update_constraints_via_the_front(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_880: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
 
     study.get_files().tree.save({"user": {"expansion": {"constraints": {"constraints.txt": b"0"}}}})
@@ -501,9 +453,9 @@ def test_update_constraints_via_the_front(
 @pytest.mark.unit_test
 def test_update_weights_via_the_front(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_880: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
     # Same test as the one for constraints
     study.get_files().tree.save({"user": {"expansion": {"weights": {"weights.txt": b"0"}}}})
@@ -563,9 +515,9 @@ def test_add_resources(
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[2.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "weights", filename3])
 
     settings = xpansion_manager.get_xpansion_settings(study)
@@ -588,9 +540,9 @@ def test_add_resources(
 @pytest.mark.unit_test
 def test_get_single_constraints(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_870: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
 
     constraints_file_content = b"0"
@@ -609,9 +561,9 @@ def test_get_single_constraints(
 @pytest.mark.unit_test
 def test_get_settings_without_sensitivity(
     xpansion_manager: XpansionManager,
-    empty_study_810: StudyInterface,
+    empty_study_870: FileStudy,
 ) -> None:
-    study = empty_study_810
+    study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
 
     study.get_files().tree.delete(["user", "expansion", "sensitivity"])
@@ -663,16 +615,16 @@ def test_add_capa(
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[0.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename1])
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[1.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename2])
 
 
@@ -719,9 +671,9 @@ def test_get_single_capa(
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
     assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[0.0]],
-        "index": ["0"],
+        "index": [0],
     }
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)

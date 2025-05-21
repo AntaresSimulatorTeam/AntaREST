@@ -26,7 +26,6 @@ const LinkComponent = forwardRef<HTMLAnchorElement, LinkProps & { href: string }
 interface TabItem {
   label: string;
   path: string;
-  onClick?: () => void;
   disabled?: boolean;
 }
 
@@ -48,14 +47,6 @@ function TabWrapper({ study, tabList, divider, disablePadding = false }: Props) 
   }, [location.pathname, tabList]);
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    tabList[newValue].onClick?.();
-  };
-
-  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -72,7 +63,7 @@ function TabWrapper({ study, tabList, divider, disablePadding = false }: Props) 
       }}
     >
       <Box sx={divider ? { borderBottom: 1, borderColor: "divider" } : null}>
-        <Tabs value={selectedTab} onChange={handleChange}>
+        <Tabs value={selectedTab}>
           {tabList.map(({ path, label, disabled }) => (
             <Tab
               key={path}

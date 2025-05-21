@@ -30,7 +30,12 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.sts_model import (
+    STStorageCreation,
+    STStorageOutput,
+    STStorageUpdate,
+    STStorageUpdates,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -42,8 +47,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
-from antarest.study.storage.variantstudy.model.command.update_st_storage import UpdateSTStorage
+from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 # =============
@@ -299,14 +303,19 @@ class STStorageManager:
     def update_storages_props(
         self,
         study: StudyInterface,
-        update_storages_by_areas: Mapping[str, Mapping[str, STStorageUpdate]],
+        update_storages_by_areas: STStorageUpdates,
     ) -> Mapping[str, Mapping[str, STStorageOutput]]:
         old_storages_by_areas = self.get_all_storages_props(study)
         new_storages_by_areas = {area_id: dict(clusters) for area_id, clusters in old_storages_by_areas.items()}
 
-        # Prepare the commands to update the storage clusters.
-        commands = []
-        study_version = study.version
+        # Prepare the command to update the storage clusters.
+        command = UpdateSTStorages(
+            storage_properties=update_storages_by_areas,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+
+        # Prepare the return of the method
         for area_id, update_storages_by_ids in update_storages_by_areas.items():
             old_storages_by_ids = old_storages_by_areas[area_id]
             for storage_id, update_cluster in update_storages_by_ids.items():
@@ -315,21 +324,7 @@ class STStorageManager:
                 new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
                 new_storages_by_areas[area_id][storage_id] = new_cluster
 
-                # Convert the DTO to a configuration object and update the configuration file.
-                properties = create_st_storage_config(
-                    study_version,
-                    **new_cluster.model_dump(mode="json", exclude_none=True),
-                )
-                path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
-                cmd = UpdateConfig(
-                    target=path,
-                    data=properties.model_dump(mode="json", by_alias=True, exclude={"id"}),
-                    command_context=self._command_context,
-                    study_version=study_version,
-                )
-                commands.append(cmd)
-
-        study.add_commands(commands)
+        study.add_commands([command])
         return new_storages_by_areas
 
     def get_storage(
@@ -390,10 +385,8 @@ class STStorageManager:
 
         updated_sts = sts_storage.model_copy(update=cluster_data.model_dump(exclude_unset=True, exclude_none=True))
 
-        command = UpdateSTStorage(
-            area_id=area_id,
-            st_storage_id=storage_id,
-            properties=cluster_data,
+        command = UpdateSTStorages(
+            storage_properties={area_id: {storage_id: cluster_data}},
             command_context=self._command_context,
             study_version=study.version,
         )

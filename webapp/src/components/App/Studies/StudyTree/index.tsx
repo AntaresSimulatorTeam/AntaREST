@@ -12,39 +12,53 @@
  * This file is part of the Antares project.
  */
 
-import type { NonStudyFolderDTO } from "./types";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { toError } from "@/utils/fnUtils";
+import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import * as R from "ramda";
+import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { updateStudyFilters } from "../../../../redux/ducks/studies";
+import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import { updateStudyFilters } from "../../../../redux/ducks/studies";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
-import * as R from "ramda";
-import React, { useState } from "react";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { fetchSubfolders, insertFoldersIfNotExist } from "./utils";
-import { useTranslation } from "react-i18next";
 import StudyTreeNodeComponent from "./StudyTreeNode";
-import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
+import { insertIfNotExist } from "./utils";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
-  const [subFolders, setSubFolders] = useState<NonStudyFolderDTO[]>([]);
+  const [workspaces, setWorkspaces] = useState<string[]>([]);
+  const [subFolders, setSubFolders] = useState(storage.getItem(StorageKey.StudyTreeFolders) || []);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
 
-  useUpdateEffect(() => {
-    const nextStudiesTree = insertFoldersIfNotExist(initialStudiesTree, subFolders);
-    setStudiesTree(nextStudiesTree);
-    // subFolders isn't a dependency because we don't want to trigger this code
+  useEffect(() => {
+    getWorkspaces().then((nextWorkspaces) => {
+      const nextStudyTree = insertIfNotExist(initialStudiesTree, nextWorkspaces, subFolders);
+      setStudiesTree(nextStudyTree);
+      setWorkspaces(nextWorkspaces);
+    });
+    // subFolders isn't listed as a dependency because we don't want to trigger this code
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStudiesTree]);
+
+  useUpdateEffect(() => {
+    storage.setItem(StorageKey.StudyTreeFolders, subFolders);
+  }, [subFolders]);
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
 
   /**
    * This function is called when the user clicks on a folder.
@@ -59,55 +73,79 @@ function StudyTree() {
    * To enable this, we'll fetch the subfolders of a folder when the user clicks on it using the explorer API.
    *
    * @param itemId - The id of the item clicked, which is its path
+   * @returns void
    */
   async function updateTree(itemId: string) {
-    if (itemId.startsWith(DEFAULT_WORKSPACE_PREFIX)) {
-      // we don't update the tree if the user clicks on the default workspace
-      // api doesn't allow to fetch the subfolders of the default workspace
-      return;
+    const [root, workspace, ...subPath] = itemId.split("/");
+
+    const isAbsolutePath = root === ""; // Path must starts with a '/'
+    const isValidWorkspace = workspace && workspace !== DEFAULT_WORKSPACE_NAME;
+
+    if (!isAbsolutePath || !isValidWorkspace) {
+      return null;
     }
-    // If the user clicks on the root folder, we don't update the tree,
-    // there're no subfolders under the root only workspaces.
-    if (itemId === ROOT_FOLDER_NAME) {
-      return;
-    }
-    // usefull flag to display "loading..." message
-    setItemsLoading([...itemsLoading, itemId]);
-    // fetch subfolders and inesrt them to the tree
+
+    setItemsLoading((prev) => [...prev, itemId]);
+
+    // Fetch subfolders and insert them to the tree
     try {
-      const newSubFolders = await fetchSubfolders(itemId);
-      // use union to prioritize new subfolders
-      const nextSubfolders = R.unionWith(R.eqBy(R.prop("path")), newSubFolders, subFolders);
-      setSubFolders(nextSubfolders);
-      const nextStudiesTree = insertFoldersIfNotExist(studiesTree, nextSubfolders);
-      setStudiesTree(nextStudiesTree);
-    } catch {
+      const newSubFolders = await api.getFolders(workspace, subPath.join("/"));
+
+      if (newSubFolders.length > 0) {
+        // use union to prioritize new subfolders
+        const thisParent = ["", workspace, ...subPath].join("/");
+        const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
+        const nextSubfolders = [...newSubFolders, ...otherSubfolders];
+
+        setSubFolders(nextSubfolders);
+
+        const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
+        setStudiesTree(nextStudyTree);
+      }
+    } catch (err) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
           path: itemId,
           interpolation: { escapeValue: false },
         }),
-        "",
+        toError(err),
       );
     }
-    setItemsLoading(itemsLoading.filter((e) => e !== itemId));
+
+    setItemsLoading((prev) => prev.filter((id) => id !== itemId));
+  }
+
+  /**
+   *
+   * Only on desktop mode it make sense to fetch the workspaces
+   * as they are generated dynamically based on mounted discs
+   * On web mode this case is almost neved used, so we'd rather save the API call
+   *
+   * @returns The list of workspaces
+   */
+  // eslint-disable-next-line require-await
+  async function getWorkspaces() {
+    if (import.meta.env.MODE === "desktop") {
+      return api.getWorkspaces();
+    }
+    return workspaces;
   }
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  // we need to handle both the expand event and the onClick event
-  // because the onClick isn't triggered when user click on arrow
+  // We need to handle both the expand event and the onClick event
+  // because the onClick isn't triggered when user click on arrow.
   // Also the expanse event isn't triggered when the item doesn't have any subfolder
-  // but we stil want to apply the filter on the clicked folder
-  const handleItemExpansionToggle = async (
+  // but we still want to apply the filter on the clicked folder.
+  const handleItemExpansionToggle = (
     event: React.SyntheticEvent<Element, Event>,
     itemId: string,
     isExpanded: boolean,
   ) => {
     if (isExpanded) {
-      await updateTree(itemId);
+      updateTree(itemId);
     }
   };
 
@@ -127,8 +165,7 @@ function StudyTree() {
       sx={{ p: 2, pt: 0 }}
     >
       <StudyTreeNodeComponent
-        studyTreeNode={studiesTree}
-        parentId=""
+        node={studiesTree}
         itemsLoading={itemsLoading}
         onNodeClick={handleTreeItemClick}
       />

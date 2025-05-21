@@ -49,14 +49,14 @@ class AllocationFormFields(FormFieldsBaseModel):
             raise ValueError("allocation must not contain duplicate area IDs")
 
         for a in allocation:
-            if a.coefficient < 0:
-                raise ValueError("allocation must not contain negative coefficients")
-
             if numpy.isnan(a.coefficient):
                 raise ValueError("allocation must not contain NaN coefficients")
 
+        if all(a.coefficient == 0 for a in allocation):
+            raise ValueError("at least one allocation coefficient must be non-zero")
+
         if sum(a.coefficient for a in allocation) <= 0:
-            raise ValueError("sum of allocation coefficients must be positive")
+            raise ValueError("sum of coefficients must be positive")
 
         return self
 
@@ -99,8 +99,6 @@ class AllocationMatrix(FormFieldsBaseModel):
             raise ValueError("allocation matrix must not be empty")
         if array.shape != (rows, cols):
             raise ValueError("allocation matrix must have square shape")
-        if np.any(array < 0):
-            raise ValueError("allocation matrix must not contain negative coefficients")
         if np.any(np.isnan(array)):
             raise ValueError("allocation matrix must not contain NaN coefficients")
         if np.all(array == 0):
@@ -139,7 +137,8 @@ class AllocationManager:
         if not allocation_data:
             raise AllocationDataNotFound(area_id)
 
-        return allocation_data.get("[allocation]", {})  # type: ignore
+        # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
+        return allocation_data.get("[allocation]", allocation_data.get("allocation", {}))  # type: ignore
 
     def get_allocation_form_fields(
         self, all_areas: List[AreaInfoDTO], study: StudyInterface, area_id: str
@@ -196,7 +195,7 @@ class AllocationManager:
             # sort for deterministic error message and testing
             raise AreaNotFound(*sorted(invalid_ids))
 
-        filtered_allocations = [f for f in data.allocation if f.coefficient > 0 and f.area_id in areas_ids]
+        filtered_allocations = [f for f in data.allocation if f.area_id in areas_ids]
 
         command = UpdateConfig(
             target=f"input/hydro/allocation/{area_id}/[allocation]",
@@ -243,7 +242,8 @@ class AllocationManager:
         array = np.zeros((len(rows), len(columns)), dtype=np.float64)
 
         for prod_area, allocation_dict in allocation_cfg.items():
-            allocations = allocation_dict["[allocation]"]
+            # allocation format can differ from the number of '[' (i.e. [[allocation]] or [allocation])
+            allocations = allocation_dict.get("[allocation]", allocation_dict.get("allocation", {}))
             for cons_area, coefficient in allocations.items():
                 row_idx = rows.index(cons_area)
                 col_idx = columns.index(prod_area)

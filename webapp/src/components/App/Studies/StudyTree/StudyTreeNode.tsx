@@ -12,44 +12,62 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo } from "react";
-import * as R from "ramda";
-import type { StudyTreeNodeProps } from "./types";
 import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
-import { t } from "i18next";
+import * as R from "ramda";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
+import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 
-export default function StudyTreeNode({
-  studyTreeNode,
-  parentId,
-  itemsLoading,
-  onNodeClick,
-}: StudyTreeNodeProps) {
-  const id = parentId ? `${parentId}/${studyTreeNode.name}` : studyTreeNode.name;
-  const isLoadingFolder = itemsLoading.includes(id);
-  const hasUnloadedChildern = studyTreeNode.hasChildren && studyTreeNode.children.length === 0;
-  const sortedChildren = useMemo(
-    () => R.sortBy(R.compose(R.toLower, R.prop("name")), studyTreeNode.children),
-    [studyTreeNode.children],
-  );
-
-  // Either the user clicked on the folder and we need to show the folder is loading
-  // Or the explorer api says that this folder has children so we need to load at least one element
-  // so the arrow to explanse the element is displayed which indicate to the user that this is a folder
-  if (isLoadingFolder || hasUnloadedChildern) {
-    return (
-      <TreeItemEnhanced itemId={id} label={studyTreeNode.name}>
-        <TreeItemEnhanced itemId={id + "loading"} label={t("studies.tree.fetchFolderLoading")} />
-      </TreeItemEnhanced>
-    );
+function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
+  if (folderA.name === DEFAULT_WORKSPACE_NAME) {
+    return -1;
+  } else if (folderB.name === DEFAULT_WORKSPACE_NAME) {
+    return 1;
+  } else {
+    return 0;
   }
+}
+
+const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
+const defaultFirstSort = R.sortWith([prioritizeDefault]);
+
+export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
+  const { hasChildren, children, path, name } = node;
+  const isLoading = itemsLoading.includes(node.path);
+  const hasUnloadedChildren = hasChildren && children.length === 0;
+  const { t } = useTranslation();
+
+  const sortedChildren = useMemo(() => {
+    const sortedByName = nameSort(children);
+    if (node.name === ROOT_NODE_NAME) {
+      return defaultFirstSort(sortedByName);
+    }
+    return sortedByName;
+  }, [children, node.name]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
-    <TreeItemEnhanced itemId={id} label={studyTreeNode.name} onClick={() => onNodeClick(id)}>
+    <TreeItemEnhanced
+      itemId={path}
+      label={name}
+      onClick={() => onNodeClick(node.path)}
+      loading={isLoading}
+    >
+      {hasUnloadedChildren && (
+        <TreeItemEnhanced
+          itemId={`${path}//loading`}
+          label={`${t("global.loading")}...`}
+          sx={{ fontStyle: "italic" }}
+        />
+      )}
       {sortedChildren.map((child) => (
         <StudyTreeNode
-          key={`${id}/${child.name}`}
-          studyTreeNode={child}
-          parentId={id}
+          key={child.path}
+          node={child}
           itemsLoading={itemsLoading}
           onNodeClick={onNodeClick}
         />

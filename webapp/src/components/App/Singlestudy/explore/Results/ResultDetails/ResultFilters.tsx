@@ -307,7 +307,7 @@ function ResultFilters({
         pb: 1,
       }}
     >
-      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+      <CustomScrollbar>
         <Box
           sx={{
             width: 1,
@@ -333,7 +333,7 @@ function ResultFilters({
       </CustomScrollbar>
 
       {/* Result Filters Group */}
-      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+      <CustomScrollbar>
         <Box
           sx={{
             display: "flex",

@@ -17,7 +17,7 @@ import CustomScrollbar from "@/components/common/CustomScrollbar";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import { DEFAULT_WORKSPACE_PREFIX, ROOT_FOLDER_NAME } from "@/components/common/utils/constants";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { updateStudiesSortConf, updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -45,7 +45,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { AxiosError } from "axios";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const sortOptions = [
@@ -86,22 +86,18 @@ export interface Props {
 
 function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToLaunch }: Props) {
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
+  const folderList = folder.split("/");
   const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
   const sortConf = useAppSelector(getStudiesSortConf);
-  const [folderList, setFolderList] = useState(folder.split("/"));
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const hasStudiesSelected = selectedStudyIds.length > 0;
-  const isInDefaultWorkspace = folder.startsWith(DEFAULT_WORKSPACE_PREFIX);
-  const isRootFolder = folder === ROOT_FOLDER_NAME;
-  const canScan = !isInDefaultWorkspace && !isRootFolder;
-
-  useEffect(() => {
-    setFolderList(folder.split("/"));
-  }, [folder]);
+  const isInDefaultWorkspace = folderList.length > 1 && folderList[1] === DEFAULT_WORKSPACE_NAME;
+  const isRootFolder = folderList.length === 1;
+  const canScan = !isRootFolder && !isInDefaultWorkspace;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -121,8 +117,6 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
 
   const handleFolderScan = async () => {
     try {
-      // Remove "/root" from the path
-      const folder = folderList.slice(1).join("/");
       await scanFolder(folder, isRecursiveScan);
       setConfirmFolderScan(false);
       setIsRecursiveScan(false);
@@ -149,7 +143,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
 
   return (
     <>
-      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+      <CustomScrollbar>
         <Box
           sx={{
             display: "flex",
@@ -170,9 +164,8 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
                     key={path}
                     underline={isRoot ? "none" : "hover"}
                     color="inherit"
-                    onClick={() => setFolder(isRoot ? "root" : path)}
-                    sx={{ display: "flex", alignItems: "center" }}
-                    href="#"
+                    onClick={() => setFolder(isRoot ? "" : path)}
+                    sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
                   >
                     {isRoot ? <HomeIcon fontSize="inherit" /> : folder}
                   </Link>

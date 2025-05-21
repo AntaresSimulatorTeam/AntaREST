@@ -78,6 +78,7 @@ const defaultContext = {
   canUndo: true,
   canRedo: true,
   isDirty: false,
+  aggregateTypes: [],
 };
 
 const renderMatrixActions = (

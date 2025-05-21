@@ -24,7 +24,6 @@ from antarest.study.model import (
     STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 _TSNumber: te.TypeAlias = int
@@ -62,7 +61,7 @@ class ScenarioBuilder(IniFileNode):
     - `<Level>`: The level of the hydraulic reservoir (in range 0-1).
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         self.config = config
 
         rules: _Rules = {}
@@ -84,7 +83,6 @@ class ScenarioBuilder(IniFileNode):
             self._populate_hydro_generation_power_rules(rules)
 
         super().__init__(
-            context=context,
             config=config,
             types={"Default Ruleset": rules},
         )

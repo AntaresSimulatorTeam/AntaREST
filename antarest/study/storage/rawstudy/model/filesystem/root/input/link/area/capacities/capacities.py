@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_scenario_hourly_ones
@@ -22,11 +22,11 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 class InputLinkAreaCapacities(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
@@ -34,10 +34,12 @@ class InputLinkAreaCapacities(FolderNode):
         children: TREE = {}
         for area_to in self.config.get_links(self.area):
             children[f"{area_to}_direct"] = InputSeriesMatrix(
-                self.context, self.config.next_file(f"{area_to}_direct.txt"), default_empty=default_scenario_hourly_ones
+                self.matrix_mapper,
+                self.config.next_file(f"{area_to}_direct.txt"),
+                default_empty=default_scenario_hourly_ones,
             )
             children[f"{area_to}_indirect"] = InputSeriesMatrix(
-                self.context,
+                self.matrix_mapper,
                 self.config.next_file(f"{area_to}_indirect.txt"),
                 default_empty=default_scenario_hourly_ones,
             )

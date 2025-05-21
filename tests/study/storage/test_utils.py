@@ -76,7 +76,7 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     study_path = tmp_path / "study"
     study_path.mkdir()
     config = FileStudyTreeConfig(study_path=study_path, path=study_path, study_id="my-study", version=STUDY_VERSION_8_8)
-    tree = FileStudyTree(context=Mock(), config=config)
+    tree = FileStudyTree(matrix_mapper=Mock(), config=config)
     antares_study_path = study_path / "study.antares"
     write_ini_file(antares_study_path, {"antares": {"version": "700"}})
 

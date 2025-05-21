@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
@@ -23,11 +23,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
 class InputThermalPreproArea(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
@@ -36,7 +36,7 @@ class InputThermalPreproArea(FolderNode):
         # For instance, if your cluster ID is "Base", then the series ID will be "base".
         series_ids = map(str.lower, self.config.get_thermal_ids(self.area))
         children: TREE = {
-            series_id: InputThermalPreproAreaThermal(self.context, self.config.next_file(series_id))
+            series_id: InputThermalPreproAreaThermal(self.matrix_mapper, self.config.next_file(series_id))
             for series_id in series_ids
         }
         return children

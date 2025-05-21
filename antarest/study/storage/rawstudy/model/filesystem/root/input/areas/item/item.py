@@ -25,14 +25,11 @@ class InputAreasItem(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "ui": InputAreasUi(self.context, self.config.next_file("ui.ini")),
+            "ui": InputAreasUi(self.config.next_file("ui.ini")),
             "optimization": InputAreasOptimization(
-                self.context,
                 self.config.next_file("optimization.ini"),
             ),
         }
         if self.config.version >= STUDY_VERSION_8_3:
-            children["adequacy_patch"] = InputAreasAdequacyPatch(
-                self.context, self.config.next_file("adequacy_patch.ini")
-            )
+            children["adequacy_patch"] = InputAreasAdequacyPatch(self.config.next_file("adequacy_patch.ini"))
         return children

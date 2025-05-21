@@ -11,10 +11,9 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from unittest.mock import Mock
 
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import ThermalConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
 RULES = {
@@ -98,15 +97,15 @@ def test_get(tmp_path: Path) -> None:
             print(f"{key} = {value}", file=f)
 
     thermals = [
-        ThermalConfig(id="01_solar", name="01_solar", enabled=True),
-        ThermalConfig(id="02_wind_on", name="02_wind_on", enabled=True),
-        ThermalConfig(id="03_wind_off", name="03_wind_off", enabled=True),
-        ThermalConfig(id="04_res", name="04_res", enabled=True),
-        ThermalConfig(id="05_nuclear", name="05_nuclear", enabled=True),
-        ThermalConfig(id="06_coal", name="06_coal", enabled=True),
-        ThermalConfig(id="07_gas", name="07_gas", enabled=True),
-        ThermalConfig(id="08_non-res", name="08_non-res", enabled=True),
-        ThermalConfig(id="09_hydro_pump", name="09_hydro_pump", enabled=True),
+        ThermalCluster(name="01_solar", enabled=True),
+        ThermalCluster(name="02_wind_on", enabled=True),
+        ThermalCluster(name="03_wind_off", enabled=True),
+        ThermalCluster(name="04_res", enabled=True),
+        ThermalCluster(name="05_nuclear", enabled=True),
+        ThermalCluster(name="06_coal", enabled=True),
+        ThermalCluster(name="07_gas", enabled=True),
+        ThermalCluster(name="08_non-res", enabled=True),
+        ThermalCluster(name="09_hydro_pump", enabled=True),
     ]
 
     areas = {
@@ -122,7 +121,6 @@ def test_get(tmp_path: Path) -> None:
     }
 
     node = ScenarioBuilder(
-        context=Mock(),
         config=FileStudyTreeConfig(
             study_path=path,
             path=path,

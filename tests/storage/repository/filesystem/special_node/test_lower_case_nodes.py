@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import textwrap
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -71,7 +70,6 @@ def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node
     )
 
     node = ini_node_cluster_class(
-        context=Mock(),
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_8, "area_test"),
         area="area_test",
     )
@@ -87,7 +85,6 @@ def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node
 def test_cluster_ini_list(study_dir: Path, ini_file: Path, ini_node_cluster_class):
     data = {"Cluster 1": {"group": "Gas"}}
     node = ini_node_cluster_class(
-        context=Mock(),
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_8, "area_test"),
         area="area_test",
     )
@@ -111,7 +108,6 @@ def test_binding_constraint_group_writing(
     ini_file: Path,
 ):
     node = BindingConstraintsIni(
-        context=Mock(),
         config=FileStudyTreeConfig(study_path=study_dir, path=ini_file, version=STUDY_VERSION_8_8, study_id="id"),
     )
 
@@ -137,7 +133,6 @@ def test_binding_constraint_group_parsing(
     )
 
     node = BindingConstraintsIni(
-        context=Mock(),
         config=FileStudyTreeConfig(study_path=study_dir, path=ini_file, version=STUDY_VERSION_8_8, study_id="id"),
     )
 
@@ -156,7 +151,6 @@ def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_
         )
     )
     node = InputSTStorageAreaList(
-        context=Mock(),
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_6, "area_test"),
         area="area_test",
     )

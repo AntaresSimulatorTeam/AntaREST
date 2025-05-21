@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pandas as pd
 
-link = [[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760
-direct = [[1.0]] * 8760
-indirect = [[1.0]] * 8760
+link = pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+direct = pd.DataFrame([[1.0]] * 8760)
+indirect = pd.DataFrame([[1.0]] * 8760)

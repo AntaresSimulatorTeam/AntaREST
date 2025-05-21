@@ -10,12 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from typing_extensions import override
 
 from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -39,23 +38,15 @@ class UpdateComments(ICommand):
     comments: str
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-        return (
-            CommandOutput(
-                status=True,
-                message=f"Comment '{self.comments}' has been successfully replaced.",
-            ),
-            dict(),
-        )
-
-    @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         replace_comment_data: JSON = {"settings": {"comments": self.comments.encode("utf-8")}}
 
         study_data.tree.save(replace_comment_data)
 
-        output, _ = self._apply_config(study_data.config)
-        return output
+        return CommandOutput(
+            status=True,
+            message=f"Comment '{self.comments}' has been successfully replaced.",
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

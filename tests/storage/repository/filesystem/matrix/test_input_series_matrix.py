@@ -13,7 +13,6 @@ import io
 import itertools
 import shutil
 import textwrap
-import typing as t
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -22,11 +21,9 @@ import pandas as pd
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.matrixstore.uri_resolver_service import UriResolverService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 
@@ -53,7 +50,7 @@ class TestInputSeriesMatrix:
         )
         file.write_text(content)
 
-        node = InputSeriesMatrix(context=Mock(), config=my_study_config, nb_columns=8)
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, nb_columns=8)
 
         # checks formatted response
         actual = node.load(formatted=True)
@@ -81,17 +78,16 @@ class TestInputSeriesMatrix:
         default_matrix = np.array([[1, 2], [3, 4]])
         if not link:
             file_path.touch()
-            node = InputSeriesMatrix(context=Mock(), config=my_study_config, default_empty=default_matrix)
+            node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, default_empty=default_matrix)
         else:
             link_path = file_path.parent / f"{file_path.name}.link"
             link_path.touch()
-            resolver = Mock()
-            resolver.resolve.return_value = {}
-            resolver.build_matrix_uri.return_value = "matrix://my-id"
+            resolver = Mock(spec=MatrixUriMapper)
+            resolver.get_matrix.return_value = pd.DataFrame()
             matrix_service = Mock()
-            matrix_service.create.return_value = "my-id"
-            context = ContextServer(matrix=matrix_service, resolver=resolver)
-            node = InputSeriesMatrix(context=context, config=my_study_config, default_empty=default_matrix)
+            matrix_service.create.return_value = "matrix://my-id"
+            resolver.matrix_service = matrix_service
+            node = InputSeriesMatrix(matrix_mapper=resolver, config=my_study_config, default_empty=default_matrix)
 
         # checks formatted response
         actual = node.load(formatted=True)
@@ -105,7 +101,7 @@ class TestInputSeriesMatrix:
         assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = InputSeriesMatrix(context=Mock(), config=my_study_config)
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config)
         with pytest.raises(ChildNotFoundError) as ctx:
             node.load()
         err_msg = str(ctx.value)
@@ -123,22 +119,18 @@ class TestInputSeriesMatrix:
         }
         link.write_text(matrix_uri)
 
-        def resolve(uri: str, formatted: bool = True) -> t.Dict[str, t.Any]:
+        def get_matrix(uri: str) -> pd.DataFrame:
             assert uri == matrix_uri
-            assert formatted is True
-            return matrix_obj
+            return pd.DataFrame(data=matrix_obj["data"])
 
-        context = ContextServer(
-            matrix=Mock(spec=ISimpleMatrixService),
-            resolver=Mock(spec=UriResolverService, resolve=resolve),
+        node = InputSeriesMatrix(
+            matrix_mapper=Mock(spec=MatrixUriMapper, get_matrix=get_matrix), config=my_study_config
         )
-
-        node = InputSeriesMatrix(context=context, config=my_study_config)
         actual = node.load()
         assert actual == matrix_obj
 
     def test_save(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = InputSeriesMatrix(context=Mock(), config=my_study_config)
+        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config)
         node.dump({"columns": [0, 1], "data": [[1, 2], [3, 4]], "index": [0, 1]})
         actual = my_study_config.path.read_text()
         expected = textwrap.dedent(
@@ -167,13 +159,12 @@ class TestCopyAndRenameFile:
         self.link.write_text("Link: Mock File Content")
 
         config = FileStudyTreeConfig(study_path=self.file.parent, path=self.file, version=-1, study_id="")
-        context = ContextServer(matrix=Mock(), resolver=Mock())
-        self.node = InputSeriesMatrix(context=context, config=config)
+        self.node = InputSeriesMatrix(matrix_mapper=Mock(), config=config)
 
         self.modified_file = self.file.parent / "lazy_modified.txt"
         self.modified_link = self.file.parent / f"{self.modified_file.name}.link"
         config2 = FileStudyTreeConfig(study_path=self.file.parent, path=self.modified_file, version=-1, study_id="")
-        self.fake_node = InputSeriesMatrix(context=Mock(), config=config2)
+        self.fake_node = InputSeriesMatrix(matrix_mapper=Mock(), config=config2)
         self.target = self.modified_file.stem
 
     def _checks_behavior(self, rename: bool, target_is_link: bool):

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.model import STUDY_VERSION_8_7
@@ -37,8 +36,8 @@ class TestRemoveXpansionResource:
         (xpansion_path / "constraints" / "constraints1.ini").touch()
         (xpansion_path / "constraints" / "constraints2.txt").touch()
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_nominal_case(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
 
         # Constraints
@@ -80,8 +79,8 @@ class TestRemoveXpansionResource:
             resource_path = empty_study.config.study_path / "user" / "expansion" / "capa" / file_name
             assert not resource_path.exists()
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_error_case_for_constraint(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_error_case_for_constraint(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "constraints1"
 
@@ -102,8 +101,8 @@ class TestRemoveXpansionResource:
             in output.message
         )
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_error_case_for_weight(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_error_case_for_weight(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "weights1"
 
@@ -124,8 +123,8 @@ class TestRemoveXpansionResource:
             in output.message
         )
 
-    @pytest.mark.parametrize("empty_study", ["empty_study_870.zip"], indirect=True)
-    def test_error_case_for_capa(self, empty_study: FileStudy, command_context: CommandContext):
+    def test_error_case_for_capa(self, empty_study_870: FileStudy, command_context: CommandContext):
+        empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "capa1"
 

@@ -9,24 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pandas as pd
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.model import MatrixDTO
 
 
 def test_matrix_service():
     service = InMemorySimpleMatrixService()
-    matrix_id = service.create([[1, 2, 3], [4, 5, 6]])
+    df = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
+    matrix_id = service.create(df)
     assert service.exists(matrix_id)
-    dto = service.get(matrix_id)
-    assert dto == MatrixDTO(
-        id=matrix_id,
-        data=[[1, 2, 3], [4, 5, 6]],
-        index=["0", "1"],
-        columns=["0", "1", "2"],
-        width=3,
-        height=2,
-        created_at=dto.created_at,
-    )
+    created_df = service.get(matrix_id)
+    assert created_df.equals(df)
     service.delete(matrix_id)
     assert not service.exists(matrix_id)

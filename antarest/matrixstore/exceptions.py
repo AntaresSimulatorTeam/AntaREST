@@ -18,3 +18,14 @@ from fastapi import HTTPException
 class MatrixDataSetNotFound(HTTPException):
     def __init__(self) -> None:
         super().__init__(HTTPStatus.NOT_FOUND)
+
+
+class MatrixNotFound(HTTPException):
+    def __init__(self, matrix_id: str) -> None:
+        message = f"Matrix {matrix_id} doesn't exist"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class MatrixNotSupported(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, f"Could not save the matrix: {message}")

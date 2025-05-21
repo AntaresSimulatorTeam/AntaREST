@@ -20,12 +20,14 @@ from antarest.core.exceptions import StudyNotFoundError, VariantGenerationError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import User
+from antarest.login.utils import current_user_context
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
@@ -227,40 +229,6 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
 
 
 @pytest.mark.unit_test
-def test_copy_study() -> None:
-    study_service = VariantStudyService(
-        raw_study_service=Mock(),
-        cache=Mock(),
-        task_service=Mock(),
-        command_factory=Mock(),
-        study_factory=Mock(),
-        config=build_config(Path("")),
-        repository=Mock(),
-        event_bus=Mock(),
-    )
-
-    src_id = "source"
-    commands = [
-        CommandBlock(
-            study_id=src_id,
-            command="Command",
-            args="",
-            index=0,
-            version=7,
-        )
-    ]
-    src_md = VariantStudy(
-        id=src_id,
-        path="path",
-        commands=commands,
-        additional_data=StudyAdditionalData(),
-    )
-
-    md = study_service.copy(src_md, "dst_name", [])
-    assert len(src_md.commands) == len(md.commands)
-
-
-@pytest.mark.unit_test
 def test_delete_study(tmp_path: Path) -> None:
     name = "my-study"
     study_path = tmp_path / name
@@ -293,7 +261,16 @@ def test_delete_study(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit_test
-def test_get_variant_children(tmp_path: Path) -> None:
+def test_get_variant_children(tmp_path: Path, admin_user) -> None:
+    with db():
+        user_me = User(id=2, name="me")
+        user_not_me = User(id=3, name="not me")
+        db.session.add(user_me)
+        db.session.add(user_not_me)
+
+    jwt_user_me = JWTUser(id=user_me.id, impersonator=user_me.id, type="users")
+    jwt_user_not_me = JWTUser(id=user_not_me.id, impersonator=user_not_me.id, type="users")
+
     name = "my-study"
     study_path = tmp_path / name
     study_path.mkdir()
@@ -350,14 +327,22 @@ def test_get_variant_children(tmp_path: Path) -> None:
             additional_data=StudyAdditionalData(),
         ),
     ]
-    repo_mock.get.side_effect = [parent] + children
-    repo_mock.get_children.side_effect = [children, [], []]
+    for jwt_user in [jwt_user_me, jwt_user_not_me, admin_user]:
+        repo_mock.get.side_effect = [parent] + children
+        repo_mock.get_children.side_effect = [children, [], []]
 
-    tree = study_service.get_all_variants_children(
-        "parent",
-        RequestParameters(user=JWTUser(id=2, type="user", impersonator=2)),
-    )
-    assert len(tree.children) == 1
+        with current_user_context(jwt_user):
+            if jwt_user == jwt_user_me:
+                tree = study_service.get_all_variants_children("parent")
+                assert len(tree.children) == 1
+
+            elif jwt_user == admin_user:
+                tree = study_service.get_all_variants_children("parent")
+                assert len(tree.children) == 2
+
+            else:
+                with pytest.raises(UserHasNotPermissionError):
+                    study_service.get_all_variants_children("parent")
 
 
 @pytest.mark.unit_test

@@ -336,17 +336,17 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_THERMAL_CLUSTER.value,
-            version=2,
+            version=3,
             args=[
                 {
                     "area_id": "area_name",
                     "parameters": {
                         "name": "cluster_name",
                         "group": "nuclear",
-                        "unitcount": 3,
-                        "nominalcapacity": 100,
-                        "marginal-cost": 40,
-                        "market-bid-cost": 45,
+                        "unitCount": 3,
+                        "nominalCapacity": 100,
+                        "marginalCost": 40,
+                        "marketBidCost": 45,
                     },
                     "prepro": "prepro",
                     "modulation": "modulation",
@@ -359,42 +359,12 @@ COMMANDS = [
                 "area_id": "area_name",
                 "modulation": "modulation",
                 "parameters": {
-                    "co2": 0.0,
-                    "costgeneration": "SetManually",
-                    "efficiency": 100.0,
-                    "enabled": True,
-                    "fixed-cost": 0.0,
-                    "gen-ts": "use global",
                     "group": "nuclear",
-                    "law.forced": "uniform",
-                    "law.planned": "uniform",
-                    "marginal-cost": 40.0,
-                    "market-bid-cost": 45.0,
-                    "min-down-time": 1,
-                    "min-stable-power": 0.0,
-                    "min-up-time": 1,
-                    "must-run": False,
+                    "marginalCost": 40.0,
+                    "marketBidCost": 45.0,
                     "name": "cluster_name",
-                    "nh3": 0.0,
-                    "nmvoc": 0.0,
-                    "nominalcapacity": 100.0,
-                    "nox": 0.0,
-                    "op1": 0.0,
-                    "op2": 0.0,
-                    "op3": 0.0,
-                    "op4": 0.0,
-                    "op5": 0.0,
-                    "pm10": 0.0,
-                    "pm2_5": 0.0,
-                    "pm5": 0.0,
-                    "so2": 0.0,
-                    "spinning": 0.0,
-                    "spread-cost": 0.0,
-                    "startup-cost": 0.0,
-                    "unitcount": 3,
-                    "variableomcost": 0.0,
-                    "volatility.forced": 0.0,
-                    "volatility.planned": 0.0,
+                    "nominalCapacity": 100.0,
+                    "unitCount": 3,
                 },
                 "prepro": "prepro",
             }
@@ -813,18 +783,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_ST_STORAGE.value,
-            args={
-                "area_id": "area 1",
-                "st_storage_id": "storage 1",
-                "properties": {
-                    "enabled": False,
-                },
-            },
+            action=CommandName.UPDATE_ST_STORAGES.value,
+            args={"storage_properties": {"area 1": {"sts_1": {"enabled": False}}}},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_st_storage",
+        id="update_st_storages",
     ),
     pytest.param(
         CommandDTO(
@@ -1018,7 +982,29 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory):
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
-    assert dto.version == 2
+    assert dto.version == 3
+    assert dto.args["parameters"]["name"] == "cluster_name"
+    assert "cluster_name" not in dto.args
+
+
+@pytest.mark.unit_test
+def test_parse_create_cluster_dto_v2(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_THERMAL_CLUSTER.value,
+        version=2,
+        args={
+            "area_id": "area_name",
+            "parameters": {"name": "cluster_name"},
+            "prepro": "prepro",
+            "modulation": "modulation",
+        },
+        study_version=STUDY_VERSION_8_8,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 3
     assert dto.args["parameters"]["name"] == "cluster_name"
     assert "cluster_name" not in dto.args
 
