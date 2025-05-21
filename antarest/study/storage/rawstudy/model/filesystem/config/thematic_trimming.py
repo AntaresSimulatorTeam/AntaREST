@@ -11,20 +11,16 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Self, TypeAlias
+from typing import Any, Self
 
 from antares.study.version import StudyVersion
 from pydantic import Field
 
-from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.model import (
-    STUDY_VERSION_8_1,
-    STUDY_VERSION_8_3,
-    STUDY_VERSION_8_6,
-    STUDY_VERSION_8_8,
-    STUDY_VERSION_9_1,
+from antarest.study.business.model.thematic_trimming_model import (
+    ThematicTrimming,
+    initialize_with_version,
+    validate_against_version,
 )
 
 
@@ -144,23 +140,23 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
         return cls.model_validate(thematic_trimming.model_dump())
 
     @classmethod
-    def parse_ini_file(cls, data: Any, study_version: StudyVersion) -> "ThematicTrimmingFileData":
+    def parse_ini_file(cls, data: Any, study_version: StudyVersion) -> tuple["ThematicTrimmingFileData", bool]:
+        """Parse an ini content to return a ThematicTrimmingFileData object and a flag indicating if missing fields are activated or not."""
         if data == {}:
-            return ThematicTrimmingFileData()
+            return ThematicTrimmingFileData(), True
 
         if data.get("selected_vars_reset", True):
             # Means written fields are deactivated and others are activated
             unselected_vars = data.get("select_var -", [])
             args = {var: False for var in unselected_vars}
-            return ThematicTrimmingFileData(**args)
+            return ThematicTrimmingFileData(**args), True
 
         # Means written fields are activated and others deactivated
         selected_vars = data.get("select_var +", [])
         args = {var: True for var in selected_vars}
         file_data = ThematicTrimmingFileData(**args)
 
-        initialize_with_version(file_data, study_version, False)
-        return file_data
+        return file_data, False
 
     @classmethod
     def to_ini_file(cls, thematic_trimming: ThematicTrimming) -> dict[str, Any]:
@@ -184,9 +180,10 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
 
 
 def parse_thematic_trimming(study_version: StudyVersion, data: Any) -> ThematicTrimming:
-    thematic_trimming = ThematicTrimmingFileData.parse_ini_file(data, study_version).to_model()
+    thematic_trimming_file_data, default_value = ThematicTrimmingFileData.parse_ini_file(data, study_version)
+    thematic_trimming = thematic_trimming_file_data.to_model()
     validate_against_version(thematic_trimming, study_version)
-    initialize_with_version(thematic_trimming, study_version)
+    initialize_with_version(thematic_trimming, study_version, default_value)
     return thematic_trimming
 
 
@@ -196,196 +193,3 @@ def serialize_thematic_trimming(
     validate_against_version(thematic_trimming_update, study_version)
     new_trimming = current_thematic_trimming.model_copy(update=thematic_trimming_update.model_dump(exclude_none=True))
     return ThematicTrimmingFileData.to_ini_file(new_trimming)
-
-
-def _get_default_fields() -> list[str]:
-    return [
-        "ov_cost",
-        "op_cost",
-        "mrg_price",
-        "co2_emis",
-        "dtg_by_plant",
-        "balance",
-        "row_bal",
-        "psp",
-        "misc_ndg",
-        "load",
-        "h_ror",
-        "wind",
-        "solar",
-        "nuclear",
-        "lignite",
-        "coal",
-        "gas",
-        "oil",
-        "mix_fuel",
-        "misc_dtg",
-        "h_stor",
-        "h_pump",
-        "h_lev",
-        "h_infl",
-        "h_ovfl",
-        "h_val",
-        "h_cost",
-        "unsp_enrg",
-        "spil_enrg",
-        "lold",
-        "lolp",
-        "avl_dtg",
-        "dtg_mrg",
-        "max_mrg",
-        "np_cost",
-        "np_cost_by_plant",
-        "nodu",
-        "nodu_by_plant",
-        "flow_lin",
-        "ucap_lin",
-        "loop_flow",
-        "flow_quad",
-        "cong_fee_alg",
-        "cong_fee_abs",
-        "marg_cost",
-        "cong_prob_plus",
-        "cong_prob_minus",
-        "hurdle_cost",
-    ]
-
-
-def _get_v_8_1_fields() -> list[str]:
-    return [
-        "res_generation_by_plant",
-        "misc_dtg_2",
-        "misc_dtg_3",
-        "misc_dtg_4",
-        "wind_offshore",
-        "wind_onshore",
-        "solar_concrt",
-        "solar_pv",
-        "solar_rooft",
-        "renw_1",
-        "renw_2",
-        "renw_3",
-        "renw_4",
-    ]
-
-
-def _get_v_8_3_fields() -> list[str]:
-    return ["dens", "profit_by_plant"]
-
-
-def _get_v_8_8_fields() -> list[str]:
-    return ["sts_cashflow_by_cluster"]
-
-
-def _get_v_9_1_fields() -> list[str]:
-    return ["sts_by_group"]
-
-
-def _get_sts_fields() -> list[str]:
-    return ["sts_inj_by_plant", "sts_withdrawal_by_plant", "sts_lvl_by_plant"]
-
-
-def _get_sts_group_fields() -> list[str]:
-    return [
-        "psp_open_injection",
-        "psp_open_withdrawal",
-        "psp_open_level",
-        "psp_closed_injection",
-        "psp_closed_withdrawal",
-        "psp_closed_level",
-        "pondage_injection",
-        "pondage_withdrawal",
-        "pondage_level",
-        "battery_injection",
-        "battery_withdrawal",
-        "battery_level",
-        "other1_injection",
-        "other1_withdrawal",
-        "other1_level",
-        "other2_injection",
-        "other2_withdrawal",
-        "other2_level",
-        "other3_injection",
-        "other3_withdrawal",
-        "other3_level",
-        "other4_injection",
-        "other4_withdrawal",
-        "other4_level",
-        "other5_injection",
-        "other5_withdrawal",
-        "other5_level",
-    ]
-
-
-ThematicTrimmingType: TypeAlias = ThematicTrimming | ThematicTrimmingFileData
-
-
-def _check_version(trimming_object: ThematicTrimmingType, field: str, version: StudyVersion) -> None:
-    if getattr(trimming_object, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
-def validate_against_version(trimming_object: ThematicTrimmingType, version: StudyVersion) -> None:
-    sts_group_fields = _get_sts_group_fields()
-
-    if version < STUDY_VERSION_8_1:
-        for field in _get_v_8_1_fields():
-            _check_version(trimming_object, field, version)
-
-    if version < STUDY_VERSION_8_3:
-        for field in _get_v_8_3_fields():
-            _check_version(trimming_object, field, version)
-
-    if version < STUDY_VERSION_8_6:
-        sts_fields = _get_sts_fields()
-        sts_fields.extend(sts_group_fields)
-        for field in sts_fields:
-            _check_version(trimming_object, field, version)
-
-    if version < STUDY_VERSION_8_8:
-        for field in _get_v_8_8_fields():
-            _check_version(trimming_object, field, version)
-
-    if version < STUDY_VERSION_9_1:
-        for field in _get_v_9_1_fields():
-            _check_version(trimming_object, field, version)
-    else:
-        for field in sts_group_fields:
-            _check_version(trimming_object, field, version)
-
-
-def _initialize_field_default(trimming_object: ThematicTrimmingType, field: str, default_bool: bool) -> None:
-    if getattr(trimming_object, field) is None:
-        setattr(trimming_object, field, default_bool)
-
-
-def initialize_with_version(
-    trimming_object: ThematicTrimmingType, version: StudyVersion, default_bool: bool = True
-) -> None:
-    for field in _get_default_fields():
-        _initialize_field_default(trimming_object, field, default_bool)
-
-    if version >= STUDY_VERSION_8_1:
-        for field in _get_v_8_1_fields():
-            _initialize_field_default(trimming_object, field, default_bool)
-
-    if version >= STUDY_VERSION_8_3:
-        for field in _get_v_8_3_fields():
-            _initialize_field_default(trimming_object, field, default_bool)
-
-    if version >= STUDY_VERSION_8_6:
-        sts_fields = _get_sts_fields()
-        for field in sts_fields:
-            _initialize_field_default(trimming_object, field, default_bool)
-        if version < STUDY_VERSION_9_1:
-            sts_group_fields = _get_sts_group_fields()
-            for field in sts_group_fields:
-                _initialize_field_default(trimming_object, field, default_bool)
-
-    if version >= STUDY_VERSION_8_8:
-        for field in _get_v_8_8_fields():
-            _initialize_field_default(trimming_object, field, default_bool)
-
-    if version >= STUDY_VERSION_9_1:
-        for field in _get_v_9_1_fields():
-            _initialize_field_default(trimming_object, field, default_bool)

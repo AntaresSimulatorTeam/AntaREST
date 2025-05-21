@@ -13,7 +13,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, initialize_with_version
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
@@ -26,7 +26,6 @@ from antarest.study.model import (
     STUDY_VERSION_9_1,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming import initialize_with_version
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -69,25 +68,25 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
     study.version = config.version = STUDY_VERSION_7_0
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming()
-    initialize_with_version(expected, STUDY_VERSION_7_0)
+    initialize_with_version(expected, STUDY_VERSION_7_0, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming(avl_dtg=False)
-    initialize_with_version(expected, STUDY_VERSION_8)
+    initialize_with_version(expected, STUDY_VERSION_8, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_2
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming(avl_dtg=False)
-    initialize_with_version(expected, STUDY_VERSION_8_2)
+    initialize_with_version(expected, STUDY_VERSION_8_2, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_3
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming(dens=False, profit_by_plant=False)
-    initialize_with_version(expected, STUDY_VERSION_8_3)
+    initialize_with_version(expected, STUDY_VERSION_8_3, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_4
@@ -99,11 +98,11 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
     study.version = config.version = STUDY_VERSION_8_6
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming(sts_inj_by_plant=False)
-    initialize_with_version(expected, STUDY_VERSION_8_6)
+    initialize_with_version(expected, STUDY_VERSION_8_6, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_9_1
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming(sts_by_group=False)
-    initialize_with_version(expected, STUDY_VERSION_9_1)
+    initialize_with_version(expected, STUDY_VERSION_9_1, True)
     assert actual == expected
