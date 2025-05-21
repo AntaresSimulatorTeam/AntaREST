@@ -175,9 +175,6 @@ class StorageConfig:
             if "workspaces" in data
             else defaults.workspaces
         )
-        cls.validate_workspaces(workspaces, desktop_mode)
-        if desktop_mode:
-            workspaces = {**workspaces, **cls.system_workspaces()}
         return cls(
             matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
             archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
@@ -652,9 +649,8 @@ class Config:
     def from_dict(cls, data: JSON) -> "Config":
         defaults = cls()
         desktop_mode = data.get("desktop_mode", defaults.desktop_mode)
-        storage_config = (
-            StorageConfig.from_dict(data["storage"], desktop_mode) if "storage" in data else defaults.storage
-        )
+        storage_config = StorageConfig.from_dict(data["storage"]) if "storage" in data else defaults.storage
+        StorageConfig.validate_workspaces(storage_config.workspaces, desktop_mode)
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
