@@ -12,13 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import { Box, styled } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
 import type { StudyMetadata, VariantTree } from "../../../../../types/types";
-import { getTreeNodes, type StudyTree } from "./utils";
 import {
   CIRCLE_RADIUS,
   colors,
+  CURVE_OFFSET,
   DCX,
   DCY,
   DEPTH_OFFSET,
@@ -35,9 +36,8 @@ import {
   TILE_SIZE_Y,
   TILE_SIZE_Y_2,
   ZOOM_OUT,
-  CURVE_OFFSET,
 } from "./treeconfig";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import { getTreeNodes, type StudyTree } from "./utils";
 
 export const SVGCircle = styled("circle")({
   cursor: "pointer",
@@ -51,13 +51,12 @@ export const SVGText = styled("text")({
 });
 
 interface Props {
-  study: StudyMetadata | undefined;
-  tree: VariantTree | undefined;
+  study: StudyMetadata;
+  variantTree?: VariantTree;
   onClick: (studyId: string) => void;
 }
 
-export default function CustomizedTreeView(props: Props) {
-  const { study, tree, onClick } = props;
+export default function StudyTreeView({ study, variantTree, onClick }: Props) {
   const [studyTree, setStudyTree] = useState<StudyTree>();
   const [hoverId, setHoverId] = useState<string>("");
   const { isDarkMode } = useThemeColorScheme();
@@ -116,7 +115,7 @@ export default function CustomizedTreeView(props: Props) {
         y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2}
         width={rectWidth}
         height={TILE_SIZE_Y - RECT_Y_SPACING}
-        fill={hoverId === id || study?.id === id ? rectHoverColor : rectColor}
+        fill={hoverId === id || study.id === id ? rectHoverColor : rectColor}
         onClick={() => onClick(id)}
         onMouseOver={(e) => onMouseOver(id)}
         onMouseOut={onMouseOut}
@@ -127,7 +126,7 @@ export default function CustomizedTreeView(props: Props) {
         y={cy - TILE_SIZE_Y_2 + RECT_Y_SPACING_2}
         width={RECT_TEXT_WIDTH}
         height={TILE_SIZE_Y - RECT_Y_SPACING}
-        fill={hoverId === id || study?.id === id ? hoverColor : rectColor}
+        fill={hoverId === id || study.id === id ? hoverColor : rectColor}
         onClick={() => onClick(id)}
         onMouseOver={(e) => onMouseOver(id)}
         onMouseOut={onMouseOut}
@@ -144,7 +143,7 @@ export default function CustomizedTreeView(props: Props) {
         key={`name-${i}-${j}`}
         x={rectWidth + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING}
         y={cy + RECT_Y_SPACING_2}
-        fill={isDarkMode ? (hoverId === id || study?.id === id ? "black" : "white") : "black"}
+        fill={isDarkMode ? (hoverId === id || study.id === id ? "black" : "white") : "black"}
         fontSize={TEXT_SIZE}
         onClick={() => onClick(id)}
         onMouseOver={(e) => onMouseOver(id)}
@@ -211,13 +210,13 @@ export default function CustomizedTreeView(props: Props) {
 
   useEffect(() => {
     const buildStudyTree = async () => {
-      if (study && tree) {
-        const tmp = await getTreeNodes(tree);
+      if (variantTree) {
+        const tmp = await getTreeNodes(variantTree);
         setStudyTree(tmp);
       }
     };
     buildStudyTree();
-  }, [study, tree]);
+  }, [study, variantTree]);
 
   return (
     <Box

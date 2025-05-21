@@ -12,22 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
-import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
-import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
+import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
+import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import { Box, Divider, Tooltip, Typography, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
-  countDescendants,
   displayVersionName,
 } from "../../../../services/utils";
-import type { StudyMetadata, VariantTree } from "../../../../types/types";
+import type { StudyMetadata } from "../../../../types/types";
 import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 
 const MAX_STUDY_TITLE_LENGTH = 45;
@@ -55,19 +54,15 @@ const Item = styled(Box)(({ theme }) => ({
 }));
 
 interface Props {
-  study: StudyMetadata | undefined;
-  parent: StudyMetadata | undefined;
-  childrenTree: VariantTree | undefined;
+  study: StudyMetadata;
+  parentStudy?: StudyMetadata;
+  variantNb?: number;
 }
 
-function Details({ study, parent, childrenTree }: Props) {
+function Details({ study, parentStudy, variantNb }: Props) {
   const [t, i18n] = useTranslation();
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
-
-  if (!study) {
-    return null;
-  }
 
   return (
     <Box
@@ -88,22 +83,20 @@ function Details({ study, parent, childrenTree }: Props) {
       </Item>
       <StyledDivider />
       <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
-      {parent && (
+      {parentStudy && (
         <Item>
           <AltRouteOutlinedIcon sx={{ color: "text.secondary" }} />
-          <Tooltip title={parent.name}>
-            <LinkText to={`/studies/${parent.id}`}>
-              {`${parent.name.substring(0, MAX_STUDY_TITLE_LENGTH)}...`}
+          <Tooltip title={parentStudy.name}>
+            <LinkText to={`/studies/${parentStudy.id}`}>
+              {`${parentStudy.name.substring(0, MAX_STUDY_TITLE_LENGTH)}...`}
             </LinkText>
           </Tooltip>
         </Item>
       )}
-      {childrenTree && (
-        <Item>
-          <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
-          <TinyText>{countDescendants(childrenTree)}</TinyText>
-        </Item>
-      )}
+      <Item>
+        <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
+        <TinyText>{variantNb}</TinyText>
+      </Item>
       <StyledDivider />
       <Item>
         <PersonOutlineOutlinedIcon sx={{ color: "text.secondary" }} />
