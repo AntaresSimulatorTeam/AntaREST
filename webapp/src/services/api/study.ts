@@ -12,28 +12,28 @@
  * This file is part of the Antares project.
  */
 
+import type { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
-import client from "./client";
+import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
+  AreasConfig,
   FileStudyTreeConfigDTO,
   LaunchJob,
+  LaunchJobDTO,
+  LaunchOptions,
   MatrixAggregationResult,
-  StudyOutputDownloadDTO,
+  StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
-  StudyOutput,
-  StudyPublicMode,
-  AreasConfig,
-  LaunchJobDTO,
   StudyMetadataPatchDTO,
-  LaunchOptions,
-  StudyLayer,
+  StudyOutput,
+  StudyOutputDownloadDTO,
+  StudyPublicMode,
 } from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
+import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
-import type { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 interface Workspace {
   name: string;

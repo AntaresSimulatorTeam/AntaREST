@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
+import { toError } from "@/utils/fnUtils";
 import {
   Box,
   Button,
@@ -26,29 +26,30 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import * as R from "ramda";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { useMountedState } from "react-use";
+import * as R from "ramda";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { shallowEqual } from "react-redux";
-import type { LaunchOptions, StudyMetadata, StudyOutput } from "../../../types/types";
+import { useMountedState } from "react-use";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { getStudy } from "../../../../../redux/selectors";
 import {
   getLauncherCores,
   getLauncherTimeLimit,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
-} from "../../../services/api/study";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import BasicDialog from "../../common/dialogs/BasicDialog";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../redux/selectors";
-import usePromiseWithSnackbarError from "../../../hooks/usePromiseWithSnackbarError";
-import SelectSingle from "../../common/SelectSingle";
-import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
-import { convertVersions } from "../../../services/utils";
-import UsePromiseCond from "../../common/utils/UsePromiseCond";
-import SwitchFE from "../../common/fieldEditors/SwitchFE";
+} from "../../../../../services/api/study";
+import { convertVersions } from "../../../../../services/utils";
+import type { LaunchOptions, StudyMetadata, StudyOutput } from "../../../../../types/types";
+import SelectSingle from "../../../../common/SelectSingle";
+import BasicDialog from "../../../../common/dialogs/BasicDialog";
+import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
+import SwitchFE from "../../../../common/fieldEditors/SwitchFE";
+import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 
 interface Props {
   open: boolean;
@@ -135,7 +136,7 @@ function LauncherDialog(props: Props) {
           onClose();
         })
         .catch((err) => {
-          enqueueErrorSnackbar(t("studies.error.runStudy"), err);
+          enqueueErrorSnackbar(t("studies.error.runStudy"), toError(err));
         })
         .finally(() => {
           if (isMounted()) {
