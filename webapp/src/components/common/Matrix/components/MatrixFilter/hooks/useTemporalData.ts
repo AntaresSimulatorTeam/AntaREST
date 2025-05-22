@@ -1,0 +1,118 @@
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { useMemo } from "react";
+import { TIME_INDEXING } from "../constants";
+import { getDefaultRangeForIndexType, extractValueFromDate } from "../dateUtils";
+import type { TimeFrequencyType } from "../../../shared/types";
+
+interface UseTemporalDataProps {
+  dateTime?: string[];
+  isTimeSeries: boolean;
+  timeFrequency?: TimeFrequencyType;
+}
+
+export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps) {
+  // Memoize the default range values for each indexing type
+  const indexTypeRanges = useMemo(() => {
+    // Create a map of all default ranges
+    return Object.values(TIME_INDEXING).reduce(
+      (acc, type) => {
+        acc[type] = getDefaultRangeForIndexType(type);
+        return acc;
+      },
+      {} as Record<string, { min: number; max: number }>,
+    );
+  }, []);
+
+  // Get the range values based on data or defaults
+  const valuesByIndexType = useMemo(() => {
+    const result = { ...indexTypeRanges } as Record<
+      string,
+      { min: number; max: number; uniqueValues?: number[] }
+    >;
+
+    result[TIME_INDEXING.DAY_HOUR] = {
+      min: 1,
+      max: 24,
+      uniqueValues: Array.from({ length: 24 }, (_, i) => i + 1),
+    };
+
+    result[TIME_INDEXING.WEEKDAY] = {
+      min: 1,
+      max: 7,
+      uniqueValues: Array.from({ length: 7 }, (_, i) => i + 1),
+    };
+
+    result[TIME_INDEXING.MONTH] = {
+      min: 1,
+      max: 12,
+      uniqueValues: Array.from({ length: 12 }, (_, i) => i + 1),
+    };
+
+    // Only try to extract data-based values if we have time series data
+    if (dateTime && isTimeSeries && dateTime.length > 0) {
+      // Only update the ranges that should be data-dependent
+      const dynamicTypes = [
+        TIME_INDEXING.DAY_OF_YEAR,
+        TIME_INDEXING.HOUR_YEAR,
+        TIME_INDEXING.DAY_OF_MONTH,
+        TIME_INDEXING.WEEK,
+      ];
+
+      for (const indexType of dynamicTypes) {
+        try {
+          const values = dateTime.map((dateStr, index) =>
+            extractValueFromDate(dateStr, indexType, index),
+          );
+
+          if (values.length > 0) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
+            result[indexType] = { min, max, uniqueValues };
+          }
+        } catch {
+          // Keep defaults on error
+        }
+      }
+    }
+
+    return result;
+  }, [dateTime, isTimeSeries, indexTypeRanges]);
+
+  // Extract and memoize temporal values for each date string
+  const temporalValues = useMemo(() => {
+    if (!dateTime || !isTimeSeries || dateTime.length === 0) {
+      return {};
+    }
+
+    const result: Record<string, number[]> = {};
+
+    // Extract values for each indexing type
+    for (const indexType of Object.values(TIME_INDEXING)) {
+      result[indexType] = dateTime.map((dateStr, index) =>
+        extractValueFromDate(dateStr, indexType, index),
+      );
+    }
+
+    return result;
+  }, [dateTime, isTimeSeries]);
+
+  return {
+    indexTypeRanges,
+    valuesByIndexType,
+    temporalValues,
+  };
+}
