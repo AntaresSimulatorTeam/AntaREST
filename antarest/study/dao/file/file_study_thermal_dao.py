@@ -138,7 +138,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         return self._remove_from_config(study_data.config, area_id, thermal)
 
-    def _remove_cluster_from_scenario_builder(self, study_data: FileStudy, area_id: str, thermal_id: str) -> None:
+    @staticmethod
+    def _remove_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, thermal_id: str) -> None:
         """
         Update the scenario builder by removing the rows that correspond to the thermal cluster to remove.
 
@@ -155,7 +156,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
-    def _remove_cluster_from_binding_constraints(self, study_data: FileStudy, area_id: str, thermal_id: str) -> None:
+    @staticmethod
+    def _remove_cluster_from_binding_constraints(study_data: FileStudy, area_id: str, thermal_id: str) -> None:
         """
         Remove the binding constraints that are related to the thermal cluster.
 
@@ -202,7 +204,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         study_data.tree.save(binding_constraints, url)
 
-    def _remove_from_config(self, study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
+    @staticmethod
+    def _remove_from_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
         study_data.areas[area_id].thermals.remove(thermal)
 
         # Also removes thermal cluster from constraint terms
