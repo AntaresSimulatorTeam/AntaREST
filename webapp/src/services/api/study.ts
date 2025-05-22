@@ -169,7 +169,7 @@ export const editStudy = async (
 
 export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<void> => {
   const res = await client.post(
-    `/v1/studies/${sid}/copy?dest=${encodeURIComponent(name)}&with_outputs=${withOutputs}`,
+    `/v1/studies/${sid}/copy?study_name=${encodeURIComponent(name)}&with_outputs=${withOutputs}`,
   );
   return res.data;
 };
