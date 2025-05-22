@@ -10,13 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from pathlib import Path
-from typing import List, Mapping, MutableMapping, MutableSequence, Sequence
+from typing import List, Mapping, Sequence
 
 from antarest.core.exceptions import (
     DuplicateThermalCluster,
-    MatrixWidthMismatchError,
-    WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
 from antarest.study.business.model.thermal_cluster_model import (
@@ -298,40 +295,3 @@ class ThermalManager:
         study.add_commands(commands)
 
         return create_thermal_cluster(cluster_creation, study_version)
-
-    def validate_series(self, study: StudyInterface, area_id: str, cluster_id: str) -> bool:
-        lower_cluster_id = cluster_id.lower()
-        thermal_cluster_path = Path(f"input/thermal/series/{area_id}/{lower_cluster_id}")
-        series_path = [thermal_cluster_path / "series"]
-
-        file_study = study.get_files()
-        if study.version >= STUDY_VERSION_8_7:
-            series_path.append(thermal_cluster_path / "CO2Cost")
-            series_path.append(thermal_cluster_path / "fuelCost")
-
-        ts_widths: MutableMapping[int, MutableSequence[str]] = {}
-        for ts_path in series_path:
-            matrix = file_study.tree.get(ts_path.as_posix().split("/"))
-            matrix_data = matrix["data"]
-            matrix_height = len(matrix_data)
-            # We ignore empty matrices as there are default matrices for the simulator.
-            if matrix_data != [[]] and matrix_height != 8760:
-                raise WrongMatrixHeightError(
-                    f"The matrix {ts_path.name} should have 8760 rows, currently: {matrix_height}"
-                )
-            matrix_width = len(matrix_data[0])
-            if matrix_width > 1:
-                ts_widths.setdefault(matrix_width, []).append(ts_path.name)
-
-        if len(ts_widths) > 1:
-            messages = []
-            for width, name_list in ts_widths.items():
-                names = ", ".join([f"'{name}'" for name in name_list])
-                message = {
-                    1: f"matrix {names} has {width} columns",
-                    2: f"matrices {names} have {width} columns",
-                }[min(2, len(name_list))]
-                messages.append(message)
-            raise MatrixWidthMismatchError("Mismatch widths: " + "; ".join(messages))
-
-        return True
