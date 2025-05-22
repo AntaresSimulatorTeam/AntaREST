@@ -32,7 +32,7 @@ class ReadOnlyThermalDao(ABC):
 
 class ThermalDao(ReadOnlyThermalDao):
     @abstractmethod
-    def save_thermal(self, thermal: ThermalCluster) -> None:
+    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         raise NotImplementedError()
 
     @abstractmethod

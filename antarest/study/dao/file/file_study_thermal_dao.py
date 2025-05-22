@@ -17,7 +17,10 @@ from typing_extensions import override
 from antarest.core.exceptions import ThermalClusterConfigNotFound, ThermalClusterNotFound
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
@@ -61,8 +64,25 @@ class FileStudyThermalDao(ThermalDao, ABC):
             return False
 
     @override
-    def save_thermal(self, thermal: ThermalCluster) -> None:
-        raise NotImplementedError()
+    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+        study_data = self.get_file_study()
+        self._update_thermal_config(area_id, thermal)
+
+        study_data.tree.save(
+            serialize_thermal_cluster(study_data.config.version, thermal),
+            ["input", "thermal", "clusters", "properties", area_id, "list", thermal.id],
+        )
+
+    def _update_thermal_config(self, area_id: str, thermal: ThermalCluster) -> None:
+        study_data = self.get_file_study().config
+        if area_id not in study_data.areas:
+            raise ValueError(f"The area '{area_id}' does not exist")
+
+        for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
+            if existing_cluster.id == thermal.id:
+                study_data.areas[area_id].thermals[k] = thermal
+                return
+        study_data.areas[area_id].thermals.append(thermal)
 
     @override
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:

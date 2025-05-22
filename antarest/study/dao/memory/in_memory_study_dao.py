@@ -106,7 +106,7 @@ class InMemoryStudyDao(StudyDao):
         raise NotImplementedError()
 
     @override
-    def save_thermal(self, thermal: ThermalCluster) -> None:
+    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         raise NotImplementedError()
 
     @override
