@@ -163,7 +163,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         if index_and_cfg is None:
             return CommandOutput(
                 status=False,
-                message="The binding constraint with ID '{self.id}' does not exist",
+                message=f"The binding constraint with ID '{self.id}' does not exist",
             )
 
         index, actual_cfg = index_and_cfg
