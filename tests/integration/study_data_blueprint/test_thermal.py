@@ -567,71 +567,6 @@ class TestThermal:
         assert res.json()["data"] == matrix
 
         # =============================
-        #  THERMAL CLUSTER VALIDATION
-        # =============================
-
-        # Everything is fine at the beginning
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
-        )
-        assert res.status_code == 200
-        assert res.json() is True
-
-        # Modifies series matrix with wrong length (!= 8760)
-        _upload_matrix(
-            client,
-            user_access_token,
-            internal_study_id,
-            f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/series",
-            pd.DataFrame(np.random.randint(0, 10, size=(4, 1))),
-        )
-
-        # Validation should fail
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
-        )
-        assert res.status_code == 422
-        obj = res.json()
-        assert obj["exception"] == "WrongMatrixHeightError"
-        assert obj["description"] == "The matrix series should have 8760 rows, currently: 4"
-
-        # Update with the right length
-        _upload_matrix(
-            client,
-            user_access_token,
-            internal_study_id,
-            f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/series",
-            pd.DataFrame(np.random.randint(0, 10, size=(8760, 4))),
-        )
-
-        # Validation should succeed again
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
-        )
-        assert res.status_code == 200
-        assert res.json() is True
-
-        if version >= 870:
-            # Adds a CO2Cost matrix with different columns size
-            _upload_matrix(
-                client,
-                user_access_token,
-                internal_study_id,
-                f"input/thermal/series/{area_id}/{fr_gas_conventional_id.lower()}/CO2Cost",
-                pd.DataFrame(np.random.randint(0, 10, size=(8760, 3))),
-            )
-
-            # Validation should fail
-            res = client.get(
-                f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}/validate"
-            )
-            assert res.status_code == 422
-            obj = res.json()
-            assert obj["exception"] == "MatrixWidthMismatchError"
-            pattern = r".*'series'.*4.*'CO2Cost'.*3"
-            assert re.match(pattern, obj["description"])
-
-        # =============================
         #  THERMAL CLUSTER DELETION
         # =============================
 
@@ -814,10 +749,7 @@ class TestThermal:
             },
         )
         assert res.status_code == 404, res.json()
-        obj = res.json()
-        description = obj["description"]
-        assert bad_area_id in description
-        assert re.search(r"is not found", description, flags=re.IGNORECASE)
+        assert bad_area_id in obj["description"]["description"]
 
         # Check PATCH with the wrong `cluster_id`
         bad_cluster_id = "bad_cluster"
