@@ -56,22 +56,19 @@ def export_file(
     return _export_file(file_transfer_manager, download_name, download_log, 10, file_writer, export_format.media_type)
 
 
+FileWriter: TypeAlias = Callable[[Path], None]
+
+
 def export_df_chunks(
     df_chunks: Iterator[pd.DataFrame],
-    file_transfer_manager: FileTransferManager,
     export_format: TableExportFormat,
-    download_name: str,
-    download_log: str,
-) -> FileResponse:
+) -> FileWriter:
     stream_writer = export_format.get_stream_writer()
 
     def file_writer(path: Path) -> None:
         stream_writer(path, df_chunks)
 
-    return _export_file(file_transfer_manager, download_name, download_log, 10, file_writer, export_format.media_type)
-
-
-FileWriter: TypeAlias = Callable[[Path], None]
+    return file_writer
 
 
 def _export_file(

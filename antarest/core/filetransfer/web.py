@@ -9,21 +9,27 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import concurrent.futures
+import http
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.tasks.model import TaskStatus
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
 
-def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
+def create_file_transfer_api(
+    filetransfer_manager: FileTransferManager, task_service: ITaskService, config: Config
+) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
@@ -44,5 +50,57 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
             headers={"Content-Disposition": f'attachment; filename="{download.filename}"'},
             media_type="application/zip",
         )
+
+    @bp.get(
+        "/downloads/{download_id}/metadata",
+        tags=[APITag.downloads],
+        summary="Retrieve download file or information about the preparation of the download file",  # FIXME
+    )
+    def get_download_metadata(
+        task_id: str,
+        download_id: str,
+        wait_for_availability: bool = False,
+        timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT,
+    ) -> FileResponse:
+        sanitized_task_id = sanitize_uuid(task_id)
+        task = task_service.status_task(sanitized_task_id)
+
+        # the user ask for a timeout
+        if wait_for_availability:
+            try:
+                task_service.await_task(sanitized_task_id, timeout_sec=timeout)
+            except concurrent.futures.TimeoutError:
+                raise HTTPException(
+                    status_code=http.HTTPStatus.ACCEPTED,
+                    detail=f"The requested file is still in process after waiting for {timeout} seconds.",
+                )
+
+        # the user did not ask for a timeout
+        elif not task.status.is_final():
+            raise HTTPException(status_code=http.HTTPStatus.ACCEPTED, detail="The requested file is still in process.")
+
+        # the task has a final status
+        try:
+            file_download = filetransfer_manager.fetch_download(download_id)
+        except Exception as e:
+            raise HTTPException(
+                status_code=e.args[0],
+                detail=f"Impossible to retrieve the requested file: {e.args[1]}",
+            ) from e
+
+        # the task was successfully completed
+        if task.status == TaskStatus.COMPLETED:
+            return FileResponse(
+                path=file_download.path,
+                status_code=http.HTTPStatus.ACCEPTED,
+                headers={"Content-Disposition": f'attachment; filename="{file_download.filename}"'},
+            )
+
+        # the task was unabled to get completed
+        else:
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"An unexpected error occurred while retrieving the requested file: {task.result.message}",  # type: ignore
+            )
 
     return bp
