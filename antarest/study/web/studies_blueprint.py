@@ -11,13 +11,12 @@
 # This file is part of the Antares project.
 
 import collections
-import io
 import logging
 from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, File, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -253,7 +252,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Import Study",
         response_model=str,
     )
-    def import_study(study: bytes = File(...), groups: str = "") -> str:
+    def import_study(study: UploadFile, groups: str = "") -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
@@ -268,14 +267,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study")
-        zip_binary = io.BytesIO(study)
 
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         try:
-            uuid = study_service.import_study(zip_binary, group_ids)
+            uuid = study_service.import_study(study.file, group_ids)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
