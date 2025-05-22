@@ -139,3 +139,18 @@ def test_storage_config_from_dict_validation_errors(storage_config_default, work
             Config.from_dict(config_data)
     else:
         Config.from_dict(config_data)
+
+
+def test_storage_config_from_dict_desktop_mode_true(storage_config_default):
+    data = {
+        **storage_config_default,
+        "workspaces": {
+            "default": {
+                "path": "./default_workspace",
+            },
+        },
+    }
+
+    config = StorageConfig.from_dict(data, desktop_mode=True)
+
+    assert "local" in config.workspaces or "c:\\" in config.workspaces
