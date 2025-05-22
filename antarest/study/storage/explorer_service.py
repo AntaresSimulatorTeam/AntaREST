@@ -15,7 +15,11 @@ from pathlib import PurePosixPath
 from typing import List
 
 from antarest.core.config import Config
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, WorkspaceMetadata
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    NonStudyFolderDTO,
+    WorkspaceMetadata,
+)
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,

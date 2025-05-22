@@ -61,7 +61,7 @@ class TestHydroAllocation:
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"dest": "Clone", "with_outputs": False, "use_task": False},
+            params={"study_name": "Clone", "with_outputs": False, "use_task": False},
         )
         assert res.status_code == http.HTTPStatus.CREATED, res.json()
         managed_id = res.json()
