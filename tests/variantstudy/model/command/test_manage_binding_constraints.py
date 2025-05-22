@@ -383,3 +383,24 @@ def test__update_matrices_names(
     for matrix_link in superfluous_matrices:
         link_path = study_path / f"input/bindingconstraints/{matrix_link}"
         assert not link_path.exists(), f"Superfluous matrix link: {matrix_link!r}"
+
+
+def test_update_bc_with_an_integer_name(empty_study_870: FileStudy, command_context: CommandContext):
+    study = empty_study_870
+    study_version = study.config.version
+    args = {"name": "111", "command_context": command_context, "study_version": study_version}
+    output = CreateBindingConstraint(**args).apply(study)
+    assert output.status, output.message
+
+    ini_content = study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+    # Ensures the id is read as a string
+    assert ini_content["0"]["id"] == "111"
+
+    # Updates any properties of the BC
+    args = {"id": "111", "comments": "Hello", "command_context": command_context, "study_version": study_version}
+    output = UpdateBindingConstraint(**args).apply(study)
+
+    # Ensures the update succeeded
+    assert output.status, output.message
+    ini_content = study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+    assert ini_content["0"]["comments"] == "Hello"

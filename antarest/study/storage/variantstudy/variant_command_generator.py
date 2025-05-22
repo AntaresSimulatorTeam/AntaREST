@@ -15,6 +15,7 @@ import uuid
 from typing import Callable, List, Optional, Union, cast
 
 from antarest.core.utils.utils import StopWatch
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.utils import update_antares_info
@@ -119,7 +120,7 @@ class VariantCommandGenerator:
         return VariantCommandGenerator._generate(
             commands,
             study,
-            lambda command, data, _listener: command.apply(cast(FileStudy, data), _listener),
+            lambda command, data, _listener: command.apply(FileStudyTreeDao(cast(FileStudy, data)), _listener),
             metadata,
             listener,
         )
