@@ -53,14 +53,12 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(AntaresBaseModel, extra="ignore"):
+class LinkConfig(AntaresBaseModel, extra="ignore"):
     """
     Object linked to /input/links/<link>/properties.ini information
-
     Attributes:
         filters_synthesis: list of filters for synthesis data
         filters_year: list of filters for year-by-year data
-
     Notes:
         Ignore extra fields, because we only need `filter-synthesis` and `filter-year-by-year`.
     """
@@ -84,7 +82,7 @@ class Area(AntaresBaseModel, extra="forbid"):
     """
 
     name: str
-    links: Dict[str, Link]
+    links: Dict[str, LinkConfig]
     thermals: List[ThermalCluster]
     renewables: List[RenewableConfigType]
     filters_synthesis: List[str]
@@ -264,20 +262,6 @@ class FileStudyTreeConfig(DTO):
         """
         lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
         return [grp for _, grp in sorted(lower_groups.items())]
-
-    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_synthesis
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_synthesis
-        return self.areas[area].filters_synthesis
-
-    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_year
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_year
-        return self.areas[area].filters_year
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):

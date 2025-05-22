@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
@@ -49,7 +49,7 @@ def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
 
 
 def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
-    link_manager.create_link(study, link_creation_dto=LinkDTO(area1="area1", area2="area2"))
+    link_manager.create_link(study, Link(area1="area1", area2="area2"))
 
 
 @pytest.mark.unit_test
