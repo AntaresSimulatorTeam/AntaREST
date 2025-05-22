@@ -18,7 +18,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 
 class ReadOnlyThermalDao(ABC):
     @abstractmethod
-    def get_thermals(self) -> Sequence[ThermalCluster]:
+    def get_thermals(self, area_id: str) -> Sequence[ThermalCluster]:
         raise NotImplementedError()
 
     @abstractmethod

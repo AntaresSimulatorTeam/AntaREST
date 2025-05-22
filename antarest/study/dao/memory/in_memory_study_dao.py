@@ -94,7 +94,7 @@ class InMemoryStudyDao(StudyDao):
         del self._links[link_key(link.area1, link.area2)]
 
     @override
-    def get_thermals(self) -> Sequence[ThermalCluster]:
+    def get_thermals(self, area_id: str) -> Sequence[ThermalCluster]:
         raise NotImplementedError()
 
     @override

@@ -74,8 +74,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.link_exists(area1_id, area2_id)
 
     @override
-    def get_thermals(self) -> Sequence[ThermalCluster]:
-        return self._adaptee.get_thermals()
+    def get_thermals(self, area_id: str) -> Sequence[ThermalCluster]:
+        return self._adaptee.get_thermals(area_id)
 
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
