@@ -80,7 +80,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidateDTO,
@@ -96,6 +96,8 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -391,12 +393,16 @@ class RawStudyInterface(StudyInterface):
         return self._cached_file_study
 
     @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.get_files()).read_only()
+
+    @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
         file_study = self.get_files()
 
         for command in commands:
-            result = command.apply(file_study, listener)
+            result = command.apply(FileStudyTreeDao(self.get_files()), listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
         remove_from_cache(self._raw_study_service.cache, study.id)
@@ -448,6 +454,10 @@ class VariantStudyInterface(StudyInterface):
     @override
     def get_files(self) -> FileStudy:
         return self._variant_service.get_raw(self._study)
+
+    @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -1638,7 +1648,7 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-    ) -> List[LinkDTO]:
+    ) -> List[Link]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
@@ -1664,8 +1674,8 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkDTO,
-    ) -> LinkDTO:
+        link_creation_dto: Link,
+    ) -> Link:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1684,8 +1694,8 @@ class StudyService:
         uuid: str,
         area_from: str,
         area_to: str,
-        link_update_dto: LinkBaseDTO,
-    ) -> LinkDTO:
+        link_update_dto: LinkUpdate,
+    ) -> Link:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)

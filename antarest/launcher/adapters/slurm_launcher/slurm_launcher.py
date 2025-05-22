@@ -30,7 +30,7 @@ from antareslauncher.study_dto import StudyDTO
 from filelock import FileLock
 from typing_extensions import override
 
-from antarest.core.config import Config, NbCoresConfig, SlurmConfig, TimeLimitConfig
+from antarest.core.config import NbCoresConfig, SlurmConfig, TimeLimitConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -39,9 +39,11 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
+from antarest.launcher.ssh_client import calculates_slurm_load
+from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.login.utils import current_user_context
 
 logger = logging.getLogger(__name__)
@@ -144,18 +146,15 @@ class LauncherArgs(argparse.Namespace):
 class SlurmLauncher(AbstractLauncher):
     def __init__(
         self,
-        config: Config,
+        config: SlurmConfig,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
     ) -> None:
-        super().__init__(config, callbacks, event_bus, cache)
-        if config.launcher.slurm is None:
-            raise LauncherInitException("Missing parameter 'launcher.slurm'")
-
-        self.slurm_config: SlurmConfig = config.launcher.slurm
+        super().__init__(callbacks, event_bus, cache)
+        self.slurm_config: SlurmConfig = config
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
@@ -648,6 +647,31 @@ class SlurmLauncher(AbstractLauncher):
                 None,
                 None,
             )
+
+    @override
+    def get_solver_versions(self) -> List[str]:
+        return sorted(self.slurm_config.antares_versions_on_remote_server)
+
+    @override
+    def get_load(self) -> LauncherLoadDTO:
+        ssh_config = SSHConfigDTO(
+            config_path=Path(),
+            username=self.slurm_config.username,
+            hostname=self.slurm_config.hostname,
+            port=self.slurm_config.port,
+            private_key_file=self.slurm_config.private_key_file,
+            key_password=self.slurm_config.key_password,
+            password=self.slurm_config.password,
+        )
+        partition = self.slurm_config.partition
+        allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
+        args = {
+            "allocatedCpuRate": allocated_cpus,
+            "clusterLoadRate": cluster_load,
+            "nbQueuedJobs": queued_jobs,
+            "launcherStatus": "SUCCESS",
+        }
+        return LauncherLoadDTO(**args)
 
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:

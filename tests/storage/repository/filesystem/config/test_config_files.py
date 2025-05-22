@@ -36,7 +36,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
-    Link,
+    LinkConfig,
     Mode,
     Simulation,
 )
@@ -590,7 +590,7 @@ def test_parse_links(study_path: Path) -> None:
     """
     (study_path / "input/links/fr/properties.ini").write_text(content)
 
-    link = Link(filters_synthesis=["annual"], filters_year=["hourly"])
+    link = LinkConfig(filters_synthesis=["annual"], filters_year=["hourly"])
     assert _parse_links_filtering(study_path, "fr") == {"l1": link}
 
 
