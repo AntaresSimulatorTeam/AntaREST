@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, IconButton, Tooltip, useTheme } from "@mui/material";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -30,56 +30,59 @@ function MultiRowFilter({
   timeFrequency,
 }: RowFilterProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
   const [expandedFilters, setExpandedFilters] = useState<string[]>(
     filter.rowsFilters.map((rf) => rf.id),
   );
 
-  const handleAddFilter = () => {
+  const handleAddFilter = useCallback(() => {
     const newFilter = createDefaultRowFilter(
       filter.rowsFilters[0]?.range?.max || 100,
       timeFrequency,
     );
 
-    setFilter({
-      ...filter,
-      rowsFilters: [...filter.rowsFilters, newFilter],
-    });
+    setFilter((prevFilter) => ({
+      ...prevFilter,
+      rowsFilters: [...prevFilter.rowsFilters, newFilter],
+    }));
 
-    // Auto-expand the newly added filter
     setExpandedFilters((prev) => [...prev, newFilter.id]);
-  };
+  }, [filter.rowsFilters, setFilter, timeFrequency]);
 
-  const handleRemoveFilter = (id: string) => {
-    // Don't remove if it's the last filter
-    if (filter.rowsFilters.length <= 1) {
-      return;
-    }
+  const handleRemoveFilter = useCallback(
+    (id: string) => {
+      // Don't remove if it's the last filter
+      if (filter.rowsFilters.length <= 1) {
+        return;
+      }
 
-    setFilter({
-      ...filter,
-      rowsFilters: filter.rowsFilters.filter((rf) => rf.id !== id),
-    });
+      setFilter((prevFilter) => ({
+        ...prevFilter,
+        rowsFilters: prevFilter.rowsFilters.filter((rf) => rf.id !== id),
+      }));
 
-    // Remove the ID from expanded filters
-    setExpandedFilters((prev) => prev.filter((filterId) => filterId !== id));
-  };
+      // Remove the ID from expanded filters
+      setExpandedFilters((prev) => prev.filter((filterId) => filterId !== id));
+    },
+    [filter.rowsFilters.length, setFilter],
+  );
 
-  const handleToggleExpanded = (id: string) => {
+  const handleToggleExpanded = useCallback((id: string) => {
     setExpandedFilters((prev) =>
       prev.includes(id) ? prev.filter((filterId) => filterId !== id) : [...prev, id],
     );
-  };
+  }, []);
 
-  const handleToggleAll = () => {
-    if (expandedFilters.length === filter.rowsFilters.length) {
-      // If all are expanded, collapse all
-      setExpandedFilters([]);
-    } else {
+  const handleToggleAll = useCallback(() => {
+    setExpandedFilters((prev) => {
+      if (prev.length === filter.rowsFilters.length) {
+        // If all are expanded, collapse all
+        return [];
+      }
+
       // Otherwise expand all
-      setExpandedFilters(filter.rowsFilters.map((rf) => rf.id));
-    }
-  };
+      return filter.rowsFilters.map((rf) => rf.id);
+    });
+  }, [filter.rowsFilters]);
 
   const allExpanded = expandedFilters.length === filter.rowsFilters.length;
 
@@ -109,14 +112,6 @@ function MultiRowFilter({
             onClick={handleToggleAll}
             size="small"
             color={allExpanded ? "primary" : "default"}
-            sx={{
-              border: "1px solid",
-              borderColor: "divider",
-              borderRadius: 1,
-              padding: "4px",
-              backgroundColor: (theme) =>
-                theme.palette.mode === "dark" ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)",
-            }}
           >
             {allExpanded ? (
               <ExpandLessIcon fontSize="small" />
@@ -132,10 +127,6 @@ function MultiRowFilter({
           size="small"
           sx={{
             flex: 1,
-            boxShadow: theme.shadows[0],
-            "&:hover": {
-              boxShadow: theme.shadows[1],
-            },
           }}
         >
           {t("matrix.filter.addRowFilter")}
