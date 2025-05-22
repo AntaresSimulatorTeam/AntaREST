@@ -128,7 +128,7 @@ class ThermalManager:
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
                 old_cluster = old_thermals_by_ids[thermal_id]
-                new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(mode="json", exclude_none=True))
+                new_cluster = update_thermal_cluster(old_cluster, update_cluster)
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
         study.add_commands([command])
