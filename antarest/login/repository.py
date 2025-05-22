@@ -90,7 +90,7 @@ class IdentityRepository:
         return self._session
 
     def get_all_users(self) -> list[Identity]:
-        identities: list[Identity] = self.session.query(Identity).where(Identity.type == "users").all()
+        identities: list[Identity] = self.session.query(Identity).where(Identity.type != "bots").all()
         return identities
 
 
@@ -284,7 +284,7 @@ class RoleRepository:
         if details:
             q = q.options(joinedload(Role.group))
 
-        if groups:
+        if groups is not None:
             group_mapping = [group.id for group in groups]
             q = q.filter(Role.group_id.in_(group_mapping))
 
