@@ -52,7 +52,13 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
+        try:
+            file_study.tree.get(path.split("/"), depth=1)
+            return True
+        except KeyError:
+            return False
 
     @override
     def save_thermal(self, thermal: ThermalCluster) -> None:
