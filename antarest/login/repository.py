@@ -284,7 +284,7 @@ class RoleRepository:
         if details:
             q = q.options(joinedload(Role.group))
 
-        if groups is not None:
+        if groups:
             group_mapping = [group.id for group in groups]
             q = q.filter(Role.group_id.in_(group_mapping))
 
