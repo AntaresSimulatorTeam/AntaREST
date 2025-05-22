@@ -10,18 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import collections
 from pathlib import Path
 from typing import List, Mapping, MutableMapping, MutableSequence, Sequence
 
-from antares.study.version import StudyVersion
-
 from antarest.core.exceptions import (
-    AreaNotFound,
     DuplicateThermalCluster,
     MatrixWidthMismatchError,
-    ThermalClusterConfigNotFound,
-    ThermalClusterNotFound,
     WrongMatrixHeightError,
 )
 from antarest.core.model import JSON
@@ -36,7 +30,6 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -115,23 +108,7 @@ class ThermalManager:
         Raises:
             ThermalClusterConfigNotFound: If no clusters are found in the specified area.
         """
-
-        file_study = study.get_files()
-        path = _ALL_CLUSTERS_PATH
-        try:
-            # may raise KeyError if the path is missing
-            clusters = file_study.tree.get(path.split("/"), depth=5)
-            # may raise KeyError if "list" is missing
-            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
-        except KeyError:
-            raise ThermalClusterConfigNotFound(path) from None
-
-        thermals_by_areas: MutableMapping[str, MutableMapping[str, ThermalCluster]]
-        thermals_by_areas = collections.defaultdict(dict)
-        for area_id, cluster_obj in clusters.items():
-            for cluster_id, cluster in cluster_obj.items():
-                thermals_by_areas[area_id][cluster_id] = parse_thermal_cluster(study.version, cluster)
-        return thermals_by_areas
+        return study.get_study_dao().get_all_thermals()
 
     def update_thermals_props(
         self,
@@ -179,21 +156,16 @@ class ThermalManager:
             The created cluster.
         """
 
-        command = self._make_create_cluster_cmd(area_id, cluster_data, study.version)
-        study.add_commands([command])
-        return create_thermal_cluster(cluster_data, study.version)
-
-    def _make_create_cluster_cmd(
-        self, area_id: str, cluster: ThermalClusterCreation, study_version: StudyVersion
-    ) -> CreateCluster:
-        # NOTE: currently, in the `CreateCluster` class, there is a confusion
-        # between the cluster name and the cluster ID (which is a section name).
-        return CreateCluster(
+        command = CreateCluster(
             area_id=area_id,
-            parameters=cluster,
-            study_version=study_version,
+            parameters=cluster_data,
+            study_version=study.version,
             command_context=self._command_context,
         )
+        # NOTE: currently, in the `CreateCluster` class, there is a confusion
+        # between the cluster name and the cluster ID (which is a section name).
+        study.add_commands([command])
+        return create_thermal_cluster(cluster_data, study.version)
 
     def update_cluster(
         self,
@@ -219,18 +191,7 @@ class ThermalManager:
             ThermalClusterNotFound: If the provided `cluster_id` does not match the ID of the cluster
             in the provided cluster_data.
         """
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-
-        try:
-            area = file_study.config.areas[area_id]
-        except KeyError:
-            raise AreaNotFound(area_id)
-
-        thermal_cluster = next((thermal for thermal in area.thermals if thermal.id == cluster_id), None)
-        if thermal_cluster is None:
-            raise ThermalClusterNotFound(path, cluster_id)
-
+        thermal_cluster = self.get_cluster(study, area_id, cluster_id)
         updated_thermal_cluster = update_thermal_cluster(thermal_cluster, cluster_data)
 
         command = UpdateThermalClusters(
