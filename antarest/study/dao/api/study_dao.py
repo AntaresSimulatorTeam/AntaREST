@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from abc import abstractmethod
 from typing import Sequence
 
 from antares.study.version import StudyVersion
@@ -22,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 class ReadOnlyStudyDao(ReadOnlyLinkDao, ReadOnlyThermalDao):
-    @override
+    @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
@@ -40,7 +41,7 @@ class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao):
         """
         return ReadOnlyAdapter(self)
 
-    @override
+    @abstractmethod
     def get_file_study(self) -> FileStudy:
         """
         To ease transition, to be removed when all goes through other methods
