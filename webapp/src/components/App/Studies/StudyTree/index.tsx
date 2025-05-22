@@ -124,7 +124,6 @@ function StudyTree() {
    *
    * @returns The list of workspaces
    */
-  // eslint-disable-next-line require-await
   async function getWorkspaces() {
     if (isDesktopMode) {
       try {
