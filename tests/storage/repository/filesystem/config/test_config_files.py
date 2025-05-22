@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -28,6 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_thermal,
     build,
     parse_outputs,
+    parse_simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -35,10 +37,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
+    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -155,7 +159,7 @@ def test_parse_outputs(study_path: Path) -> None:
             "20201220-1456eco-hello": Simulation(
                 name="hello",
                 date="20201220-1456",
-                mode="economy",
+                mode=Mode.ECONOMY,
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
@@ -177,7 +181,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230127-1550eco": Simulation(
                     name="",
                     date="20230127-1550",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=True,
                     by_year=False,
@@ -189,7 +193,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230203-1530eco": Simulation(
                     name="",
                     date="20230203-1530",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=False,
                     by_year=False,
@@ -201,7 +205,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230203-1531eco": Simulation(
                     name="",
                     date="20230203-1531",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=False,
                     by_year=False,
@@ -213,7 +217,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 "20230203-1600eco": Simulation(
                     name="",
                     date="20230203-1600",
-                    mode="economy",
+                    mode=Mode.ECONOMY,
                     nbyears=1,
                     synthesis=True,
                     by_year=False,
@@ -588,3 +592,34 @@ def test_parse_links(study_path: Path) -> None:
 
     link = LinkConfig(filters_synthesis=["annual"], filters_year=["hourly"])
     assert _parse_links_filtering(study_path, "fr") == {"l1": link}
+
+
+def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
+    """
+    Ensures we're able to parse an `expansion` simulation
+    """
+    study_path = empty_study_880.config.path
+    output_path = study_path / "output"
+    output_id = "20250521-1009exp-fake_output"
+    expansion_output = output_path / output_id
+    expansion_output.mkdir(parents=True)
+    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
+        (expansion_output / file).touch()
+
+    ini_path = expansion_output / "about-the-study" / "parameters.ini"
+    ini_path.parent.mkdir(parents=True)
+
+    write_ini_file(ini_path, {"general": {"nbyears": "1", "year-by-year": False}, "output": {"synthesis": True}})
+    simulation = parse_simulation(expansion_output, output_id)
+
+    empty_study_880.config.outputs = {output_id: simulation}
+    tree = empty_study_880.tree.build()
+    output_tree = tree["output"].get()
+    assert len(output_tree.keys()) == 1
+    # Asserts every .txt file is scanned but not the .mps one
+    assert "file_1" in output_tree[output_id]
+    assert "file_2" in output_tree[output_id]
+    assert "checkIntegrity" in output_tree[output_id]
+    assert "file_3" not in output_tree[output_id]
+    # Asserts the `economy` folder is scanned
+    assert "economy" in output_tree[output_id]

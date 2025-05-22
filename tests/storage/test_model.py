@@ -23,6 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
+    Mode,
     Simulation,
     validate_config,
 )
@@ -52,7 +53,7 @@ def config() -> FileStudyTreeConfig:
             "o": Simulation(
                 name="o",
                 date="date",
-                mode="mode",
+                mode=Mode.ECONOMY,
                 nbyears=1,
                 synthesis=True,
                 by_year=True,
