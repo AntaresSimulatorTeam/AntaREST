@@ -11,15 +11,12 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import BinaryIO, Optional, Sequence
 
-import pandas as pd
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.exceptions import (
-    AggregatedOutputFailed,
-    AggregatedOutputNotReady,
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
@@ -30,10 +27,10 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.serde.json import to_json
+from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.login.utils import get_user_id
 from antarest.study.business.aggregator_management import (
@@ -43,9 +40,9 @@ from antarest.study.business.aggregator_management import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
 )
-from antarest.study.model import ExportFormat, OutputAggregation, Study, StudyDownloadDTO, StudySimResultDTO
+from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.df_download import TableExportFormat
+from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -474,11 +471,10 @@ class OutputService:
         export_format: TableExportFormat,
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
-        aggregation_results_max_size: int,
         download_name: str,
         download_log: str,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> str:
+    ) -> FileDownloadTaskDTO:
         """
         Aggregates output data based on several filtering conditions
 
@@ -502,11 +498,11 @@ class OutputService:
         output_path = self._storage.get_output_path(study, output_id)
 
         logger.info(download_log)
-        download_file = self._file_transfer_manager.request_download(
+        file_download = self._file_transfer_manager.request_download(
             f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=10
         )
-        download_file_path = Path(download_file.path)
-        download_id = download_file.id
+        file_download_path = Path(file_download.path)
+        download_id = file_download.id
 
         aggregator_manager = AggregatorManager(
             output_path,
@@ -523,19 +519,22 @@ class OutputService:
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
                 )
+
                 results = aggregator_manager.aggregate_output_data()
 
-                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{download_file_path}'."))
-                export_format.export_table(results, download_file_path, with_index=False, with_header=True)
+                writer = export_df_chunks(results, export_format)
+                writer(file_download_path)
+
+                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_download_path}'."))
 
                 self._file_transfer_manager.set_ready(download_id, use_notification=False)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"Aggregated output file '{download_file_path}' is ready for download.")
-                )
 
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(f"Aggregated output file '{file_download_path}' is ready for download.")
+                )
                 return TaskResult(
                     success=True,
-                    message=f"Successfully aggregated output data for study '{study.id}'. Results are stored in '{download_file_path}'.",
+                    message=f"Successfully aggregated output data for study '{study.id}'. Results are stored in '{file_download_path}'.",
                 )
 
             except Exception as e:
@@ -551,27 +550,4 @@ class OutputService:
             custom_event_messages=None,
         )
 
-        with db():
-            output_aggregation = OutputAggregation(task_id=task_id, download_id=download_id)
-            db.session.add(output_aggregation)
-            db.session.commit()
-
-        return task_id
-
-    def get_aggregated_output(self, task_id: str) -> FileResponse:
-        """
-        Retrieves the aggregated results based on the id of the task that aggregated output data
-
-        task_id: id of the task that aggregated output data
-        """
-        task = self._task_service.status_task(task_id)
-
-        if task.status == TaskStatus.COMPLETED:
-            with db():
-                output_aggregation = db.session.query(OutputAggregation).get(task_id)
-            download_file = self._file_transfer_manager.fetch_download(output_aggregation.download_id)
-            return FileResponse(path=download_file.path, status_code=200)
-        elif task.status in (TaskStatus.RUNNING, TaskStatus.PENDING):
-            raise AggregatedOutputNotReady(task_id)
-        else:
-            raise AggregatedOutputFailed(task_id, task.result.message)  # type: ignore[union-attr]
+        return FileDownloadTaskDTO(file=file_download.to_dto(), task=task_id)
