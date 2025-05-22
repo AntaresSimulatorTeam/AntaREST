@@ -122,5 +122,13 @@ class InMemoryStudyDao(StudyDao):
         raise NotImplementedError()
 
     @override
+    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
     def delete_thermal(self, thermal: ThermalCluster) -> None:
         raise NotImplementedError()
