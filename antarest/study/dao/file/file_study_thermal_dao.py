@@ -9,44 +9,49 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+from typing_extensions import override
+
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.dao.api.thermal_dao import ThermalDao
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class ReadOnlyThermalDao(ABC):
+class FileStudyThermalDao(ThermalDao, ABC):
     @abstractmethod
+    def get_file_study(self) -> FileStudy:
+        pass
+
+    @override
     def get_thermals(self) -> Sequence[ThermalCluster]:
         raise NotImplementedError()
 
-    @abstractmethod
+    @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
         raise NotImplementedError()
 
-    @abstractmethod
+    @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
         raise NotImplementedError()
 
-
-class ThermalDao(ReadOnlyThermalDao):
-    @abstractmethod
+    @override
     def save_thermal(self, thermal: ThermalCluster) -> None:
         raise NotImplementedError()
 
-    @abstractmethod
+    @override
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
-    @abstractmethod
+    @override
     def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
-    @abstractmethod
+    @override
     def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
-    @abstractmethod
+    @override
     def delete_thermal(self, thermal: ThermalCluster) -> None:
         raise NotImplementedError()

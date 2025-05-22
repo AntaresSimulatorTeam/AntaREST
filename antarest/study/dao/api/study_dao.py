@@ -9,24 +9,25 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from abc import abstractmethod
 from typing import Sequence
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
+from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class ReadOnlyStudyDao(ReadOnlyLinkDao):
-    @abstractmethod
+class ReadOnlyStudyDao(ReadOnlyLinkDao, ReadOnlyThermalDao):
+    @override
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
 
-class StudyDao(ReadOnlyStudyDao, LinkDao):
+class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao):
     """
     Abstraction for access to study data. Handles all reading
     and writing from underlying storage format.
@@ -39,7 +40,7 @@ class StudyDao(ReadOnlyStudyDao, LinkDao):
         """
         return ReadOnlyAdapter(self)
 
-    @abstractmethod
+    @override
     def get_file_study(self) -> FileStudy:
         """
         To ease transition, to be removed when all goes through other methods
@@ -70,3 +71,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def link_exists(self, area1_id: str, area2_id: str) -> bool:
         return self._adaptee.link_exists(area1_id, area2_id)
+
+    @override
+    def get_thermals(self) -> Sequence[ThermalCluster]:
+        return self._adaptee.get_thermals()
+
+    @override
+    def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
+        return self._adaptee.get_thermal(area_id, thermal_id)
+
+    @override
+    def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
+        return self._adaptee.thermal_exists(area_id, thermal_id)
