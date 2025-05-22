@@ -40,6 +40,7 @@ function StudyTree() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
+  const isDesktopMode = import.meta.env.MODE === "desktop";
 
   useEffect(() => {
     getWorkspaces().then((nextWorkspaces) => {
@@ -125,8 +126,13 @@ function StudyTree() {
    */
   // eslint-disable-next-line require-await
   async function getWorkspaces() {
-    if (import.meta.env.MODE === "desktop") {
-      return api.getWorkspaces();
+    if (isDesktopMode) {
+      try {
+        return await api.getWorkspaces();
+      } catch (err) {
+        enqueueErrorSnackbar(t("studies.tree.error.failToFetchWorkspace"), toError(err));
+        return [];
+      }
     }
     return workspaces;
   }
