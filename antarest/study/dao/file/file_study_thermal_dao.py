@@ -36,7 +36,26 @@ class FileStudyThermalDao(ThermalDao, ABC):
         pass
 
     @override
-    def get_thermals(self, area_id: str) -> Sequence[ThermalCluster]:
+    def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+        file_study = self.get_file_study()
+        version = file_study.config.version
+        path = _ALL_CLUSTERS_PATH
+        try:
+            # may raise KeyError if the path is missing
+            clusters = file_study.tree.get(path.split("/"), depth=5)
+            # may raise KeyError if "list" is missing
+            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
+        except KeyError:
+            raise ThermalClusterConfigNotFound(path) from None
+
+        thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
+        for area_id, cluster_obj in clusters.items():
+            for cluster_id, cluster in cluster_obj.items():
+                thermals_by_areas.setdefault(area_id, {})[cluster_id] = parse_thermal_cluster(version, cluster)
+        return thermals_by_areas
+
+    @override
+    def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
         file_study = self.get_file_study()
         path = _CLUSTERS_PATH.format(area_id=area_id)
         try:

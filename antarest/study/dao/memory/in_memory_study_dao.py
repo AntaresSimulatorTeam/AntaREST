@@ -112,7 +112,14 @@ class InMemoryStudyDao(StudyDao):
         del self._links[link_key(link.area1, link.area2)]
 
     @override
-    def get_thermals(self, area_id: str) -> Sequence[ThermalCluster]:
+    def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+        all_thermals: dict[str, dict[str, ThermalCluster]] = {}
+        for key, thermal_cluster in self._thermals.items():
+            all_thermals.setdefault(key.area_id, {})[key.cluster_id] = thermal_cluster
+        return all_thermals
+
+    @override
+    def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
         return list(self._thermals.values())
 
     @override

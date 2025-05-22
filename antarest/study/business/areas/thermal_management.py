@@ -77,14 +77,7 @@ class ThermalManager:
         Raises:
             ThermalClusterNotFound: If the specified cluster does not exist.
         """
-
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-        try:
-            cluster_data = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise ThermalClusterNotFound(path, cluster_id) from None
-        return parse_thermal_cluster(study.version, cluster_data)
+        return study.get_study_dao().get_thermal(area_id, cluster_id)
 
     def get_clusters(
         self,
@@ -104,14 +97,7 @@ class ThermalManager:
         Raises:
             ThermalClusterConfigNotFound: If no clusters are found in the specified area.
         """
-
-        file_study = study.get_files()
-        path = _CLUSTERS_PATH.format(area_id=area_id)
-        try:
-            clusters_data = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise ThermalClusterConfigNotFound(path, area_id) from None
-        return [parse_thermal_cluster(study.version, c) for c in clusters_data.values()]
+        return study.get_study_dao().get_all_thermals_for_area(area_id)
 
     def get_all_thermals_props(
         self,
