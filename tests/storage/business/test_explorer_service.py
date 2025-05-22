@@ -22,7 +22,6 @@ from antarest.study.storage.explorer_service import Explorer
 
 def build_config(root: Path) -> Config:
     return Config(
-        desktop_mode=False,
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
@@ -33,14 +32,15 @@ def build_config(root: Path) -> Config:
     )
 
 
-def build_tree(root: Path) -> None:
-    default = root / "default"
+@pytest.fixture
+def config_scenario_a(tmp_path: Path) -> Config:
+    default = tmp_path / "default"
     default.mkdir()
     a = default / "studyA"
     a.mkdir()
     (a / "study.antares").touch()
 
-    diese = root / "diese"
+    diese = tmp_path / "diese"
     diese.mkdir()
     c = diese / "folder/studyC"
     c.mkdir(parents=True)
@@ -71,14 +71,14 @@ def build_tree(root: Path) -> None:
     d.mkdir(parents=True)
     (d / "config.txt").touch()
 
+    d = diese / ".hidden_folder"
+    d.mkdir(parents=True)
+    (d / "config.txt").touch()
+
     d = diese / "$RECYCLE.BIN"
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-
-@pytest.fixture
-def config_scenario_a(tmp_path: Path) -> Config:
-    build_tree(tmp_path)
     config = build_config(tmp_path)
     return config
 
@@ -91,6 +91,20 @@ def test_list_dir_empty_string(config_scenario_a: Config):
     # We don't want to see the .git folder or the $RECYCLE.BIN as they were ignored in the workspace config
     assert len(result) == 1
     assert result[0] == NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True)
+
+
+@pytest.mark.unit_test
+def test_list_dir_show_hidden_file(config_scenario_a: Config):
+    explorer = Explorer(config_scenario_a)
+    result = explorer.list_dir("diese", "", show_hidden_file=True)
+
+    # explicit ask to show hidden files
+    assert len(result) == 2
+    assert (
+        NonStudyFolderDTO(path=Path(".hidden_folder"), workspace="diese", name=".hidden_folder", has_children=False)
+        in result
+    )
+    assert NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True) in result
 
 
 @pytest.mark.unit_test
