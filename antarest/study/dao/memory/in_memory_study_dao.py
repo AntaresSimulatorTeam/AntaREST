@@ -29,9 +29,19 @@ class LinkKey:
     area2_id: str
 
 
+@dataclass(frozen=True)
+class ClusterKey:
+    area_id: str
+    cluster_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
+
+
+def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
+    return ClusterKey(area_id, cluster_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -42,10 +52,18 @@ class InMemoryStudyDao(StudyDao):
 
     def __init__(self, version: StudyVersion) -> None:
         self._version = version
+        # Links
         self._links: Dict[LinkKey, Link] = {}
         self._link_capacities: Dict[LinkKey, str] = {}
         self._link_direct_capacities: Dict[LinkKey, str] = {}
         self._link_indirect_capacities: Dict[LinkKey, str] = {}
+        # Thermals
+        self._thermals: Dict[ClusterKey, ThermalCluster] = {}
+        self._thermal_prepro: Dict[ClusterKey, str] = {}
+        self._thermal_modulation: Dict[ClusterKey, str] = {}
+        self._thermal_series: Dict[ClusterKey, str] = {}
+        self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
+        self._thermal_co2_cost: Dict[ClusterKey, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -95,40 +113,40 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_thermals(self, area_id: str) -> Sequence[ThermalCluster]:
-        raise NotImplementedError()
+        return list(self._thermals.values())
 
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
-        raise NotImplementedError()
+        return self._thermals[cluster_key(area_id, thermal_id)]
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        raise NotImplementedError()
+        return cluster_key(area_id, thermal_id) in self._thermals
 
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        raise NotImplementedError()
+        self._thermals[cluster_key(area_id, thermal.id)] = thermal
 
     @override
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
 
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        raise NotImplementedError()
+        del self._thermals[cluster_key(area_id, thermal.id)]
