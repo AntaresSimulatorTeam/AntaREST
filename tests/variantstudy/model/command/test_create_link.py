@@ -15,7 +15,7 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -102,20 +102,19 @@ class TestCreateLink:
         assert int(link_data[area2_id]["colorb"]) == 112
         assert link_data[area2_id]["display-comments"] is True
 
-        empty_study.config.version = 820
+        empty_study.config.version = STUDY_VERSION_8_8
         create_link_command: ICommand = CreateLink(
             area1=area2_id,
             area2=area3_id,
             parameters={},
             command_context=command_context,
             series=[[0]],
-            study_version=study_version,
+            study_version=empty_study.config.version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
         )
         assert output.status
-        empty_study.config.version = 800
 
         assert (study_path / "input" / "links" / area2_id / f"{area3_id}_parameters.txt.link").exists()
         assert (study_path / "input" / "links" / area2_id / "capacities" / f"{area3_id}_direct.txt.link").exists()
@@ -123,6 +122,7 @@ class TestCreateLink:
 
         # TODO:assert matrix default content : 1 column, 8760 rows, value = 1
 
+        empty_study.config.version = STUDY_VERSION_8_1
         output = CreateLink.model_validate(
             {
                 "area1": area1_id,

@@ -493,7 +493,7 @@ def test_sta_mini_copy(storage_service) -> None:
     destination_study_name = "copy-STA-mini"
 
     client = create_test_client(storage_service)
-    result = client.post(f"/v1/studies/{source_study_name}/copy?dest={destination_study_name}&use_task=false")
+    result = client.post(f"/v1/studies/{source_study_name}/copy?study_name={destination_study_name}&use_task=false")
 
     assert result.status_code == HTTPStatus.CREATED.value
     uuid = result.json()

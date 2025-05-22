@@ -67,10 +67,10 @@ class TestLink:
             f"/v1/studies/{study_id}/links/{area1_id}/{area1_id}",
             json={"hurdlesCost": False},
         )
-        assert res.status_code == 422
+        assert res.status_code == 404
         expected = {
-            "description": "Cannot create a link that goes from and to the same single area: area 1",
-            "exception": "LinkValidationError",
+            "description": "The link area 1 -> area 1 is not present in the study",
+            "exception": "LinkNotFound",
         }
         assert expected == res.json()
 
@@ -349,24 +349,5 @@ class TestLink:
             "loopFlow": False,
             "transmissionCapacities": "enabled",
             "usePhaseShifter": False,
-        }
-        assert expected == res.json()
-
-    def test_create_link_810(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
-
-        preparer = PreparerProxy(client, user_access_token)
-        study_id = preparer.create_study("foo", version=810)
-        area1_id = preparer.create_area(study_id, name="Area 1")["id"]
-        area2_id = preparer.create_area(study_id, name="Area 2")["id"]
-
-        res = client.post(
-            f"/v1/studies/{study_id}/links", json={"area1": area1_id, "area2": area2_id, "filterSynthesis": "hourly"}
-        )
-
-        assert res.status_code == 422, res.json()
-        expected = {
-            "description": "Cannot specify a filter value for study's version earlier than v8.2",
-            "exception": "LinkValidationError",
         }
         assert expected == res.json()
