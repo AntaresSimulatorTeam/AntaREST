@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import {
   Box,
   Button,
@@ -31,22 +31,24 @@ import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
+
 import { useMatrixContext } from "../../context/MatrixContext";
 import { Operation } from "../../shared/constants";
 import { calculateMatrixAggregates } from "../../shared/utils";
-import type { FilterState, FilterCriteria, MatrixFilterProps } from "./types";
-import { FILTER_TYPES, getDefaultFilterState } from "./constants";
+import type { FilterState, MatrixFilterProps } from "./types";
+import { getDefaultFilterState } from "./constants";
 import ColumnFilter from "./ColumnFilter";
 import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
-import { processRowFilters } from "./utils";
-import { useUpdateEffect } from "react-use";
+import { useFilteredData } from "./hooks/useFilteredData";
 
 function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterProps) {
   const { t } = useTranslation();
   const { currentState, setMatrixData, aggregateTypes, setFilterPreview, filterPreview } =
     useMatrixContext();
+
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<FilterState>(
     getDefaultFilterState(
@@ -56,49 +58,21 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     ),
   );
 
-  // Calculate the filtered data based on current filter settings
-  const filteredData = useMemo((): FilterCriteria => {
-    if (!filter.active) {
-      // Return all rows and columns when filter is not active
-      return {
-        columnsIndices: Array.from({ length: currentState.data[0]?.length || 0 }, (_, i) => i),
-        rowsIndices: Array.from({ length: currentState.data.length || 0 }, (_, i) => i),
-      };
-    }
+  const filteredData = useFilteredData({
+    filter,
+    dateTime,
+    isTimeSeries,
+    timeFrequency,
+    rowCount: currentState.data.length,
+    columnCount: currentState.data[0]?.length || 0,
+  });
 
-    // Filter columns
-    let columnsIndices: number[] = [];
-    const totalColumns = currentState.data[0]?.length || 0;
-
-    if (filter.columnsFilter.type === FILTER_TYPES.RANGE && filter.columnsFilter.range) {
-      const { min, max } = filter.columnsFilter.range;
-      columnsIndices = Array.from({ length: totalColumns }, (_, i) => i + 1)
-        .filter((idx) => idx >= min && idx <= max)
-        .map((idx) => idx - 1); // Convert to 0-based index
-    } else if (filter.columnsFilter.type === FILTER_TYPES.LIST && filter.columnsFilter.list) {
-      columnsIndices = filter.columnsFilter.list
-        .map((idx) => idx - 1)
-        .filter((idx) => idx >= 0 && idx < totalColumns);
-    }
-
-    // Process multiple row filters and get combined indices
-    const rowsIndices: number[] = processRowFilters(
-      filter,
-      dateTime,
-      isTimeSeries,
-      timeFrequency,
-      currentState.data.length,
-    );
-
-    return { columnsIndices, rowsIndices };
-  }, [currentState.data, filter, dateTime, isTimeSeries, timeFrequency]);
-
-  const togglePreviewMode = () => {
+  const togglePreviewMode = useCallback(() => {
     setFilterPreview({
       active: !filterPreview.active,
       criteria: filteredData,
     });
-  };
+  }, [filterPreview.active, filteredData, setFilterPreview]);
 
   // Update the filter preview when filter criteria changes
   useUpdateEffect(() => {
@@ -116,7 +90,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     }
   }, [filteredData, filter.active, setFilterPreview, filterPreview]);
 
-  const applyOperation = () => {
+  const applyOperation = useCallback(() => {
     if (!filter.active || currentState.data.length === 0) {
       return;
     }
@@ -125,7 +99,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     const { type: opType, value } = filter.operation;
     const newData = currentState.data.map((row) => [...row]);
 
-    // Apply the operation to each filtered cell
     for (const rowIdx of rowsIndices) {
       for (const colIdx of columnsIndices) {
         const currentValue = newData[rowIdx][colIdx];
@@ -160,9 +133,16 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
       data: newData,
       aggregates: calculateMatrixAggregates({ matrix: newData, types: aggregateTypes }),
     });
-  };
+  }, [
+    currentState.data,
+    filter.active,
+    filter.operation,
+    filteredData,
+    setMatrixData,
+    aggregateTypes,
+  ]);
 
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setFilter(
       getDefaultFilterState(
         currentState.data.length,
@@ -178,17 +158,18 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         rowsIndices: Array.from({ length: currentState.data.length || 0 }, (_, i) => i),
       },
     });
-  };
+  }, [currentState.data, setFilterPreview, timeFrequency]);
 
-  const toggleDrawer = () => {
-    setOpen(!open);
-  };
+  const toggleDrawer = useCallback(() => {
+    setOpen((prev) => !prev);
+  }, []);
 
-  const toggleFilter = () => {
-    setFilter({ ...filter, active: !filter.active });
-  };
+  const toggleFilter = useCallback(() => {
+    setFilter((prev) => ({ ...prev, active: !prev.active }));
+  }, []);
 
-  const getFilterSummary = () => {
+  // Generate summary text for active filters
+  const getFilterSummary = useMemo(() => {
     if (!filter.active) {
       return { columnFilterText: "", rowFilterTexts: [] };
     }
@@ -198,20 +179,21 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     const rowFilterTexts: string[] = [];
 
     // Column filter summary
-    if (columnsFilter.type === FILTER_TYPES.RANGE && columnsFilter.range) {
+    if (columnsFilter.type === "range" && columnsFilter.range) {
       columnFilterText = `${t("matrix.filter.columns")}: ${columnsFilter.range.min} - ${columnsFilter.range.max}`;
-    } else if (columnsFilter.type === FILTER_TYPES.LIST && columnsFilter.list) {
+    } else if (columnsFilter.type === "list" && columnsFilter.list) {
       columnFilterText = `${t("matrix.filter.columns")}: [${columnsFilter.list.join(", ")}]`;
     }
 
     // Row filters summary (multiple)
     for (const rowFilter of rowsFilters) {
       const indexType = t(`matrix.filter.indexing.${rowFilter.indexingType}`);
-      if (rowFilter.type === FILTER_TYPES.RANGE && rowFilter.range) {
+
+      if (rowFilter.type === "range" && rowFilter.range) {
         rowFilterTexts.push(
           `${t("matrix.filter.rows")} (${indexType}): ${rowFilter.range.min} - ${rowFilter.range.max}`,
         );
-      } else if (rowFilter.type === FILTER_TYPES.LIST && rowFilter.list) {
+      } else if (rowFilter.type === "list" && rowFilter.list) {
         rowFilterTexts.push(
           `${t("matrix.filter.rows")} (${indexType}): [${rowFilter.list.join(", ")}]`,
         );
@@ -219,7 +201,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     }
 
     return { columnFilterText, rowFilterTexts };
-  };
+  }, [filter, t]);
 
   return (
     <>
@@ -279,9 +261,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                 color={filterPreview.active ? "info" : "inherit"}
                 onClick={togglePreviewMode}
                 sx={{
-                  minWidth: "unset",
-                  width: "42px",
-                  height: "36px",
                   borderRadius: 1.5,
                   ...(filterPreview.active && {
                     borderWidth: 1,
@@ -307,33 +286,19 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
               variant="outlined"
               sx={{
                 p: 1.5,
-                backgroundColor: "background.paper",
-                position: "relative",
                 ...(filterPreview.active && {
                   boxShadow: "0 0 0 1px rgba(33, 150, 243, 0.2)",
                   borderColor: "rgba(33, 150, 243, 0.3)",
                 }),
               }}
             >
-              {filterPreview.active && (
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "2px",
-                    height: "100%",
-                    bgcolor: "info.main",
-                    opacity: 0.7,
-                  }}
-                />
-              )}
               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 {t("matrix.filter.activeFilters")}
               </Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {(() => {
-                  const { columnFilterText, rowFilterTexts } = getFilterSummary();
+                  const { columnFilterText, rowFilterTexts } = getFilterSummary;
+
                   return (
                     <>
                       {columnFilterText && (
@@ -354,7 +319,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                       )}
                       {rowFilterTexts.map((text, index) => (
                         <Chip
-                          key={`row-filter-${index}-${filter.rowsFilters[index]?.id || crypto.randomUUID()}`}
+                          key={`row-filter-${index}-${text}`}
                           label={text}
                           size="small"
                           color="primary"
@@ -393,31 +358,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
         <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
 
-        <Box sx={{ position: "relative" }}>
-          {filterPreview.active && (
-            <Box
-              sx={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                display: "flex",
-                alignItems: "center",
-                color: "info.dark",
-                py: 0.5,
-                px: 1,
-                borderRadius: 1,
-                fontSize: "0.75rem",
-                bgcolor: "rgba(33, 150, 243, 0.07)",
-                border: "1px solid rgba(33, 150, 243, 0.15)",
-                zIndex: 1,
-              }}
-            >
-              <VisibilityIcon sx={{ fontSize: 14, mr: 0.5, opacity: 0.7 }} />
-              {t("matrix.filter.previewMode")}
-            </Box>
-          )}
-          <SelectionSummary filteredData={filteredData} previewMode={filterPreview.active} />
-        </Box>
+        <SelectionSummary filteredData={filteredData} previewMode={filterPreview.active} />
       </Drawer>
     </>
   );

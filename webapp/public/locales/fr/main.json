@@ -920,7 +920,9 @@
         "week": "Semaine",
         "weekday": "Jour de la semaine"
       },
-      "addRowFilter": "Ajouter un filtre sur les lignes"
+      "addRowFilter": "Ajouter un filtre sur les lignes",
+      "collapseAll": "Réduire les filtres",
+      "expandAll": "Développer les filtres"
     },
     "operation": {
       "equal": "Définir la valeur",

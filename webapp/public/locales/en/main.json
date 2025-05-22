@@ -929,7 +929,9 @@
         "active": "Preview mode: showing only filtered data",
         "inactive": "Enable preview to see only filtered data"
       },
-      "addRowFilter": "Add row filter"
+      "addRowFilter": "Add row filter",
+      "collapseAll": "Collapse filters",
+      "expandAll": "Expand filters"
     },
     "operation": {
       "equal": "Set value",
