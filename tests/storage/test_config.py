@@ -153,4 +153,4 @@ def test_storage_config_from_dict_desktop_mode_true(storage_config_default):
 
     config = StorageConfig.from_dict(data, desktop_mode=True)
 
-    assert "local" in config.workspaces or "c:\\" in config.workspaces
+    assert "local" in config.workspaces or "C:\\" in config.workspaces
