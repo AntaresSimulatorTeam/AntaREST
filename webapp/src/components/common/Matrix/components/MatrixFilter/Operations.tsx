@@ -25,79 +25,34 @@ import {
   Box,
   Button,
   Slider,
+  type SelectChangeEvent,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useTranslation } from "react-i18next";
 import type { OperationsProps } from "./types";
 import { Operation } from "../../shared/constants";
-import { useState } from "react";
+import { useOperationControls } from "./hooks/useOperationControls";
 
 function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
-  const [value, setValue] = useState<number>(filter.operation.value);
+  const {
+    value,
+    quickOperations,
+    hasValidFilters,
+    handleOperationTypeChange,
+    handleValueChange,
+    handleSliderChange,
+    applyQuickOperation,
+  } = useOperationControls({ filter, setFilter, onApplyOperation });
 
-  // Check if we have valid filters to apply operations
-  const hasValidFilters =
-    filter.active &&
-    (filter.columnsFilter.range ||
-      (filter.columnsFilter.list && filter.columnsFilter.list.length > 0));
-
-  const handleOperationTypeChange = (e: { target: { value: string } }) => {
-    setFilter({
-      ...filter,
-      operation: {
-        ...filter.operation,
-        type: e.target.value,
-      },
-    });
+  const handleOperationTypeChangeEvent = (e: SelectChangeEvent<string>) => {
+    handleOperationTypeChange(e.target.value);
   };
 
-  const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleValueChangeEvent = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = Number.parseFloat(e.target.value) || 0;
-    setValue(newValue);
-    setFilter({
-      ...filter,
-      operation: {
-        ...filter.operation,
-        value: newValue,
-      },
-    });
-  };
-
-  const handleSliderChange = (_event: Event, newValue: number | number[]) => {
-    if (!Array.isArray(newValue)) {
-      setValue(newValue);
-      setFilter({
-        ...filter,
-        operation: {
-          ...filter.operation,
-          value: newValue,
-        },
-      });
-    }
-  };
-
-  const quickOperations = [
-    { label: "+1", op: Operation.Add, value: 1 },
-    { label: "-1", op: Operation.Sub, value: 1 },
-    { label: "×2", op: Operation.Mul, value: 2 },
-    { label: "÷2", op: Operation.Div, value: 2 },
-    { label: "=0", op: Operation.Eq, value: 0 },
-    { label: "|x|", op: Operation.Abs, value: 0 },
-  ];
-
-  const applyQuickOperation = (op: string, val: number) => {
-    setFilter({
-      ...filter,
-      operation: {
-        type: op,
-        value: val,
-      },
-    });
-
-    // Immediately apply the operation
-    setTimeout(onApplyOperation, 0);
+    handleValueChange(newValue);
   };
 
   return (
@@ -106,7 +61,6 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
         <Typography variant="subtitle1">{t("matrix.filter.operation")}</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        {/* Quick operation buttons */}
         <Box sx={{ mb: 2 }}>
           <Typography variant="subtitle2" gutterBottom>
             {t("matrix.filter.quickOperations")}
@@ -132,7 +86,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
           <Select
             value={filter.operation.type}
             label={t("matrix.filter.operationType")}
-            onChange={handleOperationTypeChange}
+            onChange={handleOperationTypeChangeEvent}
             disabled={!filter.active}
           >
             <MenuItem value={Operation.Eq}>{t("matrix.operation.equal")}</MenuItem>
@@ -149,14 +103,13 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             <TextField
               label={t("matrix.filter.value")}
               type="number"
-              value={filter.operation.value}
-              onChange={handleValueChange}
+              value={value}
+              onChange={handleValueChangeEvent}
               fullWidth
               margin="dense"
               disabled={!filter.active}
             />
 
-            {/* Slider for common ranges */}
             {filter.operation.type !== Operation.Div && (
               <Box sx={{ px: 2, pt: 1, pb: 0 }}>
                 <Slider
