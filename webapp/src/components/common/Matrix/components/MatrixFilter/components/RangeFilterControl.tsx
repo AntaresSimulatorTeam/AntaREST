@@ -13,6 +13,7 @@
  */
 
 import { Box, Typography, Slider } from "@mui/material";
+import { useMemo, useCallback, memo } from "react";
 
 interface RangeFilterControlProps {
   min: number;
@@ -26,47 +27,69 @@ interface RangeFilterControlProps {
   formatValue?: (value: number) => string;
 }
 
-const RangeFilterControl = ({
-  min,
-  max,
-  value,
-  onChange,
-  minBound,
-  maxBound,
-  marks,
-  disabled = false,
-  formatValue,
-}: RangeFilterControlProps) => {
-  const handleChange = (_event: Event, newValue: number | number[]) => {
-    if (Array.isArray(newValue)) {
-      onChange([newValue[0], newValue[1]]);
-    }
-  };
+const RangeFilterControl = memo(
+  ({
+    min,
+    max,
+    value,
+    onChange,
+    minBound,
+    maxBound,
+    marks,
+    disabled = false,
+    formatValue,
+  }: RangeFilterControlProps) => {
+    // Extract values for dependency array to avoid complex expressions
+    const valueMin = value[0];
+    const valueMax = value[1];
 
-  return (
-    <Box sx={{ px: 2, pt: 3, pb: 1 }}>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ display: "flex", justifyContent: "space-between" }}
-      >
-        <span>{formatValue ? formatValue(min) : min}</span>
-        <span>{formatValue ? formatValue(max) : max}</span>
-      </Typography>
-      <Slider
-        value={[value[0], value[1]]}
-        onChange={handleChange}
-        valueLabelDisplay="auto"
-        valueLabelFormat={formatValue}
-        min={minBound}
-        max={maxBound}
-        marks={marks}
-        step={1}
-        sx={{ mt: 1 }}
-        disabled={disabled}
-      />
-    </Box>
-  );
-};
+    // Memoize the value array to prevent unnecessary re-renders
+    const sliderValue = useMemo(() => [valueMin, valueMax], [valueMin, valueMax]);
 
-export default RangeFilterControl;
+    // Memoize formatted values
+    const formattedMin = useMemo(() => (formatValue ? formatValue(min) : min), [formatValue, min]);
+    const formattedMax = useMemo(() => (formatValue ? formatValue(max) : max), [formatValue, max]);
+
+    // Memoize marks to prevent recreation
+    const memoizedMarks = useMemo(() => marks, [marks]);
+
+    const handleChange = useCallback(
+      (_event: Event, newValue: number | number[]) => {
+        if (Array.isArray(newValue)) {
+          onChange([newValue[0], newValue[1]]);
+        }
+      },
+      [onChange],
+    );
+
+    return (
+      <Box sx={{ px: 2, pt: 3, pb: 1 }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "flex", justifyContent: "space-between" }}
+        >
+          <span>{formattedMin}</span>
+          <span>{formattedMax}</span>
+        </Typography>
+        <Slider
+          value={sliderValue}
+          onChange={handleChange}
+          valueLabelDisplay="auto"
+          valueLabelFormat={formatValue}
+          min={minBound}
+          max={maxBound}
+          marks={memoizedMarks}
+          step={1}
+          sx={{ mt: 1 }}
+          disabled={disabled}
+        />
+      </Box>
+    );
+  },
+);
+
+// Add display name
+RangeFilterControl.displayName = "RangeFilterControl";
+
+export default memo(RangeFilterControl);

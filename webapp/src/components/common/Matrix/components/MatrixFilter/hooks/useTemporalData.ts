@@ -23,7 +23,7 @@ interface UseTemporalDataProps {
   timeFrequency?: TimeFrequencyType;
 }
 
-export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps) {
+export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTemporalDataProps) {
   // Memoize the default range values for each indexing type
   const indexTypeRanges = useMemo(() => {
     // Create a map of all default ranges
@@ -38,11 +38,13 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
 
   // Get the range values based on data or defaults
   const valuesByIndexType = useMemo(() => {
+    // Start with a fresh object using the default ranges
     const result = { ...indexTypeRanges } as Record<
       string,
       { min: number; max: number; uniqueValues?: number[] }
     >;
 
+    // Always use fixed values for these constants
     result[TIME_INDEXING.DAY_HOUR] = {
       min: 1,
       max: 24,

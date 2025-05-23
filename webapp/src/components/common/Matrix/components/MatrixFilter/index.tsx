@@ -50,7 +50,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     useMatrixContext();
 
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<FilterState>(
+  const [filter, setFilter] = useState<FilterState>(() =>
     getDefaultFilterState(
       currentState.data.length,
       currentState.data[0]?.length || 0,
@@ -58,13 +58,21 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     ),
   );
 
+  const { rowCount, columnCount } = useMemo(
+    () => ({
+      rowCount: currentState.data.length,
+      columnCount: currentState.data[0]?.length || 0,
+    }),
+    [currentState.data],
+  );
+
   const filteredData = useFilteredData({
     filter,
     dateTime,
     isTimeSeries,
     timeFrequency,
-    rowCount: currentState.data.length,
-    columnCount: currentState.data[0]?.length || 0,
+    rowCount,
+    columnCount,
   });
 
   const togglePreviewMode = useCallback(() => {
@@ -142,26 +150,24 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     aggregateTypes,
   ]);
 
-  const resetFilters = useCallback(() => {
-    setFilter(
-      getDefaultFilterState(
-        currentState.data.length,
-        currentState.data[0]?.length || 0,
-        timeFrequency,
-      ),
-    );
+  const resetFilters = () => {
+    const newFilter = getDefaultFilterState(rowCount, columnCount, timeFrequency);
+
+    setFilter(newFilter);
 
     setFilterPreview({
       active: false,
       criteria: {
-        columnsIndices: Array.from({ length: currentState.data[0]?.length || 0 }, (_, i) => i),
-        rowsIndices: Array.from({ length: currentState.data.length || 0 }, (_, i) => i),
+        columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
+        rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
       },
     });
-  }, [currentState.data, setFilterPreview, timeFrequency]);
+  };
 
   const toggleDrawer = useCallback(() => {
-    setOpen((prev) => !prev);
+    requestAnimationFrame(() => {
+      setOpen((prev) => !prev);
+    });
   }, []);
 
   const toggleFilter = useCallback(() => {
@@ -215,6 +221,8 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         anchor="right"
         open={open}
         onClose={toggleDrawer}
+        keepMounted
+        transitionDuration={200}
         PaperProps={{
           sx: { p: 2, maxWidth: "400px" },
         }}
