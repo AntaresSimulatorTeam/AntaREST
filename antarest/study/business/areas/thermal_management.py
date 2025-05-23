@@ -269,7 +269,7 @@ class ThermalManager:
         study_dao = study.get_study_dao()
 
         prepro_matrix = study_dao.get_thermal_prepro(area_id, lower_source_id).to_numpy().tolist()
-        matrices.append(("input/thermal/prepro/{area_id}/{lower_new_id}/data", prepro_matrix))
+        matrices.append((f"input/thermal/prepro/{area_id}/{lower_new_id}/data", prepro_matrix))
 
         modulation_matrix = study_dao.get_thermal_modulation(area_id, lower_source_id).to_numpy().tolist()
         matrices.append((f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation", modulation_matrix))

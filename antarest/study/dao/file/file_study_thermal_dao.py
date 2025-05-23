@@ -19,6 +19,7 @@ from antarest.core.exceptions import ThermalClusterConfigNotFound, ThermalCluste
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.model import STUDY_VERSION_8_7
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -53,7 +54,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                thermals_by_areas.setdefault(area_id, {})[cluster_id] = parse_thermal_cluster(version, cluster)
+                lowered_id = transform_name_to_id(cluster_id)
+                thermals_by_areas.setdefault(area_id, {})[lowered_id] = parse_thermal_cluster(version, cluster)
         return thermals_by_areas
 
     @override

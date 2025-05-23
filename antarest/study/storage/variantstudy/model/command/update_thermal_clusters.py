@@ -63,10 +63,11 @@ class UpdateThermalClusters(ICommand):
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
-                if cluster_id not in all_thermals[area_id]:
+                lowered_id = cluster_id.lower()
+                if lowered_id not in all_thermals[area_id]:
                     return command_failed(f"Thermal cluster '{cluster_id}' in area '{area_id}' does not exist")
 
-                current_cluster = all_thermals[area_id][cluster_id]
+                current_cluster = all_thermals[area_id][lowered_id]
                 new_cluster = update_thermal_cluster(current_cluster, new_properties)
                 new_clusters.append(new_cluster)
 

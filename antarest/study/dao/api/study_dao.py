@@ -92,20 +92,20 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return self._adaptee.get_thermal_prepro(area_id, thermal_id)
 
     @override
     def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return self._adaptee.get_thermal_modulation(area_id, thermal_id)
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return self._adaptee.get_thermal_series(area_id, thermal_id)
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return self._adaptee.get_thermal_fuel_cost(area_id, thermal_id)
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
