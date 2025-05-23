@@ -34,7 +34,7 @@ function MultiRowFilter({
     filter.rowsFilters.map((rf) => rf.id),
   );
 
-  const handleAddFilter = useCallback(() => {
+  const handleAddFilter = () => {
     const newFilter = createDefaultRowFilter(
       filter.rowsFilters[0]?.range?.max || 100,
       timeFrequency,
@@ -46,7 +46,7 @@ function MultiRowFilter({
     }));
 
     setExpandedFilters((prev) => [...prev, newFilter.id]);
-  }, [filter.rowsFilters, setFilter, timeFrequency]);
+  };
 
   const handleRemoveFilter = useCallback(
     (id: string) => {
