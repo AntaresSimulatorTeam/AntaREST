@@ -134,7 +134,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         study_data.tree.save(
             serialize_thermal_cluster(study_data.config.version, thermal),
-            ["input", "thermal", "clusters", "properties", area_id, "list", thermal.id],
+            ["input", "thermal", "clusters", area_id, "list", thermal.id],
         )
 
     @override
@@ -143,8 +143,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         ini_content = {}
         for thermal in thermals:
             self._update_thermal_config(area_id, thermal)
-            ini_content.update(serialize_thermal_cluster(study_data.config.version, thermal))
-        study_data.tree.save(ini_content, ["input", "thermal", "clusters", "properties", area_id, "list"])
+            ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
+        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
 
     def _update_thermal_config(self, area_id: str, thermal: ThermalCluster) -> None:
         study_data = self.get_file_study().config
