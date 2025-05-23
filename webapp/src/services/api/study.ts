@@ -68,7 +68,7 @@ export const getFolders = async (workspace: string, folderPath: string) => {
   const res = await client.get<NonStudyFolderDTO[]>(
     `/v1/private/explorer/${encodeURIComponent(workspace)}/_list_dir?path=${encodeURIComponent(folderPath)}`,
     {
-      timeout: 1000 * 30, // Wait for 30 seconds
+      timeout: 1000 * 300, // Wait for 5 minutes
     },
   );
   return res.data;
