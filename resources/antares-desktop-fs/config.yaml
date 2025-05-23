@@ -1,5 +1,7 @@
 # Documentation about this file can be found in this file: `docs/install/1-CONFIG.md`
 
+desktop_mode: true
+
 security:
   disabled: true
   jwt:
@@ -15,13 +17,12 @@ storage:
   workspaces:
     default:
       path: ./internal_studies/
-    studies:
-      path: ./studies/
 
 launcher:
   launchers:
     - id: local
       type: local
+      name: my_local
       binaries:
         VER: ANTARES_SOLVER_PATH
       local_workspace: ./local_workspace
@@ -54,8 +55,6 @@ api_prefix: "/api"
 
 server:
   worker_threadpool_size: 12
-  services:
-    - watcher
 
 logging:
   logfile: ./logs/antarest.log
