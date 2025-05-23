@@ -104,7 +104,7 @@ class CreateCluster(ICommand):
         thermal = parse_thermal_cluster(self.study_version, self.parameters.model_dump(mode="json"))
         lower_thermal_id = thermal.id.lower()
         if study_data.thermal_exists(self.area_id, lower_thermal_id):
-            return command_failed(f"Thermal cluster '{thermal.id}' in area '{self.area_id}' already exists")
+            return command_failed(f"Thermal cluster '{thermal.id}' already exists in the area '{self.area_id}'")
 
         study_data.save_thermal(self.area_id, thermal)
 
@@ -119,7 +119,7 @@ class CreateCluster(ICommand):
             study_data.save_thermal_fuel_cost(self.area_id, lower_thermal_id, null_matrix)
             study_data.save_thermal_co2_cost(self.area_id, lower_thermal_id, null_matrix)
 
-        return command_succeeded(f"Thermal cluster '{thermal.id}' inside area '{self.area_id}' created")
+        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'")
 
     @override
     def to_dto(self) -> CommandDTO:
