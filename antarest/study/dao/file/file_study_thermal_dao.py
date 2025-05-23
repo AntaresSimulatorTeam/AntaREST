@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ThermalClusterConfigNotFound, ThermalClusterNotFound
@@ -24,6 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
@@ -85,6 +87,47 @@ class FileStudyThermalDao(ThermalDao, ABC):
             return False
 
     @override
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        node = study_data.tree.get_node(["input", "thermal", "prepro", area_id, thermal_id, "data"])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
+
+    @override
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        node = study_data.tree.get_node(["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
+
+    @override
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "series"])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
+
+    @override
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_8_7:
+            raise ValueError(f"fuelCost matrix is supported since version 8.7 and your study is in {study_version}")
+        node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
+
+    @override
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_8_7:
+            raise ValueError(f"CO2Cost matrix is supported since version 8.7 and your study is in {study_version}")
+        node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
+
+    @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         study_data = self.get_file_study()
         self._update_thermal_config(area_id, thermal)
@@ -143,7 +186,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         study_version = study_data.config.version
         if study_version < STUDY_VERSION_8_7:
             raise ValueError(f"C02Cost matrix is supported since version 8.7 and your study is in {study_version}")
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
+        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:

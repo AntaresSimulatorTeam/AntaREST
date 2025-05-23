@@ -12,6 +12,7 @@
 from abc import abstractmethod
 from typing import Sequence
 
+import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
@@ -88,3 +89,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
         return self._adaptee.thermal_exists(area_id, thermal_id)
+
+    @override
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()

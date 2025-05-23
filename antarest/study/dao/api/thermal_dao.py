@@ -13,6 +13,8 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
+import pandas as pd
+
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 
 
@@ -31,6 +33,26 @@ class ReadOnlyThermalDao(ABC):
 
     @abstractmethod
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
 

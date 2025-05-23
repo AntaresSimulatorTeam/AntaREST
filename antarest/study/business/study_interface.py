@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import CommandApplicationError
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
@@ -71,9 +72,9 @@ class InMemoryStudyInterface(StudyInterface):
     Only used for test purposes, currently.
     """
 
-    def __init__(self, id: str, version: StudyVersion):
+    def __init__(self, id: str, version: StudyVersion, matrix_service: ISimpleMatrixService):
         self._id = id
-        self._study_dao = InMemoryStudyDao(version)
+        self._study_dao = InMemoryStudyDao(version, matrix_service)
 
     @override
     @property
