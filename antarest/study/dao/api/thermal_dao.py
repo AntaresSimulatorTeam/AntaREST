@@ -88,3 +88,7 @@ class ThermalDao(ReadOnlyThermalDao):
     @abstractmethod
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def duplicate_thermal(self, area_id: str, source_id: str, new_cluster_name: str) -> ThermalCluster:
+        raise NotImplementedError()
