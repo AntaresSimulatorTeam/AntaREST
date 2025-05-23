@@ -119,7 +119,7 @@ class CreateCluster(ICommand):
             study_data.save_thermal_fuel_cost(self.area_id, lower_thermal_id, null_matrix)
             study_data.save_thermal_co2_cost(self.area_id, lower_thermal_id, null_matrix)
 
-        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'")
+        return command_succeeded(f"Thermal cluster '{thermal.id}' added to area '{self.area_id}'.")
 
     @override
     def to_dto(self) -> CommandDTO:
