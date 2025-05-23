@@ -19,7 +19,6 @@ from antarest.core.exceptions import ThermalClusterConfigNotFound, ThermalCluste
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -209,18 +208,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
         self._remove_cluster_from_scenario_builder(study_data, area_id, thermal.id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         return self._remove_from_config(study_data.config, area_id, thermal)
-
-    @override
-    def duplicate_thermal(self, area_id: str, source_id: str, new_cluster_name: str) -> ThermalCluster:
-        source_thermal = self.get_thermal(area_id, source_id)
-        new_id = transform_name_to_id(new_cluster_name, lower=False)
-        source_thermal.name = new_cluster_name
-        source_thermal.id = new_id
-        self.save_thermal(area_id, source_thermal)
-
-        # Matrices
-
-        return source_thermal
 
     @staticmethod
     def _remove_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, thermal_id: str) -> None:

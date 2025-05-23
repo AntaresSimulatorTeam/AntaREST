@@ -22,7 +22,6 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -191,12 +190,3 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         del self._thermals[cluster_key(area_id, thermal.id)]
-
-    @override
-    def duplicate_thermal(self, area_id: str, source_id: str, new_cluster_name: str) -> ThermalCluster:
-        source_thermal = self.get_thermal(area_id, source_id)
-        new_id = transform_name_to_id(new_cluster_name, lower=False)
-        source_thermal.name = new_cluster_name
-        source_thermal.id = new_id
-        self.save_thermal(area_id, source_thermal)
-        return source_thermal

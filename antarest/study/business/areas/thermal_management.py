@@ -244,7 +244,6 @@ class ThermalManager:
         if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise DuplicateThermalCluster(area_id, new_id)
 
-        file_study = study.get_files()
         study_version = study.version
 
         # Cluster duplication
@@ -253,40 +252,44 @@ class ThermalManager:
         cluster_creation = ThermalClusterCreation(
             **source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"})
         )
+        command_context = self._command_context
         create_cluster_cmd = CreateCluster(
             area_id=area_id,
             parameters=cluster_creation,
             study_version=study_version,
-            command_context=self._command_context,
+            command_context=command_context,
         )
 
-        # Matrix edition
+        # Matrices
         lower_source_id = source_id.lower()
-        source_paths = [
-            f"input/thermal/series/{area_id}/{lower_source_id}/series",
-            f"input/thermal/prepro/{area_id}/{lower_source_id}/modulation",
-            f"input/thermal/prepro/{area_id}/{lower_source_id}/data",
-        ]
-        new_paths = [
-            f"input/thermal/series/{area_id}/{lower_new_id}/series",
-            f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation",
-            f"input/thermal/prepro/{area_id}/{lower_new_id}/data",
-        ]
-        if study_version >= STUDY_VERSION_8_7:
-            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/CO2Cost")
-            source_paths.append(f"input/thermal/series/{area_id}/{lower_source_id}/fuelCost")
-            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost")
-            new_paths.append(f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost")
-
-        # Prepare and execute commands
         commands: List[CreateCluster | ReplaceMatrix] = [create_cluster_cmd]
         command_context = self._command_context
-        for source_path, new_path in zip(source_paths, new_paths):
-            current_matrix = file_study.tree.get(source_path.split("/"))["data"]
-            command = ReplaceMatrix(
-                target=new_path, matrix=current_matrix, command_context=command_context, study_version=study_version
+
+        matrices: list[tuple[str, list[list[float]]]] = []
+        study_dao = study.get_study_dao()
+
+        prepro_matrix = study_dao.get_thermal_prepro(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append(("input/thermal/prepro/{area_id}/{lower_new_id}/data", prepro_matrix))
+
+        modulation_matrix = study_dao.get_thermal_modulation(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/thermal/prepro/{area_id}/{lower_new_id}/modulation", modulation_matrix))
+
+        series_matrix = study_dao.get_thermal_series(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/thermal/series/{area_id}/{lower_new_id}/series", series_matrix))
+
+        if study_version >= STUDY_VERSION_8_7:
+            fuel_cost_matrix = study_dao.get_thermal_fuel_cost(area_id, lower_source_id).to_numpy().tolist()
+            matrices.append((f"input/thermal/series/{area_id}/{lower_new_id}/fuelCost", fuel_cost_matrix))
+
+            co2_cost_matrix = study_dao.get_thermal_co2_cost(area_id, lower_source_id).to_numpy().tolist()
+            matrices.append((f"input/thermal/series/{area_id}/{lower_new_id}/CO2Cost", co2_cost_matrix))
+
+        # Add commands
+        for matrix in matrices:
+            cmd = ReplaceMatrix(
+                target=matrix[0], matrix=matrix[1], command_context=command_context, study_version=study_version
             )
-            commands.append(command)
+            commands.append(cmd)
 
         study.add_commands(commands)
 
