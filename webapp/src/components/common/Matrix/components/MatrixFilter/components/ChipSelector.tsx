@@ -69,17 +69,18 @@ const ChipSelector = ({
           const isSelected = selectedValues.includes(option.value);
 
           if (renderOption) {
+            // Use a div instead of Box with onClick to prevent button nesting issues
+            // when renderOption returns a button-like element
             return (
-              <Box
+              <div
                 key={option.value}
-                onClick={() => handleChipClick(option.value)}
-                sx={{
+                style={{
                   cursor: disabled ? "default" : "pointer",
                   opacity: disabled ? 0.7 : 1,
                 }}
               >
                 {renderOption(option, isSelected)}
-              </Box>
+              </div>
             );
           }
 
