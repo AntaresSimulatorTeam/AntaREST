@@ -92,4 +92,4 @@ def parse_thermal_cluster(study_version: StudyVersion, data: Any) -> ThermalClus
 
 def serialize_thermal_cluster(study_version: StudyVersion, cluster: ThermalCluster) -> dict[str, Any]:
     validate_thermal_cluster_against_version(study_version, cluster)
-    return ThermalClusterFileData.from_model(cluster).model_dump(by_alias=True, exclude_none=True)
+    return ThermalClusterFileData.from_model(cluster).model_dump(mode="json", by_alias=True, exclude_none=True)

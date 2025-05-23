@@ -14,21 +14,18 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import (
-    ThermalCluster,
     ThermalClusterUpdates,
     update_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
-    parse_thermal_cluster,
-    serialize_thermal_cluster,
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -56,59 +53,27 @@ class UpdateThermalClusters(ICommand):
                 validate_thermal_cluster_against_version(self.study_version, cluster)
         return self
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        for area_id, value in self.cluster_properties.items():
-            if area_id not in study_data.areas:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
-
-            thermal_mapping: dict[str, tuple[int, ThermalCluster]] = {}
-            for index, thermal in enumerate(study_data.areas[area_id].thermals):
-                thermal_mapping[transform_name_to_id(thermal.id)] = (index, thermal)
-
-            for cluster_id, update in value.items():
-                if cluster_id not in thermal_mapping:
-                    return CommandOutput(
-                        status=False,
-                        message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
-                    )
-
-                index, thermal = thermal_mapping[cluster_id]
-                study_data.areas[area_id].thermals[index] = update_thermal_cluster(thermal, update)
-
-        return CommandOutput(status=True, message="The thermal clusters were successfully updated.")
-
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        all_thermals = study_data.get_all_thermals()
+
         for area_id, value in self.cluster_properties.items():
-            ini_path = ["input", "thermal", "clusters", area_id, "list"]
+            if area_id not in all_thermals:
+                return command_failed(f"Area '{area_id}' does not exist")
 
-            try:
-                all_clusters_for_area = study_data.tree.get(ini_path)
-            except ChildNotFoundError:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
+            new_clusters = []
+            for cluster_id, new_properties in value.items():
+                lowered_id = cluster_id.lower()
+                if lowered_id not in all_thermals[area_id]:
+                    return command_failed(f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.")
 
-            # Validates the Ini file
-            clusters_by_id = IdMapping(parse_thermal_cluster, all_clusters_for_area, self.study_version)
+                current_cluster = all_thermals[area_id][lowered_id]
+                new_cluster = update_thermal_cluster(current_cluster, new_properties)
+                new_clusters.append(new_cluster)
 
-            for cluster_id, update in value.items():
-                if not clusters_by_id.asserts_id_exists(cluster_id):
-                    return CommandOutput(
-                        status=False,
-                        message=f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.",
-                    )
+            study_data.save_thermals(area_id, new_clusters)
 
-                # Performs the update
-                cluster_key, cluster = clusters_by_id.get_key_and_properties(cluster_id)
-                updated_cluster = update_thermal_cluster(cluster, update)
-                all_clusters_for_area[cluster_key] = serialize_thermal_cluster(
-                    study_data.config.version, updated_cluster
-                )
-
-            study_data.tree.save(data=all_clusters_for_area, url=ini_path)
-
-        output = self.update_in_config(study_data.config)
-
-        return output
+        return command_succeeded("All thermal clusters updated")
 
     @override
     def to_dto(self) -> CommandDTO:
