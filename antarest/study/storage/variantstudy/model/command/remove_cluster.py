@@ -45,7 +45,7 @@ class RemoveCluster(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if not study_data.thermal_exists(self.area_id, self.cluster_id):
-            return command_failed(f"Thermal cluster '{self.cluster_id}' in area '{self.area_id}' does not exists")
+            return command_failed(f"Thermal cluster '{self.cluster_id}' in area '{self.area_id}' does not exist")
 
         thermal = study_data.get_thermal(self.area_id, self.cluster_id)
         study_data.delete_thermal(self.area_id, thermal)

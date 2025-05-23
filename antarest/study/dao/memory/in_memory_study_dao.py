@@ -135,6 +135,11 @@ class InMemoryStudyDao(StudyDao):
         self._thermals[cluster_key(area_id, thermal.id)] = thermal
 
     @override
+    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
+        for thermal in thermals:
+            self.save_thermal(area_id, thermal)
+
+    @override
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
         self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
 

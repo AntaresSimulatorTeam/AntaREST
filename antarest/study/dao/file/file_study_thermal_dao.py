@@ -94,6 +94,15 @@ class FileStudyThermalDao(ThermalDao, ABC):
             ["input", "thermal", "clusters", "properties", area_id, "list", thermal.id],
         )
 
+    @override
+    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
+        study_data = self.get_file_study()
+        ini_content = {}
+        for thermal in thermals:
+            self._update_thermal_config(area_id, thermal)
+            ini_content.update(serialize_thermal_cluster(study_data.config.version, thermal))
+        study_data.tree.save(ini_content, ["input", "thermal", "clusters", "properties", area_id, "list"])
+
     def _update_thermal_config(self, area_id: str, thermal: ThermalCluster) -> None:
         study_data = self.get_file_study().config
         if area_id not in study_data.areas:

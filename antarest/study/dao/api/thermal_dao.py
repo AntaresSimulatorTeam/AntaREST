@@ -40,6 +40,10 @@ class ThermalDao(ReadOnlyThermalDao):
         raise NotImplementedError()
 
     @abstractmethod
+    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
