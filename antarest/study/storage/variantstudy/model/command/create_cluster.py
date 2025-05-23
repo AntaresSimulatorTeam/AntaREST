@@ -101,22 +101,23 @@ class CreateCluster(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        thermal = parse_thermal_cluster(self.study_version, self.parameters.model_dump(mode="json", by_alias=True))
+        thermal = parse_thermal_cluster(self.study_version, self.parameters.model_dump(mode="json"))
         if study_data.thermal_exists(self.area_id, thermal.id):
             return command_failed(f"Thermal cluster '{thermal.id}' in area '{self.area_id}' already exists")
 
         study_data.save_thermal(self.area_id, thermal)
 
         # Matrices
+        lower_thermal_id = thermal.id.lower()
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
-        study_data.save_thermal_series(self.area_id, thermal.id, null_matrix)
+        study_data.save_thermal_series(self.area_id, lower_thermal_id, null_matrix)
         assert isinstance(self.prepro, str)
         assert isinstance(self.modulation, str)
-        study_data.save_thermal_prepro(self.area_id, thermal.id, self.prepro)
-        study_data.save_thermal_modulation(self.area_id, thermal.id, self.modulation)
+        study_data.save_thermal_prepro(self.area_id, lower_thermal_id, self.prepro)
+        study_data.save_thermal_modulation(self.area_id, lower_thermal_id, self.modulation)
         if self.study_version >= STUDY_VERSION_8_7:
-            study_data.save_thermal_fuel_cost(self.area_id, thermal.id, null_matrix)
-            study_data.save_thermal_co2_cost(self.area_id, thermal.id, null_matrix)
+            study_data.save_thermal_fuel_cost(self.area_id, lower_thermal_id, null_matrix)
+            study_data.save_thermal_co2_cost(self.area_id, lower_thermal_id, null_matrix)
 
         return command_succeeded(f"Thermal cluster '{thermal.id}' inside area '{self.area_id}' created")
 
