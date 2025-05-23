@@ -488,7 +488,7 @@ def has_non_study_folder(path: Path, filter_in: List[str], filter_out: List[str]
         try:
             if is_non_study_folder(sub_path, filter_in, filter_out):
                 return True
-        except PermissionError:
+        except (PermissionError, OSError):
             logger.warning("tried to run is_non_study_folder on {sub_path} but no permission")
     return False
 
