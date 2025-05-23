@@ -65,10 +65,11 @@ class Explorer:
                                 has_children=has_children,
                             )
                         )
-                except PermissionError as e:
-                    logger.warning(f"Permission error while accessing {child} or one of its children: {e}")
-        except PermissionError as e:
-            logger.warning(f"Permission error while listing {directory_path}: {e}")
+                except (PermissionError, OSError) as e:
+                    logger.warning(f"Error while accessing {child} or one of its children: {e}")
+        except (PermissionError, OSError) as e:
+            logger.warning(f"Error while listing {directory_path}: {e}")
+
         return directories
 
     def list_workspaces(
