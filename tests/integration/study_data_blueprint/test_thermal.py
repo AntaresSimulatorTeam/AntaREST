@@ -718,11 +718,7 @@ class TestThermal:
             },
         )
         assert res.status_code == 500, res.json()
-        obj = res.json()
-        description = obj["description"]
-        assert bad_area_id in description
-        assert re.search(r"Area ", description, flags=re.IGNORECASE)
-        assert re.search(r"does not exist ", description, flags=re.IGNORECASE)
+        assert f"The area '{bad_area_id}' does not exist" in res.json()["description"]
 
         # Check POST with wrong `group`
         res = client.post(
@@ -749,7 +745,7 @@ class TestThermal:
             },
         )
         assert res.status_code == 404, res.json()
-        assert bad_area_id in obj["description"]["description"]
+        assert bad_area_id in res.json()["description"]
 
         # Check PATCH with the wrong `cluster_id`
         bad_cluster_id = "bad_cluster"

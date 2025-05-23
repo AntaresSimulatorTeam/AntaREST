@@ -10,12 +10,12 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Any, Sequence
 
 import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.model import STUDY_VERSION_8_7
@@ -60,12 +60,17 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
         file_study = self.get_file_study()
+        clusters_data = self._get_all_thermals_for_area(file_study, area_id)
+        return [parse_thermal_cluster(file_study.config.version, c) for c in clusters_data.values()]
+
+    @staticmethod
+    def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
         path = _CLUSTERS_PATH.format(area_id=area_id)
         try:
             clusters_data = file_study.tree.get(path.split("/"), depth=3)
         except KeyError:
             raise ThermalClusterConfigNotFound(path, area_id) from None
-        return [parse_thermal_cluster(file_study.config.version, c) for c in clusters_data.values()]
+        return clusters_data
 
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
@@ -84,7 +89,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         try:
             file_study.tree.get(path.split("/"), depth=1)
             return True
-        except KeyError:
+        except (KeyError, ChildNotFoundError):
             return False
 
     @override
@@ -141,7 +146,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
         study_data = self.get_file_study()
-        ini_content = {}
+        ini_content = self._get_all_thermals_for_area(study_data, area_id)
         for thermal in thermals:
             self._update_thermal_config(area_id, thermal)
             ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
