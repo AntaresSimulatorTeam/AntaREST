@@ -19,7 +19,6 @@ from antarest.core.exceptions import ThermalClusterConfigNotFound, ThermalCluste
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -54,7 +53,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                lowered_id = transform_name_to_id(cluster_id)
+                lowered_id = cluster_id.lower()
                 thermals_by_areas.setdefault(area_id, {})[lowered_id] = parse_thermal_cluster(version, cluster)
         return thermals_by_areas
 
@@ -193,11 +192,11 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         study_data = self.get_file_study()
-
+        cluster_id = thermal.id.lower()
         paths = [
-            ["input", "thermal", "clusters", area_id, "list", thermal.id],
-            ["input", "thermal", "prepro", area_id, thermal.id],
-            ["input", "thermal", "series", area_id, thermal.id],
+            ["input", "thermal", "clusters", area_id, "list", cluster_id],
+            ["input", "thermal", "prepro", area_id, cluster_id],
+            ["input", "thermal", "series", area_id, cluster_id],
         ]
         if len(study_data.config.areas[area_id].thermals) == 1:
             paths.append(["input", "thermal", "prepro", area_id])
@@ -206,8 +205,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         for path in paths:
             study_data.tree.delete(path)
 
-        self._remove_cluster_from_binding_constraints(study_data, area_id, thermal.id)
-        self._remove_cluster_from_scenario_builder(study_data, area_id, thermal.id)
+        self._remove_cluster_from_binding_constraints(study_data, area_id, cluster_id)
+        self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         return self._remove_from_config(study_data.config, area_id, thermal)
 
