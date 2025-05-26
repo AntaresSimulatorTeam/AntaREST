@@ -233,7 +233,7 @@ class RawStudyService(AbstractStorageService):
     def copy(
         self,
         src_meta: RawStudy,
-        dest_name: str,
+        dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],
@@ -244,7 +244,7 @@ class RawStudyService(AbstractStorageService):
 
         Args:
             src_meta: The source study that you want to copy.
-            dest_name: The name for the destination study.
+            dest_study_name: The name for the destination study.
             groups: A list of groups to assign to the destination study.
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             output_ids: A list of output names that you want to include in the destination study.
@@ -255,7 +255,7 @@ class RawStudyService(AbstractStorageService):
         """
         self._check_study_exists(src_meta)
 
-        dest_study = self.build_raw_study(dest_name, groups, src_meta, destination_folder)
+        dest_study = self.build_raw_study(dest_study_name, groups, src_meta, destination_folder)
 
         src_path = self.get_study_path(src_meta)
         dest_path = self.get_study_path(dest_study)
@@ -270,7 +270,7 @@ class RawStudyService(AbstractStorageService):
         return dest_study
 
     def build_raw_study(
-        self, dest_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
+        self, dest_study_name: str, groups: Sequence[str], src_study: Study, destination_folder: PurePosixPath
     ) -> RawStudy:
         if src_study.additional_data is None:
             additional_data = StudyAdditionalData()
@@ -283,7 +283,7 @@ class RawStudyService(AbstractStorageService):
         dest_id = str(uuid4())
         dest_study = RawStudy(
             id=dest_id,
-            name=dest_name,
+            name=dest_study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(self.config.get_workspace_path() / dest_id),
             created_at=datetime.utcnow(),

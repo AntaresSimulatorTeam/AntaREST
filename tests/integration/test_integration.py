@@ -189,7 +189,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
     # Study copy
     copied = client.post(
-        f"/v1/studies/{created.json()}/copy?dest=copied&use_task=false",
+        f"/v1/studies/{created.json()}/copy?study_name=copied&use_task=false",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert copied.status_code == 201
@@ -278,7 +278,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     )
     job_id = res.json()["job_id"]
 
-    res = client.get("/v1/launcher/load")
+    res = client.get("/v1/launcher/load?launcher_id=local_id")
     assert res.status_code == 200, res.json()
     launcher_load = res.json()
     assert launcher_load["allocatedCpuRate"] == 100 / (os.cpu_count() or 1)
@@ -294,7 +294,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert job_info == {
         "id": job_id,
         "study_id": study_id,
-        "launcher": "local",
+        "launcher": "local_id",
         "launcher_params": ANY,
         "status": "pending",
         "creation_date": ANY,
@@ -1335,7 +1335,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Copy a study with admin user who belongs to a group
-    copied = client.post(f"/v1/studies/{internal_study_id}/copy?dest=copied&use_task=false")
+    copied = client.post(f"/v1/studies/{internal_study_id}/copy?study_name=copied&use_task=false")
     assert copied.status_code == 201
     # asserts that it has admin groups and PublicMode to NONE
     res = client.get(f"/v1/studies/{copied.json()}").json()
@@ -1348,7 +1348,7 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
 
     # George copies a study
     copied = client.post(
-        f"/v1/studies/{internal_study_id}/copy?dest=copied&use_task=false",
+        f"/v1/studies/{internal_study_id}/copy?study_name=copied&use_task=false",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert copied.status_code == 201
@@ -1382,7 +1382,7 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> Non
     assert variant_study.status_code == 200
 
     # Copy Variant as a reference study
-    client.post(f"/v1/studies/{variant_id}/copy?dest=copied&use_task=False")
+    client.post(f"/v1/studies/{variant_id}/copy?study_name=copied&use_task=False")
 
     all_studies = client.get("/v1/studies")
     assert variant_study.status_code == 200
@@ -1412,7 +1412,7 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output1"]},  # type: ignore
+        params={"study_name": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output1"]},  # type: ignore
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1442,7 +1442,7 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"dest": "copied", "use_task": True, "destination_folder": "folder"},
+        params={"study_name": "copied", "use_task": True, "destination_folder": "folder"},
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
@@ -1477,7 +1477,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     res = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "with_outputs": True,
             "use_task": False,
             "output_ids": ["output0", "output1"],
@@ -1498,7 +1498,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     copy = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "with_outputs": False,
             "use_task": False,
             "output_ids": ["output2"],
@@ -1516,7 +1516,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     copy = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "with_outputs": False,
             "use_task": False,
         },
@@ -1528,7 +1528,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     res = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "with_outputs": True,
             "use_task": False,
         },
@@ -1546,7 +1546,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     res = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "use_task": False,
         },
     )
@@ -1563,7 +1563,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     res = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "use_task": False,
             "with_outputs": True,
             "output_ids": ["output10"],
@@ -1577,7 +1577,7 @@ def copy_with_output(client: TestClient, tmp_path: Path, study_id: str):
     res = client.post(
         f"/v1/studies/{study_id}/copy",
         params={
-            "dest": "copied",
+            "study_name": "copied",
             "use_task": False,
             "output_ids": ["output1"],
         },

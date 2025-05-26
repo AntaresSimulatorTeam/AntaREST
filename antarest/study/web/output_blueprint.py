@@ -10,13 +10,12 @@
 #
 # This file is part of the Antares project.
 import collections
-import io
 import logging
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, List, Sequence
 
-from fastapi import APIRouter, Depends, File, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, UploadFile
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
@@ -72,13 +71,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         summary="Import Output",
         response_model=str,
     )
-    def import_output(uuid: str, output: bytes = File(...)) -> Any:
+    def import_output(uuid: str, output: UploadFile) -> Any:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-
-        zip_binary = io.BytesIO(output)
-
-        output_id = output_service.import_output(uuid_sanitized, zip_binary)
+        output_id = output_service.import_output(uuid_sanitized, output.file)
         return output_id
 
     @bp.get(

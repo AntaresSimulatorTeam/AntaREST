@@ -69,7 +69,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
     DistrictSet,
     FileStudyTreeConfig,
-    Link,
+    LinkConfig,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -633,7 +633,7 @@ def test_download_output() -> None:
 
     area = Area(
         name="area",
-        links={"west": Link(filters_synthesis=[], filters_year=[])},
+        links={"west": LinkConfig(filters_synthesis=[], filters_year=[])},
         thermals=[],
         renewables=[],
         filters_synthesis=[],

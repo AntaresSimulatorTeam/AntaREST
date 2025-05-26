@@ -105,7 +105,7 @@ class TestSTStorage:
         # Copies the study, to convert it into a managed one.
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",
-            params={"dest": "default", "with_outputs": False, "use_task": False},
+            params={"study_name": "default", "with_outputs": False, "use_task": False},
         )
         assert res.status_code == 201, res.json()
         internal_study_id = res.json()

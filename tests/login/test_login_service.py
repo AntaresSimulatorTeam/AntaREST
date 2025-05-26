@@ -30,6 +30,7 @@ from antarest.login.model import (
     RoleCreationDTO,
     User,
     UserCreateDTO,
+    UserInfo,
     UserLdap,
 )
 from antarest.login.service import GroupNotFoundError, LoginService
@@ -861,6 +862,23 @@ class TestLoginService:
         with current_user_context(user):
             actual = login_service.get_all_users()
         assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
+
+    @with_db_context
+    def test_get_all_users_for_user_wo_group(self, login_service: LoginService) -> None:
+        # Add an LDAP user with no group
+        login_service.users.save(UserLdap(id=60, name="Jane DOE"))
+
+        # Ensures the admin is able to fetch the LDAP user
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_all_users()
+            assert UserInfo(id=60, name="Jane DOE") in actual
+
+        # Ensures the LDAP user can fetch himself and him only as it doesn't have any group
+        ldap_user = get_user(login_service, user_id=60)
+        with current_user_context(ldap_user):
+            actual = login_service.get_all_users()
+            assert actual == [UserInfo(id=60, name="Jane DOE")]
 
     @with_db_context
     def test_get_all_bots(self, login_service: LoginService) -> None:

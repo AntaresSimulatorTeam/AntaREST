@@ -17,12 +17,11 @@ from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
 
 from antares.study.version import SolverVersion
 
-from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 
 
 class LauncherInitException(Exception):
@@ -62,12 +61,10 @@ class LauncherCallbacks(NamedTuple):
 class AbstractLauncher(ABC):
     def __init__(
         self,
-        config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ):
-        self.config = config
         self.callbacks = callbacks
         self.event_bus = event_bus
         self.cache = cache
@@ -84,6 +81,14 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def kill_job(self, job_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_load(self) -> LauncherLoadDTO:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_solver_versions(self) -> List[str]:
         raise NotImplementedError()
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:

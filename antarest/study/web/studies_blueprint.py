@@ -11,13 +11,12 @@
 # This file is part of the Antares project.
 
 import collections
-import io
 import logging
 from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, File, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -253,7 +252,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         summary="Import Study",
         response_model=str,
     )
-    def import_study(study: bytes = File(...), groups: str = "") -> str:
+    def import_study(study: UploadFile, groups: str = "") -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
@@ -268,14 +267,13 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study")
-        zip_binary = io.BytesIO(study)
 
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         try:
-            uuid = study_service.import_study(zip_binary, group_ids)
+            uuid = study_service.import_study(study.file, group_ids)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
@@ -319,7 +317,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def copy_study(
         uuid: str,
-        dest: str,
+        study_name: str,
         output_ids: Annotated[list[str], Query(default_factory=list)],
         with_outputs: bool | None = None,
         groups: str = "",
@@ -332,7 +330,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         Args:
         - `uuid`: The identifier of the study you wish to duplicate.
-        - `dest`: The destination workspace where the study will be copied.
+        - `study_name`: The name of the new study.
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
@@ -343,14 +341,14 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         Returns:
         - The unique identifier of the task copying the study.
         """
-        logger.info(f"Copying study {uuid} into new study '{dest}'")
+        logger.info(f"Copying study {uuid} into new study '{study_name}'")
 
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         uuid_sanitized = sanitize_uuid(uuid)
-        destination_name_sanitized = escape(dest)
+        destination_name_sanitized = escape(study_name)
 
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,

@@ -66,7 +66,7 @@ export const getWorkspaces = async () => {
  */
 export const getFolders = async (workspace: string, folderPath: string) => {
   const res = await client.get<NonStudyFolderDTO[]>(
-    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
+    `/v1/private/explorer/${encodeURIComponent(workspace)}/_list_dir?path=${encodeURIComponent(folderPath)}`,
     {
       timeout: 1000 * 3, // Wait for 3 seconds
     },
@@ -169,7 +169,7 @@ export const editStudy = async (
 
 export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<void> => {
   const res = await client.post(
-    `/v1/studies/${sid}/copy?dest=${encodeURIComponent(name)}&with_outputs=${withOutputs}`,
+    `/v1/studies/${sid}/copy?study_name=${encodeURIComponent(name)}&with_outputs=${withOutputs}`,
   );
   return res.data;
 };
