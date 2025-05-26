@@ -162,7 +162,6 @@ class OutputService:
         Get global result information
         Args:
             study_id: study Id
-            params: request parameters
 
         Returns: an object containing all needed information
 
@@ -215,7 +214,6 @@ class OutputService:
         Args:
             study_uuid: study id
             output_uuid: output id
-            params: request parameters
         """
         study = self._study_service.get_study(study_uuid)
         assert_permission(study, StudyPermissionType.READ)
@@ -228,7 +226,6 @@ class OutputService:
         Args:
             study_uuid: study id
             output_uuid: output id
-            params: request parameters
         """
         study = self._study_service.get_study(study_uuid)
         assert_permission(study, StudyPermissionType.READ)
@@ -377,7 +374,6 @@ class OutputService:
         Args:
             uuid: study uuid
             output_name: output simulation name
-            params: request parameters
 
         Returns:
 
