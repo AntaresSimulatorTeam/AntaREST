@@ -162,7 +162,6 @@ class StorageConfig:
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
     auto_archive_max_parallel: int = 5
-    aggregation_results_max_size: int = 200
     snapshot_retention_days: int = 7
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
 
@@ -174,8 +173,6 @@ class StorageConfig:
             if "workspaces" in data
             else defaults.workspaces
         )
-
-        cls._validate_workspaces(data, workspaces)
         return cls(
             matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
             archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
@@ -196,18 +193,22 @@ class StorageConfig:
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),
             auto_archive_max_parallel=data.get("auto_archive_max_parallel", defaults.auto_archive_max_parallel),
-            aggregation_results_max_size=data.get(
-                "aggregation_results_max_size", defaults.aggregation_results_max_size
-            ),
             snapshot_retention_days=data.get("snapshot_retention_days", defaults.snapshot_retention_days),
             matrixstore_format=InternalMatrixFormat(data.get("matrixstore_format", defaults.matrixstore_format)),
         )
 
     @classmethod
-    def _validate_workspaces(cls, config_as_json: JSON, workspaces: Dict[str, WorkspaceConfig]) -> None:
+    def validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
         """
         Validate that no two workspaces have overlapping paths.
         """
+        workspace_names = list(workspaces.keys())
+        only_default = workspace_names == [DEFAULT_WORKSPACE_NAME]
+        if desktop_mode and not only_default:
+            raise ValueError(
+                f"Desktop mode is on, only default workspace should be configured. Instead conf has {workspace_names}"
+            )
+
         workspace_name_by_path = [(config.path, name) for name, config in workspaces.items()]
         for path, name in workspace_name_by_path:
             for path2, name2 in workspace_name_by_path:
@@ -630,14 +631,18 @@ class Config:
     tasks: TaskConfig = TaskConfig()
     root_path: str = ""
     api_prefix: str = ""
+    desktop_mode: bool = False
 
     @classmethod
     def from_dict(cls, data: JSON) -> "Config":
         defaults = cls()
+        desktop_mode = data.get("desktop_mode", defaults.desktop_mode)
+        storage_config = StorageConfig.from_dict(data["storage"]) if "storage" in data else defaults.storage
+        StorageConfig.validate_workspaces(storage_config.workspaces, desktop_mode)
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
-            storage=StorageConfig.from_dict(data["storage"]) if "storage" in data else defaults.storage,
+            storage=storage_config,
             launcher=LauncherConfig.from_dict(data["launcher"]) if "launcher" in data else defaults.launcher,
             db=DbConfig.from_dict(data["db"]) if "db" in data else defaults.db,
             logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
@@ -649,6 +654,7 @@ class Config:
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
+            desktop_mode=desktop_mode,
         )
 
     @classmethod

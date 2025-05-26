@@ -16,7 +16,6 @@ from typing import List, Optional, Sequence
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.model import JSON
-from antarest.core.requests import RequestParameters
 from antarest.study.model import Study, StudyMetadataDTO
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -189,12 +188,11 @@ class IStudyStorage(ABC):
         """
 
     @abstractmethod
-    def get_synthesis(self, metadata: Study, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
             metadata: study
-            params: RequestParameters
         Returns: FileStudyTreeConfigDTO
 
         """

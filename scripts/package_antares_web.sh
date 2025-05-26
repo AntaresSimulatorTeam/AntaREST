@@ -19,7 +19,7 @@ RESOURCES_DIR="${PROJECT_DIR}/resources"
 ANTARES_SOLVER_DIR="${DIST_DIR}/AntaresWeb/antares_solver"
 
 if [[ "$OSTYPE" == "msys"* ]]; then
-  ANTARES_SOLVER_FOLDER_NAME="rte-antares-$ANTARES_SOLVER_FULL_VERSION-installer-64bits"
+  ANTARES_SOLVER_FOLDER_NAME="antares-solver_windows"
   ANTARES_SOLVER_ZIPFILE_NAME="$ANTARES_SOLVER_FOLDER_NAME.zip"
 else
   ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu20.04.tar.gz"
@@ -66,10 +66,9 @@ rm $ANTARES_SOLVER_ZIPFILE_NAME
 
 if [[ "$OSTYPE" == "msys"* ]]; then
   echo "INFO: Moving executables in '$ANTARES_SOLVER_DIR'..."
-  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/antares-$ANTARES_SOLVER_VERSION-solver.exe" "$ANTARES_SOLVER_DIR"
-  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/sirius_solver.dll" "$ANTARES_SOLVER_DIR"
-  mv "$ANTARES_SOLVER_FOLDER_NAME/bin/zlib1.dll" "$ANTARES_SOLVER_DIR"
+  mv "$ANTARES_SOLVER_DIR/solver/Release/"* "$ANTARES_SOLVER_DIR"
   rm -rf $ANTARES_SOLVER_FOLDER_NAME
+  rm -rf $"$ANTARES_SOLVER_DIR/solver/Release/"
 fi
 
 echo "INFO: Copying basic configuration files..."

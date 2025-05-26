@@ -12,9 +12,9 @@
 import numpy as np
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_6_fixed_hourly
@@ -32,17 +32,17 @@ default_link_legacy_matrix.flags.writeable = False
 class InputLinkArea(FolderNode):
     def __init__(
         self,
-        context: ContextServer,
+        matrix_mapper: MatrixUriMapper,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(context, config)
+        super().__init__(matrix_mapper, config)
         self.area = area
 
     @override
     def build(self) -> TREE:
         children: TREE
-        ctx = self.context
+        ctx = self.matrix_mapper
         cfg = self.config
         if cfg.version < STUDY_VERSION_8_2:
             children = {
@@ -59,7 +59,6 @@ class InputLinkArea(FolderNode):
             children["capacities"] = InputLinkAreaCapacities(ctx, cfg.next_file("capacities"), area=self.area)
 
         children["properties"] = InputLinkAreaProperties(
-            ctx,
             cfg.next_file("properties.ini"),
             area=self.area,
         )

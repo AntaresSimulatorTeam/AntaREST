@@ -26,7 +26,6 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -194,7 +193,7 @@ class RawStudyService(AbstractStorageService):
         return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
 
     @override
-    def get_synthesis(self, metadata: RawStudy, params: Optional[RequestParameters] = None) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: RawStudy) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, metadata.id)

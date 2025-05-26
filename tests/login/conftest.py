@@ -16,7 +16,14 @@ from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.login.ldap import LdapService
-from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
+from antarest.login.repository import (
+    BotRepository,
+    GroupRepository,
+    IdentityRepository,
+    RoleRepository,
+    UserLdapRepository,
+    UserRepository,
+)
 from antarest.login.service import LoginService
 
 
@@ -34,6 +41,13 @@ def user_repo_fixture(db_middleware: DBSessionMiddleware) -> UserRepository:
     """Fixture that creates a UserRepository instance."""
     # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
     return UserRepository()
+
+
+@pytest.fixture(name="identity_repo")
+def identity_repo_fixture(db_middleware: DBSessionMiddleware) -> IdentityRepository:
+    """Fixture that creates an IdentityRepository instance."""
+    # note: `DBSessionMiddleware` is required to instantiate a thread-local db session.
+    return IdentityRepository()
 
 
 # noinspection PyUnusedLocal
@@ -79,6 +93,7 @@ def ldap_service_fixture(
 @pytest.fixture(name="login_service")
 def login_service_fixture(
     user_repo: UserRepository,
+    identity_repo: IdentityRepository,
     bot_repo: BotRepository,
     group_repo: GroupRepository,
     role_repo: RoleRepository,
@@ -88,6 +103,7 @@ def login_service_fixture(
     """Fixture that creates a LoginService instance."""
     return LoginService(
         user_repo=user_repo,
+        identity_repo=identity_repo,
         bot_repo=bot_repo,
         group_repo=group_repo,
         role_repo=role_repo,

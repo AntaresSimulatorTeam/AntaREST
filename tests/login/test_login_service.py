@@ -14,9 +14,10 @@ import typing as t
 from unittest.mock import patch
 
 import pytest
+from sqlalchemy.orm import Session
 
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.requests import RequestParameters
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.login.model import (
     ADMIN_ID,
@@ -29,9 +30,12 @@ from antarest.login.model import (
     RoleCreationDTO,
     User,
     UserCreateDTO,
+    UserInfo,
     UserLdap,
 )
-from antarest.login.service import LoginService
+from antarest.login.service import GroupNotFoundError, LoginService
+from antarest.login.utils import current_user_context
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_db_context
 
 # For the unit tests, we will define several fictitious users, groups and roles.
@@ -71,40 +75,17 @@ _ROLES: t.List[RoleObj] = [
 ]
 
 
-def get_jwt_user(user: User, roles: t.Iterable[Role], owner_id: int = 0) -> JWTUser:
-    jwt_user = JWTUser(
-        id=user.id,
-        impersonator=owner_id or user.id,
-        type="users",
-        groups=[JWTGroup(id=role.group.id, name=role.group.name, role=role.type) for role in roles],
-    )
-    return jwt_user
-
-
-def get_request_param(
-    user: t.Union[User, UserLdap, Bot],
-    role: t.Optional[Role],
-    owner_id: int = 0,
-) -> RequestParameters:
-    if user is None:
-        return RequestParameters(user=None)
-    roles = (role,) if role else ()
-    jwt_user = get_jwt_user(user, roles, owner_id=owner_id)
-    return RequestParameters(user=jwt_user)
-
-
-def get_user_param(login_service: LoginService, user_id: int, group_id: str = "(unknown)") -> RequestParameters:
+def get_user(login_service: LoginService, user_id: int, group_id: str = "(unknown)") -> JWTUser:
     user = login_service.users.get(user_id) or login_service.ldap.get(user_id)
     assert user is not None
     role = login_service.roles.get(user_id, group_id)
-    return get_request_param(user, role)
-
-
-def get_bot_param(login_service: LoginService, bot_id: int, group_id: str = "(unknown)") -> RequestParameters:
-    bot = login_service.bots.get(bot_id)
-    assert bot is not None
-    role = login_service.roles.get(bot_id, group_id)
-    return get_request_param(bot, role, owner_id=bot.owner)
+    roles = [role] if role is not None else []
+    return JWTUser(
+        id=user.id,
+        impersonator=user.id,
+        type="users",
+        groups=[JWTGroup(id=role.group.id, name=role.group.name, role=role.type) for role in roles],
+    )
 
 
 class TestLoginService:
@@ -129,31 +110,35 @@ class TestLoginService:
     @with_db_context
     def test_save_group(self, login_service: LoginService) -> None:
         # site admin can update any group
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.save_group(Group(id="superman", name="Poor Men"), _param)
+        user = get_user(login_service, ADMIN_ID, group_id="admin")
+        with current_user_context(user):
+            login_service.save_group(Group(id="superman", name="Poor Men"))
         actual = login_service.groups.get("superman")
         assert actual is not None
         assert actual.name == "Poor Men"
 
         # Group admin can update his own group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        login_service.save_group(Group(id="superman", name="Man of Steel"), _param)
+        user = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(user):
+            login_service.save_group(Group(id="superman", name="Man of Steel"))
         actual = login_service.groups.get("superman")
         assert actual is not None
         assert actual.name == "Man of Steel"
 
         # Another user of the same group cannot update the group
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.save_group(Group(id="superman", name="Woman of Steel"), _param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.save_group(Group(id="superman", name="Woman of Steel"))
         actual = login_service.groups.get("superman")
         assert actual is not None
         assert actual.name == "Man of Steel"  # not updated
 
         # Group admin cannot update another group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.save_group(Group(id="metropolis", name="Man of Steel"), _param)
+        user = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(Exception, match="Group name already exists"):
+            with current_user_context(user):
+                login_service.save_group(Group(id="metropolis", name="Man of Steel"))
         actual = login_service.groups.get("metropolis")
         assert actual is not None
         assert actual.name == "Metropolis"  # not updated
@@ -161,42 +146,48 @@ class TestLoginService:
     @with_db_context
     def test_create_user(self, login_service: LoginService) -> None:
         # Site admin can create a user
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.create_user(UserCreateDTO(name="Laurent", password="S3cr3t"), _param)
+        user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(user):
+            login_service.create_user(UserCreateDTO(name="Laurent", password="S3cr3t"))
         actual = login_service.users.get_by_name("Laurent")
         assert actual is not None
         assert actual.name == "Laurent"
 
         # Group admin cannot create a user
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.create_user(UserCreateDTO(name="Alexandre", password="S3cr3t"), _param)
+        user = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.create_user(UserCreateDTO(name="Alexandre", password="S3cr3t"))
         actual = login_service.users.get_by_name("Alexandre")
         assert actual is None
 
     @with_db_context
     def test_save_user(self, login_service: LoginService) -> None:
         # Prepare a new user
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        user = login_service.create_user(UserCreateDTO(name="Laurentius", password="S3cr3t"), _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            user = login_service.create_user(UserCreateDTO(name="Laurentius", password="S3cr3t"))
 
         # Only site admin can update a user
-        login_service.save_user(User(id=user.id, name="Lawrence"), _param)
+        with current_user_context(admin_user):
+            login_service.save_user(User(id=user.id, name="Lawrence"))
         actual = login_service.users.get(user.id)
         assert actual is not None
         assert actual.name == "Lawrence"
 
         # Group admin cannot update a user
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.save_user(User(id=user.id, name="Loran"), _param)
+        group_admin_user = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin_user):
+                login_service.save_user(User(id=user.id, name="Loran"))
             actual = login_service.users.get(user.id)
             assert actual is not None
             assert actual.name == "Lawrence"
 
         # A user can update himself
-        _param = get_user_param(login_service, user_id=user.id)
-        login_service.save_user(User(id=user.id, name="Loran"), _param)
+        self_user = get_user(login_service, user_id=user.id)
+        with current_user_context(self_user):
+            login_service.save_user(User(id=user.id, name="Loran"))
         actual = login_service.users.get(user.id)
         assert actual is not None
         assert actual.name == "Loran"
@@ -204,148 +195,134 @@ class TestLoginService:
     @with_db_context
     def test_save_bot(self, login_service: LoginService) -> None:
         # Joh Fredersen can create Maria because he is the leader of Metropolis
-        _param = get_user_param(login_service, user_id=4, group_id="metropolis")
-        login_service.save_bot(BotCreateDTO(name="Maria I", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=4, group_id="metropolis")
+        with current_user_context(joh_fredersen):
+            login_service.save_bot(BotCreateDTO(name="Maria I", roles=[]))
         actual: t.Sequence[Role] = login_service.bots.get_all_by_owner(4)
         assert len(actual) == 1
         assert actual[0].name == "Maria I"
 
         # Freder Fredersen can create Maria with the reader role
-        _param = get_user_param(login_service, user_id=5, group_id="metropolis")
-        login_service.save_bot(
-            BotCreateDTO(
-                name="Maria II",
-                roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.READER.value)],
-            ),
-            _param,
-        )
+        freder_fredersen = get_user(login_service, user_id=5, group_id="metropolis")
+        with current_user_context(freder_fredersen):
+            login_service.save_bot(
+                BotCreateDTO(
+                    name="Maria II",
+                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.READER.value)],
+                )
+            )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create Maria with the admin role
-        _param = get_user_param(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria III",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria III",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create a bot with an empty name
-        _param = get_user_param(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create a bot that already exists
-        _param = get_user_param(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria II",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria II",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Freder Fredersen cannot create a bot with an invalid group
-        _param = get_user_param(login_service, user_id=5, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria III",
-                    roles=[BotRoleCreateDTO(group="metropolis2", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria III",
+                        roles=[BotRoleCreateDTO(group="metropolis2", role=RoleType.ADMIN.value)],
+                    )
+                )
         actual = login_service.bots.get_all_by_owner(5)
         assert len(actual) == 1
         assert actual[0].name == "Maria II"
 
         # Bot's name cannot be empty
-        _param = get_user_param(login_service, user_id=4, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(Exception, match="Bot name must not be empty"):
+            with current_user_context(joh_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
 
         # Avoid duplicate bots
-        _param = get_user_param(login_service, user_id=4, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.save_bot(
-                BotCreateDTO(
-                    name="Maria I",
-                    roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
-                ),
-                _param,
-            )
+        with pytest.raises(Exception, match="Bot name already exists"):
+            with current_user_context(joh_fredersen):
+                login_service.save_bot(
+                    BotCreateDTO(
+                        name="Maria I",
+                        roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.ADMIN.value)],
+                    )
+                )
 
     @with_db_context
     def test_save_role(self, login_service: LoginService) -> None:
         # Prepare a new group and a new user
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         login_service.groups.save(Group(id="web", name="Spider Web"))
         login_service.users.save(User(id=20, name="Spider-man"))
         login_service.users.save(User(id=21, name="Spider-woman"))
 
         # The site admin can create a role
-        login_service.save_role(
-            RoleCreationDTO(type=RoleType.ADMIN, group_id="web", identity_id=20),
-            _param,
-        )
+        with current_user_context(admin_user):
+            login_service.save_role(RoleCreationDTO(type=RoleType.ADMIN, group_id="web", identity_id=20))
         actual = login_service.roles.get(20, "web")
         assert actual is not None
         assert actual.type == RoleType.ADMIN
 
         # The group admin can create a role
-        _param = get_user_param(login_service, user_id=20, group_id="web")
-        login_service.save_role(
-            RoleCreationDTO(type=RoleType.WRITER, group_id="web", identity_id=21),
-            _param,
-        )
+        group_admin = get_user(login_service, user_id=20, group_id="web")
+        with current_user_context(group_admin):
+            login_service.save_role(RoleCreationDTO(type=RoleType.WRITER, group_id="web", identity_id=21))
         actual = login_service.roles.get(21, "web")
         assert actual is not None
         assert actual.type == RoleType.WRITER
 
         # The group admin cannot create a role with an invalid group
-        _param = get_user_param(login_service, user_id=20, group_id="web")
         with pytest.raises(Exception):
-            login_service.save_role(
-                RoleCreationDTO(type=RoleType.WRITER, group_id="web2", identity_id=21),
-                _param,
-            )
+            with current_user_context(group_admin):
+                login_service.save_role(RoleCreationDTO(type=RoleType.WRITER, group_id="web2", identity_id=21))
         actual = login_service.roles.get(21, "web")
         assert actual is not None
         assert actual.type == RoleType.WRITER
 
         # The user cannot create a role
-        _param = get_user_param(login_service, user_id=21, group_id="web")
-        with pytest.raises(Exception):
-            login_service.save_role(
-                RoleCreationDTO(type=RoleType.READER, group_id="web", identity_id=20),
-                _param,
-            )
+        user = get_user(login_service, user_id=21, group_id="web")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.save_role(RoleCreationDTO(type=RoleType.READER, group_id="web", identity_id=20))
         actual = login_service.roles.get(20, "web")
         assert actual is not None
         assert actual.type == RoleType.ADMIN
@@ -353,33 +330,37 @@ class TestLoginService:
     @with_db_context
     def test_get_group(self, login_service: LoginService) -> None:
         # Site admin can get any group
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_group("superman", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_group("superman")
         assert actual is not None
         assert actual.name == "Superman"
 
         # Group admin can get his own group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_group("superman", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_group("superman")
         assert actual is not None
         assert actual.name == "Superman"
 
         # Group admin cannot get another group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_group("metropolis", _param)
+        with pytest.raises(GroupNotFoundError):
+            with current_user_context(group_admin):
+                login_service.get_group("metropolis")
 
         # Lois Lane can get its own group
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        actual = login_service.get_group("superman", _param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(user):
+            actual = login_service.get_group("superman")
         assert actual is not None
         assert actual.id == "superman"
 
     @with_db_context
     def test_get_group_info(self, login_service: LoginService) -> None:
         # Site admin can get any group
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_group_info("superman", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_group_info("superman")
         assert actual is not None
         assert actual.name == "Superman"
         assert [obj.model_dump() for obj in actual.users] == [
@@ -388,55 +369,54 @@ class TestLoginService:
         ]
 
         # Group admin can get his own group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_group_info("superman", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_group_info("superman")
         assert actual is not None
         assert actual.name == "Superman"
 
         # Group admin cannot get another group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_group_info("metropolis", _param)
+        with pytest.raises(GroupNotFoundError):
+            with current_user_context(group_admin):
+                login_service.get_group_info("metropolis")
 
         # Lois Lane cannot get its own group
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_group_info("superman", _param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.get_group_info("superman")
 
     @with_db_context
     def test_get_user(self, login_service: LoginService) -> None:
         # Site admin can get any user
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_user(2, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_user(2)
         assert actual is not None
         assert actual.name == "Clark Kent"
 
         # Group admin can get a user of his own group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_user(3, _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_user(3)
         assert actual is not None
         assert actual.name == "Lois Lane"
 
         # Group admin cannot get a user of another group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_user(5, _param)
+        with current_user_context(group_admin):
+            actual = login_service.get_user(5)
         assert actual is None
 
         # Lois Lane can get its own user
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        actual = login_service.get_user(3, _param)
+        lois_lane = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(lois_lane):
+            actual = login_service.get_user(3)
         assert actual is not None
         assert actual.name == "Lois Lane"
 
-        # Create a bot for Lois Lane
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]), _param)
-
-        # The bot can get its owner
-        _param = get_bot_param(login_service, bot_id=bot.id)
-        actual = login_service.get_user(3, _param)
-        assert actual is not None
-        assert actual.name == "Lois Lane"
+        # Lois Lane is able to create its own bot
+        with current_user_context(lois_lane):
+            login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]))
 
     @with_db_context
     def test_get_identity(self, login_service: LoginService) -> None:
@@ -458,9 +438,10 @@ class TestLoginService:
     @with_db_context
     def test_get_user_info(self, login_service: LoginService) -> None:
         # Site admin can get any user
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         clark_id = 2
-        actual = login_service.get_user_info(clark_id, _param)
+        with current_user_context(admin_user):
+            actual = login_service.get_user_info(clark_id)
         assert actual is not None
         assert actual.model_dump() == {
             "id": clark_id,
@@ -476,9 +457,10 @@ class TestLoginService:
         }
 
         # Group admin can get a user of his own group
-        _param = get_user_param(login_service, user_id=clark_id, group_id="superman")
+        group_admin = get_user(login_service, user_id=clark_id, group_id="superman")
         lois_id = 3
-        actual = login_service.get_user_info(lois_id, _param)
+        with current_user_context(group_admin):
+            actual = login_service.get_user_info(lois_id)
         assert actual is not None
         assert actual.model_dump() == {
             "id": lois_id,
@@ -494,35 +476,15 @@ class TestLoginService:
         }
 
         # Group admin cannot get a user of another group
-        _param = get_user_param(login_service, user_id=clark_id, group_id="superman")
         freder_id = 5
-        actual = login_service.get_user_info(freder_id, _param)
+        with current_user_context(group_admin):
+            actual = login_service.get_user_info(freder_id)
         assert actual is None
 
         # Lois Lane can get its own user info
-        _param = get_user_param(login_service, user_id=lois_id, group_id="superman")
-        actual = login_service.get_user_info(lois_id, _param)
-        assert actual is not None
-        assert actual.model_dump() == {
-            "id": lois_id,
-            "name": "Lois Lane",
-            "roles": [
-                {
-                    "group_id": "superman",
-                    "group_name": "Superman",
-                    "identity_id": lois_id,
-                    "type": RoleType.READER,
-                }
-            ],
-        }
-
-        # Create a bot for Lois Lane
-        _param = get_user_param(login_service, user_id=lois_id, group_id="superman")
-        bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]), _param)
-
-        # The bot can get its owner
-        _param = get_bot_param(login_service, bot_id=bot.id)
-        actual = login_service.get_user_info(lois_id, _param)
+        lois_lane = get_user(login_service, user_id=lois_id, group_id="superman")
+        with current_user_context(lois_lane):
+            actual = login_service.get_user_info(lois_id)
         assert actual is not None
         assert actual.model_dump() == {
             "id": lois_id,
@@ -541,103 +503,98 @@ class TestLoginService:
     def test_get_bot(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="metropolis")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="metropolis")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get any bot
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_bot(joh_bot.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_bot(joh_bot.id)
         assert actual is not None
         assert actual.name == "Maria"
 
         # Joh Fredersen can get its own bot
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        actual = login_service.get_bot(joh_bot.id, _param)
+        with current_user_context(joh_fredersen):
+            actual = login_service.get_bot(joh_bot.id)
         assert actual is not None
         assert actual.name == "Maria"
 
-        # The bot cannot get itself
-        _param = get_bot_param(login_service, bot_id=joh_bot.id)
-        with pytest.raises(Exception):
-            login_service.get_bot(joh_bot.id, _param)
-
         # Freder Fredersen cannot get the bot
         freder_id = 5
-        _param = get_user_param(login_service, user_id=freder_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_bot(joh_bot.id, _param)
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.get_bot(joh_bot.id)
 
     @with_db_context
     def test_get_bot_info(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get any bot
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_bot_info(joh_bot.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_bot_info(joh_bot.id)
         assert actual is not None
         assert actual.model_dump() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
 
         # Joh Fredersen can get its own bot
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        actual = login_service.get_bot_info(joh_bot.id, _param)
+        with current_user_context(joh_fredersen):
+            actual = login_service.get_bot_info(joh_bot.id)
         assert actual is not None
         assert actual.model_dump() == {"id": 6, "isAuthor": True, "name": "Maria", "roles": []}
 
-        # The bot cannot get itself
-        _param = get_bot_param(login_service, bot_id=joh_bot.id)
-        with pytest.raises(Exception):
-            login_service.get_bot_info(joh_bot.id, _param)
-
         # Freder Fredersen cannot get the bot
         freder_id = 5
-        _param = get_user_param(login_service, user_id=freder_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_bot_info(joh_bot.id, _param)
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.get_bot_info(joh_bot.id)
 
-        # Freder Fredersen cannot get the bot
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
+        # Requesting a fake bot fails
         with pytest.raises(Exception):
-            login_service.get_bot_info(999, _param)
+            with current_user_context(admin_user):
+                login_service.get_bot_info(999)
 
     @with_db_context
     def test_get_all_bots_by_owner(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get any bot
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_all_bots_by_owner(joh_id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_all_bots_by_owner(joh_id)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
         assert [obj.to_dto().model_dump() for obj in actual] == expected
 
-        # Freder Fredersen can get its own bot
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        actual = login_service.get_all_bots_by_owner(joh_id, _param)
+        # Joh Fredersen can get its own bot
+        with current_user_context(joh_fredersen):
+            actual = login_service.get_all_bots_by_owner(joh_id)
         expected = [{"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id}]
         assert [obj.to_dto().model_dump() for obj in actual] == expected
-
-        # The bot cannot get itself
-        _param = get_bot_param(login_service, bot_id=joh_bot.id)
-        with pytest.raises(Exception):
-            login_service.get_all_bots_by_owner(joh_id, _param)
 
         # Freder Fredersen cannot get the bot
         freder_id = 5
-        _param = get_user_param(login_service, user_id=freder_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_all_bots_by_owner(joh_id, _param)
+        freder_fredersen = get_user(login_service, user_id=freder_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(freder_fredersen):
+                login_service.get_all_bots_by_owner(joh_id)
 
     @with_db_context
     def test_exists_bot(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # Everybody can check the existence of a bot
         assert login_service.exists_bot(joh_id) is False, "not a bot"
@@ -692,8 +649,9 @@ class TestLoginService:
     def test_get_jwt(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # Update the user "Jane DOE" which is an LDAP user
         jane_id = 60
@@ -726,88 +684,236 @@ class TestLoginService:
         assert jwt_user is None
 
     @with_db_context
-    def test_get_all_groups(self, login_service: LoginService) -> None:
+    def test_get_all_groups(self, login_service: LoginService, db_session: Session) -> None:
         # The site admin can get all groups
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_all_groups(_param)
-        assert [g.model_dump() for g in actual] == [
-            {"id": "admin", "name": "X-Men"},
-            {"id": "superman", "name": "Superman"},
-            {"id": "metropolis", "name": "Metropolis"},
-        ]
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups()
+                assert len(db_recorder.sql_statements) == 1  # Only one request to get all groups
+                assert [g.model_dump() for g in actual] == [
+                    {"id": "admin", "name": "X-Men"},
+                    {"id": "superman", "name": "Superman"},
+                    {"id": "metropolis", "name": "Metropolis"},
+                ]
+
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups(details=True)
+                assert len(db_recorder.sql_statements) == 2
+                # 1 request to get all users
+                # 1 request to get all roles
+                assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "admin",
+                        "name": "X-Men",
+                        "users": [{"id": 1, "name": "Professor Xavier", "role": RoleType.ADMIN}],
+                    },
+                    {
+                        "id": "superman",
+                        "name": "Superman",
+                        "users": [
+                            {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
+                            {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
+                        ],
+                    },
+                    {
+                        "id": "metropolis",
+                        "name": "Metropolis",
+                        "users": [
+                            {"id": 4, "name": "Joh Fredersen", "role": RoleType.ADMIN},
+                            {"id": 5, "name": "Freder Fredersen", "role": RoleType.READER},
+                        ],
+                    },
+                ]
 
         # The group admin can its own groups
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_all_groups(_param)
-        assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups()
+                assert len(db_recorder.sql_statements) == 1
+                assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
+
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_groups(details=True)
+                assert len(db_recorder.sql_statements) == 3
+                # One request to get the current user groups
+                # One request for users
+                # One request for roles
+                assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "superman",
+                        "name": "Superman",
+                        "users": [
+                            {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
+                            {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
+                        ],
+                    }
+                ]
 
         # The user can get its own groups
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        actual = login_service.get_all_groups(_param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(user):
+            actual = login_service.get_all_groups()
         assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
 
     @with_db_context
-    def test_get_all_users(self, login_service: LoginService) -> None:
+    def test_get_all_users(self, login_service: LoginService, db_session: Session) -> None:
         # The site admin can get all users
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_all_users(_param)
-        assert [u.model_dump() for u in actual] == [
-            {"id": 1, "name": "Professor Xavier"},
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-            {"id": 4, "name": "Joh Fredersen"},
-            {"id": 5, "name": "Freder Fredersen"},
-        ]
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users()
+            assert len(db_recorder.sql_statements) == 1  # Only one request to get all users
+            assert [u.model_dump() for u in actual] == [
+                {"id": 1, "name": "Professor Xavier"},
+                {"id": 2, "name": "Clark Kent"},
+                {"id": 3, "name": "Lois Lane"},
+                {"id": 4, "name": "Joh Fredersen"},
+                {"id": 5, "name": "Freder Fredersen"},
+            ]
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users(details=True)
+            assert len(db_recorder.sql_statements) == 2
+            # One request to get all users
+            # One request to get all roles
+            assert [u.model_dump() for u in actual] == [
+                {
+                    "id": 1,
+                    "name": "Professor Xavier",
+                    "roles": [{"group_id": "admin", "group_name": "X-Men", "identity_id": 1, "type": RoleType.ADMIN}],
+                },
+                {
+                    "id": 2,
+                    "name": "Clark Kent",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 2, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 3,
+                    "name": "Lois Lane",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 3, "type": RoleType.READER}
+                    ],
+                },
+                {
+                    "id": 4,
+                    "name": "Joh Fredersen",
+                    "roles": [
+                        {"group_id": "metropolis", "group_name": "Metropolis", "identity_id": 4, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 5,
+                    "name": "Freder Fredersen",
+                    "roles": [
+                        {
+                            "group_id": "metropolis",
+                            "group_name": "Metropolis",
+                            "identity_id": 5,
+                            "type": RoleType.READER,
+                        }
+                    ],
+                },
+            ]
 
-        # The group admin can get its own users, but also the users of the other groups
-        # note: I don't know why the group admin can get all users -- Laurent
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_all_users(_param)
-        assert [u.model_dump() for u in actual] == [
-            {"id": 1, "name": "Professor Xavier"},
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-            {"id": 4, "name": "Joh Fredersen"},
-            {"id": 5, "name": "Freder Fredersen"},
-        ]
+        # The group admin can get its own users, and that's all
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            # Without details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users()
+            assert len(db_recorder.sql_statements) == 3
+            # One request to get the current user groups
+            # One request for users
+            # One request for roles
+            assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
 
-        # The user can get its own users
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        actual = login_service.get_all_users(_param)
-        assert [u.model_dump() for u in actual] == [
-            {"id": 2, "name": "Clark Kent"},
-            {"id": 3, "name": "Lois Lane"},
-        ]
+            # With details
+            with DBStatementRecorder(db_session.bind) as db_recorder:
+                actual = login_service.get_all_users(details=True)
+            assert len(db_recorder.sql_statements) == 3  # Same requests
+            assert [u.model_dump() for u in actual] == [
+                {
+                    "id": 2,
+                    "name": "Clark Kent",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 2, "type": RoleType.ADMIN}
+                    ],
+                },
+                {
+                    "id": 3,
+                    "name": "Lois Lane",
+                    "roles": [
+                        {"group_id": "superman", "group_name": "Superman", "identity_id": 3, "type": RoleType.READER}
+                    ],
+                },
+            ]
+
+        # Same check as group owner
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(user):
+            actual = login_service.get_all_users()
+        assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
+
+    @with_db_context
+    def test_get_all_users_for_user_wo_group(self, login_service: LoginService) -> None:
+        # Add an LDAP user with no group
+        login_service.users.save(UserLdap(id=60, name="Jane DOE"))
+
+        # Ensures the admin is able to fetch the LDAP user
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_all_users()
+            assert UserInfo(id=60, name="Jane DOE") in actual
+
+        # Ensures the LDAP user can fetch himself and him only as it doesn't have any group
+        ldap_user = get_user(login_service, user_id=60)
+        with current_user_context(ldap_user):
+            actual = login_service.get_all_users()
+            assert actual == [UserInfo(id=60, name="Jane DOE")]
 
     @with_db_context
     def test_get_all_bots(self, login_service: LoginService) -> None:
         # Create a bot for Joh Fredersen
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="superman")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_fredersen = get_user(login_service, user_id=joh_id, group_id="superman")
+        with current_user_context(joh_fredersen):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can get all bots
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_all_bots(_param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_all_bots()
         assert [b.to_dto().model_dump() for b in actual] == [
             {"id": joh_bot.id, "is_author": True, "name": "Maria", "owner": joh_id},
         ]
 
         # The group admin cannot access the list of bots
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_all_bots(_param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            with pytest.raises(UserHasNotPermissionError):
+                login_service.get_all_bots()
 
         # The user cannot access the list of bots
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_all_bots(_param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(user):
+            with pytest.raises(UserHasNotPermissionError):
+                login_service.get_all_bots()
 
     @with_db_context
     def test_get_all_roles_in_group(self, login_service: LoginService) -> None:
         # The site admin can get all roles in a given group
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        actual = login_service.get_all_roles_in_group("superman", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            actual = login_service.get_all_roles_in_group("superman")
         assert [b.to_dto().model_dump() for b in actual] == [
             {
                 "group": {"id": "superman", "name": "Superman"},
@@ -822,8 +928,9 @@ class TestLoginService:
         ]
 
         # The group admin can get all roles his own group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        actual = login_service.get_all_roles_in_group("superman", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with current_user_context(group_admin):
+            actual = login_service.get_all_roles_in_group("superman")
         assert [b.to_dto().model_dump() for b in actual] == [
             {
                 "group": {"id": "superman", "name": "Superman"},
@@ -838,9 +945,10 @@ class TestLoginService:
         ]
 
         # The user cannot access the list of roles
-        _param = get_user_param(login_service, user_id=3, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.get_all_roles_in_group("superman", _param)
+        user = get_user(login_service, user_id=3, group_id="superman")
+        with current_user_context(user):
+            with pytest.raises(UserHasNotPermissionError):
+                login_service.get_all_roles_in_group("superman")
 
     @with_db_context
     def test_delete_group(self, login_service: LoginService) -> None:
@@ -860,92 +968,104 @@ class TestLoginService:
         login_service.roles.save(Role(type=RoleType.RUNNER, group=group3, identity=freder))
 
         # The site admin can delete any group
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_group("g1", _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_group("g1")
         assert login_service.groups.get(group1.id) is None
 
         # The group admin can delete his own group
-        _param = get_user_param(login_service, user_id=3, group_id="g2")
-        login_service.delete_group("g2", _param)
+        group_admin = get_user(login_service, user_id=3, group_id="g2")
+        with current_user_context(group_admin):
+            login_service.delete_group("g2")
         assert login_service.groups.get(group2.id) is None
 
         # The user cannot delete a group
-        _param = get_user_param(login_service, user_id=5, group_id="g3")
-        with pytest.raises(Exception):
-            login_service.delete_group("g3", _param)
+        user = get_user(login_service, user_id=5, group_id="g3")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.delete_group("g3")
         assert login_service.groups.get(group3.id) is not None
 
     @with_db_context
     def test_delete_user(self, login_service: LoginService) -> None:
         # Create Joh's bot
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="metropolis")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_user = get_user(login_service, user_id=joh_id, group_id="metropolis")
+        with current_user_context(joh_user):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can delete Fredersen (5)
         freder_id = 5
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_user(freder_id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_user(freder_id)
         assert login_service.users.get(freder_id) is None
 
         # The group admin Joh can delete himself (4)
-        _param = get_user_param(login_service, user_id=joh_id, group_id="metropolis")
-        login_service.delete_user(joh_id, _param)
+        with current_user_context(joh_user):
+            login_service.delete_user(joh_id)
         assert login_service.users.get(joh_id) is None
         assert login_service.bots.get(joh_bot.id) is None
 
         # Lois Lane cannot delete Clark Kent (2)
         lois_id = 3
         clark_id = 2
-        _param = get_user_param(login_service, user_id=lois_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_user(clark_id, _param)
+        lois = get_user(login_service, user_id=lois_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(lois):
+                login_service.delete_user(clark_id)
         assert login_service.users.get(clark_id) is not None
 
         # Clark Kent cannot delete Lois Lane (3)
-        _param = get_user_param(login_service, user_id=clark_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_user(lois_id, _param)
+        clark = get_user(login_service, user_id=clark_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(clark):
+                login_service.delete_user(lois_id)
         assert login_service.users.get(lois_id) is not None
 
     @with_db_context
     def test_delete_bot(self, login_service: LoginService) -> None:
         # Create Joh's bot
         joh_id = 4
-        _param = get_user_param(login_service, user_id=joh_id, group_id="metropolis")
-        joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]), _param)
+        joh_user = get_user(login_service, user_id=joh_id, group_id="metropolis")
+        with current_user_context(joh_user):
+            joh_bot = login_service.save_bot(BotCreateDTO(name="Maria", roles=[]))
 
         # The site admin can delete the bot
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_bot(joh_bot.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_bot(joh_bot.id)
         assert login_service.bots.get(joh_bot.id) is None
 
         # Create Lois's bot
         lois_id = 3
-        _param = get_user_param(login_service, user_id=lois_id, group_id="superman")
-        lois_bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]), _param)
+        lois = get_user(login_service, user_id=lois_id, group_id="superman")
+        with current_user_context(lois):
+            lois_bot = login_service.save_bot(BotCreateDTO(name="Lois bot", roles=[]))
 
         # The group admin cannot delete the bot
         clark_id = 2
-        _param = get_user_param(login_service, user_id=clark_id, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_bot(lois_bot.id, _param)
+        clark = get_user(login_service, user_id=clark_id, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(clark):
+                login_service.delete_bot(lois_bot.id)
         assert login_service.bots.get(lois_bot.id) is not None
 
         # Create Freder's bot
         freder_id = 5
-        _param = get_user_param(login_service, user_id=freder_id, group_id="metropolis")
-        freder_bot = login_service.save_bot(BotCreateDTO(name="Freder bot", roles=[]), _param)
+        user = get_user(login_service, user_id=freder_id, group_id="metropolis")
+        with current_user_context(user):
+            freder_bot = login_service.save_bot(BotCreateDTO(name="Freder bot", roles=[]))
 
         # Freder can delete his own bot
-        _param = get_user_param(login_service, user_id=freder_id, group_id="metropolis")
-        login_service.delete_bot(freder_bot.id, _param)
+        with current_user_context(user):
+            login_service.delete_bot(freder_bot.id)
         assert login_service.bots.get(freder_bot.id) is None
 
         # Freder cannot delete Lois's bot
-        _param = get_user_param(login_service, user_id=freder_id, group_id="metropolis")
-        with pytest.raises(Exception):
-            login_service.delete_bot(lois_bot.id, _param)
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.delete_bot(lois_bot.id)
         assert login_service.bots.get(lois_bot.id) is not None
 
     @with_db_context
@@ -960,31 +1080,35 @@ class TestLoginService:
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The site admin can delete any role
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_role(role.identity.id, role.group.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin can delete a role of his own group
-        _param = get_user_param(login_service, user_id=user.id, group_id="g1")
-        login_service.delete_role(role.identity.id, role.group.id, _param)
+        group_admin = get_user(login_service, user_id=user.id, group_id="g1")
+        with current_user_context(group_admin):
+            login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin cannot delete a role of another group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_role(role.identity.id, "g1", _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin):
+                login_service.delete_role(role.identity.id, "g1")
         assert login_service.roles.get(role.identity.id, "g1") is not None
 
         # The user cannot delete a role
-        _param = get_user_param(login_service, user_id=1, group_id="g1")
-        with pytest.raises(Exception):
-            login_service.delete_role(role.identity.id, role.group.id, _param)
+        user = get_user(login_service, user_id=1, group_id="g1")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(user):
+                login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
     @with_db_context
@@ -999,29 +1123,33 @@ class TestLoginService:
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The site admin can delete any role
-        _param = get_user_param(login_service, user_id=ADMIN_ID, group_id="admin")
-        login_service.delete_all_roles_from_user(user.id, _param)
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin can delete a role of his own group
-        _param = get_user_param(login_service, user_id=user.id, group_id="g1")
-        login_service.delete_all_roles_from_user(user.id, _param)
+        group_admin = get_user(login_service, user_id=user.id, group_id="g1")
+        with current_user_context(group_admin):
+            login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is None
 
         # Create a new role
         role = login_service.roles.save(Role(type=RoleType.ADMIN, group=group, identity=user))
 
         # The group admin cannot delete a role of another group
-        _param = get_user_param(login_service, user_id=2, group_id="superman")
-        with pytest.raises(Exception):
-            login_service.delete_all_roles_from_user(user.id, _param)
+        group_admin = get_user(login_service, user_id=2, group_id="superman")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin):
+                login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
         # The user cannot delete a role
-        _param = get_user_param(login_service, user_id=1, group_id="g1")
-        with pytest.raises(Exception):
-            login_service.delete_all_roles_from_user(user.id, _param)
+        user = get_user(login_service, user_id=1, group_id="g1")
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(group_admin):
+                login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None

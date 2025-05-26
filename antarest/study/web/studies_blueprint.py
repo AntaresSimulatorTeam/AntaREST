@@ -11,26 +11,23 @@
 # This file is part of the Antares project.
 
 import collections
-import io
 import logging
 from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
-from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.login.utils import require_current_user
 from antarest.study.model import (
     CommentsDto,
     MatrixIndex,
@@ -56,7 +53,7 @@ def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) ->
     return list(collections.OrderedDict.fromkeys(values))
 
 
-def create_study_routes(study_service: StudyService, ftm: FileTransferManager, config: Config) -> APIRouter:
+def create_study_routes(study_service: StudyService, config: Config) -> APIRouter:
     """
     Endpoint implementation for studies management
     Args:
@@ -67,8 +64,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get(
         "/studies",
@@ -76,7 +73,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Get Studies",
     )
     def get_studies(
-        current_user: JWTUser = Depends(auth.get_current_user),
         name: str = Query(
             "",
             description=(
@@ -133,12 +129,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         """
 
         logger.info("Fetching for matching studies")
-        params = RequestParameters(user=current_user)
 
         user_list = [int(v) for v in _split_comma_separated_values(users)]
-
-        if not params.user:
-            raise UserHasNotPermissionError("FAIL permission: user is not logged")
 
         study_filter = StudyFilter(
             name=name,
@@ -153,7 +145,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             exists=exists,
             workspace=workspace,
             folder=folder,
-            access_permissions=AccessPermissions.from_params(params),
+            access_permissions=AccessPermissions.for_current_user(),
         )
 
         matching_studies = study_service.get_studies_information(
@@ -170,7 +162,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Count Studies",
     )
     def count_studies(
-        current_user: JWTUser = Depends(auth.get_current_user),
         name: str = Query("", description="Case-insensitive: filter studies based on their name.", alias="name"),
         managed: Optional[bool] = Query(None, description="Management status filter."),
         archived: Optional[bool] = Query(None, description="Archive status filter."),
@@ -207,12 +198,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         """
 
         logger.info("Counting matching studies")
-        params = RequestParameters(user=current_user)
-
         user_list = [int(v) for v in _split_comma_separated_values(users)]
-
-        if not params.user:
-            raise UserHasNotPermissionError("FAIL permission: user is not logged")
 
         count = study_service.count_studies(
             study_filter=StudyFilter(
@@ -228,7 +214,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
                 exists=exists,
                 workspace=workspace,
                 folder=folder,
-                access_permissions=AccessPermissions.from_params(params),
+                access_permissions=AccessPermissions.for_current_user(),
             ),
         )
 
@@ -239,14 +225,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_management],
         summary="Get comments",
     )
-    def get_comments(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_comments(uuid: str) -> Any:
         logger.info(f"Get comments of study {uuid}")
-        params = RequestParameters(user=current_user)
         study_id = sanitize_uuid(uuid)
-        return study_service.get_comments(study_id, params)
+        return study_service.get_comments(study_id)
 
     @bp.put(
         "/studies/{uuid}/comments",
@@ -255,18 +237,13 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Update comments",
         response_model=None,
     )
-    def edit_comments(
-        uuid: str,
-        data: CommentsDto,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def edit_comments(uuid: str, data: CommentsDto) -> Any:
         logger.info(f"Editing comments for study {uuid}")
         new = data
         if not new:
             raise HTTPException(status_code=400, detail="empty body not authorized")
         study_id = sanitize_uuid(uuid)
-        params = RequestParameters(user=current_user)
-        study_service.edit_comments(study_id, new, params)
+        study_service.edit_comments(study_id, new)
 
     @bp.post(
         "/studies/_import",
@@ -275,11 +252,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Import Study",
         response_model=str,
     )
-    def import_study(
-        study: bytes = File(...),
-        groups: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
+    def import_study(study: UploadFile, groups: str = "") -> str:
         """
         Upload and import a compressed study from your computer to the Antares Web server.
 
@@ -294,14 +267,13 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - 415 error if the archive is corrupted or in an unknown format.
         """
         logger.info("Importing new study")
-        zip_binary = io.BytesIO(study)
 
-        params = RequestParameters(user=current_user)
-        group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
-        group_ids = [sanitize_string(gid) for gid in group_ids]
+        user = require_current_user()
+        group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
+        group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         try:
-            uuid = study_service.import_study(zip_binary, group_ids, params)
+            uuid = study_service.import_study(study.file, group_ids)
         except BadArchiveContent as e:
             raise BadZipBinary(str(e))
 
@@ -313,11 +285,7 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_management],
         summary="Upgrade study to the target version (or next version if not specified)",
     )
-    def upgrade_study(
-        uuid: str,
-        target_version: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> str:
+    def upgrade_study(uuid: str, target_version: str = "") -> str:
         """
         Upgrade a study to the target version or the next version if the target
         version is not specified.
@@ -337,9 +305,8 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             else f"Upgrade study {uuid} to the next version"
         )
         logger.info(msg)
-        params = RequestParameters(user=current_user)
         # returns the task ID
-        return study_service.upgrade_study(uuid, target_version, params)
+        return study_service.upgrade_study(uuid, target_version)
 
     @bp.post(
         "/studies/{uuid}/copy",
@@ -356,7 +323,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         groups: str = "",
         use_task: bool = True,
         destination_folder: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> str:
         """
         This endpoint enables you to duplicate a study and place it in a specified location.
@@ -376,11 +342,13 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - The unique identifier of the task copying the study.
         """
         logger.info(f"Copying study {uuid} into new study '{dest}'")
-        group_ids = _split_comma_separated_values(groups, default=[group.id for group in current_user.groups])
-        group_ids = [sanitize_string(gid) for gid in group_ids]
+
+        user = require_current_user()
+        group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
+        group_ids = [sanitize_string(gid) for gid in group_ids_raw]
+
         uuid_sanitized = sanitize_uuid(uuid)
         destination_name_sanitized = escape(dest)
-        params = RequestParameters(user=current_user)
 
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,
@@ -388,7 +356,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
             group_ids=group_ids,
             with_outputs=with_outputs,
             use_task=use_task,
-            params=params,
             destination_folder=PurePosixPath(destination_folder),
             output_ids=output_ids,
         )
@@ -400,14 +367,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_management],
         summary="Move study",
     )
-    def move_study(
-        uuid: str,
-        folder_dest: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def move_study(uuid: str, folder_dest: str) -> Any:
         logger.info(f"Moving study {uuid} into folder '{folder_dest}'")
-        params = RequestParameters(user=current_user)
-        study_service.move_study(uuid, folder_dest, params)
+        study_service.move_study(uuid, folder_dest)
 
     @bp.post(
         "/studies",
@@ -416,19 +378,13 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Create a new empty study",
         response_model=str,
     )
-    def create_study(
-        name: str,
-        version: StudyVersionStr | None = None,
-        groups: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def create_study(name: str, version: StudyVersionStr | None = None, groups: str = "") -> Any:
         logger.info(f"Creating new study '{name}'")
         name_sanitized = escape(name)
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
-        params = RequestParameters(user=current_user)
-        uuid = study_service.create_study(name_sanitized, version, group_ids, params)
+        uuid = study_service.create_study(name_sanitized, version, group_ids)
 
         return uuid
 
@@ -438,14 +394,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Return study synthesis",
         response_model=FileStudyTreeConfigDTO,
     )
-    def get_study_synthesis(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_synthesis(uuid: str) -> Any:
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return a synthesis for study '{study_id}'")
-        params = RequestParameters(user=current_user)
-        return study_service.get_study_synthesis(study_id, params)
+        return study_service.get_study_synthesis(study_id)
 
     @bp.get(
         "/studies/{uuid}/matrixindex",
@@ -453,15 +405,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Return study input matrix start date index",
         response_model=MatrixIndex,
     )
-    def get_study_matrix_index(
-        uuid: str,
-        path: str = "",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_matrix_index(uuid: str, path: str = "") -> Any:
         study_id = sanitize_uuid(uuid)
         logger.info(f"Return the start date for input matrix '{study_id}'")
-        params = RequestParameters(user=current_user)
-        return study_service.get_input_matrix_startdate(study_id, path, params)
+        return study_service.get_input_matrix_startdate(study_id, path)
 
     @bp.get(
         "/studies/{uuid}/export",
@@ -469,16 +416,11 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Export Study",
         response_model=FileDownloadTaskDTO,
     )
-    def export_study(
-        uuid: str,
-        no_output: Optional[bool] = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def export_study(uuid: str, no_output: Optional[bool] = False) -> Any:
         logger.info(f"Exporting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
-        params = RequestParameters(user=current_user)
-        return study_service.export_study(uuid_sanitized, params, not no_output)
+        return study_service.export_study(uuid_sanitized, not no_output)
 
     @bp.delete(
         "/studies/{uuid}",
@@ -486,16 +428,11 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_management],
         summary="Delete Study",
     )
-    def delete_study(
-        uuid: str,
-        children: bool = False,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def delete_study(uuid: str, children: bool = False) -> Any:
         logger.info(f"Deleting study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
 
-        params = RequestParameters(user=current_user)
-        study_service.delete_study(uuid_sanitized, children, params)
+        study_service.delete_study(uuid_sanitized, children)
 
         return ""
 
@@ -504,15 +441,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_permissions],
         summary="Change study owner",
     )
-    def change_owner(
-        uuid: str,
-        user_id: int,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def change_owner(uuid: str, user_id: int) -> Any:
         logger.info(f"Changing owner to {user_id} for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        params = RequestParameters(user=current_user)
-        study_service.change_owner(uuid_sanitized, user_id, params)
+        study_service.change_owner(uuid_sanitized, user_id)
 
         return ""
 
@@ -521,16 +453,11 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_permissions],
         summary="Add a group association",
     )
-    def add_group(
-        uuid: str,
-        group_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def add_group(uuid: str, group_id: str) -> Any:
         logger.info(f"Adding group {group_id} to study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_string(group_id)
-        params = RequestParameters(user=current_user)
-        study_service.add_group(uuid_sanitized, group_id, params)
+        study_service.add_group(uuid_sanitized, group_id)
 
         return ""
 
@@ -539,17 +466,12 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_permissions],
         summary="Remove a group association",
     )
-    def remove_group(
-        uuid: str,
-        group_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def remove_group(uuid: str, group_id: str) -> Any:
         logger.info(f"Removing group {group_id} to study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
         group_id = sanitize_string(group_id)
 
-        params = RequestParameters(user=current_user)
-        study_service.remove_group(uuid_sanitized, group_id, params)
+        study_service.remove_group(uuid_sanitized, group_id)
 
         return ""
 
@@ -558,15 +480,10 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         tags=[APITag.study_permissions],
         summary="Set study public mode",
     )
-    def set_public_mode(
-        uuid: str,
-        mode: PublicMode,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def set_public_mode(uuid: str, mode: PublicMode) -> Any:
         logger.info(f"Setting public mode to {mode} for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-        params = RequestParameters(user=current_user)
-        study_service.set_public_mode(uuid_sanitized, mode, params)
+        study_service.set_public_mode(uuid_sanitized, mode)
 
         return ""
 
@@ -576,12 +493,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Show available study versions",
         response_model=List[str],
     )
-    def get_study_versions(
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
-        params = RequestParameters(user=current_user)
+    def get_study_versions() -> Any:
         logger.info("Fetching version list")
-        return StudyService.get_studies_versions(params=params)
+        return StudyService.get_studies_versions()
 
     @bp.get(
         "/studies/{uuid}",
@@ -589,13 +503,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Get Study information",
         response_model=StudyMetadataDTO,
     )
-    def get_study_metadata(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_metadata(uuid: str) -> Any:
         logger.info(f"Fetching study {uuid} metadata")
-        params = RequestParameters(user=current_user)
-        study_metadata = study_service.get_study_information(uuid, params)
+        study_metadata = study_service.get_study_information(uuid)
         return study_metadata
 
     @bp.put(
@@ -604,14 +514,9 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Update Study information",
         response_model=StudyMetadataDTO,
     )
-    def update_study_metadata(
-        uuid: str,
-        study_metadata_patch: StudyMetadataPatchDTO,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def update_study_metadata(uuid: str, study_metadata_patch: StudyMetadataPatchDTO) -> Any:
         logger.info(f"Updating metadata for study {uuid}")
-        params = RequestParameters(user=current_user)
-        study_metadata = study_service.update_study_information(uuid, study_metadata_patch, params)
+        study_metadata = study_service.update_study_information(uuid, study_metadata_patch)
         return study_metadata
 
     @bp.put(
@@ -619,38 +524,27 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         summary="Archive a study",
         tags=[APITag.study_management],
     )
-    def archive_study(
-        study_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def archive_study(study_id: str) -> Any:
         logger.info(f"Archiving study {study_id}")
         study_id = sanitize_uuid(study_id)
-        params = RequestParameters(user=current_user)
-        return study_service.archive(study_id, params)
+        return study_service.archive(study_id)
 
     @bp.put(
         "/studies/{study_id}/unarchive",
         summary="Unarchive a study",
         tags=[APITag.study_management],
     )
-    def unarchive_study(
-        study_id: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def unarchive_study(study_id: str) -> Any:
         logger.info(f"Unarchiving study {study_id}")
         study_id = sanitize_uuid(study_id)
-        params = RequestParameters(user=current_user)
-        return study_service.unarchive(study_id, params)
+        return study_service.unarchive(study_id)
 
     @bp.get(
         "/studies/{uuid}/disk-usage",
         summary="Compute study disk usage",
         tags=[APITag.study_management],
     )
-    def study_disk_usage(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> int:
+    def study_disk_usage(uuid: str) -> int:
         """
         Compute disk usage of an input study
 
@@ -661,7 +555,6 @@ def create_study_routes(study_service: StudyService, ftm: FileTransferManager, c
         - The disk usage of the study in bytes.
         """
         logger.info("Retrieving study disk usage")
-        params = RequestParameters(user=current_user)
-        return study_service.get_disk_usage(uuid=uuid, params=params)
+        return study_service.get_disk_usage(uuid=uuid)
 
     return bp

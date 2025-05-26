@@ -21,10 +21,10 @@ from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic  # type:
 from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
-from antarest.core.requests import RequestParameters
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group
+from antarest.login.utils import get_current_user
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, Tag
 
 
@@ -59,22 +59,25 @@ class AccessPermissions(AntaresBaseModel, frozen=True, extra="forbid"):
     user_groups: Sequence[str] = ()
 
     @classmethod
-    def from_params(cls, params: RequestParameters | JWTUser) -> "AccessPermissions":
+    def for_current_user(cls) -> "AccessPermissions":
+        """
+        This function makes it easier to pass on user ids and groups into the repository filtering function by
+        extracting the associated `AccessPermissions` object.
+        """
+        return cls.for_user(get_current_user())
+
+    @classmethod
+    def for_user(cls, user: Optional[JWTUser]) -> "AccessPermissions":
         """
         This function makes it easier to pass on user ids and groups into the repository filtering function by
         extracting the associated `AccessPermissions` object.
 
         Args:
-            params: `RequestParameters` or `JWTUser` holding user ids and groups
+            user: `JWTUser` holding user ids and groups
 
         Returns: `AccessPermissions`
 
         """
-        if isinstance(params, RequestParameters):
-            user = params.user
-        else:
-            user = params
-
         if user:
             return cls(
                 is_admin=user.is_site_admin() or user.is_admin_token(),
@@ -316,6 +319,7 @@ class StudyMetadataRepository:
         # efficiently (see: `AbstractStorageService.get_study_information`)
         entity = with_polymorphic(Study, "*")
 
+        escape_char = "\\"
         # noinspection PyTypeChecker
         q = self.session.query(entity)
         if study_filter.exists is not None:
@@ -345,11 +349,11 @@ class StudyMetadataRepository:
         if study_filter.archived is not None:
             q = q.filter(entity.archived == study_filter.archived)
         if study_filter.name:
-            regex = f"%{escape_like(study_filter.name)}%"
-            q = q.filter(entity.name.ilike(regex))
+            regex = f"%{escape_like(study_filter.name, escape_char)}%"
+            q = q.filter(entity.name.ilike(regex, escape=escape_char))
         if study_filter.folder:
-            regex = f"{escape_like(study_filter.folder)}%"
-            q = q.filter(entity.folder.ilike(regex))
+            regex = f"{escape_like(study_filter.folder, escape_char)}%"
+            q = q.filter(entity.folder.ilike(regex, escape=escape_char))
         if study_filter.workspace:
             q = q.filter(RawStudy.workspace == study_filter.workspace)
         if study_filter.variant is not None:

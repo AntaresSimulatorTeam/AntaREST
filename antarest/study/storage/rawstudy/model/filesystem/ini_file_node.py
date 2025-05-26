@@ -37,7 +37,6 @@ from antarest.core.serde.json import from_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 
 logger = logging.getLogger(__name__)
@@ -228,14 +227,12 @@ def _match_url(data: JSON, url: List[str], depth: int | None = None) -> IniMatch
 class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
-        context: ContextServer,
         config: FileStudyTreeConfig,
         types: Optional[Dict[str, Any]] = None,
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
         super().__init__(config)
-        self.context = context
         self.path = config.path
         self.types = types or {}
         self.reader = reader or IniReader()

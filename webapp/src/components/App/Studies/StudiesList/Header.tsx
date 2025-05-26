@@ -143,7 +143,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
 
   return (
     <>
-      <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+      <CustomScrollbar>
         <Box
           sx={{
             display: "flex",
@@ -164,7 +164,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
                     key={path}
                     underline={isRoot ? "none" : "hover"}
                     color="inherit"
-                    onClick={() => setFolder(isRoot ? "root" : path)}
+                    onClick={() => setFolder(isRoot ? "" : path)}
                     sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
                   >
                     {isRoot ? <HomeIcon fontSize="inherit" /> : folder}

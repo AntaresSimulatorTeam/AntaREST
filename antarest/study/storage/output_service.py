@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO, Iterator, Optional, Sequence
 
 import pandas as pd
 from starlette.responses import FileResponse, Response
@@ -21,20 +21,18 @@ from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyUnarchived,
     OutputNotFound,
-    StudyNotFoundError,
     TaskAlreadyRunning,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import PermissionInfo, StudyPermissionType
-from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import to_json
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.utils import StopWatch
+from antarest.login.utils import get_user_id
 from antarest.study.business.aggregator_management import (
     AggregatorManager,
     MCAllAreasQueryFile,
@@ -72,9 +70,9 @@ class OutputService:
         self._file_transfer_manager = file_transfer_manager
         self._event_bus = event_bus
 
-    def get_digest_file(self, study_id: str, output_id: str, params: RequestParameters) -> DigestUI:
+    def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         study = self._study_service.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         file_study = self._study_service.get_file_study(study)
         digest_node = file_study.tree.get_node(url=["output", output_id, "economy", "mc-all", "grid", "digest"])
         assert isinstance(digest_node, DigestSynthesis)
@@ -87,15 +85,9 @@ class OutputService:
             f"Unarchive output {study.name}/{output_id} ({study.id})",
         )
 
-    def unarchive_output(
-        self,
-        study_id: str,
-        output_id: str,
-        keep_src_zip: bool,
-        params: RequestParameters,
-    ) -> Optional[str]:
+    def unarchive_output(self, study_id: str, output_id: str, keep_src_zip: bool) -> Optional[str]:
         study = self._study_service.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
         output_path = Path(study.path) / "output" / output_id
@@ -112,8 +104,7 @@ class OutputService:
                 ref_id=study_id,
                 type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            ),
-            RequestParameters(user=DEFAULT_ADMIN_USER),
+            )
         )
         if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
             raise TaskAlreadyRunning()
@@ -152,7 +143,6 @@ class OutputService:
                 ).model_dump(mode="json"),
                 name=task_name,
                 ref_id=study.id,
-                request_params=params,
             )
 
         if not task_id:
@@ -163,12 +153,11 @@ class OutputService:
                 ref_id=study.id,
                 progress=None,
                 custom_event_messages=None,
-                request_params=params,
             )
 
         return task_id
 
-    def get_study_sim_result(self, study_id: str, params: RequestParameters) -> list[StudySimResultDTO]:
+    def get_study_sim_result(self, study_id: str) -> list[StudySimResultDTO]:
         """
         Get global result information
         Args:
@@ -179,11 +168,11 @@ class OutputService:
 
         """
         study = self._study_service.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         logger.info(
             "study %s output listing asked by user %s",
             study_id,
-            params.get_user_id(),
+            get_user_id(),
         )
 
         return self._storage.get_study_sim_result(study)
@@ -192,7 +181,6 @@ class OutputService:
         self,
         uuid: str,
         output: BinaryIO | Path,
-        params: RequestParameters,
         output_name_suffix: Optional[str] = None,
         auto_unzip: bool = True,
     ) -> Optional[str]:
@@ -201,7 +189,6 @@ class OutputService:
         Args:
             uuid: study uuid
             output: zip file with simulation folder or simulation folder path
-            params: request parameters
             output_name_suffix: optional suffix name for the output
             auto_unzip: add a task to unzip the output after import
 
@@ -210,26 +197,19 @@ class OutputService:
         """
         logger.info(f"Importing new output for study {uuid}")
         study = self._study_service.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.RUN)
+        assert_permission(study, StudyPermissionType.RUN)
         self._study_service.assert_study_unarchived(study)
-        if not Path(study.path).exists():
-            raise StudyNotFoundError(f"Study files were not found for study {uuid}")
 
         output_id = self._storage.import_output(study, output, output_name_suffix)
         remove_from_cache(cache=self._study_service.cache_service, root_id=study.id)
-        logger.info("output added to study %s by user %s", uuid, params.get_user_id())
+        logger.info("output added to study %s by user %s", uuid, get_user_id())
 
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
-            self.unarchive_output(uuid, output_id, not is_managed(study), params)
+            self.unarchive_output(uuid, output_id, not is_managed(study))
 
         return output_id
 
-    def output_variables_information(
-        self,
-        study_uuid: str,
-        output_uuid: str,
-        params: RequestParameters,
-    ) -> dict[str, list[str]]:
+    def output_variables_information(self, study_uuid: str, output_uuid: str) -> dict[str, list[str]]:
         """
         Returns information about output variables using thematic and geographic trimming information
         Args:
@@ -238,16 +218,11 @@ class OutputService:
             params: request parameters
         """
         study = self._study_service.get_study(study_uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
         return get_output_variables_information(self._study_service.get_file_study(study), output_uuid)
 
-    def export_output(
-        self,
-        study_uuid: str,
-        output_uuid: str,
-        params: RequestParameters,
-    ) -> FileDownloadTaskDTO:
+    def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
         Export study output to a zip file.
         Args:
@@ -256,15 +231,13 @@ class OutputService:
             params: request parameters
         """
         study = self._study_service.get_study(study_uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
 
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {study.name}/{output_uuid} export"
         export_file_download = self._file_transfer_manager.request_download(
-            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}",
-            export_name,
-            params.user,
+            f"{study.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id
@@ -293,7 +266,6 @@ class OutputService:
             ref_id=study.id,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
         return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
@@ -305,7 +277,6 @@ class OutputService:
         data: StudyDownloadDTO,
         use_task: bool,
         filetype: ExportFormat,
-        params: RequestParameters,
         tmp_export_file: Optional[Path] = None,
     ) -> Response | FileDownloadTaskDTO | FileResponse:
         """
@@ -317,24 +288,21 @@ class OutputService:
             use_task: use task or not.
             filetype: type of returning file,.
             tmp_export_file: temporary file (if `use_task` is false),.
-            params: request parameters.
 
         Returns: CSV content file
 
         """
         # GET STUDY ID
         study = self._study_service.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
-        logger.info(f"Study {study_id} output download asked by {params.get_user_id()}")
+        logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
         if use_task:
             logger.info(f"Exporting {output_id} from study {study_id}")
             export_name = f"Study filtered output {study.name}/{output_id} export"
             export_file_download = self._file_transfer_manager.request_download(
-                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}",
-                export_name,
-                params.user,
+                f"{study.name}-{study_id}-{output_id}_filtered{filetype.suffix}", export_name
             )
             export_path = Path(export_file_download.path)
             export_id = export_file_download.id
@@ -371,7 +339,6 @@ class OutputService:
                 ref_id=study.id,
                 progress=None,
                 custom_event_messages=None,
-                request_params=params,
             )
 
             return FileDownloadTaskDTO(file=export_file_download.to_dto(), task=task_id)
@@ -404,7 +371,7 @@ class OutputService:
                 json_response = to_json(matrix.model_dump(mode="json"))
                 return Response(content=json_response, media_type="application/json")
 
-    def delete_output(self, uuid: str, output_name: str, params: RequestParameters) -> None:
+    def delete_output(self, uuid: str, output_name: str) -> None:
         """
         Delete specific output simulation in study
         Args:
@@ -416,7 +383,7 @@ class OutputService:
 
         """
         study = self._study_service.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
         self._storage.delete_output(study, output_name)
         self._event_bus.push(
@@ -429,25 +396,24 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def archive_outputs(self, study_id: str, params: RequestParameters) -> None:
+    def archive_outputs(self, study_id: str) -> None:
         logger.info(f"Archiving all outputs for study {study_id}")
         study = self._study_service.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
         file_study = self._study_service.get_file_study(study)
         for output in file_study.config.outputs:
             if not file_study.config.outputs[output].archived:
-                self.archive_output(study_id, output, params)
+                self.archive_output(study_id, output)
 
     def archive_output(
         self,
         study_id: str,
         output_id: str,
-        params: RequestParameters,
         force: bool = False,
     ) -> Optional[str]:
         study = self._study_service.get_study(study_id)
-        assert_permission(params.user, study, StudyPermissionType.WRITE)
+        assert_permission(study, StudyPermissionType.WRITE)
         self._study_service.assert_study_unarchived(study)
 
         output_path = Path(study.path) / "output" / output_id
@@ -466,8 +432,7 @@ class OutputService:
                     name=task_name,
                     type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                     status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-                ),
-                RequestParameters(user=DEFAULT_ADMIN_USER),
+                )
             )
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
@@ -496,7 +461,6 @@ class OutputService:
             ref_id=study.id,
             progress=None,
             custom_event_messages=None,
-            request_params=params,
         )
 
         return task_id
@@ -509,10 +473,8 @@ class OutputService:
         frequency: MatrixFrequency,
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
-        params: RequestParameters,
-        aggregation_results_max_size: int,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> pd.DataFrame:
+    ) -> Iterator[pd.DataFrame]:
         """
         Aggregates output data based on several filtering conditions
 
@@ -523,17 +485,15 @@ class OutputService:
             frequency: yearly, monthly, weekly, daily or hourly.
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
-            params: request parameters
-            aggregation_results_max_size: maximum size of results that can be aggregated
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
         Returns: the aggregated data as a DataFrame
 
         """
         study = self._study_service.get_study(uuid)
-        assert_permission(params.user, study, StudyPermissionType.READ)
+        assert_permission(study, StudyPermissionType.READ)
         output_path = self._storage.get_output_path(study, output_id)
         aggregator_manager = AggregatorManager(
-            output_path, query_file, frequency, ids_to_consider, columns_names, aggregation_results_max_size, mc_years
+            output_path, query_file, frequency, ids_to_consider, columns_names, mc_years
         )
         return aggregator_manager.aggregate_output_data()

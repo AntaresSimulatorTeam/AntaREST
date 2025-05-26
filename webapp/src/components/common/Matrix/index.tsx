@@ -150,7 +150,7 @@ function Matrix({
       <MatrixContainer>
         {/* The <Box> allows to keep the height on vertical resize */}
         <Box>
-          <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+          <CustomScrollbar>
             <MatrixHeader>
               <Tooltip title={title}>
                 <MatrixTitle>{title}</MatrixTitle>
