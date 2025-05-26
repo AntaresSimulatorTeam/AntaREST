@@ -21,8 +21,6 @@ from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.matrix_export import TableExportFormat
 
-FileWriter: TypeAlias = Callable[[Path], None]
-
 
 def export_file(
     df_matrix: pd.DataFrame,

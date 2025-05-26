@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import Any, List, Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
-from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
