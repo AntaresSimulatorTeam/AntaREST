@@ -1,6 +1,41 @@
 Antares Web Changelog
 =====================
 
+v2.21.0 (2025-05-26)
+--------------------
+
+## What's Changed
+
+### Features
+
+* **ui-playlist**: update the dialog by [`2473`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2473)
+* **aggregation**: streamed aggregation by [`2484`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2484)
+* **workspaces**: forbid additional workspaces on desktop by [`2394`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2394)
+
+### Bug fixes
+
+* **scan**: use workspace and study path as key of missing studies [`2480`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2480)
+* **thermal**: return `hard coal` group in lower case [`2487`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2487)
+* **desktop**: allow users to create empty studies [`2488`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2488)
+* **bc**: fix issue when updating `time_step` via table-mode [`2489`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2489)
+* **ui-studytree**: minor fixes and improvement [`2477`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2477)
+* **scan**: properly filter default workspace [`2483`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2483)
+* **desktop**: use antares-solver_windows instead of rte-antares--installer-64bits [`2457`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2457)
+* **study**: fix a bug when deleting all tags [`2493`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2493)
+* **import**: reduce memory use when importing large files [`2500`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2500)
+* **user**: allow to fetch ldap users [`2501`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2501)
+* **ui-playlist**: some issues [`2495`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2495)
+
+### Performances
+* **db**: remove N+1 requests when getting users and groups list [`2490`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2490)
+
+### Refactorings
+* **login**: remove `RequestParameters` class [`2467`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2467)
+* **matrix**: remove `ContextServer` and simplify `UriResolverService` [`2463`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2463)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.20.0...v2.21.0
+
+
 v2.20.0 (2025-04-30)
 --------------------
 
