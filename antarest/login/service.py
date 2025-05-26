@@ -588,7 +588,18 @@ class LoginService:
             return [user.to_dto() for user in all_users]
 
         # Get roles
-        groups = None if user.is_site_admin() else [r.group for r in self.roles.get_all_by_user(user.id)]
+        if user.is_site_admin():
+            groups = None
+        else:
+            groups = [r.group for r in self.roles.get_all_by_user(user.id)]
+            if not groups:
+                # The user has no groups, he can only fetch himself
+                user_id = user.id
+                user_name = next(iter(identity.name for identity in all_users if identity.id == user_id))
+                if details:
+                    return [IdentityDTO(id=user_id, name=user_name, roles=[])]
+                return [UserInfo(id=user_id, name=user_name)]
+
         all_roles = self.roles.get_all(details=details, groups=groups)
 
         # Builds a map from a user to all his roles
