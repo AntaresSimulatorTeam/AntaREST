@@ -508,8 +508,8 @@ class OutputService:
             output_path,
             query_file,
             frequency,
-            columns_names,
             ids_to_consider,
+            columns_names,
             mc_years,
         )
 
