@@ -66,20 +66,29 @@ def create_file_transfer_api(
         task = task_service.status_task(sanitized_task_id)
 
         # the user ask for a timeout
-        if wait_for_availability:
-            try:
-                task_service.await_task(sanitized_task_id, timeout_sec=timeout)
-            except concurrent.futures.TimeoutError:
+        if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+            if wait_for_availability:
+                try:
+                    task_service.await_task(task_id=sanitized_task_id, timeout_sec=timeout)
+                    task = task_service.status_task(sanitized_task_id)  # update task status
+                except concurrent.futures.TimeoutError:
+                    raise HTTPException(
+                        status_code=http.HTTPStatus.ACCEPTED,
+                        detail=f"The requested file is still in process after waiting for {timeout} seconds.",
+                    )
+            # the user did not ask for a timeout
+            else:
                 raise HTTPException(
-                    status_code=http.HTTPStatus.ACCEPTED,
-                    detail=f"The requested file is still in process after waiting for {timeout} seconds.",
+                    status_code=http.HTTPStatus.ACCEPTED, detail="The requested file is still in process."
                 )
 
-        # the user did not ask for a timeout
-        elif not task.status.is_final():
-            raise HTTPException(status_code=http.HTTPStatus.ACCEPTED, detail="The requested file is still in process.")
+        # the task could not be completed
+        if task.status != TaskStatus.COMPLETED:
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"The requested file was not successfully processed: {task.result.message}",  # type: ignore
+            )
 
-        # the task has a final status
         try:
             file_download = filetransfer_manager.fetch_download(download_id)
         except Exception as e:
@@ -89,18 +98,10 @@ def create_file_transfer_api(
             ) from e
 
         # the task was successfully completed
-        if task.status == TaskStatus.COMPLETED:
-            return FileResponse(
-                path=file_download.path,
-                status_code=http.HTTPStatus.ACCEPTED,
-                headers={"Content-Disposition": f'attachment; filename="{file_download.filename}"'},
-            )
-
-        # the task was unabled to get completed
-        else:
-            raise HTTPException(
-                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"An unexpected error occurred while retrieving the requested file: {task.result.message}",  # type: ignore
-            )
+        return FileResponse(
+            path=file_download.path,
+            status_code=http.HTTPStatus.OK,
+            headers={"Content-Disposition": f'attachment; filename="{file_download.filename}"'},
+        )
 
     return bp
