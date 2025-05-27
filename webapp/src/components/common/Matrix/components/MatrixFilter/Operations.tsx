@@ -24,7 +24,6 @@ import {
   TextField,
   Box,
   Button,
-  Slider,
   type SelectChangeEvent,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -36,15 +35,8 @@ import { useOperationControls } from "./hooks/useOperationControls";
 
 function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
-  const {
-    value,
-    quickOperations,
-    hasValidFilters,
-    handleOperationTypeChange,
-    handleValueChange,
-    handleSliderChange,
-    applyQuickOperation,
-  } = useOperationControls({ filter, setFilter, onApplyOperation });
+  const { value, hasValidFilters, handleOperationTypeChange, handleValueChange } =
+    useOperationControls({ filter, setFilter, onApplyOperation });
 
   const handleOperationTypeChangeEvent = (e: SelectChangeEvent<string>) => {
     handleOperationTypeChange(e.target.value);
@@ -56,90 +48,65 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   };
 
   return (
-    <Accordion defaultExpanded>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">{t("matrix.filter.operation")}</Typography>
+    <Accordion defaultExpanded sx={{ my: 1, borderTop: "none" }}>
+      <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />}>
+        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
+          {t("matrix.filter.operation")}
+        </Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="subtitle2" gutterBottom>
-            {t("matrix.filter.quickOperations")}
-          </Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-            {quickOperations.map((op) => (
-              <Button
-                key={op.label}
-                variant="outlined"
-                size="small"
-                onClick={() => applyQuickOperation(op.op, op.value)}
-                sx={{ minWidth: 40 }}
-                disabled={!hasValidFilters}
-              >
-                {op.label}
-              </Button>
-            ))}
-          </Box>
-        </Box>
-
-        <FormControl fullWidth margin="dense">
-          <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
+        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+          <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.operationType")}</InputLabel>
           <Select
             value={filter.operation.type}
             label={t("matrix.filter.operationType")}
             onChange={handleOperationTypeChangeEvent}
             disabled={!filter.active}
+            sx={{ fontSize: "0.8rem" }}
           >
-            <MenuItem value={Operation.Eq}>{t("matrix.operation.equal")}</MenuItem>
-            <MenuItem value={Operation.Add}>{t("matrix.operation.add")}</MenuItem>
-            <MenuItem value={Operation.Sub}>{t("matrix.operation.subtract")}</MenuItem>
-            <MenuItem value={Operation.Mul}>{t("matrix.operation.multiply")}</MenuItem>
-            <MenuItem value={Operation.Div}>{t("matrix.operation.divide")}</MenuItem>
-            <MenuItem value={Operation.Abs}>{t("matrix.operation.absolute")}</MenuItem>
+            <MenuItem value={Operation.Eq} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.operation.equal")}
+            </MenuItem>
+            <MenuItem value={Operation.Add} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.operation.add")}
+            </MenuItem>
+            <MenuItem value={Operation.Sub} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.operation.subtract")}
+            </MenuItem>
+            <MenuItem value={Operation.Mul} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.operation.multiply")}
+            </MenuItem>
+            <MenuItem value={Operation.Div} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.operation.divide")}
+            </MenuItem>
+            <MenuItem value={Operation.Abs} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.operation.absolute")}
+            </MenuItem>
           </Select>
         </FormControl>
 
         {filter.operation.type !== Operation.Abs && (
-          <>
-            <TextField
-              label={t("matrix.filter.value")}
-              type="number"
-              value={value}
-              onChange={handleValueChangeEvent}
-              fullWidth
-              margin="dense"
-              disabled={!filter.active}
-            />
-
-            {filter.operation.type !== Operation.Div && (
-              <Box sx={{ px: 2, pt: 1, pb: 0 }}>
-                <Slider
-                  value={value}
-                  onChange={handleSliderChange}
-                  min={-100}
-                  max={100}
-                  step={0.1}
-                  valueLabelDisplay="auto"
-                  disabled={!filter.active}
-                  marks={[
-                    { value: -100, label: "-100 " },
-                    { value: -50, label: "-50 " },
-                    { value: 0, label: "0 " },
-                    { value: 50, label: "50 " },
-                    { value: 100, label: "100 " },
-                  ]}
-                />
-              </Box>
-            )}
-          </>
+          <TextField
+            label={t("matrix.filter.value")}
+            type="number"
+            value={value}
+            onChange={handleValueChangeEvent}
+            fullWidth
+            size="small"
+            sx={{ mb: 1, "& .MuiInputBase-input": { fontSize: "0.8rem" } }}
+            disabled={!filter.active}
+          />
         )}
 
-        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+        <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
           <Button
             variant="contained"
             color="primary"
             onClick={onApplyOperation}
-            startIcon={<PlayArrowIcon />}
+            startIcon={<PlayArrowIcon fontSize="small" />}
             disabled={!hasValidFilters}
+            size="small"
+            sx={{ fontSize: "0.6rem", py: 0.5 }}
           >
             {t("matrix.filter.applyOperation")}
           </Button>

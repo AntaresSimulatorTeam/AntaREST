@@ -224,33 +224,50 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         keepMounted
         transitionDuration={200}
         PaperProps={{
-          sx: { p: 2, maxWidth: "400px" },
+          sx: {
+            p: 1.5,
+            width: "380px",
+            maxWidth: "380px",
+            display: "flex",
+            flexDirection: "column",
+            height: "100vh",
+          },
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Typography variant="h6">{t("matrix.filter.title")}</Typography>
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 1,
+            flexShrink: 0,
+          }}
+        >
+          <Typography sx={{ fontSize: "1rem", fontWeight: 500 }}>
+            {t("matrix.filter.title")}
+          </Typography>
           <Box>
             <Tooltip title={t("matrix.filter.resetFilters")}>
               <IconButton onClick={resetFilters} size="small">
-                <FilterAltOffIcon />
+                <FilterAltOffIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title={t("matrix.filter.close")}>
               <IconButton onClick={toggleDrawer} size="small">
-                <CloseIcon />
+                <CloseIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           </Box>
         </Box>
 
-        <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+        <Box sx={{ display: "flex", gap: 0.75, mb: 1, flexShrink: 0 }}>
           {/* Main filter toggle button */}
           <Button
             variant={filter.active ? "contained" : "outlined"}
             color={filter.active ? "primary" : "inherit"}
             onClick={toggleFilter}
             startIcon={<FilterListIcon />}
-            sx={{ flex: 1 }}
+            sx={{ flex: 1, fontSize: "0.8rem", py: 0.5 }}
           >
             {filter.active ? t("matrix.filter.active") : t("matrix.filter.inactive")}
           </Button>
@@ -268,13 +285,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                 variant="outlined"
                 color={filterPreview.active ? "info" : "inherit"}
                 onClick={togglePreviewMode}
-                sx={{
-                  borderRadius: 1.5,
-                  ...(filterPreview.active && {
-                    borderWidth: 1,
-                    backgroundColor: "rgba(33, 150, 243, 0.08)",
-                  }),
-                }}
               >
                 {filterPreview.active ? (
                   <VisibilityIcon fontSize="small" />
@@ -286,24 +296,28 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
           )}
         </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 1, flexShrink: 0 }} />
 
         {filter.active && (
-          <Box sx={{ mb: 2 }}>
+          <Box sx={{ mb: 1, flexShrink: 0 }}>
             <Paper
               variant="outlined"
               sx={{
-                p: 1.5,
+                p: 0.75,
                 ...(filterPreview.active && {
                   boxShadow: "0 0 0 1px rgba(33, 150, 243, 0.2)",
                   borderColor: "rgba(33, 150, 243, 0.3)",
                 }),
               }}
             >
-              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontSize: "0.65rem", mb: 0.25, display: "block" }}
+              >
                 {t("matrix.filter.activeFilters")}
               </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Stack direction="row" spacing={0.25} flexWrap="wrap" useFlexGap>
                 {(() => {
                   const { columnFilterText, rowFilterTexts } = getFilterSummary;
 
@@ -316,11 +330,12 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                           color="primary"
                           variant="outlined"
                           sx={{
-                            m: 0.5,
+                            height: 18,
+                            fontSize: "0.6rem",
+                            "& .MuiChip-label": { px: 0.3 },
                             ...(filterPreview.active && {
                               borderColor: "info.main",
                               color: "info.main",
-                              borderWidth: 1,
                             }),
                           }}
                         />
@@ -333,11 +348,12 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
                           color="primary"
                           variant="outlined"
                           sx={{
-                            m: 0.5,
+                            height: 18,
+                            fontSize: "0.6rem",
+                            "& .MuiChip-label": { px: 0.3 },
                             ...(filterPreview.active && {
                               borderColor: "info.main",
                               color: "info.main",
-                              borderWidth: 1,
                             }),
                           }}
                         />
@@ -350,23 +366,58 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
           </Box>
         )}
 
-        <ColumnFilter
-          filter={filter}
-          setFilter={setFilter}
-          columnCount={currentState.data[0]?.length || 0}
-        />
+        {/* Scrollable content area */}
+        <Box
+          sx={{
+            flex: 1,
+            overflowY: "overlay",
+            overflowX: "hidden",
+            minHeight: 0,
+            pr: 0.5,
+            // Custom scrollbar that doesn't affect layout
+            "&::-webkit-scrollbar": {
+              width: "6px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "transparent",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: "rgba(0,0,0,0.2)",
+              borderRadius: "3px",
+              "&:hover": {
+                background: "rgba(0,0,0,0.3)",
+              },
+            },
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(0,0,0,0.2) transparent",
+          }}
+        >
+          <ColumnFilter
+            filter={filter}
+            setFilter={setFilter}
+            columnCount={currentState.data[0]?.length || 0}
+          />
 
-        <MultiRowFilter
-          filter={filter}
-          setFilter={setFilter}
-          dateTime={dateTime}
-          isTimeSeries={isTimeSeries}
-          timeFrequency={timeFrequency}
-        />
+          <MultiRowFilter
+            filter={filter}
+            setFilter={setFilter}
+            dateTime={dateTime}
+            isTimeSeries={isTimeSeries}
+            timeFrequency={timeFrequency}
+          />
 
-        <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
+          <Operations filter={filter} setFilter={setFilter} onApplyOperation={applyOperation} />
+        </Box>
 
-        <SelectionSummary filteredData={filteredData} previewMode={filterPreview.active} />
+        {/* Fixed summary at bottom */}
+        <Box
+          sx={{
+            flexShrink: 0,
+            mt: 0.5,
+          }}
+        >
+          <SelectionSummary filteredData={filteredData} previewMode={filterPreview.active} />
+        </Box>
       </Drawer>
     </>
   );

@@ -56,6 +56,7 @@ const RowFilterComponent = memo(
       handleListChange,
       addValueToList,
       removeValueFromList,
+      clearAllValues,
       handleKeyPress,
       handleCheckboxChange,
       handleTypeChange: handleFilterTypeChange,
@@ -105,7 +106,6 @@ const RowFilterComponent = memo(
       [rowFilter.range?.min, rowFilter.range?.max, availableValues.min, availableValues.max],
     );
 
-    // Callbacks for child components
     const handleAddValue = useCallback(() => {
       addValueToList(filterId);
     }, [addValueToList, filterId]);
@@ -116,6 +116,10 @@ const RowFilterComponent = memo(
       },
       [removeValueFromList, filterId],
     );
+
+    const handleClearAll = useCallback(() => {
+      clearAllValues(filterId);
+    }, [clearAllValues, filterId]);
 
     const handleCheckbox = useCallback(
       (value: number) => {
@@ -277,8 +281,12 @@ const RowFilterComponent = memo(
         expanded={expanded}
         onChange={() => onToggleExpanded?.(rowFilter.id)}
         slotProps={{ transition: { unmountOnExit: true } }}
+        sx={{ mb: 0.5 }}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon fontSize="small" />}
+          sx={{ py: 0, my: 0, maxHeight: 35, minHeight: 0 }}
+        >
           <Box
             sx={{
               display: "flex",
@@ -287,39 +295,47 @@ const RowFilterComponent = memo(
               width: "100%",
             }}
           >
-            <Typography variant="subtitle1">{t("matrix.filter.rowsFilter")}</Typography>
+            <Typography sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
+              {t("matrix.filter.rowsFilter")}
+            </Typography>
           </Box>
           {onRemoveFilter && filter.rowsFilters.length > 1 && (
-            <IconButton size="small" onClick={handleDeleteClick}>
-              <DeleteIcon fontSize="small" />
+            <IconButton size="small" onClick={handleDeleteClick} sx={{ p: 0.5 }}>
+              <DeleteIcon fontSize="small" sx={{ width: 13, height: 13 }} />
             </IconButton>
           )}
         </AccordionSummary>
-        <AccordionDetails>
-          <FormControl fullWidth margin="dense">
-            <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
+        <AccordionDetails sx={{ pt: 0.5, pb: 1 }}>
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.indexingType")}</InputLabel>
             <Select
               value={rowFilter.indexingType}
               label={t("matrix.filter.indexingType")}
               onChange={handleIndexingTypeChange}
+              sx={{ fontSize: "0.8rem" }}
             >
               {filteredOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
+                <MenuItem key={option.value} value={option.value} sx={{ fontSize: "0.8rem" }}>
                   {t(`matrix.filter.indexing.${option.value}`)}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl fullWidth margin="dense">
-            <InputLabel>{t("matrix.filter.type")}</InputLabel>
+          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+            <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.type")}</InputLabel>
             <Select
               value={rowFilter.type}
               label={t("matrix.filter.type")}
               onChange={handleTypeChange}
+              sx={{ fontSize: "0.8rem" }}
             >
-              <MenuItem value={FILTER_TYPES.RANGE}>{t("matrix.filter.range")}</MenuItem>
-              <MenuItem value={FILTER_TYPES.LIST}>{t("matrix.filter.list")}</MenuItem>
+              <MenuItem value={FILTER_TYPES.RANGE} sx={{ fontSize: "0.8rem" }}>
+                {t("matrix.filter.range")}
+              </MenuItem>
+              <MenuItem value={FILTER_TYPES.LIST} sx={{ fontSize: "0.8rem" }}>
+                {t("matrix.filter.list")}
+              </MenuItem>
             </Select>
           </FormControl>
 
@@ -336,6 +352,7 @@ const RowFilterComponent = memo(
             inputValue={inputValue}
             onInputChange={handleListChange}
             onKeyPress={handleKeyPress}
+            onClearAll={handleClearAll}
             sliderMarks={sliderMarks}
           />
         </AccordionDetails>

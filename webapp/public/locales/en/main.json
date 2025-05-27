@@ -903,6 +903,7 @@
       "enterValue": "Enter a value",
       "pressEnterOrComma": "Press Enter or comma to add",
       "selectedValues": "Selected values",
+      "clearAll": "Clear all",
       "selectMonths": "Select months",
       "selectDays": "Select days",
       "activeFilters": "Active filters",
@@ -910,12 +911,11 @@
       "operation": "Operation",
       "operationType": "Operation type",
       "value": "Value",
-      "quickOperations": "Quick operations",
       "applyOperation": "Apply operation",
       "selectionSummary": "Selection summary",
-      "selectedRows": "Selected rows",
-      "selectedColumns": "Selected columns",
-      "selectedCells": "Selected cells",
+      "selectedRows": "Rows",
+      "selectedColumns": "Columns",
+      "selectedCells": "Cells",
       "indexing": {
         "dayOfMonth": "Day of month",
         "dayOfYear": "Day of year",
@@ -929,7 +929,7 @@
         "active": "Preview mode: showing only filtered data",
         "inactive": "Enable preview to see only filtered data"
       },
-      "addRowFilter": "Add row filter",
+      "addRowFilter": "Add filter",
       "collapseAll": "Collapse filters",
       "expandAll": "Expand filters"
     },

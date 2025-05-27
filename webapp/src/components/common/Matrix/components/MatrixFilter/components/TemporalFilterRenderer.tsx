@@ -36,6 +36,7 @@ interface TemporalFilterRendererProps {
   onAddValue: () => void;
   onRemoveValue: (value: number) => void;
   onCheckboxChange: (value: number) => void;
+  onClearAll: () => void;
   inputValue: string;
   onInputChange: (value: string) => void;
   onKeyPress: (event: React.KeyboardEvent) => void;
@@ -54,6 +55,7 @@ const TemporalFilterRenderer = memo(
     onAddValue,
     onRemoveValue,
     onCheckboxChange,
+    onClearAll,
     inputValue,
     onInputChange,
     onKeyPress,
@@ -230,6 +232,7 @@ const TemporalFilterRenderer = memo(
               onKeyPress={onKeyPress}
               onAddValue={onAddValue}
               onRemoveValue={onRemoveValue}
+              onClearAll={onClearAll}
               placeholder="Enter hour number (1-8760)"
               disabled={disabled}
             />
@@ -293,6 +296,7 @@ const TemporalFilterRenderer = memo(
           onKeyPress={onKeyPress}
           onAddValue={onAddValue}
           onRemoveValue={onRemoveValue}
+          onClearAll={onClearAll}
           disabled={disabled}
         />
       );
