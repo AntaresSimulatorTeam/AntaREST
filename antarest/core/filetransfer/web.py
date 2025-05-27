@@ -54,7 +54,7 @@ def create_file_transfer_api(
     @bp.get(
         "/downloads/{download_id}/metadata",
         tags=[APITag.downloads],
-        summary="Retrieve download file or information about the preparation of the download file",  # FIXME
+        summary="Retrieve download file or information on the file's state of preparation",
     )
     def get_download_metadata(
         task_id: str,
@@ -70,17 +70,18 @@ def create_file_transfer_api(
             if wait_for_availability:
                 try:
                     task_service.await_task(task_id=sanitized_task_id, timeout_sec=timeout)
-                    task = task_service.status_task(sanitized_task_id)  # update task status
                 except concurrent.futures.TimeoutError:
                     raise HTTPException(
-                        status_code=http.HTTPStatus.ACCEPTED,
+                        status_code=http.HTTPStatus.EXPECTATION_FAILED,
                         detail=f"The requested file is still in process after waiting for {timeout} seconds.",
                     )
             # the user did not ask for a timeout
             else:
                 raise HTTPException(
-                    status_code=http.HTTPStatus.ACCEPTED, detail="The requested file is still in process."
+                    status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="The requested file is still in process."
                 )
+
+        task = task_service.status_task(sanitized_task_id)  # update task status
 
         # the task could not be completed
         if task.status != TaskStatus.COMPLETED:
