@@ -104,7 +104,7 @@ export const CHIP_STYLES = {
     height: COMPONENT_DIMENSIONS.chip.height,
     fontSize: DESIGN_TOKENS.fontSize.xs,
     "& .MuiChip-label": {
-      px: DESIGN_TOKENS.spacing.xs,
+      px: DESIGN_TOKENS.spacing.sm,
     },
   },
   preview: {
@@ -118,6 +118,22 @@ export const BUTTON_STYLES = {
   base: {
     fontSize: DESIGN_TOKENS.fontSize.md,
     py: DESIGN_TOKENS.spacing.sm,
+  },
+  compact: {
+    fontSize: DESIGN_TOKENS.fontSize.xs,
+    py: DESIGN_TOKENS.spacing.sm,
+    px: DESIGN_TOKENS.spacing.lg,
+    minHeight: 28,
+    height: 28,
+  },
+  compactIconOnly: {
+    fontSize: DESIGN_TOKENS.fontSize.xs,
+    py: DESIGN_TOKENS.spacing.sm,
+    px: DESIGN_TOKENS.spacing.sm,
+    minHeight: 28,
+    height: 28,
+    minWidth: 28,
+    width: 28,
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
@@ -144,7 +160,7 @@ export const TYPOGRAPHY_STYLES = {
 // Layout spacing utilities
 export const LAYOUT_SPACING = {
   section: {
-    marginBottom: DESIGN_TOKENS.spacing.xl,
+    marginBottom: DESIGN_TOKENS.spacing.lg,
     flexShrink: 0,
   },
   content: {
@@ -158,6 +174,10 @@ export const FORM_STYLES = {
     fontSize: DESIGN_TOKENS.fontSize.md,
     "& .MuiInputLabel-root": {
       fontSize: DESIGN_TOKENS.fontSize.md,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      maxWidth: "calc(100% - 24px)", // Account for shrink animation
     },
     "& .MuiSelect-select": {
       fontSize: DESIGN_TOKENS.fontSize.md,
@@ -175,9 +195,68 @@ export const FORM_STYLES = {
     },
     "& .MuiInputLabel-root": {
       fontSize: DESIGN_TOKENS.fontSize.md,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      maxWidth: "calc(100% - 24px)", // Account for shrink animation
     },
     "& .MuiFormHelperText-root": {
       fontSize: DESIGN_TOKENS.fontSize.xs,
+    },
+  },
+  sideBySideContainer: {
+    display: "flex",
+    gap: DESIGN_TOKENS.spacing.lg,
+    mb: DESIGN_TOKENS.spacing.lg,
+    flexDirection: "row" as const,
+    "& > *": {
+      flex: 1,
+      minWidth: 0, // Prevent flex items from overflowing
+    },
+    "@media (max-width: 480px)": {
+      flexDirection: "column" as const,
+      gap: DESIGN_TOKENS.spacing.md,
+    },
+  },
+  responsiveContainer: {
+    display: "flex",
+    gap: DESIGN_TOKENS.spacing.lg,
+    mb: DESIGN_TOKENS.spacing.lg,
+    flexDirection: "row" as const,
+    alignItems: "flex-start",
+    "@media (max-width: 360px)": {
+      flexDirection: "column" as const,
+      gap: DESIGN_TOKENS.spacing.md,
+    },
+  },
+  sideBySideFormControl: {
+    fontSize: DESIGN_TOKENS.fontSize.md,
+    "& .MuiInputLabel-root": {
+      fontSize: DESIGN_TOKENS.fontSize.md,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      maxWidth: "calc(100% - 32px)", // Account for shrink animation and padding
+      "&.MuiInputLabel-shrink": {
+        maxWidth: "calc(133% - 32px)", // Allow more space when shrunk
+        transform: "translate(14px, -9px) scale(0.75)",
+      },
+    },
+    "& .MuiSelect-select": {
+      fontSize: DESIGN_TOKENS.fontSize.md,
+    },
+    "& .MuiInputBase-input": {
+      fontSize: DESIGN_TOKENS.fontSize.md,
+    },
+    "& .MuiOutlinedInput-notchedOutline": {
+      "& legend": {
+        maxWidth: "100%",
+        "& span": {
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        },
+      },
     },
   },
 } as const satisfies Record<string, SxProps<Theme>>;

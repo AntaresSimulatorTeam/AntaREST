@@ -153,8 +153,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
         <Box
           sx={{
-            flexShrink: 0,
-            mt: DESIGN_TOKENS.spacing.sm,
+            mt: DESIGN_TOKENS.spacing.lg,
           }}
         >
           <SelectionSummary filteredData={currentFilteredData} previewMode={filterPreview.active} />

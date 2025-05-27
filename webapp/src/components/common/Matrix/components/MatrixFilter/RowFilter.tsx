@@ -24,6 +24,7 @@ import {
   Box,
   type SelectChangeEvent,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -313,38 +314,44 @@ const RowFilterComponent = memo(
           )}
         </AccordionSummary>
         <AccordionDetails sx={ACCORDION_STYLES.details}>
-          <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
-            <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
-            <Select
-              value={rowFilter.indexingType}
-              label={t("matrix.filter.indexingType")}
-              onChange={handleIndexingTypeChange}
-              sx={FORM_STYLES.formControl}
-            >
-              {filteredOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
-                  {t(`matrix.filter.indexing.${option.value}`)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={FORM_STYLES.sideBySideContainer}>
+            <Tooltip title={t("matrix.filter.indexingType")} placement="top">
+              <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+                <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
+                <Select
+                  value={rowFilter.indexingType}
+                  label={t("matrix.filter.indexingType")}
+                  onChange={handleIndexingTypeChange}
+                  sx={FORM_STYLES.sideBySideFormControl}
+                >
+                  {filteredOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
+                      {t(`matrix.filter.indexing.${option.value}`)}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Tooltip>
 
-          <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
-            <InputLabel>{t("matrix.filter.type")}</InputLabel>
-            <Select
-              value={rowFilter.type}
-              label={t("matrix.filter.type")}
-              onChange={handleTypeChange}
-              sx={FORM_STYLES.formControl}
-            >
-              <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
-                {t("matrix.filter.range")}
-              </MenuItem>
-              <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
-                {t("matrix.filter.list")}
-              </MenuItem>
-            </Select>
-          </FormControl>
+            <Tooltip title={t("matrix.filter.type")} placement="top">
+              <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+                <InputLabel>{t("matrix.filter.type")}</InputLabel>
+                <Select
+                  value={rowFilter.type}
+                  label={t("matrix.filter.type")}
+                  onChange={handleTypeChange}
+                  sx={FORM_STYLES.sideBySideFormControl}
+                >
+                  <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
+                    {t("matrix.filter.range")}
+                  </MenuItem>
+                  <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
+                    {t("matrix.filter.list")}
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Tooltip>
+          </Box>
 
           <TemporalFilterRenderer
             indexingType={rowFilter.indexingType}
