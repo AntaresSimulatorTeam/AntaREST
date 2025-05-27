@@ -25,6 +25,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import ClearIcon from "@mui/icons-material/Clear";
 import { useTranslation } from "react-i18next";
+import { DESIGN_TOKENS, FORM_STYLES, TYPOGRAPHY_STYLES } from "../styles";
 
 interface ListFilterControlProps {
   inputValue: string;
@@ -63,11 +64,7 @@ const ListFilterControl = ({
         onKeyDown={onKeyPress}
         type="number"
         disabled={disabled}
-        sx={{
-          "& .MuiInputBase-input": { fontSize: "0.8rem" },
-          "& .MuiInputLabel-root": { fontSize: "0.8rem" },
-          "& .MuiFormHelperText-root": { fontSize: "0.6rem" },
-        }}
+        sx={FORM_STYLES.textField}
         slotProps={{
           input: {
             endAdornment: (
@@ -87,11 +84,16 @@ const ListFilterControl = ({
         helperText={t("matrix.filter.pressEnterOrComma")}
       />
       {selectedValues.length > 0 && (
-        <Box sx={{ mt: 0.5 }}>
+        <Box sx={{ mt: DESIGN_TOKENS.spacing.sm }}>
           <Box
-            sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: DESIGN_TOKENS.spacing.sm,
+            }}
           >
-            <Typography color="text.secondary" sx={{ fontSize: "0.6rem" }}>
+            <Typography color="text.secondary" sx={TYPOGRAPHY_STYLES.smallCaption}>
               {t("matrix.filter.selectedValues")}:
             </Typography>
             {onClearAll && (
@@ -103,9 +105,9 @@ const ListFilterControl = ({
                 disabled={disabled}
                 sx={{
                   minWidth: "auto",
-                  fontSize: "0.6rem",
-                  py: 0.2,
-                  px: 0.5,
+                  fontSize: DESIGN_TOKENS.fontSize.xs,
+                  py: DESIGN_TOKENS.spacing.xs,
+                  px: DESIGN_TOKENS.spacing.sm,
                   height: 20,
                 }}
               >
@@ -113,7 +115,7 @@ const ListFilterControl = ({
               </Button>
             )}
           </Box>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={DESIGN_TOKENS.spacing.sm} flexWrap="wrap" useFlexGap>
             {selectedValues.map((value) => (
               <Chip
                 key={value}

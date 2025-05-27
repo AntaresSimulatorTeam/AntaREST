@@ -29,8 +29,22 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useTranslation } from "react-i18next";
 import { useMemo, memo, useCallback } from "react";
-import type { RowFilterProps } from "./types";
-import { FILTER_TYPES, TEMPORAL_OPTIONS, TIME_INDEXING } from "./constants";
+import type { RowFilterProps, RowFilter } from "./types";
+import {
+  FILTER_TYPES,
+  TEMPORAL_OPTIONS,
+  TIME_INDEXING,
+  type TimeIndexingType,
+  type FilterType,
+} from "./constants";
+import {
+  ACCORDION_STYLES,
+  TYPOGRAPHY_STYLES,
+  FORM_STYLES,
+  DESIGN_TOKENS,
+  CONTAINER_STYLES,
+  ICON_BUTTON_STYLES,
+} from "./styles";
 import { useFilterControls } from "./hooks/useFilterControls";
 import { useTemporalData } from "./hooks/useTemporalData";
 import { getLocalizedTimeLabels } from "./dateUtils";
@@ -74,7 +88,7 @@ const RowFilterComponent = memo(
 
     // Filter temporal options based on the current time frequency
     const filteredOptions = useMemo(
-      () => getFilteredTemporalOptions(timeFrequency, TEMPORAL_OPTIONS),
+      () => getFilteredTemporalOptions(timeFrequency, [...TEMPORAL_OPTIONS]),
       [timeFrequency],
     );
 
@@ -138,10 +152,10 @@ const RowFilterComponent = memo(
 
     const handleIndexingTypeChange = useCallback(
       (e: SelectChangeEvent) => {
-        const newType = e.target.value;
+        const newType = e.target.value as TimeIndexingType;
         const availableValuesForType = valuesByIndexType[newType] || { min: 1, max: 100 };
 
-        const updatedRowFilter = {
+        const updatedRowFilter: RowFilter = {
           ...rowFilter,
           indexingType: newType,
           range: {
@@ -165,7 +179,7 @@ const RowFilterComponent = memo(
 
     const handleTypeChange = useCallback(
       (e: SelectChangeEvent) => {
-        handleFilterTypeChange(e.target.value, filterId);
+        handleFilterTypeChange(e.target.value as FilterType, filterId);
       },
       [handleFilterTypeChange, filterId],
     );
@@ -281,59 +295,52 @@ const RowFilterComponent = memo(
         expanded={expanded}
         onChange={() => onToggleExpanded?.(rowFilter.id)}
         slotProps={{ transition: { unmountOnExit: true } }}
-        sx={{ mb: 0.5 }}
+        sx={{ mb: DESIGN_TOKENS.spacing.sm }}
       >
         <AccordionSummary
           expandIcon={<ExpandMoreIcon fontSize="small" />}
-          sx={{ py: 0, my: 0, maxHeight: 35, minHeight: 0 }}
+          sx={ACCORDION_STYLES.summary}
         >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-            }}
-          >
-            <Typography sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
+          <Box sx={CONTAINER_STYLES.flexRow}>
+            <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
               {t("matrix.filter.rowsFilter")}
             </Typography>
           </Box>
           {onRemoveFilter && filter.rowsFilters.length > 1 && (
-            <IconButton size="small" onClick={handleDeleteClick} sx={{ p: 0.5 }}>
+            <IconButton size="small" onClick={handleDeleteClick} sx={ICON_BUTTON_STYLES.small}>
               <DeleteIcon fontSize="small" sx={{ width: 13, height: 13 }} />
             </IconButton>
           )}
         </AccordionSummary>
-        <AccordionDetails sx={{ pt: 0.5, pb: 1 }}>
-          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-            <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.indexingType")}</InputLabel>
+        <AccordionDetails sx={ACCORDION_STYLES.details}>
+          <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
+            <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
             <Select
               value={rowFilter.indexingType}
               label={t("matrix.filter.indexingType")}
               onChange={handleIndexingTypeChange}
-              sx={{ fontSize: "0.8rem" }}
+              sx={FORM_STYLES.formControl}
             >
               {filteredOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value} sx={{ fontSize: "0.8rem" }}>
+                <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
                   {t(`matrix.filter.indexing.${option.value}`)}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-            <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.type")}</InputLabel>
+          <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
+            <InputLabel>{t("matrix.filter.type")}</InputLabel>
             <Select
               value={rowFilter.type}
               label={t("matrix.filter.type")}
               onChange={handleTypeChange}
-              sx={{ fontSize: "0.8rem" }}
+              sx={FORM_STYLES.formControl}
             >
-              <MenuItem value={FILTER_TYPES.RANGE} sx={{ fontSize: "0.8rem" }}>
+              <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
                 {t("matrix.filter.range")}
               </MenuItem>
-              <MenuItem value={FILTER_TYPES.LIST} sx={{ fontSize: "0.8rem" }}>
+              <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
                 {t("matrix.filter.list")}
               </MenuItem>
             </Select>

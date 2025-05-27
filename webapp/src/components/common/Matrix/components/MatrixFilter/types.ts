@@ -13,11 +13,12 @@
  */
 
 import type { TimeFrequencyType } from "../../shared/types";
+import type { FilterType, TimeIndexingType } from "./constants";
 
 export interface RowFilter {
   id: string;
-  indexingType: string;
-  type: string;
+  indexingType: TimeIndexingType;
+  type: FilterType;
   range?: { min: number; max: number };
   list?: number[];
 }
@@ -25,7 +26,7 @@ export interface RowFilter {
 export interface FilterState {
   active: boolean;
   columnsFilter: {
-    type: string;
+    type: FilterType;
     range?: { min: number; max: number };
     list?: number[];
   };
@@ -87,7 +88,7 @@ export interface TemporalIndexingParams {
 }
 
 export interface TemporalOption {
-  value: string;
+  value: TimeIndexingType;
   label: string;
   description: string;
 }
