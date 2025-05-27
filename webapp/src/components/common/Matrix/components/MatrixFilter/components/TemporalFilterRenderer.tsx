@@ -120,6 +120,8 @@ const TemporalFilterRenderer = memo(
       if (indexingType !== TIME_INDEXING.HOUR_YEAR) {
         return [];
       }
+
+      // TODO: fix incorrect hour of year options
       return [
         { value: 1, label: "Jan 1" },
         { value: 24, label: "Jan 2" },
