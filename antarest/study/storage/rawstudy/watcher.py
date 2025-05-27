@@ -164,7 +164,6 @@ class Watcher(IService):
         Scan a folder and add studies found to database.
 
         Args:
-            params: user parameters
             workspace: workspace to scan
             path: relative path to folder to scan
             recursive: if true, scan recursively all subfolders otherwise only the first level

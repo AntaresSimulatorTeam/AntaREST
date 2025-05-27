@@ -347,7 +347,6 @@ class MatrixService(ISimpleMatrixService):
         Parameters:
             dataset_name: the dataset name search query
             filter_own: indicate if only the current user datasets should be returned
-            params: The request parameter containing user information
 
         Returns:
             the list of matching MatrixUserMetadata
@@ -466,7 +465,6 @@ class MatrixService(ISimpleMatrixService):
         Export study output to a zip file.
         Parameters:
             dataset_id: matrix dataset id
-            params: request parameters
         """
         dataset = self.repo_dataset.get(dataset_id)
         if dataset is None:
