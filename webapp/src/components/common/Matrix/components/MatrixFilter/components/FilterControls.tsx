@@ -47,8 +47,9 @@ function FilterControls({
         variant={isFilterActive ? "contained" : "outlined"}
         color={isFilterActive ? "primary" : "inherit"}
         onClick={onToggleFilter}
-        startIcon={<FilterListIcon />}
-        sx={BUTTON_STYLES.base}
+        startIcon={<FilterListIcon fontSize="small" />}
+        size="small"
+        sx={BUTTON_STYLES.compact}
       >
         {isFilterActive ? t("matrix.filter.active") : t("matrix.filter.inactive")}
       </Button>
@@ -63,6 +64,8 @@ function FilterControls({
             variant="outlined"
             color={isPreviewActive ? "info" : "inherit"}
             onClick={onTogglePreview}
+            size="small"
+            sx={BUTTON_STYLES.compactIconOnly}
           >
             {isPreviewActive ? (
               <VisibilityIcon fontSize="small" />
