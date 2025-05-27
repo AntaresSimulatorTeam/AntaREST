@@ -134,8 +134,21 @@ export function useMatrixFilter({
   }, [rowCount, columnCount, timeFrequency, setFilterPreview]);
 
   const toggleFilter = useCallback(() => {
-    setFilter((prev) => ({ ...prev, active: !prev.active }));
-  }, []);
+    setFilter((prev) => {
+      const newActive = !prev.active;
+      // Enable preview mode by default when activating filter
+      if (newActive) {
+        setFilterPreview({
+          active: true,
+          criteria: {
+            columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
+            rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
+          },
+        });
+      }
+      return { ...prev, active: newActive };
+    });
+  }, [setFilterPreview, rowCount, columnCount]);
 
   return {
     filter,
