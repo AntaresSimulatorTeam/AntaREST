@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 
 import { TIME_INDEXING } from "../constants";
 import { getLocalizedTimeLabels } from "../dateUtils";
+import { DESIGN_TOKENS } from "../styles";
 import RangeFilterControl from "./RangeFilterControl";
 import ListFilterControl from "./ListFilterControl";
 import ChipSelector from "./ChipSelector";
@@ -165,8 +166,8 @@ const TemporalFilterRenderer = memo(
     if (filterType === "range") {
       if (indexingType === TIME_INDEXING.HOUR_YEAR) {
         return (
-          <Box sx={{ px: 2, pt: 3, pb: 1 }}>
-            <Box sx={{ mb: 2 }}>
+          <Box sx={{ px: DESIGN_TOKENS.spacing.xl, pt: 3, pb: DESIGN_TOKENS.spacing.lg }}>
+            <Box sx={{ mb: DESIGN_TOKENS.spacing.xl }}>
               <Typography variant="caption" color="text.secondary">
                 Hour of year range:
               </Typography>
@@ -208,7 +209,7 @@ const TemporalFilterRenderer = memo(
       // Special handling for hour of year
       if (indexingType === TIME_INDEXING.HOUR_YEAR) {
         return (
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ mt: DESIGN_TOKENS.spacing.xl }}>
             <ChipSelector
               title={t("matrix.filter.commonTimePeriods")}
               options={hourOfYearOptions}
@@ -220,7 +221,7 @@ const TemporalFilterRenderer = memo(
             <Typography
               variant="caption"
               color="text.secondary"
-              sx={{ display: "block", mt: 2, mb: 1 }}
+              sx={{ display: "block", mt: DESIGN_TOKENS.spacing.xl, mb: DESIGN_TOKENS.spacing.lg }}
             >
               Or add specific hours manually:
             </Typography>

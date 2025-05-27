@@ -15,6 +15,7 @@
 import { Typography, Paper, Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { SelectionSummaryProps } from "./types";
+import { SELECTION_SUMMARY_STYLES, PREVIEW_STYLES } from "./styles";
 
 function SelectionSummary({ filteredData, previewMode = false }: SelectionSummaryProps) {
   const { t } = useTranslation();
@@ -25,11 +26,8 @@ function SelectionSummary({ filteredData, previewMode = false }: SelectionSummar
     <Paper
       variant="outlined"
       sx={{
-        p: 0.5,
-        ...(previewMode && {
-          boxShadow: "0 0 0 1px rgba(33, 150, 243, 0.2)",
-          borderColor: "rgba(33, 150, 243, 0.3)",
-        }),
+        ...SELECTION_SUMMARY_STYLES.container,
+        ...(previewMode && PREVIEW_STYLES.container),
       }}
     >
       <Typography
@@ -41,44 +39,44 @@ function SelectionSummary({ filteredData, previewMode = false }: SelectionSummar
         {t("matrix.filter.selectionSummary")}
       </Typography>
 
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <Box sx={{ textAlign: "center", flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+      <Box sx={SELECTION_SUMMARY_STYLES.statsContainer}>
+        <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
+          <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedRows")}
           </Typography>
           <Typography
             variant="caption"
             color={previewMode ? "info.main" : "text.primary"}
             fontWeight="medium"
-            sx={{ display: "block", fontSize: "0.8rem" }}
+            sx={SELECTION_SUMMARY_STYLES.value}
           >
             {filteredData.rowsIndices.length}
           </Typography>
         </Box>
 
-        <Box sx={{ textAlign: "center", flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+        <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
+          <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedColumns")}
           </Typography>
           <Typography
             variant="caption"
             color={previewMode ? "info.main" : "text.primary"}
             fontWeight="medium"
-            sx={{ display: "block", fontSize: "0.8rem" }}
+            sx={SELECTION_SUMMARY_STYLES.value}
           >
             {filteredData.columnsIndices.length}
           </Typography>
         </Box>
 
-        <Box sx={{ textAlign: "center", flex: 1 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+        <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
+          <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedCells")}
           </Typography>
           <Typography
             variant="body2"
             color={previewMode ? "info.main" : "primary.main"}
             fontWeight="medium"
-            sx={{ display: "block", fontSize: "0.8rem" }}
+            sx={SELECTION_SUMMARY_STYLES.value}
           >
             {totalCells}
           </Typography>

@@ -13,6 +13,7 @@
  */
 
 import { Box, Chip, Stack, Typography } from "@mui/material";
+import { DESIGN_TOKENS, CHIP_SELECTOR_STYLES } from "../styles";
 
 export interface ChipOption {
   value: number;
@@ -53,10 +54,14 @@ const ChipSelector = ({
 
   return (
     <Box>
-      {title && <Typography sx={{ fontSize: "0.7rem", mb: 0.5 }}>{title}</Typography>}
+      {title && (
+        <Typography sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, mb: DESIGN_TOKENS.spacing.sm }}>
+          {title}
+        </Typography>
+      )}
       <Stack
         direction="row"
-        spacing={dense ? 0.5 : 1}
+        spacing={dense ? DESIGN_TOKENS.spacing.sm : DESIGN_TOKENS.spacing.lg}
         flexWrap="wrap"
         useFlexGap
         sx={dense ? { maxWidth: "100%" } : undefined}
@@ -87,22 +92,7 @@ const ChipSelector = ({
               variant={isSelected ? "filled" : variant}
               size={size}
               disabled={disabled}
-              sx={
-                dense
-                  ? {
-                      m: 0.125,
-                      minWidth: 28,
-                      height: 18,
-                      fontSize: "0.6rem",
-                      "& .MuiChip-label": { px: 0.5 },
-                    }
-                  : {
-                      my: 0.25,
-                      height: 24,
-                      fontSize: "0.8rem",
-                      "& .MuiChip-label": { px: 0.8 },
-                    }
-              }
+              sx={dense ? CHIP_SELECTOR_STYLES.dense : CHIP_SELECTOR_STYLES.normal}
             />
           );
         })}

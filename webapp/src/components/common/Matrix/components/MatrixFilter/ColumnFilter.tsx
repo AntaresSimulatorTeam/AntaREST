@@ -26,7 +26,8 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
 import type { ColumnFilterProps } from "./types";
-import { FILTER_TYPES } from "./constants";
+import { FILTER_TYPES, type FilterType } from "./constants";
+import { ACCORDION_STYLES, TYPOGRAPHY_STYLES, FORM_STYLES, DESIGN_TOKENS } from "./styles";
 import { useFilterControls } from "./hooks/useFilterControls";
 import RangeFilterControl from "./components/RangeFilterControl";
 import ListFilterControl from "./components/ListFilterControl";
@@ -44,7 +45,7 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
   } = useFilterControls({ filter, setFilter });
 
   const handleTypeChangeEvent = (e: SelectChangeEvent) => {
-    handleTypeChange(e.target.value);
+    handleTypeChange(e.target.value as FilterType);
   };
 
   const handleRangeChange = (newValues: [number, number]) => {
@@ -61,28 +62,28 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
   };
 
   return (
-    <Accordion defaultExpanded sx={{ mb: 1 }}>
+    <Accordion defaultExpanded sx={ACCORDION_STYLES.marginBottom}>
       <AccordionSummary
         expandIcon={<ExpandMoreIcon fontSize="small" />}
-        sx={{ py: 0, my: 0, maxHeight: 35, minHeight: 0 }}
+        sx={ACCORDION_STYLES.summary}
       >
-        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
+        <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
           {t("matrix.filter.columnsFilter")}
         </Typography>
       </AccordionSummary>
-      <AccordionDetails sx={{ pt: 0.5, pb: 1 }}>
-        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-          <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.type")}</InputLabel>
+      <AccordionDetails sx={ACCORDION_STYLES.details}>
+        <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
+          <InputLabel>{t("matrix.filter.type")}</InputLabel>
           <Select
             value={filter.columnsFilter.type}
             label={t("matrix.filter.type")}
             onChange={handleTypeChangeEvent}
-            sx={{ fontSize: "0.8rem" }}
+            sx={FORM_STYLES.formControl}
           >
-            <MenuItem value={FILTER_TYPES.RANGE} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
               {t("matrix.filter.range")}
             </MenuItem>
-            <MenuItem value={FILTER_TYPES.LIST} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
               {t("matrix.filter.list")}
             </MenuItem>
           </Select>

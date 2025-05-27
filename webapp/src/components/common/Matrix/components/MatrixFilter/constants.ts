@@ -16,11 +16,15 @@ import { TimeFrequency, Operation } from "../../shared/constants";
 import type { FilterState, TemporalOption, RowFilter } from "./types";
 import type { TimeFrequencyType } from "../../shared/types";
 
+// Filter type constants
 export const FILTER_TYPES = {
   RANGE: "range",
   LIST: "list",
-};
+} as const;
 
+export type FilterType = (typeof FILTER_TYPES)[keyof typeof FILTER_TYPES];
+
+// Time indexing type constants
 export const TIME_INDEXING = {
   DAY_OF_MONTH: "dayOfMonth",
   DAY_OF_YEAR: "dayOfYear",
@@ -29,11 +33,16 @@ export const TIME_INDEXING = {
   MONTH: "month",
   WEEK: "week",
   WEEKDAY: "weekday",
-};
+} as const;
 
-// Maps time frequency to appropriate indexing options
-export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, string[]> = {
-  [TimeFrequency.Annual]: [TIME_INDEXING.MONTH], // Annual data typically just uses sequential indices
+export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING];
+
+/**
+ * Maps time frequency to appropriate indexing options.
+ * Each frequency has its most relevant temporal indexing types ordered by relevance.
+ */
+export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, readonly TimeIndexingType[]> = {
+  [TimeFrequency.Annual]: [TIME_INDEXING.MONTH],
   [TimeFrequency.Monthly]: [TIME_INDEXING.MONTH],
   [TimeFrequency.Weekly]: [TIME_INDEXING.WEEK, TIME_INDEXING.WEEKDAY],
   [TimeFrequency.Daily]: [
@@ -48,19 +57,29 @@ export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, string[]> = 
     TIME_INDEXING.DAY_OF_MONTH,
     TIME_INDEXING.WEEKDAY,
   ],
-};
+} as const;
 
-// Get default indexing type based on time frequency
-export const getDefaultIndexingType = (timeFrequency?: TimeFrequencyType): string => {
+/**
+ * Gets the default indexing type for a given time frequency.
+ * Returns the first (most relevant) indexing type for the frequency.
+ *
+ * @param timeFrequency - The time frequency to get default indexing for
+ * @returns The default time indexing type
+ */
+export const getDefaultIndexingType = (timeFrequency?: TimeFrequencyType): TimeIndexingType => {
   if (!timeFrequency) {
     return TIME_INDEXING.DAY_OF_MONTH;
   }
 
   const options = TIME_FREQUENCY_INDEXING_MAP[timeFrequency];
-  return options && options.length > 0 ? options[0] : TIME_INDEXING.DAY_OF_MONTH;
+  return options?.[0] ?? TIME_INDEXING.DAY_OF_MONTH;
 };
 
-export const TEMPORAL_OPTIONS: TemporalOption[] = [
+/**
+ * Temporal filtering options with localization keys and descriptions.
+ * Each option defines a specific way to filter time-based data.
+ */
+export const TEMPORAL_OPTIONS: readonly TemporalOption[] = [
   {
     value: TIME_INDEXING.DAY_OF_MONTH,
     label: "matrix.filter.indexing.dayOfMonth",
@@ -96,19 +115,39 @@ export const TEMPORAL_OPTIONS: TemporalOption[] = [
     label: "matrix.filter.indexing.hourYear",
     description: "Filter by hour of year (1-8760)",
   },
-];
+] as const;
 
+/**
+ * Creates a default row filter configuration.
+ * Initializes with appropriate defaults based on data dimensions and time frequency.
+ *
+ * @param rowCount - The number of rows in the matrix
+ * @param timeFrequency - The time frequency for temporal filtering
+ * @returns A default row filter configuration
+ */
 export const createDefaultRowFilter = (
   rowCount: number,
   timeFrequency?: TimeFrequencyType,
 ): RowFilter => ({
-  id: crypto.randomUUID(),
+  id: crypto.randomUUID(), // TODO: check if necessary to keep, if so use UUID or useId()
   indexingType: getDefaultIndexingType(timeFrequency),
   type: FILTER_TYPES.RANGE,
-  range: { min: 1, max: rowCount || 1 },
+  range: {
+    min: 1,
+    max: Math.max(rowCount, 1),
+  },
   list: [],
 });
 
+/**
+ * Creates the default filter state for the matrix.
+ * Initializes all filter components with safe defaults based on matrix dimensions.
+ *
+ * @param rowCount - The number of rows in the matrix
+ * @param columnCount - The number of columns in the matrix
+ * @param timeFrequency - The time frequency for temporal filtering
+ * @returns The default filter state
+ */
 export const getDefaultFilterState = (
   rowCount: number,
   columnCount: number,
@@ -117,7 +156,10 @@ export const getDefaultFilterState = (
   active: false,
   columnsFilter: {
     type: FILTER_TYPES.RANGE,
-    range: { min: 1, max: Math.max(columnCount, 1) },
+    range: {
+      min: 1,
+      max: Math.max(columnCount, 1),
+    },
     list: [],
   },
   rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],

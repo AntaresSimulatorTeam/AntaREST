@@ -14,6 +14,7 @@
 
 import { Box, Typography, Slider } from "@mui/material";
 import { useMemo, useCallback, memo } from "react";
+import { DESIGN_TOKENS, TYPOGRAPHY_STYLES } from "../styles";
 
 interface RangeFilterControlProps {
   min: number;
@@ -63,7 +64,7 @@ function RangeFilterControl({
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          fontSize: "0.6rem",
+          ...TYPOGRAPHY_STYLES.smallCaption,
         }}
       >
         <span>{formattedMin}</span>
@@ -80,9 +81,9 @@ function RangeFilterControl({
         step={1}
         size="small"
         sx={{
-          mt: 0.5,
+          mt: DESIGN_TOKENS.spacing.sm,
           "& .MuiSlider-markLabel": {
-            fontSize: "0.6rem",
+            fontSize: DESIGN_TOKENS.fontSize.xs,
           },
         }}
         disabled={disabled}

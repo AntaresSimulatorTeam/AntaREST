@@ -13,7 +13,8 @@
  */
 
 import { useState, useCallback } from "react";
-import type { FilterState } from "../types";
+import type { FilterState, RowFilter } from "../types";
+import type { FilterType } from "../constants";
 
 interface UseFilterControlsProps {
   filter: FilterState;
@@ -31,7 +32,7 @@ interface UseFilterControlsReturn {
   handleKeyPress: (event: React.KeyboardEvent) => void;
   handleCheckboxChange: (value: number, filterId?: string) => void;
   handleRangeChange: (newValue: number[], filterId?: string) => void;
-  handleTypeChange: (newType: string, filterId?: string) => void;
+  handleTypeChange: (newType: FilterType, filterId?: string) => void;
 }
 
 export function useFilterControls({
@@ -237,7 +238,7 @@ export function useFilterControls({
 
   // Handle filter type changes
   const handleTypeChange = useCallback(
-    (newType: string, id?: string) => {
+    (newType: FilterType, id?: string) => {
       if (id) {
         // For row filters
         setFilter((prevFilter) => ({
@@ -246,7 +247,7 @@ export function useFilterControls({
             if (rf.id !== id) {
               return rf;
             }
-            return { ...rf, type: newType };
+            return { ...rf, type: newType } as RowFilter;
           }),
         }));
       } else {

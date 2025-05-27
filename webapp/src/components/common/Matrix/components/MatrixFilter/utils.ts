@@ -145,3 +145,57 @@ export function processRowFilters(
   // Convert set back to array and sort
   return Array.from(allIndices).sort((a, b) => a - b);
 }
+
+/**
+ * Safely extracts matrix dimensions from matrix data
+ *
+ * @param matrixData - The matrix data array
+ * @returns Object containing rowCount and columnCount
+ */
+export function getMatrixDimensions(matrixData: number[][]): {
+  rowCount: number;
+  columnCount: number;
+} {
+  const rowCount = matrixData.length;
+  const columnCount = matrixData[0]?.length || 0;
+
+  return { rowCount, columnCount };
+}
+
+/**
+ * Validates that matrix data is properly formatted
+ *
+ * @param matrixData - The matrix data array to validate
+ * @returns Boolean indicating if the matrix is valid
+ */
+export function isValidMatrix(matrixData: unknown): matrixData is number[][] {
+  if (!Array.isArray(matrixData) || matrixData.length === 0) {
+    return false;
+  }
+
+  const firstRowLength = matrixData[0]?.length;
+  if (typeof firstRowLength !== "number") {
+    return false;
+  }
+
+  return matrixData.every(
+    (row) =>
+      Array.isArray(row) &&
+      row.length === firstRowLength &&
+      row.every((cell) => typeof cell === "number"),
+  );
+}
+
+/**
+ * Creates default indices arrays for given dimensions
+ *
+ * @param rowCount - Number of rows
+ * @param columnCount - Number of columns
+ * @returns Object containing rowsIndices and columnsIndices arrays
+ */
+export function createDefaultIndices(rowCount: number, columnCount: number) {
+  return {
+    rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
+    columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
+  };
+}
