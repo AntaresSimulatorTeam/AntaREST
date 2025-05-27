@@ -60,22 +60,22 @@ def create_file_transfer_api(
         task_id: str,
         download_id: str,
         wait_for_availability: bool = False,
-        timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT,
     ) -> FileResponse:
         sanitized_task_id = sanitize_uuid(task_id)
         task = task_service.status_task(sanitized_task_id)
 
-        # the user ask for a timeout
         if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+            # the user wants to wait for the download to be available
             if wait_for_availability:
                 try:
-                    task_service.await_task(task_id=sanitized_task_id, timeout_sec=timeout)
+                    task_service.await_task(task_id=sanitized_task_id, timeout_sec=DEFAULT_AWAIT_MAX_TIMEOUT)
                 except concurrent.futures.TimeoutError:
                     raise HTTPException(
-                        status_code=http.HTTPStatus.EXPECTATION_FAILED,
-                        detail=f"The requested file is still in process after waiting for {timeout} seconds.",
+                        status_code=http.HTTPStatus.REQUEST_TIMEOUT,
+                        detail=f"The requested file is still in process after waiting for {DEFAULT_AWAIT_MAX_TIMEOUT}"
+                        f" seconds.",
                     )
-            # the user did not ask for a timeout
+            # the user does not want to wait for the results
             else:
                 raise HTTPException(
                     status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="The requested file is still in process."
@@ -90,13 +90,7 @@ def create_file_transfer_api(
                 detail=f"The requested file was not successfully processed: {task.result.message}",  # type: ignore
             )
 
-        try:
-            file_download = filetransfer_manager.fetch_download(download_id)
-        except Exception as e:
-            raise HTTPException(
-                status_code=e.args[0],
-                detail=f"Impossible to retrieve the requested file: {e.args[1]}",
-            ) from e
+        file_download = filetransfer_manager.fetch_download(download_id)
 
         # the task was successfully completed
         return FileResponse(
