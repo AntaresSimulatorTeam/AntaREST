@@ -20,6 +20,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RowFilter from "./RowFilter";
 import { createDefaultRowFilter } from "./constants";
+import { DESIGN_TOKENS, CONTAINER_STYLES, ICON_BUTTON_STYLES } from "./styles";
 import type { RowFilterProps } from "./types";
 
 function MultiRowFilter({
@@ -92,7 +93,7 @@ function MultiRowFilter({
   return (
     <>
       {filter.rowsFilters.map((rowFilter) => (
-        <Box key={rowFilter.id} sx={{ mb: 1 }}>
+        <Box key={rowFilter.id} sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
           <RowFilter
             filter={filter}
             setFilter={setFilter}
@@ -107,7 +108,7 @@ function MultiRowFilter({
         </Box>
       ))}
 
-      <Box sx={{ display: "flex", gap: 1 }}>
+      <Box sx={CONTAINER_STYLES.flexRowGap}>
         <Tooltip
           title={allExpanded ? t("matrix.filter.collapseAll") : t("matrix.filter.expandAll")}
         >
@@ -115,7 +116,7 @@ function MultiRowFilter({
             onClick={handleToggleAll}
             size="small"
             color={allExpanded ? "primary" : "default"}
-            sx={{ p: 0.5 }}
+            sx={ICON_BUTTON_STYLES.small}
           >
             {allExpanded ? (
               <ExpandLessIcon fontSize="small" />
@@ -131,7 +132,7 @@ function MultiRowFilter({
           size="small"
           sx={{
             flex: 1,
-            fontSize: "0.7rem",
+            fontSize: DESIGN_TOKENS.fontSize.xs,
           }}
         >
           {t("matrix.filter.addRowFilter")}

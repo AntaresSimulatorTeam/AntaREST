@@ -32,6 +32,7 @@ import { useTranslation } from "react-i18next";
 import type { OperationsProps } from "./types";
 import { Operation } from "../../shared/constants";
 import { useOperationControls } from "./hooks/useOperationControls";
+import { TYPOGRAPHY_STYLES, FORM_STYLES, DESIGN_TOKENS, OPERATION_STYLES } from "./styles";
 
 function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
@@ -48,38 +49,36 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   };
 
   return (
-    <Accordion defaultExpanded sx={{ my: 1, borderTop: "none" }}>
+    <Accordion defaultExpanded sx={{ my: DESIGN_TOKENS.spacing.lg, borderTop: "none" }}>
       <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />}>
-        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
-          {t("matrix.filter.operation")}
-        </Typography>
+        <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>{t("matrix.filter.operation")}</Typography>
       </AccordionSummary>
       <AccordionDetails>
-        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
-          <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.operationType")}</InputLabel>
+        <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>
+          <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
           <Select
             value={filter.operation.type}
             label={t("matrix.filter.operationType")}
             onChange={handleOperationTypeChangeEvent}
             disabled={!filter.active}
-            sx={{ fontSize: "0.8rem" }}
+            sx={FORM_STYLES.formControl}
           >
-            <MenuItem value={Operation.Eq} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={Operation.Eq} sx={FORM_STYLES.menuItem}>
               {t("matrix.operation.equal")}
             </MenuItem>
-            <MenuItem value={Operation.Add} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={Operation.Add} sx={FORM_STYLES.menuItem}>
               {t("matrix.operation.add")}
             </MenuItem>
-            <MenuItem value={Operation.Sub} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={Operation.Sub} sx={FORM_STYLES.menuItem}>
               {t("matrix.operation.subtract")}
             </MenuItem>
-            <MenuItem value={Operation.Mul} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={Operation.Mul} sx={FORM_STYLES.menuItem}>
               {t("matrix.operation.multiply")}
             </MenuItem>
-            <MenuItem value={Operation.Div} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={Operation.Div} sx={FORM_STYLES.menuItem}>
               {t("matrix.operation.divide")}
             </MenuItem>
-            <MenuItem value={Operation.Abs} sx={{ fontSize: "0.8rem" }}>
+            <MenuItem value={Operation.Abs} sx={FORM_STYLES.menuItem}>
               {t("matrix.operation.absolute")}
             </MenuItem>
           </Select>
@@ -93,12 +92,12 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             onChange={handleValueChangeEvent}
             fullWidth
             size="small"
-            sx={{ mb: 1, "& .MuiInputBase-input": { fontSize: "0.8rem" } }}
+            sx={{ mb: DESIGN_TOKENS.spacing.lg, ...FORM_STYLES.textField }}
             disabled={!filter.active}
           />
         )}
 
-        <Box sx={{ mt: 1, display: "flex", justifyContent: "flex-end" }}>
+        <Box sx={OPERATION_STYLES.container}>
           <Button
             variant="contained"
             color="primary"
@@ -106,7 +105,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             startIcon={<PlayArrowIcon fontSize="small" />}
             disabled={!hasValidFilters}
             size="small"
-            sx={{ fontSize: "0.6rem", py: 0.5 }}
+            sx={OPERATION_STYLES.submitButton}
           >
             {t("matrix.filter.applyOperation")}
           </Button>
