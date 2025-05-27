@@ -27,6 +27,7 @@ interface UseFilterControlsReturn {
   handleListChange: (value: string) => void;
   addValueToList: (filterId?: string) => void;
   removeValueFromList: (valueToRemove: number, filterId?: string) => void;
+  clearAllValues: (filterId?: string) => void;
   handleKeyPress: (event: React.KeyboardEvent) => void;
   handleCheckboxChange: (value: number, filterId?: string) => void;
   handleRangeChange: (newValue: number[], filterId?: string) => void;
@@ -207,6 +208,33 @@ export function useFilterControls({
     [setFilter],
   );
 
+  const clearAllValues = useCallback(
+    (id?: string) => {
+      if (id) {
+        // For row filters
+        setFilter((prevFilter) => ({
+          ...prevFilter,
+          rowsFilters: prevFilter.rowsFilters.map((rf) => {
+            if (rf.id !== id) {
+              return rf;
+            }
+            return { ...rf, list: [] };
+          }),
+        }));
+      } else {
+        // For column filter
+        setFilter((prevFilter) => ({
+          ...prevFilter,
+          columnsFilter: {
+            ...prevFilter.columnsFilter,
+            list: [],
+          },
+        }));
+      }
+    },
+    [setFilter],
+  );
+
   // Handle filter type changes
   const handleTypeChange = useCallback(
     (newType: string, id?: string) => {
@@ -252,6 +280,7 @@ export function useFilterControls({
     handleListChange,
     addValueToList,
     removeValueFromList,
+    clearAllValues,
     handleKeyPress,
     handleCheckboxChange,
     handleRangeChange,
