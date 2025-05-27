@@ -38,6 +38,7 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
     handleListChange,
     addValueToList,
     removeValueFromList,
+    clearAllValues,
     handleKeyPress,
     handleTypeChange,
   } = useFilterControls({ filter, setFilter });
@@ -60,20 +61,30 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
   };
 
   return (
-    <Accordion defaultExpanded>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="subtitle1">{t("matrix.filter.columnsFilter")}</Typography>
+    <Accordion defaultExpanded sx={{ mb: 1 }}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon fontSize="small" />}
+        sx={{ py: 0, my: 0, maxHeight: 35, minHeight: 0 }}
+      >
+        <Typography sx={{ fontSize: "0.8rem", fontWeight: 500 }}>
+          {t("matrix.filter.columnsFilter")}
+        </Typography>
       </AccordionSummary>
-      <AccordionDetails>
-        <FormControl fullWidth margin="dense">
-          <InputLabel>{t("matrix.filter.type")}</InputLabel>
+      <AccordionDetails sx={{ pt: 0.5, pb: 1 }}>
+        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
+          <InputLabel sx={{ fontSize: "0.8rem" }}>{t("matrix.filter.type")}</InputLabel>
           <Select
             value={filter.columnsFilter.type}
             label={t("matrix.filter.type")}
             onChange={handleTypeChangeEvent}
+            sx={{ fontSize: "0.8rem" }}
           >
-            <MenuItem value={FILTER_TYPES.RANGE}>{t("matrix.filter.range")}</MenuItem>
-            <MenuItem value={FILTER_TYPES.LIST}>{t("matrix.filter.list")}</MenuItem>
+            <MenuItem value={FILTER_TYPES.RANGE} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.filter.range")}
+            </MenuItem>
+            <MenuItem value={FILTER_TYPES.LIST} sx={{ fontSize: "0.8rem" }}>
+              {t("matrix.filter.list")}
+            </MenuItem>
           </Select>
         </FormControl>
 
@@ -99,6 +110,7 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
             onKeyPress={handleKeyPress}
             onAddValue={() => addValueToList()}
             onRemoveValue={(value) => removeValueFromList(value)}
+            onClearAll={() => clearAllValues()}
           />
         )}
       </AccordionDetails>

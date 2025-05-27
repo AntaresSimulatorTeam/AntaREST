@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Typography, Paper, Grid } from "@mui/material";
+import { Typography, Paper, Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { SelectionSummaryProps } from "./types";
 
@@ -25,8 +25,7 @@ function SelectionSummary({ filteredData, previewMode = false }: SelectionSummar
     <Paper
       variant="outlined"
       sx={{
-        mt: 2,
-        p: 2,
+        p: 0.5,
         ...(previewMode && {
           boxShadow: "0 0 0 1px rgba(33, 150, 243, 0.2)",
           borderColor: "rgba(33, 150, 243, 0.3)",
@@ -34,55 +33,57 @@ function SelectionSummary({ filteredData, previewMode = false }: SelectionSummar
       }}
     >
       <Typography
-        variant="subtitle2"
+        variant="caption"
         color={previewMode ? "info.main" : "primary.main"}
         gutterBottom
+        sx={{ display: "block", textAlign: "center" }}
       >
         {t("matrix.filter.selectionSummary")}
       </Typography>
 
-      <Grid container spacing={2}>
-        <Grid item xs={6}>
-          <Typography variant="body2" color="text.secondary">
-            {t("matrix.filter.selectedRows")}:
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box sx={{ textAlign: "center", flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+            {t("matrix.filter.selectedRows")}
           </Typography>
           <Typography
-            variant="h6"
-            color={previewMode ? "info.main" : undefined}
-            fontWeight={previewMode ? "medium" : "medium"}
-            sx={previewMode ? { opacity: 0.9 } : undefined}
+            variant="caption"
+            color={previewMode ? "info.main" : "text.primary"}
+            fontWeight="medium"
+            sx={{ display: "block", fontSize: "0.8rem" }}
           >
             {filteredData.rowsIndices.length}
           </Typography>
-        </Grid>
+        </Box>
 
-        <Grid item xs={6}>
-          <Typography variant="body2" color="text.secondary">
-            {t("matrix.filter.selectedColumns")}:
+        <Box sx={{ textAlign: "center", flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+            {t("matrix.filter.selectedColumns")}
           </Typography>
           <Typography
-            variant="h6"
-            color={previewMode ? "info.main" : undefined}
-            fontWeight={previewMode ? "medium" : "medium"}
-            sx={previewMode ? { opacity: 0.9 } : undefined}
+            variant="caption"
+            color={previewMode ? "info.main" : "text.primary"}
+            fontWeight="medium"
+            sx={{ display: "block", fontSize: "0.8rem" }}
           >
             {filteredData.columnsIndices.length}
           </Typography>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12}>
-          <Typography variant="body2" color="text.secondary">
-            {t("matrix.filter.selectedCells")}:
+        <Box sx={{ textAlign: "center", flex: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+            {t("matrix.filter.selectedCells")}
           </Typography>
           <Typography
-            variant="h5"
+            variant="body2"
             color={previewMode ? "info.main" : "primary.main"}
             fontWeight="medium"
+            sx={{ display: "block", fontSize: "0.8rem" }}
           >
             {totalCells}
           </Typography>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Paper>
   );
 }

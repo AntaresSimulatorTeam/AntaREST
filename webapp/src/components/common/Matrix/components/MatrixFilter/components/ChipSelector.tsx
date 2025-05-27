@@ -41,7 +41,7 @@ const ChipSelector = ({
   size = "small",
   color = "primary",
   variant = "outlined",
-  dense = false,
+  dense = true,
   disabled = false,
   renderOption,
 }: ChipSelectorProps) => {
@@ -52,12 +52,8 @@ const ChipSelector = ({
   };
 
   return (
-    <Box sx={{ mt: 2 }}>
-      {title && (
-        <Typography variant="subtitle2" gutterBottom>
-          {title}
-        </Typography>
-      )}
+    <Box>
+      {title && <Typography sx={{ fontSize: "0.7rem", mb: 0.5 }}>{title}</Typography>}
       <Stack
         direction="row"
         spacing={dense ? 0.5 : 1}
@@ -69,10 +65,8 @@ const ChipSelector = ({
           const isSelected = selectedValues.includes(option.value);
 
           if (renderOption) {
-            // Use a div instead of Box with onClick to prevent button nesting issues
-            // when renderOption returns a button-like element
             return (
-              <div
+              <Box
                 key={option.value}
                 style={{
                   cursor: disabled ? "default" : "pointer",
@@ -80,7 +74,7 @@ const ChipSelector = ({
                 }}
               >
                 {renderOption(option, isSelected)}
-              </div>
+              </Box>
             );
           }
 
@@ -93,7 +87,22 @@ const ChipSelector = ({
               variant={isSelected ? "filled" : variant}
               size={size}
               disabled={disabled}
-              sx={dense ? { m: 0.2, minWidth: 36, height: 24 } : { my: 0.5 }}
+              sx={
+                dense
+                  ? {
+                      m: 0.125,
+                      minWidth: 28,
+                      height: 18,
+                      fontSize: "0.6rem",
+                      "& .MuiChip-label": { px: 0.5 },
+                    }
+                  : {
+                      my: 0.25,
+                      height: 24,
+                      fontSize: "0.8rem",
+                      "& .MuiChip-label": { px: 0.8 },
+                    }
+              }
             />
           );
         })}
