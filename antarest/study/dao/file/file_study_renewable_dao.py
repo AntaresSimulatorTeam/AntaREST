@@ -108,7 +108,21 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        cluster_id = renewable.get_id().lower()
+        paths = [
+            ["input", "renewables", "clusters", area_id, "list", cluster_id],
+            ["input", "renewables", "series", area_id, cluster_id],
+        ]
+        if len(study_data.config.areas[area_id].renewables) == 1:
+            paths.append(["input", "renewables", "series", area_id])
+
+        for path in paths:
+            study_data.tree.delete(path)
+
+        self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
+        # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
+        return self._remove_from_config(study_data.config, area_id, renewable)
 
     @staticmethod
     def _update_renewable_config(study_data: FileStudyTreeConfig, area_id: str, renewable: RenewableCluster) -> None:
@@ -117,7 +131,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
         renewable_id = renewable.get_id()
         for k, existing_cluster in enumerate(study_data.areas[area_id].renewables):
-            if existing_cluster.id == renewable_id:
+            if existing_cluster.get_id() == renewable_id:
                 study_data.areas[area_id].renewables[k] = renewable
                 return
         study_data.areas[area_id].renewables.append(renewable)
