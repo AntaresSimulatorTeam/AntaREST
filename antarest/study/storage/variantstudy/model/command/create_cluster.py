@@ -21,6 +21,7 @@ from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
+    create_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
@@ -101,7 +102,7 @@ class CreateCluster(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        thermal = parse_thermal_cluster(self.study_version, self.parameters)
+        thermal = create_thermal_cluster(self.parameters, self.study_version)
         lower_thermal_id = thermal.id.lower()
         if study_data.thermal_exists(self.area_id, lower_thermal_id):
             return command_failed(f"Thermal cluster '{thermal.id}' already exists in the area '{self.area_id}'")
