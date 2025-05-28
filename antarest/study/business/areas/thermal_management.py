@@ -123,7 +123,7 @@ class ThermalManager:
             old_thermals_by_ids = old_thermals_by_areas[area_id]
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
-                old_cluster = old_thermals_by_ids[thermal_id]
+                old_cluster = old_thermals_by_ids[thermal_id.lower()]
                 new_cluster = update_thermal_cluster(old_cluster, update_cluster)
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 

@@ -244,7 +244,7 @@ class RenewableManager:
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():
                 # Update the renewable cluster properties.
-                old_cluster = old_renewables_by_ids[renewable_id]
+                old_cluster = old_renewables_by_ids[renewable_id.lower()]
                 new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(exclude_none=True))
                 new_renewables_by_areas[area_id][renewable_id] = new_cluster
 
