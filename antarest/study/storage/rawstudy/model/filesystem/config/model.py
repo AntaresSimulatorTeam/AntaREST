@@ -246,7 +246,7 @@ class FileStudyTreeConfig(DTO):
         Returns a list of renewable cluster IDs for a given area.
         Note that IDs may not be in lower case (but series IDs are).
         """
-        return [r.id for r in self.areas[area].renewables]
+        return [r.get_id() for r in self.areas[area].renewables]
 
     def get_st_storage_ids(self, area: str) -> List[str]:
         return [s.id for s in self.areas[area].st_storages]
