@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Any, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -59,15 +59,8 @@ class FileStudyRenewableDao(RenewableDao, ABC):
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
         file_study = self.get_file_study()
-
-        path = _CLUSTERS_PATH.format(area_id=area_id)
-
-        try:
-            clusters = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise RenewableClusterConfigNotFound(path, area_id)
-
-        return [parse_renewable_cluster(cluster) for cluster in clusters.values()]
+        clusters_data = self._get_all_renewables_for_area(file_study, area_id)
+        return [parse_renewable_cluster(cluster) for cluster in clusters_data.values()]
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
@@ -108,7 +101,12 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        ini_content = self._get_all_renewables_for_area(study_data, area_id)
+        for renewable in renewables:
+            self._update_renewable_config(study_data.config, area_id, renewable)
+            ini_content[renewable.get_id()] = serialize_renewable_cluster(renewable)
+        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
 
     @override
     def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
@@ -132,6 +130,15 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         return self._remove_from_config(study_data.config, area_id, renewable)
+
+    @staticmethod
+    def _get_all_renewables_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
+        path = _CLUSTERS_PATH.format(area_id=area_id)
+        try:
+            clusters_data = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise RenewableClusterConfigNotFound(path, area_id) from None
+        return clusters_data
 
     @staticmethod
     def _update_renewable_config(study_data: FileStudyTreeConfig, area_id: str, renewable: RenewableCluster) -> None:

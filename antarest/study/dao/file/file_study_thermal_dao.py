@@ -63,15 +63,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
         clusters_data = self._get_all_thermals_for_area(file_study, area_id)
         return [parse_thermal_cluster(file_study.config.version, c) for c in clusters_data.values()]
 
-    @staticmethod
-    def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
-        path = _CLUSTERS_PATH.format(area_id=area_id)
-        try:
-            clusters_data = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise ThermalClusterConfigNotFound(path, area_id) from None
-        return clusters_data
-
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
         file_study = self.get_file_study()
@@ -203,6 +194,15 @@ class FileStudyThermalDao(ThermalDao, ABC):
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         return self._remove_from_config(study_data.config, area_id, thermal)
+
+    @staticmethod
+    def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
+        path = _CLUSTERS_PATH.format(area_id=area_id)
+        try:
+            clusters_data = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise ThermalClusterConfigNotFound(path, area_id) from None
+        return clusters_data
 
     @staticmethod
     def _update_thermal_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
