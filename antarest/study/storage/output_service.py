@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Optional, Sequence
+from typing import BinaryIO, Optional, Sequence, Tuple
 
 from starlette.responses import FileResponse, Response
 
@@ -474,7 +474,7 @@ class OutputService:
         download_name: str,
         download_log: str,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> FileDownloadTaskDTO:
+    ) -> Tuple[str, str]:
         """
         Aggregates output data based on several filtering conditions
 
@@ -490,7 +490,7 @@ class OutputService:
             download_log: log to display while launching aggregation output task,
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
-        Returns: the task that aggregates output data
+        Returns: tuple of the file download id and the task id
 
         """
         study = self._study_service.get_study(uuid)
@@ -550,4 +550,4 @@ class OutputService:
             custom_event_messages=None,
         )
 
-        return FileDownloadTaskDTO(file=file_download.to_dto(), task=task_id)
+        return download_id, task_id

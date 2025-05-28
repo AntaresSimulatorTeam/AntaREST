@@ -9,27 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import concurrent.futures
-import http
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import FileDownloadDTO
+from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.tasks.model import TaskStatus
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
 
-def create_file_transfer_api(
-    filetransfer_manager: FileTransferManager, task_service: ITaskService, config: Config
-) -> APIRouter:
+def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: Config) -> APIRouter:
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
@@ -54,49 +48,19 @@ def create_file_transfer_api(
     @bp.get(
         "/downloads/{download_id}/metadata",
         tags=[APITag.downloads],
-        summary="Retrieve download file or information on the file's state of preparation",
+        summary="Retrieve information on a file's state of preparation",
     )
     def get_download_metadata(
         task_id: str,
         download_id: str,
         wait_for_availability: bool = False,
-    ) -> FileResponse:
+    ) -> FileDownloadTaskDTO:
         sanitized_task_id = sanitize_uuid(task_id)
-        task = task_service.status_task(sanitized_task_id)
-
-        if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
-            # the user wants to wait for the download to be available
-            if wait_for_availability:
-                try:
-                    task_service.await_task(task_id=sanitized_task_id, timeout_sec=DEFAULT_AWAIT_MAX_TIMEOUT)
-                except concurrent.futures.TimeoutError:
-                    raise HTTPException(
-                        status_code=http.HTTPStatus.REQUEST_TIMEOUT,
-                        detail=f"The requested file is still in process after waiting for {DEFAULT_AWAIT_MAX_TIMEOUT}"
-                        f" seconds.",
-                    )
-            # the user does not want to wait for the results
-            else:
-                raise HTTPException(
-                    status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="The requested file is still in process."
-                )
-
-        task = task_service.status_task(sanitized_task_id)  # update task status
-
-        # the task could not be completed
-        if task.status != TaskStatus.COMPLETED:
-            raise HTTPException(
-                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"The requested file was not successfully processed: {task.result.message}",  # type: ignore
-            )
-
-        file_download = filetransfer_manager.fetch_download(download_id)
+        sanitized_download_id = sanitize_uuid(download_id)
 
         # the task was successfully completed
-        return FileResponse(
-            path=file_download.path,
-            status_code=http.HTTPStatus.OK,
-            headers={"Content-Disposition": f'attachment; filename="{file_download.filename}"'},
+        return filetransfer_manager.get_download_metadata(
+            task_id=sanitized_task_id, download_id=sanitized_download_id, wait_for_availability=wait_for_availability
         )
 
     return bp
