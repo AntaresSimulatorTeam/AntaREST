@@ -47,7 +47,7 @@ class UpdateRenewablesClusters(ICommand):
 
         for area_id, value in self.cluster_properties.items():
             if area_id not in all_renewables:
-                return command_failed(f"Area '{area_id}' does not exist")
+                return command_failed(f"The area '{area_id}' is not found.")
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
@@ -61,7 +61,7 @@ class UpdateRenewablesClusters(ICommand):
 
             study_data.save_renewables(area_id, new_clusters)
 
-        return command_succeeded("All renewable clusters updated")
+        return command_succeeded("The renewable clusters were successfully updated.")
 
     @override
     def to_dto(self) -> CommandDTO:

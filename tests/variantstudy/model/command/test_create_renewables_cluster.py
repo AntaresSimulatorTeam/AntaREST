@@ -16,14 +16,11 @@ import re
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableClusterGroup,
-    RenewableProperties,
-    TimeSeriesInterpretation,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -36,7 +33,7 @@ class TestCreateRenewablesCluster:
     def test_init(self, command_context: CommandContext) -> None:
         cl = CreateRenewablesCluster(
             area_id="foo",
-            parameters=RenewableProperties(
+            parameters=RenewableClusterCreation(
                 name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
@@ -50,7 +47,7 @@ class TestCreateRenewablesCluster:
         # Check the command data
         assert cl.area_id == "foo"
         assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == RenewableProperties(
+        assert cl.parameters == RenewableClusterCreation(
             name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
         )
 
@@ -59,7 +56,7 @@ class TestCreateRenewablesCluster:
             CreateRenewablesCluster(
                 area_id="fr",
                 command_context=command_context,
-                parameters=RenewableProperties(name="%"),
+                parameters=RenewableClusterCreation(name="%"),
                 study_version=STUDY_VERSION_8_8,
             )
 
@@ -75,7 +72,9 @@ class TestCreateRenewablesCluster:
 
         CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)
 
-        parameters = RenewableProperties(name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION)
+        parameters = RenewableClusterCreation(
+            name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION
+        )
 
         command = CreateRenewablesCluster(
             area_id=area_id,
@@ -136,7 +135,7 @@ class TestCreateRenewablesCluster:
     def test_to_dto(self, command_context: CommandContext) -> None:
         command = CreateRenewablesCluster(
             area_id="foo",
-            parameters=RenewableProperties(
+            parameters=RenewableClusterCreation(
                 name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
