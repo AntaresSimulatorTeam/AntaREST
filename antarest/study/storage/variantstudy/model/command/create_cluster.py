@@ -101,7 +101,7 @@ class CreateCluster(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        thermal = parse_thermal_cluster(self.study_version, self.parameters.model_dump(mode="json"))
+        thermal = parse_thermal_cluster(self.study_version, self.parameters)
         lower_thermal_id = thermal.id.lower()
         if study_data.thermal_exists(self.area_id, lower_thermal_id):
             return command_failed(f"Thermal cluster '{thermal.id}' already exists in the area '{self.area_id}'")
