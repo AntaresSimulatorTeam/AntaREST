@@ -416,7 +416,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
-            version=2,
+            version=3,
             args={
                 "area_id": "area_name",
                 "parameters": {
@@ -442,7 +442,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
-            version=2,
+            version=3,
             args=[
                 {
                     "area_id": "area_name",
@@ -1060,6 +1060,6 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
-    assert dto.version == 2
+    assert dto.version == 3
     assert dto.args["parameters"]["name"] == "cluster_name"
     assert "cluster_name" not in dto.args

@@ -41,7 +41,8 @@ class CreateRenewablesCluster(ICommand):
     command_name: CommandName = CommandName.CREATE_RENEWABLES_CLUSTER
 
     # version 2: remove cluster_name and type parameters as RenewableProperties
-    _SERIALIZATION_VERSION: Final[int] = 2
+    # version 3: type parameters as RenewableClusterCreation
+    _SERIALIZATION_VERSION: Final[int] = 3
 
     # Command parameters
     # ==================
@@ -55,10 +56,13 @@ class CreateRenewablesCluster(ICommand):
         # Validate parameters
         if isinstance(values["parameters"], dict):
             parameters = values["parameters"]
-            if info.context and info.context.version == 1:
-                parameters["name"] = values.pop("cluster_name")
-            cluster = parse_renewable_cluster(parameters)
-            values["parameters"] = RenewableClusterCreation.from_cluster(cluster)
+            if info.context:
+                version = info.context.version
+                if version == 1:
+                    parameters["name"] = values.pop("cluster_name")
+                if version < 3:
+                    cluster = parse_renewable_cluster(parameters)
+                    values["parameters"] = RenewableClusterCreation.from_cluster(cluster)
         return values
 
     @override

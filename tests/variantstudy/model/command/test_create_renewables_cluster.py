@@ -145,7 +145,7 @@ class TestCreateRenewablesCluster:
                 "parameters": {"name": "Cluster1", "group": "solar thermal", "nominalCapacity": 2400, "unitCount": 2},
             },
             "id": None,
-            "version": 2,
+            "version": 3,
             "study_version": "8.8",
             "updated_at": None,
             "user_id": None,
