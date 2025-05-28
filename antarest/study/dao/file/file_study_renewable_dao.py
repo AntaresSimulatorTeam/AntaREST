@@ -10,9 +10,10 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence, override
+from typing import Sequence
 
 import pandas as pd
+from typing_extensions import override
 
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao

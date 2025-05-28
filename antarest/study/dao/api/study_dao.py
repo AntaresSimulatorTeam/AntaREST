@@ -17,19 +17,21 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
+from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class ReadOnlyStudyDao(ReadOnlyLinkDao, ReadOnlyThermalDao):
+class ReadOnlyStudyDao(ReadOnlyLinkDao, ReadOnlyThermalDao, ReadOnlyRenewableDao):
     @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
 
-class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao):
+class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao):
     """
     Abstraction for access to study data. Handles all reading
     and writing from underlying storage format.
@@ -109,3 +111,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
         return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
+
+    @override
+    def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
+        raise NotImplementedError()
+
+    @override
+    def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
+        raise NotImplementedError()
+
+    @override
+    def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
+        raise NotImplementedError()
+
+    @override
+    def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
+        raise NotImplementedError()
+
+    @override
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+        raise NotImplementedError()

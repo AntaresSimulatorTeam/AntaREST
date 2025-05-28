@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -190,3 +191,39 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         del self._thermals[cluster_key(area_id, thermal.id)]
+
+    @override
+    def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
+        raise NotImplementedError()
+
+    @override
+    def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
+        raise NotImplementedError()
+
+    @override
+    def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
+        raise NotImplementedError()
+
+    @override
+    def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
+        raise NotImplementedError()
+
+    @override
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
+        raise NotImplementedError()
