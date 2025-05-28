@@ -110,8 +110,8 @@ class RenewableClusterCreation(AntaresBaseModel):
 
     name: ItemName
     enabled: Optional[bool] = None
-    unit_count: Optional[int] = None
-    nominal_capacity: Optional[float] = None
+    unit_count: Optional[int] = Field(default=None, ge=1)
+    nominal_capacity: Optional[float] = Field(default=None, ge=0)
     group: Optional[RenewableClusterGroup] = None
     ts_interpretation: Optional[TimeSeriesInterpretation] = None
 
@@ -134,9 +134,21 @@ class RenewableClusterUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
+    @model_validator(mode="before")
+    @classmethod
+    def _ignore_name(cls, data: Any) -> Any:
+        """
+        Renaming is not currently supported, but name needs to be accepted
+        for backwards compatibility. We can restore that property when
+        proper renaming is implemented.
+        """
+        if isinstance(data, dict) and "name" in data:
+            del data["name"]
+        return data
+
     enabled: Optional[bool] = None
-    unit_count: Optional[int] = None
-    nominal_capacity: Optional[float] = None
+    unit_count: Optional[int] = Field(default=None, ge=1)
+    nominal_capacity: Optional[float] = Field(default=None, ge=0)
     group: Optional[RenewableClusterGroup] = None
     ts_interpretation: Optional[TimeSeriesInterpretation] = None
 

@@ -421,7 +421,7 @@ COMMANDS = [
                 "area_id": "area_name",
                 "parameters": {
                     "name": "cluster_name",
-                    "ts-interpretation": "power-generation",
+                    "tsInterpretation": "power-generation",
                 },
             },
             study_version=STUDY_VERSION_8_8,
@@ -429,12 +429,8 @@ COMMANDS = [
         {
             "area_id": "area_name",
             "parameters": {
-                "enabled": True,
-                "group": "other res 1",
                 "name": "cluster_name",
-                "nominalCapacity": 0.0,
                 "tsInterpretation": "power-generation",
-                "unitCount": 1,
             },
         },
         id="create_renewables_cluster",
@@ -446,10 +442,7 @@ COMMANDS = [
             args=[
                 {
                     "area_id": "area_name",
-                    "parameters": {
-                        "name": "cluster_name",
-                        "ts-interpretation": "power-generation",
-                    },
+                    "parameters": {"name": "cluster_name", "enabled": False, "unitCount": 4},
                 }
             ],
             study_version=STUDY_VERSION_8_8,
@@ -458,12 +451,9 @@ COMMANDS = [
             {
                 "area_id": "area_name",
                 "parameters": {
-                    "enabled": True,
-                    "group": "other res 1",
+                    "enabled": False,
                     "name": "cluster_name",
-                    "nominalCapacity": 0.0,
-                    "tsInterpretation": "power-generation",
-                    "unitCount": 1,
+                    "unitCount": 4,
                 },
             }
         ],
