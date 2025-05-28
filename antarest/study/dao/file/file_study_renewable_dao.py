@@ -18,6 +18,7 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -102,8 +103,43 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "renewables", "series", area_id, renewable_id, "series"])
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         raise NotImplementedError()
+
+    @staticmethod
+    def _update_renewable_config(study_data: FileStudyTreeConfig, area_id: str, renewable: RenewableCluster) -> None:
+        if area_id not in study_data.areas:
+            raise ValueError(f"The area '{area_id}' does not exist")
+
+        renewable_id = renewable.get_id()
+        for k, existing_cluster in enumerate(study_data.areas[area_id].renewables):
+            if existing_cluster.id == renewable_id:
+                study_data.areas[area_id].renewables[k] = renewable
+                return
+        study_data.areas[area_id].renewables.append(renewable)
+
+    @staticmethod
+    def _remove_from_config(study_data: FileStudyTreeConfig, area_id: str, renewable: RenewableCluster) -> None:
+        study_data.areas[area_id].renewables.remove(renewable)
+
+    @staticmethod
+    def _remove_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, renewable_id: str) -> None:
+        """
+        Update the scenario builder by removing the rows that correspond to the renewable cluster to remove.
+
+        NOTE: this update can be very long if the scenario builder configuration is large.
+        """
+        rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+        for ruleset in rulesets.values():
+            for key in list(ruleset):
+                # The key is in the form "symbol,area,year,cluster"
+                symbol, *parts = key.split(",")
+                if symbol == "r" and parts[0] == area_id and parts[2] == renewable_id:
+                    del ruleset[key]
+
+        study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
