@@ -114,20 +114,20 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
-        raise NotImplementedError()
+        return self._adaptee.get_all_renewables()
 
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        raise NotImplementedError()
+        return self._adaptee.get_all_renewables_for_area(area_id)
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
-        raise NotImplementedError()
+        return self._adaptee.get_renewable(area_id, renewable_id)
 
     @override
     def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
-        raise NotImplementedError()
+        return self._adaptee.renewable_exists(area_id, renewable_id)
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return self._adaptee.get_renewable_series(area_id, renewable_id)
