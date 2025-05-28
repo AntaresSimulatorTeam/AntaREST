@@ -96,7 +96,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
         study_data.tree.save(
             serialize_renewable_cluster(renewable),
-            ["input", "renewables", "clusters", area_id, "list", renewable.get_id()],
+            ["input", "renewables", "clusters", area_id, "list", renewable.id],
         )
 
     @override
@@ -105,7 +105,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         ini_content = self._get_all_renewables_for_area(study_data, area_id)
         for renewable in renewables:
             self._update_renewable_config(study_data.config, area_id, renewable)
-            ini_content[renewable.get_id()] = serialize_renewable_cluster(renewable)
+            ini_content[renewable.id] = serialize_renewable_cluster(renewable)
         study_data.tree.save(ini_content, ["input", "renewables", "clusters", area_id, "list"])
 
     @override
@@ -116,7 +116,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         study_data = self.get_file_study()
-        cluster_id = renewable.get_id().lower()
+        cluster_id = renewable.id.lower()
         paths = [
             ["input", "renewables", "clusters", area_id, "list", cluster_id],
             ["input", "renewables", "series", area_id, cluster_id],
@@ -145,9 +145,9 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         if area_id not in study_data.areas:
             raise ValueError(f"The area '{area_id}' does not exist")
 
-        renewable_id = renewable.get_id()
+        renewable_id = renewable.id
         for k, existing_cluster in enumerate(study_data.areas[area_id].renewables):
-            if existing_cluster.get_id() == renewable_id:
+            if existing_cluster.id == renewable_id:
                 study_data.areas[area_id].renewables[k] = renewable
                 return
         study_data.areas[area_id].renewables.append(renewable)

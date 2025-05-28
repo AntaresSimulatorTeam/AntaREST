@@ -202,7 +202,7 @@ class RenewableManager:
         """
         new_id = transform_name_to_id(new_cluster_name, lower=False)
         lower_new_id = new_id.lower()
-        if any(lower_new_id == cluster.get_id().lower() for cluster in self.get_clusters(study, area_id)):
+        if any(lower_new_id == cluster.id.lower() for cluster in self.get_clusters(study, area_id)):
             raise DuplicateRenewableCluster(area_id, new_id)
 
         # Cluster duplication

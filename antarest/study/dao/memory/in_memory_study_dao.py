@@ -221,7 +221,7 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        self._renewables[cluster_key(area_id, renewable.get_id())] = renewable
+        self._renewables[cluster_key(area_id, renewable.id)] = renewable
 
     @override
     def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
@@ -234,4 +234,4 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        del self._renewables[cluster_key(area_id, renewable.get_id())]
+        del self._renewables[cluster_key(area_id, renewable.id)]

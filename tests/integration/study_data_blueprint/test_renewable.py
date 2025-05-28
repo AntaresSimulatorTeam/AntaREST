@@ -45,13 +45,8 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
 from tests.integration.utils import wait_task_completion
-
-DEFAULT_PROPERTIES = RenewableProperties(name="Dummy").model_dump(mode="json")
-DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = []
@@ -116,12 +111,12 @@ class TestRenewable:
 
         # We can create a renewable cluster with the following properties:
         fr_solar_pv_props = {
-            **DEFAULT_PROPERTIES,
             "name": fr_solar_pv,
             "group": "Solar PV",
             "nominalCapacity": 5001,
             "unitCount": 1,
             "tsInterpretation": "production-factor",
+            "enabled": True,
         }
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",

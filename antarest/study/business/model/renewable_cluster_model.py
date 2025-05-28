@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional, cast
+from typing import Any, Optional, cast
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
@@ -82,15 +82,21 @@ class RenewableCluster(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
+    # TODO: for backwards compat, we do not set ID in lower case, but we should change this
+    @model_validator(mode="before")
+    @classmethod
+    def set_id(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "id" not in data and "name" in data:
+            data["id"] = transform_name_to_id(data["name"], lower=False)
+        return data
+
+    id: str
     name: ItemName
     enabled: bool = True
     unit_count: int = Field(default=1, ge=1)
     nominal_capacity: float = Field(default=0.0, ge=0)
     group: RenewableClusterGroup = RenewableClusterGroup.OTHER1
     ts_interpretation: TimeSeriesInterpretation = TimeSeriesInterpretation.POWER_GENERATION
-
-    def get_id(self) -> str:
-        return transform_name_to_id(self.name, lower=False)  # TODO: remove lower = False in the future
 
 
 class RenewableClusterCreation(AntaresBaseModel):
@@ -114,7 +120,9 @@ class RenewableClusterCreation(AntaresBaseModel):
         """
         Conversion to creation request
         """
-        return RenewableClusterCreation.model_validate(cluster.model_dump(mode="json", exclude_none=True))
+        return RenewableClusterCreation.model_validate(
+            cluster.model_dump(mode="json", exclude={"id"}, exclude_none=True)
+        )
 
 
 class RenewableClusterUpdate(AntaresBaseModel):

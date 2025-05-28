@@ -64,7 +64,7 @@ class CreateRenewablesCluster(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         renewable = create_renewable_cluster(self.parameters)
-        renewable_id = renewable.get_id()
+        renewable_id = renewable.id
         lower_renewable_id = renewable_id.lower()
         if study_data.renewable_exists(self.area_id, lower_renewable_id):
             return command_failed(f"Renewable cluster '{renewable_id}' already exists in the area '{self.area_id}'")

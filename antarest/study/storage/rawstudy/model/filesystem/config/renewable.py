@@ -41,7 +41,7 @@ class RenewableClusterFileData(AntaresBaseModel):
 
     @classmethod
     def from_model(cls, cluster: RenewableCluster) -> "RenewableClusterFileData":
-        return cls.model_validate(cluster.model_dump())
+        return cls.model_validate(cluster.model_dump(exclude={"id"}))
 
 
 def parse_renewable_cluster(data: Any) -> RenewableCluster:
