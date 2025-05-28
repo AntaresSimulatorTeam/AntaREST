@@ -249,9 +249,7 @@ class ThermalManager:
         # Cluster duplication
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
-        cluster_creation = ThermalClusterCreation(
-            **source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"})
-        )
+        cluster_creation = ThermalClusterCreation.from_cluster(source_cluster)
         command_context = self._command_context
         create_cluster_cmd = CreateCluster(
             area_id=area_id,

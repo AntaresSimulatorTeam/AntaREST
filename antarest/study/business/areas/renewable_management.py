@@ -212,13 +212,10 @@ class RenewableManager:
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, creation_form, study.version)
 
         # Matrix edition
-        lower_source_id = source_id.lower()
-        source_path = f"input/renewables/series/{area_id}/{lower_source_id}/series"
         new_path = f"input/renewables/series/{area_id}/{lower_new_id}/series"
 
         # Prepare and execute commands
-        file_study = study.get_files()
-        current_matrix = file_study.tree.get(source_path.split("/"))["data"]
+        current_matrix = study.get_study_dao().get_renewable_series(area_id, source_id.lower()).to_numpy().tolist()
         replace_matrix_cmd = ReplaceMatrix(
             target=new_path, matrix=current_matrix, command_context=self._command_context, study_version=study.version
         )
