@@ -68,6 +68,9 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_series: Dict[ClusterKey, str] = {}
         self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
+        # Renewables
+        self._renewables: Dict[ClusterKey, RenewableCluster] = {}
+        self._renewable_series: Dict[ClusterKey, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -194,36 +197,41 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
-        raise NotImplementedError()
+        all_renewables: dict[str, dict[str, RenewableCluster]] = {}
+        for key, renewable_cluster in self._renewables.items():
+            all_renewables.setdefault(key.area_id, {})[key.cluster_id] = renewable_cluster
+        return all_renewables
 
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        raise NotImplementedError()
+        return list(self._renewables.values())
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
-        raise NotImplementedError()
+        return self._renewables[cluster_key(area_id, renewable_id)]
 
     @override
     def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
-        raise NotImplementedError()
+        return cluster_key(area_id, renewable_id) in self._renewables
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._renewable_series[cluster_key(area_id, renewable_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError()
+        self._renewables[cluster_key(area_id, renewable.get_id())] = renewable
 
     @override
     def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
-        raise NotImplementedError()
+        for renewable in renewables:
+            self.save_renewable(area_id, renewable)
 
     @override
     def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError()
+        del self._renewables[cluster_key(area_id, renewable.get_id())]
