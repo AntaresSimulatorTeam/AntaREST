@@ -24,17 +24,14 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterCreation,
-    RenewableClusterOutput,
     RenewableClusterUpdate,
     RenewableClusterUpdates,
+    create_renewable_cluster,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewablePropertiesType,
-    create_renewable_config,
-)
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -69,7 +66,7 @@ class RenewableManager:
     def __init__(self, command_context: CommandContext):
         self._command_context = command_context
 
-    def get_clusters(self, study: StudyInterface, area_id: str) -> Sequence[RenewableClusterOutput]:
+    def get_clusters(self, study: StudyInterface, area_id: str) -> Sequence[RenewableCluster]:
         """
         Fetches all clusters related to a specific area in a study.
 
@@ -93,7 +90,7 @@ class RenewableManager:
     def get_all_renewables_props(
         self,
         study: StudyInterface,
-    ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
+    ) -> Mapping[str, Mapping[str, RenewableCluster]]:
         """
         Retrieve all renewable clusters from all areas within a study.
 
@@ -127,7 +124,7 @@ class RenewableManager:
 
     def create_cluster(
         self, study: StudyInterface, area_id: str, cluster_data: RenewableClusterCreation
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         """
         Creates a new cluster within an area in the study.
 
@@ -157,7 +154,7 @@ class RenewableManager:
         )
         return command
 
-    def get_cluster(self, study: StudyInterface, area_id: str, cluster_id: str) -> RenewableClusterOutput:
+    def get_cluster(self, study: StudyInterface, area_id: str, cluster_id: str) -> RenewableCluster:
         """
         Retrieves a single cluster's data for a specific area in a study.
 
@@ -186,7 +183,7 @@ class RenewableManager:
         area_id: str,
         cluster_id: str,
         cluster_data: RenewableClusterUpdate,
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         """
         Updates the configuration of an existing cluster within an area in the study.
 
@@ -254,7 +251,7 @@ class RenewableManager:
         area_id: str,
         source_id: str,
         new_cluster_name: str,
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         """
         Creates a duplicate cluster within the study area with a new name.
 
@@ -296,13 +293,13 @@ class RenewableManager:
         commands = [create_cluster_cmd, replace_matrix_cmd]
         study.add_commands(commands)
 
-        return RenewableClusterOutput(**new_config.model_dump(by_alias=False))
+        return create_renewable_cluster(creation_form)
 
     def update_renewables_props(
         self,
         study: StudyInterface,
         update_renewables_by_areas: RenewableClusterUpdates,
-    ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
+    ) -> Mapping[str, Mapping[str, RenewableCluster]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}
 
@@ -328,4 +325,4 @@ class RenewableManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return RenewableClusterOutput.model_json_schema()
+        return RenewableCluster.model_json_schema()
