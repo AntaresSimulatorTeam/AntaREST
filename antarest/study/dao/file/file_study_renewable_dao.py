@@ -19,7 +19,10 @@ from antarest.core.exceptions import ChildNotFoundError, RenewableClusterConfigN
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
+    parse_renewable_cluster,
+    serialize_renewable_cluster,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
@@ -95,7 +98,13 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        self._update_renewable_config(study_data.config, area_id, renewable)
+
+        study_data.tree.save(
+            serialize_renewable_cluster(renewable),
+            ["input", "renewables", "clusters", area_id, "list", renewable.get_id()],
+        )
 
     @override
     def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
