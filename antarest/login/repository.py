@@ -90,7 +90,7 @@ class IdentityRepository:
         return self._session
 
     def get_all_users(self) -> list[Identity]:
-        identities: list[Identity] = self.session.query(Identity).where(Identity.type == "users").all()
+        identities: list[Identity] = self.session.query(Identity).where(Identity.type != "bots").all()
         return identities
 
 
