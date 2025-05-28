@@ -21,6 +21,7 @@ storage:
 launcher:
   launchers:
     - id: local
+      name: my_local
       type: local
       name: my_local
       binaries:
