@@ -10,7 +10,7 @@ pyinstaller-hooks-contrib==2024.8
 # IMPORTANT: Make sure the versions of these typing libraries match the versions
 # of the corresponding implementation libraries used in production (in `requirements.txt`).
 
-pandas-stubs~=2.2.2
+pandas-stubs~=2.2.3.250527
 types-openpyxl~=3.1.5
 types-paramiko~=3.4.0
 types-psycopg2~=2.9.9
