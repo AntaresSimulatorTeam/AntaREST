@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
 
 def test_file_request():
     app = create_app()
-    ftm = FileTransferManager(Mock(), Mock(), Config())
+    ftm = FileTransferManager(Mock(), Mock(), Mock(), Config())
 
     @app.get("/dummy")
     def dummy_endpoint(tmppath: Path = Depends(ftm.request_tmp_file)):
@@ -69,6 +69,7 @@ def test_lifecycle(tmp_path: Path):
         ftm = FileTransferManager(
             FileDownloadRepository(),
             event_bus,
+            Mock(),
             Config(storage=StorageConfig(tmp_dir=tmp_path)),
         )
         with pytest.raises(MustBeAuthenticatedError):
