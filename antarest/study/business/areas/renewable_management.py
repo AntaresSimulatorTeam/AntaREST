@@ -10,19 +10,14 @@
 #
 # This file is part of the Antares project.
 
-import collections
-from typing import Mapping, MutableMapping, Sequence
+from typing import Mapping, Sequence
 
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     DuplicateRenewableCluster,
-    RenewableClusterConfigNotFound,
-    RenewableClusterNotFound,
 )
 from antarest.core.model import JSON
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
     RenewableClusterCreation,
@@ -33,7 +28,6 @@ from antarest.study.business.model.renewable_cluster_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -43,11 +37,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/renewables/clusters"
-
-
-class TimeSeriesInterpretation(EnumIgnoreCase):
-    POWER_GENERATION = "power-generation"
-    PRODUCTION_FACTOR = "production-factor"
 
 
 class RenewableManager:
@@ -68,16 +57,7 @@ class RenewableManager:
         Raises:
             RenewableClusterConfigNotFound: If the clusters configuration for the specified area is not found.
         """
-        file_study = study.get_files()
-
-        path = _CLUSTERS_PATH.format(area_id=area_id)
-
-        try:
-            clusters = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise RenewableClusterConfigNotFound(path, area_id)
-
-        return [parse_renewable_cluster(cluster) for cluster in clusters.values()]
+        return study.get_study_dao().get_all_renewables_for_area(area_id)
 
     def get_all_renewables_props(
         self,
@@ -95,24 +75,7 @@ class RenewableManager:
         Raises:
             RenewableClusterConfigNotFound: If no clusters are found in the specified area.
         """
-
-        file_study = study.get_files()
-        path = _ALL_CLUSTERS_PATH
-        try:
-            # may raise KeyError if the path is missing
-            clusters = file_study.tree.get(path.split("/"), depth=5)
-            # may raise KeyError if "list" is missing
-            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
-        except KeyError:
-            raise RenewableClusterConfigNotFound(path)
-
-        renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableCluster]]
-        renewables_by_areas = collections.defaultdict(dict)
-        for area_id, cluster_obj in clusters.items():
-            for cluster_id, cluster in cluster_obj.items():
-                renewables_by_areas[area_id][cluster_id] = parse_renewable_cluster(cluster)
-
-        return renewables_by_areas
+        return study.get_study_dao().get_all_renewables()
 
     def create_cluster(
         self, study: StudyInterface, area_id: str, cluster_data: RenewableClusterCreation
@@ -158,13 +121,7 @@ class RenewableManager:
         Raises:
             RenewableClusterNotFound: If the specified cluster is not found within the area.
         """
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-        try:
-            cluster = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise RenewableClusterNotFound(path, cluster_id)
-        return parse_renewable_cluster(cluster)
+        return study.get_study_dao().get_renewable(area_id, cluster_id)
 
     def update_cluster(
         self,
@@ -189,27 +146,16 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-
-        try:
-            area = file_study.config.areas[area_id]
-        except KeyError:
-            raise AreaNotFound(area_id)
-
-        renewable = next((r for r in area.renewables if r.get_id() == cluster_id), None)
-        if renewable is None:
-            raise RenewableClusterNotFound(path, cluster_id)
+        renewable_cluster = self.get_cluster(study, area_id, cluster_id)
+        updated_renewable_cluster = update_renewable_cluster(renewable_cluster, cluster_data)
 
         command = UpdateRenewablesClusters(
             cluster_properties={area_id: {cluster_id: cluster_data}},
             command_context=self._command_context,
             study_version=study.version,
         )
-
         study.add_commands([command])
-
-        return update_renewable_cluster(renewable, cluster_data)
+        return updated_renewable_cluster
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """

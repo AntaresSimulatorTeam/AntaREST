@@ -15,9 +15,15 @@ from typing import Sequence
 import pandas as pd
 from typing_extensions import override
 
+from antarest.core.exceptions import RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+_CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
+_CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
+_ALL_CLUSTERS_PATH = "input/renewables/clusters"
 
 
 class FileStudyRenewableDao(RenewableDao, ABC):
@@ -27,15 +33,46 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        path = _ALL_CLUSTERS_PATH
+        try:
+            # may raise KeyError if the path is missing
+            clusters = file_study.tree.get(path.split("/"), depth=5)
+            # may raise KeyError if "list" is missing
+            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
+        except KeyError:
+            raise RenewableClusterConfigNotFound(path)
+
+        renewables_by_areas: dict[str, dict[str, RenewableCluster]] = {}
+        for area_id, cluster_obj in clusters.items():
+            for cluster_id, cluster in cluster_obj.items():
+                lowered_id = cluster_id.lower()
+                renewables_by_areas.setdefault(area_id, {})[lowered_id] = parse_renewable_cluster(cluster)
+
+        return renewables_by_areas
 
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+
+        path = _CLUSTERS_PATH.format(area_id=area_id)
+
+        try:
+            clusters = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise RenewableClusterConfigNotFound(path, area_id)
+
+        return [parse_renewable_cluster(cluster) for cluster in clusters.values()]
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
+        try:
+            cluster = file_study.tree.get(path.split("/"), depth=1)
+        except KeyError:
+            raise RenewableClusterNotFound(path, renewable_id)
+        return parse_renewable_cluster(cluster)
 
     @override
     def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
