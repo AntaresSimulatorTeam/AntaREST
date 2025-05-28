@@ -127,7 +127,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         for path in paths:
             study_data.tree.delete(path)
 
-        self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
+        self._remove_renewable_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the renewable cluster in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].renewables.remove(renewable)
 
@@ -153,7 +153,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         study_data.areas[area_id].renewables.append(renewable)
 
     @staticmethod
-    def _remove_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, renewable_id: str) -> None:
+    def _remove_renewable_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, renewable_id: str) -> None:
         """
         Update the scenario builder by removing the rows that correspond to the renewable cluster to remove.
 
