@@ -84,7 +84,7 @@ class CreateRenewablesCluster(ICommand):
             version=self._SERIALIZATION_VERSION,
             args={
                 "area_id": self.area_id,
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True),
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
             },
             study_version=self.study_version,
         )

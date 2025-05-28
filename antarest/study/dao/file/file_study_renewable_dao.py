@@ -106,7 +106,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         for renewable in renewables:
             self._update_renewable_config(study_data.config, area_id, renewable)
             ini_content[renewable.get_id()] = serialize_renewable_cluster(renewable)
-        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
+        study_data.tree.save(ini_content, ["input", "renewables", "clusters", area_id, "list"])
 
     @override
     def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
@@ -128,7 +128,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
             study_data.tree.delete(path)
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
-        # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
+        # Deleting the renewable cluster in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].renewables.remove(renewable)
 
     @staticmethod
