@@ -24,8 +24,10 @@ from antarest.core.tasks.service import ITaskService
 def build_filetransfer_service(
     app_ctxt: Optional[AppBuildContext], event_bus: IEventBus, task_service: ITaskService, config: Config
 ) -> FileTransferManager:
-    ftm = FileTransferManager(repository=FileDownloadRepository(), event_bus=event_bus, config=config)
+    ftm = FileTransferManager(
+        repository=FileDownloadRepository(), event_bus=event_bus, task_service=task_service, config=config
+    )
 
     if app_ctxt:
-        app_ctxt.api_root.include_router(create_file_transfer_api(ftm, task_service, config))
+        app_ctxt.api_root.include_router(create_file_transfer_api(ftm, config))
     return ftm

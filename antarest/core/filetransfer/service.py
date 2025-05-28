@@ -11,21 +11,32 @@
 # This file is part of the Antares project.
 
 import datetime
+import http
 import logging
 import os
 import tempfile
+import time
 import uuid
 from pathlib import Path
 from typing import List, Optional
 
+from fastapi import HTTPException
 from starlette.background import BackgroundTasks
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadNotFound, FileDownloadNotReady
+from antarest.core.filetransfer.model import (
+    FileDownload,
+    FileDownloadDTO,
+    FileDownloadNotFound,
+    FileDownloadNotReady,
+    FileDownloadTaskDTO,
+)
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.tasks.model import TaskStatus
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
 from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -38,11 +49,13 @@ class FileTransferManager:
         self,
         repository: FileDownloadRepository,
         event_bus: IEventBus,
+        task_service: ITaskService,
         config: Config,
     ):
         self.config = config
         self.repository = repository
         self.event_bus = event_bus
+        self.task_service = task_service
         self.tmp_dir = config.storage.tmp_dir
         self.download_default_expiration_timeout_minutes = config.storage.download_default_expiration_timeout_minutes
 
@@ -207,3 +220,29 @@ class FileTransferManager:
             raise FileDownloadNotReady()
 
         return download
+
+    def get_download_metadata(self, task_id: str, download_id: str, wait_for_availability: bool) -> FileDownloadTaskDTO:
+        task = self.task_service.status_task(task_id)
+
+        file_raw = self.repository.get(download_id)
+        if not file_raw:
+            raise FileDownloadNotFound()
+        file = file_raw.to_dto()
+
+        # the user wants to wait for the download to be available
+        if wait_for_availability:
+            end = time.time() + DEFAULT_AWAIT_MAX_TIMEOUT
+            while task.status in [TaskStatus.PENDING, TaskStatus.RUNNING] and time.time() < end:
+                task = self.task_service.status_task(task_id)
+                time.sleep(2)
+
+            if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+                raise HTTPException(status_code=http.HTTPStatus.REQUEST_TIMEOUT, detail="File is still in process.")
+
+        if task.status == TaskStatus.FAILED:
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"File was not successfully processed: {task.result.message}.",  # type: ignore
+            )
+
+        return FileDownloadTaskDTO(task=task.id, file=file)
