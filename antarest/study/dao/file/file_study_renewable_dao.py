@@ -15,11 +15,12 @@ from typing import Sequence
 import pandas as pd
 from typing_extensions import override
 
-from antarest.core.exceptions import RenewableClusterConfigNotFound, RenewableClusterNotFound
+from antarest.core.exceptions import ChildNotFoundError, RenewableClusterConfigNotFound, RenewableClusterNotFound
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 _CLUSTER_PATH = "input/renewables/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
@@ -76,11 +77,20 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=renewable_id)
+        try:
+            file_study.tree.get(path.split("/"), depth=1)
+            return True
+        except (KeyError, ChildNotFoundError):
+            return False
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        node = study_data.tree.get_node(["input", "renewables", "series", area_id, renewable_id, "series"])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
 
     @override
     def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
