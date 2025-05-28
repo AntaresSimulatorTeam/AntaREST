@@ -129,7 +129,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
-        return self._remove_from_config(study_data.config, area_id, renewable)
+        study_data.config.areas[area_id].renewables.remove(renewable)
 
     @staticmethod
     def _get_all_renewables_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
@@ -151,10 +151,6 @@ class FileStudyRenewableDao(RenewableDao, ABC):
                 study_data.areas[area_id].renewables[k] = renewable
                 return
         study_data.areas[area_id].renewables.append(renewable)
-
-    @staticmethod
-    def _remove_from_config(study_data: FileStudyTreeConfig, area_id: str, renewable: RenewableCluster) -> None:
-        study_data.areas[area_id].renewables.remove(renewable)
 
     @staticmethod
     def _remove_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, renewable_id: str) -> None:
