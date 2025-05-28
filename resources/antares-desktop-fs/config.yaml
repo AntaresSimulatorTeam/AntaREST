@@ -23,7 +23,6 @@ launcher:
     - id: local
       name: my_local
       type: local
-      name: my_local
       binaries:
         VER: ANTARES_SOLVER_PATH
       local_workspace: ./local_workspace

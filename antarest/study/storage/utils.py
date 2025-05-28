@@ -420,7 +420,7 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
     requested_path = workspace.path / folder
     requested_path = requested_path.resolve()
     safe_dir = workspace.path.resolve()
-    # check wether the requested path is a subdirectory of the workspace
+    # check whether the requested path is a subdirectory of the workspace
     return requested_path.is_relative_to(safe_dir)
 
 
@@ -492,7 +492,7 @@ def has_non_study_folder(
             if is_non_study_folder(sub_path, filter_in, filter_out) and show:
                 return True
         except (PermissionError, OSError):
-            logger.warning("tried to run is_non_study_folder on {sub_path} but no permission")
+            logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
     return False
 
 
