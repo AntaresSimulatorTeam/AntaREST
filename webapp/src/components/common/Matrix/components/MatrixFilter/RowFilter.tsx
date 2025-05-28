@@ -24,7 +24,6 @@ import {
   Box,
   type SelectChangeEvent,
   IconButton,
-  Tooltip,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -37,6 +36,7 @@ import {
   TIME_INDEXING,
   type TimeIndexingType,
   type FilterType,
+  type FilterOperatorType,
 } from "./constants";
 import {
   ACCORDION_STYLES,
@@ -70,11 +70,13 @@ const RowFilterComponent = memo(
       inputValue,
       handleListChange,
       addValueToList,
+      addValuesToList,
       removeValueFromList,
       clearAllValues,
       handleKeyPress,
       handleCheckboxChange,
       handleTypeChange: handleFilterTypeChange,
+      handleOperatorChange,
     } = useFilterControls({
       filter,
       setFilter,
@@ -103,6 +105,7 @@ const RowFilterComponent = memo(
         type: foundFilter.type,
         range: foundFilter.range ? { ...foundFilter.range } : undefined,
         list: foundFilter.list ? [...foundFilter.list] : [],
+        operator: foundFilter.operator,
       };
     }, [filter.rowsFilters, filterId]);
 
@@ -183,6 +186,13 @@ const RowFilterComponent = memo(
         handleFilterTypeChange(e.target.value as FilterType, filterId);
       },
       [handleFilterTypeChange, filterId],
+    );
+
+    const handleOperatorChangeEvent = useCallback(
+      (operator: FilterOperatorType) => {
+        handleOperatorChange(operator, filterId);
+      },
+      [handleOperatorChange, filterId],
     );
 
     const handleRangeChange = useCallback(
@@ -308,49 +318,45 @@ const RowFilterComponent = memo(
             </Typography>
           </Box>
           {onRemoveFilter && filter.rowsFilters.length > 1 && (
-            <IconButton size="small" onClick={handleDeleteClick} sx={ICON_BUTTON_STYLES.small}>
+            <IconButton size="small" onClick={handleDeleteClick} sx={ICON_BUTTON_STYLES.extraSmall}>
               <DeleteIcon fontSize="small" sx={{ width: 13, height: 13 }} />
             </IconButton>
           )}
         </AccordionSummary>
         <AccordionDetails sx={ACCORDION_STYLES.details}>
           <Box sx={FORM_STYLES.sideBySideContainer}>
-            <Tooltip title={t("matrix.filter.indexingType")} placement="top">
-              <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
-                <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
-                <Select
-                  value={rowFilter.indexingType}
-                  label={t("matrix.filter.indexingType")}
-                  onChange={handleIndexingTypeChange}
-                  sx={FORM_STYLES.sideBySideFormControl}
-                >
-                  {filteredOptions.map((option) => (
-                    <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
-                      {t(`matrix.filter.indexing.${option.value}`)}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Tooltip>
+            <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+              <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
+              <Select
+                value={rowFilter.indexingType}
+                label={t("matrix.filter.indexingType")}
+                onChange={handleIndexingTypeChange}
+                sx={FORM_STYLES.sideBySideFormControl}
+              >
+                {filteredOptions.map((option) => (
+                  <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
+                    {t(`matrix.filter.indexing.${option.value}`)}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-            <Tooltip title={t("matrix.filter.type")} placement="top">
-              <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
-                <InputLabel>{t("matrix.filter.type")}</InputLabel>
-                <Select
-                  value={rowFilter.type}
-                  label={t("matrix.filter.type")}
-                  onChange={handleTypeChange}
-                  sx={FORM_STYLES.sideBySideFormControl}
-                >
-                  <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
-                    {t("matrix.filter.range")}
-                  </MenuItem>
-                  <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
-                    {t("matrix.filter.list")}
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            </Tooltip>
+            <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+              <InputLabel>{t("matrix.filter.type")}</InputLabel>
+              <Select
+                value={rowFilter.type}
+                label={t("matrix.filter.type")}
+                onChange={handleTypeChange}
+                sx={FORM_STYLES.sideBySideFormControl}
+              >
+                <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
+                  {t("matrix.filter.range")}
+                </MenuItem>
+                <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
+                  {t("matrix.filter.list")}
+                </MenuItem>
+              </Select>
+            </FormControl>
           </Box>
 
           <TemporalFilterRenderer
@@ -361,6 +367,7 @@ const RowFilterComponent = memo(
             onRangeChange={handleRangeChange}
             selectedValues={rowFilter.list || []}
             onAddValue={handleAddValue}
+            onAddValues={(values) => addValuesToList(values, filterId)}
             onRemoveValue={handleRemoveValue}
             onCheckboxChange={handleCheckbox}
             inputValue={inputValue}
@@ -368,6 +375,8 @@ const RowFilterComponent = memo(
             onKeyPress={handleKeyPress}
             onClearAll={handleClearAll}
             sliderMarks={sliderMarks}
+            operator={rowFilter.operator}
+            onOperatorChange={handleOperatorChangeEvent}
           />
         </AccordionDetails>
       </Accordion>

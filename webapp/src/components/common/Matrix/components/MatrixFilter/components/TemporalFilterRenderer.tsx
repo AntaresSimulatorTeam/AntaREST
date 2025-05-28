@@ -13,10 +13,10 @@
  */
 
 import { useMemo, memo } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-import { TIME_INDEXING } from "../constants";
+import { TIME_INDEXING, type FilterOperatorType } from "../constants";
 import { getLocalizedTimeLabels } from "../dateUtils";
 import { DESIGN_TOKENS } from "../styles";
 import RangeFilterControl from "./RangeFilterControl";
@@ -35,6 +35,7 @@ interface TemporalFilterRendererProps {
   onRangeChange: (newValue: [number, number]) => void;
   selectedValues: number[];
   onAddValue: () => void;
+  onAddValues?: (values: number[]) => void;
   onRemoveValue: (value: number) => void;
   onCheckboxChange: (value: number) => void;
   onClearAll: () => void;
@@ -43,6 +44,8 @@ interface TemporalFilterRendererProps {
   onKeyPress: (event: React.KeyboardEvent) => void;
   disabled?: boolean;
   sliderMarks?: Array<{ value: number; label: string }>;
+  operator?: FilterOperatorType;
+  onOperatorChange?: (operator: FilterOperatorType) => void;
 }
 
 const TemporalFilterRenderer = memo(
@@ -54,6 +57,7 @@ const TemporalFilterRenderer = memo(
     onRangeChange,
     selectedValues,
     onAddValue,
+    onAddValues,
     onRemoveValue,
     onCheckboxChange,
     onClearAll,
@@ -62,6 +66,8 @@ const TemporalFilterRenderer = memo(
     onKeyPress,
     disabled = false,
     sliderMarks,
+    operator,
+    onOperatorChange,
   }: TemporalFilterRendererProps) => {
     const { t } = useTranslation();
 
@@ -115,33 +121,6 @@ const TemporalFilterRenderer = memo(
       return [];
     }, [indexingType, t]);
 
-    // Create common time period options for hour of year
-    const hourOfYearOptions = useMemo(() => {
-      if (indexingType !== TIME_INDEXING.HOUR_YEAR) {
-        return [];
-      }
-
-      // TODO: fix incorrect hour of year options
-      return [
-        { value: 1, label: "Jan 1" },
-        { value: 24, label: "Jan 2" },
-        { value: 48, label: "Jan 3" },
-        { value: 168, label: "Jan 8 (week 1)" },
-        { value: 336, label: "Jan 15 (week 2)" },
-        { value: 744, label: "Feb 1" },
-        { value: 1416, label: "Mar 1" },
-        { value: 2160, label: "Apr 1" },
-        { value: 2880, label: "May 1" },
-        { value: 3624, label: "Jun 1" },
-        { value: 4344, label: "Jul 1" },
-        { value: 5088, label: "Aug 1" },
-        { value: 5832, label: "Sep 1" },
-        { value: 6552, label: "Oct 1" },
-        { value: 7296, label: "Nov 1" },
-        { value: 8016, label: "Dec 1" },
-      ];
-    }, [indexingType]);
-
     // Day of month options (1-31)
     const dayOfMonthOptions = useMemo(() => {
       if (indexingType !== TIME_INDEXING.DAY_OF_MONTH) {
@@ -153,31 +132,11 @@ const TemporalFilterRenderer = memo(
       }));
     }, [indexingType]);
 
-    // Memoize formatted range values for hour of year
-    const formattedRange = useMemo(() => {
-      if (indexingType === TIME_INDEXING.HOUR_YEAR) {
-        return {
-          min: formatHourOfYear(rangeValue[0]),
-          max: formatHourOfYear(rangeValue[1]),
-        };
-      }
-      return null;
-    }, [indexingType, rangeValue, formatHourOfYear]);
-
     // Decide which component to render based on indexing and filter types
     if (filterType === "range") {
       if (indexingType === TIME_INDEXING.HOUR_YEAR) {
         return (
           <Box sx={{ px: DESIGN_TOKENS.spacing.xl, pt: 3, pb: DESIGN_TOKENS.spacing.lg }}>
-            <Box sx={{ mb: DESIGN_TOKENS.spacing.xl }}>
-              <Typography variant="caption" color="text.secondary">
-                Hour of year range:
-              </Typography>
-              <Typography variant="body2" sx={{ fontWeight: "medium" }}>
-                {formattedRange?.min} - {formattedRange?.max}
-              </Typography>
-            </Box>
-
             <RangeFilterControl
               min={rangeValue[0]}
               max={rangeValue[1]}
@@ -212,29 +171,16 @@ const TemporalFilterRenderer = memo(
       if (indexingType === TIME_INDEXING.HOUR_YEAR) {
         return (
           <Box sx={{ mt: DESIGN_TOKENS.spacing.xl }}>
-            <ChipSelector
-              title={t("matrix.filter.commonTimePeriods")}
-              options={hourOfYearOptions}
-              selectedValues={selectedValues}
-              onChange={onCheckboxChange}
-              disabled={disabled}
-            />
-
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ display: "block", mt: DESIGN_TOKENS.spacing.xl, mb: DESIGN_TOKENS.spacing.lg }}
-            >
-              Or add specific hours manually:
-            </Typography>
-
             <ListFilterControl
               inputValue={inputValue}
               selectedValues={selectedValues}
+              operator={operator}
               onInputChange={onInputChange}
               onKeyPress={onKeyPress}
               onAddValue={onAddValue}
+              onAddValues={onAddValues}
               onRemoveValue={onRemoveValue}
+              onOperatorChange={onOperatorChange}
               onClearAll={onClearAll}
               placeholder="Enter hour number (1-8760)"
               disabled={disabled}
@@ -295,10 +241,13 @@ const TemporalFilterRenderer = memo(
         <ListFilterControl
           inputValue={inputValue}
           selectedValues={selectedValues}
+          operator={operator}
           onInputChange={onInputChange}
           onKeyPress={onKeyPress}
           onAddValue={onAddValue}
+          onAddValues={onAddValues}
           onRemoveValue={onRemoveValue}
+          onOperatorChange={onOperatorChange}
           onClearAll={onClearAll}
           disabled={disabled}
         />
