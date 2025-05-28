@@ -26,7 +26,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
 import type { ColumnFilterProps } from "./types";
-import { FILTER_TYPES, type FilterType } from "./constants";
+import { FILTER_TYPES, type FilterType, type FilterOperatorType } from "./constants";
 import { ACCORDION_STYLES, TYPOGRAPHY_STYLES, FORM_STYLES, DESIGN_TOKENS } from "./styles";
 import { useFilterControls } from "./hooks/useFilterControls";
 import RangeFilterControl from "./components/RangeFilterControl";
@@ -38,14 +38,20 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
     inputValue,
     handleListChange,
     addValueToList,
+    addValuesToList,
     removeValueFromList,
     clearAllValues,
     handleKeyPress,
     handleTypeChange,
+    handleOperatorChange,
   } = useFilterControls({ filter, setFilter });
 
   const handleTypeChangeEvent = (e: SelectChangeEvent) => {
     handleTypeChange(e.target.value as FilterType);
+  };
+
+  const handleOperatorChangeEvent = (operator: FilterOperatorType) => {
+    handleOperatorChange(operator);
   };
 
   const handleRangeChange = (newValues: [number, number]) => {
@@ -107,10 +113,13 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
           <ListFilterControl
             inputValue={inputValue}
             selectedValues={filter.columnsFilter.list || []}
+            operator={filter.columnsFilter.operator}
             onInputChange={handleListChange}
             onKeyPress={handleKeyPress}
             onAddValue={() => addValueToList()}
+            onAddValues={(values) => addValuesToList(values)}
             onRemoveValue={(value) => removeValueFromList(value)}
+            onOperatorChange={handleOperatorChangeEvent}
             onClearAll={() => clearAllValues()}
           />
         )}

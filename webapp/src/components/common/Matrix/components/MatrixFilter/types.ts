@@ -13,7 +13,7 @@
  */
 
 import type { TimeFrequencyType } from "../../shared/types";
-import type { FilterType, TimeIndexingType } from "./constants";
+import type { FilterType, TimeIndexingType, FilterOperatorType } from "./constants";
 
 export interface RowFilter {
   id: string;
@@ -21,6 +21,7 @@ export interface RowFilter {
   type: FilterType;
   range?: { min: number; max: number };
   list?: number[];
+  operator?: FilterOperatorType;
 }
 
 export interface FilterState {
@@ -29,6 +30,7 @@ export interface FilterState {
     type: FilterType;
     range?: { min: number; max: number };
     list?: number[];
+    operator?: FilterOperatorType;
   };
   rowsFilters: RowFilter[];
   operation: {

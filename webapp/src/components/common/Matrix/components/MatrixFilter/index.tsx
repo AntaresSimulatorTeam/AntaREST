@@ -63,6 +63,10 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
     columnCount,
   });
 
+  // TODO: when activating filters preview mode is on, and with the list filter type
+  // that is combined with the = operator the filteredData is empty, and the following log keeps logging infinite times
+  console.log("currentFilteredData", currentFilteredData);
+
   // Update the filter preview when filter criteria changes
   useEffect(() => {
     if (filter.active) {
