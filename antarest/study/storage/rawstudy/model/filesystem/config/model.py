@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import StudyVersionInt
 
@@ -30,7 +31,6 @@ from .binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .validation import extract_filtering, study_version_context
 
@@ -84,7 +84,7 @@ class Area(AntaresBaseModel, extra="forbid"):
     name: str
     links: Dict[str, LinkConfig]
     thermals: List[ThermalCluster]
-    renewables: List[RenewableConfigType]
+    renewables: List[RenewableCluster]
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6

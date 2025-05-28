@@ -143,7 +143,7 @@ def create_renewable_cluster(cluster_data: RenewableClusterCreation) -> Renewabl
     return RenewableCluster.model_validate(cluster_data.model_dump(exclude_none=True))
 
 
-def update_thermal_cluster(cluster: RenewableCluster, data: RenewableClusterUpdate) -> RenewableCluster:
+def update_renewable_cluster(cluster: RenewableCluster, data: RenewableClusterUpdate) -> RenewableCluster:
     """
     Updates a renewable cluster according to the provided update data.
     """
