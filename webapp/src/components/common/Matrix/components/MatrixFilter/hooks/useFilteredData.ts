@@ -15,7 +15,7 @@
 import { useMemo } from "react";
 import type { FilterState, FilterCriteria } from "../types";
 import type { TimeFrequencyType } from "../../../shared/types";
-import { FILTER_TYPES } from "../constants";
+import { FILTER_TYPES, FILTER_OPERATORS } from "../constants";
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
@@ -53,10 +53,53 @@ export function useFilteredData({
       columnsIndices = Array.from({ length: columnCount }, (_, i) => i + 1)
         .filter((idx) => idx >= min && idx <= max)
         .map((idx) => idx - 1); // Convert to 0-based index
-    } else if (filter.columnsFilter.type === FILTER_TYPES.LIST && filter.columnsFilter.list) {
-      columnsIndices = filter.columnsFilter.list
-        .map((idx) => idx - 1)
-        .filter((idx) => idx >= 0 && idx < columnCount);
+    } else if (filter.columnsFilter.type === FILTER_TYPES.LIST) {
+      const operator = filter.columnsFilter.operator || FILTER_OPERATORS.EQUALS;
+      const list = filter.columnsFilter.list || [];
+
+      if (list.length === 0) {
+        columnsIndices = [];
+      } else {
+        const allIndices = Array.from({ length: columnCount }, (_, i) => i + 1);
+
+        switch (operator) {
+          case FILTER_OPERATORS.EQUALS:
+            columnsIndices = list
+              .map((idx) => idx - 1)
+              .filter((idx) => idx >= 0 && idx < columnCount);
+            break;
+          case FILTER_OPERATORS.GREATER_THAN: {
+            const gtThreshold = Math.min(...list);
+            columnsIndices = allIndices.filter((idx) => idx > gtThreshold).map((idx) => idx - 1);
+            break;
+          }
+          case FILTER_OPERATORS.LESS_THAN: {
+            const ltThreshold = Math.max(...list);
+            columnsIndices = allIndices.filter((idx) => idx < ltThreshold).map((idx) => idx - 1);
+            break;
+          }
+          case FILTER_OPERATORS.GREATER_EQUAL: {
+            const gteThreshold = Math.min(...list);
+            columnsIndices = allIndices.filter((idx) => idx >= gteThreshold).map((idx) => idx - 1);
+            break;
+          }
+          case FILTER_OPERATORS.LESS_EQUAL: {
+            const lteThreshold = Math.max(...list);
+            columnsIndices = allIndices.filter((idx) => idx <= lteThreshold).map((idx) => idx - 1);
+            break;
+          }
+          case FILTER_OPERATORS.RANGE:
+            // For range operator, treat the list as individual values to include
+            columnsIndices = list
+              .map((idx) => idx - 1)
+              .filter((idx) => idx >= 0 && idx < columnCount);
+            break;
+          default:
+            columnsIndices = list
+              .map((idx) => idx - 1)
+              .filter((idx) => idx >= 0 && idx < columnCount);
+        }
+      }
     }
 
     // Process multiple row filters and get combined indices

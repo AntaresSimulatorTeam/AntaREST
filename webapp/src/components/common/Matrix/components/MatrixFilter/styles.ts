@@ -14,7 +14,6 @@
 
 import type { SxProps, Theme } from "@mui/material";
 
-// Design tokens for consistent spacing and sizing
 export const DESIGN_TOKENS = {
   spacing: {
     xs: 0.25,
@@ -37,7 +36,6 @@ export const DESIGN_TOKENS = {
   },
 } as const;
 
-// Component-specific dimensions and measurements
 export const COMPONENT_DIMENSIONS = {
   drawer: {
     width: 380,
@@ -52,7 +50,6 @@ export const COMPONENT_DIMENSIONS = {
   },
 } as const;
 
-// Color palette for component styling
 export const COMPONENT_COLORS = {
   scrollbar: {
     thumb: "rgba(0,0,0,0.2)",
@@ -64,7 +61,6 @@ export const COMPONENT_COLORS = {
   },
 } as const;
 
-// Drawer component styles
 export const DRAWER_STYLES = {
   paper: {
     p: DESIGN_TOKENS.spacing.xl,
@@ -98,7 +94,6 @@ export const DRAWER_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Chip component styles
 export const CHIP_STYLES = {
   base: {
     height: COMPONENT_DIMENSIONS.chip.height,
@@ -113,7 +108,6 @@ export const CHIP_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Button component styles
 export const BUTTON_STYLES = {
   base: {
     fontSize: DESIGN_TOKENS.fontSize.md,
@@ -137,7 +131,6 @@ export const BUTTON_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Typography styles
 export const TYPOGRAPHY_STYLES = {
   title: {
     fontSize: DESIGN_TOKENS.fontSize.lg,
@@ -157,7 +150,6 @@ export const TYPOGRAPHY_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Layout spacing utilities
 export const LAYOUT_SPACING = {
   section: {
     marginBottom: DESIGN_TOKENS.spacing.lg,
@@ -168,7 +160,6 @@ export const LAYOUT_SPACING = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Form component styles
 export const FORM_STYLES = {
   formControl: {
     fontSize: DESIGN_TOKENS.fontSize.md,
@@ -190,6 +181,7 @@ export const FORM_STYLES = {
     fontSize: DESIGN_TOKENS.fontSize.md,
   },
   textField: {
+    width: "100%",
     "& .MuiInputBase-input": {
       fontSize: DESIGN_TOKENS.fontSize.md,
     },
@@ -261,7 +253,6 @@ export const FORM_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Accordion component styles
 export const ACCORDION_STYLES = {
   summary: {
     py: 0,
@@ -278,7 +269,6 @@ export const ACCORDION_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Icon button styles
 export const ICON_BUTTON_STYLES = {
   small: {
     p: DESIGN_TOKENS.spacing.sm,
@@ -288,7 +278,6 @@ export const ICON_BUTTON_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Common container styles
 export const CONTAINER_STYLES = {
   flexRow: {
     display: "flex",
@@ -310,7 +299,6 @@ export const CONTAINER_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Chip selector styles
 export const CHIP_SELECTOR_STYLES = {
   dense: {
     m: 0.125,
@@ -331,7 +319,6 @@ export const CHIP_SELECTOR_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Selection summary styles
 export const SELECTION_SUMMARY_STYLES = {
   container: {
     p: DESIGN_TOKENS.spacing.sm,
@@ -354,7 +341,6 @@ export const SELECTION_SUMMARY_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Operation styles
 export const OPERATION_STYLES = {
   submitButton: {
     fontSize: DESIGN_TOKENS.fontSize.xs,
@@ -367,7 +353,6 @@ export const OPERATION_STYLES = {
   },
 } as const satisfies Record<string, SxProps<Theme>>;
 
-// Preview mode styles
 export const PREVIEW_STYLES = {
   container: {
     boxShadow: `0 0 0 1px ${COMPONENT_COLORS.preview.shadow}`,

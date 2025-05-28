@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { FILTER_TYPES, TIME_FREQUENCY_INDEXING_MAP } from "./constants";
+import { FILTER_TYPES, TIME_FREQUENCY_INDEXING_MAP, FILTER_OPERATORS } from "./constants";
 import type { FilterState, TemporalIndexingParams, TemporalOption, RowFilter } from "./types";
 import { TimeFrequency } from "../../shared/constants";
 import type { TimeFrequencyType } from "../../shared/types";
@@ -65,8 +65,45 @@ function applyRowFilter(
   if (rowFilter.type === FILTER_TYPES.RANGE && rowFilter.range) {
     const { min, max } = rowFilter.range;
     matchingIndices = indices.filter(({ value }) => value >= min && value <= max);
-  } else if (rowFilter.type === FILTER_TYPES.LIST && rowFilter.list && rowFilter.list.length > 0) {
-    matchingIndices = indices.filter(({ value }) => rowFilter.list?.includes(value));
+  } else if (rowFilter.type === FILTER_TYPES.LIST) {
+    const operator = rowFilter.operator || FILTER_OPERATORS.EQUALS;
+    const list = rowFilter.list || [];
+
+    if (list.length === 0) {
+      matchingIndices = [];
+    } else {
+      switch (operator) {
+        case FILTER_OPERATORS.EQUALS:
+          matchingIndices = indices.filter(({ value }) => list.includes(value));
+          break;
+        case FILTER_OPERATORS.GREATER_THAN: {
+          const gtThreshold = Math.min(...list);
+          matchingIndices = indices.filter(({ value }) => value > gtThreshold);
+          break;
+        }
+        case FILTER_OPERATORS.LESS_THAN: {
+          const ltThreshold = Math.max(...list);
+          matchingIndices = indices.filter(({ value }) => value < ltThreshold);
+          break;
+        }
+        case FILTER_OPERATORS.GREATER_EQUAL: {
+          const gteThreshold = Math.min(...list);
+          matchingIndices = indices.filter(({ value }) => value >= gteThreshold);
+          break;
+        }
+        case FILTER_OPERATORS.LESS_EQUAL: {
+          const lteThreshold = Math.max(...list);
+          matchingIndices = indices.filter(({ value }) => value <= lteThreshold);
+          break;
+        }
+        case FILTER_OPERATORS.RANGE:
+          // For range operator, treat the list as individual values to include
+          matchingIndices = indices.filter(({ value }) => list.includes(value));
+          break;
+        default:
+          matchingIndices = indices.filter(({ value }) => list.includes(value));
+      }
+    }
   } else {
     // Default to all indices
     matchingIndices = indices;

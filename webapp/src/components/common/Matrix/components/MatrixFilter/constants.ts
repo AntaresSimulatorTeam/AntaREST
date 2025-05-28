@@ -24,7 +24,17 @@ export const FILTER_TYPES = {
 
 export type FilterType = (typeof FILTER_TYPES)[keyof typeof FILTER_TYPES];
 
-// Time indexing type constants
+export const FILTER_OPERATORS = {
+  EQUALS: "equals",
+  GREATER_THAN: "greaterThan",
+  LESS_THAN: "lessThan",
+  GREATER_EQUAL: "greaterEqual",
+  LESS_EQUAL: "lessEqual",
+  RANGE: "range",
+} as const;
+
+export type FilterOperatorType = (typeof FILTER_OPERATORS)[keyof typeof FILTER_OPERATORS];
+
 export const TIME_INDEXING = {
   DAY_OF_MONTH: "dayOfMonth",
   DAY_OF_YEAR: "dayOfYear",
@@ -42,20 +52,23 @@ export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING
  * Each frequency has its most relevant temporal indexing types ordered by relevance.
  */
 export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, readonly TimeIndexingType[]> = {
-  [TimeFrequency.Annual]: [TIME_INDEXING.MONTH],
+  [TimeFrequency.Annual]: [], // No temporal subdivisions make sense for annual data
   [TimeFrequency.Monthly]: [TIME_INDEXING.MONTH],
-  [TimeFrequency.Weekly]: [TIME_INDEXING.WEEK, TIME_INDEXING.WEEKDAY],
+  [TimeFrequency.Weekly]: [TIME_INDEXING.WEEK, TIME_INDEXING.WEEKDAY, TIME_INDEXING.DAY_OF_MONTH],
   [TimeFrequency.Daily]: [
     TIME_INDEXING.DAY_OF_MONTH,
     TIME_INDEXING.DAY_OF_YEAR,
     TIME_INDEXING.WEEKDAY,
+    TIME_INDEXING.WEEK,
     TIME_INDEXING.MONTH,
   ],
   [TimeFrequency.Hourly]: [
-    TIME_INDEXING.DAY_HOUR,
     TIME_INDEXING.HOUR_YEAR,
-    TIME_INDEXING.DAY_OF_MONTH,
+    TIME_INDEXING.WEEK,
     TIME_INDEXING.WEEKDAY,
+    TIME_INDEXING.MONTH,
+    TIME_INDEXING.DAY_OF_MONTH,
+    TIME_INDEXING.DAY_HOUR,
   ],
 } as const;
 
@@ -131,12 +144,13 @@ export const createDefaultRowFilter = (
 ): RowFilter => ({
   id: crypto.randomUUID(), // TODO: check if necessary to keep, if so use UUID or useId()
   indexingType: getDefaultIndexingType(timeFrequency),
-  type: FILTER_TYPES.RANGE,
+  type: FILTER_TYPES.LIST,
   range: {
     min: 1,
     max: Math.max(rowCount, 1),
   },
   list: [],
+  operator: FILTER_OPERATORS.EQUALS,
 });
 
 /**
@@ -155,12 +169,13 @@ export const getDefaultFilterState = (
 ): FilterState => ({
   active: false,
   columnsFilter: {
-    type: FILTER_TYPES.RANGE,
+    type: FILTER_TYPES.LIST,
     range: {
       min: 1,
       max: Math.max(columnCount, 1),
     },
     list: [],
+    operator: FILTER_OPERATORS.EQUALS,
   },
   rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],
   operation: {
