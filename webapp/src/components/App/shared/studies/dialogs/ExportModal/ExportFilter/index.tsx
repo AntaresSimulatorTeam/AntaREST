@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import { Box, Checkbox, FormControlLabel, styled } from "@mui/material";
+import range from "lodash/range";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import range from "lodash/range";
-import { Box, Checkbox, FormControlLabel, styled } from "@mui/material";
 import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
@@ -23,11 +23,11 @@ import {
   type Set as District,
   type FileStudyTreeConfigDTO,
   type StudyOutputDownloadDTO,
-} from "../../../../../types/types";
+} from "../../../../../../../types/types";
+import SelectMulti from "../../../../../../common/SelectMulti";
+import SelectSingle from "../../../../../../common/SelectSingle";
 import Filter from "./Filter";
 import TagSelect from "./TagSelect";
-import SelectSingle from "../../../../common/SelectSingle";
-import SelectMulti from "../../../../common/SelectMulti";
 
 const Root = styled(Box)(({ theme }) => ({
   flex: 1,

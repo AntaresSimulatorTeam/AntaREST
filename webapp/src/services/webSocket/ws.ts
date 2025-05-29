@@ -12,29 +12,29 @@
  * This file is part of the Antares project.
  */
 
+import { TASK_TYPES_MANAGED } from "@/components/App/Tasks/utils";
+import i18n from "@/i18n";
+import { includes } from "@/utils/tsUtils";
 import debug from "debug";
+import { enqueueSnackbar, type VariantType } from "notistack";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { LaunchJobDTO, UserInfo } from "../../types/types";
-import { getConfig } from "../config";
-import { isStringEmpty, isUserExpired } from "../utils";
-import type { AppDispatch } from "../../redux/store";
 import { refresh as refreshUser } from "../../redux/ducks/auth";
 import { deleteStudy, setStudy } from "../../redux/ducks/studies";
+import { refreshStudySynthesis } from "../../redux/ducks/studySyntheses";
 import {
   incrementTaskNotifications,
   setMaintenanceMode,
   setMessageInfo,
   setWebSocketConnected,
 } from "../../redux/ducks/ui";
-import { refreshStudySynthesis } from "../../redux/ducks/studySyntheses";
-import type { WsEvent, WsEventListener } from "./types";
-import { WsChannel, WsEventType } from "./constants";
-import { TASK_TYPES_MANAGED } from "@/components/App/Tasks/utils";
-import i18n from "@/i18n";
-import { enqueueSnackbar, type VariantType } from "notistack";
+import type { AppDispatch } from "../../redux/store";
+import type { LaunchJobDTO, UserInfo } from "../../types/types";
 import { TaskType } from "../api/tasks/constants";
-import { includes } from "@/utils/tsUtils";
+import { getConfig } from "../config";
+import { isStringEmpty, isUserExpired } from "../utils";
+import { WsChannel, WsEventType } from "./constants";
+import type { WsEvent, WsEventListener } from "./types";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -56,6 +56,7 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
 
   const config = getConfig();
 
+  console.log(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
   webSocket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
 
   if (!globalListenerAdded) {

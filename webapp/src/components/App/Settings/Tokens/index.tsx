@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { toError } from "@/utils/fnUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoIcon from "@mui/icons-material/Info";
 import TokenIcon from "@mui/icons-material/Token";
@@ -168,7 +169,7 @@ function Tokens() {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(t("settings.error.tokenDelete", { 0: token.name }), err);
+        enqueueErrorSnackbar(t("settings.error.tokenDelete", { 0: token.name }), toError(err));
       })
       .finally(() => {
         setTokensInLoading((prev) => prev.filter((u) => u !== token));

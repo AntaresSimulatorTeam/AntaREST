@@ -12,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import StringFE from "@/components/common/fieldEditors/StringFE";
+import { validatePath } from "@/utils/validation/string";
+import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import type { DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
-import type { StudyMetadata } from "../../../types/types";
-import { moveStudy } from "../../../services/api/study";
-import FormDialog from "../../common/dialogs/FormDialog";
-import type { SubmitHandlerPlus } from "../../common/Form/types";
-import StringFE from "@/components/common/fieldEditors/StringFE";
 import * as R from "ramda";
-import { validatePath } from "@/utils/validation/string";
+import { useTranslation } from "react-i18next";
+import { moveStudy } from "../../../../../services/api/study";
+import type { StudyMetadata } from "../../../../../types/types";
+import FormDialog from "../../../../common/dialogs/FormDialog";
+import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 
 function formalizePath(path: string | undefined, studyId?: StudyMetadata["id"]) {
   const trimmedPath = path?.trim();
@@ -89,10 +90,14 @@ function MoveStudyDialog(props: Props) {
   return (
     <FormDialog
       open={open}
+      title={t("global.move")}
+      titleIcon={DriveFileMoveIcon}
       config={{ defaultValues }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
       onCancel={onClose}
+      submitButtonIcon={null}
+      submitButtonText={t("global.move")}
     >
       {({ control }) => (
         <StringFE
@@ -102,8 +107,9 @@ function MoveStudyDialog(props: Props) {
           label={t("global.path")}
           placeholder={t("studies.movefolderplaceholder")}
           sx={{ mx: 0 }}
-          autoFocus
+          margin="dense"
           fullWidth
+          autoFocus
         />
       )}
     </FormDialog>
