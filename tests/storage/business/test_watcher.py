@@ -23,7 +23,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.core.exceptions import CannotAccessInternalWorkspace
+from antarest.core.exceptions import CannotAccessInternalWorkspace, ScanDisabled
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
@@ -40,8 +40,9 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 from tests.storage.conftest import SimpleSyncTaskService
 
 
-def build_config(root: Path) -> Config:
+def build_config(root: Path, desktop_mode=False) -> Config:
     return Config(
+        desktop_mode=desktop_mode,
         storage=StorageConfig(
             workspaces={
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME, groups=["toto"]),
@@ -56,7 +57,7 @@ def build_config(root: Path) -> Config:
                     filter_out=["to_skip.*"],
                 ),
             }
-        )
+        ),
     )
 
 
@@ -302,6 +303,24 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any):
     # verify that `upgrade_folder` and `ts_gen_folder`  have been skipped
     assert f"Upgrade temporary folder found. Will skip further scan of folder {upgrade_folder}" in caplog.text
     assert f"TS generation temporary folder found. Will skip further scan of folder {ts_gen_folder}" in caplog.text
+
+
+@pytest.mark.unit_test
+def test_scan_disabled_exception(study_tree: Path):
+    clean_files()
+
+    # Build a configuration with desktop_mode enabled
+    config = build_config(study_tree, desktop_mode=True)
+    service = Mock()
+    watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
+
+    # Assert that ScanDisabled exception is raised when recursive=True and desktop_mode=True
+    with pytest.raises(ScanDisabled, match="Recursive scan disables when desktop mode is on"):
+        watcher.scan(recursive=True)
+
+    # Also for one_shot scan
+    with pytest.raises(ScanDisabled, match="Recursive scan disables when desktop mode is on"):
+        watcher.oneshot_scan(recursive=True)
 
 
 def process(x: int) -> bool:
