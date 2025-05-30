@@ -168,12 +168,8 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
           {t("global.close")}
         </Button>
       }
+      maxWidth="md"
       sx={{ ".MuiDialogContent-root": { pb: 0 } }}
-      slotProps={{
-        paper: {
-          sx: { maxWidth: 680 },
-        },
-      }}
     >
       <UsePromiseCond
         response={res}
