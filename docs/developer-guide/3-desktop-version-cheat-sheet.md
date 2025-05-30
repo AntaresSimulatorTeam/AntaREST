@@ -24,17 +24,23 @@ To test the desktop version locally, follow these steps:
 
 ## Understanding the Build Process  
 
-The process of building the artifact is defined in the GitHub Actions workflow file located at:  
-```  
-./github/workflows/deploy.yml  
-```  
+The process of building the artifact is defined in the GitHub Actions workflow file 
+[deploy.yml](../../.github/workflows/deploy.yml)
 You can review this file to understand how the artifact is built.  
 
 ## Triggering the Build via GitHub Actions  
 
 If you want the GitHub Action to build the artifact for your branch:  
 
-1. Add your branch name to the `on.push.branches` section in the `deploy.yml` file.  
+1. Add your branch name to the `on.push.branches` section in the `deploy.yml` file.  Like this ```yaml
+name: deploy
+on:
+  push:
+    branches:
+      - "master"
+      - "hotfix/**"
+      - "your_branch_name"  # Replace with your branch name if needed
+```
 2. Push your changes to the branch.  
 
 The GitHub Action will be triggered, and the artifact will be built.  
