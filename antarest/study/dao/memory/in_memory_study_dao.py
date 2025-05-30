@@ -127,7 +127,7 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
-        return list(self._thermals.values())
+        return [thermal for key, thermal in self._thermals.items() if key.area_id == area_id]
 
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
@@ -204,7 +204,7 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        return list(self._renewables.values())
+        return [renewable for key, renewable in self._renewables.items() if key.area_id == area_id]
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
