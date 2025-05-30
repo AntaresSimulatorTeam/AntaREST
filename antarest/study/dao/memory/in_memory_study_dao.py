@@ -123,7 +123,7 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
-        return list(self._thermals.values())
+        return [thermal for key, thermal in self._thermals.items() if key.area_id == area_id]
 
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
