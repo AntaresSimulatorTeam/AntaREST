@@ -16,14 +16,11 @@ import re
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableClusterGroup,
-    RenewableProperties,
-    TimeSeriesInterpretation,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -36,7 +33,7 @@ class TestCreateRenewablesCluster:
     def test_init(self, command_context: CommandContext) -> None:
         cl = CreateRenewablesCluster(
             area_id="foo",
-            parameters=RenewableProperties(
+            parameters=RenewableClusterCreation(
                 name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
@@ -49,8 +46,7 @@ class TestCreateRenewablesCluster:
 
         # Check the command data
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "Cluster1"
-        assert cl.parameters == RenewableProperties(
+        assert cl.parameters == RenewableClusterCreation(
             name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
         )
 
@@ -59,7 +55,7 @@ class TestCreateRenewablesCluster:
             CreateRenewablesCluster(
                 area_id="fr",
                 command_context=command_context,
-                parameters=RenewableProperties(name="%"),
+                parameters=RenewableClusterCreation(name="%"),
                 study_version=STUDY_VERSION_8_8,
             )
 
@@ -75,7 +71,9 @@ class TestCreateRenewablesCluster:
 
         CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(empty_study)
 
-        parameters = RenewableProperties(name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION)
+        parameters = RenewableClusterCreation(
+            name=cluster_name, ts_interpretation=TimeSeriesInterpretation.POWER_GENERATION
+        )
 
         command = CreateRenewablesCluster(
             area_id=area_id,
@@ -119,24 +117,21 @@ class TestCreateRenewablesCluster:
             flags=re.IGNORECASE,
         )
 
+        fake_area = "non_existent_area"
         output = CreateRenewablesCluster(
-            area_id="non_existent_area",
+            area_id=fake_area,
             parameters=parameters,
             command_context=command_context,
             study_version=study_version,
         ).apply(empty_study)
         assert output.status is False
-        assert re.match(
-            r"Area 'non_existent_area' does not exist",
-            output.message,
-            flags=re.IGNORECASE,
-        )
+        assert f"The area '{fake_area}' does not exist" in output.message
 
     # noinspection SpellCheckingInspection
     def test_to_dto(self, command_context: CommandContext) -> None:
         command = CreateRenewablesCluster(
             area_id="foo",
-            parameters=RenewableProperties(
+            parameters=RenewableClusterCreation(
                 name="Cluster1", group=RenewableClusterGroup.THERMAL_SOLAR, unit_count=2, nominal_capacity=2400
             ),
             command_context=command_context,
@@ -147,17 +142,10 @@ class TestCreateRenewablesCluster:
             "action": "create_renewables_cluster",  # "renewables" with a final "s".
             "args": {
                 "area_id": "foo",
-                "parameters": {
-                    "name": "Cluster1",
-                    "group": "solar thermal",
-                    "nominalcapacity": 2400,
-                    "unitcount": 2,
-                    "enabled": True,
-                    "ts-interpretation": "power-generation",
-                },
+                "parameters": {"name": "Cluster1", "group": "solar thermal", "nominalCapacity": 2400, "unitCount": 2},
             },
             "id": None,
-            "version": 2,
+            "version": 3,
             "study_version": "8.8",
             "updated_at": None,
             "user_id": None,

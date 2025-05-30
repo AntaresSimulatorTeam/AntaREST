@@ -63,8 +63,8 @@ from antarest.study.business.model.hydro_model import (
 )
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterCreation,
-    RenewableClusterOutput,
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
@@ -1414,9 +1414,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
         summary="Get all renewable clusters",
-        response_model=Sequence[RenewableClusterOutput],
     )
-    def get_renewable_clusters(uuid: str, area_id: str) -> Sequence[RenewableClusterOutput]:
+    def get_renewable_clusters(uuid: str, area_id: str) -> Sequence[RenewableCluster]:
         logger.info("Getting renewable clusters for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1426,9 +1425,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
         tags=[APITag.study_data],
         summary="Get a single renewable cluster",
-        response_model=RenewableClusterOutput,
     )
-    def get_renewable_cluster(uuid: str, area_id: str, cluster_id: str) -> RenewableClusterOutput:
+    def get_renewable_cluster(uuid: str, area_id: str, cluster_id: str) -> RenewableCluster:
         logger.info("Getting renewable cluster values for study %s and cluster %s", uuid, cluster_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1452,11 +1450,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
         summary="Create a new renewable cluster",
-        response_model=RenewableClusterOutput,
     )
-    def create_renewable_cluster(
-        uuid: str, area_id: str, cluster_data: RenewableClusterCreation
-    ) -> RenewableClusterOutput:
+    def create_renewable_cluster(uuid: str, area_id: str, cluster_data: RenewableClusterCreation) -> RenewableCluster:
         """
         Create a new renewable cluster.
 
@@ -1477,11 +1472,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
         tags=[APITag.study_data],
         summary="Update a renewable cluster",
-        response_model=RenewableClusterOutput,
     )
     def update_renewable_cluster(
         uuid: str, area_id: str, cluster_id: str, cluster_data: RenewableClusterUpdate
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         logger.info(f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1491,12 +1485,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
         tags=[APITag.study_data],
         summary="Get renewable configuration for a given cluster (deprecated)",
-        response_model=RenewableClusterOutput,
         deprecated=True,
     )
     def redirect_update_renewable_cluster(
         uuid: str, area_id: str, cluster_id: str, cluster_data: RenewableClusterUpdate
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
         return update_renewable_cluster(uuid, area_id, cluster_id, cluster_data)
 
@@ -1922,7 +1915,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_type: ClusterType,
         source_cluster_id: str,
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
-    ) -> STStorageOutput | ThermalCluster | RenewableClusterOutput:
+    ) -> STStorageOutput | ThermalCluster | RenewableCluster:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
 

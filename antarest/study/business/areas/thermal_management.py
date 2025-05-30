@@ -123,7 +123,7 @@ class ThermalManager:
             old_thermals_by_ids = old_thermals_by_areas[area_id]
             for thermal_id, update_cluster in update_thermals_by_ids.items():
                 # Update the thermal cluster properties.
-                old_cluster = old_thermals_by_ids[thermal_id]
+                old_cluster = old_thermals_by_ids[thermal_id.lower()]
                 new_cluster = update_thermal_cluster(old_cluster, update_cluster)
                 new_thermals_by_areas[area_id][thermal_id] = new_cluster
 
@@ -249,9 +249,7 @@ class ThermalManager:
         # Cluster duplication
         source_cluster = self.get_cluster(study, area_id, source_id)
         source_cluster.name = new_cluster_name
-        cluster_creation = ThermalClusterCreation(
-            **source_cluster.model_dump(mode="json", by_alias=False, exclude={"id"})
-        )
+        cluster_creation = ThermalClusterCreation.from_cluster(source_cluster)
         command_context = self._command_context
         create_cluster_cmd = CreateCluster(
             area_id=area_id,

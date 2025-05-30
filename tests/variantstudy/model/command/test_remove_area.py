@@ -12,7 +12,7 @@
 
 from checksumdir import dirhash
 
-from antarest.study.business.areas.renewable_management import TimeSeriesInterpretation
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup, RenewableProperties
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -166,7 +166,7 @@ class TestRemoveArea:
                 renewable_id = transform_name_to_id(renewable_name)
                 output = CreateRenewablesCluster(
                     area_id=area_id2,
-                    parameters=RenewableProperties(
+                    parameters=RenewableClusterCreation(
                         name=renewable_name,
                         enabled=True,
                         group=RenewableClusterGroup.ROOFTOP_SOLAR,

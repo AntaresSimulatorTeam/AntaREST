@@ -339,5 +339,4 @@ class TestRenewableCluster:
             json=[{"action": "remove_renewables_cluster", "args": args}],
         )
         assert res.status_code == http.HTTPStatus.INTERNAL_SERVER_ERROR
-        result = res.json()
-        assert "'la_rochelle' not a child of ClusteredRenewableClusterSeries" in result["description"]
+        assert res.json()["description"] == "Renewable cluster 'La_Rochelle' in area 'fr' does not exist"

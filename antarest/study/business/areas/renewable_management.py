@@ -10,31 +10,24 @@
 #
 # This file is part of the Antares project.
 
-import collections
-from typing import Any, Mapping, MutableMapping, Sequence
+from typing import Mapping, Sequence
 
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     DuplicateRenewableCluster,
-    RenewableClusterConfigNotFound,
-    RenewableClusterNotFound,
 )
 from antarest.core.model import JSON
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterCreation,
-    RenewableClusterOutput,
     RenewableClusterUpdate,
     RenewableClusterUpdates,
+    create_renewable_cluster,
+    update_renewable_cluster,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewablePropertiesType,
-    create_renewable_config,
-)
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -46,21 +39,6 @@ _CLUSTERS_PATH = "input/renewables/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/renewables/clusters"
 
 
-class TimeSeriesInterpretation(EnumIgnoreCase):
-    POWER_GENERATION = "power-generation"
-    PRODUCTION_FACTOR = "production-factor"
-
-
-def create_renewable_output(
-    study_version: StudyVersion,
-    cluster_id: str,
-    config: Mapping[str, Any],
-) -> "RenewableClusterOutput":
-    obj = create_renewable_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.model_dump()
-    return RenewableClusterOutput(**kwargs)
-
-
 class RenewableManager:
     """
     A manager class responsible for handling operations related to renewable clusters within a study.
@@ -69,7 +47,7 @@ class RenewableManager:
     def __init__(self, command_context: CommandContext):
         self._command_context = command_context
 
-    def get_clusters(self, study: StudyInterface, area_id: str) -> Sequence[RenewableClusterOutput]:
+    def get_clusters(self, study: StudyInterface, area_id: str) -> Sequence[RenewableCluster]:
         """
         Fetches all clusters related to a specific area in a study.
 
@@ -79,21 +57,12 @@ class RenewableManager:
         Raises:
             RenewableClusterConfigNotFound: If the clusters configuration for the specified area is not found.
         """
-        file_study = study.get_files()
-
-        path = _CLUSTERS_PATH.format(area_id=area_id)
-
-        try:
-            clusters = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise RenewableClusterConfigNotFound(path, area_id)
-
-        return [create_renewable_output(study.version, cluster_id, cluster) for cluster_id, cluster in clusters.items()]
+        return study.get_study_dao().get_all_renewables_for_area(area_id)
 
     def get_all_renewables_props(
         self,
         study: StudyInterface,
-    ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
+    ) -> Mapping[str, Mapping[str, RenewableCluster]]:
         """
         Retrieve all renewable clusters from all areas within a study.
 
@@ -106,28 +75,11 @@ class RenewableManager:
         Raises:
             RenewableClusterConfigNotFound: If no clusters are found in the specified area.
         """
-
-        file_study = study.get_files()
-        path = _ALL_CLUSTERS_PATH
-        try:
-            # may raise KeyError if the path is missing
-            clusters = file_study.tree.get(path.split("/"), depth=5)
-            # may raise KeyError if "list" is missing
-            clusters = {area_id: cluster_list["list"] for area_id, cluster_list in clusters.items()}
-        except KeyError:
-            raise RenewableClusterConfigNotFound(path)
-
-        renewables_by_areas: MutableMapping[str, MutableMapping[str, RenewableClusterOutput]]
-        renewables_by_areas = collections.defaultdict(dict)
-        for area_id, cluster_obj in clusters.items():
-            for cluster_id, cluster in cluster_obj.items():
-                renewables_by_areas[area_id][cluster_id] = create_renewable_output(study.version, cluster_id, cluster)
-
-        return renewables_by_areas
+        return study.get_study_dao().get_all_renewables()
 
     def create_cluster(
         self, study: StudyInterface, area_id: str, cluster_data: RenewableClusterCreation
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         """
         Creates a new cluster within an area in the study.
 
@@ -139,25 +91,22 @@ class RenewableManager:
         Returns:
             The newly created cluster.
         """
-        cluster = cluster_data.to_properties(study.version)
-        command = self._make_create_cluster_cmd(area_id, cluster, study.version)
-
+        command = self._make_create_cluster_cmd(area_id, cluster_data, study.version)
         study.add_commands([command])
-        output = self.get_cluster(study, area_id, cluster.get_id())
-        return output
+        return create_renewable_cluster(cluster_data)
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: RenewablePropertiesType, study_version: StudyVersion
+        self, area_id: str, cluster_creation: RenewableClusterCreation, study_version: StudyVersion
     ) -> CreateRenewablesCluster:
         command = CreateRenewablesCluster(
             area_id=area_id,
-            parameters=cluster,
+            parameters=cluster_creation,
             command_context=self._command_context,
             study_version=study_version,
         )
         return command
 
-    def get_cluster(self, study: StudyInterface, area_id: str, cluster_id: str) -> RenewableClusterOutput:
+    def get_cluster(self, study: StudyInterface, area_id: str, cluster_id: str) -> RenewableCluster:
         """
         Retrieves a single cluster's data for a specific area in a study.
 
@@ -172,13 +121,7 @@ class RenewableManager:
         Raises:
             RenewableClusterNotFound: If the specified cluster is not found within the area.
         """
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-        try:
-            cluster = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise RenewableClusterNotFound(path, cluster_id)
-        return create_renewable_output(study.version, cluster_id, cluster)
+        return study.get_study_dao().get_renewable(area_id, cluster_id)
 
     def update_cluster(
         self,
@@ -186,7 +129,7 @@ class RenewableManager:
         area_id: str,
         cluster_id: str,
         cluster_data: RenewableClusterUpdate,
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         """
         Updates the configuration of an existing cluster within an area in the study.
 
@@ -203,29 +146,16 @@ class RenewableManager:
             RenewableClusterNotFound: If the cluster to update is not found.
         """
 
-        file_study = study.get_files()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=cluster_id)
-
-        try:
-            area = file_study.config.areas[area_id]
-        except KeyError:
-            raise AreaNotFound(area_id)
-
-        renewable = next((r for r in area.renewables if r.id == cluster_id), None)
-        if renewable is None:
-            raise RenewableClusterNotFound(path, cluster_id)
-
-        updated_renewable = renewable.model_copy(update=cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+        renewable_cluster = self.get_cluster(study, area_id, cluster_id)
+        updated_renewable_cluster = update_renewable_cluster(renewable_cluster, cluster_data)
 
         command = UpdateRenewablesClusters(
             cluster_properties={area_id: {cluster_id: cluster_data}},
             command_context=self._command_context,
             study_version=study.version,
         )
-
         study.add_commands([command])
-
-        return RenewableClusterOutput(**updated_renewable.model_dump(exclude={"id"}), id=cluster_id)
+        return updated_renewable_cluster
 
     def delete_clusters(self, study: StudyInterface, area_id: str, cluster_ids: Sequence[str]) -> None:
         """
@@ -254,7 +184,7 @@ class RenewableManager:
         area_id: str,
         source_id: str,
         new_cluster_name: str,
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         """
         Creates a duplicate cluster within the study area with a new name.
 
@@ -278,31 +208,27 @@ class RenewableManager:
         # Cluster duplication
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
-        creation_form = RenewableClusterCreation(**current_cluster.model_dump(by_alias=False, exclude={"id"}))
-        new_config = creation_form.to_properties(study.version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study.version)
+        creation_form = RenewableClusterCreation.from_cluster(current_cluster)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, creation_form, study.version)
 
         # Matrix edition
-        lower_source_id = source_id.lower()
-        source_path = f"input/renewables/series/{area_id}/{lower_source_id}/series"
         new_path = f"input/renewables/series/{area_id}/{lower_new_id}/series"
 
         # Prepare and execute commands
-        file_study = study.get_files()
-        current_matrix = file_study.tree.get(source_path.split("/"))["data"]
+        current_matrix = study.get_study_dao().get_renewable_series(area_id, source_id.lower()).to_numpy().tolist()
         replace_matrix_cmd = ReplaceMatrix(
             target=new_path, matrix=current_matrix, command_context=self._command_context, study_version=study.version
         )
         commands = [create_cluster_cmd, replace_matrix_cmd]
         study.add_commands(commands)
 
-        return RenewableClusterOutput(**new_config.model_dump(by_alias=False))
+        return create_renewable_cluster(creation_form)
 
     def update_renewables_props(
         self,
         study: StudyInterface,
         update_renewables_by_areas: RenewableClusterUpdates,
-    ) -> Mapping[str, Mapping[str, RenewableClusterOutput]]:
+    ) -> Mapping[str, Mapping[str, RenewableCluster]]:
         old_renewables_by_areas = self.get_all_renewables_props(study)
         new_renewables_by_areas = {area_id: dict(clusters) for area_id, clusters in old_renewables_by_areas.items()}
 
@@ -318,7 +244,7 @@ class RenewableManager:
             old_renewables_by_ids = old_renewables_by_areas[area_id]
             for renewable_id, update_cluster in update_renewables_by_ids.items():
                 # Update the renewable cluster properties.
-                old_cluster = old_renewables_by_ids[renewable_id]
+                old_cluster = old_renewables_by_ids[renewable_id.lower()]
                 new_cluster = old_cluster.model_copy(update=update_cluster.model_dump(exclude_none=True))
                 new_renewables_by_areas[area_id][renewable_id] = new_cluster
 
@@ -328,4 +254,4 @@ class RenewableManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return RenewableClusterOutput.model_json_schema()
+        return RenewableCluster.model_json_schema()
