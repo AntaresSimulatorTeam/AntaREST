@@ -32,7 +32,8 @@ You can review this file to understand how the artifact is built.
 
 If you want the GitHub Action to build the artifact for your branch:  
 
-1. Add your branch name to the `on.push.branches` section in the `deploy.yml` file.  Like this ```yaml
+1. Add your branch name to the `on.push.branches` section in the `deploy.yml` file.  Like this 
+```yaml
 name: deploy
 on:
   push:
