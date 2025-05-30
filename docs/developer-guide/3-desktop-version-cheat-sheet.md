@@ -2,9 +2,9 @@
 
 This document is intended to help new developers get started with testing and building the desktop version locally.  
 
-## Testing the Desktop Version Locally  
+## Running the Desktop Version Locally  
 
-To test the desktop version locally, follow these steps:  
+To run the desktop version locally, follow these steps:  
 
 1. **Build the artifact locally**:  
     Run the following script to build the artifact:  
