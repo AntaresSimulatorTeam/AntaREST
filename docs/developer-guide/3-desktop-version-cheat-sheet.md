@@ -43,7 +43,7 @@ The GitHub Action will be triggered, and the artifact will be built.
 
 Once the build is complete, you can retrieve the artifact from the **Actions** tab on GitHub under the **Deploy** section.  
 
-![desktop artifacts ui screenshot](desktop_artifact_ui.png)
+![desktop artifacts ui screenshot](desktop_artifacts_ui.png)
 
 
 ## Updating the Default Configuration  
