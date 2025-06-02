@@ -321,3 +321,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
         self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+        del self._st_storages[cluster_key(area_id, storage.id)]

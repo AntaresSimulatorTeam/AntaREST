@@ -128,3 +128,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
         raise NotImplementedError()
+
+    @override
+    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+        raise NotImplementedError()

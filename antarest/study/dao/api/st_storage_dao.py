@@ -124,3 +124,7 @@ class STStorageDao(ReadOnlySTStorageDao):
     @abstractmethod
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+        raise NotImplementedError()
