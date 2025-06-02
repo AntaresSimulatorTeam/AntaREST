@@ -39,10 +39,6 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 #  Short-term storage manager
 # ============================
 
-_STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
-_STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
-_ALL_STORAGE_PATH = "input/st-storage/clusters"
-
 
 class STStorageManager:
     """
