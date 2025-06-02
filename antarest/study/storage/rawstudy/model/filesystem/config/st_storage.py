@@ -15,7 +15,6 @@ from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import (
     initialize_thermal_cluster,

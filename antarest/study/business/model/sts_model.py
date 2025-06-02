@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_6
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
@@ -145,7 +145,6 @@ class STStorageUpdate(AntaresBaseModel):
     penalize_variation_withdrawal: Optional[bool] = None
 
 
-
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
     if getattr(data, field) is not None:
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
@@ -161,49 +160,57 @@ def validate_st_storage_against_version(
     Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
     """
     if version < STUDY_VERSION_8_6:
-        raise InvalidFieldForVersionError(f"Short-term storages only exist since v8.8 and your study is in {version}")
+        raise InvalidFieldForVersionError(f"Short-term storages only exist since v8.6 and your study is in {version}")
+
+    if version < STUDY_VERSION_8_8:
+        _check_min_version(storage_data, "enabled", version)
+
+    if version < STUDY_VERSION_9_2:
+        for field in ["efficiency_withdrawal", "penalize_variation_injection", "penalize_variation_withdrawal"]:
+            _check_min_version(storage_data, field, version)
 
 
-        for field in ["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
-            _check_min_version(cluster_data, field, version)
-
-    if version < STUDY_VERSION_8_7:
-        for field in ["cost_generation", "efficiency", "variable_o_m_cost"]:
-            _check_min_version(cluster_data, field, version)
+def _initialize_field_default(storage: STStorage, field: str, default_value: Any) -> None:
+    if getattr(storage, field) is None:
+        setattr(storage, field, default_value)
 
 
-def _initialize_field_default(cluster: ThermalCluster, field: str, default_value: Any) -> None:
-    if getattr(cluster, field) is None:
-        setattr(cluster, field, default_value)
-
-
-def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -> None:
+def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_8_6:
-        for field in ["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
-            _initialize_field_default(cluster, field, 0)
+        for field in [
+            "injection_nominal_capacity",
+            "withdrawal_nominal_capacity",
+            "reservoir_capacity",
+            "efficiency",
+            "initial_level",
+            "initial_level_optim",
+        ]:
+            _initialize_field_default(storage, field, 0)
 
-    if version >= STUDY_VERSION_8_7:
-        _initialize_field_default(cluster, "cost_generation", ThermalCostGeneration.SET_MANUALLY)
-        _initialize_field_default(cluster, "efficiency", 100.0)
-        _initialize_field_default(cluster, "variable_o_m_cost", 0.0)
+    if version >= STUDY_VERSION_8_8:
+        _initialize_field_default(storage, "enabled", True)
+
+    if version >= STUDY_VERSION_9_2:
+        _initialize_field_default(storage, "efficiency_withdrawal", 1)
+        _initialize_field_default(storage, "penalize_variation_injection", False)
+        _initialize_field_default(storage, "penalize_variation_withdrawal", False)
 
 
-def create_thermal_cluster(cluster_data: ThermalClusterCreation, version: StudyVersion) -> ThermalCluster:
+def create_st_storage(cluster_data: STStorageCreation, version: StudyVersion) -> STStorage:
     """
-    Creates a thermal cluster from a creation request, checking and initializing it against the specified study version.
+    Creates a short-term storage from a creation request, checking and initializing it against the specified study version.
     """
-    cluster = ThermalCluster.model_validate(cluster_data.model_dump(exclude_none=True))
-    validate_thermal_cluster_against_version(version, cluster_data)
-    initialize_thermal_cluster(cluster, version)
-    return cluster
+    storage = STStorage.model_validate(cluster_data.model_dump(exclude_none=True))
+    validate_st_storage_against_version(version, cluster_data)
+    initialize_st_storage(storage, version)
+    return storage
 
 
-def update_thermal_cluster(cluster: ThermalCluster, data: ThermalClusterUpdate) -> ThermalCluster:
+def update_st_storage(storage: STStorage, data: STStorageUpdate) -> STStorage:
     """
-    Updates a cluster according to the provided update data.
+    Updates a short-term storage according to the provided update data.
     """
-    return cluster.model_copy(update=data.model_dump(exclude_none=True))
-
+    return storage.model_copy(update=data.model_dump(exclude_none=True))
