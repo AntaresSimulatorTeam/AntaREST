@@ -28,7 +28,7 @@ def build_config(root: Path) -> Config:
                 "diese": WorkspaceConfig(path=root / "diese", filter_out=[".git", ".*RECYCLE.BIN"]),
                 "test": WorkspaceConfig(path=root / "test"),
             }
-        )
+        ),
     )
 
 
@@ -71,12 +71,15 @@ def config_scenario_a(tmp_path: Path) -> Config:
     d.mkdir(parents=True)
     (d / "config.txt").touch()
 
+    d = diese / ".hidden_folder"
+    d.mkdir(parents=True)
+    (d / "config.txt").touch()
+
     d = diese / "$RECYCLE.BIN"
     d.mkdir(parents=True)
     (d / "trash").touch()
 
     config = build_config(tmp_path)
-
     return config
 
 
@@ -88,6 +91,20 @@ def test_list_dir_empty_string(config_scenario_a: Config):
     # We don't want to see the .git folder or the $RECYCLE.BIN as they were ignored in the workspace config
     assert len(result) == 1
     assert result[0] == NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True)
+
+
+@pytest.mark.unit_test
+def test_list_dir_show_hidden_file(config_scenario_a: Config):
+    explorer = Explorer(config_scenario_a)
+    result = explorer.list_dir("diese", "", show_hidden_file=True)
+
+    # explicit ask to show hidden files
+    assert len(result) == 2
+    assert (
+        NonStudyFolderDTO(path=Path(".hidden_folder"), workspace="diese", name=".hidden_folder", has_children=False)
+        in result
+    )
+    assert NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True) in result
 
 
 @pytest.mark.unit_test
