@@ -14,7 +14,11 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.sts_model import STStorageUpdates, update_st_storage
+from antarest.study.business.model.sts_model import (
+    STStorageUpdates,
+    update_st_storage,
+    validate_st_storage_against_version,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -46,7 +50,7 @@ class UpdateSTStorages(ICommand):
     def validate_properties_against_version(self) -> Self:
         for value in self.storage_properties.values():
             for properties in value.values():
-                properties.validate_model_against_version(self.study_version)
+                validate_st_storage_against_version(self.study_version, properties)
         return self
 
     @override
