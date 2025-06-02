@@ -248,7 +248,7 @@ class STStorageManager:
         current_cluster = self.get_storage(study, area_id, source_id)
         current_cluster.name = new_cluster_name
 
-        creation_form = STStorageCreation.from_cluster(current_cluster)
+        creation_form = STStorageCreation.from_storage(current_cluster)
         create_cluster_cmd = self._make_create_cluster_cmd(area_id, creation_form, study.version)
         commands: list[CreateSTStorage | ReplaceMatrix] = [create_cluster_cmd]
 
@@ -297,19 +297,19 @@ class STStorageManager:
                 (f"input/st-storage/series/{area_id}/{new_id}/cost_variation_withdrawal", cost_variation_withdrawal)
             )
 
-            # Add commands
-            for matrix in matrices:
-                cmd = ReplaceMatrix(
-                    target=matrix[0],
-                    matrix=matrix[1],
-                    command_context=self._command_context,
-                    study_version=study.version,
-                )
-                commands.append(cmd)
+        # Add commands
+        for matrix in matrices:
+            cmd = ReplaceMatrix(
+                target=matrix[0],
+                matrix=matrix[1],
+                command_context=self._command_context,
+                study_version=study.version,
+            )
+            commands.append(cmd)
 
-            study.add_commands(commands)
+        study.add_commands(commands)
 
-            return create_st_storage(creation_form, study.version)
+        return create_st_storage(creation_form, study.version)
 
     @staticmethod
     def get_table_schema() -> JSON:
