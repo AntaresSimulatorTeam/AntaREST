@@ -156,43 +156,78 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "pmax_injection"])
 
     @override
     def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "pmax_withdrawal"])
 
     @override
     def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "lower_rule_curve"])
 
     @override
     def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "upper_rule_curve"])
 
     @override
     def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "inflows"])
 
     @override
     def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_9_2:
+            raise ValueError(
+                f"costInjection matrix is supported since version 9.2 and your study is in {study_version}"
+            )
+        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_injection"])
 
     @override
     def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_9_2:
+            raise ValueError(
+                f"costWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
+            )
+        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_withdrawal"])
 
     @override
     def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_9_2:
+            raise ValueError(f"costLevel matrix is supported since version 9.2 and your study is in {study_version}")
+        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_level"])
 
     @override
     def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_9_2:
+            raise ValueError(
+                f"costVariationInjection matrix is supported since version 9.2 and your study is in {study_version}"
+            )
+        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_variation_injection"])
 
     @override
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version < STUDY_VERSION_9_2:
+            raise ValueError(
+                f"costVariationWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
+            )
+        study_data.tree.save(
+            series_id, ["input", "thermal", "series", area_id, storage_id, "cost_variation_withdrawal"]
+        )
 
     @override
     def delete_storage(self, area_id: str, storage: STStorage) -> None:
