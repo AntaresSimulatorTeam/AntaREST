@@ -16,6 +16,7 @@ from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
@@ -61,6 +62,7 @@ class STStorage(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     name: ItemName
+    id: str
 
     @model_validator(mode="before")
     @classmethod
@@ -143,6 +145,9 @@ class STStorageUpdate(AntaresBaseModel):
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
+
+
+STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
