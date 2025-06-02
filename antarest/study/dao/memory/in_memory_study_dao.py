@@ -13,11 +13,14 @@
 from dataclasses import dataclass
 from typing import Dict, Sequence
 
+import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -28,9 +31,19 @@ class LinkKey:
     area2_id: str
 
 
+@dataclass(frozen=True)
+class ClusterKey:
+    area_id: str
+    cluster_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
+
+
+def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
+    return ClusterKey(area_id, cluster_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -39,12 +52,21 @@ class InMemoryStudyDao(StudyDao):
     TODO, warning: no version handling, no check on areas, no checks on matrices ...
     """
 
-    def __init__(self, version: StudyVersion) -> None:
+    def __init__(self, version: StudyVersion, matrix_service: ISimpleMatrixService) -> None:
         self._version = version
+        self._matrix_service = matrix_service
+        # Links
         self._links: Dict[LinkKey, Link] = {}
         self._link_capacities: Dict[LinkKey, str] = {}
         self._link_direct_capacities: Dict[LinkKey, str] = {}
         self._link_indirect_capacities: Dict[LinkKey, str] = {}
+        # Thermals
+        self._thermals: Dict[ClusterKey, ThermalCluster] = {}
+        self._thermal_prepro: Dict[ClusterKey, str] = {}
+        self._thermal_modulation: Dict[ClusterKey, str] = {}
+        self._thermal_series: Dict[ClusterKey, str] = {}
+        self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
+        self._thermal_co2_cost: Dict[ClusterKey, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -91,3 +113,80 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_link(self, link: Link) -> None:
         del self._links[link_key(link.area1, link.area2)]
+
+    @override
+    def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+        all_thermals: dict[str, dict[str, ThermalCluster]] = {}
+        for key, thermal_cluster in self._thermals.items():
+            all_thermals.setdefault(key.area_id, {})[key.cluster_id] = thermal_cluster
+        return all_thermals
+
+    @override
+    def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
+        return [thermal for key, thermal in self._thermals.items() if key.area_id == area_id]
+
+    @override
+    def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
+        return self._thermals[cluster_key(area_id, thermal_id)]
+
+    @override
+    def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
+        return cluster_key(area_id, thermal_id) in self._thermals
+
+    @override
+    def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        matrix_id = self._thermal_prepro[cluster_key(area_id, thermal_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        matrix_id = self._thermal_modulation[cluster_key(area_id, thermal_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_thermal_series(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        matrix_id = self._thermal_series[cluster_key(area_id, thermal_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        matrix_id = self._thermal_fuel_cost[cluster_key(area_id, thermal_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
+        matrix_id = self._thermal_co2_cost[cluster_key(area_id, thermal_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+        self._thermals[cluster_key(area_id, thermal.id)] = thermal
+
+    @override
+    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
+        for thermal in thermals:
+            self.save_thermal(area_id, thermal)
+
+    @override
+    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        self._thermal_prepro[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        self._thermal_modulation[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        self._thermal_series[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        self._thermal_fuel_cost[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+        self._thermal_co2_cost[cluster_key(area_id, thermal_id)] = series_id
+
+    @override
+    def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+        del self._thermals[cluster_key(area_id, thermal.id)]

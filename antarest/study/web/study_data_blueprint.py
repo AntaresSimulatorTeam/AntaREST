@@ -1630,28 +1630,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
         return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data)
 
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/validate",
-        tags=[APITag.study_data],
-        summary="Validates the thermal cluster series",
-    )
-    def validate_cluster_series(uuid: str, area_id: str, cluster_id: str) -> bool:
-        """
-        Validate the consistency of all time series for the given thermal cluster.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `cluster_id`: the ID of the thermal cluster.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Validating thermal series values for study {uuid} and cluster {cluster_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.thermal_manager.validate_series(study_interface, area_id, cluster_id)
-
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
