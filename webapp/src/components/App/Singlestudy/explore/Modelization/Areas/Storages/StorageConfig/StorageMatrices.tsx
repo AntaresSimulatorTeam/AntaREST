@@ -33,8 +33,13 @@ interface Props {
 // on the simulator side yet. When that development is done, these properties
 // should be removed to restore the standard time series behavior with resize
 // functionality.
-function BuildMatrices(areaId: string, storageId: string, studyVersion: number) {
+function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
   const { t } = useTranslation();
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   const matrices = [
     {
       label: t("study.modelization.storages.modulation"),
@@ -162,15 +167,8 @@ function BuildMatrices(areaId: string, storageId: string, studyVersion: number) 
       },
     );
   }
-  return matrices;
-}
 
-function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
-  return <TabsView disableGutters items={BuildMatrices(areaId, storageId, studyVersion)} />;
+  return <TabsView disableGutters items={matrices} />;
 }
 
 export default StorageMatrices;
