@@ -12,12 +12,9 @@
 
 import collections
 import operator
-from typing import Any, List, Mapping, MutableMapping, Sequence, TypeAlias
+from typing import Any, List, Mapping, MutableMapping, Sequence
 
-import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import field_validator, model_validator
-from typing_extensions import Literal
 
 from antarest.core.exceptions import (
     AreaNotFound,
@@ -28,7 +25,6 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
-from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
     STStorageCreation,
     STStorageOutput,
@@ -48,112 +44,6 @@ from antarest.study.storage.variantstudy.model.command.remove_st_storage import 
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-# =============
-#  Time series
-# =============
-
-
-class STStorageMatrix(AntaresBaseModel):
-    """
-    Short-Term Storage Matrix  Model.
-
-    This model represents a matrix associated with short-term storage
-    and validates its integrity against specific conditions.
-
-    Attributes:
-        data: The 2D-array matrix containing time series values.
-        index: List of lines for the data matrix.
-        columns: List of columns for the data matrix.
-    """
-
-    class Config:
-        extra = "forbid"
-
-    data: List[List[float]]
-    index: List[int]
-    columns: List[int]
-
-    @field_validator("data")
-    def validate_time_series(cls, data: List[List[float]]) -> List[List[float]]:
-        """
-        Validator to check the integrity of the time series data.
-
-        Note:
-            - The time series must have a shape of (8760, 1).
-            - Time series values must not be empty or contain NaN values.
-        """
-        array = np.array(data)
-        if array.size == 0:
-            raise ValueError("time series must not be empty")
-        if array.shape != (8760, 1):
-            raise ValueError(f"time series must have shape ({8760}, 1)")
-        if np.any(np.isnan(array)):
-            raise ValueError("time series must not contain NaN values")
-        return data
-
-
-# noinspection SpellCheckingInspection
-class STStorageMatrices(AntaresBaseModel):
-    """
-    Short-Term Storage Matrices Validation Model.
-
-    This model is designed to validate constraints on short-term storage matrices.
-
-    Attributes:
-        pmax_injection: Matrix representing maximum injection values.
-        pmax_withdrawal: Matrix representing maximum withdrawal values.
-        lower_rule_curve: Matrix representing lower rule curve values.
-        upper_rule_curve: Matrix representing upper rule curve values.
-        inflows: Matrix representing inflow values.
-    """
-
-    class Config:
-        extra = "forbid"
-
-    pmax_injection: STStorageMatrix
-    pmax_withdrawal: STStorageMatrix
-    lower_rule_curve: STStorageMatrix
-    upper_rule_curve: STStorageMatrix
-    inflows: STStorageMatrix
-
-    @field_validator(
-        "pmax_injection",
-        "pmax_withdrawal",
-        "lower_rule_curve",
-        "upper_rule_curve",
-    )
-    def validate_time_series(cls, matrix: STStorageMatrix) -> STStorageMatrix:
-        """
-        Validator to check if matrix values are within the range [0, 1].
-        """
-        array = np.array(matrix.data)
-        if np.any((array < 0) | (array > 1)):
-            raise ValueError("Matrix values should be between 0 and 1")
-        return matrix
-
-    @model_validator(mode="after")
-    def validate_rule_curve(self) -> "STStorageMatrices":
-        """
-        Validator to ensure 'lower_rule_curve' values are less than
-        or equal to 'upper_rule_curve' values.
-        """
-        lower_array = np.array(self.lower_rule_curve.data, dtype=np.float64)
-        upper_array = np.array(self.upper_rule_curve.data, dtype=np.float64)
-        if (lower_array > upper_array).any():
-            raise ValueError("Each 'lower_rule_curve' value must be lower or equal to each 'upper_rule_curve'")
-
-        return self
-
-
-# noinspection SpellCheckingInspection
-STStorageTimeSeries: TypeAlias = Literal[
-    "pmax_injection",
-    "pmax_withdrawal",
-    "lower_rule_curve",
-    "upper_rule_curve",
-    "inflows",
-]
 
 # ============================
 #  Short-term storage manager

@@ -19,12 +19,10 @@ import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
 import type { StudyMetadata } from "@/types/types";
+import { useOutletContext } from "react-router-dom";
 
-interface Props {
-  study: StudyMetadata;
-}
-
-function Fields({ study }: Props) {
+function Fields() {
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { control, watch } = useFormContextPlus<HydroFormFields>();
   const [reservoirDisabled, waterValuesDisabled, heuristicDisabled, leeWayDisabled] = watch([
     "reservoir",
