@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Mapping, Sequence
+from typing import Mapping, Sequence
 
 from antares.study.version import StudyVersion
 
@@ -27,7 +27,7 @@ from antarest.study.business.model.sts_model import (
     update_st_storage,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
@@ -215,17 +215,20 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
             storage_ids: IDs list of short-term storages to remove.
         """
-        commands = [RemoveSTStorage(
-                    area_id=area_id,
-                    storage_id=storage_id,
-                    command_context=self._command_context,
-                    study_version=study.version,
-                ) for storage_id in storage_ids]
+        commands = [
+            RemoveSTStorage(
+                area_id=area_id,
+                storage_id=storage_id,
+                command_context=self._command_context,
+                study_version=study.version,
+            )
+            for storage_id in storage_ids
+        ]
         study.add_commands(commands)
 
     def duplicate_cluster(
         self, study: StudyInterface, area_id: str, source_id: str, new_cluster_name: str
-    ) -> STStorageOutput:
+    ) -> STStorage:
         """
         Creates a duplicate cluster within the study area with a new name.
 
@@ -242,65 +245,76 @@ class STStorageManager:
             DuplicateSTStorage: If a cluster with the new name already exists in the area.
         """
         new_id = transform_name_to_id(new_cluster_name)
-        lower_new_id = new_id.lower()
-        if any(lower_new_id == storage.id.lower() for storage in self.get_storages(study, area_id)):
+        if any(new_id == storage.id.lower() for storage in self.get_storages(study, area_id)):
             raise DuplicateSTStorage(area_id, new_id)
 
         # Cluster duplication
         current_cluster = self.get_storage(study, area_id, source_id)
         current_cluster.name = new_cluster_name
-        fields_to_exclude = {"id"}
-        # We should remove the field 'enabled' for studies before v8.8 as it didn't exist
-        if study.version < STUDY_VERSION_8_8:
-            fields_to_exclude.add("enabled")
-        creation_form = STStorageCreation.model_validate(
-            current_cluster.model_dump(mode="json", by_alias=False, exclude=fields_to_exclude)
-        )
 
-        new_config = creation_form.to_properties(study.version)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, new_config, study.version)
+        creation_form = STStorageCreation.from_cluster(current_cluster)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, creation_form, study.version)
+        commands: list[CreateSTStorage | ReplaceMatrix] = [create_cluster_cmd]
 
         # Matrix edition
         lower_source_id = source_id.lower()
-        # noinspection SpellCheckingInspection
-        ts_names = ["pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"]
+
+        matrices: list[tuple[str, list[list[float]]]] = []
+        study_dao = study.get_study_dao()
+
+        pmax_injection = study_dao.get_st_storage_pmax_injection(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/pmax_injection", pmax_injection))
+
+        pmax_withdrawal = study_dao.get_st_storage_pmax_withdrawal(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/pmax_withdrawal", pmax_withdrawal))
+
+        lower_rule_curve = study_dao.get_st_storage_lower_rule_curve(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/lower_rule_curve", lower_rule_curve))
+
+        upper_rule_curve = study_dao.get_st_storage_upper_rule_curve(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/lower_rule_curve", upper_rule_curve))
+
+        inflows = study_dao.get_st_storage_inflows(area_id, lower_source_id).to_numpy().tolist()
+        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/inflows", inflows))
+
         if study.version >= STUDY_VERSION_9_2:
-            ts_names.extend(
-                [
-                    "cost_injection",
-                    "cost_withdrawal",
-                    "cost_level",
-                    "cost_variation_injection",
-                    "cost_variation_withdrawal",
-                ]
+            cost_injection = study_dao.get_st_storage_cost_injection(area_id, lower_source_id).to_numpy().tolist()
+            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/cost_injection", cost_injection))
+
+            cost_withdrawal = study_dao.get_st_storage_cost_withdrawal(area_id, lower_source_id).to_numpy().tolist()
+            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/cost_withdrawal", cost_withdrawal))
+
+            cost_level = study_dao.get_st_storage_cost_level(area_id, lower_source_id).to_numpy().tolist()
+            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/cost_level", cost_level))
+
+            cost_variation_injection = (
+                study_dao.get_st_storage_cost_variation_injection(area_id, lower_source_id).to_numpy().tolist()
+            )
+            matrices.append(
+                (f"input/st-storage/series/{area_id}/{new_id}/cost_variation_injection", cost_variation_injection)
             )
 
-        source_paths = [
-            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_source_id, ts_name=ts_name)
-            for ts_name in ts_names
-        ]
-        new_paths = [
-            _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=lower_new_id, ts_name=ts_name)
-            for ts_name in ts_names
-        ]
-
-        # Prepare and execute commands
-        file_study = study.get_files()
-        commands: List[CreateSTStorage | ReplaceMatrix] = [create_cluster_cmd]
-        for source_path, new_path in zip(source_paths, new_paths):
-            current_matrix = file_study.tree.get(source_path.split("/"))["data"]
-            command = ReplaceMatrix(
-                target=new_path,
-                matrix=current_matrix,
-                command_context=self._command_context,
-                study_version=study.version,
+            cost_variation_withdrawal = (
+                study_dao.get_st_storage_cost_variation_withdrawal(area_id, lower_source_id).to_numpy().tolist()
             )
-            commands.append(command)
+            matrices.append(
+                (f"input/st-storage/series/{area_id}/{new_id}/cost_variation_withdrawal", cost_variation_withdrawal)
+            )
 
-        study.add_commands(commands)
+            # Add commands
+            for matrix in matrices:
+                cmd = ReplaceMatrix(
+                    target=matrix[0],
+                    matrix=matrix[1],
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
+                commands.append(cmd)
 
-        return STStorageOutput(**new_config.model_dump(mode="json", by_alias=False))
+            study.add_commands(commands)
+
+            return create_st_storage(creation_form, study.version)
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return STStorageOutput.model_json_schema()
+        return STStorage.model_json_schema()
