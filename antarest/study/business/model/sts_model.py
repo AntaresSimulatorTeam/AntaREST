@@ -180,15 +180,11 @@ def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_8_6:
-        for field in [
-            "injection_nominal_capacity",
-            "withdrawal_nominal_capacity",
-            "reservoir_capacity",
-            "efficiency",
-            "initial_level",
-            "initial_level_optim",
-        ]:
+        for field in ["injection_nominal_capacity", "withdrawal_nominal_capacity", "reservoir_capacity"]:
             _initialize_field_default(storage, field, 0)
+        _initialize_field_default(storage, "efficiency", 1)
+        _initialize_field_default(storage, "initial_level", 0.5)
+        _initialize_field_default(storage, "initial_level_optim", False)
 
     if version >= STUDY_VERSION_8_8:
         _initialize_field_default(storage, "enabled", True)
