@@ -112,6 +112,13 @@ class STStorageCreation(AntaresBaseModel):
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
 
+    @classmethod
+    def from_storage(cls, storage: STStorage) -> "STStorageCreation":
+        """
+        Conversion to creation request, can be useful for duplicating storages.
+        """
+        return STStorageCreation.model_validate(storage.model_dump(mode="json", exclude={"id"}, exclude_none=True))
+
 
 class STStorageUpdate(AntaresBaseModel):
     """

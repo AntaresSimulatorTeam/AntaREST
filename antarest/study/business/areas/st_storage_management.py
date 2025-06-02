@@ -10,30 +10,25 @@
 #
 # This file is part of the Antares project.
 
-import collections
-import operator
-from typing import Any, List, Mapping, MutableMapping, Sequence
+from typing import List, Mapping, Sequence
 
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import (
-    AreaNotFound,
-    ChildNotFoundError,
     DuplicateSTStorage,
-    STStorageConfigNotFound,
-    STStorageNotFound,
 )
 from antarest.core.model import JSON
-from antarest.core.requests import CaseInsensitiveDict
 from antarest.study.business.model.sts_model import (
+    STStorage,
     STStorageCreation,
     STStorageUpdate,
     STStorageUpdates,
+    create_st_storage,
+    update_st_storage,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -49,26 +44,6 @@ _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
-def _get_values_by_ids(file_study: FileStudy, area_id: str) -> Mapping[str, Mapping[str, Any]]:
-    path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
-    try:
-        return CaseInsensitiveDict(file_study.tree.get(path.split("/"), depth=3))
-    except ChildNotFoundError:
-        raise AreaNotFound(area_id) from None
-    except KeyError:
-        raise STStorageConfigNotFound(path, area_id) from None
-
-
-def create_storage_output(
-    study_version: StudyVersion,
-    cluster_id: str,
-    config: Mapping[str, Any],
-) -> "STStorageOutput":
-    obj = create_st_storage_config(study_version=study_version, **config, id=cluster_id)
-    kwargs = obj.model_dump(mode="json", by_alias=False)
-    return STStorageOutput(**kwargs)
-
-
 class STStorageManager:
     """
     Manage short-term storage configuration in a study
@@ -82,7 +57,7 @@ class STStorageManager:
         study: StudyInterface,
         area_id: str,
         form: STStorageCreation,
-    ) -> STStorageOutput:
+    ) -> STStorage:
         """
         Create a new short-term storage configuration for the given `study`, `area_id`, and `form fields`.
 
@@ -94,22 +69,17 @@ class STStorageManager:
         Returns:
             The ID of the newly created short-term storage.
         """
-        file_study = study.get_files()
-        values_by_ids = _get_values_by_ids(file_study, area_id)
+        storage = create_st_storage(form, study.version)
 
-        storage = form.to_properties(study.version)
-        storage_id = storage.get_id()
-        values = values_by_ids.get(storage_id)
-        if values is not None:
-            raise DuplicateSTStorage(area_id, storage_id)
+        if study.get_study_dao().st_storage_exists(area_id, storage.id):
+            raise DuplicateSTStorage(area_id, storage.id)
 
-        command = self._make_create_cluster_cmd(area_id, storage, study.version)
+        command = self._make_create_cluster_cmd(area_id, form, study.version)
         study.add_commands([command])
-        output = self.get_storage(study, area_id, storage_id=storage_id)
-        return output
+        return storage
 
     def _make_create_cluster_cmd(
-        self, area_id: str, cluster: STStoragePropertiesType, study_version: StudyVersion
+        self, area_id: str, cluster: STStorageCreation, study_version: StudyVersion
     ) -> CreateSTStorage:
         command = CreateSTStorage(
             area_id=area_id,
@@ -123,7 +93,7 @@ class STStorageManager:
         self,
         study: StudyInterface,
         area_id: str,
-    ) -> Sequence[STStorageOutput]:
+    ) -> Sequence[STStorage]:
         """
         Get the list of short-term storage configurations for the given `study`, and `area_id`.
 
@@ -135,24 +105,12 @@ class STStorageManager:
             The list of forms used to display the short-term storages.
         """
 
-        file_study = study.get_files()
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
-        try:
-            config = file_study.tree.get(path.split("/"), depth=3)
-        except ChildNotFoundError:
-            raise AreaNotFound(area_id) from None
-        except KeyError:
-            raise STStorageConfigNotFound(path, area_id) from None
-
-        # Sort STStorageConfig by groups and then by name
-        order_by = operator.attrgetter("group", "name")
-        storages = [create_storage_output(study.version, storage_id, options) for storage_id, options in config.items()]
-        return sorted(storages, key=order_by)
+        return study.get_study_dao().get_all_st_storages_for_area(area_id)
 
     def get_all_storages_props(
         self,
         study: StudyInterface,
-    ) -> Mapping[str, Mapping[str, STStorageOutput]]:
+    ) -> Mapping[str, Mapping[str, STStorage]]:
         """
         Retrieve all short-term storages from all areas within a study.
 
@@ -166,29 +124,13 @@ class STStorageManager:
             STStorageConfigNotFound: If no storages are found in the specified area.
         """
 
-        file_study = study.get_files()
-        path = _ALL_STORAGE_PATH
-        try:
-            # may raise KeyError if the path is missing
-            storages = file_study.tree.get(path.split("/"), depth=5)
-            # may raise KeyError if "list" is missing
-            storages = {area_id: cluster_list["list"] for area_id, cluster_list in storages.items()}
-        except KeyError:
-            raise STStorageConfigNotFound(path) from None
-
-        storages_by_areas: MutableMapping[str, MutableMapping[str, STStorageOutput]]
-        storages_by_areas = collections.defaultdict(dict)
-        for area_id, cluster_obj in storages.items():
-            for cluster_id, cluster in cluster_obj.items():
-                storages_by_areas[area_id][cluster_id] = create_storage_output(study.version, cluster_id, cluster)
-
-        return storages_by_areas
+        return study.get_study_dao().get_all_st_storages()
 
     def update_storages_props(
         self,
         study: StudyInterface,
         update_storages_by_areas: STStorageUpdates,
-    ) -> Mapping[str, Mapping[str, STStorageOutput]]:
+    ) -> Mapping[str, Mapping[str, STStorage]]:
         old_storages_by_areas = self.get_all_storages_props(study)
         new_storages_by_areas = {area_id: dict(clusters) for area_id, clusters in old_storages_by_areas.items()}
 
@@ -216,7 +158,7 @@ class STStorageManager:
         study: StudyInterface,
         area_id: str,
         storage_id: str,
-    ) -> STStorageOutput:
+    ) -> STStorage:
         """
         Get short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -228,14 +170,7 @@ class STStorageManager:
         Returns:
             Form used to display and edit a short-term storage.
         """
-
-        file_study = study.get_files()
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
-        try:
-            config = file_study.tree.get(path.split("/"), depth=1)
-        except KeyError:
-            raise STStorageNotFound(path, storage_id) from None
-        return create_storage_output(study.version, storage_id, config)
+        return study.get_study_dao().get_st_storage(area_id, storage_id)
 
     def update_storage(
         self,
@@ -243,7 +178,7 @@ class STStorageManager:
         area_id: str,
         storage_id: str,
         cluster_data: STStorageUpdate,
-    ) -> STStorageOutput:
+    ) -> STStorage:
         """
         Set short-term storage configuration for the given `study`, `area_id`, and `storage_id`.
 
@@ -255,29 +190,16 @@ class STStorageManager:
         Returns:
             Updated form of short-term storage.
         """
-        path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
-        file_study = study.get_files()
-
-        try:
-            area = file_study.config.areas[area_id]
-        except KeyError:
-            raise AreaNotFound(area_id)
-
-        sts_storage = next((sts for sts in area.st_storages if sts.id == storage_id), None)
-        if sts_storage is None:
-            raise STStorageNotFound(path, storage_id)
-
-        updated_sts = sts_storage.model_copy(update=cluster_data.model_dump(exclude_unset=True, exclude_none=True))
+        storage = self.get_storage(study, area_id, storage_id)
+        updated_storage = update_st_storage(storage, cluster_data)
 
         command = UpdateSTStorages(
             storage_properties={area_id: {storage_id: cluster_data}},
             command_context=self._command_context,
             study_version=study.version,
         )
-
         study.add_commands([command])
-
-        return STStorageOutput(**updated_sts.model_dump(exclude={"id"}), id=storage_id)
+        return updated_storage
 
     def delete_storages(
         self,
@@ -293,24 +215,12 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
             storage_ids: IDs list of short-term storages to remove.
         """
-        file_study = study.get_files()
-        values_by_ids = _get_values_by_ids(file_study, area_id)
-
-        for storage_id in storage_ids:
-            if storage_id not in values_by_ids:
-                path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id=storage_id)
-                raise STStorageNotFound(path, storage_id)
-
-        commands = []
-        for storage_id in storage_ids:
-            commands.append(
-                RemoveSTStorage(
+        commands = [RemoveSTStorage(
                     area_id=area_id,
                     storage_id=storage_id,
                     command_context=self._command_context,
                     study_version=study.version,
-                )
-            )
+                ) for storage_id in storage_ids]
         study.add_commands(commands)
 
     def duplicate_cluster(
