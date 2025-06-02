@@ -98,6 +98,10 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         raise NotImplementedError()
 
     @override
+    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
     def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
