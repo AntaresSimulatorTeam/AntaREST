@@ -72,14 +72,14 @@ class InMemoryStudyDao(StudyDao):
         self._st_storages: Dict[ClusterKey, STStorage] = {}
         self._storage_pmax_injection: Dict[ClusterKey, str] = {}
         self._storage_pmax_withdrawal: Dict[ClusterKey, str] = {}
-        self._storage_pmax_lower_rule_curve: Dict[ClusterKey, str] = {}
-        self._storage_pmax_upper_rule_curve: Dict[ClusterKey, str] = {}
-        self._storage_pmax_inflows: Dict[ClusterKey, str] = {}
-        self._storage_pmax_cost_injection: Dict[ClusterKey, str] = {}
-        self._storage_pmax_cost_withdrawal: Dict[ClusterKey, str] = {}
-        self._storage_pmax_cost_level: Dict[ClusterKey, str] = {}
-        self._storage_pmax_cost_variation_injection: Dict[ClusterKey, str] = {}
-        self._storage_pmax_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
+        self._storage_lower_rule_curve: Dict[ClusterKey, str] = {}
+        self._storage_upper_rule_curve: Dict[ClusterKey, str] = {}
+        self._storage_inflows: Dict[ClusterKey, str] = {}
+        self._storage_cost_injection: Dict[ClusterKey, str] = {}
+        self._storage_cost_withdrawal: Dict[ClusterKey, str] = {}
+        self._storage_cost_level: Dict[ClusterKey, str] = {}
+        self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
+        self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -206,104 +206,118 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
-        raise NotImplementedError()
+        all_storages: dict[str, dict[str, STStorage]] = {}
+        for key, storage in self._st_storages.items():
+            all_storages.setdefault(key.area_id, {})[key.cluster_id] = storage
+        return all_storages
 
     @override
     def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
-        raise NotImplementedError()
+        return [storage for key, storage in self._st_storages.items() if key.area_id == area_id]
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
-        raise NotImplementedError()
+        return self._st_storages[cluster_key(area_id, storage_id)]
 
     @override
     def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
-        raise NotImplementedError()
+        return cluster_key(area_id, storage_id) in self._st_storages
 
     @override
     def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_pmax_injection[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_lower_rule_curve[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_upper_rule_curve[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_inflows[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_cost_injection[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_cost_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_cost_level[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_cost_variation_injection[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        raise NotImplementedError()
+        self._st_storages[cluster_key(area_id, st_storage.id)] = st_storage
 
     @override
     def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        raise NotImplementedError()
+        for storage in storages:
+            self.save_st_storage(area_id, storage)
 
     @override
     def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_pmax_injection[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_lower_rule_curve[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_upper_rule_curve[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_inflows[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_cost_injection[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_cost_withdrawal[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_cost_level[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_cost_variation_injection[cluster_key(area_id, storage_id)] = series_id
 
     @override
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
