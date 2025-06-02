@@ -15,10 +15,10 @@ from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.sts_model import STStorage
-from antarest.study.business.model.thermal_cluster_model import (
-    initialize_thermal_cluster,
-    validate_thermal_cluster_against_version,
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    initialize_st_storage,
+    validate_st_storage_against_version,
 )
 
 
@@ -57,11 +57,11 @@ class STStorageFileData(AntaresBaseModel):
 
 def parse_st_storage(study_version: StudyVersion, data: Any) -> STStorage:
     storage = STStorageFileData.model_validate(data).to_model()
-    validate_thermal_cluster_against_version(study_version, storage)
-    initialize_thermal_cluster(storage, study_version)
+    validate_st_storage_against_version(study_version, storage)
+    initialize_st_storage(storage, study_version)
     return storage
 
 
 def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dict[str, Any]:
-    validate_thermal_cluster_against_version(study_version, storage)
+    validate_st_storage_against_version(study_version, storage)
     return STStorageFileData.from_model(storage).model_dump(mode="json", by_alias=True, exclude_none=True)
