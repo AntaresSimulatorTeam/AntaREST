@@ -224,10 +224,10 @@ class FileTransferManager:
     def get_download_metadata(self, task_id: str, download_id: str, wait_for_availability: bool) -> FileDownloadTaskDTO:
         task = self.task_service.status_task(task_id)
 
-        file_raw = self.repository.get(download_id)
-        if not file_raw:
+        download = self.repository.get(download_id)
+        if not download:
             raise FileDownloadNotFound()
-        file = file_raw.to_dto()
+        file = download.to_dto()
 
         # the user wants to wait for the download to be available
         if wait_for_availability:
@@ -236,8 +236,8 @@ class FileTransferManager:
                 task = self.task_service.status_task(task_id)
                 time.sleep(2)
 
-            if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
-                raise HTTPException(status_code=http.HTTPStatus.REQUEST_TIMEOUT, detail="File is still in process.")
+        if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
+            raise HTTPException(status_code=http.HTTPStatus.REQUEST_TIMEOUT, detail="File is still in process.")
 
         if task.status == TaskStatus.FAILED:
             raise HTTPException(

@@ -1110,13 +1110,14 @@ class TestDataAggregationCreationOperations:
         assert res.status_code == 200
         download_id, task_id = get_file_and_task_ids(res.json())
 
-        # get aggregated output too early
-        # must pass with a 417 code
+        # download metadata returns an error explaining that the file is not ready
         res = client.get(
             f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": False}
         )
-        assert res.status_code == 200, res.json()
+        assert res.status_code == 408
+        assert res.json()["description"] == "File is still in process."
 
+        # in that case, attempting to get aggregated must return a 408 code
         res = client.get(f"v1/downloads/{download_id}")
         assert res.json()["exception"] == "FileDownloadNotReady"
         assert "Requested file is not ready for download." in res.json()["description"]

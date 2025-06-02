@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Optional, Sequence, Tuple
+from typing import BinaryIO, Optional, Sequence
 
 from starlette.responses import FileResponse, Response
 
@@ -22,7 +22,7 @@ from antarest.core.exceptions import (
     OutputNotFound,
     TaskAlreadyRunning,
 )
-from antarest.core.filetransfer.model import FileDownloadTaskDTO
+from antarest.core.filetransfer.model import DownloadMetadataDTO, FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -474,7 +474,7 @@ class OutputService:
         download_name: str,
         download_log: str,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Tuple[str, str]:
+    ) -> DownloadMetadataDTO:
         """
         Aggregates output data based on several filtering conditions
 
@@ -550,4 +550,4 @@ class OutputService:
             custom_event_messages=None,
         )
 
-        return download_id, task_id
+        return DownloadMetadataDTO(download_id=download_id, task_id=task_id)

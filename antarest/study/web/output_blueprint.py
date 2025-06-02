@@ -13,11 +13,12 @@ import collections
 import logging
 from http import HTTPStatus
 from pathlib import Path
-from typing import Any, Dict, List, Sequence
+from typing import Any, List, Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 
 from antarest.core.config import Config
+from antarest.core.filetransfer.model import DownloadMetadataDTO
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -201,7 +202,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data
@@ -232,7 +233,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        download_id, task_id = output_service.aggregate_output_data(
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -244,7 +245,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             download_name=download_name,
             download_log=download_log,
         )
-        return {"download_id": download_id, "task_id": task_id}
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
@@ -261,7 +261,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         return aggregate_areas_raw_data(
             uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
         )
@@ -280,7 +280,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         """
         Create an aggregation of links raw data
 
@@ -309,7 +309,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        download_id, task_id = output_service.aggregate_output_data(
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -321,7 +321,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             download_name=download_name,
             download_log=download_log,
         )
-        return {"download_id": download_id, "task_id": task_id}
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
@@ -338,7 +337,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         return aggregate_links_raw_data(
             uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
         )
@@ -356,7 +355,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data in mc-all
@@ -386,7 +385,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
         download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        download_id, task_id = output_service.aggregate_output_data(
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -397,7 +396,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             download_name=download_name,
             download_log=download_log,
         )
-        return {"download_id": download_id, "task_id": task_id}
 
     @bp.get(
         "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
@@ -413,7 +411,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         return aggregate_areas_raw_data__all(
             uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
         )
@@ -431,7 +429,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         """
         Create an aggregation of links in mc-all
 
@@ -462,7 +460,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
         )
 
-        download_id, task_id = output_service.aggregate_output_data(
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
@@ -473,7 +471,6 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
             download_name=download_name,
             download_log=download_log,
         )
-        return {"download_id": download_id, "task_id": task_id}
 
     @bp.get(
         "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
@@ -489,7 +486,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> Dict[str, str]:
+    ) -> DownloadMetadataDTO:
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )
