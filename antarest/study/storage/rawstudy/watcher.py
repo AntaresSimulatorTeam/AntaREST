@@ -21,6 +21,7 @@ from filelock import FileLock
 from typing_extensions import override
 
 from antarest.core.config import Config
+from antarest.core.exceptions import ScanDisabled
 from antarest.core.interfaces.service import IService
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -167,6 +168,8 @@ class Watcher(IService):
             path: relative path to folder to scan
             recursive: if true, scan recursively all subfolders otherwise only the first level
         """
+        if self.config.desktop_mode and recursive:
+            raise ScanDisabled("Recursive scan disables when desktop mode is on")
 
         # noinspection PyUnusedLocal
         def scan_task(notifier: ITaskNotifier) -> TaskResult:
@@ -196,6 +199,9 @@ class Watcher(IService):
         Returns:
 
         """
+        if self.config.desktop_mode and recursive:
+            raise ScanDisabled("Recursive scan disables when desktop mode is on")
+
         stopwatch = StopWatch()
         studies: List[StudyFolder] = list()
         directory_path: Optional[Path] = None

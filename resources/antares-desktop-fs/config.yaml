@@ -1,5 +1,7 @@
 # Documentation about this file can be found in this file: `docs/install/1-CONFIG.md`
 
+desktop_mode: true
+
 security:
   disabled: true
   jwt:
@@ -15,8 +17,6 @@ storage:
   workspaces:
     default:
       path: ./internal_studies/
-    studies:
-      path: ./studies/
 
 launcher:
   launchers:
@@ -55,8 +55,6 @@ api_prefix: "/api"
 
 server:
   worker_threadpool_size: 12
-  services:
-    - watcher
 
 logging:
   logfile: ./logs/antarest.log
