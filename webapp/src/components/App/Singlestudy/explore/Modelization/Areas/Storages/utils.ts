@@ -41,7 +41,7 @@ export type StorageGroup = (typeof STORAGE_GROUPS)[number];
 export interface Storage {
   id: string;
   name: string;
-  group: StorageGroup;
+  group: StorageGroup | string;
   injectionNominalCapacity: number;
   withdrawalNominalCapacity: number;
   reservoirCapacity: number;
@@ -49,11 +49,11 @@ export interface Storage {
   initialLevel: number;
   initialLevelOptim: boolean;
   // Since v8.8
-  enabled: boolean;
+  enabled: boolean | null;
   // Since v9.2
-  efficiencyWithdrawal: number;
-  penalizeVariationInjection: boolean;
-  penalizeVariationWithdrawal: boolean;
+  efficiencyWithdrawal: number | null;
+  penalizeVariationInjection: boolean | null;
+  penalizeVariationWithdrawal: boolean | null;
 }
 
 ////////////////////////////////////////////////////////////////
