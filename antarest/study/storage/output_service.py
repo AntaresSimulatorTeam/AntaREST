@@ -490,7 +490,7 @@ class OutputService:
             download_log: log to display while launching aggregation output task,
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
-        Returns: tuple of the file download id and the task id
+        Returns: download and task ids as a DownloadMetadataDTO object
 
         """
         study = self._study_service.get_study(uuid)

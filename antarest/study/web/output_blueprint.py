@@ -219,7 +219,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            id of the task that generates a dataframe with the aggregated areas raw data  # FIXME
+            download and task ids as a DownloadMetadataDTO object
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -296,7 +296,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            id of the task that generates a dataframe with the aggregated links raw data  # FIXME
+            download and task ids as a DownloadMetadataDTO object
         """
         logger.info(
             f"Aggregating links output data for study {uuid}, output {output_id},"
@@ -371,7 +371,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            id of the task that generates a dataframe with the aggregated areas raw data  # FIXME
+            download and task ids as a DownloadMetadataDTO object
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -444,7 +444,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            id of the task that generates a dataframe with the aggregated links raw data  # FIXME
+            download and task ids as a DownloadMetadataDTO object
         """
         logger.info(
             f"Aggregating links mc-all data for study {uuid}, output {output_id},"
