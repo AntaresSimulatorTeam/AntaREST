@@ -110,7 +110,7 @@ class AdequacyPatchExtension(ILauncherExtension):
     ) -> None:
         logger.info("Applying adequacy patch postprocessing script")
         study = self.study_service.storage_service.raw_study_service.study_factory.create_from_fs(
-            study_export_path, study_id, use_cache=False
+            study_export_path, True, study_id, use_cache=False
         )
         user_config = study.tree.get(
             ["user"],
