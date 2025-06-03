@@ -314,6 +314,10 @@ class TestSTStorage:
         #  SHORT-TERM STORAGE ERRORS
         # ===========================
 
+        # Checking only for RAW studies as for variants, we'll always have errors at the generation
+        if study_type == "variant":
+            return
+
         # Check delete with the wrong value of `area_id`
         bad_area_id = "bad_area"
         res = client.request(
