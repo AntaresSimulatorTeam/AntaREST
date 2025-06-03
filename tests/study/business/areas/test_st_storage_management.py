@@ -19,13 +19,10 @@ import pytest
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageNotFound
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
+from antarest.study.business.model.sts_model import STStorage, STStorageGroup
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfig,
-    STStorageGroup,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -353,7 +350,7 @@ class TestSTStorageManager:
         mock_config = Mock(spec=FileStudyTreeConfig, study_id="id", version=STUDY_VERSION_8_6)
         file_study.config = mock_config
 
-        st_storage = STStorageConfig(
+        st_storage = STStorage(
             id="storage1",
             name="storage1",
             group=STStorageGroup.OTHER1,

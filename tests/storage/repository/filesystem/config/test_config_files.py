@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.sts_model import STStorage, STStorageGroup
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
@@ -38,7 +39,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageConfig, STStorageGroup
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -544,7 +544,7 @@ def test_parse_st_storage(study_path: Path) -> None:
     config_dir.joinpath("list.ini").write_text(ST_STORAGE_LIST_INI)
     # noinspection SpellCheckingInspection
     assert _parse_st_storage(study_path, "fr") == [
-        STStorageConfig(
+        STStorage(
             id="siemens battery",
             name="Siemens Battery",
             group=STStorageGroup.BATTERY,
@@ -555,7 +555,7 @@ def test_parse_st_storage(study_path: Path) -> None:
             initial_level=0.0,
             initial_level_optim=True,
         ),
-        STStorageConfig(
+        STStorage(
             id="grand maison",
             name="Grand'Maison",
             group=STStorageGroup.PSP_CLOSED,

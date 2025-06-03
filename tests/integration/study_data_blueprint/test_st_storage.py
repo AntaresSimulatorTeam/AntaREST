@@ -19,23 +19,16 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.business.areas.st_storage_management import create_storage_output
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import create_st_storage_config
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
 from tests.integration.utils import wait_task_completion
 
-_ST_STORAGE_860_CONFIG = create_st_storage_config(STUDY_VERSION_8_6, name="dummy")
-_ST_STORAGE_880_CONFIG = create_st_storage_config(STUDY_VERSION_8_8, name="dummy")
+ST_STORAGE_860 = parse_st_storage(STUDY_VERSION_8_6, data={"name": "dummy"})
+ST_STORAGE_880 = parse_st_storage(STUDY_VERSION_8_8, data={"name": "dummy"})
 
-_ST_STORAGE_OUTPUT_860 = create_storage_output(STUDY_VERSION_8_6, cluster_id="dummy", config={"name": "dummy"})
-_ST_STORAGE_OUTPUT_880 = create_storage_output(STUDY_VERSION_8_8, cluster_id="dummy", config={"name": "dummy"})
-
-DEFAULT_CONFIG_860 = _ST_STORAGE_860_CONFIG.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
-DEFAULT_CONFIG_880 = _ST_STORAGE_880_CONFIG.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
-
-DEFAULT_OUTPUT_860 = _ST_STORAGE_OUTPUT_860.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
-DEFAULT_OUTPUT_880 = _ST_STORAGE_OUTPUT_880.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
+ST_STORAGE_DICT_860 = ST_STORAGE_860.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
+ST_STORAGE_DICT_880 = ST_STORAGE_880.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
 
 
 # noinspection SpellCheckingInspection
@@ -53,8 +46,8 @@ class TestSTStorage:
     @pytest.mark.parametrize(
         "study_version, default_output",
         [
-            pytest.param(860, DEFAULT_OUTPUT_860, id="860"),
-            pytest.param(880, DEFAULT_OUTPUT_880, id="880"),
+            pytest.param(860, ST_STORAGE_DICT_860, id="860"),
+            pytest.param(880, ST_STORAGE_DICT_880, id="880"),
         ],
     )
     def test_lifecycle__nominal(
@@ -453,8 +446,8 @@ class TestSTStorage:
     @pytest.mark.parametrize(
         "study_version, default_config, default_output",
         [
-            pytest.param(860, DEFAULT_CONFIG_860, DEFAULT_OUTPUT_860, id="860"),
-            pytest.param(880, DEFAULT_CONFIG_880, DEFAULT_OUTPUT_880, id="880"),
+            pytest.param(860, ST_STORAGE_DICT_860, ST_STORAGE_860, id="860"),
+            pytest.param(880, ST_STORAGE_DICT_880, ST_STORAGE_880, id="880"),
         ],
     )
     def test__default_values(
