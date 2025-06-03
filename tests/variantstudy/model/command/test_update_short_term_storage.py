@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
 
 import pytest
 from pydantic import ValidationError
@@ -159,8 +158,8 @@ class TestUpdateShortTermSorage:
                 expected_de_content["Storage_3??"]["group"] = "my design !!!"  # allowed and written in lower case
             assert de_content == expected_de_content
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
-        study = empty_study_870
+    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
+        study = empty_study_880
         self._set_up(study, command_context)
         study_version = study.config.version
 
@@ -197,7 +196,7 @@ class TestUpdateShortTermSorage:
         # Try to give a parameter that only exist since v9.2
         with pytest.raises(
             ValidationError,
-            match=re.escape("You provided v9.2 field(s): `efficiency_withdrawal` but your study is in version 8.7"),
+            match="Field efficiency_withdrawal is not a valid field for study version 8.8",
         ):
             UpdateSTStorages(
                 storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},
