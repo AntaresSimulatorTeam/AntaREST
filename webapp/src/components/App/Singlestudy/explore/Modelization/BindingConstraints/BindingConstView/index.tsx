@@ -25,7 +25,7 @@ import { useOutletContext } from "react-router";
 
 import type { AxiosError } from "axios";
 import BindingConstForm from "./BindingConstForm";
-import { CommandEnum } from "../../../../Commands/Edition/commandTypes";
+import { CommandEnum } from "../../../../CommandsDrawer/EditionView/commandTypes";
 import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
 import ConstraintFields from "./ConstraintFields";
 import Delete from "@mui/icons-material/Delete";

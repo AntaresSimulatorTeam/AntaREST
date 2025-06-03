@@ -12,15 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { memo } from "react";
 import { Box, Skeleton } from "@mui/material";
+import { memo } from "react";
 import { areEqual, type GridChildComponentProps } from "react-window";
-import type { StudyMetadata } from "../../../../types/types";
-import StudyCard from "../StudyCard";
-import type { StudiesListProps } from ".";
+import type { StudiesListProps } from "..";
+import type { StudyMetadata } from "../../../../../types/types";
+import StudyCard from "./StudyCard";
 
-type Props = GridChildComponentProps<{
-  setStudyToLaunch: (id: StudyMetadata["id"]) => void;
+export type StudyCardCellProps = GridChildComponentProps<{
   columnCount: number;
   columnWidth: number;
   rowHeight: number;
@@ -29,11 +28,10 @@ type Props = GridChildComponentProps<{
   toggleStudySelection: (id: StudyMetadata["id"]) => void;
 }>;
 
-const StudyCardCell = memo<Props>(
+const StudyCardCell = memo<StudyCardCellProps>(
   (props) => {
     const { columnIndex, rowIndex, style, isScrolling, data } = props;
     const {
-      setStudyToLaunch,
       columnCount,
       columnWidth,
       rowHeight,
@@ -59,7 +57,6 @@ const StudyCardCell = memo<Props>(
         ) : (
           <StudyCard
             id={studyId}
-            setStudyToLaunch={setStudyToLaunch}
             width={width}
             height={height}
             isSelected={selectedStudyIds.includes(studyId)}

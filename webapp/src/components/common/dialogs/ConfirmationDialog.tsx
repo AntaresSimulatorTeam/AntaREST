@@ -21,12 +21,18 @@ export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions
   confirmButtonText?: string;
   onConfirm: VoidFunction;
   onCancel: VoidFunction;
+  disableConfirm?: boolean;
 }
 
-function ConfirmationDialog(props: ConfirmationDialogProps) {
-  const { cancelButtonText, confirmButtonText, onConfirm, onCancel, onClose, ...basicDialogProps } =
-    props;
-
+function ConfirmationDialog({
+  cancelButtonText,
+  confirmButtonText,
+  onConfirm,
+  onCancel,
+  onClose,
+  disableConfirm,
+  ...basicDialogProps
+}: ConfirmationDialogProps) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -50,7 +56,7 @@ function ConfirmationDialog(props: ConfirmationDialogProps) {
       actions={
         <>
           <Button onClick={onCancel}>{cancelButtonText || t("button.no")}</Button>
-          <Button onClick={onConfirm} variant="contained">
+          <Button onClick={onConfirm} variant="contained" disabled={disableConfirm}>
             {confirmButtonText || t("button.yes")}
           </Button>
         </>
