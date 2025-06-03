@@ -44,7 +44,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   const handleSubmit = ({ values: { studyName } }: SubmitHandlerPlus<typeof defaultValues>) => {
     return copyStudy({
       studyId: study.id,
-      studyName: studyName || defaultStudyName,
+      studyName: studyName.trim() || defaultStudyName,
       withOutputs: false,
     });
   };
