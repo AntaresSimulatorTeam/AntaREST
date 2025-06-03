@@ -18,6 +18,7 @@ import pytest
 
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageNotFound
 from antarest.core.serde.ini_reader import read_ini
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.model.sts_model import STStorage, STStorageGroup
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
@@ -26,6 +27,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 # noinspection SpellCheckingInspection
 LIST_INI = """
@@ -67,6 +70,18 @@ ALL_STORAGES = {
 GEN = np.random.default_rng(1000)
 
 
+@pytest.fixture
+def manager(matrix_service: ISimpleMatrixService) -> STStorageManager:
+    matrix_constants = GeneratorMatrixConstants(matrix_service)
+    matrix_constants.init_constant_matrices()
+    return STStorageManager(CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service))
+
+
+@pytest.fixture
+def study_interface(matrix_service: ISimpleMatrixService, empty_study_880) -> StudyInterface:
+    return FileStudyInterface(empty_study_880)
+
+
 def create_study_interface(tree: FileStudyTree) -> StudyInterface:
     """
     Creates a mock study interface which returns the provided study tree.
@@ -80,31 +95,18 @@ def create_study_interface(tree: FileStudyTree) -> StudyInterface:
 
 
 class TestSTStorageManager:
-    def test_get_all_storages__nominal_case(
-        self,
-        st_storage_manager: STStorageManager,
-    ) -> None:
+    def test_get_all_storages__nominal_case(self, manager: STStorageManager, study_interface: StudyInterface) -> None:
         """
         This unit test is to verify the behavior of the `get_all_storages`
         method in the `STStorageManager` class under nominal conditions.
         It checks whether the method returns the expected storage lists
         for each area, based on a specific configuration.
         """
-        # The study must be fetched from the database
-        manager = st_storage_manager
-
-        # Prepare the mocks
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(return_value=ALL_STORAGES),
-            )
-        )
 
         # Given the following arguments
 
         # run
-        all_storages = manager.get_all_storages_props(study)
+        all_storages = manager.get_all_storages_props(study_interface)
 
         # Check
         actual = {
