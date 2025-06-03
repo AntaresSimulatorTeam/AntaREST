@@ -673,7 +673,6 @@
   "studies.deselectAll": "Désélectionner toutes les études",
   "studies.scanFolder": "Scanner le dossier",
   "studies.recursiveScan": "Scan récursif",
-  "studies.movefolderplaceholder": "Chemin séparé par des '/'",
   "studies.importcopy": "Copier en base",
   "studies.importNewStudy": "Import d'une nouvelle étude",
   "studies.importHint": "Cliquer ou glisser une étude zippée ici",

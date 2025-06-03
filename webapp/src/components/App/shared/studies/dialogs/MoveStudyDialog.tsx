@@ -13,9 +13,10 @@
  */
 
 import StringFE from "@/components/common/fieldEditors/StringFE";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
 import { validatePath } from "@/utils/validation/string";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import type { DialogProps } from "@mui/material";
+import { InputAdornment, type DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
@@ -103,9 +104,20 @@ function MoveStudyDialog(props: Props) {
         <StringFE
           name="path"
           control={control}
-          rules={{ validate: validatePath({ allowEmpty: true }) }}
+          rules={{
+            validate: validatePath({
+              allowEmpty: true,
+              allowToStartWithSlash: false,
+            }),
+          }}
           label={t("global.path")}
-          placeholder={t("studies.movefolderplaceholder")}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">{`${DEFAULT_WORKSPACE_NAME}/`}</InputAdornment>
+              ),
+            },
+          }}
           sx={{ mx: 0 }}
           margin="dense"
           fullWidth

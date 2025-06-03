@@ -16,10 +16,12 @@ import FormDialog from "@/components/common/dialogs/FormDialog";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import Fieldset from "@/components/common/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
 import { copyStudy } from "@/services/api/studies";
 import type { StudyMetadata } from "@/types/types";
-import { validateString } from "@/utils/validation/string";
+import { validatePath, validateString } from "@/utils/validation/string";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import { InputAdornment } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -30,6 +32,7 @@ interface Props {
 
 const defaultValues = {
   studyName: "",
+  destinationFolder: "",
 };
 
 function CopyStudyDialog({ study, open, onClose }: Props) {
@@ -41,10 +44,13 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values: { studyName } }: SubmitHandlerPlus<typeof defaultValues>) => {
+  const handleSubmit = ({
+    values: { studyName, destinationFolder },
+  }: SubmitHandlerPlus<typeof defaultValues>) => {
     return copyStudy({
       studyId: study.id,
-      studyName: studyName.trim() || defaultStudyName,
+      studyName: studyName || defaultStudyName,
+      destinationFolder,
       withOutputs: false,
     });
   };
@@ -75,6 +81,24 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             placeholder={defaultStudyName}
             rules={{
               validate: validateString({ allowEmpty: true }),
+            }}
+          />
+          <StringFE
+            name="destinationFolder"
+            label={t("global.path")}
+            control={control}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">{`${DEFAULT_WORKSPACE_NAME}/`}</InputAdornment>
+                ),
+              },
+            }}
+            rules={{
+              validate: validatePath({
+                allowEmpty: true,
+                allowToStartWithSlash: false,
+              }),
             }}
           />
         </Fieldset>

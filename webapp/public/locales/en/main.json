@@ -670,7 +670,6 @@
   "studies.deselectAll": "Deselect all studies\n",
   "studies.scanFolder": "Scan folder",
   "studies.recursiveScan": "Recursive scan",
-  "studies.movefolderplaceholder": "Path separated by '/'",
   "studies.importcopy": "Copy to database",
   "studies.importNewStudy": "Import a new study",
   "studies.importHint": "Click or drag and drop a zipped study here",
