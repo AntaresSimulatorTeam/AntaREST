@@ -424,7 +424,11 @@ class TestCreateSTStorage:
                     strip_matrix_protocol(constants.get_st_storage_inflows()),
                 ]
             else:
-                assert actual == []
+                null_matrix = strip_matrix_protocol(constants.get_null_matrix())
+                if study_version == STUDY_VERSION_8_8:
+                    assert actual == 5 * [null_matrix]
+                else:
+                    assert actual == 10 * [null_matrix]  # 5 new cost matrices
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
