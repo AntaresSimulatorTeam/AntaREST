@@ -19,7 +19,7 @@ import { deleteStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getLatestStudyVersion } from "@/redux/selectors";
-import { archiveStudy, copyStudy, unarchiveStudy } from "@/services/api/study";
+import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
@@ -32,25 +32,18 @@ import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
-import {
-  Box,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  MenuItem,
-  Typography,
-  type MenuProps,
-} from "@mui/material";
+import { ListItemIcon, ListItemText, Menu, MenuItem, type MenuProps } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import CopyStudyDialog from "./dialogs/CopyStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
 import LauncherDialog from "./dialogs/LauncherDialog";
 import MoveStudyDialog from "./dialogs/MoveStudyDialog";
 import PropertiesDialog from "./dialogs/PropertiesDialog";
 import UpgradeDialog from "./dialogs/UpgradeDialog";
 
-export type DialogType = "launch" | "properties" | "upgrade" | "export" | "move";
+export type DialogType = "launch" | "properties" | "upgrade" | "export" | "move" | "copy";
 
 interface Props {
   open: boolean;
@@ -86,13 +79,6 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
 
   const handleDialog = (dialogType: DialogType) => () => {
     setOpenDialog(dialogType);
-    onClose();
-  };
-
-  const handleCopy = () => {
-    copyStudy(study.id, `${study.name} (${t("studies.copySuffix")})`, false).catch((err) => {
-      enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
-    });
     onClose();
   };
 
@@ -157,7 +143,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
             UpgradeIcon,
             "upgrade",
           ),
-          menuItem(!isArchived, t("global.copy"), FileCopyOutlinedIcon, handleCopy),
+          menuItem(!isArchived, t("study.copy"), FileCopyOutlinedIcon, "copy"),
           menuItem(isManaged, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
           menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
@@ -184,26 +170,17 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
       {openDialog === "upgrade" && <UpgradeDialog open study={study} onClose={closeDialog} />}
       {openDialog === "export" && <ExportModal open study={study} onClose={closeDialog} />}
       {openDialog === "move" && <MoveStudyDialog open study={study} onClose={closeDialog} />}
+      {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
       {/* Confirm deletion */}
       <ConfirmationDialog
         open={deleteAction.isPending}
         onConfirm={deleteAction.yes}
         onCancel={deleteAction.no}
-        alert="warning"
+        titleIcon={DeleteOutlinedIcon}
+        alert="error"
         maxWidth="xs"
       >
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            width: 1,
-            height: "auto",
-            gap: 1,
-          }}
-        >
-          <Typography>{t("studies.question.delete")}</Typography>
-        </Box>
+        {t("studies.question.delete")}
       </ConfirmationDialog>
     </>
   );

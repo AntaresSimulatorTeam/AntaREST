@@ -13,13 +13,14 @@
  */
 
 import ViewWrapper from "@/components/common/page/ViewWrapper";
+import { copyStudy } from "@/services/api/studies";
 import { Box, Button, Divider } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
-import { unarchiveStudy as callUnarchiveStudy, copyStudy } from "../../../../../services/api/study";
+import { unarchiveStudy as callUnarchiveStudy } from "../../../../../services/api/study";
 import type { StudyMetadata, VariantTree } from "../../../../../types/types";
 import LauncherDialog from "../../../shared/studies/dialogs/LauncherDialog";
 import CreateVariantDialog from "./CreateVariantDialog";
@@ -40,7 +41,11 @@ function InformationView({ study, variantTree }: Props) {
 
   const importStudy = async (study: StudyMetadata) => {
     try {
-      await copyStudy(study.id, `${study.name} (${t("studies.copySuffix")})`, false);
+      await copyStudy({
+        studyId: study.id,
+        studyName: `${study.name} (${t("studies.copySuffix")})`,
+        withOutputs: false,
+      });
     } catch (e) {
       enqueueErrorSnackbar(t("studies.error.copyStudy"), e as AxiosError);
     }
