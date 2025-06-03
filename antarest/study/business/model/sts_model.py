@@ -16,7 +16,7 @@ from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.core.model import LowerCaseId
+from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
@@ -52,6 +52,7 @@ class STStorageGroup(EnumIgnoreCase):
 Capacity: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 InitialLevel: TypeAlias = Annotated[float, Field(ge=0, le=1)]
+Group: TypeAlias = Optional[LowerCaseStr]
 
 
 class STStorage(AntaresBaseModel):
@@ -82,7 +83,7 @@ class STStorage(AntaresBaseModel):
     enabled: Optional[bool] = None
 
     # Added in 9.2
-    group: Optional[str] = None
+    group: Group = None
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
@@ -107,7 +108,7 @@ class STStorageCreation(AntaresBaseModel):
     initial_level: Optional[InitialLevel] = None
     initial_level_optim: Optional[bool] = None
     enabled: Optional[bool] = None
-    group: Optional[str] = None
+    group: Group = None
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
@@ -148,7 +149,7 @@ class STStorageUpdate(AntaresBaseModel):
     initial_level: Optional[InitialLevel] = None
     initial_level_optim: Optional[bool] = None
     enabled: Optional[bool] = None
-    group: Optional[str] = None
+    group: Group = None
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None

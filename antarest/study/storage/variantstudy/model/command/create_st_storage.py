@@ -280,7 +280,10 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        args = {"area_id": self.area_id, "parameters": self.parameters.model_dump(mode="json", by_alias=True)}
+        args = {
+            "area_id": self.area_id,
+            "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+        }
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 args[matrix_name] = strip_matrix_protocol(matrix_data)
