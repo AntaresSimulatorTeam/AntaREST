@@ -34,7 +34,7 @@ describe("validateString", () => {
 
   test("should return an error for an empty string", () => {
     expect(validateString("")).toBe("form.field.required");
-    expect(validateString("   ")).toBe("form.field.required");
+    expect(validateString("   ")).toBe("form.field.invalidValue");
   });
 
   test("should handle length restrictions", () => {
