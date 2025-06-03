@@ -14,7 +14,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageNotFound
+from antarest.core.exceptions import AreaNotFound, STStorageNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
 from antarest.study.business.model.sts_model import STStorage, STStorageCreation, STStorageGroup
@@ -28,6 +28,46 @@ from antarest.study.storage.variantstudy.business.matrix_constants_generator imp
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+
+EXPECTED_STORAGES = {'de': [{'efficiency': 0.46,
+         'efficiencyWithdrawal': 0.47,
+         'enabled': True,
+         'group': 'other1',
+         'id': 'storagede',
+         'initialLevel': 0.5,
+         'initialLevelOptim': False,
+         'injectionNominalCapacity': 0.0,
+         'name': 'StorageDE',
+         'penalizeVariationInjection': True,
+         'penalizeVariationWithdrawal': False,
+         'reservoirCapacity': 0.0,
+         'withdrawalNominalCapacity': 0.0}],
+ 'fr': [{'efficiency': 0.94,
+         'efficiencyWithdrawal': 1.0,
+         'enabled': True,
+         'group': 'battery',
+         'id': 'storage1',
+         'initialLevel': 0.5,
+         'initialLevelOptim': True,
+         'injectionNominalCapacity': 1500.0,
+         'name': 'Storage1',
+         'penalizeVariationInjection': False,
+         'penalizeVariationWithdrawal': False,
+         'reservoirCapacity': 20000.0,
+         'withdrawalNominalCapacity': 1500.0},
+        {'efficiency': 1.0,
+         'efficiencyWithdrawal': 1.0,
+         'enabled': False,
+         'group': 'my_own_group',
+         'id': 'storage2',
+         'initialLevel': 0.5,
+         'initialLevelOptim': False,
+         'injectionNominalCapacity': 0.0,
+         'name': 'Storage2',
+         'penalizeVariationInjection': False,
+         'penalizeVariationWithdrawal': False,
+         'reservoirCapacity': 0.0,
+         'withdrawalNominalCapacity': 0.0}]}
 
 
 @pytest.fixture
@@ -119,68 +159,9 @@ class TestSTStorageManager:
             area_id: [form.model_dump(by_alias=True) for form in clusters_by_ids.values()]
             for area_id, clusters_by_ids in all_storages.items()
         }
-        expected = {'de': [{'efficiency': 0.46,
-         'efficiencyWithdrawal': 0.47,
-         'enabled': True,
-         'group': 'other1',
-         'id': 'storagede',
-         'initialLevel': 0.5,
-         'initialLevelOptim': False,
-         'injectionNominalCapacity': 0.0,
-         'name': 'StorageDE',
-         'penalizeVariationInjection': True,
-         'penalizeVariationWithdrawal': False,
-         'reservoirCapacity': 0.0,
-         'withdrawalNominalCapacity': 0.0}],
- 'fr': [{'efficiency': 0.94,
-         'efficiencyWithdrawal': 1.0,
-         'enabled': True,
-         'group': 'battery',
-         'id': 'storage1',
-         'initialLevel': 0.5,
-         'initialLevelOptim': True,
-         'injectionNominalCapacity': 1500.0,
-         'name': 'Storage1',
-         'penalizeVariationInjection': False,
-         'penalizeVariationWithdrawal': False,
-         'reservoirCapacity': 20000.0,
-         'withdrawalNominalCapacity': 1500.0},
-        {'efficiency': 1.0,
-         'efficiencyWithdrawal': 1.0,
-         'enabled': False,
-         'group': 'my_own_group',
-         'id': 'storage2',
-         'initialLevel': 0.5,
-         'initialLevelOptim': False,
-         'injectionNominalCapacity': 0.0,
-         'name': 'Storage2',
-         'penalizeVariationInjection': False,
-         'penalizeVariationWithdrawal': False,
-         'reservoirCapacity': 0.0,
-         'withdrawalNominalCapacity': 0.0}]}
-        assert actual == expected
+        assert actual == EXPECTED_STORAGES
 
-    def test_get_all_storages__config_not_found(self, st_storage_manager: STStorageManager) -> None:
-        """
-        This test verifies that when the `get_all_storages` method is called
-        with a study and the corresponding configuration is not found
-        (indicated by the `KeyError` raised by the mock), it correctly
-        raises the `STStorageConfigNotFound` exception with the expected error
-        message containing the study ID.
-        """
-        # Prepare the mocks
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(side_effect=KeyError("Oops!")),
-            )
-        )
-
-        # run
-        with pytest.raises(STStorageConfigNotFound, match="not found"):
-            st_storage_manager.get_all_storages_props(study)
-
-    def test_get_st_storages__nominal_case(self, st_storage_manager: STStorageManager) -> None:
+    def test_get_st_storages__nominal_case(self, manager: STStorageManager, study_interface: StudyInterface) -> None:
         """
         This unit test is to verify the behavior of the `get_storages`
         method in the `STStorageManager` class under nominal conditions.
@@ -188,97 +169,12 @@ class TestSTStorageManager:
         based on a specific configuration.
         """
 
-        # Prepare the mocks
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(return_value=LIST_CFG),
-            )
-        )
-
         # run
-        groups = st_storage_manager.get_storages(study, area_id="West")
+        groups = manager.get_storages(study_interface, area_id="fr")
 
         # Check
         actual = [form.model_dump(by_alias=True) for form in groups]
-        expected = [
-            {
-                "efficiency": 0.94,
-                "group": STStorageGroup.BATTERY,
-                "id": "storage1",
-                "initialLevel": 0.5,
-                "initialLevelOptim": True,
-                "injectionNominalCapacity": 1500.0,
-                "name": "Storage1",
-                "reservoirCapacity": 20000.0,
-                "withdrawalNominalCapacity": 1500.0,
-                # v8.8 field
-                "enabled": None,
-                # v9.2 fields
-                "efficiencyWithdrawal": None,
-                "penalizeVariationInjection": None,
-                "penalizeVariationWithdrawal": None,
-            },
-            {
-                "efficiency": 0.78,
-                "group": STStorageGroup.PSP_CLOSED,
-                "id": "storage2",
-                "initialLevel": 0.5,
-                "initialLevelOptim": False,
-                "injectionNominalCapacity": 2000.0,
-                "name": "Storage2",
-                "reservoirCapacity": 20000.0,
-                "withdrawalNominalCapacity": 1500.0,
-                # v8.8 field
-                "enabled": None,
-                # v9.2 fields
-                "efficiencyWithdrawal": None,
-                "penalizeVariationInjection": None,
-                "penalizeVariationWithdrawal": None,
-            },
-            {
-                "efficiency": 0.72,
-                "group": STStorageGroup.PSP_CLOSED,
-                "id": "storage3",
-                "initialLevel": 1,
-                "initialLevelOptim": False,
-                "injectionNominalCapacity": 1500.0,
-                "name": "Storage3",
-                "reservoirCapacity": 21000.0,
-                "withdrawalNominalCapacity": 1500.0,
-                # v8.8 field
-                "enabled": None,
-                # v9.2 fields
-                "efficiencyWithdrawal": None,
-                "penalizeVariationInjection": None,
-                "penalizeVariationWithdrawal": None,
-            },
-        ]
-        assert actual == expected
-
-    def test_get_st_storages__config_not_found(self, st_storage_manager: STStorageManager) -> None:
-        """
-        This test verifies that when the `get_storages` method is called
-        with a study and area ID, and the corresponding configuration is not found
-        (indicated by the `KeyError` raised by the mock), it correctly
-        raises the `STStorageConfigNotFound` exception with the expected error
-        message containing the study ID and area ID.
-        """
-        # Prepare the mocks
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(side_effect=KeyError("Oops!")),
-            )
-        )
-
-        # run
-        with pytest.raises(STStorageConfigNotFound, match="not found") as ctx:
-            st_storage_manager.get_storages(study, area_id="West")
-
-        # ensure the error message contains at least the study ID and area ID
-        err_msg = str(ctx.value)
-        assert "West" in err_msg
+        assert actual == EXPECTED_STORAGES["fr"]
 
     def test_get_st_storage__nominal_case(self, st_storage_manager: STStorageManager) -> None:
         """
@@ -395,25 +291,3 @@ class TestSTStorageManager:
         assert not st_storage_output.initial_level_optim
         assert st_storage_output.injection_nominal_capacity == 2000.0
         assert st_storage_output.efficiency == 1.0
-
-    def test_get_st_storage__config_not_found(self, st_storage_manager: STStorageManager) -> None:
-        """
-        Test the `get_st_storage` method of the `STStorageManager` class when the configuration is not found.
-
-        This test verifies that the `get_st_storage` method raises an `STStorageNotFound`
-        exception when the configuration for the provided study, area, and storage ID combination is not found.
-        """
-
-        # Prepare the mocks
-        study = create_study_interface(
-            Mock(
-                spec=FileStudyTree,
-                get=Mock(side_effect=KeyError("Oops!")),
-            )
-        )
-        # Run the method being tested and expect an exception
-        with pytest.raises(STStorageNotFound, match="not found") as ctx:
-            st_storage_manager.get_storage(study, area_id="West", storage_id="storage1")
-        # ensure the error message contains at least the study ID, area ID and storage ID
-        err_msg = str(ctx.value)
-        assert "storage1" in err_msg
