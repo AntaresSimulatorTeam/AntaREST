@@ -139,7 +139,7 @@ class TestUpdateShortTermSorage:
 
             de_content = read_ini(de_ini)
             expected_de_content = {
-                "Storage_3??": {
+                "storage_3": {
                     "efficiency": 1.0,
                     "group": "other1",
                     "initiallevel": 0.1,
@@ -152,10 +152,10 @@ class TestUpdateShortTermSorage:
                 }
             }
             if study_version >= STUDY_VERSION_9_2:
-                expected_de_content["Storage_3??"]["efficiencywithdrawal"] = 1
-                expected_de_content["Storage_3??"]["penalize-variation-withdrawal"] = False
-                expected_de_content["Storage_3??"]["penalize-variation-injection"] = True
-                expected_de_content["Storage_3??"]["group"] = "my design !!!"  # allowed and written in lower case
+                expected_de_content["storage_3"]["efficiencywithdrawal"] = 1
+                expected_de_content["storage_3"]["penalize-variation-withdrawal"] = False
+                expected_de_content["storage_3"]["penalize-variation-injection"] = True
+                expected_de_content["storage_3"]["group"] = "my design !!!"  # allowed and written in lower case
             assert de_content == expected_de_content
 
     def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
