@@ -119,61 +119,45 @@ class TestSTStorageManager:
             area_id: [form.model_dump(by_alias=True) for form in clusters_by_ids.values()]
             for area_id, clusters_by_ids in all_storages.items()
         }
-        expected = {
-            "west": [
-                {
-                    "id": "storage1",
-                    "group": STStorageGroup.BATTERY,
-                    "name": "Storage1",
-                    "injectionNominalCapacity": 1500.0,
-                    "withdrawalNominalCapacity": 1500.0,
-                    "reservoirCapacity": 20000.0,
-                    "efficiency": 0.94,
-                    "initialLevel": 0.5,
-                    "initialLevelOptim": True,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
-                },
-                {
-                    "id": "storage2",
-                    "group": STStorageGroup.PSP_CLOSED,
-                    "name": "Storage2",
-                    "injectionNominalCapacity": 2000.0,
-                    "withdrawalNominalCapacity": 1500.0,
-                    "reservoirCapacity": 20000.0,
-                    "efficiency": 0.78,
-                    "initialLevel": 0.5,
-                    "initialLevelOptim": False,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
-                },
-                {
-                    "id": "storage3",
-                    "group": STStorageGroup.PSP_CLOSED,
-                    "name": "Storage3",
-                    "injectionNominalCapacity": 1500.0,
-                    "withdrawalNominalCapacity": 1500.0,
-                    "reservoirCapacity": 21000.0,
-                    "efficiency": 0.72,
-                    "initialLevel": 1.0,
-                    "initialLevelOptim": False,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
-                },
-            ],
-        }
+        expected = {'de': [{'efficiency': 0.46,
+         'efficiencyWithdrawal': 0.47,
+         'enabled': True,
+         'group': 'other1',
+         'id': 'storagede',
+         'initialLevel': 0.5,
+         'initialLevelOptim': False,
+         'injectionNominalCapacity': 0.0,
+         'name': 'StorageDE',
+         'penalizeVariationInjection': True,
+         'penalizeVariationWithdrawal': False,
+         'reservoirCapacity': 0.0,
+         'withdrawalNominalCapacity': 0.0}],
+ 'fr': [{'efficiency': 0.94,
+         'efficiencyWithdrawal': 1.0,
+         'enabled': True,
+         'group': 'battery',
+         'id': 'storage1',
+         'initialLevel': 0.5,
+         'initialLevelOptim': True,
+         'injectionNominalCapacity': 1500.0,
+         'name': 'Storage1',
+         'penalizeVariationInjection': False,
+         'penalizeVariationWithdrawal': False,
+         'reservoirCapacity': 20000.0,
+         'withdrawalNominalCapacity': 1500.0},
+        {'efficiency': 1.0,
+         'efficiencyWithdrawal': 1.0,
+         'enabled': False,
+         'group': 'my_own_group',
+         'id': 'storage2',
+         'initialLevel': 0.5,
+         'initialLevelOptim': False,
+         'injectionNominalCapacity': 0.0,
+         'name': 'Storage2',
+         'penalizeVariationInjection': False,
+         'penalizeVariationWithdrawal': False,
+         'reservoirCapacity': 0.0,
+         'withdrawalNominalCapacity': 0.0}]}
         assert actual == expected
 
     def test_get_all_storages__config_not_found(self, st_storage_manager: STStorageManager) -> None:
