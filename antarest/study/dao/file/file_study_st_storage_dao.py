@@ -242,7 +242,20 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def delete_storage(self, area_id: str, storage: STStorage) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        storage_id = storage.id
+        paths = [
+            ["input", "st-storage", "clusters", area_id, "list", storage_id],
+            ["input", "st-storage", "series", area_id, storage_id],
+        ]
+        if len(study_data.config.areas[area_id].st_storages) == 1:
+            paths.append(["input", "st-storage", "series", area_id])
+
+        for path in paths:
+            study_data.tree.delete(path)
+
+        # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
+        study_data.config.areas[area_id].st_storages.remove(storage)
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
