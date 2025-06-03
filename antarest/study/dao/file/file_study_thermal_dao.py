@@ -54,7 +54,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
                 thermal = parse_thermal_cluster(version, cluster)
-                thermals_by_areas.setdefault(area_id, {})[thermal.id] = thermal
+                thermals_by_areas.setdefault(area_id, {})[thermal.id.lower()] = thermal
         return thermals_by_areas
 
     @override
