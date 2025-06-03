@@ -49,7 +49,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         storages_by_areas: dict[str, dict[str, STStorage]] = {}
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
-                storages_by_areas[area_id][cluster_id] = parse_st_storage(study_data.config.version, cluster)
+                storages_by_areas.setdefault(area_id, {})[cluster_id] = parse_st_storage(
+                    study_data.config.version, cluster
+                )
 
         return storages_by_areas
 
