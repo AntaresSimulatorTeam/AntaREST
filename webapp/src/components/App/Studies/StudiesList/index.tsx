@@ -25,6 +25,7 @@ import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import StudyCardCell from "./StudyCardCell";
 import Header from "./Header";
+import StudiesPreview from "./StudiesPreview";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -34,6 +35,7 @@ export interface StudiesListProps {
 }
 
 function StudiesList({ studyIds }: StudiesListProps) {
+  console.log("StudiesList rendered with studyIds:", studyIds);
   const scrollPosition = useAppSelector(getStudiesScrollPosition);
   const [studiesToLaunch, setStudiesToLaunch] = useState<Array<StudyMetadata["id"]>>([]);
   const [selectedStudyIds, setSelectedStudyIds] = useState<Array<StudyMetadata["id"]>>([]);
@@ -81,6 +83,7 @@ function StudiesList({ studyIds }: StudiesListProps) {
         setSelectedStudyIds={setSelectedStudyIds}
         setStudiesToLaunch={setStudiesToLaunch}
       />
+      {/* <StudiesPreview /> */}
       <Box sx={{ flex: 1, pl: 1, pb: 1, overflowX: "hidden" }}>
         <AutoSizer>
           {({ height, width }) => {

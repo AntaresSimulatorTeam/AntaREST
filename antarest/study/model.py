@@ -383,7 +383,7 @@ class StudyFolder:
     groups: List[Group]
 
 
-class NonStudyFolderDTO(AntaresBaseModel):
+class FolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
@@ -395,7 +395,10 @@ class NonStudyFolderDTO(AntaresBaseModel):
     has_children: bool = Field(
         alias="hasChildren",
     )  # true when has at least one non-study-folder children
-
+    is_study_folder: bool = Field(
+        alias="isStudyFolder",
+        default=False,
+    )  # true when this folder is a study folder, used to display the icon in the front
     model_config = ConfigDict(populate_by_name=True)
 
     @computed_field(alias="parentPath")

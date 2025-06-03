@@ -33,7 +33,7 @@ const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
 const defaultFirstSort = R.sortWith([prioritizeDefault]);
 
 export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
-  const { hasChildren, children, path, name } = node;
+  const { hasChildren, children, path, name, isStudyFolder } = node;
   const isLoading = itemsLoading.includes(node.path);
   const hasUnloadedChildren = hasChildren && children.length === 0;
   const { t } = useTranslation();
@@ -54,7 +54,8 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
     <TreeItemEnhanced
       itemId={path}
       label={name}
-      onClick={() => onNodeClick(node.path)}
+      badge={isStudyFolder ? "scanner" : undefined}
+      onClick={() => onNodeClick(node.path, isStudyFolder)}
       loading={isLoading}
     >
       {hasUnloadedChildren && (

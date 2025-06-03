@@ -15,7 +15,7 @@
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
-import type { NonStudyFolderDTO, StudyTreeNode } from "./types";
+import type { FolderDTO, StudyTreeNode } from "./types";
 
 /**
  * Builds a tree structure from a list of study metadata.
@@ -34,6 +34,7 @@ export function buildStudyTree(studies: StudyMetadata[]) {
         name: DEFAULT_WORKSPACE_NAME,
         children: [],
         path: `/${DEFAULT_WORKSPACE_NAME}`,
+        isStudy: false,
       },
     ],
     path: "",
@@ -85,10 +86,7 @@ export function buildStudyTree(studies: StudyMetadata[]) {
  * @returns study tree with the folder inserted if it wasn't already there.
  * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
-function insertFolderIfNotExist(
-  studiesTree: StudyTreeNode,
-  folder: NonStudyFolderDTO,
-): StudyTreeNode {
+function insertFolderIfNotExist(studiesTree: StudyTreeNode, folder: FolderDTO): StudyTreeNode {
   const currentNodePath = `${studiesTree.path}`;
   // Early return if folder doesn't belong in this branch
   if (!folder.parentPath.startsWith(currentNodePath)) {
@@ -106,6 +104,7 @@ function insertFolderIfNotExist(
           {
             ...folderExists,
             hasChildren: folder.hasChildren,
+            isStudyFolder: folder.isStudyFolder,
           },
         ],
       };
@@ -120,6 +119,7 @@ function insertFolderIfNotExist(
           name: folder.name,
           children: [],
           hasChildren: folder.hasChildren,
+          isStudyFolder: folder.isStudyFolder,
         },
       ],
     };
@@ -148,7 +148,7 @@ function insertFolderIfNotExist(
  */
 export function insertFoldersIfNotExist(
   studiesTree: StudyTreeNode,
-  folders: NonStudyFolderDTO[],
+  folders: FolderDTO[],
 ): StudyTreeNode {
   const sortedFolders = [...folders].sort((a, b) => a.path.localeCompare(b.path));
   return sortedFolders.reduce(insertFolderIfNotExist, { ...studiesTree });
@@ -226,7 +226,7 @@ export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promis
 export function insertIfNotExist(
   studyTree: StudyTreeNode,
   workspaces: string[],
-  folders: NonStudyFolderDTO[],
+  folders: FolderDTO[],
 ) {
   const treeWithWorkspaces = insertWorkspacesIfNotExist(studyTree, workspaces);
   const treeWithFolders = insertFoldersIfNotExist(treeWithWorkspaces, folders);

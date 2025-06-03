@@ -22,15 +22,20 @@ import { useTranslation } from "react-i18next";
 import { updateStudyFilters } from "../../../../redux/ducks/studies";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
+import { getStudies, getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { insertIfNotExist } from "./utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import { useUpdateEffect } from "react-use";
+import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import { scanFolder } from "../../../../services/api/study";
+import type { AxiosError } from "axios";
+import RadarIcon from "@mui/icons-material/Radar";
 
 function StudyTree() {
+  const studies = useAppSelector(getStudies);
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
   const [workspaces, setWorkspaces] = useState<string[]>([]);
@@ -41,6 +46,8 @@ function StudyTree() {
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
   const isDesktopMode = import.meta.env.MODE === "desktop";
+  const [confirmFolderScan, setConfirmFolderScan] = useState(false);
+  // const canScan = !isRootFolder && !isInDefaultWorkspace;
 
   useEffect(() => {
     getWorkspaces().then((nextWorkspaces) => {
@@ -96,11 +103,19 @@ function StudyTree() {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
-        const nextSubfolders = [...newSubFolders, ...otherSubfolders];
+        const filteredStudyFolders = subFolders.filter(
+          (folder) =>
+            !folder.isStudyFolder ||
+            !studies.some(
+              (study) => folder.path === study.folder && study.workspace === folder.workspace,
+            ),
+        );
+        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
 
         setSubFolders(nextSubfolders);
 
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
+        console.log("nextStudyTree", nextStudyTree);
         setStudiesTree(nextStudyTree);
       }
     } catch (err) {
@@ -154,8 +169,23 @@ function StudyTree() {
     }
   };
 
-  const handleTreeItemClick = (itemId: string) => {
-    dispatch(updateStudyFilters({ folder: itemId }));
+  const handleTreeItemClick = (itemId: string, isStudyFolder: boolean) => {
+    if (isStudyFolder) {
+      setConfirmFolderScan(true);
+    } else {
+      dispatch(updateStudyFilters({ folder: itemId }));
+    }
+  };
+
+  const handleFolderScan = async () => {
+    try {
+      // dispatch(updateStudyFilters({ folder: itemId }));
+      console.log("handleFolderScan folder ", folder, "???");
+      await scanFolder(folder, false);
+      setConfirmFolderScan(false);
+    } catch (e) {
+      enqueueErrorSnackbar(t("studies.error.scanFolder"), e as AxiosError);
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -163,18 +193,33 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SimpleTreeView
-      defaultExpandedItems={[...getParentPaths(folder), folder]}
-      defaultSelectedItems={folder}
-      onItemExpansionToggle={handleItemExpansionToggle}
-      sx={{ p: 2, pt: 0 }}
-    >
-      <StudyTreeNodeComponent
-        node={studiesTree}
-        itemsLoading={itemsLoading}
-        onNodeClick={handleTreeItemClick}
-      />
-    </SimpleTreeView>
+    <>
+      {confirmFolderScan && (
+        <ConfirmationDialog
+          titleIcon={RadarIcon}
+          onCancel={() => {
+            setConfirmFolderScan(false);
+          }}
+          onConfirm={handleFolderScan}
+          alert="warning"
+          open
+        >
+          {`${t("studies.scanFolder")} ${folder}?`}
+        </ConfirmationDialog>
+      )}
+      <SimpleTreeView
+        defaultExpandedItems={[...getParentPaths(folder), folder]}
+        defaultSelectedItems={folder}
+        onItemExpansionToggle={handleItemExpansionToggle}
+        sx={{ p: 2, pt: 0 }}
+      >
+        <StudyTreeNodeComponent
+          node={studiesTree}
+          itemsLoading={itemsLoading}
+          onNodeClick={handleTreeItemClick}
+        />
+      </SimpleTreeView>
+    </>
   );
 }
 
