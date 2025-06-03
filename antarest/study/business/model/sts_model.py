@@ -72,6 +72,7 @@ class STStorage(AntaresBaseModel):
             data["id"] = transform_name_to_id(data["name"])
         return data
 
+    group: Group = STStorageGroup.OTHER1.value
     injection_nominal_capacity: Capacity = 0
     withdrawal_nominal_capacity: Capacity = 0
     reservoir_capacity: Capacity = 0
@@ -83,7 +84,6 @@ class STStorage(AntaresBaseModel):
     enabled: Optional[bool] = None
 
     # Added in 9.2
-    group: Group = None
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None

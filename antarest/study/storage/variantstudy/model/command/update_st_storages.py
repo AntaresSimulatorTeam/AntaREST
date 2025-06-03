@@ -74,7 +74,7 @@ class UpdateSTStorages(ICommand):
 
             study_data.save_st_storages(area_id, new_storages)
 
-        return command_succeeded("All short-term storages updated")
+        return command_succeeded("The short-term storages were successfully updated.")
 
     @override
     def to_dto(self) -> CommandDTO:

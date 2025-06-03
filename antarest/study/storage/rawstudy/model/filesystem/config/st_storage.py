@@ -30,19 +30,18 @@ class STStorageFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: str
+    group: Optional[str] = None
     injection_nominal_capacity: Optional[float] = Field(default=None, alias="injectionnominalcapacity")
     withdrawal_nominal_capacity: Optional[float] = Field(default=None, alias="withdrawalnominalcapacity")
     reservoir_capacity: Optional[float] = Field(default=None, alias="reservoircapacity")
     efficiency: Optional[float] = None
     initial_level: Optional[float] = Field(default=None, alias="initiallevel")
-    initial_level_optim: Optional[float] = Field(default=None, alias="initialleveloptim")
+    initial_level_optim: Optional[bool] = Field(default=None, alias="initialleveloptim")
 
     # Added in 8.8
     enabled: Optional[bool] = None
 
     # Added in 9.2
-    group: Optional[str] = None
-
     efficiency_withdrawal: Optional[float] = Field(default=None, alias="efficiencywithdrawal")
     penalize_variation_injection: Optional[bool] = Field(default=None, alias="penalize-variation-injection")
     penalize_variation_withdrawal: Optional[bool] = Field(default=None, alias="penalize-variation-withdrawal")
