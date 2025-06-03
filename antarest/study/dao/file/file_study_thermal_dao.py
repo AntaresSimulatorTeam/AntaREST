@@ -53,8 +53,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                lowered_id = cluster_id.lower()
-                thermals_by_areas.setdefault(area_id, {})[lowered_id] = parse_thermal_cluster(version, cluster)
+                thermal = parse_thermal_cluster(version, cluster)
+                thermals_by_areas.setdefault(area_id, {})[thermal.id] = thermal
         return thermals_by_areas
 
     @override

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import operator
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from typing import Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -49,9 +49,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         storages_by_areas: dict[str, dict[str, STStorage]] = {}
         for area_id, cluster_obj in storages.items():
             for cluster_id, cluster in cluster_obj.items():
-                storages_by_areas.setdefault(area_id, {})[cluster_id] = parse_st_storage(
-                    study_data.config.version, cluster
-                )
+                storage = parse_st_storage(study_data.config.version, cluster)
+                storages_by_areas.setdefault(area_id, {})[storage.id] = storage
 
         return storages_by_areas
 
@@ -60,10 +59,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data = self.get_file_study()
         all_storages = self._get_all_storages_for_area(study_data, area_id)
 
-        # Sort STStorageConfig by groups and then by name
+        # Sort STStorage by groups and then by name
         order_by = operator.attrgetter("group", "name")
-        storages = [parse_st_storage(study_data.config.version, options) for options in all_storages.values()]
-        return sorted(storages, key=order_by)
+        return sorted(all_storages.values(), key=order_by)
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
@@ -161,10 +159,12 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
         study_data = self.get_file_study()
-        ini_content = self._get_all_storages_for_area(study_data, area_id)
+        all_storages = self._get_all_storages_for_area(study_data, area_id)
         for st_storage in storages:
             self._update_st_storage_config(area_id, st_storage)
-            ini_content[st_storage.id] = serialize_st_storage(study_data.config.version, st_storage)
+            all_storages[st_storage.id] = st_storage
+
+        ini_content = {id: serialize_st_storage(study_data.config.version, sts) for id, sts in all_storages.items()}
         study_data.tree.save(ini_content, ["input", "st-storage", "clusters", area_id, "list"])
 
     @override
@@ -262,10 +262,15 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data.config.areas[area_id].st_storages.remove(storage)
 
     @staticmethod
-    def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
+    def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]
         try:
-            return file_study.tree.get(path.split("/"), depth=3)
+            config = file_study.tree.get(path.split("/"), depth=3)
+            storages = {}
+            for sts in config.values():
+                storage = parse_st_storage(file_study.config.version, sts)
+                storages[storage.id] = storage
+            return storages
         except ChildNotFoundError:
             raise AreaNotFound(area_id) from None
         except KeyError:
