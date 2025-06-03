@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import i18n, { type TFunction } from "i18next";
+import moment from "moment";
 import * as R from "ramda";
 import {
   RoleType,
-  type StudyMetadataDTO,
-  type StudyMetadata,
-  type JWTGroup,
-  type UserInfo,
-  type VariantTreeDTO,
-  type VariantTree,
   type GenericInfo,
+  type JWTGroup,
+  type StudyMetadata,
+  type StudyMetadataDTO,
+  type UserInfo,
+  type VariantTree,
+  type VariantTreeDTO,
 } from "../../types/types";
 
 export const convertStudyDtoToMetadata = (

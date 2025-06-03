@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { toError } from "@/utils/fnUtils";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isDependencyList } from "../utils/reactUtils";
 
@@ -50,7 +51,7 @@ function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams): UsePromiseR
   const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
   const [data, setData] = useState<T>();
   const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
-  const [error, setError] = useState<Error | string | undefined>();
+  const [error, setError] = useState<Error | undefined>();
   const [reloadCount, setReloadCount] = useState(0);
 
   const reloadPromise = useRef<{
@@ -89,9 +90,10 @@ function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams): UsePromiseR
       })
       .catch((err) => {
         if (active) {
-          setError(err);
+          const errObj = toError(err);
+          setError(errObj);
           setStatus(PromiseStatus.Rejected);
-          reloadPromise.current?.reject(err);
+          reloadPromise.current?.reject(errObj);
         }
       })
       .finally(() => {

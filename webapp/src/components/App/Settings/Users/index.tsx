@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { toError } from "@/utils/fnUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonIcon from "@mui/icons-material/Person";
@@ -154,7 +155,7 @@ function Users() {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(t("settings.error.userDelete", { 0: user.name }), err);
+        enqueueErrorSnackbar(t("settings.error.userDelete", { 0: user.name }), toError(err));
       })
       .finally(() => {
         setUsersInLoading((prev) => prev.filter((u) => u !== user));
