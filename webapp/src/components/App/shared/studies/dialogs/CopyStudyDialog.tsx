@@ -35,6 +35,7 @@ const defaultValues = {
 function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const defaultStudyName = `${study.name} (${t("studies.copySuffix")})`;
+  const isVariant = study.type === "variantstudy";
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -55,7 +56,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   return (
     <FormDialog
       open={open}
-      title={t("study.copy")}
+      title={isVariant ? t("study.copyVariant") : t("global.copy")}
       titleIcon={ContentCopyIcon}
       maxWidth="sm"
       submitButtonIcon={null}

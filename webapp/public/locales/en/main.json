@@ -308,7 +308,7 @@
   "study.managedStudy": "Managed study",
   "study.properties": "Properties",
   "study.upgrade": "Upgrade study",
-  "study.copy": "Save as reference study",
+  "study.copyVariant": "Save as reference study",
   "study.validate": "Validate",
   "study.versionSource": "Version source",
   "study.modelization": "Modelization",

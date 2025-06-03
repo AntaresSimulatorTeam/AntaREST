@@ -86,6 +86,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
     archiveStudy(study.id).catch((err) => {
       enqueueErrorSnackbar(t("studies.error.archive", { studyname: study.name }), toError(err));
     });
+
     onClose();
   };
 
@@ -93,6 +94,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
     unarchiveStudy(study.id).catch((err) => {
       enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
     });
+
     onClose();
   };
 
@@ -109,6 +111,8 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
           });
       }
     });
+
+    onClose();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -143,7 +147,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
             UpgradeIcon,
             "upgrade",
           ),
-          menuItem(!isArchived, t("study.copy"), FileCopyOutlinedIcon, "copy"),
+          menuItem(
+            !isArchived,
+            isVariant ? t("study.copyVariant") : t("global.copy"),
+            FileCopyOutlinedIcon,
+            "copy",
+          ),
           menuItem(isManaged, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
           menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
