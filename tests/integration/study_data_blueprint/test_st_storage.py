@@ -16,6 +16,7 @@ from unittest.mock import ANY
 
 import numpy as np
 import pytest
+from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -46,8 +47,8 @@ class TestSTStorage:
     @pytest.mark.parametrize(
         "study_version, default_output",
         [
-            pytest.param(860, ST_STORAGE_DICT_860, id="860"),
-            pytest.param(880, ST_STORAGE_DICT_880, id="880"),
+            pytest.param(STUDY_VERSION_8_6, ST_STORAGE_DICT_860, id="860"),
+            pytest.param(STUDY_VERSION_8_8, ST_STORAGE_DICT_880, id="880"),
         ],
     )
     def test_lifecycle__nominal(
@@ -56,7 +57,7 @@ class TestSTStorage:
         user_access_token: str,
         internal_study_id: str,
         study_type: str,
-        study_version: int,
+        study_version: StudyVersion,
         default_output: t.Dict[str, t.Any],
     ) -> None:
         """
@@ -89,7 +90,7 @@ class TestSTStorage:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Upgrade study to version 860 or above
-        res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": study_version})
+        res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": f"{study_version:ddd}"})
         res.raise_for_status()
         task_id = res.json()
         task = wait_task_completion(client, user_access_token, task_id)
@@ -182,12 +183,9 @@ class TestSTStorage:
                 "reservoirCapacity": 2500,
             },
         )
+        # Ensures we're still able to process a name here (legacy) but we don't update it
         assert res.status_code == 200, res.json()
-        siemens_output = {
-            **siemens_output,
-            "name": "New Siemens Battery",
-            "reservoirCapacity": 2500,
-        }
+        siemens_output = {**siemens_output, "reservoirCapacity": 2500}
         assert res.json() == siemens_output
 
         res = client.get(f"{storage_url}/{siemens_battery_id}")
@@ -321,11 +319,11 @@ class TestSTStorage:
         res = client.request(
             "DELETE", f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/storages", json=[siemens_battery_id]
         )
-        assert res.status_code == 404
+        assert res.status_code == 500
         obj = res.json()
 
-        assert obj["description"] == f"Area is not found: '{bad_area_id}'"
-        assert obj["exception"] == "AreaNotFound"
+        assert obj["description"] == f"Short-term storage '{siemens_battery_id}' in area '{bad_area_id}' does not exist"
+        assert obj["exception"] == "CommandApplicationError"
 
         # Check delete with the wrong value of `study_id`
         bad_study_id = "bad_study"
@@ -365,10 +363,10 @@ class TestSTStorage:
             f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/storages",
             json={"name": siemens_battery, "group": "Battery"},
         )
-        assert res.status_code == 404
+        assert res.status_code == 500
         obj = res.json()
-        assert obj["description"] == f"Area is not found: '{bad_area_id}'"
-        assert obj["exception"] == "AreaNotFound"
+        assert f"The area '{bad_area_id}' does not exist" in obj["description"]
+        assert obj["exception"] == "CommandApplicationError"
 
         # Check POST with wrong `group`
         res = client.post(
@@ -376,9 +374,7 @@ class TestSTStorage:
             json={"name": siemens_battery, "group": "GroupFoo"},
         )
         assert res.status_code == 422, res.json()
-        obj = res.json()
-        description = obj["description"]
-        assert re.search(r"Input should be", description)
+        assert res.json()["description"] == f"Free groups are available since v9.2 and your study is in {study_version}"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(
@@ -387,8 +383,8 @@ class TestSTStorage:
         )
         assert res.status_code == 404
         obj = res.json()
-        assert obj["description"] == f"Area is not found: '{bad_area_id}'"
-        assert obj["exception"] == "AreaNotFound"
+        assert obj["description"] == f"'{bad_area_id}' not a child of InputSTStorageClusters"
+        assert obj["exception"] == "ChildNotFoundError"
 
         # Check PATCH with the wrong `storage_id`
         bad_storage_id = "bad_storage"
@@ -435,9 +431,9 @@ class TestSTStorage:
         # Cannot specify the field 'enabled' before v8.8
         properties = {"enabled": False, "name": "fake_name", "group": "Battery"}
         res = client.post(storage_url, json=properties)
-        if study_version < 880:
+        if study_version < STUDY_VERSION_8_8:
             assert res.status_code == 422
-            assert res.json()["exception"] == "ValidationError"
+            assert res.json()["exception"] == "InvalidFieldForVersionError"
         else:
             assert res.status_code == 200
             assert res.json()["enabled"] is False
