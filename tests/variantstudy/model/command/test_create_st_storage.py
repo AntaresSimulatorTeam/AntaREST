@@ -19,7 +19,7 @@ from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
@@ -69,12 +69,12 @@ class TestCreateSTStorage:
             parameters=STStorageCreation(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
-            study_version=STUDY_VERSION_8_8,
+            study_version=STUDY_VERSION_8_6,
         )
 
         # Check the attribues
         assert cmd.command_name == CommandName.CREATE_ST_STORAGE
-        assert cmd.study_version == STUDY_VERSION_8_8
+        assert cmd.study_version == STUDY_VERSION_8_6
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
