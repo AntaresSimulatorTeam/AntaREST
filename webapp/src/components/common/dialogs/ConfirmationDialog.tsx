@@ -34,6 +34,7 @@ function ConfirmationDialog({
   ...basicDialogProps
 }: ConfirmationDialogProps) {
   const { t } = useTranslation();
+  const { alert } = basicDialogProps;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -55,8 +56,10 @@ function ConfirmationDialog({
       {...basicDialogProps}
       actions={
         <>
-          <Button onClick={onCancel}>{cancelButtonText || t("button.no")}</Button>
-          <Button onClick={onConfirm} variant="contained" disabled={disableConfirm}>
+          <Button onClick={onCancel} color={alert ? "inherit" : "primary"}>
+            {cancelButtonText || t("button.no")}
+          </Button>
+          <Button onClick={onConfirm} variant="contained" disabled={disableConfirm} color={alert}>
             {confirmButtonText || t("button.yes")}
           </Button>
         </>

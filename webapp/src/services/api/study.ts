@@ -167,13 +167,6 @@ export const editStudy = async (
   return res.data;
 };
 
-export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<void> => {
-  const res = await client.post(
-    `/v1/studies/${sid}/copy?study_name=${encodeURIComponent(name)}&with_outputs=${withOutputs}`,
-  );
-  return res.data;
-};
-
 export const moveStudy = async (studyId: string, folder: string) => {
   await client.put(`/v1/studies/${studyId}/move`, null, {
     params: { folder_dest: folder },
