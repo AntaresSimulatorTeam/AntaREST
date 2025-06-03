@@ -22,14 +22,21 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import STStorageFileData, parse_st_storage
 from tests.integration.utils import wait_task_completion
 
-ST_STORAGE_860 = parse_st_storage(STUDY_VERSION_8_6, data={"name": "dummy"})
-ST_STORAGE_880 = parse_st_storage(STUDY_VERSION_8_8, data={"name": "dummy"})
+_ST_STORAGE_860 = parse_st_storage(STUDY_VERSION_8_6, data={"name": "dummy"})
+_ST_STORAGE_880 = parse_st_storage(STUDY_VERSION_8_8, data={"name": "dummy"})
 
-ST_STORAGE_DICT_860 = ST_STORAGE_860.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
-ST_STORAGE_DICT_880 = ST_STORAGE_880.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
+ST_STORAGE_DICT_860 = _ST_STORAGE_860.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
+ST_STORAGE_DICT_880 = _ST_STORAGE_880.model_dump(mode="json", by_alias=True, exclude={"id", "name"})
+
+ST_STORAGE_INI_860 = STStorageFileData.from_model(_ST_STORAGE_860).model_dump(
+    mode="json", by_alias=True, exclude={"name"}, exclude_none=True
+)
+ST_STORAGE_INI_880 = STStorageFileData.from_model(_ST_STORAGE_880).model_dump(
+    mode="json", by_alias=True, exclude={"name"}, exclude_none=True
+)
 
 
 # noinspection SpellCheckingInspection
@@ -446,8 +453,8 @@ class TestSTStorage:
     @pytest.mark.parametrize(
         "study_version, default_config, default_output",
         [
-            pytest.param(860, ST_STORAGE_DICT_860, ST_STORAGE_860, id="860"),
-            pytest.param(880, ST_STORAGE_DICT_880, ST_STORAGE_880, id="880"),
+            pytest.param(860, ST_STORAGE_INI_860, ST_STORAGE_DICT_860, id="860"),
+            pytest.param(880, ST_STORAGE_INI_880, ST_STORAGE_DICT_880, id="880"),
         ],
     )
     def test__default_values(
@@ -532,14 +539,14 @@ class TestSTStorage:
             "action": "create_st_storage",
             "args": {
                 "area_id": "fr",
-                "parameters": {**default_config, "name": siemens_battery, "group": "battery"},
+                "parameters": {"name": siemens_battery, "group": "battery"},
                 "pmax_injection": ANY,
                 "pmax_withdrawal": ANY,
                 "lower_rule_curve": ANY,
                 "upper_rule_curve": ANY,
                 "inflows": ANY,
             },
-            "version": 2,
+            "version": 3,
             "updated_at": ANY,
             "user_name": ANY,
         }
