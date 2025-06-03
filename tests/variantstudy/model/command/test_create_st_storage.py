@@ -20,11 +20,6 @@ from pydantic import ValidationError
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Properties,
-    STStorageGroup,
-    STStorageProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName

@@ -16,7 +16,8 @@ from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.business.model.sts_model import STStorageCreation
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -163,6 +164,16 @@ class TestUpdateShortTermSorage:
         self._set_up(study, command_context)
         study_version = study.config.version
 
+        # Create a short-term storage
+        cmd = CreateSTStorage(
+            command_context=command_context,
+            area_id="fr",
+            parameters=STStorageCreation(**{"name": "sts_1"}),
+            study_version=STUDY_VERSION_8_8,
+        )
+        output = cmd.apply(study)
+        assert output.status is True
+
         # Fake area
         cmd = UpdateSTStorages(
             storage_properties={"fake_area": {"a": {"initial_level": 0.4}}},
@@ -173,7 +184,7 @@ class TestUpdateShortTermSorage:
         assert output.status is False
         assert output.message == "The area 'fake_area' is not found."
 
-        # Fake cluster
+        # Fake storage
         cmd = UpdateSTStorages(
             storage_properties={"FR": {"fake_storage": {"initial_level": 0.1}}},
             command_context=command_context,

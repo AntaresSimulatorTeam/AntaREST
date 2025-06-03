@@ -59,7 +59,7 @@ class UpdateSTStorages(ICommand):
 
         for area_id, value in self.storage_properties.items():
             if area_id not in all_storages:
-                return command_failed(f"Area '{area_id}' does not exist")
+                return command_failed(f"The area '{area_id}' is not found.")
 
             new_storages = []
             for storage_id, new_properties in value.items():
