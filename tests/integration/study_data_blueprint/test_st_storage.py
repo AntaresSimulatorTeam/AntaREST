@@ -791,7 +791,7 @@ class TestSTStorage:
         cluster_cfg = res.json()
         assert cluster_cfg["reservoirCapacity"] == 5600
 
-        # Check that getting the list works and that is has correctly been updated
+        # Check that getting the list works and that it has correctly been updated
         res = client.get(
             f"/v1/studies/{variant_id}/areas/{area_id}/storages",
         )
