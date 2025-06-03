@@ -10,17 +10,14 @@
 #
 # This file is part of the Antares project.
 
-import io
 from unittest.mock import Mock
 
-import numpy as np
 import pytest
 
 from antarest.core.exceptions import AreaNotFound, STStorageConfigNotFound, STStorageNotFound
-from antarest.core.serde.ini_reader import read_ini
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.st_storage_management import STStorageManager, STStorageUpdate
-from antarest.study.business.model.sts_model import STStorage, STStorageGroup
+from antarest.study.business.model.sts_model import STStorage, STStorageCreation, STStorageGroup
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
@@ -28,70 +25,79 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
-# noinspection SpellCheckingInspection
-LIST_INI = """
-[storage1]
-name = Storage1
-group = Battery
-injectionnominalcapacity = 1500
-withdrawalnominalcapacity = 1500
-reservoircapacity = 20000
-efficiency = 0.94
-initialleveloptim = true
-
-[storage2]
-name = Storage2
-group = PSP_closed
-injectionnominalcapacity = 2000
-withdrawalnominalcapacity = 1500
-reservoircapacity = 20000
-efficiency = 0.78
-initiallevel = 0.5
-
-[storage3]
-name = Storage3
-group = PSP_closed
-injectionnominalcapacity = 1500
-withdrawalnominalcapacity = 1500
-reservoircapacity = 21000
-efficiency = 0.72
-initiallevel = 1
-"""
-
-LIST_CFG = read_ini(io.StringIO(LIST_INI))
-
-ALL_STORAGES = {
-    "west": {"list": LIST_CFG},
-    "east": {"list": {}},
-}
-
-GEN = np.random.default_rng(1000)
-
 
 @pytest.fixture
-def manager(matrix_service: ISimpleMatrixService) -> STStorageManager:
+def command_context(matrix_service: ISimpleMatrixService) -> CommandContext:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
-    return STStorageManager(CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service))
+    return CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service)
 
 
 @pytest.fixture
-def study_interface(matrix_service: ISimpleMatrixService, empty_study_880) -> StudyInterface:
-    return FileStudyInterface(empty_study_880)
+def manager(matrix_service: ISimpleMatrixService, command_context: CommandContext) -> STStorageManager:
+    return STStorageManager(command_context)
 
+def _set_up_study(study: StudyInterface, command_context: CommandContext) -> None:
+    study_data = study.get_files()
+    # Create 2 areas
+    output = CreateArea(command_context=command_context,  area_name="fr", study_version=study.version).apply(study_data)
+    assert output.status
+    output = CreateArea(command_context=command_context,  area_name="DE", study_version=study.version).apply(study_data)
+    assert output.status
+    # Create 2 storages in fr area and 1 in DE area
+    cmd = CreateSTStorage(
+        command_context=command_context,
+        area_id="fr",
+        parameters=STStorageCreation(
+            name="Storage1",
+            group=STStorageGroup.BATTERY,
+            injection_nominal_capacity=1500,
+            withdrawal_nominal_capacity=1500,
+            reservoir_capacity=20000,
+            efficiency=0.94,
+            initial_level_optim=True,
+        ),
+        study_version=study.version
+    )
+    output = cmd.apply(study_data)
+    assert output.status
 
-def create_study_interface(tree: FileStudyTree) -> StudyInterface:
-    """
-    Creates a mock study interface which returns the provided study tree.
-    """
-    file_study = Mock(spec=FileStudy)
-    file_study.tree = tree
-    study = Mock(StudyInterface)
-    study.get_files.return_value = file_study
-    study.version = STUDY_VERSION_8_6
-    return study
+    cmd = CreateSTStorage(
+        command_context=command_context,
+        area_id="fr",
+        parameters=STStorageCreation(
+            name="Storage2",
+            group="my_own_group",
+            enabled=False,
+        ),
+        study_version=study.version
+    )
+    output = cmd.apply(study_data)
+    assert output.status
+
+    cmd = CreateSTStorage(
+        command_context=command_context,
+        area_id="de",
+        parameters=STStorageCreation(
+            name="StorageDE",
+            efficiency=0.46,
+            efficiency_withdrawal=0.47,
+            penalize_variation_injection=True,
+        ),
+        study_version=study.version
+    )
+    output = cmd.apply(study_data)
+    assert output.status
+
+@pytest.fixture
+def study_interface(matrix_service: ISimpleMatrixService, empty_study_920, command_context) -> StudyInterface:
+    study_interface = FileStudyInterface(empty_study_920)
+    _set_up_study(study_interface, command_context)
+    return study_interface
 
 
 class TestSTStorageManager:
