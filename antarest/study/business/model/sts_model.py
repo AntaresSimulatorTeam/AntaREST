@@ -175,6 +175,13 @@ def validate_st_storage_against_version(
     if version < STUDY_VERSION_8_6:
         raise InvalidFieldForVersionError(f"Short-term storages only exist since v8.6 and your study is in {version}")
 
+    if storage_data.group is not None and version < STUDY_VERSION_9_2:
+        # We need to be sure we're able to cast the group to a STStorageGroup enum value
+        try:
+            STStorageGroup(storage_data.group)
+        except ValueError:
+            raise InvalidFieldForVersionError(f"Free groups are available since v9.2 and your study is in {version}")
+
     if version < STUDY_VERSION_8_8:
         _check_min_version(storage_data, "enabled", version)
 
