@@ -20,7 +20,7 @@ from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorage
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.model import STUDY_VERSION_9_2
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage, serialize_st_storage
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
@@ -148,11 +148,22 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        self._update_st_storage_config(area_id, st_storage)
+
+        study_data.tree.save(
+            serialize_st_storage(study_data.config.version, st_storage),
+            ["input", "st-storage", "clusters", area_id, "list", st_storage.id],
+        )
 
     @override
     def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        ini_content = self._get_all_storages_for_area(study_data, area_id)
+        for st_storage in storages:
+            self._update_st_storage_config(area_id, st_storage)
+            ini_content[st_storage.id] = serialize_st_storage(study_data.config.version, st_storage)
+        study_data.tree.save(ini_content, ["input", "st-storage", "clusters", area_id, "list"])
 
     @override
     def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
@@ -248,3 +259,14 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         node = study_data.tree.get_node(["input", "st-storage", "series", area_id, storage_id, ts_name])
         assert isinstance(node, InputSeriesMatrix)
         return node.parse_as_dataframe()
+
+    def _update_st_storage_config(self, area_id: str, storage: STStorage) -> None:
+        study_data = self.get_file_study().config
+        if area_id not in study_data.areas:
+            raise ValueError(f"The area '{area_id}' does not exist")
+
+        for k, existing_storage in enumerate(study_data.areas[area_id].st_storages):
+            if existing_storage.id == storage.id:
+                study_data.areas[area_id].st_storages[k] = storage
+                return
+        study_data.areas[area_id].st_storages.append(storage)
