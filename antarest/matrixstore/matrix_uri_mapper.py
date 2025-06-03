@@ -107,15 +107,6 @@ class MatrixUriMapperFactory:
         self._matrix_service = matrix_service
 
     def create(self, mapper_type: MatrixUriMapperType = MatrixUriMapperType.MANAGED) -> MatrixUriMapper:
-        """
-        Crée une instance de MatrixUriMapper du type spécifié.
-
-        Args:
-            mapper_type: Type de mapper à créer (standard ou caching)
-
-        Returns:
-            Une instance du mapper demandé
-        """
         if mapper_type == MatrixUriMapperType.MANAGED:
             return MatrixUriMapperManaged(self._matrix_service)
         elif mapper_type == MatrixUriMapperType.UNMANAGED:
