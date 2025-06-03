@@ -383,23 +383,20 @@ class TestCreateSTStorage:
         actual = cmd.to_dto()
 
         expected_parameters = PARAMETERS.copy()
-        # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
-        expected_parameters["initiallevel"] = 0.5
-        expected_parameters["group"] = "battery"
-        expected_parameters["enabled"] = True
-        constants = command_context.generator_matrix_constants
+        expected_parameters["group"] = "battery"  # the group is now in lower case
 
+        null_matrix = strip_matrix_protocol(command_context.generator_matrix_constants.get_null_matrix())
         assert actual == CommandDTO(
             action=CommandName.CREATE_ST_STORAGE.value,
-            version=2,
+            version=3,
             args={
                 "area_id": "area_fr",
                 "parameters": expected_parameters,
-                "pmax_injection": strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-                "pmax_withdrawal": strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-                "lower_rule_curve": strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
-                "upper_rule_curve": strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
-                "inflows": strip_matrix_protocol(constants.get_st_storage_inflows()),
+                "pmax_injection": null_matrix,
+                "pmax_withdrawal": null_matrix,
+                "lower_rule_curve": null_matrix,
+                "upper_rule_curve": null_matrix,
+                "inflows": null_matrix,
             },
             study_version=STUDY_VERSION_8_8,
         )
