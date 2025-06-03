@@ -198,7 +198,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             raise ValueError(
                 f"costInjection matrix is supported since version 9.2 and your study is in {study_version}"
             )
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_injection"])
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_injection"])
 
     @override
     def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
@@ -208,7 +208,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             raise ValueError(
                 f"costWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
             )
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_withdrawal"])
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_withdrawal"])
 
     @override
     def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
@@ -216,7 +216,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_version = study_data.config.version
         if study_version < STUDY_VERSION_9_2:
             raise ValueError(f"costLevel matrix is supported since version 9.2 and your study is in {study_version}")
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_level"])
+        study_data.tree.save(series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_level"])
 
     @override
     def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
@@ -226,7 +226,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             raise ValueError(
                 f"costVariationInjection matrix is supported since version 9.2 and your study is in {study_version}"
             )
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, storage_id, "cost_variation_injection"])
+        study_data.tree.save(
+            series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_variation_injection"]
+        )
 
     @override
     def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
@@ -237,7 +239,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 f"costVariationWithdrawal matrix is supported since version 9.2 and your study is in {study_version}"
             )
         study_data.tree.save(
-            series_id, ["input", "thermal", "series", area_id, storage_id, "cost_variation_withdrawal"]
+            series_id, ["input", "st-storage", "series", area_id, storage_id, "cost_variation_withdrawal"]
         )
 
     @override
@@ -254,7 +256,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         for path in paths:
             study_data.tree.delete(path)
 
-        # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
+        # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
 
     @staticmethod

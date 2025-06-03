@@ -211,9 +211,10 @@ class TestCreateSTStorage:
             )
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
-        assert raised_error["type"] == "extra_forbidden"
-        assert raised_error["msg"] == "Extra inputs are not permitted"
-        assert "efficiency_withdrawal" in raised_error["loc"]
+        assert (
+            raised_error["msg"]
+            == "Value error, 422: Field efficiency_withdrawal is not a valid field for study version 8.8"
+        )
 
     def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
         empty_study = empty_study_720
@@ -229,7 +230,10 @@ class TestCreateSTStorage:
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
         assert raised_error["type"] == "value_error"
-        assert raised_error["msg"] == "Value error, Unsupported study version: 7.2"
+        assert (
+            raised_error["msg"]
+            == "Value error, 422: Short-term storages only exist since v8.6 and your study is in 7.2"
+        )
 
     def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
@@ -401,7 +405,7 @@ class TestCreateSTStorage:
         )
 
     def test_get_inner_matrices(self, command_context: CommandContext):
-        for study_version in (STUDY_VERSION_8_8, STUDY_VERSION_9_2):
+        for study_version in (STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2):
             cmd = CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
@@ -410,10 +414,8 @@ class TestCreateSTStorage:
             )
             actual = cmd.get_inner_matrices()
             constants = command_context.generator_matrix_constants
-            # Ensures with the v9.2 we don't create default matrices
-            if study_version == STUDY_VERSION_9_2:
-                assert actual == []
-            else:
+            # Ensures in v8.8 and in v9.2 we don't create default matrices
+            if study_version == STUDY_VERSION_8_6:
                 assert actual == [
                     strip_matrix_protocol(constants.get_st_storage_pmax_injection()),
                     strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
@@ -421,6 +423,8 @@ class TestCreateSTStorage:
                     strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
                     strip_matrix_protocol(constants.get_st_storage_inflows()),
                 ]
+            else:
+                assert actual == []
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
@@ -439,7 +443,7 @@ class TestCreateSTStorage:
         )
         output = cmd.apply(study)
         assert output.status is True
-        assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area fr'."
+        assert output.message == "Short-term storage 'storage1' successfully added to area 'area fr'."
         # Checks ini content
         ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area fr" / "list.ini"
         ini_content = read_ini(ini_path)
@@ -477,7 +481,7 @@ class TestCreateSTStorage:
         )
         output = cmd.apply(study)
         assert output.status is True
-        assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area be'."
+        assert output.message == "Short-term storage 'storage1' successfully added to area 'area be'."
 
         # Checks ini content
         ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area be" / "list.ini"

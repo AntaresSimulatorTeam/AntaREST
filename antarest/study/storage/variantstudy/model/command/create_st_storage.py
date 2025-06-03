@@ -163,11 +163,11 @@ class CreateSTStorage(ICommand):
         """
         values = {"command_context": self.command_context}
         if v is None:
-            if self.study_version >= STUDY_VERSION_8_8:
-                return None
             # use an already-registered default matrix
             constants: GeneratorMatrixConstants
             constants = self.command_context.generator_matrix_constants
+            if self.study_version >= STUDY_VERSION_8_8:
+                return constants.get_null_matrix()
             # Directly access the methods instead of using `getattr` for maintainability
             methods = {
                 "pmax_injection": constants.get_st_storage_pmax_injection,
@@ -274,7 +274,7 @@ class CreateSTStorage(ICommand):
                 self.area_id, storage.id, self.cost_variation_withdrawal
             )
 
-        return command_succeeded(f"Short-term storage '{storage.id}' added to area '{self.area_id}'.")
+        return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
 
     @override
     def to_dto(self) -> CommandDTO:
