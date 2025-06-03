@@ -47,7 +47,7 @@ class UpdateSTStorages(ICommand):
     storage_properties: STStorageUpdates
 
     @model_validator(mode="after")
-    def validate_properties_against_version(self) -> Self:
+    def validate_against_version(self) -> Self:
         for value in self.storage_properties.values():
             for properties in value.values():
                 validate_st_storage_against_version(self.study_version, properties)

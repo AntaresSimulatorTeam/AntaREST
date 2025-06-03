@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, Final, List, Optional, TypeAlias, cast
+from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -20,7 +20,7 @@ from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.model.sts_model import STStorageCreation
+from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -131,6 +131,11 @@ class CreateSTStorage(ICommand):
                 cluster = parse_st_storage(study_version, properties_as_dict)
                 values["parameters"] = STStorageCreation.from_storage(cluster)
         return values
+
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_st_storage_against_version(self.study_version, self.parameters)
+        return self
 
     def validate_field(self, v: MatrixType, field: str) -> MatrixType:
         """
