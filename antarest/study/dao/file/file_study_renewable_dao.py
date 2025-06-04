@@ -38,6 +38,9 @@ class FileStudyRenewableDao(RenewableDao, ABC):
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
+        """
+        Returns for each area id, a mapping of a cluster id (in lower case) towards the corresponding cluster object.
+        """
         file_study = self.get_file_study()
         path = _ALL_CLUSTERS_PATH
         try:

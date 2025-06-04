@@ -39,6 +39,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+        """
+        Returns for each area id, a mapping of a cluster id (in lower case) towards the corresponding cluster object.
+        """
         file_study = self.get_file_study()
         version = file_study.config.version
         path = _ALL_CLUSTERS_PATH
