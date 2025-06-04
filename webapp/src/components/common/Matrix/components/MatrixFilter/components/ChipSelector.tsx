@@ -34,7 +34,7 @@ interface ChipSelectorProps {
   renderOption?: (option: ChipOption, isSelected: boolean) => React.ReactNode;
 }
 
-const ChipSelector = ({
+function ChipSelector({
   options,
   selectedValues,
   onChange,
@@ -45,7 +45,7 @@ const ChipSelector = ({
   dense = true,
   disabled = false,
   renderOption,
-}: ChipSelectorProps) => {
+}: ChipSelectorProps) {
   const handleChipClick = (value: number) => {
     if (!disabled) {
       onChange(value);
@@ -99,6 +99,6 @@ const ChipSelector = ({
       </Stack>
     </Box>
   );
-};
+}
 
 export default ChipSelector;

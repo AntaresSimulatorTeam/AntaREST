@@ -49,7 +49,7 @@ interface ListFilterControlProps {
   disabled?: boolean;
 }
 
-const ListFilterControl = ({
+function ListFilterControl({
   inputValue,
   selectedValues,
   operator = FILTER_OPERATORS.EQUALS,
@@ -62,7 +62,7 @@ const ListFilterControl = ({
   onClearAll,
   placeholder,
   disabled = false,
-}: ListFilterControlProps) => {
+}: ListFilterControlProps) {
   const { t } = useTranslation();
 
   const handleOperatorChange = (e: SelectChangeEvent) => {
@@ -241,6 +241,6 @@ const ListFilterControl = ({
       )}
     </>
   );
-};
+}
 
 export default ListFilterControl;
