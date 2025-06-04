@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Skeleton } from "@mui/material";
+import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
@@ -241,13 +241,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
           />
         );
 
-        return control._formState.isLoading ? (
-          <Skeleton variant="rectangular" sx={{ borderRadius: "5px" }}>
-            {field}
-          </Skeleton>
-        ) : (
-          field
-        );
+        return control._formState.isLoading ? <FieldSkeleton>{field}</FieldSkeleton> : field;
       }
 
       return <FieldEditor {...(feProps as TProps)} />;
