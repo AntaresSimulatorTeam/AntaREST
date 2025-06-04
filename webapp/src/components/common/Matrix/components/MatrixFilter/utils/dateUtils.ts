@@ -13,7 +13,7 @@
  */
 
 import { parse, getDate, getMonth, getDay, getHours, getDayOfYear, isValid } from "date-fns";
-import { TIME_INDEXING } from "./constants";
+import { TIME_INDEXING } from "../constants";
 
 // Common date formats to try when parsing strings
 export const DATE_FORMATS = [

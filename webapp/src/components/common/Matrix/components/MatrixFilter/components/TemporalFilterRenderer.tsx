@@ -17,7 +17,7 @@ import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 import { TIME_INDEXING, type FilterOperatorType } from "../constants";
-import { getLocalizedTimeLabels } from "../dateUtils";
+import { getLocalizedTimeLabels } from "../utils/dateUtils";
 import { DESIGN_TOKENS } from "../styles";
 import RangeFilterControl from "./RangeFilterControl";
 import ListFilterControl from "./ListFilterControl";
@@ -48,238 +48,233 @@ interface TemporalFilterRendererProps {
   onOperatorChange?: (operator: FilterOperatorType) => void;
 }
 
-const TemporalFilterRenderer = memo(
-  ({
-    indexingType,
-    filterType,
-    availableValues,
-    rangeValue,
-    onRangeChange,
-    selectedValues,
-    onAddValue,
-    onAddValues,
-    onRemoveValue,
-    onCheckboxChange,
-    onClearAll,
-    inputValue,
-    onInputChange,
-    onKeyPress,
-    disabled = false,
-    sliderMarks,
-    operator,
-    onOperatorChange,
-  }: TemporalFilterRendererProps) => {
-    const { t } = useTranslation();
+function TemporalFilterRenderer({
+  indexingType,
+  filterType,
+  availableValues,
+  rangeValue,
+  onRangeChange,
+  selectedValues,
+  onAddValue,
+  onAddValues,
+  onRemoveValue,
+  onCheckboxChange,
+  onClearAll,
+  inputValue,
+  onInputChange,
+  onKeyPress,
+  disabled = false,
+  sliderMarks,
+  operator,
+  onOperatorChange,
+}: TemporalFilterRendererProps) {
+  const { t } = useTranslation();
 
-    // Format hour of year as human-readable text (Jan 1, 5h)
-    const formatHourOfYear = useMemo(() => {
-      return (hour: number): string => {
-        const months = [
-          "Jan",
-          "Feb",
-          "Mar",
-          "Apr",
-          "May",
-          "Jun",
-          "Jul",
-          "Aug",
-          "Sep",
-          "Oct",
-          "Nov",
-          "Dec",
-        ];
-        const daysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  // Format hour of year as human-readable text (Jan 1, 5h)
+  const formatHourOfYear = useMemo(() => {
+    return (hour: number): string => {
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const daysPerMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
-        // Ensure we have a positive hour value
-        const safeHour = Math.max(1, hour);
-        let remainingHours = safeHour - 1; // 0-based for calculation
+      // Ensure we have a positive hour value
+      const safeHour = Math.max(1, hour);
+      let remainingHours = safeHour - 1; // 0-based for calculation
 
-        // Calculate month
-        let monthIndex = 0;
-        while (monthIndex < 12 && remainingHours >= daysPerMonth[monthIndex] * 24) {
-          remainingHours -= daysPerMonth[monthIndex] * 24;
-          monthIndex++;
-        }
-
-        // Calculate day and hour
-        const dayOfMonth = Math.floor(remainingHours / 24) + 1;
-        const hourOfDay = remainingHours % 24;
-
-        // Format: "Jan 1, 5h" (5th hour of Jan 1st)
-        return `${months[monthIndex]} ${dayOfMonth}, ${hourOfDay}h`;
-      };
-    }, []);
-
-    // Create localized option lists for months, weekdays, etc.
-    const localizedOptions = useMemo(() => {
-      if (indexingType === TIME_INDEXING.WEEKDAY) {
-        return getLocalizedTimeLabels("weekday", t);
+      // Calculate month
+      let monthIndex = 0;
+      while (monthIndex < 12 && remainingHours >= daysPerMonth[monthIndex] * 24) {
+        remainingHours -= daysPerMonth[monthIndex] * 24;
+        monthIndex++;
       }
-      if (indexingType === TIME_INDEXING.MONTH) {
-        return getLocalizedTimeLabels("month", t);
-      }
+
+      // Calculate day and hour
+      const dayOfMonth = Math.floor(remainingHours / 24) + 1;
+      const hourOfDay = remainingHours % 24;
+
+      // Format: "Jan 1, 5h" (5th hour of Jan 1st)
+      return `${months[monthIndex]} ${dayOfMonth}, ${hourOfDay}h`;
+    };
+  }, []);
+
+  // Create localized option lists for months, weekdays, etc.
+  const localizedOptions = useMemo(() => {
+    if (indexingType === TIME_INDEXING.WEEKDAY) {
+      return getLocalizedTimeLabels("weekday", t);
+    }
+    if (indexingType === TIME_INDEXING.MONTH) {
+      return getLocalizedTimeLabels("month", t);
+    }
+    return [];
+  }, [indexingType, t]);
+
+  // Day of month options (1-31)
+  const dayOfMonthOptions = useMemo(() => {
+    if (indexingType !== TIME_INDEXING.DAY_OF_MONTH) {
       return [];
-    }, [indexingType, t]);
+    }
+    return Array.from({ length: 31 }, (_, i) => ({
+      value: i + 1,
+      label: (i + 1).toString(),
+    }));
+  }, [indexingType]);
 
-    // Day of month options (1-31)
-    const dayOfMonthOptions = useMemo(() => {
-      if (indexingType !== TIME_INDEXING.DAY_OF_MONTH) {
-        return [];
-      }
-      return Array.from({ length: 31 }, (_, i) => ({
-        value: i + 1,
-        label: (i + 1).toString(),
-      }));
-    }, [indexingType]);
-
-    // Decide which component to render based on indexing and filter types
-    if (filterType === "range") {
-      if (indexingType === TIME_INDEXING.HOUR_YEAR) {
-        return (
-          <Box sx={{ px: DESIGN_TOKENS.spacing.xl, pt: 3, pb: DESIGN_TOKENS.spacing.lg }}>
-            <RangeFilterControl
-              min={rangeValue[0]}
-              max={rangeValue[1]}
-              value={rangeValue}
-              onChange={onRangeChange}
-              minBound={availableValues.min}
-              maxBound={availableValues.max}
-              marks={sliderMarks}
-              disabled={disabled}
-              formatValue={formatHourOfYear}
-            />
-          </Box>
-        );
-      }
-
+  // Decide which component to render based on indexing and filter types
+  if (filterType === "range") {
+    if (indexingType === TIME_INDEXING.HOUR_YEAR) {
       return (
-        <RangeFilterControl
-          min={rangeValue[0]}
-          max={rangeValue[1]}
-          value={rangeValue}
-          onChange={onRangeChange}
-          minBound={availableValues.min}
-          maxBound={availableValues.max}
-          marks={sliderMarks}
-          disabled={disabled}
-        />
+        <Box sx={{ px: DESIGN_TOKENS.spacing.xl, pt: 3, pb: DESIGN_TOKENS.spacing.lg }}>
+          <RangeFilterControl
+            min={rangeValue[0]}
+            max={rangeValue[1]}
+            value={rangeValue}
+            onChange={onRangeChange}
+            minBound={availableValues.min}
+            maxBound={availableValues.max}
+            marks={sliderMarks}
+            disabled={disabled}
+            formatValue={formatHourOfYear}
+          />
+        </Box>
       );
     }
 
-    if (filterType === "list") {
-      // Special handling for hour of year
-      if (indexingType === TIME_INDEXING.HOUR_YEAR) {
-        return (
-          <Box sx={{ mt: DESIGN_TOKENS.spacing.xl }}>
-            <ListFilterControl
-              inputValue={inputValue}
-              selectedValues={selectedValues}
-              operator={operator}
-              onInputChange={onInputChange}
-              onKeyPress={onKeyPress}
-              onAddValue={onAddValue}
-              onAddValues={onAddValues}
-              onRemoveValue={onRemoveValue}
-              onOperatorChange={onOperatorChange}
-              onClearAll={onClearAll}
-              placeholder="Enter hour number (1-8760)"
-              disabled={disabled}
-            />
-          </Box>
-        );
-      }
+    return (
+      <RangeFilterControl
+        min={rangeValue[0]}
+        max={rangeValue[1]}
+        value={rangeValue}
+        onChange={onRangeChange}
+        minBound={availableValues.min}
+        maxBound={availableValues.max}
+        marks={sliderMarks}
+        disabled={disabled}
+      />
+    );
+  }
 
-      // Weekday selector
-      if (indexingType === TIME_INDEXING.WEEKDAY) {
-        return (
-          <ChipSelector
-            title={t("matrix.filter.selectDays")}
-            options={localizedOptions.map((item) => ({
-              value: item.value,
-              label: item.label,
-            }))}
-            selectedValues={selectedValues}
-            onChange={onCheckboxChange}
-            disabled={disabled}
-          />
-        );
-      }
-
-      // Month selector
-      if (indexingType === TIME_INDEXING.MONTH) {
-        return (
-          <ChipSelector
-            title={t("matrix.filter.selectMonths")}
-            options={localizedOptions.map((item) => ({
-              value: item.value,
-              label: item.label,
-            }))}
-            selectedValues={selectedValues}
-            onChange={onCheckboxChange}
-            disabled={disabled}
-          />
-        );
-      }
-
-      // Day of month selector
-      if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
-        return (
-          <ChipSelector
-            title={t("matrix.filter.selectDays")}
-            options={dayOfMonthOptions}
-            selectedValues={selectedValues}
-            onChange={onCheckboxChange}
-            disabled={disabled}
-            dense={true}
-            size="small"
-          />
-        );
-      }
-
-      // Week selector
-      if (indexingType === TIME_INDEXING.WEEK) {
-        // Generate week options (1-53)
-        const weekOptions = Array.from({ length: 53 }, (_, i) => ({
-          value: i + 1,
-          label: `${t("global.time.weekShort")} ${i + 1}`,
-        }));
-
-        return (
-          <ChipSelector
-            title={t("matrix.filter.selectWeeks")}
-            options={weekOptions}
-            selectedValues={selectedValues}
-            onChange={onCheckboxChange}
-            disabled={disabled}
-            dense={true}
-            size="small"
-          />
-        );
-      }
-
-      // Default list control for other types
+  if (filterType === "list") {
+    // Special handling for hour of year
+    if (indexingType === TIME_INDEXING.HOUR_YEAR) {
       return (
-        <ListFilterControl
-          inputValue={inputValue}
+        <Box sx={{ mt: DESIGN_TOKENS.spacing.xl }}>
+          <ListFilterControl
+            inputValue={inputValue}
+            selectedValues={selectedValues}
+            operator={operator}
+            onInputChange={onInputChange}
+            onKeyPress={onKeyPress}
+            onAddValue={onAddValue}
+            onAddValues={onAddValues}
+            onRemoveValue={onRemoveValue}
+            onOperatorChange={onOperatorChange}
+            onClearAll={onClearAll}
+            placeholder="Enter hour number (1-8760)"
+            disabled={disabled}
+          />
+        </Box>
+      );
+    }
+
+    // Weekday selector
+    if (indexingType === TIME_INDEXING.WEEKDAY) {
+      return (
+        <ChipSelector
+          title={t("matrix.filter.selectDays")}
+          options={localizedOptions.map((item) => ({
+            value: item.value,
+            label: item.label,
+          }))}
           selectedValues={selectedValues}
-          operator={operator}
-          onInputChange={onInputChange}
-          onKeyPress={onKeyPress}
-          onAddValue={onAddValue}
-          onAddValues={onAddValues}
-          onRemoveValue={onRemoveValue}
-          onOperatorChange={onOperatorChange}
-          onClearAll={onClearAll}
+          onChange={onCheckboxChange}
           disabled={disabled}
         />
       );
     }
 
-    return null;
-  },
-);
+    // Month selector
+    if (indexingType === TIME_INDEXING.MONTH) {
+      return (
+        <ChipSelector
+          title={t("matrix.filter.selectMonths")}
+          options={localizedOptions.map((item) => ({
+            value: item.value,
+            label: item.label,
+          }))}
+          selectedValues={selectedValues}
+          onChange={onCheckboxChange}
+          disabled={disabled}
+        />
+      );
+    }
 
-// Add display name for debugging
-TemporalFilterRenderer.displayName = "TemporalFilterRenderer";
+    // Day of month selector
+    if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
+      return (
+        <ChipSelector
+          title={t("matrix.filter.selectDays")}
+          options={dayOfMonthOptions}
+          selectedValues={selectedValues}
+          onChange={onCheckboxChange}
+          disabled={disabled}
+          dense={true}
+          size="small"
+        />
+      );
+    }
 
-export default TemporalFilterRenderer;
+    // Week selector
+    if (indexingType === TIME_INDEXING.WEEK) {
+      // Generate week options (1-53)
+      const weekOptions = Array.from({ length: 53 }, (_, i) => ({
+        value: i + 1,
+        label: `${t("global.time.weekShort")} ${i + 1}`,
+      }));
+
+      return (
+        <ChipSelector
+          title={t("matrix.filter.selectWeeks")}
+          options={weekOptions}
+          selectedValues={selectedValues}
+          onChange={onCheckboxChange}
+          disabled={disabled}
+          dense={true}
+          size="small"
+        />
+      );
+    }
+
+    // Default list control for other types
+    return (
+      <ListFilterControl
+        inputValue={inputValue}
+        selectedValues={selectedValues}
+        operator={operator}
+        onInputChange={onInputChange}
+        onKeyPress={onKeyPress}
+        onAddValue={onAddValue}
+        onAddValues={onAddValues}
+        onRemoveValue={onRemoveValue}
+        onOperatorChange={onOperatorChange}
+        onClearAll={onClearAll}
+        disabled={disabled}
+      />
+    );
+  }
+
+  return null;
+}
+
+export default memo(TemporalFilterRenderer);

@@ -13,9 +13,10 @@
  */
 
 import { useMemo } from "react";
+import * as R from "ramda";
 import type { FilterState, FilterCriteria } from "../types";
 import type { TimeFrequencyType } from "../../../shared/types";
-import { FILTER_TYPES, FILTER_OPERATORS } from "../constants";
+import { FILTER_TYPES, FILTER_OPERATORS, type FilterOperatorType } from "../constants";
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
@@ -27,6 +28,99 @@ interface UseFilteredDataProps {
   columnCount: number;
 }
 
+/**
+ * Applies operator logic to filter indices based on the specified operator and values
+ *
+ * @param indices - Array of indices to filter
+ * @param operator - The filter operator to apply
+ * @param values - Array of values to use for filtering
+ * @returns Filtered array of indices
+ */
+function applyOperator(
+  indices: number[],
+  operator: FilterOperatorType,
+  values: number[],
+): number[] {
+  if (R.isEmpty(values)) {
+    return [];
+  }
+
+  const predicates: Record<FilterOperatorType, (index: number) => boolean> = {
+    [FILTER_OPERATORS.EQUALS]: R.flip(R.includes)(values),
+    [FILTER_OPERATORS.GREATER_THAN]: R.gt(R.__, Math.min(...values)),
+    [FILTER_OPERATORS.LESS_THAN]: R.lt(R.__, Math.max(...values)),
+    [FILTER_OPERATORS.GREATER_EQUAL]: R.gte(R.__, Math.min(...values)),
+    [FILTER_OPERATORS.LESS_EQUAL]: R.lte(R.__, Math.max(...values)),
+    [FILTER_OPERATORS.RANGE]:
+      values.length >= 2
+        ? R.both(R.gte(R.__, Math.min(...values)), R.lte(R.__, Math.max(...values)))
+        : R.flip(R.includes)(values),
+  };
+
+  const predicate = predicates[operator] || predicates[FILTER_OPERATORS.EQUALS];
+  return R.filter(predicate, indices);
+}
+
+/**
+ * Filters column indices based on the column filter configuration
+ *
+ * @param columnFilter - The column filter configuration containing type, range, list, and operator
+ * @param columnCount - The total number of columns in the dataset
+ * @returns Array of filtered column indices (0-based)
+ */
+function filterColumns(columnFilter: FilterState["columnsFilter"], columnCount: number): number[] {
+  if (columnFilter.type === FILTER_TYPES.RANGE && columnFilter.range) {
+    const { min, max } = columnFilter.range;
+    // Generate 0-based indices directly
+    const rangeIndices = R.range(Math.max(0, min - 1), Math.min(columnCount, max));
+    return rangeIndices;
+  }
+
+  if (columnFilter.type === FILTER_TYPES.LIST) {
+    const operator = columnFilter.operator || FILTER_OPERATORS.EQUALS;
+    const list = columnFilter.list || [];
+
+    // Work with 1-based values for user-facing logic, but return 0-based indices
+    const allIndices = R.range(1, columnCount + 1);
+    const filteredIndices = applyOperator(allIndices, operator, list);
+
+    // Convert to 0-based and validate bounds
+    return R.pipe(
+      R.map(R.dec), // Convert to 0-based
+      R.filter(R.both(R.gte(R.__, 0), R.lt(R.__, columnCount))),
+    )(filteredIndices);
+  }
+
+  return [];
+}
+
+/**
+ * Creates a default filter criteria with all indices
+ *
+ * @param rowCount - The total number of rows
+ * @param columnCount - The total number of columns
+ * @returns Filter criteria with all row and column indices
+ */
+const createDefaultCriteria = R.memoizeWith(
+  (rowCount: number, columnCount: number) => `${rowCount}-${columnCount}`,
+  (rowCount: number, columnCount: number): FilterCriteria => ({
+    columnsIndices: R.range(0, columnCount),
+    rowsIndices: R.range(0, rowCount),
+  }),
+);
+
+/**
+ * Hook to compute filtered row and column indices based on filter configuration
+ *
+ * @param props - The configuration object for filtering
+ * @param props.filter - The filter state containing active status and filter configurations
+ * @param props.dateTime - Array of date/time strings for time-based filtering
+ * @param props.isTimeSeries - Whether the data represents a time series
+ * @param props.timeFrequency - The frequency of the time series data
+ * @param props.rowCount - Total number of rows in the dataset
+ * @param props.columnCount - Total number of columns in the dataset
+ * @returns Filter criteria containing arrays of filtered row and column indices
+ */
 export function useFilteredData({
   filter,
   dateTime,
@@ -35,81 +129,17 @@ export function useFilteredData({
   rowCount,
   columnCount,
 }: UseFilteredDataProps): FilterCriteria {
-  return useMemo((): FilterCriteria => {
+  return useMemo(() => {
+    // Return all indices when filter is inactive
     if (!filter.active) {
-      // Return all rows and columns when filter is not active
-      return {
-        columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
-        rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
-      };
+      return createDefaultCriteria(rowCount, columnCount);
     }
 
-    // Filter columns
-    let columnsIndices: number[] = [];
+    // Filter on columns
+    const columnsIndices = filterColumns(filter.columnsFilter, columnCount);
 
-    if (filter.columnsFilter.type === FILTER_TYPES.RANGE && filter.columnsFilter.range) {
-      const { min, max } = filter.columnsFilter.range;
-
-      columnsIndices = Array.from({ length: columnCount }, (_, i) => i + 1)
-        .filter((idx) => idx >= min && idx <= max)
-        .map((idx) => idx - 1); // Convert to 0-based index
-    } else if (filter.columnsFilter.type === FILTER_TYPES.LIST) {
-      const operator = filter.columnsFilter.operator || FILTER_OPERATORS.EQUALS;
-      const list = filter.columnsFilter.list || [];
-
-      if (list.length === 0) {
-        columnsIndices = [];
-      } else {
-        const allIndices = Array.from({ length: columnCount }, (_, i) => i + 1);
-
-        switch (operator) {
-          case FILTER_OPERATORS.EQUALS:
-            columnsIndices = list
-              .map((idx) => idx - 1)
-              .filter((idx) => idx >= 0 && idx < columnCount);
-            break;
-          case FILTER_OPERATORS.GREATER_THAN: {
-            const gtThreshold = Math.min(...list);
-            columnsIndices = allIndices.filter((idx) => idx > gtThreshold).map((idx) => idx - 1);
-            break;
-          }
-          case FILTER_OPERATORS.LESS_THAN: {
-            const ltThreshold = Math.max(...list);
-            columnsIndices = allIndices.filter((idx) => idx < ltThreshold).map((idx) => idx - 1);
-            break;
-          }
-          case FILTER_OPERATORS.GREATER_EQUAL: {
-            const gteThreshold = Math.min(...list);
-            columnsIndices = allIndices.filter((idx) => idx >= gteThreshold).map((idx) => idx - 1);
-            break;
-          }
-          case FILTER_OPERATORS.LESS_EQUAL: {
-            const lteThreshold = Math.max(...list);
-            columnsIndices = allIndices.filter((idx) => idx <= lteThreshold).map((idx) => idx - 1);
-            break;
-          }
-          case FILTER_OPERATORS.RANGE:
-            // For range operator, treat the list as individual values to include
-            columnsIndices = list
-              .map((idx) => idx - 1)
-              .filter((idx) => idx >= 0 && idx < columnCount);
-            break;
-          default:
-            columnsIndices = list
-              .map((idx) => idx - 1)
-              .filter((idx) => idx >= 0 && idx < columnCount);
-        }
-      }
-    }
-
-    // Process multiple row filters and get combined indices
-    const rowsIndices: number[] = processRowFilters(
-      filter,
-      dateTime,
-      isTimeSeries,
-      timeFrequency,
-      rowCount,
-    );
+    // Filter on rows
+    const rowsIndices = processRowFilters(filter, dateTime, isTimeSeries, timeFrequency, rowCount);
 
     return { columnsIndices, rowsIndices };
   }, [filter, dateTime, isTimeSeries, timeFrequency, rowCount, columnCount]);

@@ -32,7 +32,7 @@ import { useFilterControls } from "./hooks/useFilterControls";
 import RangeFilterControl from "./components/RangeFilterControl";
 import ListFilterControl from "./components/ListFilterControl";
 
-const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => {
+function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
   const { t } = useTranslation();
   const {
     inputValue,
@@ -126,6 +126,6 @@ const ColumnFilter = ({ filter, setFilter, columnCount }: ColumnFilterProps) => 
       </AccordionDetails>
     </Accordion>
   );
-};
+}
 
 export default ColumnFilter;

@@ -14,7 +14,7 @@
 
 import { useMemo } from "react";
 import { TIME_INDEXING } from "../constants";
-import { getDefaultRangeForIndexType, extractValueFromDate } from "../dateUtils";
+import { getDefaultRangeForIndexType, extractValueFromDate } from "../utils/dateUtils";
 import type { TimeFrequencyType } from "../../../shared/types";
 
 interface UseTemporalDataProps {
@@ -24,7 +24,6 @@ interface UseTemporalDataProps {
 }
 
 export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTemporalDataProps) {
-  // Memoize the default range values for each indexing type
   const indexTypeRanges = useMemo(() => {
     // Create a map of all default ranges
     return Object.values(TIME_INDEXING).reduce(
@@ -44,7 +43,6 @@ export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTe
       { min: number; max: number; uniqueValues?: number[] }
     >;
 
-    // Always use fixed values for these constants
     result[TIME_INDEXING.DAY_HOUR] = {
       min: 1,
       max: 24,
