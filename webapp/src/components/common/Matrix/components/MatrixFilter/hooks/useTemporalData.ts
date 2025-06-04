@@ -24,6 +24,8 @@ interface UseTemporalDataProps {
 }
 
 export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTemporalDataProps) {
+  console.warn("timeFrequency", timeFrequency);
+
   const indexTypeRanges = useMemo(() => {
     // Create a map of all default ranges
     return Object.values(TIME_INDEXING).reduce(
@@ -92,7 +94,6 @@ export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTe
     return result;
   }, [dateTime, isTimeSeries, indexTypeRanges]);
 
-  // Extract and memoize temporal values for each date string
   const temporalValues = useMemo(() => {
     if (!dateTime || !isTimeSeries || dateTime.length === 0) {
       return {};
@@ -100,7 +101,6 @@ export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTe
 
     const result: Record<string, number[]> = {};
 
-    // Extract values for each indexing type
     for (const indexType of Object.values(TIME_INDEXING)) {
       result[indexType] = dateTime.map((dateStr, index) =>
         extractValueFromDate(dateStr, indexType, index),
