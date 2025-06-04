@@ -487,7 +487,7 @@ class RawStudyService(AbstractStorageService):
                     study_id="",
                     version=StudyVersion.parse(0),
                 )
-                raw_study = self.study_factory.create_from_config(config, MatrixUriMapperType.MANAGED)  # TODO
+                raw_study = self.study_factory.create_from_config(config, MatrixUriMapperType.MANAGED)
                 file_metadata = raw_study.get(url=["study", "antares"])
                 study_version = str(file_metadata.get("version", study.version))
                 if study_version != study.version:
