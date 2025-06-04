@@ -94,3 +94,13 @@ export interface TemporalOption {
   label: string;
   description: string;
 }
+
+export interface IndexedValue {
+  index: number;
+  value: number;
+}
+
+export interface SliderMark {
+  value: number;
+  label: string;
+}
