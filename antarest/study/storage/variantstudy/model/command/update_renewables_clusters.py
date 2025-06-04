@@ -51,7 +51,7 @@ class UpdateRenewablesClusters(ICommand):
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
-                lowered_id = cluster_id.lower()
+                lowered_id = cluster_id
                 if lowered_id not in all_renewables[area_id]:
                     return command_failed(f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.")
 

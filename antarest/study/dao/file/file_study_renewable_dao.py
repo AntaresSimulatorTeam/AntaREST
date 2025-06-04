@@ -51,8 +51,8 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         renewables_by_areas: dict[str, dict[str, RenewableCluster]] = {}
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                lowered_id = cluster_id.lower()
-                renewables_by_areas.setdefault(area_id, {})[lowered_id] = parse_renewable_cluster(cluster)
+                renewable = parse_renewable_cluster(cluster)
+                renewables_by_areas.setdefault(area_id, {})[renewable.id.lower()] = renewable
 
         return renewables_by_areas
 
