@@ -1040,9 +1040,7 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
         args={
             "area_id": "area_name",
             "cluster_name": "cluster_name",
-            "parameters": {
-                "ts-interpretation": "power-generation",
-            },
+            "parameters": {"ts-interpretation": "power-generation"},
         },
         study_version=STUDY_VERSION_8_8,
     )
@@ -1052,4 +1050,21 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
     dto = command.to_dto()
     assert dto.version == 3
     assert dto.args["parameters"]["name"] == "cluster_name"
+    assert "cluster_name" not in dto.args
+
+
+def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
+        version=2,
+        args={"area_id": "area_name", "parameters": {"name": "Sts_1", "ts-interpretation": "power-generation"}},
+        study_version=STUDY_VERSION_8_8,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 3
+    assert dto.args["parameters"]["name"] == "Sts_1"
+    assert dto.args["parameters"]["tsInterpretation"] == "power-generation"
     assert "cluster_name" not in dto.args
