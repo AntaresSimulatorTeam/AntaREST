@@ -29,15 +29,14 @@ interface Props {
   onClose: VoidFunction;
 }
 
-const defaultValues = {
-  studyName: "",
-  destinationFolder: "",
-};
-
 function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  const defaultStudyName = `${study.name} (${t("studies.copySuffix")})`;
   const isVariant = study.type === "variantstudy";
+
+  const defaultValues = {
+    studyName: `${study.name} (${t("studies.copySuffix")})`,
+    destinationFolder: "",
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -48,7 +47,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   }: SubmitHandlerPlus<typeof defaultValues>) => {
     return copyStudy({
       studyId: study.id,
-      studyName: studyName || defaultStudyName,
+      studyName,
       destinationFolder,
       withOutputs: false,
     });
@@ -77,10 +76,10 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             name="studyName"
             label={t("global.name")}
             control={control}
-            placeholder={defaultStudyName}
             rules={{
-              validate: validateString({ allowEmpty: true }),
+              validate: validateString(),
             }}
+            autoFocus
           />
           <StudyPathFE name="destinationFolder" control={control} />
         </Fieldset>
