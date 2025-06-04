@@ -34,7 +34,7 @@ import { getComponentDisplayName } from "../utils/reactUtils";
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any, formValues: any) => boolean;
+  preValidate?: (value: any, formValues: any) => boolean | string | undefined;
 }
 
 // `...args: any` allows to be compatible with all field editors
@@ -165,7 +165,13 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
         if (preValidate) {
           if (RA.isFunction(validate)) {
             return (value, formValues) => {
-              return preValidate?.(value, formValues) && validate(value, formValues);
+              const result = preValidate?.(value, formValues);
+
+              if (typeof result === "string" || result === false) {
+                return result;
+              }
+
+              return validate(value, formValues);
             };
           }
 
@@ -173,7 +179,13 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
             return Object.keys(validate).reduce(
               (acc, key) => {
                 acc[key] = (value, formValues) => {
-                  return preValidate?.(value, formValues) && validate[key](value, formValues);
+                  const result = preValidate?.(value, formValues);
+
+                  if (typeof result === "string" || result === false) {
+                    return result;
+                  }
+
+                  return validate[key](value, formValues);
                 };
                 return acc;
               },

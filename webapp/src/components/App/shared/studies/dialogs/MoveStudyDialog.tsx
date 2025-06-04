@@ -12,11 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
-import { validatePath } from "@/utils/validation/string";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import { InputAdornment, type DialogProps } from "@mui/material";
+import { type DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
@@ -24,6 +21,7 @@ import { moveStudy } from "../../../../../services/api/study";
 import type { StudyMetadata } from "../../../../../types/types";
 import FormDialog from "../../../../common/dialogs/FormDialog";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import StudyPathFE from "../StudyPathFE";
 
 function formalizePath(path: string | undefined, studyId?: StudyMetadata["id"]) {
   const trimmedPath = path?.trim();
@@ -101,28 +99,7 @@ function MoveStudyDialog(props: Props) {
       submitButtonText={t("global.move")}
     >
       {({ control }) => (
-        <StringFE
-          name="path"
-          control={control}
-          rules={{
-            validate: validatePath({
-              allowEmpty: true,
-              allowToStartWithSlash: false,
-            }),
-          }}
-          label={t("global.path")}
-          slotProps={{
-            input: {
-              startAdornment: (
-                <InputAdornment position="start">{`${DEFAULT_WORKSPACE_NAME}/`}</InputAdornment>
-              ),
-            },
-          }}
-          sx={{ mx: 0 }}
-          margin="dense"
-          fullWidth
-          autoFocus
-        />
+        <StudyPathFE name="path" control={control} margin="dense" fullWidth autoFocus />
       )}
     </FormDialog>
   );

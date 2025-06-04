@@ -16,13 +16,12 @@ import FormDialog from "@/components/common/dialogs/FormDialog";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import Fieldset from "@/components/common/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
 import { copyStudy } from "@/services/api/studies";
 import type { StudyMetadata } from "@/types/types";
-import { validatePath, validateString } from "@/utils/validation/string";
+import { validateString } from "@/utils/validation/string";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import { InputAdornment } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import StudyPathFE from "../StudyPathFE";
 
 interface Props {
   study: StudyMetadata;
@@ -83,24 +82,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
               validate: validateString({ allowEmpty: true }),
             }}
           />
-          <StringFE
-            name="destinationFolder"
-            label={t("global.path")}
-            control={control}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">{`${DEFAULT_WORKSPACE_NAME}/`}</InputAdornment>
-                ),
-              },
-            }}
-            rules={{
-              validate: validatePath({
-                allowEmpty: true,
-                allowToStartWithSlash: false,
-              }),
-            }}
-          />
+          <StudyPathFE name="destinationFolder" control={control} />
         </Fieldset>
       )}
     </FormDialog>
