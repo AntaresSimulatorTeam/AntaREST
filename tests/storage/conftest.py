@@ -320,4 +320,4 @@ class FileDownloadRepositoryMock(FileDownloadRepository):
 
 class SimpleFileTransferManager(FileTransferManager):
     def __init__(self, config: Config):
-        super().__init__(FileDownloadRepositoryMock(), Mock(), Mock(), config)
+        super().__init__(FileDownloadRepositoryMock(), Mock(), config)
