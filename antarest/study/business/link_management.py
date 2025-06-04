@@ -15,7 +15,6 @@ from typing import List, Mapping, Tuple
 from antarest.core.model import JSON
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.link import serialize_link
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
@@ -36,7 +35,7 @@ class LinkManager:
         command = CreateLink(
             area1=new_link.area1,
             area2=new_link.area2,
-            parameters=serialize_link(new_link),
+            parameters=new_link.to_update(),
             command_context=self._command_context,
             study_version=study.version,
         )

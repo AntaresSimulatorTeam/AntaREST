@@ -13,7 +13,7 @@ from typing import Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.link_model import LinkUpdate, update_link
+from antarest.study.business.model.link_model import update_link
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.create_link import AbstractLinkCommand
@@ -33,8 +33,7 @@ class UpdateLink(AbstractLinkCommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_link = study_data.get_link(self.area1, self.area2)
-        new_properties = LinkUpdate.model_validate(self.parameters)
-        new_link = update_link(current_link, new_properties)
+        new_link = update_link(current_link, self.parameters)
 
         study_data.save_link(new_link)
 

@@ -137,6 +137,25 @@ FILTER_VALUES: List[FilterOption] = [
 ]
 
 
+class LinkUpdate(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    hurdles_cost: Optional[bool] = None
+    loop_flow: Optional[bool] = None
+    use_phase_shifter: Optional[bool] = None
+    transmission_capacities: Optional[TransmissionCapacity] = None
+    asset_type: Optional[AssetType] = None
+    display_comments: Optional[bool] = None
+    comments: Optional[str] = None
+    colorr: Optional[int] = None
+    colorb: Optional[int] = None
+    colorg: Optional[int] = None
+    link_width: Optional[float] = None
+    link_style: Optional[LinkStyle] = None
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+
+
 class Link(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
@@ -170,24 +189,8 @@ class Link(AntaresBaseModel):
         data = self.model_dump(mode="json", include={"filter_synthesis", "filter_year_by_year"})
         return LinkConfig(**data)
 
-
-class LinkUpdate(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
-
-    hurdles_cost: Optional[bool] = None
-    loop_flow: Optional[bool] = None
-    use_phase_shifter: Optional[bool] = None
-    transmission_capacities: Optional[TransmissionCapacity] = None
-    asset_type: Optional[AssetType] = None
-    display_comments: Optional[bool] = None
-    comments: Optional[str] = None
-    colorr: Optional[int] = None
-    colorb: Optional[int] = None
-    colorg: Optional[int] = None
-    link_width: Optional[float] = None
-    link_style: Optional[LinkStyle] = None
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+    def to_update(self) -> LinkUpdate:
+        return LinkUpdate.model_validate(self.model_dump(mode="json", exclude={"area1", "area2"}))
 
 
 def update_link(link: Link, data: LinkUpdate) -> Link:
