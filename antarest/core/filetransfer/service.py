@@ -229,7 +229,7 @@ class FileTransferManager:
         if wait_for_availability:
             end = time.time() + DEFAULT_AWAIT_MAX_TIMEOUT
 
-            while time.time() < end and not download.get("ready") and not download.get("failed"):
+            while time.time() < end and not download.ready and not download.failed:
                 with db():  # needs db context to refresh download
                     download = self.repository.get(download_id)
                     if not download:
