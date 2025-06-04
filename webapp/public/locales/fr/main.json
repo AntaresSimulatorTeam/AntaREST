@@ -118,6 +118,7 @@
   "global.validate": "Valider",
   "global.enable": "Activer",
   "global.disable": "Désactiver",
+  "global.outputs": "Sorties",
   "lang.en": "Anglais",
   "lang.fr": "Français",
   "login.error": "Échec de l'authentification",
