@@ -43,11 +43,19 @@ def get_mapper_type(is_managed: bool) -> MatrixUriMapperType:
 
 class MatrixUriMapper(ABC):
     """
-    In charge of mapping matrix URI to actual data and back.
+    Abstract base class for mapping matrix URIs to actual data and vice versa.
 
-    The only actual URI schema supported is "matrix://<id>", which
-    maps to a matrix stored in the matrix service.
+    Defines the interface for URI schema handling related to matrices.
+    The expected URI schema is "matrix://<id>", which maps to matrices
+    stored in a matrix service.
+
+    Methods to implement:
+    - get_matrix: Retrieve a matrix from a URI.
+    - create_matrix: Create a matrix and return its URI.
+    - matrix_exists: Check if a matrix exists for a given URI.
+    - is_managed: Property indicating if the mapper is managed.
     """
+
     @property
     @abstractmethod
     def is_managed(self) -> bool:
@@ -65,37 +73,78 @@ class MatrixUriMapper(ABC):
     def matrix_exists(self, uri: str) -> bool:
         pass
 
+
 class BaseMatrixUriMapper(MatrixUriMapper):
+    """
+    Base implementation of MatrixUriMapper that uses a matrix service
+    to perform actual data operations.
+
+    Provides concrete implementations of get_matrix, create_matrix,
+    and matrix_exists methods using the underlying matrix service.
+
+    The `is_managed` property remains abstract and should be implemented
+    by subclasses to specify if the mapper is managed or unmanaged.
+    """
+
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self._matrix_service = matrix_service
 
+    @override
     def get_matrix(self, uri: str) -> pd.DataFrame:
         return self._matrix_service.get(extract_matrix_id(uri))
 
+    @override
     def create_matrix(self, matrix: pd.DataFrame) -> str:
         return build_matrix_uri(self._matrix_service.create(matrix))
 
+    @override
     def matrix_exists(self, uri: str) -> bool:
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @property
+    @override
     @abstractmethod
     def is_managed(self) -> bool:
         pass
 
+
 class MatrixUriMapperManaged(BaseMatrixUriMapper):
+    """
+    Matrix URI mapper for managed matrices.
+
+    Overrides the `is_managed` property to return True.
+    """
+
     @property
+    @override
     def is_managed(self) -> bool:
         return True
 
 
 class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
+    """
+    Matrix URI mapper for unmanaged matrices.
+
+    Overrides the `is_managed` property to return False.
+    """
+
     @property
+    @override
     def is_managed(self) -> bool:
         return False
 
 
 class MatrixUriMapperFactory:
+    """
+    Factory class responsible for creating instances of MatrixUriMapper.
+
+    Based on the provided MatrixUriMapperType, returns the appropriate
+    managed or unmanaged mapper instance.
+
+    Attributes:
+        _matrix_service: The matrix service instance to be used by mappers.
+    """
+
     def __init__(self, matrix_service: ISimpleMatrixService):
         self._matrix_service = matrix_service
 
