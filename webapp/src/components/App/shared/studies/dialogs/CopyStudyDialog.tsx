@@ -22,9 +22,11 @@ import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
-import type { StudyMetadata } from "@/types/types";
+import type { StudyMetadata, StudyOutput } from "@/types/types";
 import { validateString } from "@/utils/validation/string";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
+import SaveAsIcon from "@mui/icons-material/SaveAs";
+import { Box, Chip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import StudyPathFE from "../StudyPathFE";
 
@@ -34,19 +36,25 @@ interface Props {
   onClose: VoidFunction;
 }
 
+interface DefaultValues {
+  studyName: string;
+  destinationFolder: string;
+  outputIds?: Array<StudyOutput["name"]>;
+}
+
 function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const isVariant = study.type === "variantstudy";
+  const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
 
   const outputsRes = usePromise(async () => {
     const outputs = await getStudyOutputs(study.id);
     return outputs.map(({ name }) => name);
   }, [study.id]);
 
-  const defaultValues = {
+  const defaultValues: DefaultValues = {
     studyName: `${study.name} (${t("studies.copySuffix")})`,
     destinationFolder: "",
-    outputIds: [] as string[],
   };
 
   ////////////////////////////////////////////////////////////////
@@ -54,8 +62,8 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({
-    values: { studyName, destinationFolder, outputIds },
-  }: SubmitHandlerPlus<typeof defaultValues>) => {
+    values: { studyName, destinationFolder, outputIds = [] },
+  }: SubmitHandlerPlus<DefaultValues>) => {
     return copyStudy({
       studyId: study.id,
       studyName,
@@ -72,9 +80,10 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
     <FormDialog
       open={open}
       title={isVariant ? t("study.copyVariant") : t("global.copy")}
-      titleIcon={ContentCopyIcon}
+      titleIcon={Icon}
       maxWidth="sm"
-      submitButtonIcon={null}
+      submitButtonIcon={<Icon />}
+      submitButtonText={isVariant ? t("global.record") : t("global.copy")}
       onCancel={onClose}
       onSubmit={handleSubmit}
       onSubmitSuccessful={onClose}
@@ -103,14 +112,26 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             ifRejected={() => (
               <SelectFE options={[]} helperText={t("study.error.listOutputs")} error disabled />
             )}
-            ifFulfilled={(output) => (
+            ifFulfilled={(outputs) => (
               <SelectFE
                 name="outputIds"
                 label={t("global.outputs")}
                 control={control}
-                options={output}
+                defaultValue={outputs}
+                options={outputs}
                 startCaseLabel={false}
                 multiple
+                renderValue={(selected) => {
+                  if (Array.isArray(selected)) {
+                    return (
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                        {selected.map((value) => (
+                          <Chip key={value} label={value} />
+                        ))}
+                      </Box>
+                    );
+                  }
+                }}
               />
             )}
           />

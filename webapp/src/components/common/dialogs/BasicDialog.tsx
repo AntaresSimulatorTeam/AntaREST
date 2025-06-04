@@ -30,7 +30,7 @@ type AlertValue = "success" | "error" | "info" | "warning";
 
 export interface BasicDialogProps extends Omit<DialogProps, "title"> {
   title?: React.ReactNode;
-  titleIcon?: SvgIconComponent;
+  titleIcon?: SvgIconComponent; // TODO: convert to React.ReactNode for consistency
   actions?: React.ReactNode;
   alert?: AlertValue;
   contentProps?: DialogContentProps;
