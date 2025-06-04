@@ -129,7 +129,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self._assert_url_end(url)
 
         if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
-            if isinstance(self.matrix_mapper, MatrixUriMapperManaged):
+            if self.matrix_mapper.is_managed:
                 self.get_link_path().write_text(data)
                 if self.config.path.exists():
                     self.config.path.unlink()

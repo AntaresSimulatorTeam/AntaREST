@@ -48,6 +48,10 @@ class MatrixUriMapper(ABC):
     The only actual URI schema supported is "matrix://<id>", which
     maps to a matrix stored in the matrix service.
     """
+    @property
+    @abstractmethod
+    def is_managed(self) -> bool:
+        pass
 
     @abstractmethod
     def get_matrix(self, uri: str) -> pd.DataFrame:
@@ -61,45 +65,34 @@ class MatrixUriMapper(ABC):
     def matrix_exists(self, uri: str) -> bool:
         pass
 
-
-class MatrixUriMapperManaged(MatrixUriMapper):
+class BaseMatrixUriMapper(MatrixUriMapper):
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
         self._matrix_service = matrix_service
 
-    @override
     def get_matrix(self, uri: str) -> pd.DataFrame:
-        print("MANAGED")
         return self._matrix_service.get(extract_matrix_id(uri))
 
-    @override
     def create_matrix(self, matrix: pd.DataFrame) -> str:
-        print("MANAGED")
         return build_matrix_uri(self._matrix_service.create(matrix))
 
-    @override
     def matrix_exists(self, uri: str) -> bool:
-        print("MANAGED")
         return self._matrix_service.exists(extract_matrix_id(uri))
 
+    @property
+    @abstractmethod
+    def is_managed(self) -> bool:
+        pass
 
-class MatrixUriMapperUnmanaged(MatrixUriMapper):
-    def __init__(self, matrix_service: ISimpleMatrixService) -> None:
-        self._matrix_service = matrix_service
+class MatrixUriMapperManaged(BaseMatrixUriMapper):
+    @property
+    def is_managed(self) -> bool:
+        return True
 
-    @override
-    def get_matrix(self, uri: str) -> pd.DataFrame:
-        print("UNMANAGED")
-        return self._matrix_service.get(extract_matrix_id(uri))
 
-    @override
-    def create_matrix(self, matrix: pd.DataFrame) -> str:
-        print("UNMANAGED")
-        return build_matrix_uri(self._matrix_service.create(matrix))
-
-    @override
-    def matrix_exists(self, uri: str) -> bool:
-        print("UNMANAGED")
-        return self._matrix_service.exists(extract_matrix_id(uri))
+class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
+    @property
+    def is_managed(self) -> bool:
+        return False
 
 
 class MatrixUriMapperFactory:
