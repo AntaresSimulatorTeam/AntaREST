@@ -422,6 +422,10 @@ COMMANDS = [
                 "parameters": {
                     "name": "cluster_name",
                     "tsInterpretation": "power-generation",
+                    "enabled": False,
+                    "unitCount": 3,
+                    "nominalCapacity": 100,
+                    "group": "wind offshore",
                 },
             },
             study_version=STUDY_VERSION_8_8,
@@ -431,6 +435,10 @@ COMMANDS = [
             "parameters": {
                 "name": "cluster_name",
                 "tsInterpretation": "power-generation",
+                "enabled": False,
+                "unitCount": 3,
+                "nominalCapacity": 100,
+                "group": "wind offshore",
             },
         },
         id="create_renewables_cluster",
