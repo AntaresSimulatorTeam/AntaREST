@@ -236,6 +236,27 @@ const TemporalFilterRenderer = memo(
         );
       }
 
+      // Week selector
+      if (indexingType === TIME_INDEXING.WEEK) {
+        // Generate week options (1-53)
+        const weekOptions = Array.from({ length: 53 }, (_, i) => ({
+          value: i + 1,
+          label: `${t("global.time.weekShort")} ${i + 1}`,
+        }));
+
+        return (
+          <ChipSelector
+            title={t("matrix.filter.selectWeeks")}
+            options={weekOptions}
+            selectedValues={selectedValues}
+            onChange={onCheckboxChange}
+            disabled={disabled}
+            dense={true}
+            size="small"
+          />
+        );
+      }
+
       // Default list control for other types
       return (
         <ListFilterControl

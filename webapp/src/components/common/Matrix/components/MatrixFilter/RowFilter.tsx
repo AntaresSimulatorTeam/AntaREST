@@ -224,7 +224,7 @@ const RowFilterComponent = memo(
 
       if (indexingType === TIME_INDEXING.MONTH) {
         const months = getLocalizedTimeLabels("month", t);
-        return [1, 3, 6, 9, 12].map((value) => ({
+        return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((value) => ({
           value,
           label: months[value - 1].shortLabel.charAt(0),
         }));
@@ -239,14 +239,16 @@ const RowFilterComponent = memo(
       }
 
       if (indexingType === TIME_INDEXING.DAY_HOUR) {
-        return [1, 4, 8, 12, 16, 20, 24].map((value) => ({
+        return [
+          1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+        ].map((value) => ({
           value,
           label: value.toString(),
         }));
       }
 
       if (indexingType === TIME_INDEXING.DAY_OF_YEAR) {
-        return [1, 91, 182, 273, 366].map((value) => ({
+        return [1, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365].map((value) => ({
           value,
           label: value.toString(),
         }));
@@ -255,47 +257,33 @@ const RowFilterComponent = memo(
       if (indexingType === TIME_INDEXING.HOUR_YEAR) {
         return [
           { value: 1, label: "Jan" },
-          { value: 1440, label: "Feb" },
-          { value: 2880, label: "Mar" },
-          { value: 4320, label: "May" },
-          { value: 5760, label: "Jul" },
-          { value: 7200, label: "Sep" },
-          { value: 8760, label: "Dec" },
+          { value: 744, label: "Feb" },
+          { value: 1416, label: "Mar" },
+          { value: 2160, label: "Apr" },
+          { value: 2880, label: "May" },
+          { value: 3624, label: "Jun" },
+          { value: 4344, label: "Jul" },
+          { value: 5088, label: "Aug" },
+          { value: 5832, label: "Sep" },
+          { value: 6552, label: "Oct" },
+          { value: 7296, label: "Nov" },
+          { value: 8016, label: "Dec" },
+          { value: 8760, label: "Dec 31" },
         ];
       }
 
       if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
-        const marks = [];
-        const daysToMark = [1, 6, 11, 16, 21, 26, 31];
-
-        for (const day of daysToMark) {
-          if (day <= 31) {
-            marks.push({ value: day, label: day.toString() });
-          }
-        }
-
-        if (!marks.some((m) => m.value === 31)) {
-          marks.push({ value: 31, label: "31" });
-        }
-
-        return marks;
+        return [1, 5, 10, 15, 20, 25, 31].map((value) => ({
+          value,
+          label: value.toString(),
+        }));
       }
 
       if (indexingType === TIME_INDEXING.WEEK) {
-        const marks = [];
-        const weekValues = [1, 11, 21, 31, 41, 51, 53];
-
-        for (const week of weekValues) {
-          if (week <= 53) {
-            marks.push({ value: week, label: week.toString() });
-          }
-        }
-
-        if (!marks.some((m) => m.value === 53)) {
-          marks.push({ value: 53, label: "53" });
-        }
-
-        return marks;
+        return [1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 53].map((value) => ({
+          value,
+          label: value.toString(),
+        }));
       }
 
       return [];
