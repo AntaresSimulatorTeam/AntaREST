@@ -20,6 +20,11 @@ import type { CopyStudyParams } from "./types";
 export async function copyStudy({ studyId, ...params }: CopyStudyParams) {
   const { data } = await client.post<string>(`/v1/studies/${studyId}/copy`, null, {
     params: RA.renameKeysWith(snakeCase, params),
+    paramsSerializer: {
+      // Allow to have '&output_ids=output1&output_ids=output2' instead of
+      // '&output_ids[]=output1&output_ids[]=output2' which is not supported by the API
+      indexes: null,
+    },
   });
   return data;
 }

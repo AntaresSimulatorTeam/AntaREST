@@ -30,6 +30,7 @@ import DownloadOutlinedIcon from "@mui/icons-material/DownloadOutlined";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
+import SaveAsIcon from "@mui/icons-material/SaveAs";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { ListItemIcon, ListItemText, Menu, MenuItem, type MenuProps } from "@mui/material";
@@ -150,7 +151,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
           menuItem(
             !isArchived,
             isVariant ? t("study.copyVariant") : t("global.copy"),
-            FileCopyOutlinedIcon,
+            isVariant ? SaveAsIcon : FileCopyOutlinedIcon,
             "copy",
           ),
           menuItem(isManaged, t("global.move"), DriveFileMoveIcon, "move"),
