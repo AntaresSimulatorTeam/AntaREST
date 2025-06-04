@@ -16,7 +16,6 @@ import { TimeFrequency, Operation } from "../../shared/constants";
 import type { FilterState, TemporalOption, RowFilter } from "./types";
 import type { TimeFrequencyType } from "../../shared/types";
 
-// Filter type constants
 export const FILTER_TYPES = {
   RANGE: "range",
   LIST: "list",
@@ -142,7 +141,7 @@ export const createDefaultRowFilter = (
   rowCount: number,
   timeFrequency?: TimeFrequencyType,
 ): RowFilter => ({
-  id: crypto.randomUUID(), // TODO: check if necessary to keep, if so use UUID or useId()
+  id: crypto.randomUUID(), // TODO: temp ID generation, may not be necessary to keep, if so use UUID or useId()
   indexingType: getDefaultIndexingType(timeFrequency),
   type: FILTER_TYPES.LIST,
   range: {

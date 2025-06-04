@@ -30,6 +30,7 @@ import type {
 import { TimeFrequency } from "../../../shared/constants";
 import type { TimeFrequencyType } from "../../../shared/types";
 import { extractValueFromDate, getLocalizedTimeLabels } from "./dateUtils";
+import type { TFunction } from "i18next";
 
 const createRowIndices = R.memoizeWith(
   (size: number) => String(size),
@@ -318,7 +319,7 @@ export function processRowFilters(
  * @param t - Translation function for localizing labels
  * @returns An array of slider marks with values and labels appropriate for the indexing type
  */
-export function createSliderMarks(indexingType: string, t: (key: string) => string): SliderMark[] {
+export function createSliderMarks(indexingType: string, t: TFunction): SliderMark[] {
   switch (indexingType) {
     case TIME_INDEXING.MONTH: {
       const months = getLocalizedTimeLabels("month", t);
@@ -360,6 +361,7 @@ export function createSliderMarks(indexingType: string, t: (key: string) => stri
       ];
 
     case TIME_INDEXING.HOUR_YEAR:
+      // TODO: localize months names
       return [
         { value: 1, label: "Jan" },
         { value: 744, label: "Feb" },
