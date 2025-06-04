@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import List, Optional
 from unittest.mock import Mock
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperManaged
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -97,17 +97,19 @@ def test_save_uri(tmp_path: Path):
     file.parent.mkdir()
     file.touch()
 
-    resolver = Mock()
-    resolver.matrix_exists.return_value = True
+    matrix_service = Mock()
+    matrix_service.exists.return_value = True
+
+    matrix_mapper = MatrixUriMapperManaged(matrix_service)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockLazyNode(matrix_mapper=resolver, config=config)
+    node = MockLazyNode(matrix_mapper=matrix_mapper, config=config)
 
     uri = "matrix://id"
     node.save(uri)
     assert (file.parent / f"{file.name}.link").read_text() == uri
     assert not file.exists()
-    resolver.matrix_exists.assert_called_once_with(uri)
+    matrix_service.exists.assert_called_once_with("id")
 
 
 def test_save_txt(tmp_path: Path):
