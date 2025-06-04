@@ -29,14 +29,13 @@ from antarest.core.filetransfer.model import (
     FileDownloadDTO,
     FileDownloadNotFound,
     FileDownloadNotReady,
-    FileDownloadTaskDTO,
 )
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.tasks.model import TaskStatus
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -221,28 +220,29 @@ class FileTransferManager:
 
         return download
 
-    def get_download_metadata(self, task_id: str, download_id: str, wait_for_availability: bool) -> FileDownloadTaskDTO:
-        task = self.task_service.status_task(task_id)
-
+    def get_download_metadata(self, download_id: str, wait_for_availability: bool) -> FileDownloadDTO:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
-        file = download.to_dto()
 
         # the user wants to wait for the download to be available
         if wait_for_availability:
             end = time.time() + DEFAULT_AWAIT_MAX_TIMEOUT
-            while task.status in [TaskStatus.PENDING, TaskStatus.RUNNING] and time.time() < end:
-                task = self.task_service.status_task(task_id)
+
+            while time.time() < end and not download.get("ready") and not download.get("failed"):
+                with db():  # needs db context to refresh download
+                    download = self.repository.get(download_id)
+                    if not download:
+                        raise FileDownloadNotFound()
                 time.sleep(2)
 
-        if task.status in [TaskStatus.PENDING, TaskStatus.RUNNING]:
-            raise HTTPException(status_code=http.HTTPStatus.REQUEST_TIMEOUT, detail="File is still in process.")
-
-        if task.status == TaskStatus.FAILED:
+        if download.failed:
             raise HTTPException(
                 status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"File was not successfully processed: {task.result.message}.",  # type: ignore
+                detail=f"File was not successfully processed: {download.error_message}.",
             )
 
-        return FileDownloadTaskDTO(task=task.id, file=file)
+        if not download.ready:
+            raise HTTPException(status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="File is still in process.")
+
+        return download.to_dto()

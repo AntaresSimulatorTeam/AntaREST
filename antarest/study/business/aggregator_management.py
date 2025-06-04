@@ -420,7 +420,7 @@ class AggregatorManager:
         all_output_files = sorted(self._gather_all_files_to_consider())
 
         logger.info(
-            f"Parsing {len(all_output_files)} {self.frequency.value} files"
+            f"Parsing {len(all_output_files)} {self.frequency.value} files "
             f"to build the aggregated output {self.output_id}"
         )
         # builds final dataframe

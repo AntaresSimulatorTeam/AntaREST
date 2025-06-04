@@ -12,7 +12,6 @@
 
 import io
 import shutil
-import uuid
 import zipfile
 from pathlib import Path
 from typing import Tuple
@@ -462,16 +461,12 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
 
-            download_id, task_id = get_file_and_task_ids(res.json())
-
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
-            assert res.status_code == 200, res.json()
 
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
@@ -502,12 +497,9 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
 
-            download_id, task_id = get_file_and_task_ids(res.json())
-
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -542,11 +534,9 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
 
-            download_id, task_id = get_file_and_task_ids(res.json())
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -583,11 +573,8 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-
-            download_id, task_id = get_file_and_task_ids(res.json())
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            download_id = res.json()
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -613,10 +600,8 @@ class TestRawDataAggregationMCInd:
         )
         assert res.status_code == 200, res.json()
 
-        download_id, task_id = get_file_and_task_ids(res.json())
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
@@ -628,12 +613,9 @@ class TestRawDataAggregationMCInd:
                 "frequency": "hourly",
             },
         )
+        download_id = res.json()
 
-        download_id, task_id = get_file_and_task_ids(res.json())
-
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
@@ -648,11 +630,9 @@ class TestRawDataAggregationMCInd:
         )
         assert res.status_code == 200, res.json()
 
-        file_data_id, task_id = get_file_and_task_ids(res.json())
+        file_data_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{file_data_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{file_data_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "economy/mc-ind" in res.json()["description"]
 
@@ -671,11 +651,9 @@ class TestRawDataAggregationMCInd:
                 "columns_names": "fake_col",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200, res.json()
 
         res = client.get(f"v1/downloads/{download_id}")
@@ -691,11 +669,9 @@ class TestRawDataAggregationMCInd:
                 "columns_names": "fake_col",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200, res.json()
 
         res = client.get(f"v1/downloads/{download_id}")
@@ -724,11 +700,9 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            download_id, task_id = get_file_and_task_ids(res.json())
+            download_id = res.json()
 
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -763,11 +737,9 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            download_id, task_id = get_file_and_task_ids(res.json())
+            download_id = res.json()
 
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -802,11 +774,9 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            download_id, task_id = get_file_and_task_ids(res.json())
+            download_id = res.json()
 
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -872,11 +842,9 @@ class TestRawDataAggregationMCAll:
         for study_id, output_id in [(study_id, raw_output_id), (variant_id, variant_output_id)]:
             res = client.get(f"/v1/studies/{study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            download_id, task_id = get_file_and_task_ids(res.json())
+            download_id = res.json()
 
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
 
             assert res.status_code == 200, res.json()
 
@@ -899,11 +867,9 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
-            download_id, task_id = get_file_and_task_ids(res.json())
+            download_id = res.json()
 
-            res = client.get(
-                f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-            )
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
             assert res.status_code == 200, res.json()
 
             res = client.get(f"v1/downloads/{download_id}")
@@ -926,11 +892,9 @@ class TestRawDataAggregationMCAll:
                 "frequency": "hourly",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "Output 'unknown_id' not found" in res.json()["description"], "The output_id should be in the message"
 
@@ -942,11 +906,9 @@ class TestRawDataAggregationMCAll:
                 "frequency": "hourly",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "Output 'unknown_id' not found" in res.json()["description"], (
             "The output_id that wasn't found should be in the message"
@@ -960,11 +922,9 @@ class TestRawDataAggregationMCAll:
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
             params={"query_file": "values", "frequency": "daily"},
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "economy/mc-all" in res.json()["description"]
 
@@ -984,11 +944,9 @@ class TestRawDataAggregationMCAll:
                 "columns_names": "fake_col",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200, res.json()
 
         res = client.get(f"v1/downloads/{download_id}")
@@ -1004,11 +962,9 @@ class TestRawDataAggregationMCAll:
                 "columns_names": "fake_col",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200, res.json()
 
         res = client.get(f"v1/downloads/{download_id}")
@@ -1042,11 +998,9 @@ class TestRawDataAggregationColumnsFormatting:
                 "frequency": "annual",
             },
         )
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200, res.json()
 
         res = client.get(f"v1/downloads/{download_id}")
@@ -1069,14 +1023,11 @@ class TestDataAggregationCreationOperations:
         """
         Test all return values when requesting the results of aggregation operations
 
-        - test the result of an aggregation operation with a bad task_id must return a 404 code
         - test the result of an aggregation operation with a bad output_id must return a 422 code
         - try to request the results of an aggregation operation
-            while the task is not completed yet and must return a 422 code
+            while the task is not completed yet and must return a 417 code
         - request the results of a correct aggregation operation: Success, 200
         """
-        fake_task_id = uuid.uuid4()
-        fake_file_data_id = uuid.uuid4()
         output_id = "20201014-1422eco-hello"
         params = {
             "query_file": "values",
@@ -1084,48 +1035,34 @@ class TestDataAggregationCreationOperations:
         }
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        # try to retrieve task results with a bad task_id
-        # must fail with a 404 code
-        res = client.get(
-            f"v1/downloads/{fake_file_data_id}/metadata",
-            params={"task_id": fake_task_id, "wait_for_availability": True},
-        )
-        assert res.status_code == 404, "failed to retrieve task {fake_task_id} in db" == res.json()["description"]
-
         # create a bad aggregated output task and get its id
         res = client.get(f"v1/studies/{internal_study_id}/outputs/fake_output_id/aggregate/areas/mc-ind", params=params)
         assert res.json(), res.status_code == 200
 
-        download_id, failed_task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
         # get error from task results
         # must return a 422 code
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": failed_task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, "Output 'fake_output_id not found'" in res.json()["description"]
 
         # create a correct aggregated output task and get its id
         res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
         assert res.status_code == 200
-        download_id, task_id = get_file_and_task_ids(res.json())
+        download_id = res.json()
 
         # download metadata returns an error explaining that the file is not ready
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": False}
-        )
-        assert res.status_code == 408
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": False})
+        assert res.status_code == 417
         assert res.json()["description"] == "File is still in process."
 
-        # in that case, attempting to get aggregated must return a 408 code
+        # in that case, attempting to get aggregated must return an exception
         res = client.get(f"v1/downloads/{download_id}")
         assert res.json()["exception"] == "FileDownloadNotReady"
         assert "Requested file is not ready for download." in res.json()["description"]
 
         # wait for the task to be completed
-        res = client.get(
-            f"v1/downloads/{download_id}/metadata", params={"task_id": task_id, "wait_for_availability": True}
-        )
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 200, res.json()
 
         res = client.get(f"v1/downloads/{download_id}")

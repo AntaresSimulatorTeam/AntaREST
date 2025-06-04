@@ -92,8 +92,3 @@ class FileDownload(Base):  # type: ignore
             f" ready={self.ready},"
             f" expiration_date={self.expiration_date})"
         )
-
-
-class DownloadMetadataDTO(AntaresBaseModel):
-    download_id: str
-    task_id: str

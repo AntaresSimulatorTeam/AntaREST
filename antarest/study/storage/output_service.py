@@ -22,7 +22,7 @@ from antarest.core.exceptions import (
     OutputNotFound,
     TaskAlreadyRunning,
 )
-from antarest.core.filetransfer.model import DownloadMetadataDTO, FileDownloadTaskDTO
+from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -474,7 +474,7 @@ class OutputService:
         download_name: str,
         download_log: str,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         """
         Aggregates output data based on several filtering conditions
 
@@ -490,7 +490,7 @@ class OutputService:
             download_log: log to display while launching aggregation output task,
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
-        Returns: download and task ids as a DownloadMetadataDTO object
+        Returns: download id
 
         """
         study = self._study_service.get_study(uuid)
@@ -502,7 +502,7 @@ class OutputService:
             f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=10
         )
         file_download_path = Path(file_download.path)
-        download_id = file_download.id
+        download_id: str = file_download.id
 
         aggregator_manager = AggregatorManager(
             output_path,
@@ -534,14 +534,15 @@ class OutputService:
                 )
                 return TaskResult(
                     success=True,
-                    message=f"Successfully aggregated output data for study '{study.id}'. Results are stored in '{file_download_path}'.",
+                    message=f"Successfully aggregated output data for study '{study.id}'."
+                    f" Results are stored in '{file_download_path}'.",
                 )
 
             except Exception as e:
                 self._file_transfer_manager.fail(download_id, str(e))
                 raise e
 
-        task_id = self._task_service.add_task(
+        self._task_service.add_task(
             aggregate_output_task,
             f"Aggregate output {output_id} of study {study.id}.",
             task_type=TaskType.OUTPUT_AGGREGATION,
@@ -550,4 +551,4 @@ class OutputService:
             custom_event_messages=None,
         )
 
-        return DownloadMetadataDTO(download_id=download_id, task_id=task_id)
+        return download_id

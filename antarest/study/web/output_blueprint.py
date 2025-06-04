@@ -18,7 +18,6 @@ from typing import Any, List, Sequence
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import DownloadMetadataDTO
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -202,7 +201,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data
@@ -219,7 +218,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            download and task ids as a DownloadMetadataDTO object
+            download id
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -261,7 +260,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         return aggregate_areas_raw_data(
             uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
         )
@@ -280,7 +279,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         """
         Create an aggregation of links raw data
 
@@ -296,7 +295,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            download and task ids as a DownloadMetadataDTO object
+            download id
         """
         logger.info(
             f"Aggregating links output data for study {uuid}, output {output_id},"
@@ -337,7 +336,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         return aggregate_links_raw_data(
             uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
         )
@@ -355,7 +354,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data in mc-all
@@ -371,7 +370,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            download and task ids as a DownloadMetadataDTO object
+            download id
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -411,7 +410,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         return aggregate_areas_raw_data__all(
             uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
         )
@@ -429,7 +428,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         """
         Create an aggregation of links in mc-all
 
@@ -444,7 +443,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            download and task ids as a DownloadMetadataDTO object
+            download id
         """
         logger.info(
             f"Aggregating links mc-all data for study {uuid}, output {output_id},"
@@ -486,7 +485,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> DownloadMetadataDTO:
+    ) -> str:
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )

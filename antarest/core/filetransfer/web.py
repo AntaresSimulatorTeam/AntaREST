@@ -16,7 +16,7 @@ from fastapi import APIRouter
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
+from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -50,16 +50,8 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
         tags=[APITag.downloads],
         summary="Retrieve information on a file's state of preparation",
     )
-    def get_download_metadata(
-        task_id: str,
-        download_id: str,
-        wait_for_availability: bool = False,
-    ) -> FileDownloadTaskDTO:
-        sanitized_task_id = sanitize_uuid(task_id)
+    def get_download_metadata(download_id: str, wait_for_availability: bool = False) -> FileDownloadDTO:
         sanitized_download_id = sanitize_uuid(download_id)
-
-        return filetransfer_manager.get_download_metadata(
-            task_id=sanitized_task_id, download_id=sanitized_download_id, wait_for_availability=wait_for_availability
-        )
+        return filetransfer_manager.get_download_metadata(sanitized_download_id, wait_for_availability)
 
     return bp
