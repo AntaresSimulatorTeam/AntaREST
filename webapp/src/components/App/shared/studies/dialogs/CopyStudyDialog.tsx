@@ -21,6 +21,7 @@ import type { StudyMetadata } from "@/types/types";
 import { validateString } from "@/utils/validation/string";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
+import StudyPathFE from "../StudyPathFE";
 
 interface Props {
   study: StudyMetadata;
@@ -30,6 +31,7 @@ interface Props {
 
 const defaultValues = {
   studyName: "",
+  destinationFolder: "",
 };
 
 function CopyStudyDialog({ study, open, onClose }: Props) {
@@ -41,10 +43,13 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values: { studyName } }: SubmitHandlerPlus<typeof defaultValues>) => {
+  const handleSubmit = ({
+    values: { studyName, destinationFolder },
+  }: SubmitHandlerPlus<typeof defaultValues>) => {
     return copyStudy({
       studyId: study.id,
-      studyName: studyName.trim() || defaultStudyName,
+      studyName: studyName || defaultStudyName,
+      destinationFolder,
       withOutputs: false,
     });
   };
@@ -77,6 +82,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
               validate: validateString({ allowEmpty: true }),
             }}
           />
+          <StudyPathFE name="destinationFolder" control={control} />
         </Fieldset>
       )}
     </FormDialog>
