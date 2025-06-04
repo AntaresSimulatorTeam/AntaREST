@@ -228,18 +228,19 @@ class FileTransferManager:
             end = time.time() + DEFAULT_AWAIT_MAX_TIMEOUT
 
             # disable download variable typing since it will always be defined
-            while time.time() < end and not download.ready and not download.failed:  # type: ignore [union-attr]
+            while time.time() < end and not download.ready and not download.failed:
                 with db():  # needs db context to refresh download
                     download = self.repository.get(download_id)
+                    assert download is not None
                 time.sleep(2)
 
-        if download.failed:  # type: ignore [union-attr]
+        if download.failed:
             raise HTTPException(
                 status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
-                detail=f"File was not successfully processed: {download.error_message}.",  # type: ignore [union-attr]
+                detail=f"File was not successfully processed: {download.error_message}.",
             )
 
-        if not download.ready:  # type: ignore [union-attr]
+        if not download.ready:
             raise HTTPException(status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="File is still in process.")
 
-        return download.to_dto()  # type: ignore [union-attr]
+        return download.to_dto()
