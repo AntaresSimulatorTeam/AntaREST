@@ -145,7 +145,7 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
     task_service = build_taskjob_manager(app_ctxt, config, event_bus)
-    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, task_service, config)
+    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
     login_service = build_login(app_ctxt, config, event_bus=event_bus)
     matrix_service = build_matrix_service(
         app_ctxt,

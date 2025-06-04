@@ -34,7 +34,7 @@ from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskService
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import get_current_user, require_current_user
 
@@ -48,13 +48,11 @@ class FileTransferManager:
         self,
         repository: FileDownloadRepository,
         event_bus: IEventBus,
-        task_service: ITaskService,
         config: Config,
     ):
         self.config = config
         self.repository = repository
         self.event_bus = event_bus
-        self.task_service = task_service
         self.tmp_dir = config.storage.tmp_dir
         self.download_default_expiration_timeout_minutes = config.storage.download_default_expiration_timeout_minutes
 
@@ -232,8 +230,6 @@ class FileTransferManager:
             while time.time() < end and not download.ready and not download.failed:
                 with db():  # needs db context to refresh download
                     download = self.repository.get(download_id)
-                    if not download:
-                        raise FileDownloadNotFound()
                 time.sleep(2)
 
         if download.failed:

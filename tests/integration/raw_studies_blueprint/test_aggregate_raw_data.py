@@ -14,7 +14,6 @@ import io
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -433,11 +432,6 @@ WRONGLY_TYPED_REQUESTS__ALL = [
         "format": "fake_format",
     },
 ]
-
-
-def get_file_and_task_ids(data: dict) -> Tuple[str, str]:
-    file_data_id, task_id = data["download_id"], data["task_id"]
-    return file_data_id, task_id
 
 
 @pytest.mark.integration_test
