@@ -15,7 +15,6 @@
 import i18n, { type TFunction } from "i18next";
 import moment from "moment";
 import * as R from "ramda";
-import * as RA from "ramda-adjunct";
 import {
   RoleType,
   type GenericInfo,
@@ -201,9 +200,7 @@ export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
   return res;
 };
 
-export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
-  return RA.sortByProp("name", list);
-};
+export const sortByName = R.sortBy(R.compose(R.toLower, R.prop("name")));
 
 /**
  * Converts a name string to an ID format.
