@@ -909,6 +909,7 @@
       "clearAll": "Tout effacer",
       "selectMonths": "Sélectionner les mois",
       "selectDays": "Sélectionner les jours",
+      "selectWeeks": "Sélectionner les semaines",
       "activeFilters": "Filtres actifs",
       "indexingType": "Indexation temporelle",
       "operation": "Opération",

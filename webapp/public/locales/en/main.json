@@ -907,6 +907,7 @@
       "clearAll": "Clear all",
       "selectMonths": "Select months",
       "selectDays": "Select days",
+      "selectWeeks": "Select weeks",
       "activeFilters": "Active filters",
       "indexingType": "Time indexing",
       "operation": "Operation",

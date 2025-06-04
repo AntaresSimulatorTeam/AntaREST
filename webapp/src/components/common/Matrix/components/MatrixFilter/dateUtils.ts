@@ -12,28 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import {
-  parse,
-  getDate,
-  getMonth,
-  getDay,
-  getHours,
-  getWeek,
-  getDayOfYear,
-  isValid,
-} from "date-fns";
+import { parse, getDate, getMonth, getDay, getHours, getDayOfYear, isValid } from "date-fns";
 import { TIME_INDEXING } from "./constants";
 
 // Common date formats to try when parsing strings
 export const DATE_FORMATS = [
   "yyyy-MM-dd HH:mm", // ISO format with time
   "yyyy-MM-dd", // ISO format date only
+  "EEE d MMM HH:mm", // Hourly matrix format (e.g., "Mon 1 Jan 00:00")
+  "EEE d MMM yyyy HH:mm", // Hourly matrix format with year
+  "d MMM HH:mm", // Without day name
   "dd/MM/yyyy", // European format
   "MM/dd/yyyy", // US format
   "MMMM d, yyyy", // Full month name
   "MMM d, yyyy", // Abbreviated month name
   "d MMM yyyy", // European with abbreviated month
   "d MMMM yyyy", // European with full month
+  "EEE d MMM", // Day format without time
+  "d MMM", // Simplified day month format
 ];
 
 // Month abbreviations in different languages for pattern matching fallback
@@ -61,6 +57,40 @@ export function parseFlexibleDate(dateStr: string): Date | null {
 
     if (isValid(parsedDate)) {
       return parsedDate;
+    }
+  }
+
+  // Special handling for formats that might not have a year
+  // For hourly matrix data that might be formatted without year
+  if (!dateStr.includes("20")) {
+    // Try adding current year to date strings without year
+    const currentYear = new Date().getFullYear();
+
+    // Handle different patterns for adding year
+    let dateWithYear = dateStr;
+
+    // Pattern 1: "Mon 1 Jan 00:00" -> "Mon 1 Jan 2024 00:00"
+    if (/^\w{3}\s+\d{1,2}\s+\w{3}\s+\d{2}:\d{2}$/.test(dateStr)) {
+      dateWithYear = dateStr.replace(
+        /^(\w{3}\s+\d{1,2}\s+\w{3})(\s+\d{2}:\d{2})$/,
+        `$1 ${currentYear}$2`,
+      );
+    }
+    // Pattern 2: "1 Jan 00:00" -> "1 Jan 2024 00:00"
+    else if (/^\d{1,2}\s+\w{3}\s+\d{2}:\d{2}$/.test(dateStr)) {
+      dateWithYear = dateStr.replace(/^(\d{1,2}\s+\w{3})(\s+\d{2}:\d{2})$/, `$1 ${currentYear}$2`);
+    }
+    // Pattern 3: Generic pattern
+    else {
+      dateWithYear = dateStr.replace(/(\d{1,2}\s+\w{3})(\s+\d{2}:\d{2})?/, `$1 ${currentYear}$2`);
+    }
+
+    for (const format of DATE_FORMATS) {
+      const parsedDate = parse(dateWithYear, format, new Date());
+
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
     }
   }
 
@@ -98,8 +128,10 @@ export function extractValueFromDate(
           return getDate(parsedDate);
         case TIME_INDEXING.DAY_HOUR:
           return getHours(parsedDate) + 1; // We want 1-24 instead of 0-23
-        case TIME_INDEXING.WEEK:
-          return getWeek(parsedDate);
+        case TIME_INDEXING.WEEK: {
+          const dayOfYear = getDayOfYear(parsedDate);
+          return Math.ceil(dayOfYear / 7);
+        }
         case TIME_INDEXING.DAY_OF_YEAR:
           return getDayOfYear(parsedDate);
         case TIME_INDEXING.HOUR_YEAR:
@@ -148,16 +180,20 @@ export function extractValueFromDate(
       if (match) {
         return Number.parseInt(match[1]) + 1; // Convert 0-23 to 1-24
       }
-    } else if (indexingType === TIME_INDEXING.WEEK) {
-      // Extract week number - finds "W. 01" pattern or numbers after "W"
-      const match = dateStr.match(/[Ww]\.?\s*(\d{1,2})/);
-
-      if (match) {
-        return Number.parseInt(match[1]);
-      }
     }
 
-    // Fallback to using the index if all else fails
+    // Fallback logic when date parsing fails
+    // For week indexing on hourly data, calculate week from hour index
+    if (indexingType === TIME_INDEXING.WEEK && fallbackIndex < 8760) {
+      // Assuming fallbackIndex is hour of year (0-8759)
+      // Calculate which week this hour belongs to
+      // Simple calculation: Week 1 starts on January 1st
+      const dayOfYear = Math.floor(fallbackIndex / 24) + 1; // 1-365
+      const weekNumber = Math.ceil(dayOfYear / 7);
+      return Math.min(weekNumber, 53); // Cap at 53 weeks
+    }
+
+    // Default fallback - use the index
     return fallbackIndex + 1;
   } catch {
     // If anything goes wrong, return the index
