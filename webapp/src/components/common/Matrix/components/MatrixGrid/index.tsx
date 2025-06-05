@@ -24,9 +24,7 @@ import {
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useCallback, useMemo, useState } from "react";
-import DataGrid from "@/components/common/DataGrid";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
-import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import type {
   EnhancedGridColumn,
@@ -38,6 +36,7 @@ import { formatGridNumber } from "../../shared/utils";
 import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import { Column } from "../../shared/constants";
+import MatrixStats from "../MatrixStats";
 
 export interface MatrixGridProps {
   data: NonEmptyMatrix;
