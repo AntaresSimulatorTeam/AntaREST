@@ -83,7 +83,6 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         LazyNode.__init__(self, matrix_mapper, config)
         self.freq = freq
 
-    @override
     def get_link_path(self) -> Path:
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
@@ -115,6 +114,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         output = self._get(url, depth, expanded, formatted)
         return output
 
+    @override
     def _get(
         self,
         url: Optional[List[str]] = None,
