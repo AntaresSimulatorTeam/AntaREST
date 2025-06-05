@@ -51,7 +51,8 @@ const combineFilterResultsOR = R.pipe<[number[][]], number[], number[], number[]
 /**
  * Combines multiple filter results using AND logic (intersection) - includes only indices present in all filters
  *
- * @param results
+ * @param results - Array of arrays containing row indices
+ * @returns the combined filter results
  */
 const combineFilterResultsAND = (results: number[][]): number[] => {
   if (results.length === 0) {

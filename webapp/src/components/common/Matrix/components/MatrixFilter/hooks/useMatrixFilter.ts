@@ -49,7 +49,8 @@ export function useMatrixFilter({
   columnCount,
   timeFrequency,
 }: UseMatrixFilterParams): UseMatrixFilterReturn {
-  const { currentState, setMatrixData, aggregateTypes, setFilterPreview } = useMatrixContext();
+  const { currentState, setMatrixData, aggregateTypes, filterPreview, setFilterPreview } =
+    useMatrixContext();
 
   const [filter, setFilter] = useState<FilterState>(() =>
     getDefaultFilterState(rowCount, columnCount, timeFrequency),
@@ -74,12 +75,19 @@ export function useMatrixFilter({
 
   const togglePreviewMode = useCallback(
     (filteredData: FilterCriteria) => {
+      const newActiveState = !filterPreview.active;
+
       setFilterPreview({
-        active: true,
-        criteria: filteredData,
+        active: newActiveState,
+        criteria: newActiveState
+          ? filteredData
+          : {
+              columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
+              rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
+            },
       });
     },
-    [setFilterPreview],
+    [filterPreview.active, setFilterPreview, rowCount, columnCount],
   );
 
   const resetFilters = useCallback(() => {
