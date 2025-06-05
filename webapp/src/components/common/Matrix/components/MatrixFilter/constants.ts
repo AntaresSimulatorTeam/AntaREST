@@ -177,6 +177,7 @@ export const getDefaultFilterState = (
     operator: FILTER_OPERATORS.EQUALS,
   },
   rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],
+  rowsFilterLogic: "AND",
   operation: {
     type: Operation.Eq,
     value: 0,

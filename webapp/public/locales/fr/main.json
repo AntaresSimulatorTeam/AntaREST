@@ -940,6 +940,16 @@
         "greaterEqual": "Sup. égal (≥)",
         "lessEqual": "Inf. égal (≤)",
         "range": "Plage (a-b)"
+      },
+      "logic": {
+        "and": "ET",
+        "or": "OU",
+        "andTooltip": "Tout correspondre (intersection) - Toutes les conditions doivent être remplies. Par exemple : 'Mois = Janvier ET Heure > 12' affichera uniquement les données des après-midis de janvier",
+        "orTooltip": "Correspondre à n'importe lequel (union) - Au moins une condition doit être remplie. Par exemple : 'Mois = Janvier OU Mois = Décembre' affichera les données de janvier ou de décembre"
+      },
+      "preview": {
+        "active": "Mode aperçu : affichage des données filtrées uniquement",
+        "inactive": "Activer l'aperçu pour voir uniquement les données filtrées"
       }
     },
     "operation": {
@@ -949,10 +959,6 @@
       "multiply": "Multiplier",
       "divide": "Diviser",
       "absolute": "Valeur absolue"
-    },
-    "preview": {
-      "active": "Mode aperçu : affichage des données filtrées uniquement",
-      "inactive": "Activer l'aperçu pour voir uniquement les données filtrées"
     }
   }
 }

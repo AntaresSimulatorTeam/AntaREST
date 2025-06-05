@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import { Box, Button, IconButton, Tooltip, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useCallback, useState, useMemo } from "react";
 import AddIcon from "@mui/icons-material/Add";
@@ -20,7 +20,7 @@ import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RowFilter from "./RowFilter";
 import { createDefaultRowFilter } from "./constants";
-import { DESIGN_TOKENS, CONTAINER_STYLES, ICON_BUTTON_STYLES } from "./styles";
+import { DESIGN_TOKENS, ICON_BUTTON_STYLES } from "./styles";
 import type { RowFilterProps } from "./types";
 
 function MultiRowFilter({
@@ -90,6 +90,18 @@ function MultiRowFilter({
     [expandedFilters.length, filter.rowsFilters.length],
   );
 
+  const handleLogicChange = useCallback(
+    (_: React.MouseEvent<HTMLElement>, newLogic: "AND" | "OR" | null) => {
+      if (newLogic !== null) {
+        setFilter((prevFilter) => ({
+          ...prevFilter,
+          rowsFilterLogic: newLogic,
+        }));
+      }
+    },
+    [setFilter],
+  );
+
   return (
     <>
       {filter.rowsFilters.map((rowFilter) => (
@@ -108,7 +120,36 @@ function MultiRowFilter({
         </Box>
       ))}
 
-      <Box sx={CONTAINER_STYLES.flexRowGap}>
+      <Box
+        sx={{
+          mb: DESIGN_TOKENS.spacing.lg,
+          display: "flex",
+          alignItems: "center",
+          gap: DESIGN_TOKENS.spacing.sm,
+        }}
+      >
+        {filter.rowsFilters.length > 1 && (
+          <ToggleButtonGroup
+            value={filter.rowsFilterLogic || "AND"}
+            exclusive
+            onChange={handleLogicChange}
+            size="small"
+          >
+            <Tooltip title={t("matrix.filter.logic.andTooltip")}>
+              <ToggleButton
+                value="AND"
+                sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, py: 0.5, px: 1 }}
+              >
+                {t("matrix.filter.logic.and")}
+              </ToggleButton>
+            </Tooltip>
+            <Tooltip title={t("matrix.filter.logic.orTooltip")}>
+              <ToggleButton value="OR" sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, py: 0.5, px: 1 }}>
+                {t("matrix.filter.logic.or")}
+              </ToggleButton>
+            </Tooltip>
+          </ToggleButtonGroup>
+        )}
         <Tooltip
           title={allExpanded ? t("matrix.filter.collapseAll") : t("matrix.filter.expandAll")}
         >
@@ -131,7 +172,6 @@ function MultiRowFilter({
           variant="outlined"
           size="small"
           sx={{
-            flex: 1,
             fontSize: DESIGN_TOKENS.fontSize.xs,
           }}
         >

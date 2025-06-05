@@ -184,6 +184,7 @@ export const INDEX_TO_MONTH_MAP = {
 // Common date formats used in the application
 export const DATE_FORMATS = {
   // ISO formats
+  ISO_8601: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", // e.g., "2024-01-01T00:00:00.000Z"
   ISO_DATE_TIME: "yyyy-MM-dd HH:mm",
   ISO_DATE: "yyyy-MM-dd",
 

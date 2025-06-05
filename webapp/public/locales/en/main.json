@@ -927,6 +927,9 @@
         "week": "Week",
         "weekday": "Weekday"
       },
+      "addRowFilter": "Add filter",
+      "collapseAll": "Collapse filters",
+      "expandAll": "Expand filters",
       "operator": {
         "label": "Operator",
         "equals": "Equal (=)",
@@ -936,13 +939,16 @@
         "lessEqual": "Less equal (≤)",
         "range": "Range (a-b)"
       },
+      "logic": {
+        "and": "AND",
+        "or": "OR",
+        "andTooltip": "Match all (intersection) - All conditions must be met. For example: 'Month = January AND Hour > 12' will show only data from January afternoons",
+        "orTooltip": "Match any (union) - At least one condition must be met. For example: 'Month = January OR Month = December' will show data from either January or December"
+      },
       "preview": {
         "active": "Preview mode: showing only filtered data",
         "inactive": "Enable preview to see only filtered data"
-      },
-      "addRowFilter": "Add filter",
-      "collapseAll": "Collapse filters",
-      "expandAll": "Expand filters"
+      }
     },
     "operation": {
       "equal": "Set value",

@@ -38,15 +38,35 @@ const createRowIndices = R.memoizeWith(
 );
 
 /**
- * Combines multiple filter results using Ramda for deduplication and sorting
+ * Combines multiple filter results using OR logic (union) - includes all indices from any filter
  *
  * @param results
  */
-const combineFilterResults = R.pipe<[number[][]], number[], number[], number[]>(
+const combineFilterResultsOR = R.pipe<[number[][]], number[], number[], number[]>(
   R.flatten,
   R.uniq,
   R.sort(R.subtract),
 );
+
+/**
+ * Combines multiple filter results using AND logic (intersection) - includes only indices present in all filters
+ *
+ * @param results
+ */
+const combineFilterResultsAND = (results: number[][]): number[] => {
+  if (results.length === 0) {
+    return [];
+  }
+  if (results.length === 1) {
+    return results[0];
+  }
+
+  // Start with the first result and intersect with each subsequent result
+  return R.pipe(
+    R.reduce<number[], number[]>(R.intersection, results[0]),
+    R.sort(R.subtract),
+  )(results.slice(1));
+};
 
 /**
  * Gets all row indices using memoized Ramda range
@@ -297,19 +317,23 @@ export function processRowFilters(
     });
   }
 
-  // Combine multiple filters using OR logic
-  return combineFilterResults(
-    rowsFilters.map((rowFilter) =>
-      getTemporalIndices({
-        filter,
-        rowFilter,
-        dateTime,
-        isTimeSeries,
-        timeFrequency,
-        totalRows,
-      }),
-    ),
+  // Get results from each filter
+  const filterResults = rowsFilters.map((rowFilter) =>
+    getTemporalIndices({
+      filter,
+      rowFilter,
+      dateTime,
+      isTimeSeries,
+      timeFrequency,
+      totalRows,
+    }),
   );
+
+  // Combine using the specified logic (default to AND)
+  const combineLogic = filter.rowsFilterLogic || "AND";
+  return combineLogic === "AND"
+    ? combineFilterResultsAND(filterResults)
+    : combineFilterResultsOR(filterResults);
 }
 
 /**
