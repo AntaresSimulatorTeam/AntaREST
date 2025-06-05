@@ -58,7 +58,7 @@ def config_scenario_a(tmp_path: Path) -> Config:
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-    e = diese / "folder/to_skip_folder"
+    e = diese / "folder/study_folder"
     e.mkdir(parents=True)
     (e / "study.antares").touch()
 
@@ -111,7 +111,7 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "folder")
 
-    assert len(result) == 3
+    assert len(result) == 5
     folder_path = Path("folder")
     assert (
         FolderDTO(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1", has_children=False) in result
@@ -122,6 +122,11 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
     assert (
         FolderDTO(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3", has_children=False) in result
     )
+    assert (
+        FolderDTO(path=(folder_path / "study_folder"), workspace="diese", name="study_folder", has_children=False)
+        in result
+    )
+    assert FolderDTO(path=(folder_path / "studyC"), workspace="diese", name="studyC", has_children=False) in result
 
     assert str(result[0].path) == result[0].path.as_posix()
     assert str(result[0].parent_path) == result[0].parent_path.as_posix()

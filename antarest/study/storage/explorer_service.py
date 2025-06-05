@@ -24,8 +24,8 @@ from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
     has_non_study_folder,
-    is_non_study_folder,
     is_study_folder,
+    should_ignore_folder_for_scan,
 )
 
 logger = logging.getLogger(__name__)
@@ -54,23 +54,24 @@ class Explorer:
                 # if we can't access one child we skip it
                 try:
                     show = show_hidden_file or not child.name.startswith(".")
-                    child_rel_path = PurePosixPath(child.relative_to(workspace.path))
-                    if is_non_study_folder(child, workspace.filter_in, workspace.filter_out) and show:
-                        # we don't want to expose the full absolute path on the server
-                        has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
-                        is_study_folder_flag = False
-                    else:
-                        has_children = False
-                        is_study_folder_flag = is_study_folder(child)
-                    folders.append(
-                        FolderDTO(
-                            path=child_rel_path,
-                            workspace=workspace_name,
-                            name=child.name,
-                            has_children=has_children,
-                            is_study_folder=is_study_folder_flag,
+                    if show and not should_ignore_folder_for_scan(child, workspace.filter_in, workspace.filter_out):
+                        child_rel_path = PurePosixPath(child.relative_to(workspace.path))
+                        if is_study_folder(child):
+                            has_children = False
+                            is_study_folder_flag = True
+                        else:
+                            # we don't want to expose the full absolute path on the server
+                            has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
+                            is_study_folder_flag = False
+                        folders.append(
+                            FolderDTO(
+                                path=child_rel_path,
+                                workspace=workspace_name,
+                                name=child.name,
+                                has_children=has_children,
+                                is_study_folder=is_study_folder_flag,
+                            )
                         )
-                    )
                 except (PermissionError, OSError) as e:
                     logger.warning(f"Error while accessing {child} or one of its children: {e}")
         except (PermissionError, OSError) as e:

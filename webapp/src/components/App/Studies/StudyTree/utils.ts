@@ -34,7 +34,7 @@ export function buildStudyTree(studies: StudyMetadata[]) {
         name: DEFAULT_WORKSPACE_NAME,
         children: [],
         path: `/${DEFAULT_WORKSPACE_NAME}`,
-        isStudy: false,
+        isStudyFolder: false,
       },
     ],
     path: "",

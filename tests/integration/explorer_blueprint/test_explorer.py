@@ -66,7 +66,10 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
     res.raise_for_status()
     directories_res = res.json()
     directories_res = [FolderDTO(**d) for d in directories_res]
-    directorires_expected = [FolderDTO(path=Path("folder/trash"), workspace="ext", name="trash", hasChildren=False)]
+    directorires_expected = [
+        FolderDTO(path=Path("folder/trash"), workspace="ext", name="trash", hasChildren=False, isStudyFolder=False),
+        FolderDTO(path=Path("folder/studyC"), workspace="ext", name="studyC", hasChildren=False, isStudyFolder=True),
+    ]
     assert directories_res == directorires_expected
 
     # request an path where there're no folders

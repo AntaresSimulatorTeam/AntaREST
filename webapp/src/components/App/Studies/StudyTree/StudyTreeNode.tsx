@@ -54,8 +54,8 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
     <TreeItemEnhanced
       itemId={path}
       label={name}
-      badge={isStudyFolder ? "scanner" : undefined}
-      onClick={() => onNodeClick(node.path, isStudyFolder)}
+      badge={isStudyFolder ? "scanner" : ""}
+      onClick={() => onNodeClick(node.path, !!isStudyFolder)}
       loading={isLoading}
     >
       {hasUnloadedChildren && (
