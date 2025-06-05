@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageGroup
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -38,7 +39,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     LinkConfig,
     Simulation,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableConfig
 from tests.storage.business.assets import ASSETS_DIR
 
 
@@ -506,9 +506,9 @@ def test_parse_renewables(study_path: Path) -> None:
     ini_path.write_text(REWABLES_LIST_INI)
     actual = _parse_renewables(study_path, "fr")
     expected = [
-        RenewableConfig(id="t1", name="t1", enabled=True),
-        RenewableConfig(id="t2", name="UPPER2", enabled=False),
-        RenewableConfig(id="UPPER3", name="UPPER3", enabled=True, nominal_capacity=456.5),
+        RenewableCluster(name="t1", enabled=True),
+        RenewableCluster(name="UPPER2", enabled=False),
+        RenewableCluster(name="UPPER3", enabled=True, nominal_capacity=456.5),
     ]
     assert actual == expected
 

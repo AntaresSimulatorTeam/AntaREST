@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
@@ -68,6 +69,9 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_series: Dict[ClusterKey, str] = {}
         self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
+        # Renewables
+        self._renewables: Dict[ClusterKey, RenewableCluster] = {}
+        self._renewable_series: Dict[ClusterKey, str] = {}
         # Short-term storages
         self._st_storages: Dict[ClusterKey, STStorage] = {}
         self._storage_pmax_injection: Dict[ClusterKey, str] = {}
@@ -203,6 +207,47 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         del self._thermals[cluster_key(area_id, thermal.id)]
+
+    @override
+    def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
+        all_renewables: dict[str, dict[str, RenewableCluster]] = {}
+        for key, renewable_cluster in self._renewables.items():
+            all_renewables.setdefault(key.area_id, {})[key.cluster_id] = renewable_cluster
+        return all_renewables
+
+    @override
+    def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
+        return [renewable for key, renewable in self._renewables.items() if key.area_id == area_id]
+
+    @override
+    def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
+        return self._renewables[cluster_key(area_id, renewable_id)]
+
+    @override
+    def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
+        return cluster_key(area_id, renewable_id) in self._renewables
+
+    @override
+    def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
+        matrix_id = self._renewable_series[cluster_key(area_id, renewable_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
+        self._renewables[cluster_key(area_id, renewable.id)] = renewable
+
+    @override
+    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
+        for renewable in renewables:
+            self.save_renewable(area_id, renewable)
+
+    @override
+    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
+        self._renewable_series[cluster_key(area_id, renewable_id)] = series_id
+
+    @override
+    def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
+        del self._renewables[cluster_key(area_id, renewable.id)]
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:

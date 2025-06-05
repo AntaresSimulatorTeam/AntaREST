@@ -39,6 +39,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+        """
+        Returns for each area id, a mapping of a cluster id (in lower case) towards the corresponding cluster object.
+        """
         file_study = self.get_file_study()
         version = file_study.config.version
         path = _ALL_CLUSTERS_PATH
@@ -62,15 +65,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
         file_study = self.get_file_study()
         clusters_data = self._get_all_thermals_for_area(file_study, area_id)
         return [parse_thermal_cluster(file_study.config.version, c) for c in clusters_data.values()]
-
-    @staticmethod
-    def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
-        path = _CLUSTERS_PATH.format(area_id=area_id)
-        try:
-            clusters_data = file_study.tree.get(path.split("/"), depth=3)
-        except KeyError:
-            raise ThermalClusterConfigNotFound(path, area_id) from None
-        return clusters_data
 
     @override
     def get_thermal(self, area_id: str, thermal_id: str) -> ThermalCluster:
@@ -136,7 +130,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         study_data = self.get_file_study()
-        self._update_thermal_config(area_id, thermal)
+        self._update_thermal_config(study_data.config, area_id, thermal)
 
         study_data.tree.save(
             serialize_thermal_cluster(study_data.config.version, thermal),
@@ -148,20 +142,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
         study_data = self.get_file_study()
         ini_content = self._get_all_thermals_for_area(study_data, area_id)
         for thermal in thermals:
-            self._update_thermal_config(area_id, thermal)
+            self._update_thermal_config(study_data.config, area_id, thermal)
             ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
         study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
-
-    def _update_thermal_config(self, area_id: str, thermal: ThermalCluster) -> None:
-        study_data = self.get_file_study().config
-        if area_id not in study_data.areas:
-            raise ValueError(f"The area '{area_id}' does not exist")
-
-        for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
-            if existing_cluster.id == thermal.id:
-                study_data.areas[area_id].thermals[k] = thermal
-                return
-        study_data.areas[area_id].thermals.append(thermal)
 
     @override
     def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
@@ -214,6 +197,26 @@ class FileStudyThermalDao(ThermalDao, ABC):
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         return self._remove_from_config(study_data.config, area_id, thermal)
+
+    @staticmethod
+    def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
+        path = _CLUSTERS_PATH.format(area_id=area_id)
+        try:
+            clusters_data = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise ThermalClusterConfigNotFound(path, area_id) from None
+        return clusters_data
+
+    @staticmethod
+    def _update_thermal_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
+        if area_id not in study_data.areas:
+            raise ValueError(f"The area '{area_id}' does not exist")
+
+        for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
+            if existing_cluster.id == thermal.id:
+                study_data.areas[area_id].thermals[k] = thermal
+                return
+        study_data.areas[area_id].thermals.append(thermal)
 
     @staticmethod
     def _remove_cluster_from_scenario_builder(study_data: FileStudy, area_id: str, thermal_id: str) -> None:

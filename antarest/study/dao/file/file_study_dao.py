@@ -15,12 +15,13 @@ from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
+from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class FileStudyTreeDao(StudyDao, FileStudyLinkDao, FileStudyThermalDao, FileStudySTStorageDao):
+class FileStudyTreeDao(StudyDao, FileStudyLinkDao, FileStudyThermalDao, FileStudyRenewableDao, FileStudySTStorageDao):
     """
     Implementation of study DAO over the simulator input format.
     """

@@ -12,4 +12,14 @@
  * This file is part of the Antares project.
  */
 
-export type DialogsType = "move" | "properties" | "export" | "delete";
+import type { StudyMetadata } from "@/types/types";
+
+export interface CopyStudyParams {
+  studyId: StudyMetadata["id"];
+  studyName: string;
+  outputIds?: string[];
+  withOutputs?: boolean;
+  groups?: string;
+  useTask?: boolean;
+  destinationFolder?: string;
+}
