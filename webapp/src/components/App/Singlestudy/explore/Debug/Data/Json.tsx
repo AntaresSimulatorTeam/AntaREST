@@ -121,7 +121,10 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
             enableTransform={false}
             onSave={handleSave}
             onSaveSuccessful={handleSaveSuccessful}
-            sx={{ flex: 1 }}
+            sx={{
+              flex: 1, // To show actions menu of items on small JSON
+              overflow: "auto",
+            }}
             hideSaveButton
             apiRef={jsonApiRef}
             onStateChange={handleStateChange}
