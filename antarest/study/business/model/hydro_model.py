@@ -9,13 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
+from typing import Any, Optional
 
+from antares.study.version import StudyVersion
 from pydantic import Field
 from pydantic.alias_generators import to_camel
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.model import STUDY_VERSION_9_2
 
 
 def get_inflow_path(area_id: str) -> list[str]:
@@ -41,6 +43,8 @@ class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     leeway_low: Optional[float] = Field(default=1, ge=0)
     leeway_up: Optional[float] = Field(default=1, ge=0)
     pumping_efficiency: Optional[float] = Field(default=1, ge=0)
+    # v9.2 field
+    overflow_spilled_cost_difference: Optional[float] = None
 
 
 class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
@@ -59,6 +63,12 @@ class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=T
     leeway_low: Optional[float] = Field(default=None, ge=0)
     leeway_up: Optional[float] = Field(default=None, ge=0)
     pumping_efficiency: Optional[float] = Field(default=None, ge=0)
+    # v9.2 field
+    overflow_spilled_cost_difference: Optional[float] = None
+
+    def validate_model_against_version(self, study_version: StudyVersion) -> None:
+        if study_version < STUDY_VERSION_9_2 and self.overflow_spilled_cost_difference is not None:
+            raise ValueError("You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2")
 
 
 class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
@@ -79,15 +89,35 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
     leeway_low: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="leeway low")
     leeway_up: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="leeway up")
     pumping_efficiency: Optional[dict[LowerCaseStr, float]] = Field(default=None, alias="pumping efficiency")
+    # v9.2 field
+    overflow_spilled_cost_difference: Optional[dict[LowerCaseStr, float]] = Field(
+        default=None, alias="overflow spilled cost difference"
+    )
 
-    def get_hydro_management(self, area_id: str) -> HydroManagement:
+    def get_hydro_management(self, area_id: str, study_version: StudyVersion) -> HydroManagement:
+        excludes = self._get_fields_to_exclude(study_version)
+
         lower_area_id = area_id.lower()
         args = {
             key: values.get(lower_area_id)
-            for key, values in self.model_dump().items()
+            for key, values in self.model_dump(mode="json", exclude=excludes).items()
             if values and lower_area_id in values
         }
+        args = self._add_default_values(args, study_version)
         return HydroManagement(**args)
+
+    @staticmethod
+    def _get_fields_to_exclude(study_version: StudyVersion) -> set[str]:
+        excludes = set()
+        if study_version < STUDY_VERSION_9_2:
+            excludes.add("overflow_spilled_cost_difference")
+        return excludes
+
+    @staticmethod
+    def _add_default_values(data: dict[str, Any], study_version: StudyVersion) -> dict[str, Any]:
+        if study_version >= STUDY_VERSION_9_2 and "overflow_spilled_cost_difference" not in data:
+            data["overflow_spilled_cost_difference"] = 1
+        return data
 
     def set_hydro_management(self, area_id: str, properties: HydroManagement) -> None:
         lower_area_id = area_id.lower()

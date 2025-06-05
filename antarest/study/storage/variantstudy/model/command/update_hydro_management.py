@@ -12,6 +12,7 @@
 
 from typing import List, Optional
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
@@ -42,17 +43,22 @@ class UpdateHydroManagement(ICommand):
     area_id: str
     properties: HydroManagementUpdate
 
+    @model_validator(mode="after")
+    def validate_properties_against_version(self) -> "UpdateHydroManagement":
+        self.properties.validate_model_against_version(self.study_version)
+        return self
+
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_hydro = HydroManagementFileData(**study_data.tree.get(HYDRO_PATH))
 
-        new_hydro = current_hydro.get_hydro_management(area_id=self.area_id).model_copy(
+        new_hydro = current_hydro.get_hydro_management(self.area_id, self.study_version).model_copy(
             update=self.properties.model_dump(exclude_none=True)
         )
 
         current_hydro.set_hydro_management(self.area_id, new_hydro)
 
-        study_data.tree.save(current_hydro.model_dump(by_alias=True), HYDRO_PATH)
+        study_data.tree.save(current_hydro.model_dump(by_alias=True, exclude_none=True), HYDRO_PATH)
 
         return CommandOutput(status=True, message=f"Hydro properties in '{self.area_id}' updated.")
 

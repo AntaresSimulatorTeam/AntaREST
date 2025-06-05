@@ -814,3 +814,9 @@ class FileAlreadyExistsError(HTTPException):
 class IncorrectArgumentsForCopy(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class StudyImportFailed(HTTPException):
+    def __init__(self, study_name: str, reason: str) -> None:
+        message = f"Study '{study_name}' could not be imported: {reason}"
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
