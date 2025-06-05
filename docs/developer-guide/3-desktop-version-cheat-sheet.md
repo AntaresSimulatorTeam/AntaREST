@@ -57,3 +57,9 @@ Once the build is complete, you can retrieve the artifact from the **Actions** t
 
 To update the default configuration of the desktop version, you need to modify the `config.yaml` file located in the `resources/antares-desktop-fs` directory.  
 
+
+## When to use the antares-web-installer  
+
+As a new developper you noticed that we provide to our user an installer. However you don't always need to use it for local testing.
+
+When you make an update to the `config.yaml` file located in the `resources/antares-desktop-fs` directory and you want this update to be retroactive, then you should updtate the installer code so that it applies the update on existing user installation.
