@@ -64,10 +64,10 @@ nav:
           - 'Introduction': 'developer-guide/install/0-INSTALL.md'
           - 'Configuration': 'developer-guide/install/1-CONFIG.md'
           - 'Deployment': 'developer-guide/install/2-DEPLOY.md'
-          - 'Desktop': "developer-guide/3-desktop-version-cheat-sheet.md"
       - 'Architecture': 'developer-guide/architecture/0-introduction.md'
       - 'Database management': 'developer-guide/architecture/1-database.md'
       - 'Add a new study version': 'developer-guide/1-add-new-antares-version.md'
+      - 'Desktop': "developer-guide/3-desktop-version-cheat-sheet.md"
       - 'Changelog': 'CHANGELOG.md'
       - 'Roadmap': 'developer-guide/2-roadmap.md'
   - 'External links' :
