@@ -92,18 +92,24 @@ function StudyTree() {
     // Fetch subfolders and insert them to the tree
     try {
       const newSubFolders = await api.getFolders(workspace, subPath.join("/"));
+      console.log(
+        "newSubFolders",
+        newSubFolders,
+        studies.filter((s) => s.folder?.startsWith("plouf")),
+      );
 
       if (newSubFolders.length > 0) {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
-        const filteredStudyFolders = subFolders.filter(
+        const filteredStudyFolders = newSubFolders.filter(
           (folder) =>
             !folder.isStudyFolder ||
             !studies.some(
               (study) => folder.path === study.folder && study.workspace === folder.workspace,
             ),
         );
+        console.log("filteredStudyFolders", filteredStudyFolders);
         const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
 
         setSubFolders(nextSubfolders);
