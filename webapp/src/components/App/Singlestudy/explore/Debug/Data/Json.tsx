@@ -25,7 +25,7 @@ import { downloadFile } from "../../../../../../utils/fileUtils";
 import DownloadButton from "../../../../../common/buttons/DownloadButton";
 import UploadFileButton from "../../../../../common/buttons/UploadFileButton";
 import JSONEditor, {
-  type JSONApiRef,
+  type JSONApi,
   type JSONEditorProps,
   type JSONState,
 } from "../../../../../common/JSONEditor";
@@ -36,7 +36,7 @@ import { Filename, Menubar } from "./styles";
 function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const jsonApiRef = useRef<JSONApiRef>(null);
+  const jsonApiRef = useRef<JSONApi>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 

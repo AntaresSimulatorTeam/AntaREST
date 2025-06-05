@@ -29,7 +29,7 @@ import BackdropLoading from "../loaders/BackdropLoading";
 import "./dark-theme.css";
 import { createSaveButton } from "./utils";
 
-export interface JSONApiRef {
+export interface JSONApi {
   save: VoidFunction;
 }
 
@@ -44,7 +44,7 @@ export interface JSONEditorProps extends JSONEditorOptions {
   onSaveSuccessful?: (json: any) => any;
   sx?: SxProps<Theme>;
   hideSaveButton?: boolean;
-  apiRef?: React.Ref<JSONApiRef>;
+  apiRef?: React.Ref<JSONApi>;
   onStateChange?: (state: JSONState) => void;
 }
 
