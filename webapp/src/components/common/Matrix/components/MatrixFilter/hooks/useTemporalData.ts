@@ -24,8 +24,6 @@ interface UseTemporalDataProps {
 }
 
 export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTemporalDataProps) {
-  console.warn("timeFrequency", timeFrequency);
-
   const indexTypeRanges = useMemo(() => {
     // Create a map of all default ranges
     return Object.values(TIME_INDEXING).reduce(
