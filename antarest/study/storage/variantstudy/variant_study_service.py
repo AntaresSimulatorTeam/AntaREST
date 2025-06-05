@@ -956,6 +956,7 @@ class VariantStudyService(AbstractStorageService):
             output_list_filter,
             denormalize,
             output_src_path,
+            is_managed(metadata),
         )
 
     @override

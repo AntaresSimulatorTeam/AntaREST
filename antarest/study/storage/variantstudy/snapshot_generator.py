@@ -105,7 +105,7 @@ class SnapshotGenerator:
             # The snapshot is generated, we also need to de-normalize the matrices.
             file_study = self.study_factory.create_from_fs(
                 snapshot_dir,
-                is_managed(root_study),
+                True,
                 study_id=variant_study_id,
                 output_path=snapshot_dir / OUTPUT_RELATIVE_PATH,
                 use_cache=True,
@@ -162,6 +162,7 @@ class SnapshotGenerator:
                 self.study_factory,
                 denormalize=False,  # de-normalization is done at the end
                 outputs=False,  # do NOT export outputs
+                is_study_managed=is_managed(ref_study),
             )
         elif isinstance(ref_study, RawStudy):
             self.raw_study_service.export_study_flat(

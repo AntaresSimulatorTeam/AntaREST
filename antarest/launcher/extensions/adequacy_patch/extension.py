@@ -26,6 +26,7 @@ from antarest.launcher.extensions.interface import ILauncherExtension
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.utils import is_managed
 
 logger = logging.getLogger(__name__)
 
@@ -110,7 +111,7 @@ class AdequacyPatchExtension(ILauncherExtension):
     ) -> None:
         logger.info("Applying adequacy patch postprocessing script")
         study = self.study_service.storage_service.raw_study_service.study_factory.create_from_fs(
-            study_export_path, True, study_id, use_cache=False
+            study_export_path, is_managed(self.study_service.get_study(study_id)), study_id, use_cache=False
         )
         user_config = study.tree.get(
             ["user"],

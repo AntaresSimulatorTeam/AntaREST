@@ -385,6 +385,7 @@ class RawStudyService(AbstractStorageService):
                 outputs,
                 output_list_filter,
                 denormalize,
+                is_study_managed=is_managed(metadata),
             )
 
         finally:
