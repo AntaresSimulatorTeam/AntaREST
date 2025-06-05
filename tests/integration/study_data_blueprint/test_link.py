@@ -129,9 +129,8 @@ class TestLink:
                     }
                 ],
             )
-            assert res.status_code == 500
-            expected = "Unexpected exception occurred when trying to apply command CommandName.UPDATE_LINK"
-            assert expected in res.json()["description"]
+            assert res.status_code == 422
+            assert "Extra inputs are not permitted" in res.json()["description"]
 
         # Test update link variant returns only modified values
 
@@ -145,7 +144,7 @@ class TestLink:
             res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             command_args = commands[-1]["args"]
-            assert command_args["parameters"] == {"hurdles_cost": False}
+            assert command_args["parameters"] == {"hurdlesCost": False}
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:
