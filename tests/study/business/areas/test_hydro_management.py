@@ -12,6 +12,7 @@
 import copy
 
 import pytest
+from pydantic import ValidationError
 
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.model.hydro_model import (
@@ -22,6 +23,7 @@ from antarest.study.business.model.hydro_model import (
     InflowStructureUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface
+from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -126,54 +128,74 @@ class TestHydroManagement:
                 else:
                     assert initial_data[field] == new_data[field]
 
+            # Ensures updating with a v9.2 field fails
+            with pytest.raises(
+                ValidationError,
+                match="You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2",
+            ):
+                hydro_manager.update_hydro_management(
+                    study, HydroManagementUpdate(overflow_spilled_cost_difference=0.3), area
+                )
+
     @pytest.mark.unit_test
     def test_get_all_hydro_properties(
-        self, hydro_manager: HydroManager, empty_study_880: FileStudy, command_context: CommandContext
+        self,
+        hydro_manager: HydroManager,
+        empty_study_880: FileStudy,
+        empty_study_920: FileStudy,
+        command_context: CommandContext,
     ) -> None:
-        study = FileStudyInterface(empty_study_880)
-        study_version = empty_study_880.config.version
-        assert hydro_manager.get_all_hydro_properties(study) == {}  # no areas
+        for file_study in [empty_study_880, empty_study_920]:
+            study = FileStudyInterface(file_study)
+            study_version = file_study.config.version
+            assert hydro_manager.get_all_hydro_properties(study) == {}  # no areas
 
-        # Create 2 areas
-        cmd = CreateArea(area_name="FR", command_context=command_context, study_version=study_version)
-        cmd.apply(empty_study_880)
-        cmd = CreateArea(area_name="be", command_context=command_context, study_version=study_version)
-        cmd.apply(empty_study_880)
+            # Create 2 areas
+            cmd = CreateArea(area_name="FR", command_context=command_context, study_version=study_version)
+            cmd.apply(file_study)
+            cmd = CreateArea(area_name="be", command_context=command_context, study_version=study_version)
+            cmd.apply(file_study)
 
-        # Checks default values
-        default_properties = HydroProperties(
-            management_options=HydroManagement(
-                inter_daily_breakdown=1.0,
-                intra_daily_modulation=24.0,
-                inter_monthly_breakdown=1.0,
-                reservoir=False,
-                reservoir_capacity=0,
-                follow_load=True,
-                use_water=False,
-                hard_bounds=False,
-                initialize_reservoir_date=0,
-                use_heuristic=True,
-                power_to_level=False,
-                use_leeway=False,
-                leeway_low=1.0,
-                leeway_up=1.0,
-                pumping_efficiency=1.0,
-            ),
-            inflow_structure=InflowStructure(inter_monthly_correlation=0.5),
-        )
+            # Checks default values
+            default_properties = HydroProperties(
+                management_options=HydroManagement(
+                    inter_daily_breakdown=1.0,
+                    intra_daily_modulation=24.0,
+                    inter_monthly_breakdown=1.0,
+                    reservoir=False,
+                    reservoir_capacity=0,
+                    follow_load=True,
+                    use_water=False,
+                    hard_bounds=False,
+                    initialize_reservoir_date=0,
+                    use_heuristic=True,
+                    power_to_level=False,
+                    use_leeway=False,
+                    leeway_low=1.0,
+                    leeway_up=1.0,
+                    pumping_efficiency=1.0,
+                    overflow_spilled_cost_difference=None,
+                ),
+                inflow_structure=InflowStructure(inter_monthly_correlation=0.5),
+            )
+            if study_version == STUDY_VERSION_9_2:
+                default_properties.management_options.overflow_spilled_cost_difference = 1
+            assert hydro_manager.get_all_hydro_properties(study) == {"fr": default_properties, "be": default_properties}
 
-        assert hydro_manager.get_all_hydro_properties(study) == {"fr": default_properties, "be": default_properties}
+            # Update properties
+            new_properties = HydroManagementUpdate(follow_load=False, intra_daily_modulation=4.1)
+            if study_version == STUDY_VERSION_9_2:
+                new_properties.overflow_spilled_cost_difference = 0.3
+            hydro_manager.update_hydro_management(study, new_properties, "fr")
 
-        # Update properties
-        new_properties = HydroManagementUpdate(follow_load=False, intra_daily_modulation=4.1)
-        hydro_manager.update_hydro_management(study, new_properties, "fr")
+            new_inflow = InflowStructureUpdate(inter_monthly_correlation=0.2)
+            hydro_manager.update_inflow_structure(study, "fr", new_inflow)
 
-        new_inflow = InflowStructureUpdate(inter_monthly_correlation=0.2)
-        hydro_manager.update_inflow_structure(study, "fr", new_inflow)
-
-        # Checks properties were updated
-        new_fr_properties = copy.deepcopy(default_properties)
-        new_fr_properties.management_options.follow_load = False
-        new_fr_properties.management_options.intra_daily_modulation = 4.1
-        new_fr_properties.inflow_structure.inter_monthly_correlation = 0.2
-        assert hydro_manager.get_all_hydro_properties(study) == {"fr": new_fr_properties, "be": default_properties}
+            # Checks properties were updated
+            new_fr_properties = copy.deepcopy(default_properties)
+            new_fr_properties.management_options.follow_load = False
+            new_fr_properties.management_options.intra_daily_modulation = 4.1
+            if study_version == STUDY_VERSION_9_2:
+                new_fr_properties.management_options.overflow_spilled_cost_difference = 0.3
+            new_fr_properties.inflow_structure.inter_monthly_correlation = 0.2
+            assert hydro_manager.get_all_hydro_properties(study) == {"fr": new_fr_properties, "be": default_properties}

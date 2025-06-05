@@ -122,6 +122,10 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "initialLevelOptim",
     // Since v8.8
     "enabled",
+    // Since v9.2
+    "efficiencyWithdrawal",
+    "penalizeVariationInjection",
+    "penalizeVariationWithdrawal",
   ],
   [BINDING_CONSTRAINT]: [
     "enabled",

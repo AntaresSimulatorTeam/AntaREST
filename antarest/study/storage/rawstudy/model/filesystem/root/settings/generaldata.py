@@ -26,6 +26,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_4,
     STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -164,7 +165,14 @@ class GeneralData(IniFileNode):
             adequacy["threshold-csr-variable-bounds-relaxation"] = int
 
         if study_version >= STUDY_VERSION_8_6:
-            types["adequacy patch"]["enable-first-step "] = bool
+            types["adequacy patch"]["enable-first-step"] = bool
+
+        if study_version >= STUDY_VERSION_9_2:
+            adequacy = types["adequacy patch"]
+            del adequacy["set-to-null-ntc-between-physical-out-for-first-step"]
+            del adequacy["enable-first-step"]
+            del other_preferences["initial-reservoir-levels"]
+            types["compatibility"] = {"hydro-pmax": str}
 
         IniFileNode.__init__(
             self,

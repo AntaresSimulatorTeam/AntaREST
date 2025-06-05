@@ -45,6 +45,7 @@ function StorageForm({ study, areaId, storageId }: Props) {
       // Convert to percentage ([0-1] -> [0-100])
       efficiency: storage.efficiency * 100,
       initialLevel: storage.initialLevel * 100,
+      efficiencyWithdrawal: storage.efficiencyWithdrawal * 100,
     };
   }, []);
 
@@ -60,6 +61,9 @@ function StorageForm({ study, areaId, storageId }: Props) {
     }
     if (RA.isNumber(newValues.initialLevel)) {
       newValues.initialLevel /= 100;
+    }
+    if (RA.isNumber(newValues.efficiencyWithdrawal)) {
+      newValues.efficiencyWithdrawal /= 100;
     }
     return updateStorage(study.id, areaId, storageId, newValues);
   };
@@ -79,20 +83,30 @@ function StorageForm({ study, areaId, storageId }: Props) {
     >
       {({ control }) => (
         <>
-          <Fieldset legend={t("global.general")}>
-            <StringFE label={t("global.name")} name="name" control={control} disabled />
-            <SelectFE
-              label={t("global.group")}
-              name="group"
-              control={control}
-              options={STORAGE_GROUPS}
-              startCaseLabel={false}
-              sx={{
-                alignSelf: "center",
-              }}
-            />
-          </Fieldset>
           <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
+            <StringFE label={t("global.name")} name="name" control={control} disabled />
+            {studyVersion < 920 && (
+              <SelectFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                options={STORAGE_GROUPS}
+                startCaseLabel={false}
+                sx={{
+                  alignSelf: "center",
+                }}
+              />
+            )}
+            {studyVersion >= 920 && (
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                sx={{
+                  alignSelf: "center",
+                }}
+              />
+            )}
             {studyVersion >= 880 && (
               <SwitchFE
                 label={t("global.enabled")}
@@ -104,38 +118,6 @@ function StorageForm({ study, areaId, storageId }: Props) {
                 }}
               />
             )}
-            <Tooltip
-              title={t("study.modelization.storages.injectionNominalCapacity.info")}
-              arrow
-              placement="top"
-            >
-              <Box>
-                <NumberFE
-                  label={t("study.modelization.storages.injectionNominalCapacity")}
-                  name="injectionNominalCapacity"
-                  control={control}
-                  rules={{
-                    validate: validateNumber({ min: 0 }),
-                  }}
-                />
-              </Box>
-            </Tooltip>
-            <Tooltip
-              title={t("study.modelization.storages.withdrawalNominalCapacity.info")}
-              arrow
-              placement="top"
-            >
-              <Box>
-                <NumberFE
-                  label={t("study.modelization.storages.withdrawalNominalCapacity")}
-                  name="withdrawalNominalCapacity"
-                  control={control}
-                  rules={{
-                    validate: validateNumber({ min: 0 }),
-                  }}
-                />
-              </Box>
-            </Tooltip>
             <Tooltip
               title={t("study.modelization.storages.reservoirCapacity.info")}
               arrow
@@ -152,14 +134,6 @@ function StorageForm({ study, areaId, storageId }: Props) {
                 />
               </Box>
             </Tooltip>
-            <NumberFE
-              label={t("study.modelization.storages.efficiency")}
-              name="efficiency"
-              control={control}
-              rules={{
-                validate: validateNumber({ min: 0, max: 100 }),
-              }}
-            />
             <NumberFE
               label={t("study.modelization.storages.initialLevel")}
               name="initialLevel"
@@ -178,6 +152,82 @@ function StorageForm({ study, areaId, storageId }: Props) {
                 width: 2,
               }}
             />
+          </Fieldset>
+          <Fieldset legend={t("study.modelization.storages.injectionParameters")}>
+            <Tooltip
+              title={t("study.modelization.storages.injectionNominalCapacity.info")}
+              arrow
+              placement="top"
+            >
+              <Box>
+                <NumberFE
+                  label={t("study.modelization.storages.injectionNominalCapacity")}
+                  name="injectionNominalCapacity"
+                  control={control}
+                  rules={{
+                    validate: validateNumber({ min: 0 }),
+                  }}
+                />
+              </Box>
+            </Tooltip>
+            <NumberFE
+              label={t("study.modelization.storages.efficiency")}
+              name="efficiency"
+              control={control}
+              rules={{
+                validate: validateNumber({ min: 0, max: 100 }),
+              }}
+            />
+            {studyVersion >= 920 && (
+              <SwitchFE
+                label={t("study.modelization.storages.penalizeVariationInjection")}
+                name="penalizeVariationInjection"
+                control={control}
+              />
+            )}
+          </Fieldset>
+          <Fieldset legend={t("study.modelization.storages.withdrawalParameters")}>
+            <Tooltip
+              title={t("study.modelization.storages.withdrawalNominalCapacity.info")}
+              arrow
+              placement="top"
+            >
+              <Box>
+                <NumberFE
+                  label={t("study.modelization.storages.withdrawalNominalCapacity")}
+                  name="withdrawalNominalCapacity"
+                  control={control}
+                  rules={{
+                    validate: validateNumber({ min: 0 }),
+                  }}
+                />
+              </Box>
+            </Tooltip>
+            {studyVersion >= 920 && (
+              <>
+                <Tooltip
+                  title={t("study.modelization.storages.efficiencyWithdrawal.info")}
+                  arrow
+                  placement="top"
+                >
+                  <Box>
+                    <NumberFE
+                      label={t("study.modelization.storages.efficiencyWithdrawal")}
+                      name="efficiencyWithdrawal"
+                      control={control}
+                      rules={{
+                        validate: validateNumber({ min: 0, max: 100 }),
+                      }}
+                    />
+                  </Box>
+                </Tooltip>
+                <SwitchFE
+                  label={t("study.modelization.storages.penalizeVariationWithdrawal")}
+                  name="penalizeVariationWithdrawal"
+                  control={control}
+                />
+              </>
+            )}
           </Fieldset>
         </>
       )}
