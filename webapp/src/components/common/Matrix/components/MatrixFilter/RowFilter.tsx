@@ -58,218 +58,214 @@ interface RowFilterState {
   sliderMarks: Array<{ value: number; label: string }>;
 }
 
-const RowFilter = memo(
-  ({
+function RowFilter({
+  filter,
+  setFilter,
+  dateTime,
+  isTimeSeries,
+  timeFrequency,
+  onRemoveFilter,
+  filterId,
+  expanded = true,
+  onToggleExpanded,
+}: RowFilterProps) {
+  const { t } = useTranslation();
+
+  const filterControls = useFilterControls({
     filter,
     setFilter,
+    filterId,
+  });
+
+  const { valuesByIndexType } = useTemporalData({
     dateTime,
     isTimeSeries,
     timeFrequency,
-    onRemoveFilter,
-    filterId,
-    expanded = true,
-    onToggleExpanded,
-  }: RowFilterProps) => {
-    const { t } = useTranslation();
+  });
 
-    const filterControls = useFilterControls({
-      filter,
-      setFilter,
-      filterId,
-    });
+  const state = useMemo<RowFilterState>(() => {
+    const rowFilter = filter.rowsFilters.find((rf) => rf.id === filterId) || filter.rowsFilters[0];
 
-    const { valuesByIndexType } = useTemporalData({
-      dateTime,
-      isTimeSeries,
-      timeFrequency,
-    });
+    const availableValues = valuesByIndexType[rowFilter.indexingType] || { min: 1, max: 100 };
 
-    const state = useMemo<RowFilterState>(() => {
-      const rowFilter =
-        filter.rowsFilters.find((rf) => rf.id === filterId) || filter.rowsFilters[0];
+    const rangeValue: [number, number] = [
+      rowFilter.range?.min ?? availableValues.min,
+      rowFilter.range?.max ?? availableValues.max,
+    ];
 
-      const availableValues = valuesByIndexType[rowFilter.indexingType] || { min: 1, max: 100 };
+    return {
+      rowFilter,
+      availableValues,
+      filteredOptions: getFilteredTemporalOptions(timeFrequency, [...TEMPORAL_OPTIONS]),
+      rangeValue,
+      sliderMarks: createSliderMarks(rowFilter.indexingType, t),
+    };
+  }, [filter.rowsFilters, filterId, valuesByIndexType, timeFrequency, t]);
 
-      const rangeValue: [number, number] = [
-        rowFilter.range?.min ?? availableValues.min,
-        rowFilter.range?.max ?? availableValues.max,
-      ];
+  const handleDeleteClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      onRemoveFilter?.(state.rowFilter.id);
+    },
+    [onRemoveFilter, state.rowFilter.id],
+  );
 
-      return {
-        rowFilter,
-        availableValues,
-        filteredOptions: getFilteredTemporalOptions(timeFrequency, [...TEMPORAL_OPTIONS]),
-        rangeValue,
-        sliderMarks: createSliderMarks(rowFilter.indexingType, t),
-      };
-    }, [filter.rowsFilters, filterId, valuesByIndexType, timeFrequency, t]);
+  const handleAccordionChange = useCallback(() => {
+    onToggleExpanded?.(state.rowFilter.id);
+  }, [onToggleExpanded, state.rowFilter.id]);
 
-    const handleDeleteClick = useCallback(
-      (e: React.MouseEvent) => {
-        e.stopPropagation();
-        onRemoveFilter?.(state.rowFilter.id);
-      },
-      [onRemoveFilter, state.rowFilter.id],
-    );
+  const handleIndexingTypeChange = useCallback(
+    (e: SelectChangeEvent) => {
+      const newType = e.target.value as TimeIndexingType;
+      const newAvailableValues = valuesByIndexType[newType] || { min: 1, max: 100 };
 
-    const handleAccordionChange = useCallback(() => {
-      onToggleExpanded?.(state.rowFilter.id);
-    }, [onToggleExpanded, state.rowFilter.id]);
+      setFilter((prevFilter) => ({
+        ...prevFilter,
+        rowsFilters: prevFilter.rowsFilters.map((rf) =>
+          rf.id === state.rowFilter.id
+            ? {
+                ...rf,
+                indexingType: newType,
+                range: {
+                  min: newAvailableValues.min,
+                  max: newAvailableValues.max,
+                },
+                list: [],
+              }
+            : rf,
+        ),
+      }));
+    },
+    [valuesByIndexType, setFilter, state.rowFilter.id],
+  );
 
-    const handleIndexingTypeChange = useCallback(
-      (e: SelectChangeEvent) => {
-        const newType = e.target.value as TimeIndexingType;
-        const newAvailableValues = valuesByIndexType[newType] || { min: 1, max: 100 };
+  const handleTypeChange = useCallback(
+    (e: SelectChangeEvent) => {
+      filterControls.handleTypeChange(e.target.value as FilterType, filterId);
+    },
+    [filterControls, filterId],
+  );
 
-        setFilter((prevFilter) => ({
+  const handleOperatorChange = useCallback(
+    (operator: FilterOperatorType) => {
+      filterControls.handleOperatorChange(operator, filterId);
+    },
+    [filterControls, filterId],
+  );
+
+  const handleRangeChange = useCallback(
+    (newValues: [number, number]) => {
+      setFilter((prevFilter) => {
+        const currentFilter = prevFilter.rowsFilters.find((rf) => rf.id === filterId);
+
+        // Skip update if values haven't changed
+        if (
+          currentFilter?.range?.min === newValues[0] &&
+          currentFilter?.range?.max === newValues[1]
+        ) {
+          return prevFilter;
+        }
+
+        return {
           ...prevFilter,
           rowsFilters: prevFilter.rowsFilters.map((rf) =>
-            rf.id === state.rowFilter.id
-              ? {
-                  ...rf,
-                  indexingType: newType,
-                  range: {
-                    min: newAvailableValues.min,
-                    max: newAvailableValues.max,
-                  },
-                  list: [],
-                }
-              : rf,
+            rf.id === filterId ? { ...rf, range: { min: newValues[0], max: newValues[1] } } : rf,
           ),
-        }));
-      },
-      [valuesByIndexType, setFilter, state.rowFilter.id],
-    );
+        };
+      });
+    },
+    [filterId, setFilter],
+  );
 
-    const handleTypeChange = useCallback(
-      (e: SelectChangeEvent) => {
-        filterControls.handleTypeChange(e.target.value as FilterType, filterId);
-      },
-      [filterControls, filterId],
-    );
+  const canRemove = onRemoveFilter && filter.rowsFilters.length > 1;
 
-    const handleOperatorChange = useCallback(
-      (operator: FilterOperatorType) => {
-        filterControls.handleOperatorChange(operator, filterId);
-      },
-      [filterControls, filterId],
-    );
-
-    const handleRangeChange = useCallback(
-      (newValues: [number, number]) => {
-        setFilter((prevFilter) => {
-          const currentFilter = prevFilter.rowsFilters.find((rf) => rf.id === filterId);
-
-          // Skip update if values haven't changed
-          if (
-            currentFilter?.range?.min === newValues[0] &&
-            currentFilter?.range?.max === newValues[1]
-          ) {
-            return prevFilter;
-          }
-
-          return {
-            ...prevFilter,
-            rowsFilters: prevFilter.rowsFilters.map((rf) =>
-              rf.id === filterId ? { ...rf, range: { min: newValues[0], max: newValues[1] } } : rf,
-            ),
-          };
-        });
-      },
-      [filterId, setFilter],
-    );
-
-    const canRemove = onRemoveFilter && filter.rowsFilters.length > 1;
-
-    return (
-      <Accordion
-        expanded={expanded}
-        onChange={handleAccordionChange}
-        slotProps={{ transition: { unmountOnExit: true } }}
-        sx={{ mb: DESIGN_TOKENS.spacing.sm }}
+  return (
+    <Accordion
+      expanded={expanded}
+      onChange={handleAccordionChange}
+      slotProps={{ transition: { unmountOnExit: true } }}
+      sx={{ mb: DESIGN_TOKENS.spacing.sm }}
+    >
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon fontSize="small" />}
+        sx={ACCORDION_STYLES.summary}
+        component="div" // Avoid the nested button DOM validation error
       >
-        <AccordionSummary
-          expandIcon={<ExpandMoreIcon fontSize="small" />}
-          sx={ACCORDION_STYLES.summary}
-        >
-          <Box sx={CONTAINER_STYLES.flexRow}>
-            <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
-              {t("matrix.filter.rowsFilter")}
-            </Typography>
-          </Box>
-          {canRemove && (
-            <IconButton
-              size="small"
-              onClick={handleDeleteClick}
-              sx={ICON_BUTTON_STYLES.extraSmall}
-              aria-label={t("matrix.filter.removeFilter")}
+        <Box sx={CONTAINER_STYLES.flexRow}>
+          <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
+            {t("matrix.filter.rowsFilter")}
+          </Typography>
+        </Box>
+        {canRemove && (
+          <IconButton
+            size="small"
+            onClick={handleDeleteClick}
+            sx={ICON_BUTTON_STYLES.extraSmall}
+            aria-label={t("matrix.filter.removeFilter")}
+          >
+            <DeleteIcon fontSize="small" sx={{ width: 13, height: 13 }} />
+          </IconButton>
+        )}
+      </AccordionSummary>
+
+      <AccordionDetails sx={ACCORDION_STYLES.details}>
+        <Box sx={FORM_STYLES.sideBySideContainer}>
+          <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+            <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
+            <Select
+              value={state.rowFilter.indexingType}
+              label={t("matrix.filter.indexingType")}
+              onChange={handleIndexingTypeChange}
+              sx={FORM_STYLES.sideBySideFormControl}
             >
-              <DeleteIcon fontSize="small" sx={{ width: 13, height: 13 }} />
-            </IconButton>
-          )}
-        </AccordionSummary>
-
-        <AccordionDetails sx={ACCORDION_STYLES.details}>
-          <Box sx={FORM_STYLES.sideBySideContainer}>
-            <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
-              <InputLabel>{t("matrix.filter.indexingType")}</InputLabel>
-              <Select
-                value={state.rowFilter.indexingType}
-                label={t("matrix.filter.indexingType")}
-                onChange={handleIndexingTypeChange}
-                sx={FORM_STYLES.sideBySideFormControl}
-              >
-                {state.filteredOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
-                    {t(`matrix.filter.indexing.${option.value}`)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
-              <InputLabel>{t("matrix.filter.type")}</InputLabel>
-              <Select
-                value={state.rowFilter.type}
-                label={t("matrix.filter.type")}
-                onChange={handleTypeChange}
-                sx={FORM_STYLES.sideBySideFormControl}
-              >
-                <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.filter.range")}
+              {state.filteredOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value} sx={FORM_STYLES.menuItem}>
+                  {t(`matrix.filter.indexing.${option.value}`)}
                 </MenuItem>
-                <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.filter.list")}
-                </MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
+              ))}
+            </Select>
+          </FormControl>
 
-          <TemporalFilterRenderer
-            indexingType={state.rowFilter.indexingType}
-            filterType={state.rowFilter.type}
-            availableValues={state.availableValues}
-            rangeValue={state.rangeValue}
-            onRangeChange={handleRangeChange}
-            selectedValues={state.rowFilter.list || []}
-            onAddValue={() => filterControls.addValueToList(filterId)}
-            onAddValues={(values) => filterControls.addValuesToList(values, filterId)}
-            onRemoveValue={(value) => filterControls.removeValueFromList(value, filterId)}
-            onCheckboxChange={(value) => filterControls.handleCheckboxChange(value, filterId)}
-            inputValue={filterControls.inputValue}
-            onInputChange={filterControls.handleListChange}
-            onKeyPress={filterControls.handleKeyPress}
-            onClearAll={() => filterControls.clearAllValues(filterId)}
-            sliderMarks={state.sliderMarks}
-            operator={state.rowFilter.operator}
-            onOperatorChange={handleOperatorChange}
-          />
-        </AccordionDetails>
-      </Accordion>
-    );
-  },
-);
+          <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+            <InputLabel>{t("matrix.filter.type")}</InputLabel>
+            <Select
+              value={state.rowFilter.type}
+              label={t("matrix.filter.type")}
+              onChange={handleTypeChange}
+              sx={FORM_STYLES.sideBySideFormControl}
+            >
+              <MenuItem value={FILTER_TYPES.RANGE} sx={FORM_STYLES.menuItem}>
+                {t("matrix.filter.range")}
+              </MenuItem>
+              <MenuItem value={FILTER_TYPES.LIST} sx={FORM_STYLES.menuItem}>
+                {t("matrix.filter.list")}
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-RowFilter.displayName = "RowFilter";
+        <TemporalFilterRenderer
+          indexingType={state.rowFilter.indexingType}
+          filterType={state.rowFilter.type}
+          availableValues={state.availableValues}
+          rangeValue={state.rangeValue}
+          onRangeChange={handleRangeChange}
+          selectedValues={state.rowFilter.list || []}
+          onAddValue={() => filterControls.addValueToList(filterId)}
+          onAddValues={(values) => filterControls.addValuesToList(values, filterId)}
+          onRemoveValue={(value) => filterControls.removeValueFromList(value, filterId)}
+          onCheckboxChange={(value) => filterControls.handleCheckboxChange(value, filterId)}
+          inputValue={filterControls.inputValue}
+          onInputChange={filterControls.handleListChange}
+          onKeyPress={filterControls.handleKeyPress}
+          onClearAll={() => filterControls.clearAllValues(filterId)}
+          sliderMarks={state.sliderMarks}
+          operator={state.rowFilter.operator}
+          onOperatorChange={handleOperatorChange}
+        />
+      </AccordionDetails>
+    </Accordion>
+  );
+}
 
-export default RowFilter;
+export default memo(RowFilter);
