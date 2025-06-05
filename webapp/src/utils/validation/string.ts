@@ -19,6 +19,7 @@ interface StringValidationOptions {
   existingValues?: string[];
   excludedValues?: string[];
   isCaseSensitive?: boolean;
+  allowEmpty?: boolean;
   allowSpecialChars?: boolean;
   specialChars?: string;
   allowSpaces?: boolean;
@@ -47,6 +48,7 @@ interface StringValidationOptions {
  * @param [options.existingValues=[]] - An array of strings to check against for duplicates. Comparison is case-insensitive by default.
  * @param [options.excludedValues=[]] - An array of strings that the value should not match.
  * @param [options.isCaseSensitive=false] - Whether the comparison with `existingValues` and `excludedValues` is case-sensitive. Defaults to false.
+ * @param [options.allowEmpty=false] - Flags if an empty string is allowed.
  * @param [options.allowSpecialChars=true] - Flags if special characters are permitted in the value.
  * @param [options.specialChars="&()_-"] - A string representing additional allowed characters outside the typical alphanumeric scope.
  * @param [options.allowSpaces=true] - Flags if spaces are allowed in the value.
@@ -75,6 +77,7 @@ export function validateString(
     existingValues = [],
     excludedValues = [],
     isCaseSensitive = false,
+    allowEmpty = false,
     allowSpecialChars = true,
     allowSpaces = true,
     specialChars = "&()_-",
@@ -83,10 +86,14 @@ export function validateString(
     maxLength = 255,
   } = options;
 
+  if (!value) {
+    return allowEmpty ? true : t("form.field.required");
+  }
+
   const trimmedValue = value.trim();
 
   if (!trimmedValue) {
-    return t("form.field.required");
+    return t("form.field.invalidValue");
   }
 
   if (!allowSpaces && trimmedValue.includes(" ")) {

@@ -34,9 +34,9 @@ describe("validateNumber", () => {
   });
 
   test("should return an error for non-finite numbers", () => {
-    expect(validateNumber(NaN)).toBe('form.field.invalidNumber: {"value":null}');
-    expect(validateNumber(Infinity)).toBe('form.field.invalidNumber: {"value":null}');
-    expect(validateNumber(-Infinity)).toBe('form.field.invalidNumber: {"value":null}');
+    expect(validateNumber(NaN)).toBe('form.field.invalidValue: {"value":null}');
+    expect(validateNumber(Infinity)).toBe('form.field.invalidValue: {"value":null}');
+    expect(validateNumber(-Infinity)).toBe('form.field.invalidValue: {"value":null}');
   });
 
   test("should handle minimum value validation", () => {

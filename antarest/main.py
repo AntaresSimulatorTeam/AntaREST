@@ -276,7 +276,7 @@ def fastapi_app(
 
     application.include_router(api_root)
 
-    if services.watcher:
+    if services.watcher and not config.desktop_mode:
         services.watcher.start()
 
     if services.matrix_gc:

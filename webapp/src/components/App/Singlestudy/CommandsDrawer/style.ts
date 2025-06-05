@@ -14,7 +14,7 @@
 
 import { Box, Drawer, styled } from "@mui/material";
 
-export const CommandDrawer = styled(Drawer)(({ theme }) => ({
+export const Root = styled(Drawer)({
   width: "50%",
   flexShrink: 0,
   "& .MuiDrawer-paper": {
@@ -22,7 +22,7 @@ export const CommandDrawer = styled(Drawer)(({ theme }) => ({
     boxSizing: "border-box",
     overflow: "hidden",
   },
-}));
+});
 
 export const TitleContainer = styled(Box)(({ theme }) => ({
   display: "flex",
@@ -36,5 +36,3 @@ export const TitleContainer = styled(Box)(({ theme }) => ({
   boxSizing: "border-box",
   color: "white",
 }));
-
-export default {};

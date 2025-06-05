@@ -137,6 +137,25 @@ FILTER_VALUES: List[FilterOption] = [
 ]
 
 
+class LinkUpdate(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    hurdles_cost: Optional[bool] = None
+    loop_flow: Optional[bool] = None
+    use_phase_shifter: Optional[bool] = None
+    transmission_capacities: Optional[TransmissionCapacity] = None
+    asset_type: Optional[AssetType] = None
+    display_comments: Optional[bool] = None
+    comments: Optional[str] = None
+    colorr: Optional[int] = None
+    colorb: Optional[int] = None
+    colorg: Optional[int] = None
+    link_width: Optional[float] = None
+    link_style: Optional[LinkStyle] = None
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+
+
 class Link(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
@@ -171,7 +190,7 @@ class Link(AntaresBaseModel):
         return LinkConfig(**data)
 
 
-class LinkUpdate(AntaresBaseModel):
+class LinkCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     hurdles_cost: Optional[bool] = None
@@ -188,6 +207,20 @@ class LinkUpdate(AntaresBaseModel):
     link_style: Optional[LinkStyle] = None
     filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
     filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+
+    @classmethod
+    def from_link(cls, link: Link) -> "LinkCreation":
+        """
+        Conversion to creation request. Can be useful for duplicating clusters.
+        """
+        return LinkCreation.model_validate(link.model_dump(mode="json", exclude={"id", "area1", "area2"}))
+
+
+def create_link(link_data: LinkCreation, area_from: str, area_to: str) -> Link:
+    """
+    Creates a link from a creation request
+    """
+    return Link(**{"area1": area_from, "area2": area_to, **link_data.model_dump(mode="json", exclude_none=True)})
 
 
 def update_link(link: Link, data: LinkUpdate) -> Link:

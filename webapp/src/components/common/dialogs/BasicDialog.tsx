@@ -12,51 +12,38 @@
  * This file is part of the Antares project.
  */
 
+import type { SvgIconComponent } from "@mui/icons-material";
 import {
   Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
-  type DialogProps,
   DialogTitle,
   styled,
   type DialogContentProps,
+  type DialogProps,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import type { SvgIconComponent } from "@mui/icons-material";
-import * as R from "ramda";
 import { mergeSxProp } from "../../../utils/muiUtils";
 
-enum Alert {
-  success,
-  error,
-  warning,
-  info,
-}
-
-type AlertValues = keyof typeof Alert;
+type AlertValue = "success" | "error" | "info" | "warning";
 
 export interface BasicDialogProps extends Omit<DialogProps, "title"> {
   title?: React.ReactNode;
-  titleIcon?: SvgIconComponent;
+  titleIcon?: SvgIconComponent; // TODO: convert to React.ReactNode for consistency
   actions?: React.ReactNode;
-  alert?: AlertValues;
+  alert?: AlertValue;
   contentProps?: DialogContentProps;
 }
 
 const AlertBorder = styled("span", {
   shouldForwardProp: (prop: string) => !prop.startsWith("$"),
-})<{ $type: AlertValues }>(({ theme, $type }) => ({
+})<{ $type: AlertValue }>(({ theme, $type }) => ({
   position: "absolute",
   top: 0,
   width: "100%",
   borderTop: "4px solid",
-  borderColor: R.cond([
-    [R.equals(Alert.success), () => theme.palette.success.main],
-    [R.equals(Alert.error), () => theme.palette.error.main],
-    [R.equals(Alert.warning), () => theme.palette.warning.main],
-    [R.equals(Alert.info), () => theme.palette.info.main],
-  ])(Alert[$type]),
+  borderColor: theme.palette[$type].main,
 }));
 
 function BasicDialog(props: BasicDialogProps) {
