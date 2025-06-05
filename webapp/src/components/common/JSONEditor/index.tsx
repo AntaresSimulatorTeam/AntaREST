@@ -214,17 +214,16 @@ function JSONEditor({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <BackdropLoading open={isSaving}>
+    <Box sx={mergeSxProp(sx, { position: "relative" })}>
       <Box
-        sx={mergeSxProp(
-          {
-            overflow: "auto", // Fix when parent use `flex-direction: "column"`
-          },
-          sx,
-        )}
         ref={ref}
+        sx={{
+          // Allow to keep the menu visible when parent has scroll
+          height: 1,
+        }}
       />
-    </BackdropLoading>
+      <BackdropLoading open={isSaving} />
+    </Box>
   );
 }
 
