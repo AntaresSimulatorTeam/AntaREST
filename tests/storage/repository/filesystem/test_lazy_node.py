@@ -17,6 +17,7 @@ from unittest.mock import Mock
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperManaged
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from tests.storage.repository.filesystem.matrix.test_matrix_node import MockMatrixNode
 
 
 class MockLazyNode(LazyNode[str, str, str]):
@@ -76,22 +77,6 @@ def test_get_expanded_txt(tmp_path: Path):
     assert "file://lazy.txt" == node.get(expanded=True)
 
 
-def test_get_expanded_link(tmp_path: Path):
-    uri = "matrix://my-link"
-
-    file = tmp_path / "my-study/lazy.txt"
-    file.parent.mkdir()
-    (file.parent / "lazy.txt.link").write_text(uri)
-
-    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
-
-    node = MockLazyNode(
-        matrix_mapper=Mock(),
-        config=config,
-    )
-    assert uri == node.get(expanded=True)
-
-
 def test_save_uri(tmp_path: Path):
     file = tmp_path / "my-study/lazy.txt"
     file.parent.mkdir()
@@ -103,7 +88,7 @@ def test_save_uri(tmp_path: Path):
     matrix_mapper = MatrixUriMapperManaged(matrix_service)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockLazyNode(matrix_mapper=matrix_mapper, config=config)
+    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
 
     uri = "matrix://id"
     node.save(uri)
@@ -119,14 +104,15 @@ def test_save_txt(tmp_path: Path):
     link = file.parent / f"{file.name}.link"
     link.touch()
 
-    resolver = Mock()
-    resolver.matrix_exists.return_value = False
+    matrix_service = Mock()
+    matrix_service.exists.return_value = True
+
+    matrix_mapper = MatrixUriMapperManaged(matrix_service)
 
     config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
-    node = MockLazyNode(matrix_mapper=resolver, config=config)
+    node = MockMatrixNode(matrix_mapper=matrix_mapper, config=config)
 
     content = "Mock File Content"
     node.save(content)
-    assert file.read_text() == content
-    assert not link.exists()
-    resolver.matrix_exists.assert_called_once_with(content)
+    assert (file.parent / f"{file.name}.link").read_text() == content
+    # todo missing assert

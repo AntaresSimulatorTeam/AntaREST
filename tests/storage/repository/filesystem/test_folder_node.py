@@ -227,7 +227,7 @@ def test_delete(tmp_path: Path) -> None:
     ini_node2.touch()
     data_node = sub_folder / "data.txt"
     data_node.touch()
-    data_link_node = sub_folder / "data_link.txt.link"
+    data_link_node = sub_folder / "data_link.txt"
     data_link_node.touch()
 
     assert area_list.exists()

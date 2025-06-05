@@ -26,6 +26,7 @@ from antarest.core.model import JSON
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -81,6 +82,58 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     ) -> None:
         LazyNode.__init__(self, matrix_mapper, config)
         self.freq = freq
+
+    @override
+    def get_link_path(self) -> Path:
+        path = self.config.path.parent / (self.config.path.name + ".link")
+        return path
+
+    @override
+    def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
+        self._assert_not_in_zipped_file()
+        self._assert_url_end(url)
+
+        if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
+            link_path = self.get_link_path()
+            self.matrix_mapper.handle_matrix_save(self, data, link_path)
+            return None
+
+        super().save(data, url)
+
+        if self.get_link_path().exists():
+            self.get_link_path().unlink()
+        return None
+
+    @override
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> str | G:
+        output = self._get(url, depth, expanded, formatted)
+        return output
+
+    def _get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+        get_node: bool = False,
+    ) -> str | G | INode[G, S, V]:
+        self._assert_url_end(url)
+
+        if get_node:
+            return self
+
+        if expanded:
+            if self.get_link_path().exists():
+                return self.get_link_path().read_text()
+            return self.get_lazy_content()
+
+        return self.load(url, depth, expanded, formatted)
 
     @override
     def get_lazy_content(
@@ -153,6 +206,13 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         buffer = io.StringIO()
         df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
         return buffer.getvalue()  # type: ignore
+
+    @override
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        self._assert_url_end(url)
+        if self.get_link_path().exists():
+            self.get_link_path().unlink()
+        super().delete(url)
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:

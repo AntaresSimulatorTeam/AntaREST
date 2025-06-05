@@ -11,11 +11,13 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from enum import StrEnum
+from pathlib import Path
 
 import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.study.storage.rawstudy.model.filesystem.inode import S
 
 
 def extract_matrix_id(uri: str) -> str:
@@ -56,11 +58,6 @@ class MatrixUriMapper(ABC):
     - is_managed: Property indicating if the mapper is managed.
     """
 
-    @property
-    @abstractmethod
-    def is_managed(self) -> bool:
-        pass
-
     @abstractmethod
     def get_matrix(self, uri: str) -> pd.DataFrame:
         pass
@@ -71,6 +68,10 @@ class MatrixUriMapper(ABC):
 
     @abstractmethod
     def matrix_exists(self, uri: str) -> bool:
+        pass
+
+    @abstractmethod
+    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
         pass
 
 
@@ -101,10 +102,8 @@ class BaseMatrixUriMapper(MatrixUriMapper):
     def matrix_exists(self, uri: str) -> bool:
         return self._matrix_service.exists(extract_matrix_id(uri))
 
-    @property
     @override
-    @abstractmethod
-    def is_managed(self) -> bool:
+    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
         pass
 
 
@@ -112,13 +111,13 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
     Matrix URI mapper for managed matrices.
 
-    Overrides the `is_managed` property to return True.
     """
 
-    @property
     @override
-    def is_managed(self) -> bool:
-        return True
+    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
+        link_path.write_text(matrix_uri)
+        if data.config.path.exists():
+            data.config.path.unlink()
 
 
 class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
@@ -128,10 +127,10 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     Overrides the `is_managed` property to return False.
     """
 
-    @property
     @override
-    def is_managed(self) -> bool:
-        return False
+    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
+        matrix = self.get_matrix(matrix_uri)
+        data.dump(matrix)
 
 
 class MatrixUriMapperFactory:
