@@ -111,7 +111,8 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> str | G:
-        output = self._get(url, depth, expanded, formatted)
+        output = cast("str | G", self._get(url, depth, expanded, formatted, get_node=False))
+        assert not isinstance(output, INode)
         return output
 
     @override
@@ -133,7 +134,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
                 return self.get_link_path().read_text()
             return self.get_lazy_content()
 
-        return self.load(url, depth, expanded, formatted)
+        return cast("str | G", self.load(url, depth, expanded, formatted))
 
     @override
     def get_lazy_content(

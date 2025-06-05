@@ -9,15 +9,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
-from antarest.study.storage.rawstudy.model.filesystem.inode import S
+
+if TYPE_CHECKING:
+    from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 
 def extract_matrix_id(uri: str) -> str:
@@ -71,7 +76,7 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
+    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         pass
 
 
@@ -103,7 +108,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
+    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         pass
 
 
@@ -114,7 +119,7 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
 
     @override
-    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
+    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         link_path.write_text(matrix_uri)
         if data.config.path.exists():
             data.config.path.unlink()
@@ -128,7 +133,7 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
 
     @override
-    def handle_matrix_save(self, data: str | bytes | S, matrix_uri: str, link_path: Path) -> None:
+    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         matrix = self.get_matrix(matrix_uri)
         data.dump(matrix)
 

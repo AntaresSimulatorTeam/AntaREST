@@ -115,7 +115,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             self.config.path.unlink()
 
     @override
-    def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
+    def save(self, data: Any, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
         self.dump(cast(S, data), url)
