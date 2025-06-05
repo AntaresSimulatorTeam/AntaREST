@@ -16,7 +16,7 @@ import { useMemo } from "react";
 import * as R from "ramda";
 import type { FilterState, FilterCriteria } from "../types";
 import type { TimeFrequencyType } from "../../../shared/types";
-import { FILTER_TYPES, FILTER_OPERATORS, type FilterOperatorType } from "../constants";
+import { FILTER_OPERATORS, FILTER_TYPES, type FilterOperatorType } from "../constants";
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
