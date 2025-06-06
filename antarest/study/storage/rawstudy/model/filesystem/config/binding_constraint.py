@@ -29,7 +29,7 @@ class BindingConstraintFileData(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
-    enabled: bool = True
+    enabled: Optional[bool] = None
     time_step: Optional[BindingConstraintFrequency] = Field(None, alias="type")
     operator: Optional[BindingConstraintOperator] = None
     comments: Optional[str] = None

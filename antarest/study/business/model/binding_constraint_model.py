@@ -14,12 +14,12 @@
 Object model used to read and update binding constraint configuration.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
-from antarest.core.model import LowerCaseId
+from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -83,6 +83,17 @@ class BindingConstraint(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
+    enabled: bool = True
+    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
+    operator: BindingConstraintOperator = DEFAULT_OPERATOR
+    comments: str = ""
+
+    # Added in 8.3
+    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = None
+
+    # Added in 8.7
+    group: Optional[LowerCaseStr] = None
 
 
 class BindingConstraintCreation(AntaresBaseModel):
