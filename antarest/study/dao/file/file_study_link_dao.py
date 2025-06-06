@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Sequence
+from typing import List, Sequence
 
 from typing_extensions import override
 
@@ -18,13 +18,10 @@ from antarest.core.exceptions import LinkNotFound
 from antarest.study.business.model.link_model import (
     Link,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-
-if TYPE_CHECKING:
-    pass
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 class FileStudyLinkDao(LinkDao, ABC):

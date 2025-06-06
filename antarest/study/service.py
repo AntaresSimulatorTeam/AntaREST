@@ -539,7 +539,6 @@ class StudyService:
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
             formatted: indicate if raw files must be parsed and formatted
-            params: request parameters
 
         Returns: data study formatted in json
 
@@ -556,7 +555,6 @@ class StudyService:
         Args:
             uuid: study uuid
             url: route to follow inside study structure
-            params: request parameters
 
         Returns: data study formatted in json
 
@@ -737,7 +735,6 @@ class StudyService:
 
         Args:
             uuid: The UUID of the study.
-            params: The request parameters.
 
         Returns:
             Information about the study.
@@ -774,10 +771,16 @@ class StudyService:
             study_settings["horizon"] = metadata_patch.horizon
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
 
-        if metadata_patch.author:
+        if metadata_patch.author or metadata_patch.name:
             study_antares_url = "study/antares"
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
-            study_antares["author"] = metadata_patch.author
+
+            if metadata_patch.author:
+                study_antares["author"] = metadata_patch.author
+
+            if metadata_patch.name:
+                study_antares["caption"] = metadata_patch.name
+
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
         study.additional_data = study.additional_data or StudyAdditionalData()
@@ -833,7 +836,6 @@ class StudyService:
         Retrieve study path
         Args:
             uuid: study uuid
-            params: request parameters
 
         Returns:
 
@@ -852,9 +854,6 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
-            params:
-                The parameters of the HTTP request for creation, used to determine
-                the currently logged-in user (ID and name).
 
         Returns:
             str: The ID of the newly created study.
@@ -890,14 +889,8 @@ class StudyService:
 
     def get_user_name(self) -> str:
         """
-        Retrieves the name of a user based on the provided request parameters.
-
-        Args:
-            params: The request parameters which includes user information.
-
-        Returns:
-            Returns the user's name or, if the logged user is a "bot"
-            (i.e., an application's token), it returns the token's author name.
+        Returns the user's name
+        If the logged user is a "bot" (i.e., an application's token), it returns the token's author name.
         """
         user = get_current_user()
         if user:
@@ -912,7 +905,6 @@ class StudyService:
 
         Args:
             study_id: The ID of the study.
-            params: The parameters of the HTTP request containing the user information.
 
         Returns: study synthesis
         """
@@ -1178,7 +1170,6 @@ class StudyService:
         Export study to a zip file.
         Args:
             uuid: study id
-            params: request parameters
             outputs: integrate output folder in zip file
 
         """
@@ -1236,7 +1227,6 @@ class StudyService:
         Args:
             uuid: study uuid
             children: delete children or not
-            params: request parameters
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
@@ -1297,7 +1287,6 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
-            params: request parameters
 
         Returns:
             New study UUID.
@@ -1473,7 +1462,6 @@ class StudyService:
             uuid: study id
             url: path data target in study
             new: new data to replace
-            params: request parameters
             create_missing: Flag to indicate whether to create file or parent directories if missing.
 
         Returns: new data replaced
@@ -1505,7 +1493,6 @@ class StudyService:
         Args:
             study_id: study uuid
             owner_id: new owner id
-            params: request parameters
 
         Returns:
 
@@ -1541,7 +1528,6 @@ class StudyService:
         Args:
             study_id: study uuid
             group_id: group id to attach
-            params: request parameters
 
         Returns:
 
@@ -1573,7 +1559,6 @@ class StudyService:
         Args:
             study_id: study uuid
             group_id: group to detach
-            params: request parameters
 
         Returns:
 
@@ -1603,7 +1588,6 @@ class StudyService:
         Args:
             study_id: study uuid
             mode: new public permission
-            params: request parameters
 
         Returns:
 
@@ -1731,7 +1715,6 @@ class StudyService:
         Args:
             uuid: The study ID.
             area_id: The area ID to delete.
-            params: The request parameters used to check user permissions.
 
         Raises:
             ReferencedObjectDeletionNotAllowed: If the area is referenced by a binding constraint.
@@ -1769,7 +1752,6 @@ class StudyService:
             uuid: The study ID.
             area_from: The area from which the link starts.
             area_to: The area to which the link ends.
-            params: The request parameters used to check user permissions.
 
         Raises:
             ReferencedObjectDeletionNotAllowed: If the link is referenced by a binding constraint.
@@ -1897,7 +1879,6 @@ class StudyService:
 
         Args:
             study: The study to be saved or updated.
-            owner: The owner of the study (current authenticated user).
             group_ids: The list of group IDs to associate with the study.
 
         Raises:
@@ -2077,7 +2058,6 @@ class StudyService:
             uuid: The UUID of the study.
             path: The path of the matrix to update.
             matrix_edit_instruction: A list of edit instructions to be applied to the matrix.
-            params: Additional request parameters.
 
         Raises:
             BadEditInstructionException: If an error occurs while updating the matrix.
@@ -2099,9 +2079,6 @@ class StudyService:
         This function updates studies version on the db.
 
         **Warnings: Only users with Admins rights should be able to run this function.**
-
-        Args:
-            params: Request parameters holding user ID and groups
 
         Raises:
             UserHasNotPermissionError: if params user is not admin.
@@ -2214,7 +2191,6 @@ class StudyService:
 
         Args:
             uuid: the study ID.
-            params: user request parameters.
 
         Returns:
             Disk usage of the study in bytes.
@@ -2239,7 +2215,6 @@ class StudyService:
             path: The relative path to the matrix within the study.
             with_index: A boolean indicating whether to include the index in the retrieved matrix.
             with_header: A boolean indicating whether to include the header in the retrieved matrix.
-            parameters: The request parameters, including the user information.
 
         Returns:
             A DataFrame representing the matrix.

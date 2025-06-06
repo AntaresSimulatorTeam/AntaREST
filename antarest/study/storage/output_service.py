@@ -11,9 +11,8 @@
 # This file is part of the Antares project.
 import logging
 from pathlib import Path
-from typing import BinaryIO, Iterator, Optional, Sequence
+from typing import BinaryIO, Optional, Sequence
 
-import pandas as pd
 from starlette.responses import FileResponse, Response
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
@@ -28,6 +27,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.serde.json import to_json
+from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
@@ -42,6 +42,7 @@ from antarest.study.business.aggregator_management import (
 )
 from antarest.study.model import ExportFormat, Study, StudyDownloadDTO, StudySimResultDTO
 from antarest.study.service import StudyService
+from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.output_storage import IOutputStorage
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -162,7 +163,6 @@ class OutputService:
         Get global result information
         Args:
             study_id: study Id
-            params: request parameters
 
         Returns: an object containing all needed information
 
@@ -215,7 +215,6 @@ class OutputService:
         Args:
             study_uuid: study id
             output_uuid: output id
-            params: request parameters
         """
         study = self._study_service.get_study(study_uuid)
         assert_permission(study, StudyPermissionType.READ)
@@ -228,7 +227,6 @@ class OutputService:
         Args:
             study_uuid: study id
             output_uuid: output id
-            params: request parameters
         """
         study = self._study_service.get_study(study_uuid)
         assert_permission(study, StudyPermissionType.READ)
@@ -377,7 +375,6 @@ class OutputService:
         Args:
             uuid: study uuid
             output_name: output simulation name
-            params: request parameters
 
         Returns:
 
@@ -471,10 +468,13 @@ class OutputService:
         output_id: str,
         query_file: MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile,
         frequency: MatrixFrequency,
+        export_format: TableExportFormat,
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
+        download_name: str,
+        download_log: str,
         mc_years: Optional[Sequence[int]] = None,
-    ) -> Iterator[pd.DataFrame]:
+    ) -> str:
         """
         Aggregates output data based on several filtering conditions
 
@@ -483,17 +483,72 @@ class OutputService:
             output_id: simulation output ID
             query_file: which types of data to retrieve: "values", "details", "details-st-storage", "details-res", "ids"
             frequency: yearly, monthly, weekly, daily or hourly.
+            export_format: format of the export file
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
+            download_name: name of the aggregation outputs file,
+            download_log: log to display while launching aggregation output task,
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
 
-        Returns: the aggregated data as a DataFrame
+        Returns: download id
 
         """
         study = self._study_service.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         output_path = self._storage.get_output_path(study, output_id)
-        aggregator_manager = AggregatorManager(
-            output_path, query_file, frequency, ids_to_consider, columns_names, mc_years
+
+        logger.info(download_log)
+        file_download = self._file_transfer_manager.request_download(
+            f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=10
         )
-        return aggregator_manager.aggregate_output_data()
+        file_download_path = Path(file_download.path)
+        download_id: str = file_download.id
+
+        aggregator_manager = AggregatorManager(
+            output_path,
+            query_file,
+            frequency,
+            ids_to_consider,
+            columns_names,
+            mc_years,
+        )
+
+        def aggregate_output_task(notifier: ITaskNotifier) -> TaskResult:
+            try:
+                stopwatch = StopWatch()
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
+                )
+
+                results = aggregator_manager.aggregate_output_data()
+
+                writer = export_df_chunks(results, export_format)
+                writer(file_download_path)
+
+                stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_download_path}'."))
+
+                self._file_transfer_manager.set_ready(download_id, use_notification=False)
+
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(f"Aggregated output file '{file_download_path}' is ready for download.")
+                )
+                return TaskResult(
+                    success=True,
+                    message=f"Successfully aggregated output data for study '{study.id}'."
+                    f" Results are stored in '{file_download_path}'.",
+                )
+
+            except Exception as e:
+                self._file_transfer_manager.fail(download_id, str(e))
+                raise e
+
+        self._task_service.add_task(
+            aggregate_output_task,
+            f"Aggregate output {output_id} of study {study.id}.",
+            task_type=TaskType.OUTPUT_AGGREGATION,
+            ref_id=study.id,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+        return download_id

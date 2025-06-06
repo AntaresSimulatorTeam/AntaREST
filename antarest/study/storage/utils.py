@@ -422,7 +422,7 @@ def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
     requested_path = workspace.path / folder
     requested_path = requested_path.resolve()
     safe_dir = workspace.path.resolve()
-    # check weither the requested path is a subdirectory of the workspace
+    # check whether the requested path is a subdirectory of the workspace
     return requested_path.is_relative_to(safe_dir)
 
 
@@ -485,8 +485,17 @@ def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: 
     )
 
 
-def has_non_study_folder(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
-    return any(is_non_study_folder(sub_path, filter_in, filter_out) for sub_path in path.iterdir())
+def has_non_study_folder(
+    path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False
+) -> bool:
+    for sub_path in path.iterdir():
+        try:
+            show = show_hidden_file or not sub_path.name.startswith(".")
+            if is_non_study_folder(sub_path, filter_in, filter_out) and show:
+                return True
+        except (PermissionError, OSError):
+            logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
+    return False
 
 
 def is_non_study_folder(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:

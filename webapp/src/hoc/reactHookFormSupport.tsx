@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Skeleton } from "@mui/material";
+import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
@@ -34,7 +34,7 @@ import { getComponentDisplayName } from "../utils/reactUtils";
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any, formValues: any) => boolean;
+  preValidate?: (value: any, formValues: any) => boolean | string | undefined;
 }
 
 // `...args: any` allows to be compatible with all field editors
@@ -165,7 +165,13 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
         if (preValidate) {
           if (RA.isFunction(validate)) {
             return (value, formValues) => {
-              return preValidate?.(value, formValues) && validate(value, formValues);
+              const result = preValidate?.(value, formValues);
+
+              if (typeof result === "string" || result === false) {
+                return result;
+              }
+
+              return validate(value, formValues);
             };
           }
 
@@ -173,7 +179,13 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
             return Object.keys(validate).reduce(
               (acc, key) => {
                 acc[key] = (value, formValues) => {
-                  return preValidate?.(value, formValues) && validate[key](value, formValues);
+                  const result = preValidate?.(value, formValues);
+
+                  if (typeof result === "string" || result === false) {
+                    return result;
+                  }
+
+                  return validate[key](value, formValues);
                 };
                 return acc;
               },
@@ -229,13 +241,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
           />
         );
 
-        return control._formState.isLoading ? (
-          <Skeleton variant="rectangular" sx={{ borderRadius: "5px" }}>
-            {field}
-          </Skeleton>
-        ) : (
-          field
-        );
+        return control._formState.isLoading ? <FieldSkeleton>{field}</FieldSkeleton> : field;
       }
 
       return <FieldEditor {...(feProps as TProps)} />;

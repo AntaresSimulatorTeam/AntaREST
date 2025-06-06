@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 import collections
-import io
 import logging
 from http import HTTPStatus
 from pathlib import Path
 from typing import Any, List, Sequence
 
-from fastapi import APIRouter, Depends, File, Query, Request
-from starlette.responses import FileResponse
+from fastapi import APIRouter, Depends, Query, Request, UploadFile
 
 from antarest.core.config import Config
 from antarest.core.serde.matrix_export import TableExportFormat
@@ -31,7 +29,6 @@ from antarest.study.business.aggregator_management import (
     MCIndLinksQueryFile,
 )
 from antarest.study.model import ExportFormat, StudyDownloadDTO, StudySimResultDTO
-from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -72,13 +69,10 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         summary="Import Output",
         response_model=str,
     )
-    def import_output(uuid: str, output: bytes = File(...)) -> Any:
+    def import_output(uuid: str, output: UploadFile) -> Any:
         logger.info(f"Importing output for study {uuid}")
         uuid_sanitized = sanitize_uuid(uuid)
-
-        zip_binary = io.BytesIO(output)
-
-        output_id = output_service.import_output(uuid_sanitized, zip_binary)
+        output_id = output_service.import_output(uuid_sanitized, output.file)
         return output_id
 
     @bp.get(
@@ -207,7 +201,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data
@@ -224,7 +218,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated areas raw data
+            download id
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -235,21 +229,20 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_chunks = output_service.aggregate_output_data(
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
+
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_df_chunks(
-            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
+            download_name=download_name,
+            download_log=download_log,
         )
 
     @bp.get(
@@ -267,7 +260,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         return aggregate_areas_raw_data(
             uuid, output_id, query_file, frequency, mc_years, areas_ids, columns_names, export_format
         )
@@ -286,7 +279,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         """
         Create an aggregation of links raw data
 
@@ -302,7 +295,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated links raw data
+            download id
         """
         logger.info(
             f"Aggregating links output data for study {uuid}, output {output_id},"
@@ -312,22 +305,20 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
 
-        df_chunks = output_service.aggregate_output_data(
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
             mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_df_chunks(
-            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
+            download_name=download_name,
+            download_log=download_log,
         )
 
     @bp.get(
@@ -345,7 +336,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         return aggregate_links_raw_data(
             uuid, output_id, query_file, frequency, mc_years, links_ids, columns_names, export_format
         )
@@ -363,7 +354,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         # noinspection SpellCheckingInspection
         """
         Create an aggregation of areas raw data in mc-all
@@ -379,7 +370,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated areas raw data
+            download id
         """
         logger.info(
             f"Aggregating areas output data for study {uuid}, output {output_id},"
@@ -390,20 +381,19 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_chunks = output_service.aggregate_output_data(
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
+
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(areas_ids),
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_df_chunks(
-            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
+            download_name=download_name,
+            download_log=download_log,
         )
 
     @bp.get(
@@ -420,7 +410,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         areas_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         return aggregate_areas_raw_data__all(
             uuid, output_id, query_file, frequency, areas_ids, columns_names, export_format
         )
@@ -438,7 +428,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         """
         Create an aggregation of links in mc-all
 
@@ -453,7 +443,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         - `export_format`: Returned file format (csv by default).
 
         Returns:
-            FileResponse that corresponds to a dataframe with the aggregated links raw data
+            download id
         """
         logger.info(
             f"Aggregating links mc-all data for study {uuid}, output {output_id},"
@@ -464,20 +454,21 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         uuid = sanitize_uuid(uuid)
         output_id = sanitize_string(output_id)
 
-        df_chunks = output_service.aggregate_output_data(
+        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
+        download_log = (
+            f"Aggregate output '{output_id}' data for study '{uuid}' and prepares the output in a {export_format} file."
+        )
+
+        return output_service.aggregate_output_data(
             uuid,
             output_id=output_id,
             query_file=query_file,
             frequency=frequency,
+            export_format=export_format,
             columns_names=_split_comma_separated_values(columns_names),
             ids_to_consider=_split_comma_separated_values(links_ids),
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_df_chunks(
-            df_chunks, output_service._file_transfer_manager, export_format, download_name, download_log
+            download_name=download_name,
+            download_log=download_log,
         )
 
     @bp.get(
@@ -494,7 +485,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         links_ids: str = "",
         columns_names: str = "",
         export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,
-    ) -> FileResponse:
+    ) -> str:
         return aggregate_links_raw_data__all(
             uuid, output_id, query_file, frequency, links_ids, columns_names, export_format
         )
