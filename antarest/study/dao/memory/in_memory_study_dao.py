@@ -19,6 +19,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -71,6 +72,12 @@ class InMemoryStudyDao(StudyDao):
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
+        # Binding constraints
+        self._constraints: Dict[str, BindingConstraint] = {}
+        self._constraints_values_matrix: dict[str, str] = {}
+        self._constraints_less_term_matrix: dict[str, str] = {}
+        self._constraints_greater_term_matrix: dict[str, str] = {}
+        self._constraints_equal_matrix: dict[str, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -235,3 +242,55 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
         del self._renewables[cluster_key(area_id, renewable.id)]
+
+    @override
+    def get_all_constraints(self) -> dict[str, BindingConstraint]:
+        raise NotImplementedError()
+
+    @override
+    def get_constraint(self, area_id: str, constraint_id: str) -> BindingConstraint:
+        raise NotImplementedError()
+
+    @override
+    def get_constraint_values_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_constraint_less_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_constraint_greater_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def get_constraint_equal_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @override
+    def save_constraint(self, area_id: str, constraint: BindingConstraint) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_constraints(self, area_id: str, constraints: Sequence[BindingConstraint]) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_constraint_values_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_constraint_less_term_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_constraint_greater_term_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_constraint_equal_term_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def delete_constraint(self, area_id: str, constraint: BindingConstraint) -> None:
+        raise NotImplementedError()
