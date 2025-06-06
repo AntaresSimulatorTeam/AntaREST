@@ -272,14 +272,13 @@ class BindingConstraint(AntaresBaseModel):
     group: Optional[LowerCaseStr] = None
 
 
-class BindingConstraintCreation(AntaresBaseModel):
+class BindingConstraintCreation(BindingConstraintMatrices):
     """
     Represents a creation request for a binding constraint.
 
     Most fields are optional: at creation time, default values of the constraint model will be used.
     """
 
-    name: str
     enabled: Optional[bool] = None
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
     operator: Optional[BindingConstraintOperator] = None
@@ -301,12 +300,23 @@ class BindingConstraintCreation(AntaresBaseModel):
         return BindingConstraintCreation.model_validate(constraint.model_dump(mode="json", exclude={"id"}, exclude_none=True))
 
 
-class BindingConstraintUpdate(AntaresBaseModel):
+class BindingConstraintUpdate(BindingConstraintMatrices):
     """
     Represents an update of a binding constraint.
 
     Only not-None fields will be used to update the constraint.
     """
-    pass
+    enabled: Optional[bool] = None
+    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
+    operator: Optional[BindingConstraintOperator] = None
+    comments: Optional[str] = None
+    terms: Optional[list[ConstraintTerm]] = None
 
-BindingConstraintUpdates = dict[LowerCaseId, dict[LowerCaseId, BindingConstraintUpdate]]
+    # Added in 8.3
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+
+    # Added in 8.7
+    group: Optional[LowerCaseStr] = None
+
+BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]

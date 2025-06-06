@@ -23,10 +23,11 @@ from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
+from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
+from antarest.study.business.model.binding_constraint_model import BindingConstraintUpdate
 from antarest.study.business.model.link_model import LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate, RenewableClusterUpdates
 from antarest.study.business.model.sts_model import STStorageUpdate, STStorageUpdates
@@ -244,7 +245,7 @@ class TableModeManager:
             }
             return data
         elif table_type == TableModeType.BINDING_CONSTRAINT:
-            bcs_by_ids = {key: ConstraintInput(**values) for key, values in data.items()}
+            bcs_by_ids = {key: BindingConstraintUpdate(**values) for key, values in data.items()}
             bcs_map = self._binding_constraint_manager.update_binding_constraints(study, bcs_by_ids)
             return {
                 bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()
