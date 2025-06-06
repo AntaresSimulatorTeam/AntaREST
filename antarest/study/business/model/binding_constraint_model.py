@@ -22,6 +22,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.link_model import CommaSeparatedFilterOptions
 
 
 class BindingConstraintFrequency(EnumIgnoreCase):
@@ -89,8 +90,8 @@ class BindingConstraint(AntaresBaseModel):
     comments: str = ""
 
     # Added in 8.3
-    filter_year_by_year: Optional[str] = None
-    filter_synthesis: Optional[str] = None
+    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
 
     # Added in 8.7
     group: Optional[LowerCaseStr] = None

@@ -54,6 +54,8 @@ from antarest.study.business.model.area_properties_model import AreaProperties, 
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintCreation,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
     BindingConstraintUpdate,
 )
 from antarest.study.business.model.hydro_model import (
@@ -82,10 +84,6 @@ from antarest.study.business.table_mode_management import TableDataDTO, TableMod
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 

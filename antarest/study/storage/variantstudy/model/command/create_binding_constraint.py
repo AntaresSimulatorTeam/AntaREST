@@ -23,14 +23,14 @@ from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
