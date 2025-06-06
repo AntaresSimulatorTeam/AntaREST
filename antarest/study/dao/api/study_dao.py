@@ -134,26 +134,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
         return self._adaptee.get_renewable_series(area_id, renewable_id)
 
-    @abstractmethod
+    @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
         return self._adaptee.get_all_constraints()
 
-    @abstractmethod
+    @override
     def get_constraint(self, area_id: str, constraint_id: str) -> BindingConstraint:
         return self._adaptee.get_constraint(area_id, constraint_id)
 
-    @abstractmethod
+    @override
     def get_constraint_values_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
         return self._adaptee.get_constraint_values_matrix(area_id, constraint_id)
 
-    @abstractmethod
+    @override
     def get_constraint_less_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
         return self._adaptee.get_constraint_less_term_matrix(area_id, constraint_id)
 
-    @abstractmethod
+    @override
     def get_constraint_greater_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
         return self._adaptee.get_constraint_greater_term_matrix(area_id, constraint_id)
 
-    @abstractmethod
+    @override
     def get_constraint_equal_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(area_id, constraint_id)
