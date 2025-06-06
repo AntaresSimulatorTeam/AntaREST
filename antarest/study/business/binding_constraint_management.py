@@ -48,6 +48,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -342,7 +343,7 @@ class BindingConstraintManager:
         if study_version >= STUDY_VERSION_8_7:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
 
-        adapted_constraint = ""
+        adapted_constraint = parse_binding_constraint(study_version, **constraint_output)
 
         # If 'terms' were not directly provided in the input, parse and add terms dynamically
         if not constraint.get("terms"):
