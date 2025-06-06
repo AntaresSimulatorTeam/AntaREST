@@ -139,13 +139,13 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
                 return False
         if self.group:
             # The `group` filter is a case-insensitive exact match.
-            group = getattr(constraint, "group", DEFAULT_GROUP)
+            group = constraint.group or DEFAULT_GROUP
             if self.group.upper() != group.upper():
                 return False
         if self.time_step is not None and self.time_step != constraint.time_step:
             return False
 
-        terms = constraint.terms or []
+        terms = constraint.terms
 
         if self.area_name:
             # The `area_name` filter is a case-insensitive substring match.
@@ -255,10 +255,6 @@ def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[BindingCo
         )
 
     return True
-
-
-# noinspection SpellCheckingInspection
-_ALL_BINDING_CONSTRAINTS_PATH = "input/bindingconstraints/bindingconstraints"
 
 
 class BindingConstraintManager:
