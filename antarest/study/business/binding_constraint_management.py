@@ -218,7 +218,7 @@ def _get_references_by_widths(
                 continue
 
             matrix_height = matrix.shape[0]
-            expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]  # type: ignore
+            expected_height = EXPECTED_MATRIX_SHAPES[bc.time_step][0]
             if matrix_height != expected_height:
                 raise WrongMatrixHeightError(
                     f"The binding constraint '{bc.name}' should have {expected_height} rows, currently: {matrix_height}"
