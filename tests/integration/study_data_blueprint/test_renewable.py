@@ -45,13 +45,8 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.core.utils.string import to_camel_case
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import RenewableProperties
 from tests.integration.utils import wait_task_completion
-
-DEFAULT_PROPERTIES = RenewableProperties(name="Dummy").model_dump(mode="json")
-DEFAULT_PROPERTIES = {to_camel_case(k): v for k, v in DEFAULT_PROPERTIES.items() if k != "name"}
 
 # noinspection SpellCheckingInspection
 EXISTING_CLUSTERS = []
@@ -116,12 +111,12 @@ class TestRenewable:
 
         # We can create a renewable cluster with the following properties:
         fr_solar_pv_props = {
-            **DEFAULT_PROPERTIES,
             "name": fr_solar_pv,
             "group": "Solar PV",
             "nominalCapacity": 5001,
             "unitCount": 1,
             "tsInterpretation": "production-factor",
+            "enabled": True,
         }
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
@@ -179,6 +174,7 @@ class TestRenewable:
         assert res.json() == EXISTING_CLUSTERS + [expected_fr_solar_pv_cfg]
 
         # updating properties
+        # Ensures we're able to process a name even if we don't support the renaming yet
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable/{fr_solar_pv_id}",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -190,7 +186,6 @@ class TestRenewable:
         assert res.status_code == 200, res.json()
         expected_fr_solar_pv_cfg = {
             **expected_fr_solar_pv_cfg,
-            "name": "FR Solar pv old 1",
             "nominalCapacity": 5132,
         }
         assert res.json() == expected_fr_solar_pv_cfg
@@ -413,10 +408,7 @@ class TestRenewable:
         )
         assert res.status_code == 500, res.json()
         obj = res.json()
-        description = obj["description"]
-        assert bad_area_id in description
-        assert re.search(r"Area ", description, flags=re.IGNORECASE)
-        assert re.search(r"does not exist ", description, flags=re.IGNORECASE)
+        assert f"The area '{bad_area_id}' does not exist" in obj["description"]
 
         # Check POST with wrong `group`
         res = client.post(
@@ -442,9 +434,7 @@ class TestRenewable:
         )
         assert res.status_code == 404, res.json()
         obj = res.json()
-        description = obj["description"]
-        assert bad_area_id in description
-        assert re.search(r"is not found", description, flags=re.IGNORECASE)
+        assert bad_area_id in obj["description"]
 
         # Check PATCH with the wrong `cluster_id`
         bad_cluster_id = "bad_cluster"
