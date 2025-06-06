@@ -31,6 +31,7 @@ import { useMatrixMutations } from "./hooks/useMatrixMutations";
 import { isNonEmptyMatrix, type AggregateConfig, type RowCountSource } from "./shared/types";
 import { getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
+import type { FilterCriteria } from "./components/MatrixFilter/types";
 
 interface MatrixProps {
   url: string;
@@ -51,7 +52,7 @@ interface MatrixProps {
 
 function Matrix({
   url,
-  title: titleProp,
+  title,
   customRowHeaders = [],
   dateTimeColumn = true,
   isTimeSeries = true,
@@ -68,7 +69,16 @@ function Matrix({
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
-  const title = titleProp ?? t("global.timeSeries");
+  const [filterPreview, setFilterPreview] = useState<{
+    active: boolean;
+    criteria: FilterCriteria;
+  }>({
+    active: false,
+    criteria: {
+      columnsIndices: [],
+      rowsIndices: [],
+    },
+  });
 
   const aggregateTypes = useMemo(
     () => getAggregateTypes(aggregateColumns || []),
@@ -90,6 +100,7 @@ function Matrix({
     isDirty,
     reload,
     rowCount,
+    matrixTimeFrequency,
   } = useMatrixData({
     studyId: study.id,
     path: url,
@@ -138,28 +149,31 @@ function Matrix({
         currentState,
         isSubmitting,
         updateCount,
+        aggregateTypes,
         setMatrixData,
         undo,
         redo,
         canUndo,
         canRedo,
         isDirty,
-        aggregateTypes,
+        filterPreview,
+        setFilterPreview,
       }}
     >
       <MatrixContainer>
-        {/* The <Box> allows to keep the height on vertical resize */}
         <Box>
           <CustomScrollbar>
             <MatrixHeader>
               <Tooltip title={title}>
-                <MatrixTitle>{title}</MatrixTitle>
+                <MatrixTitle>{title || t("global.timeSeries")}</MatrixTitle>
               </Tooltip>
               <MatrixActions
                 studyId={study.id}
                 path={url}
                 disabled={currentState.data.length === 0}
+                dateTime={dateTime}
                 isTimeSeries={isTimeSeries}
+                timeFrequency={matrixTimeFrequency}
                 onSave={handleSaveUpdates}
                 onMatrixUpdated={reload}
                 canImport={canImport}

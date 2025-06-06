@@ -15,6 +15,7 @@
 import * as R from "ramda";
 import type { StudyMetadata } from "../../../../../../types/types";
 import client from "../../../../../../services/api/client";
+import { WeekDay, type Month } from "@/utils/date";
 
 ////////////////////////////////////////////////////////////////
 // Enums
@@ -30,31 +31,6 @@ export enum BuildingMode {
   Automatic = "Automatic",
   Custom = "Custom",
   Derated = "Derated",
-}
-
-enum Month {
-  January = "january",
-  February = "february",
-  March = "march",
-  April = "april",
-  May = "may",
-  June = "june",
-  July = "july",
-  August = "august",
-  September = "september",
-  October = "october",
-  November = "november",
-  December = "december",
-}
-
-enum WeekDay {
-  Monday = "Monday",
-  Tuesday = "Tuesday",
-  Wednesday = "Wednesday",
-  Thursday = "Thursday",
-  Friday = "Friday",
-  Saturday = "Saturday",
-  Sunday = "Sunday",
 }
 
 ////////////////////////////////////////////////////////////////
@@ -89,33 +65,6 @@ export type SetDialogStateType = "thematicTrimming" | "scenarioPlaylist" | "scen
 ////////////////////////////////////////////////////////////////
 // Constants
 ////////////////////////////////////////////////////////////////
-
-// TODO i18n
-
-export const YEAR_OPTIONS: Array<{ label: string; value: Month }> = [
-  { label: "JAN - DEC", value: Month.January },
-  { label: "FEB - JAN", value: Month.February },
-  { label: "MAR - FEB", value: Month.March },
-  { label: "APR - MAR", value: Month.April },
-  { label: "MAY - APR", value: Month.May },
-  { label: "JUN - MAY", value: Month.June },
-  { label: "JUL - JUN", value: Month.July },
-  { label: "AUG - JUL", value: Month.August },
-  { label: "SEP - AUG", value: Month.September },
-  { label: "OCT - SEP", value: Month.October },
-  { label: "NOV - OCT", value: Month.November },
-  { label: "DEC - NOV", value: Month.December },
-];
-
-export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
-  { label: "MON - SUN", value: WeekDay.Monday },
-  { label: "TUE - MON", value: WeekDay.Tuesday },
-  { label: "WED - TUE", value: WeekDay.Wednesday },
-  { label: "THU - WED", value: WeekDay.Thursday },
-  { label: "FRI - THU", value: WeekDay.Friday },
-  { label: "SAT - FRI", value: WeekDay.Saturday },
-  { label: "SUN - SAT", value: WeekDay.Sunday },
-];
 
 export const MODE_OPTIONS = Object.values(Mode);
 export const BUILDING_MODE_OPTIONS = Object.values(BuildingMode);
