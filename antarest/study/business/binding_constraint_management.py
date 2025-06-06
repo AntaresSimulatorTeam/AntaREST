@@ -69,7 +69,6 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     TermMatrices,
     create_binding_constraint_properties,
 )
-from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
 )
@@ -779,7 +778,9 @@ class BindingConstraintManager:
         """
         # Check the existence of the binding constraint before removing it
         bc = self.get_binding_constraint(study, binding_constraint_id)
-        command = RemoveBindingConstraint(id=bc.id, command_context=self._command_context, study_version=study.version)
+        command = RemoveMultipleBindingConstraints(
+            ids=[bc.id], command_context=self._command_context, study_version=study.version
+        )
         study.add_commands([command])
 
     def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:

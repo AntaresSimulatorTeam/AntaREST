@@ -24,51 +24,51 @@ class ReadOnlyConstraintDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint(self, area_id: str, constraint_id: str) -> BindingConstraint:
+    def get_constraint(self, constraint_id: str) -> BindingConstraint:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_values_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_less_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_greater_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_constraint_equal_term_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
 
 class ConstraintDao(ReadOnlyConstraintDao):
     @abstractmethod
-    def save_constraint(self, area_id: str, constraint: BindingConstraint) -> None:
+    def save_constraint(self, constraint: BindingConstraint) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraints(self, area_id: str, constraints: Sequence[BindingConstraint]) -> None:
+    def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_values_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+    def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_less_term_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+    def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_greater_term_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+    def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_constraint_equal_term_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+    def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_constraint(self, area_id: str, constraint: BindingConstraint) -> None:
+    def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         raise NotImplementedError()
