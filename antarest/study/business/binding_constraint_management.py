@@ -12,11 +12,11 @@
 
 import collections
 import logging
-from typing import Any, Dict, List, Mapping, MutableSequence, Optional, Sequence, Tuple, TypeAlias
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import Field, model_validator
+from pydantic import model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -29,21 +29,23 @@ from antarest.core.exceptions import (
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON, LowerCaseId, LowerCaseStr
+from antarest.core.model import JSON, LowerCaseId
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_camel_case
-from antarest.study.business.all_optional_meta import camel_case_model
-from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
     OPERATOR_MATRIX_FILE_MAP,
+    BindingConstraint,
+    BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintOperator,
+    BindingConstraintUpdate,
+    BindingConstraintUpdates,
 )
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -60,10 +62,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 )
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     EXPECTED_MATRIX_SHAPES,
-    BindingConstraintMatrices,
-    BindingConstraintPropertiesBase,
     CreateBindingConstraint,
-    OptionalProperties,
     TermMatrices,
     create_binding_constraint_properties,
 )
@@ -203,7 +202,7 @@ class ConstraintTerm(AntaresBaseModel):
         return self
 
 
-class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
+class ConstraintFilters(AntaresBaseModel, extra="forbid"):
     """
     Binding Constraint Filters gathering the main filtering parameters.
 
@@ -231,7 +230,7 @@ class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
     link_id: str = ""
     cluster_id: str = ""
 
-    def match_filters(self, constraint: "ConstraintOutput") -> bool:
+    def match_filters(self, constraint: BindingConstraint) -> bool:
         """
         Check if the constraint matches the filters.
 
@@ -304,97 +303,8 @@ class ConstraintFilters(AntaresBaseModel, frozen=True, extra="forbid"):
         return True
 
 
-@camel_case_model
-class ConstraintInput870(OptionalProperties):
-    pass
-
-
-@camel_case_model
-class ConstraintInput(BindingConstraintMatrices, ConstraintInput870):
-    terms: MutableSequence[ConstraintTerm] = Field(
-        default_factory=lambda: [],
-    )
-
-
-@camel_case_model
-class ConstraintCreation(ConstraintInput):
-    name: str
-
-    @model_validator(mode="before")
-    def check_matrices_dimensions(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        for _key in ["time_step"] + [m.value for m in TermMatrices]:
-            _camel = to_camel_case(_key)
-            values[_key] = values.pop(_camel, values.get(_key))
-
-        # The dimensions of the matrices depend on the frequency and the version of the study.
-        if values.get("time_step") is None:
-            return values
-        _time_step = BindingConstraintFrequency(values["time_step"])
-
-        # Matrix shapes for binding constraints are different from usual shapes,
-        # because we need to take leap years into account, which contains 366 days and 8784 hours.
-        # Also, we use the same matrices for "weekly" and "daily" frequencies,
-        # because the solver calculates the weekly matrix from the daily matrix.
-        # See https://github.com/AntaresSimulatorTeam/AntaREST/issues/1843
-        expected_rows = EXPECTED_MATRIX_SHAPES[_time_step][0]
-
-        # Collect the matrix shapes
-        matrix_shapes = {}
-        for _field_name in ["values"] + [m.value for m in TermMatrices]:
-            if _matrix := values.get(_field_name):
-                _array = np.array(_matrix)
-                # We only store the shape if the array is not empty
-                if _array.size != 0:
-                    matrix_shapes[_field_name] = _array.shape
-
-        # We don't know the exact version of the study here, but we can rely on the matrix field names.
-        if not matrix_shapes:
-            return values
-        elif "values" in matrix_shapes:
-            expected_cols = 3
-        else:
-            # pick the first matrix column as the expected column
-            expected_cols = next(iter(matrix_shapes.values()))[1]
-
-        if all(shape == (expected_rows, expected_cols) for shape in matrix_shapes.values()):
-            return values
-
-        # Prepare a clear error message
-        _field_names = ", ".join(f"'{n}'" for n in matrix_shapes)
-        if len(matrix_shapes) == 1:
-            err_msg = f"Matrix {_field_names} must have the shape ({expected_rows}, {expected_cols})"
-        else:
-            _shapes = list({(expected_rows, s[1]) for s in matrix_shapes.values()})
-            _shapes_msg = ", ".join(f"{s}" for s in _shapes[:-1]) + " or " + f"{_shapes[-1]}"
-            err_msg = f"Matrices {_field_names} must have the same shape: {_shapes_msg}"
-
-        raise ValueError(err_msg)
-
-
-class ConstraintOutputBase(BindingConstraintPropertiesBase):
-    id: str
-    name: str
-    terms: MutableSequence[ConstraintTerm] = Field(default_factory=lambda: [])
-    # I have to redefine the time_step attribute to give him another alias.
-    time_step: Optional[BindingConstraintFrequency] = Field(DEFAULT_TIMESTEP, alias="timeStep")  # type: ignore
-
-
-class ConstraintOutput830(ConstraintOutputBase):
-    filter_year_by_year: str = Field(default="", alias="filterYearByYear")
-    filter_synthesis: str = Field(default="", alias="filterSynthesis")
-
-
-class ConstraintOutput870(ConstraintOutput830):
-    group: LowerCaseStr = DEFAULT_GROUP
-
-
-# WARNING: Do not change the order of the following line, it is used to determine
-# the type of the output constraint in the FastAPI endpoint.
-ConstraintOutput: TypeAlias = ConstraintOutputBase | ConstraintOutput830 | ConstraintOutput870
-
-
 def _get_references_by_widths(
-    file_study: FileStudy, bcs: Sequence[ConstraintOutput]
+    file_study: FileStudy, bcs: Sequence[BindingConstraint]
 ) -> Mapping[int, Sequence[Tuple[str, str]]]:
     """
     Iterates over each BC and its associated matrices.
@@ -434,7 +344,7 @@ def _get_references_by_widths(
     return references_by_width
 
 
-def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[ConstraintOutput]) -> bool:
+def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[BindingConstraint]) -> bool:
     """
     Validates the binding constraints within a group.
     """
@@ -474,7 +384,7 @@ class BindingConstraintManager:
         self._command_context = command_context
 
     @staticmethod
-    def parse_and_add_terms(key: str, value: Any, adapted_constraint: ConstraintOutput) -> None:
+    def parse_and_add_terms(key: str, value: Any, adapted_constraint: BindingConstraint) -> None:
         """Parse a single term from the constraint dictionary and add it to the adapted_constraint model."""
         if "%" in key or "." in key:
             separator = "%" if "%" in key else "."
@@ -511,7 +421,7 @@ class BindingConstraintManager:
                 )
 
     @staticmethod
-    def constraint_model_adapter(constraint: Mapping[str, Any], study_version: StudyVersion) -> ConstraintOutput:
+    def constraint_model_adapter(constraint: Mapping[str, Any], study_version: StudyVersion) -> BindingConstraint:
         """
         Adapts a binding constraint configuration to the appropriate model version.
 
@@ -523,7 +433,7 @@ class BindingConstraintManager:
                 determine which model class to instantiate and which default values to apply.
 
         Returns:
-            A new instance of either `ConstraintOutputBase`, `ConstraintOutput830`, or `ConstraintOutput870`,
+            A new instance of either `BindingConstraintBase`, `BindingConstraint830`, or `BindingConstraint870`,
             populated with the adapted values from the input constraint, and conforming to the
             structure expected by the specified version.
 
@@ -551,14 +461,7 @@ class BindingConstraintManager:
         if study_version >= STUDY_VERSION_8_7:
             constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
 
-        # Choose the right model according to the version
-        adapted_constraint: ConstraintOutput
-        if study_version >= STUDY_VERSION_8_7:
-            adapted_constraint = ConstraintOutput870(**constraint_output)
-        elif study_version >= STUDY_VERSION_8_3:
-            adapted_constraint = ConstraintOutput830(**constraint_output)
-        else:
-            adapted_constraint = ConstraintOutputBase(**constraint_output)
+        adapted_constraint = ""
 
         # If 'terms' were not directly provided in the input, parse and add terms dynamically
         if not constraint.get("terms"):
@@ -597,7 +500,7 @@ class BindingConstraintManager:
         if missing_bc_ids:
             raise BindingConstraintNotFound(f"Binding constraint(s) '{missing_bc_ids}' not found")
 
-    def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> ConstraintOutput:
+    def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> BindingConstraint:
         """
         Retrieves a binding constraint by its ID within a given study.
 
@@ -606,7 +509,7 @@ class BindingConstraintManager:
             bc_id: The ID of the binding constraint to retrieve.
 
         Returns:
-            A ConstraintOutput object representing the binding constraint with the specified ID.
+            A BindingConstraint object representing the binding constraint with the specified ID.
 
         Raises:
             BindingConstraintNotFound: If no binding constraint with the specified ID is found.
@@ -614,7 +517,7 @@ class BindingConstraintManager:
         file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-        constraints_by_id: Dict[str, ConstraintOutput] = CaseInsensitiveDict()  # type: ignore
+        constraints_by_id: Dict[str, BindingConstraint] = CaseInsensitiveDict()  # type: ignore
 
         for constraint in config.values():
             constraint_config = self.constraint_model_adapter(constraint, study.version)
@@ -627,7 +530,7 @@ class BindingConstraintManager:
 
     def get_binding_constraints(
         self, study: StudyInterface, filters: ConstraintFilters = ConstraintFilters()
-    ) -> Sequence[ConstraintOutput]:
+    ) -> Sequence[BindingConstraint]:
         """
         Retrieves all binding constraints within a given study, optionally filtered by specific criteria.
 
@@ -636,7 +539,7 @@ class BindingConstraintManager:
             filters: The filters to apply when retrieving the constraints.
 
         Returns:
-            A list of ConstraintOutput objects representing the binding constraints that match the specified filters.
+            A list of BindingConstraint objects representing the binding constraints that match the specified filters.
         """
         file_study = study.get_files()
         config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
@@ -644,12 +547,12 @@ class BindingConstraintManager:
         filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
         return filtered_constraints
 
-    def get_grouped_constraints(self, study: StudyInterface) -> Mapping[str, Sequence[ConstraintOutput]]:
+    def get_grouped_constraints(self, study: StudyInterface) -> Mapping[str, Sequence[BindingConstraint]]:
         """
          Retrieves and groups all binding constraints by their group names within a given study.
 
         This method organizes binding constraints into a dictionary where each key corresponds to a group name,
-        and the value is a list of ConstraintOutput objects associated with that group.
+        and the value is a list of BindingConstraint objects associated with that group.
 
         Args:
             study: the study
@@ -672,7 +575,7 @@ class BindingConstraintManager:
 
         return grouped_constraints
 
-    def get_constraints_by_group(self, study: StudyInterface, group_name: str) -> Sequence[ConstraintOutput]:
+    def get_constraints_by_group(self, study: StudyInterface, group_name: str) -> Sequence[BindingConstraint]:
         """
          Retrieve all binding constraints belonging to a specified group within a study.
 
@@ -681,7 +584,7 @@ class BindingConstraintManager:
             group_name: The name of the group (case-insensitive).
 
         Returns:
-            A list of ConstraintOutput objects that belong to the specified group.
+            A list of BindingConstraint objects that belong to the specified group.
 
         Raises:
             BindingConstraintNotFound: If the specified group name is not found among the constraint groups.
@@ -757,8 +660,8 @@ class BindingConstraintManager:
     def create_binding_constraint(
         self,
         study: StudyInterface,
-        data: ConstraintCreation,
-    ) -> ConstraintOutput:
+        data: BindingConstraintCreation,
+    ) -> BindingConstraint:
         bc_id = transform_name_to_id(data.name)
 
         if not bc_id:
@@ -797,7 +700,7 @@ class BindingConstraintManager:
 
     def duplicate_binding_constraint(
         self, study: StudyInterface, source_id: str, new_constraint_name: str
-    ) -> ConstraintOutput:
+    ) -> BindingConstraint:
         """
         Creates a duplicate constraint with a new name.
 
@@ -870,9 +773,9 @@ class BindingConstraintManager:
         self,
         study: StudyInterface,
         binding_constraint_id: str,
-        data: ConstraintInput,
-        existing_constraint: Optional[ConstraintOutput] = None,
-    ) -> ConstraintOutput:
+        data: BindingConstraintUpdate,
+        existing_constraint: Optional[BindingConstraint] = None,
+    ) -> BindingConstraint:
         existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
 
         check_attributes_coherence(data, study.version, data.operator or existing_constraint.operator)
@@ -924,8 +827,8 @@ class BindingConstraintManager:
     def update_binding_constraints(
         self,
         study: StudyInterface,
-        bcs_by_ids: Mapping[str, ConstraintInput],
-    ) -> Mapping[str, ConstraintOutput]:
+        bcs_by_ids: BindingConstraintUpdates,
+    ) -> Mapping[str, BindingConstraint]:
         """
         Updates multiple binding constraints within a study.
 
@@ -949,7 +852,7 @@ class BindingConstraintManager:
             if bc_id not in bcs_json_by_id:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            # convert payload sent by user to a ConstraintOutput dict
+            # convert payload sent by user to a BindingConstraint dict
             bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
             bc_json = bcs_json[bcs_json_by_id[bc_id]]
             bc_output = self.__convert_constraint_input_to_output(bc_json, bc_input_as_dict, study.version)
@@ -965,7 +868,7 @@ class BindingConstraintManager:
 
     def __convert_constraint_input_to_output(
         self, bc_json: Dict[str, Any], bc_input_as_dict: Dict[str, Any], study_version: StudyVersion
-    ) -> ConstraintOutput:
+    ) -> BindingConstraint:
         """
 
         Args:
@@ -973,7 +876,7 @@ class BindingConstraintManager:
             bc_input_as_dict: extracted from user payload.
             study_version: The version of the study to determine the properties.
         Returns:
-            ConstraintOutput: The adapted binding constraint data in the output format.
+            BindingConstraint: The adapted binding constraint data in the output format.
 
         """
         bc_props = create_binding_constraint_properties(study_version, **bc_input_as_dict)
@@ -1020,7 +923,7 @@ class BindingConstraintManager:
         study.add_commands([command])
 
     def _update_constraint_with_terms(
-        self, study: StudyInterface, bc: ConstraintOutput, terms: Mapping[str, ConstraintTerm]
+        self, study: StudyInterface, bc: BindingConstraint, terms: Mapping[str, ConstraintTerm]
     ) -> None:
         coeffs = {
             term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
@@ -1108,11 +1011,11 @@ class BindingConstraintManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return ConstraintOutput870.model_json_schema()
+        return BindingConstraint.model_json_schema()
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    data: ConstraintInput, version: StudyVersion, args: Dict[str, Any]
+    data: BindingConstraint, version: StudyVersion, args: Dict[str, Any]
 ) -> Dict[str, Any]:
     if version < STUDY_VERSION_8_7:
         if "values" not in args:
@@ -1135,7 +1038,7 @@ def _replace_matrices_according_to_frequency_and_version(
 
 
 def check_attributes_coherence(
-    data: ConstraintCreation | ConstraintInput,
+    data: BindingConstraintCreation | BindingConstraintUpdate,
     study_version: StudyVersion,
     operator: BindingConstraintOperator,
 ) -> None:

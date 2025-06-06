@@ -13,59 +13,50 @@
 """
 Object model used to read and update binding constraint configuration.
 """
+from typing import Optional
 
-from typing import Dict, List
+from pydantic import ConfigDict, Field
 
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 
 
-class BindingConstraintFrequency(EnumIgnoreCase):
+class BindingConstraintFileData(AntaresBaseModel):
     """
-    Frequency of a binding constraint.
-
-    Attributes:
-        HOURLY: hourly time series with 8784 lines
-        DAILY: daily time series with 366 lines
-        WEEKLY: weekly time series with 366 lines (same as daily)
+    Binding constraint data parsed from INI file.
     """
 
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
+    model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
+
+    enabled: bool = True
+    time_step: Optional[BindingConstraintFrequency] = Field(None, alias="type")
+    operator: Optional[BindingConstraintOperator] = None
+    comments: Optional[str] = None
+
+    # Added in 8.3
+    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = None
+
+    # Added in 8.7
+    group: Optional[str] = None
 
 
-class BindingConstraintOperator(EnumIgnoreCase):
-    """
-    Operator of a binding constraint.
+    def to_model(self) -> ThermalCluster:
+        return ThermalCluster.model_validate(self.model_dump(exclude_none=True))
 
-    Attributes:
-        LESS: less than or equal to
-        GREATER: greater than or equal to
-        BOTH: both LESS and GREATER
-        EQUAL: equal to
-    """
-
-    LESS = "less"
-    GREATER = "greater"
-    BOTH = "both"
-    EQUAL = "equal"
+    @classmethod
+    def from_model(cls, cluster: ThermalCluster) -> "ThermalClusterFileData":
+        return cls.model_validate(cluster.model_dump(exclude={"id"}))
 
 
-OPERATOR_MATRICES_MAP: Dict[BindingConstraintOperator, List[str]] = {
-    BindingConstraintOperator.EQUAL: ["eq"],
-    BindingConstraintOperator.GREATER: ["gt"],
-    BindingConstraintOperator.LESS: ["lt"],
-    BindingConstraintOperator.BOTH: ["lt", "gt"],
-}
+def parse_thermal_cluster(study_version: StudyVersion, data: Any) -> ThermalCluster:
+    cluster = ThermalClusterFileData.model_validate(data).to_model()
+    validate_thermal_cluster_against_version(study_version, cluster)
+    initialize_thermal_cluster(cluster, study_version)
+    return cluster
 
-OPERATOR_MATRIX_FILE_MAP = {
-    BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
-    BindingConstraintOperator.GREATER: ["{bc_id}_gt"],
-    BindingConstraintOperator.LESS: ["{bc_id}_lt"],
-    BindingConstraintOperator.BOTH: ["{bc_id}_lt", "{bc_id}_gt"],
-}
 
-DEFAULT_GROUP = "default"
-"""Default group for binding constraints (since v8.7)."""
-DEFAULT_OPERATOR = BindingConstraintOperator.EQUAL
-DEFAULT_TIMESTEP = BindingConstraintFrequency.HOURLY
+def serialize_thermal_cluster(study_version: StudyVersion, cluster: ThermalCluster) -> dict[str, Any]:
+    validate_thermal_cluster_against_version(study_version, cluster)
+    return ThermalClusterFileData.from_model(cluster).model_dump(mode="json", by_alias=True, exclude_none=True)
