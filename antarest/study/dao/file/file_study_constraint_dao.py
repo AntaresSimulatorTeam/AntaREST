@@ -10,14 +10,33 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import Iterator, Sequence
 
 import pandas as pd
+from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.binding_constraint_model import (
+    OPERATOR_MATRIX_FILE_MAP,
+    BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_hourly as default_bc_hourly_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_87,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_hourly as default_bc_hourly_86,
+)
+from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
+    default_bc_weekly_daily as default_bc_weekly_daily_86,
+)
 
 
 class FileStudyConstraintDao(ConstraintDao, ABC):
@@ -76,3 +95,35 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         raise NotImplementedError()
+
+
+
+
+def _generate_replacement_matrices(
+    bc_id: str,
+    study_version: StudyVersion,
+    new_time_step: BindingConstraintFrequency,
+    current_operator: BindingConstraintOperator,
+) -> Iterator[tuple[str, list[list[float]]]]:
+    """
+    Yield one (or two when operator is "BOTH") matrices initialized with default values.
+    """
+    if study_version < STUDY_VERSION_8_7:
+        target = f"input/bindingconstraints/{bc_id}"
+        matrix = {
+            BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
+            BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
+            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
+        }[new_time_step].tolist()
+        yield target, matrix
+    else:
+        matrix = {
+            BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
+            BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
+            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
+        }[new_time_step].tolist()
+        matrices_to_replace = OPERATOR_MATRIX_FILE_MAP[current_operator]
+        for matrix_name in matrices_to_replace:
+            matrix_id = matrix_name.format(bc_id=bc_id)
+            target = f"input/bindingconstraints/{matrix_id}"
+            yield target, matrix

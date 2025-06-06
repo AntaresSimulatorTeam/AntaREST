@@ -12,17 +12,13 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Set, Type, TypeAlias
+from typing import Any, Dict, Final, List, Optional, Set, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import Field, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.core.model import LowerCaseStr
-from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -31,9 +27,8 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintMatrices,
     BindingConstraintOperator,
 )
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
@@ -91,75 +86,6 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError(f"Invalid matrix length {actual_shape[0]}, expected {expected_shape[0]}")
     if np.isnan(array).any():
         raise ValueError("Matrix values cannot contain NaN")
-
-
-# =================================================================================
-# Binding constraint properties classes
-# =================================================================================
-
-
-class BindingConstraintPropertiesBase(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    enabled: bool = True
-    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
-    operator: BindingConstraintOperator = DEFAULT_OPERATOR
-    comments: str = ""
-
-    @model_validator(mode="before")
-    def replace_with_alias(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if "type" in values:
-            values["time_step"] = values.pop("type")
-        return values
-
-
-class BindingConstraintProperties830(BindingConstraintPropertiesBase):
-    filter_year_by_year: str = Field("", alias="filter-year-by-year")
-    filter_synthesis: str = Field("", alias="filter-synthesis")
-
-    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
-    def _validate_filtering(cls, v: Any) -> str:
-        return validate_filtering(v)
-
-
-class BindingConstraintProperties870(BindingConstraintProperties830):
-    group: LowerCaseStr = DEFAULT_GROUP
-
-
-BindingConstraintProperties: TypeAlias = (
-    BindingConstraintPropertiesBase | BindingConstraintProperties830 | BindingConstraintProperties870
-)
-
-
-def get_binding_constraint_config_cls(study_version: StudyVersion) -> Type[BindingConstraintProperties]:
-    """
-    Retrieves the binding constraint configuration class based on the study version.
-    """
-    if study_version >= STUDY_VERSION_8_7:
-        return BindingConstraintProperties870
-    elif study_version >= STUDY_VERSION_8_3:
-        return BindingConstraintProperties830
-    else:
-        return BindingConstraintPropertiesBase
-
-
-def create_binding_constraint_properties(study_version: StudyVersion, **kwargs: Any) -> BindingConstraintProperties:
-    """
-    Factory method to create a binding constraint configuration model.
-
-    Args:
-        study_version: The version of the study.
-        **kwargs: The properties to be used to initialize the model.
-
-    Returns:
-        The binding_constraint configuration model.
-    """
-    cls = get_binding_constraint_config_cls(study_version)
-    attrs = {k: v for k, v in kwargs.items() if k in cls.model_fields and v is not None}
-    return cls(**attrs)
-
-
-@all_optional_model
-class OptionalProperties(BindingConstraintProperties870):
-    pass
 
 
 # =================================================================================
