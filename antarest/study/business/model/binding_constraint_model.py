@@ -27,6 +27,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
 
 class BindingConstraintFrequency(EnumIgnoreCase):
@@ -281,6 +282,7 @@ class BindingConstraintCreation(BindingConstraintMatrices):
     Most fields are optional: at creation time, default values of the constraint model will be used.
     """
 
+    name: ItemName
     enabled: Optional[bool] = None
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
     operator: Optional[BindingConstraintOperator] = None

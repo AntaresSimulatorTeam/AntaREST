@@ -676,7 +676,7 @@ class BindingConstraintManager:
 
         if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
-            args = _replace_matrices_according_to_frequency_and_version(data, study.version, args)
+            args = _replace_matrices_according_to_frequency_and_version(data.time_step, study.version, args)
 
         command = UpdateBindingConstraint(**args)
 
@@ -897,7 +897,7 @@ class BindingConstraintManager:
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    data: BindingConstraint, version: StudyVersion, args: Dict[str, Any]
+    time_step: BindingConstraintFrequency, version: StudyVersion, args: Dict[str, Any]
 ) -> Dict[str, Any]:
     if version < STUDY_VERSION_8_7:
         if "values" not in args:
@@ -905,14 +905,14 @@ def _replace_matrices_according_to_frequency_and_version(
                 BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
                 BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
                 BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
-            }[data.time_step].tolist()
+            }[time_step].tolist()
             args["values"] = matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
-        }[data.time_step].tolist()
+        }[time_step].tolist()
         for term in [m.value for m in TermMatrices]:
             if term not in args:
                 args[term] = matrix
