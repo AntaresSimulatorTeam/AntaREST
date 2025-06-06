@@ -12,10 +12,7 @@
 
 from typing import Literal, Mapping, Sequence
 
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
+from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 
 

@@ -14,58 +14,56 @@
 Object model used to read and update binding constraint configuration.
 """
 
-from typing import Dict, List
+from typing import Any, Optional
 
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antares.study.version import StudyVersion
+from pydantic import ConfigDict, Field
+
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+    initialize_binding_constraint,
+    validate_binding_constraint_against_version,
+)
 
 
-class BindingConstraintFrequency(EnumIgnoreCase):
+class BindingConstraintFileData(AntaresBaseModel):
     """
-    Frequency of a binding constraint.
-
-    Attributes:
-        HOURLY: hourly time series with 8784 lines
-        DAILY: daily time series with 366 lines
-        WEEKLY: weekly time series with 366 lines (same as daily)
-    """
-
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-
-
-class BindingConstraintOperator(EnumIgnoreCase):
-    """
-    Operator of a binding constraint.
-
-    Attributes:
-        LESS: less than or equal to
-        GREATER: greater than or equal to
-        BOTH: both LESS and GREATER
-        EQUAL: equal to
+    Binding constraint data parsed from INI file.
     """
 
-    LESS = "less"
-    GREATER = "greater"
-    BOTH = "both"
-    EQUAL = "equal"
+    model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
+
+    enabled: Optional[bool] = None
+    time_step: Optional[BindingConstraintFrequency] = Field(None, alias="type")
+    operator: Optional[BindingConstraintOperator] = None
+    comments: Optional[str] = None
+
+    # Added in 8.3
+    filter_year_by_year: Optional[str] = None
+    filter_synthesis: Optional[str] = None
+
+    # Added in 8.7
+    group: Optional[str] = None
+
+    def to_model(self) -> BindingConstraint:
+        return BindingConstraint.model_validate(self.model_dump(exclude_none=True))
+
+    @classmethod
+    def from_model(cls, constraint: BindingConstraint) -> "BindingConstraintFileData":
+        return cls.model_validate(constraint.model_dump(exclude={"id"}))
 
 
-OPERATOR_MATRICES_MAP: Dict[BindingConstraintOperator, List[str]] = {
-    BindingConstraintOperator.EQUAL: ["eq"],
-    BindingConstraintOperator.GREATER: ["gt"],
-    BindingConstraintOperator.LESS: ["lt"],
-    BindingConstraintOperator.BOTH: ["lt", "gt"],
-}
+def parse_binding_constraint(study_version: StudyVersion, data: Any) -> BindingConstraint:
+    bc = BindingConstraintFileData.model_validate(data).to_model()
+    validate_binding_constraint_against_version(study_version, bc)
+    initialize_binding_constraint(bc, study_version)
+    return bc
 
-OPERATOR_MATRIX_FILE_MAP = {
-    BindingConstraintOperator.EQUAL: ["{bc_id}_eq"],
-    BindingConstraintOperator.GREATER: ["{bc_id}_gt"],
-    BindingConstraintOperator.LESS: ["{bc_id}_lt"],
-    BindingConstraintOperator.BOTH: ["{bc_id}_lt", "{bc_id}_gt"],
-}
 
-DEFAULT_GROUP = "default"
-"""Default group for binding constraints (since v8.7)."""
-DEFAULT_OPERATOR = BindingConstraintOperator.EQUAL
-DEFAULT_TIMESTEP = BindingConstraintFrequency.HOURLY
+def serialize_binding_constraint(study_version: StudyVersion, constraint: BindingConstraint) -> dict[str, Any]:
+    validate_binding_constraint_against_version(study_version, constraint)
+    return BindingConstraintFileData.from_model(constraint).model_dump(mode="json", by_alias=True, exclude_none=True)

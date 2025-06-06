@@ -37,14 +37,7 @@ from antarest.study.business.areas.st_storage_management import (
 from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
-from antarest.study.business.binding_constraint_management import (
-    ConstraintCreation,
-    ConstraintFilters,
-    ConstraintInput,
-    ConstraintOutput,
-    ConstraintTerm,
-    ConstraintTermUpdate,
-)
+from antarest.study.business.binding_constraint_management import ConstraintFilters
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
     CorrelationFormFields,
@@ -54,6 +47,15 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    BindingConstraintCreation,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+    BindingConstraintUpdate,
+    ConstraintTerm,
+    ConstraintTermUpdate,
+)
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -80,10 +82,6 @@ from antarest.study.business.table_mode_management import TableDataDTO, TableMod
 from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
@@ -783,7 +781,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints",
         tags=[APITag.study_data],
         summary="Get binding constraint list",
-        response_model=List[ConstraintOutput],
+        response_model=List[BindingConstraint],
     )
     def get_binding_constraint_list(
         uuid: str,
@@ -816,7 +814,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             description="Filter results based on cluster ID ('area.cluster')",
             alias="clusterId",
         ),
-    ) -> Sequence[ConstraintOutput]:
+    ) -> Sequence[BindingConstraint]:
         logger.info(f"Fetching binding constraint list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -837,9 +835,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=ConstraintOutput,  # TODO: redundant ?
+        response_model=BindingConstraint,  # TODO: redundant ?
     )
-    def get_binding_constraint(uuid: str, binding_constraint_id: str) -> ConstraintOutput:
+    def get_binding_constraint(uuid: str, binding_constraint_id: str) -> BindingConstraint:
         logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -850,7 +848,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Update binding constraint",
     )
-    def update_binding_constraint(uuid: str, binding_constraint_id: str, data: ConstraintInput) -> ConstraintOutput:
+    def update_binding_constraint(
+        uuid: str, binding_constraint_id: str, data: BindingConstraintUpdate
+    ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -863,7 +863,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get the list of binding constraint groups",
     )
-    def get_grouped_constraints(uuid: str) -> Mapping[str, Sequence[ConstraintOutput]]:
+    def get_grouped_constraints(uuid: str) -> Mapping[str, Sequence[BindingConstraint]]:
         """
         Get the list of binding constraint groups for the study.
 
@@ -910,7 +910,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get the binding constraint group",
     )
-    def get_constraints_by_group(uuid: str, group: str) -> Sequence[ConstraintOutput]:
+    def get_constraints_by_group(uuid: str, group: str) -> Sequence[BindingConstraint]:
         """
         Get the binding constraint group for the study.
 
@@ -958,7 +958,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.binding_constraint_manager.validate_constraint_group(study_interface, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
-    def create_binding_constraint(uuid: str, data: ConstraintCreation) -> ConstraintOutput:
+    def create_binding_constraint(uuid: str, data: BindingConstraintCreation) -> BindingConstraint:
         logger.info(f"Creating a new binding constraint for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -971,7 +971,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def duplicate_binding_constraint(
         uuid: str, binding_constraint_id: str, new_constraint_name: str
-    ) -> ConstraintOutput:
+    ) -> BindingConstraint:
         logger.info(f"Duplicates constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

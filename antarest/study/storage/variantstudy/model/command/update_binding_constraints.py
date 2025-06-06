@@ -18,13 +18,13 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.matrixstore.model import MatrixData
-from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
