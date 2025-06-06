@@ -128,28 +128,6 @@ function MultiRowFilter({
           gap: DESIGN_TOKENS.spacing.sm,
         }}
       >
-        {filter.rowsFilters.length > 1 && (
-          <ToggleButtonGroup
-            value={filter.rowsFilterLogic || "AND"}
-            exclusive
-            onChange={handleLogicChange}
-            size="small"
-          >
-            <Tooltip title={t("matrix.filter.logic.andTooltip")}>
-              <ToggleButton
-                value="AND"
-                sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, py: 0.5, px: 1 }}
-              >
-                {t("matrix.filter.logic.and")}
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title={t("matrix.filter.logic.orTooltip")}>
-              <ToggleButton value="OR" sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, py: 0.5, px: 1 }}>
-                {t("matrix.filter.logic.or")}
-              </ToggleButton>
-            </Tooltip>
-          </ToggleButtonGroup>
-        )}
         <Tooltip
           title={allExpanded ? t("matrix.filter.collapseAll") : t("matrix.filter.expandAll")}
         >
@@ -177,6 +155,28 @@ function MultiRowFilter({
         >
           {t("matrix.filter.addRowFilter")}
         </Button>
+        {filter.rowsFilters.length > 1 && (
+          <ToggleButtonGroup
+            value={filter.rowsFilterLogic || "AND"}
+            exclusive
+            onChange={handleLogicChange}
+            size="small"
+          >
+            <Tooltip title={t("matrix.filter.logic.andTooltip")}>
+              <ToggleButton
+                value="AND"
+                sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, py: 0.5, px: 1 }}
+              >
+                {t("matrix.filter.logic.and")}
+              </ToggleButton>
+            </Tooltip>
+            <Tooltip title={t("matrix.filter.logic.orTooltip")}>
+              <ToggleButton value="OR" sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, py: 0.5, px: 1 }}>
+                {t("matrix.filter.logic.or")}
+              </ToggleButton>
+            </Tooltip>
+          </ToggleButtonGroup>
+        )}
       </Box>
     </>
   );
