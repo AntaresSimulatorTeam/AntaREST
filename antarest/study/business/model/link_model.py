@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Optional, Self
+from typing import Optional, Self
 
 from pydantic import ConfigDict, Field, model_validator
 
@@ -17,7 +17,7 @@ from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.common import CommaSeparatedFilterOptions, FilterOption
+from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
 from antarest.study.storage.rawstudy.model.filesystem.config.model import LinkConfig
 
 
@@ -78,13 +78,6 @@ class LinkStyle(EnumIgnoreCase):
 
 
 DEFAULT_COLOR = 112
-FILTER_VALUES: List[FilterOption] = [
-    FilterOption.HOURLY,
-    FilterOption.DAILY,
-    FilterOption.WEEKLY,
-    FilterOption.MONTHLY,
-    FilterOption.ANNUAL,
-]
 
 
 class LinkUpdate(AntaresBaseModel):

@@ -13,6 +13,7 @@
 """
 Object model used to read and update binding constraint configuration.
 """
+
 from typing import Any, Optional
 
 from antares.study.version import StudyVersion
@@ -24,6 +25,8 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintOperator,
+    initialize_binding_constraint,
+    validate_binding_constraint_against_version,
 )
 
 
@@ -46,7 +49,6 @@ class BindingConstraintFileData(AntaresBaseModel):
     # Added in 8.7
     group: Optional[str] = None
 
-
     def to_model(self) -> BindingConstraint:
         return BindingConstraint.model_validate(self.model_dump(exclude_none=True))
 
@@ -57,11 +59,11 @@ class BindingConstraintFileData(AntaresBaseModel):
 
 def parse_binding_constraint(study_version: StudyVersion, data: Any) -> BindingConstraint:
     bc = BindingConstraintFileData.model_validate(data).to_model()
-    validate_thermal_cluster_against_version(study_version, bc)
-    initialize_thermal_cluster(bc, study_version)
+    validate_binding_constraint_against_version(study_version, bc)
+    initialize_binding_constraint(bc, study_version)
     return bc
 
 
 def serialize_binding_constraint(study_version: StudyVersion, constraint: BindingConstraint) -> dict[str, Any]:
-    validate_thermal_cluster_against_version(study_version, constraint)
+    validate_binding_constraint_against_version(study_version, constraint)
     return BindingConstraintFileData.from_model(constraint).model_dump(mode="json", by_alias=True, exclude_none=True)

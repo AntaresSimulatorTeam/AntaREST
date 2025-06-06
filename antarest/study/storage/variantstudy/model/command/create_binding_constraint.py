@@ -161,6 +161,7 @@ def create_binding_constraint_properties(study_version: StudyVersion, **kwargs: 
 class OptionalProperties(BindingConstraintProperties870):
     pass
 
+
 # =================================================================================
 # Binding constraint command classes
 # =================================================================================

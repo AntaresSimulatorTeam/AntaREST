@@ -35,6 +35,14 @@ class FilterOption(EnumIgnoreCase):
     ANNUAL = "annual"
 
 
+FILTER_VALUES: list[FilterOption] = [
+    FilterOption.HOURLY,
+    FilterOption.DAILY,
+    FilterOption.WEEKLY,
+    FilterOption.MONTHLY,
+    FilterOption.ANNUAL,
+]
+
 
 def validate_filters(filter_value: list[FilterOption] | str) -> list[FilterOption]:
     if isinstance(filter_value, str):

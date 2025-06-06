@@ -848,7 +848,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Update binding constraint",
     )
-    def update_binding_constraint(uuid: str, binding_constraint_id: str, data: BindingConstraintUpdate) -> BindingConstraint:
+    def update_binding_constraint(
+        uuid: str, binding_constraint_id: str, data: BindingConstraintUpdate
+    ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

@@ -86,6 +86,7 @@ OPERATOR_CONFLICT_MAP = {
     BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
 }
 
+
 class ConstraintFilters(AntaresBaseModel, extra="forbid"):
     """
     Binding Constraint Filters gathering the main filtering parameters.

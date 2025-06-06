@@ -16,14 +16,16 @@ Object model used to read and update binding constraint configuration.
 
 from typing import Any, Dict, List, Optional, TypeAlias
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
-from antarest.core.exceptions import InvalidConstraintTerm
+from antarest.core.exceptions import InvalidConstraintTerm, InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.common import CommaSeparatedFilterOptions
+from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
+from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
@@ -89,6 +91,7 @@ class BindingConstraintMatrices(AntaresBaseModel):
     """
     Class used to store the matrices of a binding constraint.
     """
+
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     values: Optional[MatrixType | str] = Field(
@@ -126,7 +129,6 @@ class BindingConstraintMatrices(AntaresBaseModel):
 # ==================================================
 # Binding constraint terms
 # ==================================================
-
 
 
 def validate_and_transform_term_id(term_id: str) -> str:
@@ -297,7 +299,9 @@ class BindingConstraintCreation(BindingConstraintMatrices):
         """
         Conversion to creation request, can be useful for duplicating constraints.
         """
-        return BindingConstraintCreation.model_validate(constraint.model_dump(mode="json", exclude={"id"}, exclude_none=True))
+        return BindingConstraintCreation.model_validate(
+            constraint.model_dump(mode="json", exclude={"id"}, exclude_none=True)
+        )
 
 
 class BindingConstraintUpdate(BindingConstraintMatrices):
@@ -306,6 +310,7 @@ class BindingConstraintUpdate(BindingConstraintMatrices):
 
     Only not-None fields will be used to update the constraint.
     """
+
     enabled: Optional[bool] = None
     time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
     operator: Optional[BindingConstraintOperator] = None
@@ -319,4 +324,62 @@ class BindingConstraintUpdate(BindingConstraintMatrices):
     # Added in 8.7
     group: Optional[LowerCaseStr] = None
 
+
 BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]
+
+
+def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
+    if getattr(data, field) is not None:
+        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
+
+
+def validate_binding_constraint_against_version(
+    version: StudyVersion,
+    constraint_data: BindingConstraint | BindingConstraintCreation | BindingConstraintUpdate,
+) -> None:
+    """
+    Validates input binding constraint data against the provided study versions
+
+    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
+    """
+
+    if version < STUDY_VERSION_8_3:
+        for field in ["filter_year_by_year", "filter_synthesis"]:
+            _check_min_version(constraint_data, field, version)
+
+    if version < STUDY_VERSION_8_7:
+        _check_min_version(constraint_data, "group", version)
+
+
+def _initialize_field_default(constraint: BindingConstraint, field: str, default_value: Any) -> None:
+    if getattr(constraint, field) is None:
+        setattr(constraint, field, default_value)
+
+
+def initialize_binding_constraint(constraint: BindingConstraint, version: StudyVersion) -> None:
+    """
+    Set undefined version-specific fields to default values.
+    """
+    if version >= STUDY_VERSION_8_3:
+        for field in ["filter_year_by_year", "filter_synthesis"]:
+            _initialize_field_default(constraint, field, FILTER_VALUES)
+
+    if version >= STUDY_VERSION_8_7:
+        _initialize_field_default(constraint, "group", DEFAULT_GROUP)
+
+
+def create_binding_constraint(constraint_data: BindingConstraintCreation, version: StudyVersion) -> BindingConstraint:
+    """
+    Creates a binding constraint from a creation request, checking and initializing it against the specified study version.
+    """
+    constraint = BindingConstraint.model_validate(constraint_data.model_dump(exclude_none=True))
+    validate_binding_constraint_against_version(version, constraint_data)
+    initialize_binding_constraint(constraint, version)
+    return constraint
+
+
+def update_binding_constraint(constraint: BindingConstraint, data: BindingConstraintUpdate) -> BindingConstraint:
+    """
+    Updates a binding constraint according to the provided update data.
+    """
+    return constraint.model_copy(update=data.model_dump(exclude_none=True))
