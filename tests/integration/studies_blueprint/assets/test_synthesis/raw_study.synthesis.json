@@ -1522,7 +1522,7 @@
     "20201014-1422eco-hello": {
       "name": "hello",
       "date": "20201014-1422",
-      "mode": "economy",
+      "mode": "Economy",
       "nbyears": 1,
       "synthesis": true,
       "by_year": true,
@@ -1536,7 +1536,7 @@
     "20201014-1425eco-goodbye": {
       "name": "goodbye",
       "date": "20201014-1425",
-      "mode": "economy",
+      "mode": "Economy",
       "nbyears": 2,
       "synthesis": true,
       "by_year": true,
@@ -1551,7 +1551,7 @@
     "20201014-1427eco": {
       "name": "",
       "date": "20201014-1427",
-      "mode": "economy",
+      "mode": "Economy",
       "nbyears": 1,
       "synthesis": true,
       "by_year": false,
@@ -1565,7 +1565,7 @@
     "20201014-1430adq": {
       "name": "",
       "date": "20201014-1430",
-      "mode": "adequacy",
+      "mode": "Adequacy",
       "nbyears": 1,
       "synthesis": true,
       "by_year": false,
@@ -1579,7 +1579,7 @@
     "20201014-1430adq-2": {
       "name": "2",
       "date": "20201014-1430",
-      "mode": "adequacy",
+      "mode": "Adequacy",
       "nbyears": 1,
       "synthesis": true,
       "by_year": false,
@@ -1593,7 +1593,7 @@
     "20241807-1540eco-extra-outputs": {
       "name": "extra-outputs",
       "date": "20241807-1540",
-      "mode": "economy",
+      "mode": "Economy",
       "nbyears": 1,
       "synthesis": true,
       "by_year": true,
