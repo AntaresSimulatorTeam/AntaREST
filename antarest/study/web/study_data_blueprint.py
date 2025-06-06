@@ -37,11 +37,7 @@ from antarest.study.business.areas.st_storage_management import (
 from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
-from antarest.study.business.binding_constraint_management import (
-    ConstraintFilters,
-    ConstraintTerm,
-    ConstraintTermUpdate,
-)
+from antarest.study.business.binding_constraint_management import ConstraintFilters
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
     CorrelationFormFields,
@@ -57,6 +53,8 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     BindingConstraintUpdate,
+    ConstraintTerm,
+    ConstraintTermUpdate,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,

@@ -41,6 +41,10 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintOperator,
     BindingConstraintUpdate,
     BindingConstraintUpdates,
+    ClusterTerm,
+    ConstraintTerm,
+    ConstraintTermUpdate,
+    LinkTerm,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7

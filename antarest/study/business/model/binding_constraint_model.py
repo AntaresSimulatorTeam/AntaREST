@@ -23,7 +23,7 @@ from antarest.core.exceptions import InvalidConstraintTerm
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.link_model import CommaSeparatedFilterOptions
+from antarest.study.business.model.common import CommaSeparatedFilterOptions
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 

@@ -28,6 +28,7 @@ from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
+    BindingConstraintMatrices,
     BindingConstraintOperator,
 )
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7

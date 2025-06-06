@@ -20,17 +20,17 @@ from typing_extensions import override
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import StudyVersionInt
-
-from .binding_constraint import (
+from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.model import StudyVersionInt
+
 from .st_storage import STStorageConfigType
 from .validation import extract_filtering, study_version_context
 

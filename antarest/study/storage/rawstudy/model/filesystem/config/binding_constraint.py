@@ -13,13 +13,18 @@
 """
 Object model used to read and update binding constraint configuration.
 """
-from typing import Optional
+from typing import Any, Optional
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
-from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+)
 
 
 class BindingConstraintFileData(AntaresBaseModel):
@@ -42,21 +47,21 @@ class BindingConstraintFileData(AntaresBaseModel):
     group: Optional[str] = None
 
 
-    def to_model(self) -> ThermalCluster:
-        return ThermalCluster.model_validate(self.model_dump(exclude_none=True))
+    def to_model(self) -> BindingConstraint:
+        return BindingConstraint.model_validate(self.model_dump(exclude_none=True))
 
     @classmethod
-    def from_model(cls, cluster: ThermalCluster) -> "ThermalClusterFileData":
-        return cls.model_validate(cluster.model_dump(exclude={"id"}))
+    def from_model(cls, constraint: BindingConstraint) -> "BindingConstraintFileData":
+        return cls.model_validate(constraint.model_dump(exclude={"id"}))
 
 
-def parse_thermal_cluster(study_version: StudyVersion, data: Any) -> ThermalCluster:
-    cluster = ThermalClusterFileData.model_validate(data).to_model()
-    validate_thermal_cluster_against_version(study_version, cluster)
-    initialize_thermal_cluster(cluster, study_version)
-    return cluster
+def parse_binding_constraint(study_version: StudyVersion, data: Any) -> BindingConstraint:
+    bc = BindingConstraintFileData.model_validate(data).to_model()
+    validate_thermal_cluster_against_version(study_version, bc)
+    initialize_thermal_cluster(bc, study_version)
+    return bc
 
 
-def serialize_thermal_cluster(study_version: StudyVersion, cluster: ThermalCluster) -> dict[str, Any]:
-    validate_thermal_cluster_against_version(study_version, cluster)
-    return ThermalClusterFileData.from_model(cluster).model_dump(mode="json", by_alias=True, exclude_none=True)
+def serialize_binding_constraint(study_version: StudyVersion, constraint: BindingConstraint) -> dict[str, Any]:
+    validate_thermal_cluster_against_version(study_version, constraint)
+    return BindingConstraintFileData.from_model(constraint).model_dump(mode="json", by_alias=True, exclude_none=True)
