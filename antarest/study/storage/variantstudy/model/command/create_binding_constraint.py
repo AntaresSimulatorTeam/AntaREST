@@ -22,7 +22,7 @@ from typing_extensions import override
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.matrixstore.model import MatrixData
-from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     DEFAULT_OPERATOR,
@@ -159,50 +159,6 @@ def create_binding_constraint_properties(study_version: StudyVersion, **kwargs: 
 @all_optional_model
 class OptionalProperties(BindingConstraintProperties870):
     pass
-
-
-# =================================================================================
-# Binding constraint matrices classes
-# =================================================================================
-
-
-@camel_case_model
-class BindingConstraintMatrices(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    """
-    Class used to store the matrices of a binding constraint.
-    """
-
-    values: Optional[MatrixType | str] = Field(
-        default=None,
-        description="2nd member matrix for studies before v8.7",
-    )
-    less_term_matrix: Optional[MatrixType | str] = Field(
-        default=None,
-        description="less term matrix for v8.7+ studies",
-    )
-    greater_term_matrix: Optional[MatrixType | str] = Field(
-        default=None,
-        description="greater term matrix for v8.7+ studies",
-    )
-    equal_term_matrix: Optional[MatrixType | str] = Field(
-        default=None,
-        description="equal term matrix for v8.7+ studies",
-    )
-
-    @model_validator(mode="before")
-    def check_matrices(cls, values: Dict[str, Optional[MatrixType | str]]) -> Dict[str, Optional[MatrixType | str]]:
-        values_matrix = values.get("values") or None
-        less_term_matrix = values.get("less_term_matrix") or None
-        greater_term_matrix = values.get("greater_term_matrix") or None
-        equal_term_matrix = values.get("equal_term_matrix") or None
-        if values_matrix and (less_term_matrix or greater_term_matrix or equal_term_matrix):
-            raise ValueError(
-                "You cannot fill 'values' (matrix before v8.7) and a matrix term:"
-                " 'less_term_matrix', 'greater_term_matrix' or 'equal_term_matrix' (matrices since v8.7)"
-            )
-
-        return values
-
 
 # =================================================================================
 # Binding constraint command classes

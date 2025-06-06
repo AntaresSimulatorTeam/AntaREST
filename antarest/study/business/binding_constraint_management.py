@@ -16,7 +16,6 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 from antares.study.version import StudyVersion
-from pydantic import model_validator
 
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
@@ -24,12 +23,11 @@ from antarest.core.exceptions import (
     DuplicateConstraintName,
     DuplicateConstraintTerm,
     InvalidConstraintName,
-    InvalidConstraintTerm,
     InvalidFieldForVersionError,
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
-from antarest.core.model import JSON, LowerCaseId
+from antarest.core.model import JSON
 from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.binding_constraint_model import (
@@ -83,124 +81,6 @@ OPERATOR_CONFLICT_MAP = {
     BindingConstraintOperator.LESS: [TermMatrices.EQUAL.value, TermMatrices.GREATER.value],
     BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
 }
-
-
-def validate_and_transform_term_id(term_id: str) -> str:
-    """
-    Used to validate the term id given by the user when updating an existing one
-    """
-    try:
-        if "%" in term_id:
-            area_1, area_2 = sorted(term_id.split("%"))
-            return f"{transform_name_to_id(area_1)}%{transform_name_to_id(area_2)}"
-        elif "." in term_id:
-            area, cluster = term_id.split(".")
-            return f"{transform_name_to_id(area)}.{transform_name_to_id(cluster)}"
-        raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
-    except Exception:
-        raise InvalidConstraintTerm(term_id, "Your term id is not well-formatted")
-
-
-class LinkTerm(AntaresBaseModel):
-    """
-    DTO for a constraint term on a link between two areas.
-
-    Attributes:
-        area1: the first area ID
-        area2: the second area ID
-    """
-
-    area1: LowerCaseId
-    area2: LowerCaseId
-
-    def generate_id(self) -> str:
-        """Return the constraint term ID for this link, of the form "area1%area2"."""
-        # Ensure IDs are in alphabetical order and lower case
-        ids = sorted((self.area1, self.area2))
-        return "%".join(ids)
-
-
-class ClusterTerm(AntaresBaseModel):
-    """
-    DTO for a constraint term on a cluster in an area.
-
-    Attributes:
-        area: the area ID
-        cluster: the cluster ID
-    """
-
-    area: LowerCaseId
-    cluster: LowerCaseId
-
-    def generate_id(self) -> str:
-        """Return the constraint term ID for this Area/cluster constraint, of the form "area.cluster"."""
-        # Ensure IDs are in lower case
-        return ".".join([self.area, self.cluster])
-
-
-class ConstraintTermUpdate(AntaresBaseModel):
-    """
-    DTO used to update an existing constraint term.
-
-    Attributes:
-        id: the constraint term ID, of the form "area1%area2" or "area.cluster".
-        weight: the constraint term weight, if any.
-        offset: the constraint term offset, if any.
-        data: the constraint term data (link or cluster), if any.
-    """
-
-    id: str
-    weight: Optional[float] = None
-    offset: Optional[int] = None
-    data: Optional[LinkTerm | ClusterTerm] = None
-
-    @model_validator(mode="before")
-    def validate_term_id(cls, values: dict[str, Any]) -> dict[str, Any]:
-        if "id" not in values:
-            if "data" not in values:
-                raise InvalidConstraintTerm("", "You should provide an id or data when updating an existing term")
-
-            data = values["data"]
-            if "area1" in data:
-                values["id"] = "%".join((data["area1"], data["area2"]))
-            elif "cluster" in data:
-                values["id"] = ".".join([data["area"], data["cluster"]])
-            else:
-                raise InvalidConstraintTerm(str(data), "Your term data is not well-formatted")
-
-        values["id"] = validate_and_transform_term_id(values["id"])
-        return values
-
-
-class ConstraintTerm(AntaresBaseModel):
-    """
-    DTO for a constraint term.
-
-    Attributes:
-        weight: the constraint term weight
-        offset: the constraint term offset, if any.
-        data: the constraint term data (link or cluster)
-    """
-
-    weight: float
-    offset: Optional[int] = None
-    data: LinkTerm | ClusterTerm
-
-    def generate_id(self) -> str:
-        return self.data.generate_id()
-
-    def update_from(self, updated_term: ConstraintTermUpdate) -> "ConstraintTerm":
-        if updated_term.weight:
-            self.weight = updated_term.weight
-
-        if updated_term.data:
-            self.data = updated_term.data
-
-        # IMPORTANT: If the user didn't give an offset it means he wants to remove it.
-        self.offset = updated_term.offset
-
-        return self
-
 
 class ConstraintFilters(AntaresBaseModel, extra="forbid"):
     """
