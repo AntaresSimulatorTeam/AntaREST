@@ -56,7 +56,6 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
 
   const config = getConfig();
 
-  console.log(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
   webSocket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
 
   if (!globalListenerAdded) {
@@ -258,15 +257,20 @@ function makeMaintenanceListener(dispatch: AppDispatch): WsEventListener {
 function makeNotificationListener(dispatch: AppDispatch): WsEventListener {
   const TASK_MESSAGES = {
     [TaskType.Copy]: i18n.t("studies.studycopying"),
-    [TaskType.Archive]: i18n.t("studies.studyarchiving"),
-    [TaskType.Unarchive]: i18n.t("studies.studyunarchiving"),
+    // [TaskType.Archive]: i18n.t("studies.studyarchiving"),
+    // [TaskType.Unarchive]: i18n.t("studies.studyunarchiving"),
+    [TaskType.Archive]: "",
+    [TaskType.Unarchive]: "",
     [TaskType.Scan]: i18n.t("studies.success.scanFolder"),
     [TaskType.UpgradeStudy]: "",
     [TaskType.ThermalClusterSeriesGeneration]: "",
   } as const;
 
-  const notif = (message?: string, variant: VariantType = "info") => {
-    if (location.pathname !== "/tasks") {
+  const notifIds = new Set<string>();
+
+  const notif = (id: string, message?: string, variant: VariantType = "info") => {
+    if (location.pathname !== "/tasks" && !notifIds.has(id)) {
+      notifIds.add(id);
       dispatch(incrementTaskNotifications());
     }
     if (message) {
@@ -277,19 +281,21 @@ function makeNotificationListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
       case WsEventType.DownloadCreated:
-        notif(i18n.t("downloads.newDownload"));
+        notif(e.payload.id, i18n.t("downloads.newDownload"));
         break;
       case WsEventType.DownloadReady:
-        notif(i18n.t("downloads.downloadReady"), "success");
+        notif(e.payload.id, i18n.t("downloads.downloadReady"), "success");
         break;
       case WsEventType.DownloadFailed:
-        notif(i18n.t("study.error.exportOutput"), "error");
+        notif(e.payload.id, i18n.t("study.error.exportOutput"), "error");
         break;
       case WsEventType.TaskAdded: {
-        const type = e.payload.type;
+        const { id, type } = e.payload;
+
         if (includes(type, TASK_TYPES_MANAGED)) {
-          notif(TASK_MESSAGES[type]);
+          notif(id, TASK_MESSAGES[type]);
         }
+
         break;
       }
     }

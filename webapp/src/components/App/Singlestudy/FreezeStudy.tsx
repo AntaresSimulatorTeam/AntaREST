@@ -44,6 +44,8 @@ interface FreezeStudyProps {
 const BLOCKING_TASK_TYPES = [
   TaskType.UpgradeStudy,
   TaskType.ThermalClusterSeriesGeneration,
+  TaskType.Archive,
+  TaskType.Unarchive,
 ] as const;
 
 const PROGRESS_COMPLETE = 100;
@@ -68,7 +70,7 @@ function FreezeStudy({ studyId }: FreezeStudyProps) {
 
     getTasks({
       studyId,
-      type: [TaskType.UpgradeStudy, TaskType.ThermalClusterSeriesGeneration],
+      type: [...BLOCKING_TASK_TYPES],
       status: [TaskStatus.Pending, TaskStatus.Running],
     }).then((tasks) => {
       if (active) {

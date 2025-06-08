@@ -77,21 +77,24 @@ function InformationView({ study, variantTree }: Props) {
       <Divider />
       <Box sx={{ display: "flex", gap: 2 }}>
         <Box sx={{ display: "flex", gap: 2, flex: 1 }}>
-          <Button
-            variant="contained"
-            onClick={() => {
-              navigate(`/studies/${study.id}/explore`);
-            }}
-          >
-            {t("global.open")}
-          </Button>
           {!study.archived && (
-            <Button
-              variant="outlined"
-              onClick={() => (study.managed ? setOpenVariantModal(true) : importStudy(study))}
-            >
-              {study.managed ? t("variants.createNewVariant") : t("studies.importcopy")}
-            </Button>
+            <>
+              {" "}
+              <Button
+                variant="contained"
+                onClick={() => {
+                  navigate(`/studies/${study.id}/explore`);
+                }}
+              >
+                {t("global.open")}
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => (study.managed ? setOpenVariantModal(true) : importStudy(study))}
+              >
+                {study.managed ? t("variants.createNewVariant") : t("studies.importcopy")}
+              </Button>
+            </>
           )}
         </Box>
         <Button
