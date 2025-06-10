@@ -77,7 +77,7 @@ class InMemoryStudyDao(StudyDao):
         self._constraints_values_matrix: dict[str, str] = {}
         self._constraints_less_term_matrix: dict[str, str] = {}
         self._constraints_greater_term_matrix: dict[str, str] = {}
-        self._constraints_equal_matrix: dict[str, str] = {}
+        self._constraints_equal_term_matrix: dict[str, str] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -245,52 +245,58 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
-        raise NotImplementedError()
+        return self._constraints
 
     @override
     def get_constraint(self, constraint_id: str) -> BindingConstraint:
-        raise NotImplementedError()
+        return self._constraints[constraint_id]
 
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._constraints_values_matrix[constraint_id]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._constraints_less_term_matrix[constraint_id]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._constraints_greater_term_matrix[constraint_id]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        matrix_id = self._constraints_equal_term_matrix[constraint_id]
+        return self._matrix_service.get(matrix_id)
 
     @override
     def save_constraint(self, constraint: BindingConstraint) -> None:
-        raise NotImplementedError()
+        self._constraints[constraint.id] = constraint
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
-        raise NotImplementedError()
+        for constraint in constraints:
+            self.save_constraint(constraint)
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._constraints_values_matrix[constraint_id] = series_id
 
     @override
     def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._constraints_less_term_matrix[constraint_id] = series_id
 
     @override
     def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._constraints_greater_term_matrix[constraint_id] = series_id
 
     @override
     def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        self._constraints_equal_term_matrix[constraint_id] = series_id
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
-        raise NotImplementedError()
+        for constraint in constraints:
+            del self._constraints[constraint.id]
