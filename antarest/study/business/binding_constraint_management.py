@@ -49,7 +49,6 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly as default_bc_hourly_87,
 )
@@ -178,7 +177,7 @@ class ConstraintFilters(AntaresBaseModel, extra="forbid"):
 
 
 def _get_references_by_widths(
-    file_study: FileStudy, bcs: Sequence[BindingConstraint]
+    study: StudyInterface, bcs: Sequence[BindingConstraint]
 ) -> Mapping[int, Sequence[Tuple[str, str]]]:
     """
     Iterates over each BC and its associated matrices.
@@ -194,7 +193,7 @@ def _get_references_by_widths(
     _total = len(bcs)
     for _index, bc in enumerate(bcs):
         matrices_name = (
-            OPERATOR_MATRIX_FILE_MAP[bc.operator] if file_study.config.version >= STUDY_VERSION_8_7 else ["{bc_id}"]
+            OPERATOR_MATRIX_FILE_MAP[bc.operator] if study.version >= STUDY_VERSION_8_7 else ["{bc_id}"]
         )
         for matrix_name in matrices_name:
             matrix_id = matrix_name.format(bc_id=bc.id)
@@ -218,11 +217,11 @@ def _get_references_by_widths(
     return references_by_width
 
 
-def _validate_binding_constraints(file_study: FileStudy, bcs: Sequence[BindingConstraint]) -> bool:
+def _validate_binding_constraints(study: StudyInterface, bcs: Sequence[BindingConstraint]) -> bool:
     """
     Validates the binding constraints within a group.
     """
-    references_by_widths = _get_references_by_widths(file_study, bcs)
+    references_by_widths = _get_references_by_widths(study, bcs)
 
     if len(references_by_widths) > 1:
         most_common = collections.Counter(references_by_widths.keys()).most_common()
@@ -350,14 +349,13 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If no matching group name is found in a case-insensitive manner.
         """
-        file_study = study.get_files()
         grouped_constraints = self.get_grouped_constraints(study)
 
         if group_name not in grouped_constraints:
             raise BindingConstraintNotFound(f"Group '{group_name}' not found")
 
         constraints = grouped_constraints[group_name]
-        return _validate_binding_constraints(file_study, constraints)
+        return _validate_binding_constraints(study, constraints)
 
     def validate_constraint_groups(self, study: StudyInterface) -> bool:
         """
@@ -376,13 +374,12 @@ class BindingConstraintManager:
         Raises:
             IncoherenceBetweenMatricesLength: If any validation checks fail.
         """
-        file_study = study.get_files()
         grouped_constraints = self.get_grouped_constraints(study)
         invalid_groups = {}
 
         for group_name, bcs in grouped_constraints.items():
             try:
-                _validate_binding_constraints(file_study, bcs)
+                _validate_binding_constraints(study, bcs)
             except MatrixWidthMismatchError as e:
                 invalid_groups[group_name] = e.detail
 
