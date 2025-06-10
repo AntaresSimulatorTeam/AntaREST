@@ -182,8 +182,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     name: str
 
     _SERIALIZATION_VERSION: Final[int] = 2
-    # version 2: put all args inside `parameters` and type it as BindingConstraintCreation
-    # put all matrices inside `matrices`
+    # version 2: put all args inside `parameters` and type it as BindingConstraintCreation + put all matrices inside `matrices`
 
     parameters: BindingConstraintCreation
     matrices: BindingConstraintMatrices
