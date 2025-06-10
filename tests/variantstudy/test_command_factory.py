@@ -154,10 +154,11 @@ COMMANDS = [
             args={
                 "area1": "area1",
                 "area2": "area2",
-                "parameters": {},
+                "parameters": {"hurdlesCost": False},
                 "series": "series",
             },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_link",
@@ -169,11 +170,12 @@ COMMANDS = [
                 {
                     "area1": "area1",
                     "area2": "area2",
-                    "parameters": {},
+                    "parameters": {"linkWidth": 0.4},
                     "series": "series",
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_link_list",
@@ -185,11 +187,12 @@ COMMANDS = [
                 {
                     "area1": "area1",
                     "area2": "area2",
-                    "parameters": {},
+                    "parameters": {"usePhaseShifter": True},
                     "series": "series",
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_link",
@@ -416,12 +419,16 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
-            version=2,
+            version=3,
             args={
                 "area_id": "area_name",
                 "parameters": {
                     "name": "cluster_name",
-                    "ts-interpretation": "power-generation",
+                    "tsInterpretation": "power-generation",
+                    "enabled": False,
+                    "unitCount": 3,
+                    "nominalCapacity": 100,
+                    "group": "wind offshore",
                 },
             },
             study_version=STUDY_VERSION_8_8,
@@ -429,12 +436,12 @@ COMMANDS = [
         {
             "area_id": "area_name",
             "parameters": {
-                "enabled": True,
-                "group": "other res 1",
                 "name": "cluster_name",
-                "nominalcapacity": 0.0,
-                "ts-interpretation": "power-generation",
-                "unitcount": 1,
+                "tsInterpretation": "power-generation",
+                "enabled": False,
+                "unitCount": 3,
+                "nominalCapacity": 100,
+                "group": "wind offshore",
             },
         },
         id="create_renewables_cluster",
@@ -442,14 +449,11 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
-            version=2,
+            version=3,
             args=[
                 {
                     "area_id": "area_name",
-                    "parameters": {
-                        "name": "cluster_name",
-                        "ts-interpretation": "power-generation",
-                    },
+                    "parameters": {"name": "cluster_name", "enabled": False, "unitCount": 4},
                 }
             ],
             study_version=STUDY_VERSION_8_8,
@@ -458,12 +462,9 @@ COMMANDS = [
             {
                 "area_id": "area_name",
                 "parameters": {
-                    "enabled": True,
-                    "group": "other res 1",
+                    "enabled": False,
                     "name": "cluster_name",
-                    "nominalcapacity": 0.0,
-                    "ts-interpretation": "power-generation",
-                    "unitcount": 1,
+                    "unitCount": 4,
                 },
             }
         ],
@@ -1050,9 +1051,44 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
         args={
             "area_id": "area_name",
             "cluster_name": "cluster_name",
-            "parameters": {
-                "ts-interpretation": "power-generation",
-            },
+            "parameters": {"ts-interpretation": "power-generation"},
+        },
+        study_version=STUDY_VERSION_8_8,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 3
+    assert dto.args["parameters"]["name"] == "cluster_name"
+    assert "cluster_name" not in dto.args
+
+
+def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
+        version=2,
+        args={"area_id": "area_name", "parameters": {"name": "Sts_1", "ts-interpretation": "power-generation"}},
+        study_version=STUDY_VERSION_8_8,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 3
+    assert dto.args["parameters"]["name"] == "Sts_1"
+    assert dto.args["parameters"]["tsInterpretation"] == "power-generation"
+    assert "cluster_name" not in dto.args
+
+
+def test_parse_create_link_dto_v1(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.CREATE_LINK.value,
+        version=1,
+        args={
+            "area1": "area1",
+            "area2": "area2",
+            "parameters": {"link-width": 0.56},  # old format
         },
         study_version=STUDY_VERSION_8_8,
     )
@@ -1061,5 +1097,4 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory):
     command = commands[0]
     dto = command.to_dto()
     assert dto.version == 2
-    assert dto.args["parameters"]["name"] == "cluster_name"
-    assert "cluster_name" not in dto.args
+    assert dto.args["parameters"]["linkWidth"] == 0.56

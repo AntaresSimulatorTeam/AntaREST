@@ -12,59 +12,51 @@
  * This file is part of the Antares project.
  */
 
-import { memo, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
-import type { AxiosError } from "axios";
-import { useSnackbar } from "notistack";
-import { useTranslation } from "react-i18next";
+import CopyButton from "@/components/common/buttons/CopyButton";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import { toError } from "@/utils/fnUtils";
+import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
+import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
+import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import {
   Box,
+  Button,
   Card,
   CardActions,
   CardContent,
-  Button,
-  Typography,
-  Tooltip,
+  Checkbox,
   Chip,
+  colors,
   Divider,
   styled,
-  colors,
-  Checkbox,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
-import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
-import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
-import AltRouteOutlinedIcon from "@mui/icons-material/AltRouteOutlined";
 import debug from "debug";
+import { useSnackbar } from "notistack";
+import { memo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { NavLink, useNavigate } from "react-router-dom";
 import { areEqual } from "react-window";
-import { StudyType, type StudyMetadata } from "../../../../types/types";
+import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "../../../../../redux/hooks/useAppSelector";
+import { getStudy } from "../../../../../redux/selectors";
 import {
   buildModificationDate,
   convertUTCToLocalTime,
   displayVersionName,
-} from "../../../../services/utils";
-import useEnqueueErrorSnackbar from "../../../../hooks/useEnqueueErrorSnackbar";
-import ExportModal from "../ExportModal";
-import FavoriteStudyToggle from "../../../common/studies/FavoriteStudyToggle";
-import MoveStudyDialog from "../MoveStudyDialog";
-import ConfirmationDialog from "../../../common/dialogs/ConfirmationDialog";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { getStudy } from "../../../../redux/selectors";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import { deleteStudy } from "../../../../redux/ducks/studies";
-import PropertiesDialog from "../../Singlestudy/PropertiesDialog";
-import ActionsMenu from "./ActionsMenu";
-import type { DialogsType } from "./types";
-import CopyButton from "@/components/common/buttons/CopyButton";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+} from "../../../../../services/utils";
+import { StudyType, type StudyMetadata } from "../../../../../types/types";
+import FavoriteStudyToggle from "../../../shared/studies/FavoriteStudyToggle";
+import StudyActionsMenu from "../../../shared/studies/StudyActionsMenu";
 
 const logError = debug("antares:studieslist:error");
 
 interface Props {
   id: StudyMetadata["id"];
-  setStudyToLaunch: (id: StudyMetadata["id"]) => void;
   width: number;
   height: number;
   isSelected: boolean;
@@ -78,32 +70,14 @@ const TinyText = styled(Typography)(({ theme }) => ({
 }));
 
 const StudyCard = memo((props: Props) => {
-  const {
-    id,
-    width,
-    height,
-    setStudyToLaunch,
-    isSelected,
-    hasStudiesSelected,
-    toggleStudySelection,
-  } = props;
+  const { id, width, height, isSelected, hasStudiesSelected, toggleStudySelection } = props;
   const { t, i18n } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openDialog, setOpenDialog] = useState<DialogsType | null>(null);
   const study = useAppSelector((state) => getStudy(state, id));
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isDarkMode } = useThemeColorScheme();
-
-  ////////////////////////////////////////////////////////////////
-  // Utils
-  ////////////////////////////////////////////////////////////////
-
-  const closeDialog = () => {
-    setOpenDialog(null);
-  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -117,17 +91,6 @@ const StudyCard = memo((props: Props) => {
     setAnchorEl(null);
   };
 
-  const handleDelete = () => {
-    dispatch(deleteStudy({ id }))
-      .unwrap()
-      .catch((err) => {
-        enqueueErrorSnackbar(t("studies.error.deleteStudy"), err as AxiosError);
-        logError("Failed to delete study", study, err);
-      });
-
-    setOpenDialog("delete");
-  };
-
   const handleCopyId = () => {
     navigator.clipboard
       .writeText(id)
@@ -137,7 +100,7 @@ const StudyCard = memo((props: Props) => {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(t("study.error.studyIdCopy"), err);
+        enqueueErrorSnackbar(t("study.error.studyIdCopy"), toError(err));
         logError("Failed to copy id", study, err);
       });
   };
@@ -338,29 +301,13 @@ const StudyCard = memo((props: Props) => {
             <MoreVertIcon />
           </Button>
         </Tooltip>
-        <ActionsMenu
+        <StudyActionsMenu
+          open={!!anchorEl}
           anchorEl={anchorEl}
           onClose={handleMenuClose}
           study={study}
-          setStudyToLaunch={setStudyToLaunch}
-          setOpenDialog={setOpenDialog}
         />
       </CardActions>
-      {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
-      {openDialog === "properties" && <PropertiesDialog open onClose={closeDialog} study={study} />}
-      {openDialog === "delete" && (
-        <ConfirmationDialog
-          open
-          title={t("dialog.title.confirmation")}
-          onCancel={closeDialog}
-          onConfirm={handleDelete}
-          alert="warning"
-        >
-          {t("studies.question.delete")}
-        </ConfirmationDialog>
-      )}
-      {openDialog === "export" && <ExportModal open onClose={closeDialog} study={study} />}
-      {openDialog === "move" && <MoveStudyDialog open onClose={closeDialog} study={study} />}
     </Card>
   );
 }, areEqual);

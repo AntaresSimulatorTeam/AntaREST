@@ -22,12 +22,12 @@ import type { StudyMetadata } from "@/types/types";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { isStudyFavorite } from "@/redux/selectors";
 
-export interface FavoriteStudyToggleProps {
+interface Props {
   studyId: StudyMetadata["id"];
   size?: CheckboxProps["size"];
 }
 
-function FavoriteStudyToggle({ studyId, size }: FavoriteStudyToggleProps) {
+function FavoriteStudyToggle({ studyId, size }: Props) {
   const isFavorite = useAppSelector((state) => isStudyFavorite(state, studyId));
   const dispatch = useAppDispatch();
   const { t } = useTranslation();

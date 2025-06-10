@@ -26,6 +26,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -46,10 +47,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     LinkConfig,
     Simulation,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableConfigType,
-    create_renewable_config,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
@@ -449,7 +447,7 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     return config_list
 
 
-def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
+def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
     """
     Parse the renewables INI file, return an empty list if missing.
     """
@@ -470,7 +468,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(create_renewable_config(version, **values, id=section))
+            config_list.append(parse_renewable_cluster(values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid renewable configuration: '{section}' in '{config_path}'", exc_info=exc)

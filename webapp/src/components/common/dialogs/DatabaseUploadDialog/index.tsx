@@ -17,7 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 import { Box, Button } from "@mui/material";
 import type { StudyMetadata } from "@/types/types";
-import { CommandEnum } from "@/components/App/Singlestudy/Commands/Edition/commandTypes";
+import { CommandEnum } from "@/components/App/Singlestudy/CommandsDrawer/EditionView/commandTypes";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import DataPropsView from "@/components/App/Data/DataPropsView";
 import FileTable from "@/components/common/FileTable";

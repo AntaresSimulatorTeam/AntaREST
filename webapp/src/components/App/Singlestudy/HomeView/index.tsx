@@ -12,22 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { useNavigate } from "react-router-dom";
 import { Box } from "@mui/material";
+import { useNavigate } from "react-router-dom";
 import Split from "react-split";
 import type { StudyMetadata, VariantTree } from "../../../../types/types";
+import InformationView from "./InformationView";
 import "./Split.css";
 import StudyTreeView from "./StudyTreeView";
-import InformationView from "./InformationView";
 
 interface Props {
-  study: StudyMetadata | undefined;
-  tree: VariantTree | undefined;
+  study: StudyMetadata;
+  variantTree?: VariantTree;
 }
 
-function HomeView(props: Props) {
+function HomeView({ study, variantTree }: Props) {
   const navigate = useNavigate();
-  const { study, tree } = props;
 
   return (
     <Split
@@ -54,12 +53,12 @@ function HomeView(props: Props) {
       >
         <StudyTreeView
           study={study}
-          tree={tree}
+          variantTree={variantTree}
           onClick={(studyId: string) => navigate(`/studies/${studyId}`)}
         />
       </Box>
       {/* Right */}
-      <InformationView study={study} tree={tree} />
+      <InformationView study={study} variantTree={variantTree} />
     </Split>
   );
 }

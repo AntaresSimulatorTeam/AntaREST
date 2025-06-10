@@ -14,8 +14,8 @@
 
 import { useTranslation } from "react-i18next";
 import { Toolbar, Divider, Typography } from "@mui/material";
-import { CommandDrawer, TitleContainer } from "./style";
-import EditionView from "./Edition";
+import { Root, TitleContainer } from "./style";
+import EditionView from "./EditionView";
 
 interface Props {
   open: boolean;
@@ -23,12 +23,14 @@ interface Props {
   studyId: string;
 }
 
+// TODO REFACTOR
+
 function CommandsDrawer(props: Props) {
   const [t] = useTranslation();
   const { open, onClose, studyId } = props;
 
   return (
-    <CommandDrawer variant="temporary" anchor="right" open={open} onClose={onClose}>
+    <Root variant="temporary" anchor="right" open={open} onClose={onClose}>
       <Toolbar sx={{ py: 3 }}>
         <TitleContainer>
           <Typography sx={{ color: "grey.500", fontSize: "0.9em" }}>
@@ -38,7 +40,7 @@ function CommandsDrawer(props: Props) {
       </Toolbar>
       <Divider style={{ height: "1px" }} />
       <EditionView studyId={studyId} />
-    </CommandDrawer>
+    </Root>
   );
 }
 

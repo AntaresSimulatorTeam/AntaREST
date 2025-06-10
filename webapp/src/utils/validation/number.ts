@@ -57,7 +57,7 @@ export function validateNumber(
   const value = valueOrOpts;
 
   if (!Number.isFinite(value)) {
-    return t("form.field.invalidNumber", { value });
+    return t("form.field.invalidValue", { value });
   }
 
   const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER, integer = false } = options;
