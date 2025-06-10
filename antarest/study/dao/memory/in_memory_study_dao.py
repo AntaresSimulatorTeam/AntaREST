@@ -272,13 +272,9 @@ class InMemoryStudyDao(StudyDao):
         return self._matrix_service.get(matrix_id)
 
     @override
-    def save_constraint(self, constraint: BindingConstraint) -> None:
-        self._constraints[constraint.id] = constraint
-
-    @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         for constraint in constraints:
-            self.save_constraint(constraint)
+            self._constraints[constraint.id] = constraint
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:

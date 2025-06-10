@@ -68,7 +68,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
         study_data = self.get_file_study()
         study_version = study_data.config.version
-        if study_version > STUDY_VERSION_8_7:
+        if study_version >= STUDY_VERSION_8_7:
             raise InvalidFieldForVersionError(
                 f"'values' matrix is no supported since v8.7, and your study is in {study_version}"
             )
@@ -78,19 +78,15 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return _get_matrix(self.get_file_study(), constraint_id, "lt")
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        return _get_matrix(self.get_file_study(), constraint_id, "gt")
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
-
-    @override
-    def save_constraint(self, constraint: BindingConstraint) -> None:
-        raise NotImplementedError()
+        return _get_matrix(self.get_file_study(), constraint_id, "eq")
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -115,6 +111,17 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         raise NotImplementedError()
+
+
+def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.DataFrame:
+    study_version = study_data.config.version
+    if study_version < STUDY_VERSION_8_7:
+        raise InvalidFieldForVersionError(
+            f"'less_term' matrix is only supported since v8.7, and your study is in {study_version}"
+        )
+    node = study_data.tree.get_node(["input", "bindingconstraints", f"{constraint_id}_{term}"])
+    assert isinstance(node, InputSeriesMatrix)
+    return node.parse_as_dataframe()
 
 
 def _generate_replacement_matrices(

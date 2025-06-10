@@ -46,10 +46,6 @@ class ReadOnlyConstraintDao(ABC):
 
 class ConstraintDao(ReadOnlyConstraintDao):
     @abstractmethod
-    def save_constraint(self, constraint: BindingConstraint) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         raise NotImplementedError()
 
