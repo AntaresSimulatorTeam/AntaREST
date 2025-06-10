@@ -590,10 +590,11 @@ class BindingConstraintManager:
         source_constraint.name = new_constraint_name
         constraint_creation = BindingConstraintCreation.from_constraint(source_constraint)
 
-        args = {
+        args: dict[str, Any] = {
             "parameters": constraint_creation,
             "command_context": self._command_context,
             "study_version": study.version,
+            "matrices": {}
         }
 
         # Retrieval of the source constraint matrices
