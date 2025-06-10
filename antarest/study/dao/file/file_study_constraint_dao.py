@@ -134,7 +134,42 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         study_data = self.get_file_study()
-        # todo
+        ini_content = _get_all_constraints_ini(study_data)
+        study_version = study_data.config.version
+
+        deleted_binding_constraints = []
+        kept_binding_constraints = []
+        old_groups = set()
+        for key, bc in ini_content.items():
+            constraint = parse_binding_constraint(study_data.config.version, bc)
+            if constraint.group:
+                old_groups.add(constraint.group)
+            if constraint in constraints:
+                deleted_binding_constraints.append(constraint)
+                del ini_content[key]
+            else:
+                kept_binding_constraints.append(constraint)
+
+        # BC dict should start at index 0
+        new_binding_constraints = {str(i): value for i, value in enumerate(ini_content.values())}
+
+        study_data.tree.save(new_binding_constraints, ["input", "bindingconstraints", "bindingconstraints"])
+
+        existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
+        for bc in deleted_binding_constraints:
+            if study_version < STUDY_VERSION_8_7:
+                study_data.tree.delete(["input", "bindingconstraints", bc.id])
+            else:
+                for term in ["lt", "gt", "eq"]:
+                    matrix_id = f"{bc.id}_{term}"
+                    if matrix_id in existing_files:
+                        study_data.tree.delete(["input", "bindingconstraints", matrix_id])
+
+        if study_version >= STUDY_VERSION_8_7:
+            new_groups = {bc.group for bc in kept_binding_constraints}
+            removed_groups = old_groups - new_groups
+            _remove_groups_from_scenario_builder(study_data, removed_groups)
+
         # Deleting the constraint in the configuration must be done AFTER deleting the files and folders.
         for constraint in constraints:
             study_data.config.bindings.remove(constraint)
