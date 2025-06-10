@@ -12,31 +12,33 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Set, TypeAlias
+from typing import Any, Dict, Final, List, Optional, Self, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
+from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
-    DEFAULT_GROUP,
-    DEFAULT_OPERATOR,
-    DEFAULT_TIMESTEP,
+    BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
+    ClusterTerm,
+    ConstraintTerm,
+    LinkTerm,
+    create_binding_constraint,
+    validate_binding_constraint_against_version,
 )
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
-from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    parse_bindings_coeffs_and_save_into_config,
-)
-from antarest.study.storage.variantstudy.model.command.binding_constraint_utils import remove_bc_from_scenario_builder
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -93,59 +95,10 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
 # =================================================================================
 
 
-class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatrices, ICommand, metaclass=ABCMeta):
+class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
     """
     Abstract class for binding constraint commands.
     """
-
-    _SERIALIZATION_VERSION: Final[int] = 1
-
-    coeffs: Optional[Dict[str, List[float]]] = None
-
-    @override
-    def to_dto(self) -> CommandDTO:
-        json_command = self.model_dump(mode="json", exclude={"command_context"})
-        args = {}
-        for field in ["enabled", "coeffs", "comments", "time_step", "operator"]:
-            if json_command[field]:
-                args[field] = json_command[field]
-
-        # The `filter_year_by_year` and `filter_synthesis` attributes are only available for studies since v8.3
-        if self.filter_synthesis:
-            args["filter_synthesis"] = self.filter_synthesis
-        if self.filter_year_by_year:
-            args["filter_year_by_year"] = self.filter_year_by_year
-
-        # The `group` attribute is only available for studies since v8.7
-        if self.group:
-            args["group"] = self.group
-
-        matrix_service = self.command_context.matrix_service
-        for matrix_name in [m.value for m in TermMatrices] + ["values"]:
-            matrix_attr = getattr(self, matrix_name, None)
-            if matrix_attr is not None:
-                args[matrix_name] = matrix_service.get_matrix_id(matrix_attr)
-
-        return CommandDTO(
-            action=self.command_name.value,
-            args=args,
-            version=self._SERIALIZATION_VERSION,
-            study_version=self.study_version,
-        )
-
-    @override
-    def get_inner_matrices(self) -> List[str]:
-        matrix_service = self.command_context.matrix_service
-        return [
-            matrix_service.get_matrix_id(matrix)
-            for matrix in [
-                self.values,
-                self.less_term_matrix,
-                self.greater_term_matrix,
-                self.equal_term_matrix,
-            ]
-            if matrix is not None
-        ]
 
     def get_corresponding_matrices(
         self,
@@ -184,111 +137,38 @@ class AbstractBindingConstraintCommand(OptionalProperties, BindingConstraintMatr
         # pragma: no cover
         raise TypeError(repr(v))
 
-    def validates_and_fills_matrices(
-        self,
-        *,
-        time_step: BindingConstraintFrequency,
-        specific_matrices: Optional[List[str]],
-        version: StudyVersion,
-        create: bool,
-    ) -> None:
-        if version < STUDY_VERSION_8_7:
-            self.values = self.get_corresponding_matrices(self.values, time_step, version, create)
-        elif specific_matrices:
-            for matrix in specific_matrices:
-                setattr(
-                    self, matrix, self.get_corresponding_matrices(getattr(self, matrix), time_step, version, create)
+
+def _convert_coeffs_to_terms(coeffs: dict[str, list[float]]) -> list[ConstraintTerm]:
+    terms = []
+    for link_or_cluster, w_o in coeffs.items():
+        weight = w_o[0]
+        offset = w_o[1] if len(w_o) == 2 else None
+        if "%" in link_or_cluster:
+            area_1, area_2 = link_or_cluster.split("%")
+            terms.append(
+                ConstraintTerm(
+                    weight=weight,
+                    offset=offset,
+                    data=LinkTerm.model_validate(
+                        {
+                            "area1": area_1,
+                            "area2": area_2,
+                        }
+                    ),
                 )
-        else:
-            self.less_term_matrix = self.get_corresponding_matrices(self.less_term_matrix, time_step, version, create)
-            self.greater_term_matrix = self.get_corresponding_matrices(
-                self.greater_term_matrix, time_step, version, create
             )
-            self.equal_term_matrix = self.get_corresponding_matrices(self.equal_term_matrix, time_step, version, create)
-
-    def apply_binding_constraint(
-        self,
-        study_data: FileStudy,
-        binding_constraints: Dict[str, Any],
-        new_key: str,
-        bd_id: str,
-        *,
-        old_groups: Optional[Set[str]] = None,
-    ) -> CommandOutput:
-        version = study_data.config.version
-
-        if self.coeffs:
-            for link_or_cluster in self.coeffs:
-                if "%" in link_or_cluster:
-                    area_1, area_2 = link_or_cluster.split("%")
-                    if area_1 not in study_data.config.areas or area_2 not in study_data.config.areas[area_1].links:
-                        return CommandOutput(
-                            status=False,
-                            message=f"Link '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
-                        )
-                elif "." in link_or_cluster:
-                    # Cluster IDs are stored in lower case in the binding constraints file.
-                    area, cluster_id = link_or_cluster.split(".")
-                    thermal_ids = {thermal.id.lower() for thermal in study_data.config.areas[area].thermals}
-                    if area not in study_data.config.areas or cluster_id.lower() not in thermal_ids:
-                        return CommandOutput(
-                            status=False,
-                            message=f"Cluster '{link_or_cluster}' does not exist in binding constraint '{bd_id}'",
-                        )
-                else:
-                    raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
-
-                # this is weird because Antares Simulator only accept int as offset
-                if len(self.coeffs[link_or_cluster]) == 2:
-                    self.coeffs[link_or_cluster][1] = int(self.coeffs[link_or_cluster][1])
-
-                binding_constraints[new_key][link_or_cluster] = "%".join(
-                    [str(coeff_val) for coeff_val in self.coeffs[link_or_cluster]]
+        elif "." in link_or_cluster:
+            area, cluster_id = link_or_cluster.split(".")
+            terms.append(
+                ConstraintTerm(
+                    weight=weight,
+                    offset=offset,
+                    data=ClusterTerm.model_validate({"area": area, "cluster": cluster_id}),
                 )
-
-        study_data.tree.save(
-            binding_constraints,
-            ["input", "bindingconstraints", "bindingconstraints"],
-        )
-
-        existing_constraint = binding_constraints[new_key]
-        current_operator = self.operator or BindingConstraintOperator(
-            existing_constraint.get("operator", DEFAULT_OPERATOR)
-        )
-        group = self.group or existing_constraint.get("group", DEFAULT_GROUP)
-        time_step = self.time_step or BindingConstraintFrequency(existing_constraint.get("type", DEFAULT_TIMESTEP))
-        parse_bindings_coeffs_and_save_into_config(
-            bd_id, study_data.config, self.coeffs or {}, operator=current_operator, time_step=time_step, group=group
-        )
-
-        if version >= STUDY_VERSION_8_7:
-            # When all BC of a given group are removed, the group should be removed from the scenario builder
-            old_groups = old_groups or set()
-            new_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
-            removed_groups = old_groups - new_groups
-            remove_bc_from_scenario_builder(study_data, removed_groups)
-
-        if self.values:
-            if not isinstance(self.values, str):  # pragma: no cover
-                raise TypeError(repr(self.values))
-            if version < STUDY_VERSION_8_7:
-                study_data.tree.save(self.values, ["input", "bindingconstraints", bd_id])
-
-        operator_matrices_map = {
-            BindingConstraintOperator.EQUAL: [(self.equal_term_matrix, "eq")],
-            BindingConstraintOperator.GREATER: [(self.greater_term_matrix, "gt")],
-            BindingConstraintOperator.LESS: [(self.less_term_matrix, "lt")],
-            BindingConstraintOperator.BOTH: [(self.less_term_matrix, "lt"), (self.greater_term_matrix, "gt")],
-        }
-
-        for matrix_term, matrix_alias in operator_matrices_map[current_operator]:
-            if matrix_term:
-                if not isinstance(matrix_term, str):  # pragma: no cover
-                    raise TypeError(repr(matrix_term))
-                if version >= STUDY_VERSION_8_7:
-                    matrix_id = f"{bd_id}_{matrix_alias}"
-                    study_data.tree.save(matrix_term, ["input", "bindingconstraints", matrix_id])
-        return CommandOutput(status=True)
+            )
+        else:
+            raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
+    return terms
 
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
@@ -297,32 +177,126 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     """
 
     command_name: CommandName = CommandName.CREATE_BINDING_CONSTRAINT
-    version: int = 1
 
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
     name: str
 
+    _SERIALIZATION_VERSION: Final[int] = 2
+    # version 2: put all args inside `parameters` and type it as BindingConstraintCreation
+    # put all matrices inside `matrices`
+
+    parameters: BindingConstraintCreation
+    matrices: BindingConstraintMatrices
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model_before(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                study_version = StudyVersion.parse(values["study_version"])
+
+                # Validate parameters
+                excluded_keys = set(ICommand.model_fields) | {"coeffs"}
+                args = {}
+                for key in values:
+                    if key not in excluded_keys:
+                        args[key] = values.pop(key)
+                if "coeffs" in values:
+                    args["terms"] = _convert_coeffs_to_terms(values.pop("coeffs"))
+                constraint = parse_binding_constraint(study_version, **args)
+                values["parameters"] = BindingConstraintCreation.from_constraint(constraint)
+
+                # Validate matrices
+                values["matrices"] = {}
+                for key in set(BindingConstraintMatrices.model_fields):
+                    if key in values:
+                        values["matrices"][key] = values.pop(key)
+
+        return values
+
+    @model_validator(mode="after")
+    def _validate_model_after(self) -> Self:
+        # Validate parameters
+        validate_binding_constraint_against_version(self.study_version, self.parameters)
+
+        # Validate matrices
+        time_step = self.parameters.time_step
+
+        if self.study_version < STUDY_VERSION_8_7:
+            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+                if getattr(self.matrices, matrix) is not None:
+                    raise InvalidFieldForVersionError(
+                        "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
+                    )
+
+            self.matrices.values = self.get_corresponding_matrices(
+                self.matrices.values, time_step, self.study_version, True
+            )
+
+        else:
+            if self.matrices.values is not None:
+                raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
+
+            self.matrices.less_term_matrix = self.get_corresponding_matrices(
+                self.matrices.less_term_matrix, time_step, self.study_version, True
+            )
+            self.matrices.greater_term_matrix = self.get_corresponding_matrices(
+                self.matrices.greater_term_matrix, time_step, self.study_version, True
+            )
+            self.matrices.equal_term_matrix = self.get_corresponding_matrices(
+                self.matrices.equal_term_matrix, time_step, self.study_version, True
+            )
+
+        return self
+
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        new_key = str(len(binding_constraints))
-        bd_id = transform_name_to_id(self.name)
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        constraint = create_binding_constraint(self.parameters, self.study_version)
+        study_data.save_constraints([constraint])
 
-        study_version = study_data.config.version
-        props = create_binding_constraint_properties(**self.model_dump())
-        obj = props.model_dump(mode="json", by_alias=True)
+        # Matrices
+        if self.study_version < STUDY_VERSION_8_7:
+            assert isinstance(self.matrices.values, str)
+            study_data.save_constraint_values_matrix(constraint.id, self.matrices.values)
+        else:
+            operator = self.parameters.operator
+            if operator == BindingConstraintOperator.EQUAL:
+                assert isinstance(self.matrices.equal_term_matrix, str)
+                study_data.save_constraint_equal_term_matrix(constraint.id, self.matrices.equal_term_matrix)
 
-        new_binding = {"id": bd_id, "name": self.name, **obj}
+            if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
+                assert isinstance(self.matrices.greater_term_matrix, str)
+                study_data.save_constraint_greater_term_matrix(constraint.id, self.matrices.greater_term_matrix)
 
-        binding_constraints[new_key] = new_binding
+            if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
+                assert isinstance(self.matrices.less_term_matrix, str)
+                study_data.save_constraint_less_term_matrix(constraint.id, self.matrices.less_term_matrix)
 
-        self.validates_and_fills_matrices(
-            time_step=props.time_step, specific_matrices=None, version=study_version, create=True
-        )
-        return super().apply_binding_constraint(study_data, binding_constraints, new_key, bd_id)
+        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
-        dto = super().to_dto()
-        dto.args["name"] = self.name  # type: ignore
-        return dto
+        return CommandDTO(
+            version=self._SERIALIZATION_VERSION,
+            action=self.command_name.value,
+            args={
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+                "matrices": self.matrices.model_dump(mode="json", by_alias=True, exclude_none=True),
+            },
+            study_version=self.study_version,
+        )
+
+    @override
+    def get_inner_matrices(self) -> List[str]:
+        matrix_service = self.command_context.matrix_service
+        return [
+            matrix_service.get_matrix_id(matrix)
+            for matrix in [
+                self.matrices.values,
+                self.matrices.less_term_matrix,
+                self.matrices.greater_term_matrix,
+                self.matrices.equal_term_matrix,
+            ]
+            if matrix is not None
+        ]

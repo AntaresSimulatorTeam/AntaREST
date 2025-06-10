@@ -97,8 +97,6 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         raise NotImplementedError()
 
 
-
-
 def _generate_replacement_matrices(
     bc_id: str,
     study_version: StudyVersion,
