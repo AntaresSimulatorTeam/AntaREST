@@ -23,7 +23,6 @@ from antarest.core.exceptions import (
     DuplicateConstraintName,
     DuplicateConstraintTerm,
     InvalidConstraintName,
-    InvalidFieldForVersionError,
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
@@ -77,14 +76,6 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
-
-
-OPERATOR_CONFLICT_MAP = {
-    BindingConstraintOperator.EQUAL: [TermMatrices.LESS.value, TermMatrices.GREATER.value],
-    BindingConstraintOperator.GREATER: [TermMatrices.LESS.value, TermMatrices.EQUAL.value],
-    BindingConstraintOperator.LESS: [TermMatrices.EQUAL.value, TermMatrices.GREATER.value],
-    BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
-}
 
 
 class ConstraintFilters(AntaresBaseModel, extra="forbid"):
@@ -635,8 +626,6 @@ class BindingConstraintManager:
     ) -> BindingConstraint:
         existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
 
-        check_attributes_coherence(data, study.version, data.operator or existing_constraint.operator)
-
         upd_constraint = {
             "id": binding_constraint_id,
             **data.model_dump(mode="json", exclude={"terms", "name"}, exclude_none=True),
@@ -858,26 +847,3 @@ def _replace_matrices_according_to_frequency_and_version(
             if term not in args:
                 args[term] = matrix
     return args
-
-
-def check_attributes_coherence(
-    data: BindingConstraintCreation | BindingConstraintUpdate,
-    study_version: StudyVersion,
-    operator: BindingConstraintOperator,
-) -> None:
-    if study_version < STUDY_VERSION_8_7:
-        if data.group:
-            raise InvalidFieldForVersionError(
-                f"You cannot specify a group as your study version is older than v8.7: {data.group}"
-            )
-        if any([data.less_term_matrix, data.equal_term_matrix, data.greater_term_matrix]):
-            raise InvalidFieldForVersionError("You cannot fill a 'matrix_term' as these values refer to v8.7+ studies")
-    elif data.values:
-        raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-    conflicting_matrices = [
-        getattr(data, matrix) for matrix in OPERATOR_CONFLICT_MAP[operator] if getattr(data, matrix)
-    ]
-    if conflicting_matrices:
-        raise InvalidFieldForVersionError(
-            f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[operator]}' while using the operator '{operator}'"
-        )
