@@ -232,14 +232,4 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def get_inner_matrices(self) -> list[str]:
-        matrix_service = self.command_context.matrix_service
-        return [
-            matrix_service.get_matrix_id(matrix)
-            for matrix in [
-                self.matrices.values,
-                self.matrices.less_term_matrix,
-                self.matrices.greater_term_matrix,
-                self.matrices.equal_term_matrix,
-            ]
-            if matrix is not None
-        ]
+        return super().get_inner_matrices_for_commands(self.matrices)

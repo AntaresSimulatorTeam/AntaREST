@@ -174,6 +174,19 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
                 raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
         return terms
 
+    def get_inner_matrices_for_commands(self, matrices: BindingConstraintMatrices) -> list[str]:
+        matrix_service = self.command_context.matrix_service
+        return [
+            matrix_service.get_matrix_id(matrix)
+            for matrix in [
+                matrices.values,
+                matrices.less_term_matrix,
+                matrices.greater_term_matrix,
+                matrices.equal_term_matrix,
+            ]
+            if matrix is not None
+        ]
+
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
     """
@@ -292,14 +305,4 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def get_inner_matrices(self) -> List[str]:
-        matrix_service = self.command_context.matrix_service
-        return [
-            matrix_service.get_matrix_id(matrix)
-            for matrix in [
-                self.matrices.values,
-                self.matrices.less_term_matrix,
-                self.matrices.greater_term_matrix,
-                self.matrices.equal_term_matrix,
-            ]
-            if matrix is not None
-        ]
+        return super().get_inner_matrices_for_commands(self.matrices)
