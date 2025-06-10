@@ -535,6 +535,7 @@ class BindingConstraintManager:
         self,
         study: StudyInterface,
         data: BindingConstraintCreation,
+        matrices: BindingConstraintMatrices,
     ) -> BindingConstraint:
         bc_id = transform_name_to_id(data.name)
 
@@ -546,6 +547,7 @@ class BindingConstraintManager:
 
         args = {
             "parameters": data,
+            "matrices": matrices,
             "command_context": self._command_context,
             "study_version": study.version,
         }

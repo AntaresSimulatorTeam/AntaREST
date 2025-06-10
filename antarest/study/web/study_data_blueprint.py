@@ -49,7 +49,7 @@ from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDT
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
-    BindingConstraintCreation,
+    BindingConstraintCreationWithMatrices,
     BindingConstraintFrequency,
     BindingConstraintOperator,
     BindingConstraintUpdateWithMatrices,
@@ -958,11 +958,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.binding_constraint_manager.validate_constraint_group(study_interface, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
-    def create_binding_constraint(uuid: str, data: BindingConstraintCreation) -> BindingConstraint:
+    def create_binding_constraint(uuid: str, data: BindingConstraintCreationWithMatrices) -> BindingConstraint:
         logger.info(f"Creating a new binding constraint for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.create_binding_constraint(study_interface, data)
+        return study_service.binding_constraint_manager.create_binding_constraint(study_interface, data.creation_model(), data.matrices())
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
