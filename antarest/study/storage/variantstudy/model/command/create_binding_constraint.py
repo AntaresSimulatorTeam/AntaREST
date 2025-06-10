@@ -29,6 +29,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintOperator,
     ClusterTerm,
     ConstraintTerm,
+    ConstraintTermUpdate,
     LinkTerm,
     create_binding_constraint,
     validate_binding_constraint_against_version,
@@ -137,38 +138,41 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
         # pragma: no cover
         raise TypeError(repr(v))
 
-
-def _convert_coeffs_to_terms(coeffs: dict[str, list[float]]) -> list[ConstraintTerm]:
-    terms = []
-    for link_or_cluster, w_o in coeffs.items():
-        weight = w_o[0]
-        offset = w_o[1] if len(w_o) == 2 else None
-        if "%" in link_or_cluster:
-            area_1, area_2 = link_or_cluster.split("%")
-            terms.append(
-                ConstraintTerm(
-                    weight=weight,
-                    offset=offset,
-                    data=LinkTerm.model_validate(
-                        {
-                            "area1": area_1,
-                            "area2": area_2,
-                        }
-                    ),
+    @staticmethod
+    def convert_coeffs_to_terms(
+        coeffs: dict[str, list[float]], update: bool
+    ) -> list[ConstraintTerm | ConstraintTermUpdate]:
+        terms = []
+        klass = ConstraintTermUpdate if update else ConstraintTerm
+        for link_or_cluster, w_o in coeffs.items():
+            weight = w_o[0]
+            offset = w_o[1] if len(w_o) == 2 else None
+            if "%" in link_or_cluster:
+                area_1, area_2 = link_or_cluster.split("%")
+                terms.append(
+                    klass(
+                        weight=weight,
+                        offset=offset,
+                        data=LinkTerm.model_validate(
+                            {
+                                "area1": area_1,
+                                "area2": area_2,
+                            }
+                        ),
+                    )
                 )
-            )
-        elif "." in link_or_cluster:
-            area, cluster_id = link_or_cluster.split(".")
-            terms.append(
-                ConstraintTerm(
-                    weight=weight,
-                    offset=offset,
-                    data=ClusterTerm.model_validate({"area": area, "cluster": cluster_id}),
+            elif "." in link_or_cluster:
+                area, cluster_id = link_or_cluster.split(".")
+                terms.append(
+                    klass(
+                        weight=weight,
+                        offset=offset,
+                        data=ClusterTerm.model_validate({"area": area, "cluster": cluster_id}),
+                    )
                 )
-            )
-        else:
-            raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
-    return terms
+            else:
+                raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
+        return terms
 
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
@@ -202,7 +206,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                     if key not in excluded_keys:
                         args[key] = values.pop(key)
                 if "coeffs" in values:
-                    args["terms"] = _convert_coeffs_to_terms(values.pop("coeffs"))
+                    args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"), update=False)
                 constraint = parse_binding_constraint(study_version, **args)
                 values["parameters"] = BindingConstraintCreation.from_constraint(constraint)
 

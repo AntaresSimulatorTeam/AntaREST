@@ -10,19 +10,27 @@
 #
 # This file is part of the Antares project.
 
-from typing import Mapping, Optional, Tuple
+from typing import Any, Final, Optional, Self
 
+from antares.study.version import StudyVersion
+from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.core.model import JSON
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
     BindingConstraintFrequency,
+    BindingConstraintMatrices,
     BindingConstraintOperator,
+    BindingConstraintUpdate,
+    validate_binding_constraint_against_version,
 )
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    parse_binding_constraint_for_update,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
@@ -113,44 +121,71 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        index = next(i for i, bc in enumerate(study_data.bindings) if bc.id == self.id)
-        existing_constraint = study_data.bindings[index]
-        areas_set = existing_constraint.areas
-        clusters_set = existing_constraint.clusters
-        if self.coeffs:
-            areas_set = set()
-            clusters_set = set()
-            for j in self.coeffs.keys():
-                if "%" in j:
-                    areas_set |= set(j.split("%"))
-                elif "." in j:
-                    clusters_set.add(j)
-                    areas_set.add(j.split(".")[0])
-        group = self.group or existing_constraint.group
-        operator = self.operator or existing_constraint.operator
-        time_step = self.time_step or existing_constraint.time_step
-        new_constraint = BindingConstraintDTO(
-            id=self.id,
-            group=group,
-            areas=areas_set,
-            clusters=clusters_set,
-            operator=operator,
-            time_step=time_step,
-        )
-        study_data.bindings[index] = new_constraint
-        return CommandOutput(status=True)
+    _SERIALIZATION_VERSION: Final[int] = 2
+    # version 2: put all args inside `parameters` and type it as BindingConstraintCreation + put all matrices inside `matrices`
 
-    def _find_binding_config(self, binding_constraints: Mapping[str, JSON]) -> Optional[Tuple[str, JSON]]:
-        """
-        Find the binding constraint with the given ID in the list of binding constraints,
-        and returns its index and configuration, or `None` if it does not exist.
-        """
-        for index, binding_config in binding_constraints.items():
-            if binding_config["id"] == self.id:
-                # convert to string because the index could be an integer
-                return str(index), binding_config
-        return None
+    parameters: BindingConstraintUpdate
+    matrices: BindingConstraintMatrices
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model_before(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                study_version = StudyVersion.parse(values["study_version"])
+
+                # Validate parameters
+                excluded_keys = set(ICommand.model_fields) | {"coeffs"}
+                args = {}
+                for key in values:
+                    if key not in excluded_keys:
+                        args[key] = values.pop(key)
+                if "coeffs" in values:
+                    args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"), update=True)
+                values["parameters"] = parse_binding_constraint_for_update(study_version, **args)
+
+                # Validate matrices
+                values["matrices"] = {}
+                for key in set(BindingConstraintMatrices.model_fields):
+                    if key in values:
+                        values["matrices"][key] = values.pop(key)
+
+        return values
+
+    @model_validator(mode="after")
+    def _validate_model_after(self) -> Self:
+        # Validate parameters
+        validate_binding_constraint_against_version(self.study_version, self.parameters)
+
+        # Validate matrices
+        time_step = self.parameters.time_step
+
+        if self.study_version < STUDY_VERSION_8_7:
+            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+                if getattr(self.matrices, matrix) is not None:
+                    raise InvalidFieldForVersionError(
+                        "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
+                    )
+
+            if self.matrices.values:
+                self.matrices.values = self.get_corresponding_matrices(
+                    self.matrices.values, time_step, self.study_version, False
+                )
+
+        else:
+            if self.matrices.values is not None:
+                raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
+
+            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+                if matrix_data := getattr(self.matrices, matrix):
+                    setattr(
+                        self.matrices,
+                        matrix,
+                        self.get_corresponding_matrices(matrix_data, time_step, self.study_version, False),
+                    )
+
+        return self
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:

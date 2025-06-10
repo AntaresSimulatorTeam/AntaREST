@@ -25,6 +25,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
     BindingConstraintOperator,
+    BindingConstraintUpdate,
     initialize_binding_constraint,
     validate_binding_constraint_against_version,
 )
@@ -52,6 +53,9 @@ class BindingConstraintFileData(AntaresBaseModel):
     def to_model(self) -> BindingConstraint:
         return BindingConstraint.model_validate(self.model_dump(exclude_none=True))
 
+    def to_update_model(self) -> BindingConstraintUpdate:
+        return BindingConstraintUpdate.model_validate(self.model_dump(exclude_none=True))
+
     @classmethod
     def from_model(cls, constraint: BindingConstraint) -> "BindingConstraintFileData":
         return cls.model_validate(constraint.model_dump(exclude={"id"}))
@@ -61,6 +65,12 @@ def parse_binding_constraint(study_version: StudyVersion, data: Any) -> BindingC
     bc = BindingConstraintFileData.model_validate(data).to_model()
     validate_binding_constraint_against_version(study_version, bc)
     initialize_binding_constraint(bc, study_version)
+    return bc
+
+
+def parse_binding_constraint_for_update(study_version: StudyVersion, data: Any) -> BindingConstraintUpdate:
+    bc = BindingConstraintFileData.model_validate(data).to_update_model()
+    validate_binding_constraint_against_version(study_version, bc)
     return bc
 
 
