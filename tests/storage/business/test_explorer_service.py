@@ -122,11 +122,22 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
     assert (
         FolderDTO(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3", has_children=False) in result
     )
-    # assert (
-    #     FolderDTO(path=(folder_path / "study_folder"), workspace="diese", name="study_folder", has_children=False)
-    #     in result
-    # )
-    # assert FolderDTO(path=(folder_path / "studyC"), workspace="diese", name="studyC", has_children=False) in result
+    assert (
+        FolderDTO(
+            path=(folder_path / "study_folder"),
+            workspace="diese",
+            name="study_folder",
+            has_children=False,
+            isStudyFolder=True,
+        )
+        in result
+    )
+    assert (
+        FolderDTO(
+            path=(folder_path / "studyC"), workspace="diese", name="studyC", has_children=False, isStudyFolder=True
+        )
+        in result
+    )
 
     assert str(result[0].path) == result[0].path.as_posix()
     assert str(result[0].parent_path) == result[0].parent_path.as_posix()
