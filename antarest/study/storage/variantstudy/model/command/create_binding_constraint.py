@@ -54,6 +54,7 @@ EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.WEEKLY: (366, 3),
 }
 
+
 class TermMatrices(Enum):
     LESS = "less_term_matrix"
     GREATER = "greater_term_matrix"

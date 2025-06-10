@@ -594,7 +594,7 @@ class BindingConstraintManager:
             "parameters": constraint_creation,
             "command_context": self._command_context,
             "study_version": study.version,
-            "matrices": {}
+            "matrices": {},
         }
 
         # Retrieval of the source constraint matrices
@@ -666,21 +666,20 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If any of the specified binding constraint IDs are not found.
         """
-        file_study = study.get_files()
-        bcs_json = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        bcs_json_by_id = {value["id"]: key for (key, value) in bcs_json.items()}
-        bcs_output = {}
-        for bc_id, bc_input in bcs_by_ids.items():
+        study_dao = study.get_study_dao()
+        all_constraints = study_dao.get_all_constraints()
+        constraints = {}
+
+        for bc_id, bc_update in bcs_by_ids.items():
             # check binding constraint id sent by user exist for this study
             # Note that this check is both done here and when the command is applied as well
-            if bc_id not in bcs_json_by_id:
+            if bc_id not in all_constraints:
                 raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
 
-            # convert payload sent by user to a BindingConstraint dict
-            bc_input_as_dict = bc_input.model_dump(mode="json", exclude_unset=True)
-            bc_json = bcs_json[bcs_json_by_id[bc_id]]
-            bc_output = self.__convert_constraint_input_to_output(bc_json, bc_input_as_dict, study.version)
-            bcs_output[bc_id] = bc_output
+            # Update the binding constraint properties
+            old_constraint = all_constraints[bc_id]
+            new_constraint = update_binding_constraint(old_constraint, bc_update)
+            constraints[new_constraint.id] = new_constraint
 
         command = UpdateBindingConstraints(
             bc_props_by_id=bcs_by_ids,
@@ -688,25 +687,8 @@ class BindingConstraintManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return bcs_output
 
-    def __convert_constraint_input_to_output(
-        self, bc_json: Dict[str, Any], bc_input_as_dict: Dict[str, Any], study_version: StudyVersion
-    ) -> BindingConstraint:
-        """
-
-        Args:
-            bc_json: The original binding constraint data in JSON format.
-            bc_input_as_dict: extracted from user payload.
-            study_version: The version of the study to determine the properties.
-        Returns:
-            BindingConstraint: The adapted binding constraint data in the output format.
-
-        """
-        bc_props = create_binding_constraint_properties(study_version, **bc_input_as_dict)
-        bc_props_as_dict = bc_props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-        bc_json_updated = {**bc_json, **bc_props_as_dict}
-        return self.constraint_model_adapter(bc_json_updated, study_version)
+        return constraints
 
     def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:
         """
@@ -728,7 +710,7 @@ class BindingConstraintManager:
     def _update_constraint_with_terms(
         self, study: StudyInterface, bc: BindingConstraint, terms: Mapping[str, ConstraintTerm]
     ) -> None:
-        constraint_update = BindingConstraintUpdate(**{"terms":terms})
+        constraint_update = BindingConstraintUpdate(**{"terms": terms})
         args = {
             "id": bc.id,
             "parameters": constraint_update,

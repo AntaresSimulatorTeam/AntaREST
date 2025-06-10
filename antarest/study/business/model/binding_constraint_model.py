@@ -326,16 +326,22 @@ class BindingConstraintUpdate(AntaresBaseModel):
     # Added in 8.7
     group: Optional[LowerCaseStr] = None
 
+
 class BindingConstraintUpdateWithMatrices(BindingConstraintUpdate, BindingConstraintMatrices):
     """
     Used inside the update endpoint and there only
     """
 
     def matrices(self) -> BindingConstraintMatrices:
-        return BindingConstraintMatrices.model_validate(self.model_dump(mode="json", include=set(BindingConstraintMatrices.model_fields)))
+        return BindingConstraintMatrices.model_validate(
+            self.model_dump(mode="json", include=set(BindingConstraintMatrices.model_fields))
+        )
 
     def update_model(self) -> BindingConstraintUpdate:
-        return BindingConstraintUpdate.model_validate(self.model_dump(mode="json", include=set(BindingConstraintUpdate.model_fields)))
+        return BindingConstraintUpdate.model_validate(
+            self.model_dump(mode="json", include=set(BindingConstraintUpdate.model_fields))
+        )
+
 
 class BindingConstraintCreationWithMatrices(BindingConstraintCreation, BindingConstraintMatrices):
     """
@@ -343,11 +349,14 @@ class BindingConstraintCreationWithMatrices(BindingConstraintCreation, BindingCo
     """
 
     def matrices(self) -> BindingConstraintMatrices:
-        return BindingConstraintMatrices.model_validate(self.model_dump(mode="json", include=set(BindingConstraintMatrices.model_fields)))
+        return BindingConstraintMatrices.model_validate(
+            self.model_dump(mode="json", include=set(BindingConstraintMatrices.model_fields))
+        )
 
     def creation_model(self) -> BindingConstraintCreation:
-        return BindingConstraintCreation.model_validate(self.model_dump(mode="json", include=set(BindingConstraintCreation.model_fields)))
-
+        return BindingConstraintCreation.model_validate(
+            self.model_dump(mode="json", include=set(BindingConstraintCreation.model_fields))
+        )
 
 
 BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]

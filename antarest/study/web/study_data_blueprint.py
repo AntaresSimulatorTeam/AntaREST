@@ -962,7 +962,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Creating a new binding constraint for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.create_binding_constraint(study_interface, data.creation_model(), data.matrices())
+        return study_service.binding_constraint_manager.create_binding_constraint(
+            study_interface, data.creation_model(), data.matrices()
+        )
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
