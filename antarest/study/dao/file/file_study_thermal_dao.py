@@ -18,7 +18,6 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
-from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -110,9 +109,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_8_7:
-            raise ValueError(f"fuelCost matrix is supported since version 8.7 and your study is in {study_version}")
         node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
         assert isinstance(node, InputSeriesMatrix)
         return node.parse_as_dataframe()
@@ -120,9 +116,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pd.DataFrame:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_8_7:
-            raise ValueError(f"CO2Cost matrix is supported since version 8.7 and your study is in {study_version}")
         node = study_data.tree.get_node(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
         assert isinstance(node, InputSeriesMatrix)
         return node.parse_as_dataframe()
@@ -164,17 +157,11 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_8_7:
-            raise ValueError(f"fuelCost matrix is supported since version 8.7 and your study is in {study_version}")
         study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
 
     @override
     def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version < STUDY_VERSION_8_7:
-            raise ValueError(f"C02Cost matrix is supported since version 8.7 and your study is in {study_version}")
         study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
 
     @override

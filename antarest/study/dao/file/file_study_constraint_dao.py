@@ -16,7 +16,6 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
@@ -67,11 +66,6 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
         study_data = self.get_file_study()
-        study_version = study_data.config.version
-        if study_version >= STUDY_VERSION_8_7:
-            raise InvalidFieldForVersionError(
-                f"'values' matrix is no supported since v8.7, and your study is in {study_version}"
-            )
         node = study_data.tree.get_node(["input", "bindingconstraints", constraint_id])
         assert isinstance(node, InputSeriesMatrix)
         return node.parse_as_dataframe()
@@ -114,11 +108,6 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
 
 def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.DataFrame:
-    study_version = study_data.config.version
-    if study_version < STUDY_VERSION_8_7:
-        raise InvalidFieldForVersionError(
-            f"'less_term' matrix is only supported since v8.7, and your study is in {study_version}"
-        )
     node = study_data.tree.get_node(["input", "bindingconstraints", f"{constraint_id}_{term}"])
     assert isinstance(node, InputSeriesMatrix)
     return node.parse_as_dataframe()
