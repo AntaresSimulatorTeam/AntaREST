@@ -670,18 +670,19 @@ def _replace_matrices_according_to_frequency_and_version(
 ) -> BindingConstraintMatrices:
     if version < STUDY_VERSION_8_7:
         if not matrices.values:
-            matrix = {
+            matrix_mapping = {
                 BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
                 BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
                 BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
-            }[time_step].tolist()
-            matrices.values = matrix
+            }
+            matrices.values = matrix_mapping[time_step].tolist()
     else:
-        matrix = {
+        matrix_mapping = {
             BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
             BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
             BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
-        }[time_step].tolist()
+        }
+        matrix = matrix_mapping[time_step].tolist()
 
         if operator == BindingConstraintOperator.EQUAL and not matrices.equal_term_matrix:
             matrices.equal_term_matrix = matrix
