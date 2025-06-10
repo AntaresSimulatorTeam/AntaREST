@@ -16,6 +16,7 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.study.business.model.binding_constraint_model import ClusterTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -277,6 +278,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         # Also removes thermal cluster from constraint terms
         # Cluster IDs are stored in lower case in the binding constraints file.
-        selection = [b for b in study_data.bindings if f"{area_id}.{thermal.id}" in b.clusters]
-        for binding in selection:
-            study_data.bindings.remove(binding)
+        thermal_id = thermal.id.lower()
+        for bc in study_data.bindings:
+            for term in bc.terms:
+                if isinstance(term, ClusterTerm) and term.cluster == thermal_id:
+                    study_data.bindings.remove(bc)
+                    break

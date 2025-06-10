@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import Any, Dict, List, MutableMapping, Optional, Set
+from typing import Any, Dict, List, MutableMapping, Optional
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -21,15 +21,11 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
-    DEFAULT_GROUP,
-    DEFAULT_OPERATOR,
-    DEFAULT_TIMESTEP,
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
+    BindingConstraint,
 )
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import StudyVersionInt
+from antarest.study.model import STUDY_VERSION_8_7, StudyVersionInt
 
 from .st_storage import STStorageConfigType
 from .validation import extract_filtering, study_version_context
@@ -133,28 +129,6 @@ class Simulation(AntaresBaseModel):
         return f"{self.date}{modes[self.mode]}{dash}{self.name}"
 
 
-class BindingConstraintDTO(AntaresBaseModel):
-    """
-    Object linked to `input/bindingconstraints/bindingconstraints.ini` information
-
-    Attributes:
-        id: The ID of the binding constraint.
-        areas: List of area IDs on which the BC applies (links or clusters).
-        clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
-        time_step: The time_step of the BC
-        operator: The operator of the BC
-        group: The group for the scenario of BC (optional, required since v8.7).
-    """
-
-    id: str
-    areas: Set[str]
-    clusters: Set[str]
-    time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
-    operator: BindingConstraintOperator = DEFAULT_OPERATOR
-    # since v8.7
-    group: str = DEFAULT_GROUP
-
-
 class FileStudyTreeConfig(DTO):
     """
     Root object to handle all study parameters which impact tree structure
@@ -170,7 +144,7 @@ class FileStudyTreeConfig(DTO):
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, DistrictSet]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[BindingConstraintDTO]] = None,
+        bindings: Optional[List[BindingConstraint]] = None,
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
@@ -260,8 +234,10 @@ class FileStudyTreeConfig(DTO):
         sorted alphabetically (case-insensitive).
         Note that groups are stored in lower case in the binding constraints file.
         """
-        lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
-        return [grp for _, grp in sorted(lower_groups.items())]
+        if self.version < STUDY_VERSION_8_7:
+            return []
+        lower_groups = {bc.group: bc.group for bc in self.bindings}
+        return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):
@@ -273,7 +249,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     areas: Dict[str, Area] = dict()
     sets: Dict[str, DistrictSet] = dict()
     outputs: Dict[str, Simulation] = dict()
-    bindings: List[BindingConstraintDTO] = list()
+    bindings: List[BindingConstraint] = list()
     store_new_set: bool = False
     archive_input_series: List[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)

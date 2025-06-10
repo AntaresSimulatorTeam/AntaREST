@@ -50,7 +50,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
         file_study = self.get_file_study()
         version = file_study.config.version
-        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        config = _get_all_constraints_ini(file_study)
 
         constraints_by_id: dict[str, BindingConstraint] = {}
 
@@ -81,7 +81,17 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        ini_content = _get_all_constraints_ini(study_data)
+        """
+        for constraint in constraints:
+        
+
+        for thermal in thermals:
+            self._update_thermal_config(study_data.config, area_id, thermal)
+            ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
+        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
+        """
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
@@ -113,6 +123,21 @@ def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.Data
 def _save_matrix(study_data: FileStudy, constraint_id: str, term: str, series_id: str) -> None:
     study_data.tree.save(series_id, ["input", "bindingconstraints", f"{constraint_id}{term}"])
 
+
+def _get_all_constraints_ini(study_data: FileStudy) -> dict[str, BindingConstraint]:
+    return study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+
+"""
+def _update_thermal_config(study_data: FileStudyTreeConfig, constraint: BindingConstraint) -> None:
+    if area_id not in study_data.bindings:
+        raise ValueError(f"The area '{area_id}' does not exist")
+
+    for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
+        if existing_cluster.id == thermal.id:
+            study_data.areas[area_id].thermals[k] = thermal
+            return
+    study_data.areas[area_id].thermals.append(thermal)
+"""
 
 def _generate_replacement_matrices(
     bc_id: str,
