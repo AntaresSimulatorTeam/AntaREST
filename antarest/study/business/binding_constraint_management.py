@@ -37,6 +37,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintCreation,
     BindingConstraintFrequency,
+    BindingConstraintMatrices,
     BindingConstraintOperator,
     BindingConstraintUpdate,
     BindingConstraintUpdates,
@@ -45,6 +46,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTermUpdate,
     LinkTerm,
     create_binding_constraint,
+    update_binding_constraint,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
@@ -621,21 +623,18 @@ class BindingConstraintManager:
         self,
         study: StudyInterface,
         binding_constraint_id: str,
-        data: BindingConstraintUpdate
+        data: BindingConstraintUpdate,
+        matrices: BindingConstraintMatrices,
     ) -> BindingConstraint:
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
 
-        upd_constraint = {
-            "id": binding_constraint_id,
-            **data.model_dump(mode="json", exclude={"terms", "name"}, exclude_none=True),
-        }
         args = {
-            **upd_constraint,
+            "id": binding_constraint_id,
+            "parameters": data,
+            "matrices": matrices,
             "command_context": self._command_context,
             "study_version": study.version,
         }
-        if data.terms:
-            args["coeffs"] = self.terms_to_coeffs(data.terms)
 
         if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
@@ -644,19 +643,7 @@ class BindingConstraintManager:
         command = UpdateBindingConstraint(**args)
         study.add_commands([command])
 
-        # Constructs the endpoint response.
-        upd_constraint["name"] = existing_constraint.name
-        upd_constraint["type"] = upd_constraint.get("time_step", existing_constraint.time_step)
-        upd_constraint["terms"] = data.terms or existing_constraint.terms
-        new_fields = ["enabled", "operator", "comments", "terms"]
-        if study.version >= STUDY_VERSION_8_3:
-            new_fields.extend(["filter_year_by_year", "filter_synthesis"])
-        if study.version >= STUDY_VERSION_8_7:
-            new_fields.append("group")
-        for field in new_fields:
-            if field not in upd_constraint:
-                upd_constraint[field] = getattr(data, field) or getattr(existing_constraint, field)
-        return self.constraint_model_adapter(upd_constraint, study.version)
+        return update_binding_constraint(existing_constraint, data)
 
     def update_binding_constraints(
         self,
@@ -835,7 +822,7 @@ def _replace_matrices_according_to_frequency_and_version(
                 BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
                 BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
             }[time_step].tolist()
-            args["values"] = matrix
+            args["matrices"]["values"] = matrix
     else:
         matrix = {
             BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,

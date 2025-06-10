@@ -306,7 +306,7 @@ class BindingConstraintCreation(BindingConstraintMatrices):
         )
 
 
-class BindingConstraintUpdate(BindingConstraintMatrices):
+class BindingConstraintUpdate(AntaresBaseModel):
     """
     Represents an update of a binding constraint.
 
@@ -325,6 +325,17 @@ class BindingConstraintUpdate(BindingConstraintMatrices):
 
     # Added in 8.7
     group: Optional[LowerCaseStr] = None
+
+class BindingConstraintUpdateWithMatrices(BindingConstraintUpdate, BindingConstraintMatrices):
+    """
+    Used inside the update endpoint and there only
+    """
+
+    def matrices(self) -> BindingConstraintMatrices:
+        return BindingConstraintMatrices.model_validate(self.model_dump(mode="json", include=set(BindingConstraintMatrices.model_fields)))
+
+    def update_model(self) -> BindingConstraintUpdate:
+        return BindingConstraintUpdate.model_validate(self.model_dump(mode="json", include=set(BindingConstraintUpdate.model_fields)))
 
 
 BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]

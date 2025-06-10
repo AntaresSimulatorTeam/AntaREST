@@ -52,7 +52,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintOperator,
-    BindingConstraintUpdate,
+    BindingConstraintUpdateWithMatrices,
     ConstraintTerm,
     ConstraintTermUpdate,
 )
@@ -849,13 +849,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update binding constraint",
     )
     def update_binding_constraint(
-        uuid: str, binding_constraint_id: str, data: BindingConstraintUpdate
+        uuid: str, binding_constraint_id: str, data: BindingConstraintUpdateWithMatrices
     ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.binding_constraint_manager.update_binding_constraint(
-            study_interface, binding_constraint_id, data
+            study_interface, binding_constraint_id, data.update_model(), data.matrices()
         )
 
     @bp.get(
