@@ -68,7 +68,6 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     EXPECTED_MATRIX_SHAPES,
     CreateBindingConstraint,
-    TermMatrices,
 )
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -634,14 +633,17 @@ class BindingConstraintManager:
         args = {
             "id": binding_constraint_id,
             "parameters": data,
-            "matrices": matrices,
             "command_context": self._command_context,
             "study_version": study.version,
         }
 
+        new_constraint = update_binding_constraint(existing_constraint, data)
+
         if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
-            args = _replace_matrices_according_to_frequency_and_version(data.time_step, study.version, args)
+            args["matrices"] = _replace_matrices_according_to_frequency_and_version(
+                data.time_step, new_constraint.operator, study.version, matrices
+            )
 
         command = UpdateBindingConstraint(**args)
         study.add_commands([command])
@@ -798,23 +800,34 @@ class BindingConstraintManager:
 
 
 def _replace_matrices_according_to_frequency_and_version(
-    time_step: BindingConstraintFrequency, version: StudyVersion, args: Dict[str, Any]
-) -> Dict[str, Any]:
+    time_step: BindingConstraintFrequency,
+    operator: BindingConstraintOperator,
+    version: StudyVersion,
+    matrices: BindingConstraintMatrices,
+) -> BindingConstraintMatrices:
     if version < STUDY_VERSION_8_7:
-        if "values" not in args:
+        if not matrices.values:
             matrix = {
-                BindingConstraintFrequency.HOURLY.value: default_bc_hourly_86,
-                BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_86,
-                BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_86,
+                BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
+                BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
+                BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
             }[time_step].tolist()
-            args["matrices"]["values"] = matrix
+            matrices.values = matrix
     else:
         matrix = {
-            BindingConstraintFrequency.HOURLY.value: default_bc_hourly_87,
-            BindingConstraintFrequency.DAILY.value: default_bc_weekly_daily_87,
-            BindingConstraintFrequency.WEEKLY.value: default_bc_weekly_daily_87,
+            BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
+            BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
+            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
         }[time_step].tolist()
-        for term in [m.value for m in TermMatrices]:
-            if term not in args:
-                args[term] = matrix
-    return args
+
+        if operator == BindingConstraintOperator.EQUAL:
+            if not matrices.equal_term_matrix:
+                matrices.equal_term_matrix = matrix
+        if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
+            if not matrices.greater_term_matrix:
+                matrices.greater_term_matrix = matrix
+        if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
+            if not matrices.less_term_matrix:
+                matrices.less_term_matrix = matrix
+
+    return matrices
