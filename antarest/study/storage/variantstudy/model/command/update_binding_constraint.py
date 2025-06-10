@@ -19,25 +19,23 @@ from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
-    DEFAULT_GROUP,
     OPERATOR_MATRICES_MAP,
-    BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
     BindingConstraintUpdate,
+    update_binding_constraint,
     validate_binding_constraint_against_version,
 )
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint_for_update,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
-    TermMatrices,
-    create_binding_constraint_properties,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -188,66 +186,58 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         return self
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        binding_constraints = study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        current_constraint = study_data.get_constraint(self.id)
+        constraint = update_binding_constraint(current_constraint, self.parameters)
 
-        # When all BC of a given group are removed, the group should be removed from the scenario builder
-        old_groups = {bd.get("group", DEFAULT_GROUP).lower() for bd in binding_constraints.values()}
+        study_data.save_constraints([constraint])
 
-        index_and_cfg = self._find_binding_config(binding_constraints)
-        if index_and_cfg is None:
-            return CommandOutput(
-                status=False,
-                message=f"The binding constraint with ID '{self.id}' does not exist",
-            )
+        # Matrices
+        if self.study_version < STUDY_VERSION_8_7:
+            if self.matrices.values:
+                assert isinstance(self.matrices.values, str)
+                study_data.save_constraint_values_matrix(constraint.id, self.matrices.values)
+        else:
+            operator = self.parameters.operator
+            if operator == BindingConstraintOperator.EQUAL:
+                if self.matrices.equal_term_matrix:
+                    assert isinstance(self.matrices.equal_term_matrix, str)
+                    study_data.save_constraint_equal_term_matrix(constraint.id, self.matrices.equal_term_matrix)
 
-        index, actual_cfg = index_and_cfg
+            if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
+                if self.matrices.greater_term_matrix:
+                    assert isinstance(self.matrices.greater_term_matrix, str)
+                    study_data.save_constraint_greater_term_matrix(constraint.id, self.matrices.greater_term_matrix)
 
-        study_version = study_data.config.version
-        # rename matrices if the operator has changed for version >= 870
-        if self.operator and study_version >= STUDY_VERSION_8_7:
-            existing_operator = BindingConstraintOperator(actual_cfg["operator"])
-            new_operator = self.operator
-            update_matrices_names(study_data, self.id, existing_operator, new_operator)
+            if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
+                if self.matrices.less_term_matrix:
+                    assert isinstance(self.matrices.less_term_matrix, str)
+                    study_data.save_constraint_less_term_matrix(constraint.id, self.matrices.less_term_matrix)
 
-        self.update_in_config(study_data.config)
-
-        updated_matrices = [
-            term for term in [m.value for m in TermMatrices] if hasattr(self, term) and getattr(self, term)
-        ]
-
-        time_step = self.time_step or BindingConstraintFrequency(actual_cfg["type"])
-        self.validates_and_fills_matrices(
-            time_step=time_step, specific_matrices=updated_matrices or None, version=study_version, create=False
-        )
-
-        props = create_binding_constraint_properties(**self.model_dump())
-        obj = props.model_dump(mode="json", by_alias=True, exclude_unset=True)
-
-        updated_cfg = binding_constraints[index]
-        updated_cfg.update(obj)
-
-        excluded_fields = set(ICommand.model_fields) | {"id"}
-        updated_properties = self.model_dump(exclude=excluded_fields, exclude_none=True)
-        # This 2nd check is here to remove the last term.
-        if self.coeffs or updated_properties == {"coeffs": {}}:
-            # Remove terms which IDs contain a "%" or a "." in their name
-            term_ids = {k for k in updated_cfg if "%" in k or "." in k}
-            binding_constraints[index] = {k: v for k, v in updated_cfg.items() if k not in term_ids}
-
-        return super().apply_binding_constraint(study_data, binding_constraints, index, self.id, old_groups=old_groups)
+        return command_succeeded(f"Binding constraint '{constraint.id}' updated successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
-        matrices = ["values"] + [m.value for m in TermMatrices]
-        matrix_service = self.command_context.matrix_service
-
-        excluded_fields = set(ICommand.model_fields)
-        json_command = self.model_dump(mode="json", exclude=excluded_fields, exclude_none=True)
-        for key in json_command:
-            if key in matrices:
-                json_command[key] = matrix_service.get_matrix_id(json_command[key])
-
         return CommandDTO(
-            action=self.command_name.value, args=json_command, version=1, study_version=self.study_version
+            version=self._SERIALIZATION_VERSION,
+            action=self.command_name.value,
+            args={
+                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+                "matrices": self.matrices.model_dump(mode="json", by_alias=True, exclude_none=True),
+            },
+            study_version=self.study_version,
         )
+
+    @override
+    def get_inner_matrices(self) -> list[str]:
+        matrix_service = self.command_context.matrix_service
+        return [
+            matrix_service.get_matrix_id(matrix)
+            for matrix in [
+                self.matrices.values,
+                self.matrices.less_term_matrix,
+                self.matrices.greater_term_matrix,
+                self.matrices.equal_term_matrix,
+            ]
+            if matrix is not None
+        ]
