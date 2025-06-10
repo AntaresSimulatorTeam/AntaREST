@@ -14,7 +14,6 @@ import collections
 import logging
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
-import numpy as np
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import (
@@ -31,7 +30,6 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
-    OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
     BindingConstraintCreation,
     BindingConstraintFrequency,
@@ -191,17 +189,23 @@ def _get_references_by_widths(
 
     references_by_width: Dict[int, List[Tuple[str, str]]] = {}
     _total = len(bcs)
+    study_dao = study.get_study_dao()
     for _index, bc in enumerate(bcs):
-        matrices_name = (
-            OPERATOR_MATRIX_FILE_MAP[bc.operator] if study.version >= STUDY_VERSION_8_7 else ["{bc_id}"]
-        )
-        for matrix_name in matrices_name:
-            matrix_id = matrix_name.format(bc_id=bc.id)
-            logger.info(f"⏲ Validating BC '{bc.id}': {matrix_id=} [{_index + 1}/{_total}]")
-            obj = file_study.tree.get(url=["input", "bindingconstraints", matrix_id])
-            matrix = np.array(obj["data"], dtype=float)
-            # We ignore empty matrices as there are default matrices for the simulator.
-            if not matrix.size:
+        if study.version < STUDY_VERSION_8_7:
+            matrices = {"values": study_dao.get_constraint_values_matrix(bc.id)}
+        else:
+            matrices = {}
+            operator = bc.operator
+            if operator == BindingConstraintOperator.EQUAL:
+                matrices["equal"] = study_dao.get_constraint_equal_term_matrix(bc.id)
+            if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
+                matrices["greater"] = study_dao.get_constraint_greater_term_matrix(bc.id)
+            if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
+                matrices["less"] = study_dao.get_constraint_less_term_matrix(bc.id)
+
+        for matrix_id, matrix in matrices.items():
+            if matrix.empty:
+                # We ignore empty matrices as there are default matrices for the simulator.
                 continue
 
             matrix_height = matrix.shape[0]
