@@ -493,7 +493,7 @@ class BindingConstraintManager:
     ) -> BindingConstraint:
         existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
 
-        args = {
+        args: dict[str, Any] = {
             "id": binding_constraint_id,
             "parameters": data,
             "command_context": self._command_context,
@@ -683,14 +683,17 @@ def _replace_matrices_according_to_frequency_and_version(
             BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
         }[time_step].tolist()
 
-        if operator == BindingConstraintOperator.EQUAL:
-            if not matrices.equal_term_matrix:
-                matrices.equal_term_matrix = matrix
-        if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
-            if not matrices.greater_term_matrix:
-                matrices.greater_term_matrix = matrix
-        if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
-            if not matrices.less_term_matrix:
-                matrices.less_term_matrix = matrix
+        if operator == BindingConstraintOperator.EQUAL and not matrices.equal_term_matrix:
+            matrices.equal_term_matrix = matrix
+        if (
+            operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}
+            and not matrices.greater_term_matrix
+        ):
+            matrices.greater_term_matrix = matrix
+        if (
+            operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}
+            and not matrices.less_term_matrix
+        ):
+            matrices.less_term_matrix = matrix
 
     return matrices
