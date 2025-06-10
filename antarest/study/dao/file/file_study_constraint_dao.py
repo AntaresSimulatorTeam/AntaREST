@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Iterator, Sequence
+from typing import Any, Iterator, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -24,7 +24,10 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.model import STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    parse_binding_constraint,
+    serialize_binding_constraint,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -82,16 +85,25 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
         study_data = self.get_file_study()
+        study_version = study_data.config.version
         ini_content = _get_all_constraints_ini(study_data)
-        """
-        for constraint in constraints:
-        
 
-        for thermal in thermals:
-            self._update_thermal_config(study_data.config, area_id, thermal)
-            ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
-        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
-        """
+        id_by_key = {}
+        for key, bc in ini_content.items():
+            id_by_key[parse_binding_constraint(study_data.config.version, bc).id] = key
+
+        existing_bindings = {bc.id: k for k, bc in enumerate(study_data.config.bindings)}
+
+        for constraint in constraints:
+            if constraint.id in existing_bindings:
+                study_data.config.bindings[existing_bindings[constraint.id]] = constraint
+            else:
+                study_data.config.bindings.append(constraint)
+
+            ini_key = id_by_key[constraint.id]
+            ini_content[ini_key] = serialize_binding_constraint(study_version, constraint)
+
+        study_data.tree.save(ini_content, ["input", "bindingconstraints", "bindingconstraints"])
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
@@ -124,20 +136,9 @@ def _save_matrix(study_data: FileStudy, constraint_id: str, term: str, series_id
     study_data.tree.save(series_id, ["input", "bindingconstraints", f"{constraint_id}{term}"])
 
 
-def _get_all_constraints_ini(study_data: FileStudy) -> dict[str, BindingConstraint]:
+def _get_all_constraints_ini(study_data: FileStudy) -> dict[str, Any]:
     return study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
-"""
-def _update_thermal_config(study_data: FileStudyTreeConfig, constraint: BindingConstraint) -> None:
-    if area_id not in study_data.bindings:
-        raise ValueError(f"The area '{area_id}' does not exist")
-
-    for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
-        if existing_cluster.id == thermal.id:
-            study_data.areas[area_id].thermals[k] = thermal
-            return
-    study_data.areas[area_id].thermals.append(thermal)
-"""
 
 def _generate_replacement_matrices(
     bc_id: str,
