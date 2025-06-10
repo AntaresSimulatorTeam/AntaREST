@@ -53,9 +53,7 @@ class RemoveMultipleBindingConstraints(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
-            args={
-                "ids": self.ids,
-            },
+            args={"ids": self.ids},
             study_version=self.study_version,
         )
 
