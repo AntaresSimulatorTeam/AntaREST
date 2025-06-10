@@ -621,10 +621,9 @@ class BindingConstraintManager:
         self,
         study: StudyInterface,
         binding_constraint_id: str,
-        data: BindingConstraintUpdate,
-        existing_constraint: Optional[BindingConstraint] = None,
+        data: BindingConstraintUpdate
     ) -> BindingConstraint:
-        existing_constraint = existing_constraint or self.get_binding_constraint(study, binding_constraint_id)
+        existing_constraint = self.get_binding_constraint(study, binding_constraint_id)
 
         upd_constraint = {
             "id": binding_constraint_id,
