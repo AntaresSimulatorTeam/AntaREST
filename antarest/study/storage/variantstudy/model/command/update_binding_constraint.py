@@ -170,7 +170,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         return self
 
-    def _validate_matrices(self, time_step: BindingConstraintFrequency) -> None:
+    def _validate_and_fill_matrices(self, time_step: BindingConstraintFrequency) -> None:
         if self.study_version < STUDY_VERSION_8_7:
             self.matrices.values = self.get_corresponding_matrices(
                 self.matrices.values, time_step, self.study_version, False
@@ -190,7 +190,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         current_constraint = study_data.get_constraint(self.id)
         constraint = update_binding_constraint(current_constraint, self.parameters)
 
-        self._validate_matrices(constraint.time_step)
+        self._validate_and_fill_matrices(constraint.time_step)
 
         study_data.save_constraints([constraint])
 
