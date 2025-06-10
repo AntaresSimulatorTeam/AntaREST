@@ -123,7 +123,11 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        # todo
+        # Deleting the constraint in the configuration must be done AFTER deleting the files and folders.
+        for constraint in constraints:
+            study_data.config.bindings.remove(constraint)
 
 
 def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.DataFrame:
