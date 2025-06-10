@@ -253,43 +253,6 @@ class BindingConstraintManager:
     ) -> None:
         self._command_context = command_context
 
-    @staticmethod
-    def parse_and_add_terms(key: str, value: Any, adapted_constraint: BindingConstraint) -> None:
-        """Parse a single term from the constraint dictionary and add it to the adapted_constraint model."""
-        if "%" in key or "." in key:
-            separator = "%" if "%" in key else "."
-            term_data = key.split(separator)
-            if isinstance(value, (float, int)):
-                weight, offset = (float(value), None)
-            else:
-                _parts = value.partition("%")
-                weight = float(_parts[0])
-                offset = int(_parts[2]) if _parts[2] else None
-
-            if separator == "%":
-                # Link term
-                adapted_constraint.terms.append(
-                    ConstraintTerm(
-                        weight=weight,
-                        offset=offset,
-                        data=LinkTerm.model_validate(
-                            {
-                                "area1": term_data[0],
-                                "area2": term_data[1],
-                            }
-                        ),
-                    )
-                )
-            # Cluster term
-            else:
-                adapted_constraint.terms.append(
-                    ConstraintTerm(
-                        weight=weight,
-                        offset=offset,
-                        data=ClusterTerm.model_validate({"area": term_data[0], "cluster": term_data[1]}),
-                    )
-                )
-
     def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> BindingConstraint:
         """
         Retrieves a binding constraint by its ID within a given study.
