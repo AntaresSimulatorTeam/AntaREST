@@ -89,8 +89,12 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         ini_content = _get_all_constraints_ini(study_data)
 
         id_by_key = {}
+        old_groups = set()
         for key, bc in ini_content.items():
-            id_by_key[parse_binding_constraint(study_data.config.version, bc).id] = key
+            constraint = parse_binding_constraint(study_data.config.version, bc)
+            id_by_key[constraint.id] = key
+            if constraint.group:
+                old_groups.add(constraint.group)
 
         existing_bindings = {bc.id: k for k, bc in enumerate(study_data.config.bindings)}
 
@@ -104,6 +108,12 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             ini_content[ini_key] = serialize_binding_constraint(study_version, constraint)
 
         study_data.tree.save(ini_content, ["input", "bindingconstraints", "bindingconstraints"])
+
+        if study_version >= STUDY_VERSION_8_7:
+            # Groups
+            new_groups = {bc.group for bc in constraints}
+            removed_groups = old_groups - new_groups
+            _remove_groups_from_scenario_builder(study_data, removed_groups)
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
@@ -144,7 +154,7 @@ def _get_all_constraints_ini(study_data: FileStudy) -> dict[str, Any]:
     return study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
 
-def _remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: set[str]) -> None:
+def _remove_groups_from_scenario_builder(study_data: FileStudy, removed_groups: set[str]) -> None:
     """
     Update the scenario builder by removing the rows that correspond to the BC groups to remove.
 
