@@ -144,6 +144,27 @@ def _get_all_constraints_ini(study_data: FileStudy) -> dict[str, Any]:
     return study_data.tree.get(["input", "bindingconstraints", "bindingconstraints"])
 
 
+def _remove_bc_from_scenario_builder(study_data: FileStudy, removed_groups: set[str]) -> None:
+    """
+    Update the scenario builder by removing the rows that correspond to the BC groups to remove.
+
+    NOTE: this update can be very long if the scenario builder configuration is large.
+    """
+    if not removed_groups:
+        return
+
+    rulesets = study_data.tree.get(["settings", "scenariobuilder"])
+
+    for ruleset in rulesets.values():
+        for key in list(ruleset):
+            # The key is in the form "symbol,group,year"
+            symbol, *parts = key.split(",")
+            if symbol == "bc" and parts[0] in removed_groups:
+                del ruleset[key]
+
+    study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+
 def _generate_replacement_matrices(
     bc_id: str,
     study_version: StudyVersion,
