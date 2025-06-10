@@ -85,19 +85,19 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        _save_matrix(self.get_file_study(), constraint_id, "", series_id)
 
     @override
     def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        _save_matrix(self.get_file_study(), constraint_id, "_lt", series_id)
 
     @override
     def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        _save_matrix(self.get_file_study(), constraint_id, "_gt", series_id)
 
     @override
     def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError()
+        _save_matrix(self.get_file_study(), constraint_id, "_eq", series_id)
 
     @override
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
@@ -108,6 +108,10 @@ def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.Data
     node = study_data.tree.get_node(["input", "bindingconstraints", f"{constraint_id}{term}"])
     assert isinstance(node, InputSeriesMatrix)
     return node.parse_as_dataframe()
+
+
+def _save_matrix(study_data: FileStudy, constraint_id: str, term: str, series_id: str) -> None:
+    study_data.tree.save(series_id, ["input", "bindingconstraints", f"{constraint_id}{term}"])
 
 
 def _generate_replacement_matrices(
