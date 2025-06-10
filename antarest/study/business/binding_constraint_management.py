@@ -31,8 +31,6 @@ from antarest.core.requests import CaseInsensitiveDict
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_GROUP,
-    DEFAULT_OPERATOR,
-    DEFAULT_TIMESTEP,
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
     BindingConstraintCreation,
@@ -49,8 +47,7 @@ from antarest.study.business.model.binding_constraint_model import (
     update_binding_constraint,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
+from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
@@ -292,75 +289,6 @@ class BindingConstraintManager:
                         data=ClusterTerm.model_validate({"area": term_data[0], "cluster": term_data[1]}),
                     )
                 )
-
-    @staticmethod
-    def constraint_model_adapter(constraint: Mapping[str, Any], study_version: StudyVersion) -> BindingConstraint:
-        """
-        Adapts a binding constraint configuration to the appropriate model version.
-
-        Args:
-            constraint: A dictionary or model representing the constraint to be adapted.
-                This can either be a dictionary coming from client input or an existing
-                model that needs reformatting.
-            study_version: A StudyVersion object indicating the target version of the study configuration. This is used to
-                determine which model class to instantiate and which default values to apply.
-
-        Returns:
-            A new instance of either `BindingConstraintBase`, `BindingConstraint830`, or `BindingConstraint870`,
-            populated with the adapted values from the input constraint, and conforming to the
-            structure expected by the specified version.
-
-        Note:
-            This method is crucial for ensuring backward compatibility and future-proofing the application
-            as it evolves. It allows client-side data to be accurately represented within the config and
-            ensures data integrity when storing or retrieving constraint configurations from the database.
-        """
-
-        constraint_output = {
-            "id": constraint["id"],
-            "name": constraint["name"],
-            "enabled": constraint.get("enabled", True),
-            "time_step": constraint.get("type", DEFAULT_TIMESTEP),
-            "operator": constraint.get("operator", DEFAULT_OPERATOR),
-            "comments": constraint.get("comments", ""),
-            "terms": constraint.get("terms", []),
-        }
-
-        if study_version >= STUDY_VERSION_8_3:
-            _filter_year_by_year = constraint.get("filter_year_by_year") or constraint.get("filter-year-by-year", "")
-            _filter_synthesis = constraint.get("filter_synthesis") or constraint.get("filter-synthesis", "")
-            constraint_output["filter_year_by_year"] = _filter_year_by_year
-            constraint_output["filter_synthesis"] = _filter_synthesis
-        if study_version >= STUDY_VERSION_8_7:
-            constraint_output["group"] = constraint.get("group", DEFAULT_GROUP)
-
-        adapted_constraint = parse_binding_constraint(study_version, **constraint_output)
-
-        # If 'terms' were not directly provided in the input, parse and add terms dynamically
-        if not constraint.get("terms"):
-            for key, value in constraint.items():
-                if key not in constraint_output:  # Avoid re-processing keys already included
-                    BindingConstraintManager.parse_and_add_terms(key, value, adapted_constraint)
-
-        return adapted_constraint
-
-    @staticmethod
-    def terms_to_coeffs(terms: Sequence[ConstraintTerm]) -> Dict[str, List[float]]:
-        """
-        Converts a sequence of terms into a dictionary mapping each term's ID to its coefficients,
-        including the weight and, optionally, the offset.
-
-        :param terms: A sequence of terms to be converted.
-        :return: A dictionary of term IDs mapped to a list of their coefficients.
-        """
-        coeffs = {}
-        for term in terms:
-            term_id = term.generate_id()
-            if term_id and term.weight is not None:
-                coeffs[term_id] = [term.weight]
-                if term.offset:
-                    coeffs[term_id].append(term.offset)
-        return coeffs
 
     def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> BindingConstraint:
         """
