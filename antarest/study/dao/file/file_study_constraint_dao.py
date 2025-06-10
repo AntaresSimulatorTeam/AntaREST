@@ -16,6 +16,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
@@ -24,7 +25,9 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.model import STUDY_VERSION_8_7
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly as default_bc_hourly_87,
 )
@@ -46,15 +49,32 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_all_constraints(self) -> dict[str, BindingConstraint]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        version = file_study.config.version
+        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+
+        constraints_by_id: dict[str, BindingConstraint] = {}
+
+        for constraint_ini in config.values():
+            constraint = parse_binding_constraint(version, constraint_ini)
+            constraints_by_id[constraint.id] = constraint
+        return constraints_by_id
 
     @override
     def get_constraint(self, constraint_id: str) -> BindingConstraint:
-        raise NotImplementedError()
+        return self.get_all_constraints()[constraint_id]
 
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+        study_data = self.get_file_study()
+        study_version = study_data.config.version
+        if study_version > STUDY_VERSION_8_7:
+            raise InvalidFieldForVersionError(
+                f"'values' matrix is no supported since v8.7, and your study is in {study_version}"
+            )
+        node = study_data.tree.get_node(["input", "bindingconstraints", constraint_id])
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
