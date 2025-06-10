@@ -58,7 +58,7 @@ function TreeItemEnhanced({
     return typeof label === "string" ? (
       <Tooltip title={label}>
         <span>
-          {label} {badgeChip}
+          {badgeChip} {label}
         </span>
       </Tooltip>
     ) : (
