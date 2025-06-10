@@ -412,15 +412,11 @@ class BindingConstraintManager:
         The grouping considers the exact group name, implying case sensitivity. If case-insensitive grouping
         is required, normalization of group names to a uniform case (e.g., all lower or upper) should be performed.
         """
-        file_study = study.get_files()
-        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
+        all_constraints = study.get_study_dao().get_all_constraints()
         grouped_constraints = CaseInsensitiveDict()
-
-        for constraint in config.values():
-            constraint_config = self.constraint_model_adapter(constraint, study.version)
-            constraint_group = getattr(constraint_config, "group", DEFAULT_GROUP)
-            grouped_constraints.setdefault(constraint_group, []).append(constraint_config)
-
+        for constraint in all_constraints.values():
+            group = constraint.group or DEFAULT_GROUP
+            grouped_constraints.setdefault(group, []).append(constraint)
         return grouped_constraints
 
     def get_constraints_by_group(self, study: StudyInterface, group_name: str) -> Sequence[BindingConstraint]:
