@@ -566,13 +566,6 @@ class BindingConstraintManager:
             args["coeffs"] = self.terms_to_coeffs(data.terms)
 
         command = CreateBindingConstraint(**args)
-
-        # Validates the matrices. Needed when the study is a variant because we only append the command to the list
-        time_step = data.time_step or DEFAULT_TIMESTEP
-        command.validates_and_fills_matrices(
-            time_step=time_step, specific_matrices=None, version=study.version, create=True
-        )
-
         study.add_commands([command])
 
         # Processes the constraints to add them inside the endpoint response.
@@ -678,17 +671,6 @@ class BindingConstraintManager:
             args = _replace_matrices_according_to_frequency_and_version(data.time_step, study.version, args)
 
         command = UpdateBindingConstraint(**args)
-
-        # Validates the matrices. Needed when the study is a variant because we only append the command to the list
-
-        updated_matrices = [term for term in [m.value for m in TermMatrices] if getattr(data, term)]
-        if updated_matrices:
-            time_step = data.time_step or existing_constraint.time_step
-            assert time_step is not None
-            command.validates_and_fills_matrices(
-                time_step=time_step, specific_matrices=updated_matrices, version=study.version, create=False
-            )
-
         study.add_commands([command])
 
         # Constructs the endpoint response.
