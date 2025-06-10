@@ -89,6 +89,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINTS.value: UpdateBindingConstraints,
+    CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveMultipleBindingConstraints,
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,

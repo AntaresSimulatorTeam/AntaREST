@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
@@ -36,6 +37,14 @@ class RemoveMultipleBindingConstraints(ICommand):
 
     # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
     ids: List[str]
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_model(cls, values: dict[str, Any]) -> dict[str, Any]:
+        # Handle the legacy command `RemoveBindingConstraint`
+        if "id" in values:
+            values["ids"] = [values.pop("id")]
+        return values
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:

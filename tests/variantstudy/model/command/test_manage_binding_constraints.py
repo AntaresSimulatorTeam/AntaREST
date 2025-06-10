@@ -30,7 +30,9 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
-from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
     update_matrices_names,
@@ -182,9 +184,9 @@ def test_manage_binding_constraint(
             ).apply(study_data=empty_study)
             assert output.status, output.message
 
-        output = RemoveBindingConstraint(id="bd 1", command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        output = RemoveMultipleBindingConstraints(
+            id="bd 1", command_context=command_context, study_version=study_version
+        ).apply(empty_study)  # Ensures we're able to handle legacy command
         assert output.status, output.message
 
         if study_version >= 870:
@@ -219,9 +221,9 @@ def test_manage_binding_constraint(
             expected_bd_2["group"] = "default"
         assert bd_config.get("0") == expected_bd_2
 
-        output = RemoveBindingConstraint(id="bd 2", command_context=command_context, study_version=study_version).apply(
-            empty_study
-        )
+        output = RemoveMultipleBindingConstraints(
+            id="bd 2", command_context=command_context, study_version=study_version
+        ).apply(empty_study)
         assert output.status, output.message
 
         if study_version >= 870:
