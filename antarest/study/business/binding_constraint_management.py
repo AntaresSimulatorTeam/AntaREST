@@ -362,17 +362,6 @@ class BindingConstraintManager:
                     coeffs[term_id].append(term.offset)
         return coeffs
 
-    def check_binding_constraints_exists(self, study: StudyInterface, bc_ids: List[str]) -> None:
-        file_study = study.get_files()
-        existing_constraints = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-
-        existing_ids = {constraint["id"] for constraint in existing_constraints.values()}
-
-        missing_bc_ids = [bc_id for bc_id in bc_ids if bc_id not in existing_ids]
-
-        if missing_bc_ids:
-            raise BindingConstraintNotFound(f"Binding constraint(s) '{missing_bc_ids}' not found")
-
     def get_binding_constraint(self, study: StudyInterface, bc_id: str) -> BindingConstraint:
         """
         Retrieves a binding constraint by its ID within a given study.
@@ -387,19 +376,7 @@ class BindingConstraintManager:
         Raises:
             BindingConstraintNotFound: If no binding constraint with the specified ID is found.
         """
-        file_study = study.get_files()
-        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-
-        constraints_by_id: Dict[str, BindingConstraint] = CaseInsensitiveDict()  # type: ignore
-
-        for constraint in config.values():
-            constraint_config = self.constraint_model_adapter(constraint, study.version)
-            constraints_by_id[constraint_config.id] = constraint_config
-
-        if bc_id not in constraints_by_id:
-            raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
-
-        return constraints_by_id[bc_id]
+        return study.get_study_dao().get_constraint(bc_id)
 
     def get_binding_constraints(
         self, study: StudyInterface, filters: ConstraintFilters = ConstraintFilters()
@@ -414,10 +391,8 @@ class BindingConstraintManager:
         Returns:
             A list of BindingConstraint objects representing the binding constraints that match the specified filters.
         """
-        file_study = study.get_files()
-        config = file_study.tree.get(["input", "bindingconstraints", "bindingconstraints"])
-        outputs = [self.constraint_model_adapter(c, study.version) for c in config.values()]
-        filtered_constraints = list(filter(lambda c: filters.match_filters(c), outputs))
+        all_constraints = study.get_study_dao().get_all_constraints()
+        filtered_constraints = list(filter(lambda c: filters.match_filters(c), all_constraints.values()))
         return filtered_constraints
 
     def get_grouped_constraints(self, study: StudyInterface) -> Mapping[str, Sequence[BindingConstraint]]:
