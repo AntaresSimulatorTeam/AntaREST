@@ -65,22 +65,19 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def get_constraint_values_matrix(self, constraint_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        node = study_data.tree.get_node(["input", "bindingconstraints", constraint_id])
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
+        return _get_matrix(self.get_file_study(), constraint_id, "")
 
     @override
     def get_constraint_less_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "lt")
+        return _get_matrix(self.get_file_study(), constraint_id, "_lt")
 
     @override
     def get_constraint_greater_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "gt")
+        return _get_matrix(self.get_file_study(), constraint_id, "_gt")
 
     @override
     def get_constraint_equal_term_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return _get_matrix(self.get_file_study(), constraint_id, "eq")
+        return _get_matrix(self.get_file_study(), constraint_id, "_eq")
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
@@ -108,7 +105,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
 
 def _get_matrix(study_data: FileStudy, constraint_id: str, term: str) -> pd.DataFrame:
-    node = study_data.tree.get_node(["input", "bindingconstraints", f"{constraint_id}_{term}"])
+    node = study_data.tree.get_node(["input", "bindingconstraints", f"{constraint_id}{term}"])
     assert isinstance(node, InputSeriesMatrix)
     return node.parse_as_dataframe()
 
