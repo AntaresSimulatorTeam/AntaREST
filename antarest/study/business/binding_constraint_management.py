@@ -45,6 +45,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
     LinkTerm,
+    create_binding_constraint,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
@@ -67,7 +68,6 @@ from antarest.study.storage.variantstudy.model.command.create_binding_constraint
     EXPECTED_MATRIX_SHAPES,
     CreateBindingConstraint,
     TermMatrices,
-    create_binding_constraint_properties,
 )
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -551,26 +551,15 @@ class BindingConstraintManager:
         if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
-        check_attributes_coherence(data, study.version, data.operator or DEFAULT_OPERATOR)
-
-        new_constraint = {
-            "name": data.name,
-            **data.model_dump(mode="json", exclude={"terms", "name"}, exclude_none=True),
-        }
         args = {
-            **new_constraint,
+            "parameters": data,
             "command_context": self._command_context,
             "study_version": study.version,
         }
-        if data.terms:
-            args["coeffs"] = self.terms_to_coeffs(data.terms)
-
         command = CreateBindingConstraint(**args)
         study.add_commands([command])
 
-        # Processes the constraints to add them inside the endpoint response.
-        new_constraint["id"] = bc_id
-        return self.constraint_model_adapter(new_constraint, study.version)
+        return create_binding_constraint(data, study.version)
 
     def duplicate_binding_constraint(
         self, study: StudyInterface, source_id: str, new_constraint_name: str
@@ -603,45 +592,39 @@ class BindingConstraintManager:
         if not source_constraint:
             raise BindingConstraintNotFound(f"Binding constraint '{source_id}' not found")
 
-        new_constraint = {
-            "name": new_constraint_name,
-            **source_constraint.model_dump(mode="json", exclude={"terms", "name", "id"}),
-        }
+        source_constraint.name = new_constraint_name
+        constraint_creation = BindingConstraintCreation.from_constraint(source_constraint)
+
         args = {
-            **new_constraint,
+            "parameters": constraint_creation,
             "command_context": self._command_context,
             "study_version": study.version,
         }
-        if source_constraint.terms:
-            args["coeffs"] = self.terms_to_coeffs(source_constraint.terms)
 
         # Retrieval of the source constraint matrices
-        file_study = study.get_files()
+        study_dao = study.get_study_dao()
         if study.version < STUDY_VERSION_8_7:
-            matrix = file_study.tree.get(["input", "bindingconstraints", source_id])
-            args["values"] = matrix["data"]
+            matrix = study_dao.get_constraint_values_matrix(source_id).to_numpy().tolist()
+            args["matrices"]["values"] = matrix
         else:
-            correspondence_map = {
-                "lt": TermMatrices.LESS.value,
-                "gt": TermMatrices.GREATER.value,
-                "eq": TermMatrices.EQUAL.value,
-            }
-            source_matrices = OPERATOR_MATRIX_FILE_MAP[source_constraint.operator]
-            for matrix_name in source_matrices:
-                matrix = file_study.tree.get(["input", "bindingconstraints", matrix_name.format(bc_id=source_id)])[
-                    "data"
-                ]
-                command_attribute = correspondence_map[matrix_name.removeprefix("{bc_id}_")]
-                args[command_attribute] = matrix
+            if source_constraint.operator == BindingConstraintOperator.EQUAL:
+                matrix = study_dao.get_constraint_equal_term_matrix(source_id).to_numpy().tolist()
+                args["matrices"]["equal_term_matrix"] = matrix
+
+            if source_constraint.operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
+                matrix = study_dao.get_constraint_greater_term_matrix(source_id).to_numpy().tolist()
+                args["matrices"]["greater_term_matrix"] = matrix
+
+            if source_constraint.operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
+                matrix = study_dao.get_constraint_less_term_matrix(source_id).to_numpy().tolist()
+                args["matrices"]["less_term_matrix"] = matrix
 
         # Creates and applies constraint
         command = CreateBindingConstraint(**args)
         study.add_commands([command])
 
         # Returns the new constraint
-        source_constraint.name = new_constraint_name
-        source_constraint.id = new_constraint_id
-        return source_constraint
+        return create_binding_constraint(constraint_creation, study.version)
 
     def update_binding_constraint(
         self,
@@ -747,24 +730,6 @@ class BindingConstraintManager:
         bc_json_updated = {**bc_json, **bc_props_as_dict}
         return self.constraint_model_adapter(bc_json_updated, study_version)
 
-    def remove_binding_constraint(self, study: StudyInterface, binding_constraint_id: str) -> None:
-        """
-        Removes a binding constraint from a study.
-
-        Args:
-            study: The study from which to remove the constraint.
-            binding_constraint_id: The ID of the binding constraint to remove.
-
-        Raises:
-            BindingConstraintNotFound: If no binding constraint with the specified ID is found.
-        """
-        # Check the existence of the binding constraint before removing it
-        bc = self.get_binding_constraint(study, binding_constraint_id)
-        command = RemoveMultipleBindingConstraints(
-            ids=[bc.id], command_context=self._command_context, study_version=study.version
-        )
-        study.add_commands([command])
-
     def remove_multiple_binding_constraints(self, study: StudyInterface, binding_constraints_ids: List[str]) -> None:
         """
         Removes multiple binding constraints from a study.
@@ -772,12 +737,7 @@ class BindingConstraintManager:
         Args:
             study: The study from which to remove the constraint.
             binding_constraints_ids: The IDs of the binding constraints to remove.
-
-        Raises:
-            BindingConstraintNotFound: If at least one binding constraint within the specified list is not found.
         """
-
-        self.check_binding_constraints_exists(study, binding_constraints_ids)
 
         command = RemoveMultipleBindingConstraints(
             ids=binding_constraints_ids,
@@ -790,12 +750,10 @@ class BindingConstraintManager:
     def _update_constraint_with_terms(
         self, study: StudyInterface, bc: BindingConstraint, terms: Mapping[str, ConstraintTerm]
     ) -> None:
-        coeffs = {
-            term_id: [term.weight, term.offset] if term.offset else [term.weight] for term_id, term in terms.items()
-        }
+        constraint_update = BindingConstraintUpdate(**{"terms":terms})
         args = {
             "id": bc.id,
-            "coeffs": coeffs,
+            "parameters": constraint_update,
             "command_context": self._command_context,
             "study_version": study.version,
         }

@@ -989,8 +989,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.remove_binding_constraint(
-            study_interface, binding_constraint_id
+        return study_service.binding_constraint_manager.remove_multiple_binding_constraints(
+            study_interface, [binding_constraint_id]
         )
 
     @bp.delete(
