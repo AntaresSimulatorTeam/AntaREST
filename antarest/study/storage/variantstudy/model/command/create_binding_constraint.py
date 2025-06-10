@@ -159,7 +159,7 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
                                 "area2": area_2,
                             }
                         ),
-                    )
+                    )  # type: ignore
                 )
             elif "." in link_or_cluster:
                 area, cluster_id = link_or_cluster.split(".")
@@ -168,7 +168,7 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
                         weight=weight,
                         offset=offset,
                         data=ClusterTerm.model_validate({"area": area, "cluster": cluster_id}),
-                    )
+                    )  # type: ignore
                 )
             else:
                 raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")

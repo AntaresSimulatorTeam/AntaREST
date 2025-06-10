@@ -314,7 +314,7 @@ class BindingConstraintUpdate(BindingConstraintMatrices):
     """
 
     enabled: Optional[bool] = None
-    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
+    time_step: Optional[BindingConstraintFrequency] = Field(None, alias="type")
     operator: Optional[BindingConstraintOperator] = None
     comments: Optional[str] = None
     terms: Optional[list[ConstraintTerm]] = None

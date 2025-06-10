@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
+    BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
     BindingConstraintUpdate,
@@ -157,8 +158,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
         validate_binding_constraint_against_version(self.study_version, self.parameters)
 
         # Validate matrices
-        time_step = self.parameters.time_step
-
         if self.study_version < STUDY_VERSION_8_7:
             for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
                 if getattr(self.matrices, matrix) is not None:
@@ -166,29 +165,32 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                         "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
                     )
 
-            if self.matrices.values:
-                self.matrices.values = self.get_corresponding_matrices(
-                    self.matrices.values, time_step, self.study_version, False
-                )
-
-        else:
-            if self.matrices.values is not None:
-                raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-
-            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
-                if matrix_data := getattr(self.matrices, matrix):
-                    setattr(
-                        self.matrices,
-                        matrix,
-                        self.get_corresponding_matrices(matrix_data, time_step, self.study_version, False),
-                    )
+        elif self.matrices.values is not None:
+            raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
 
         return self
+
+    def _validate_matrices(self, time_step: BindingConstraintFrequency) -> None:
+        if self.study_version < STUDY_VERSION_8_7:
+            self.matrices.values = self.get_corresponding_matrices(
+                self.matrices.values, time_step, self.study_version, False
+            )
+        else:
+            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+                setattr(
+                    self.matrices,
+                    matrix,
+                    self.get_corresponding_matrices(
+                        getattr(self.matrices, matrix), time_step, self.study_version, False
+                    ),
+                )
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_constraint = study_data.get_constraint(self.id)
         constraint = update_binding_constraint(current_constraint, self.parameters)
+
+        self._validate_matrices(constraint.time_step)
 
         study_data.save_constraints([constraint])
 
