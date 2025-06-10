@@ -27,6 +27,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintMatrices,
     BindingConstraintOperator,
+    BindingConstraintUpdate,
     ClusterTerm,
     ConstraintTerm,
     ConstraintTermUpdate,
@@ -101,6 +102,8 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
     Abstract class for binding constraint commands.
     """
 
+    _SERIALIZATION_VERSION: Final[int] = 2
+
     def get_corresponding_matrices(
         self,
         v: Optional[MatrixType | str],
@@ -174,7 +177,7 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
                 raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
         return terms
 
-    def get_inner_matrices_for_commands(self, matrices: BindingConstraintMatrices) -> list[str]:
+    def command_get_inner_matrices(self, matrices: BindingConstraintMatrices) -> list[str]:
         matrix_service = self.command_context.matrix_service
         return [
             matrix_service.get_matrix_id(matrix)
@@ -187,6 +190,19 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
             if matrix is not None
         ]
 
+    def command_to_dto(
+        self, parameters: BindingConstraintCreation | BindingConstraintUpdate, matrices: BindingConstraintMatrices
+    ) -> CommandDTO:
+        return CommandDTO(
+            version=self._SERIALIZATION_VERSION,
+            action=self.command_name.value,
+            args={
+                "parameters": parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+                "matrices": matrices.model_dump(mode="json", by_alias=True, exclude_none=True),
+            },
+            study_version=self.study_version,
+        )
+
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
     """
@@ -198,7 +214,6 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `CREATE_BINDING_CONSTRAINT` command:
     name: str
 
-    _SERIALIZATION_VERSION: Final[int] = 2
     # version 2: put all args inside `parameters` and type it as BindingConstraintCreation + put all matrices inside `matrices`
 
     parameters: BindingConstraintCreation
@@ -293,16 +308,8 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(
-            version=self._SERIALIZATION_VERSION,
-            action=self.command_name.value,
-            args={
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
-                "matrices": self.matrices.model_dump(mode="json", by_alias=True, exclude_none=True),
-            },
-            study_version=self.study_version,
-        )
+        return super().command_to_dto(self.parameters, self.matrices)
 
     @override
     def get_inner_matrices(self) -> List[str]:
-        return super().get_inner_matrices_for_commands(self.matrices)
+        return super().command_get_inner_matrices(self.matrices)

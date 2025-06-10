@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Final, Optional, Self
+from typing import Any, Optional, Self
 
 from antares.study.version import StudyVersion
 from pydantic import model_validator
@@ -120,7 +120,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     # Properties of the `UPDATE_BINDING_CONSTRAINT` command:
     id: str
 
-    _SERIALIZATION_VERSION: Final[int] = 2
     # version 2: put all args inside `parameters` and type it as BindingConstraintCreation + put all matrices inside `matrices`
 
     parameters: BindingConstraintUpdate
@@ -220,16 +219,8 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        return CommandDTO(
-            version=self._SERIALIZATION_VERSION,
-            action=self.command_name.value,
-            args={
-                "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
-                "matrices": self.matrices.model_dump(mode="json", by_alias=True, exclude_none=True),
-            },
-            study_version=self.study_version,
-        )
+        return super().command_to_dto(self.parameters, self.matrices)
 
     @override
     def get_inner_matrices(self) -> list[str]:
-        return super().get_inner_matrices_for_commands(self.matrices)
+        return super().command_get_inner_matrices(self.matrices)
