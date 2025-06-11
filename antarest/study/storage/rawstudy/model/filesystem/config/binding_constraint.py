@@ -14,6 +14,7 @@
 Object model used to read and update binding constraint configuration.
 """
 
+import copy
 from typing import Any, Optional
 
 from antares.study.version import StudyVersion
@@ -44,7 +45,7 @@ class BindingConstraintFileData(AntaresBaseModel):
     @model_validator(mode="before")
     @classmethod
     def _validate_terms(cls, values: dict[str, Any]) -> dict[str, Any]:
-        return _terms_from_ini(values)
+        return _terms_from_ini(copy.deepcopy(values))
 
     id: str
     name: str
