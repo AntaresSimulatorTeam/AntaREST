@@ -281,6 +281,8 @@ class RoleRepository:
 
     def get_all(self, details: bool, groups: Optional[list[Group]] = None) -> list[Role]:
         q = self.session.query(Role)
+        q = q.join(Role.identity).options(joinedload(Role.identity)).where(Identity.type != "bots")
+
         if details:
             q = q.options(joinedload(Role.group))
 
