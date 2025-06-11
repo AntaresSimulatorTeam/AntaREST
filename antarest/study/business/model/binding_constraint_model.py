@@ -420,4 +420,7 @@ def update_binding_constraint(constraint: BindingConstraint, data: BindingConstr
     """
     Updates a binding constraint according to the provided update data.
     """
-    return constraint.model_copy(update=data.model_dump(exclude_none=True))
+    current_properties = constraint.model_dump(exclude_none=True)
+    new_properties = data.model_dump(exclude_none=True)
+    current_properties.update(new_properties)
+    return BindingConstraint.model_validate(current_properties)

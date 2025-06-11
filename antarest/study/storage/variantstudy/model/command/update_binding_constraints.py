@@ -69,12 +69,10 @@ class UpdateBindingConstraints(ICommand):
         bc_props_by_id = values["bc_props_by_id"]
         study_version = values["study_version"]
         bc_props_by_id_validated = {}
-        if info.context:
-            version = info.context.version
-            if version < 2:
-                for bc_id, bc_props in bc_props_by_id.items():
-                    bc_props_validated = parse_binding_constraint(study_version, **bc_props)
-                    bc_props_by_id_validated[bc_id] = bc_props_validated
+        if info.context and info.context.version < 2:
+            for bc_id, bc_props in bc_props_by_id.items():
+                bc_props_validated = parse_binding_constraint(study_version, **bc_props)
+                bc_props_by_id_validated[bc_id] = bc_props_validated
             values["bc_props_by_id"] = bc_props_by_id_validated
         return values
 
