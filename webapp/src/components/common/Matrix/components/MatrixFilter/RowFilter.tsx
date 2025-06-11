@@ -56,6 +56,7 @@ interface RowFilterState {
   filteredOptions: typeof TEMPORAL_OPTIONS;
   rangeValue: [number, number];
   sliderMarks: Array<{ value: number; label: string }>;
+  filterSummary: string;
 }
 
 function RowFilter({
@@ -93,14 +94,31 @@ function RowFilter({
       rowFilter.range?.max ?? availableValues.max,
     ];
 
+    let filterSummary = "";
+    if (filter.active) {
+      const indexTypeLabel = t(`matrix.filter.indexing.${rowFilter.indexingType}`);
+
+      if (rowFilter.type === FILTER_TYPES.RANGE && rowFilter.range) {
+        filterSummary = ` (${indexTypeLabel}: ${rowFilter.range.min}-${rowFilter.range.max})`;
+      } else if (rowFilter.type === FILTER_TYPES.LIST && rowFilter.list?.length) {
+        const displayItems =
+          rowFilter.list.length > 3
+            ? `${rowFilter.list.slice(0, 3).join(", ")}...`
+            : rowFilter.list.join(", ");
+
+        filterSummary = ` (${indexTypeLabel}: [${displayItems}])`;
+      }
+    }
+
     return {
       rowFilter,
       availableValues,
       filteredOptions: getFilteredTemporalOptions(timeFrequency, [...TEMPORAL_OPTIONS]),
       rangeValue,
       sliderMarks: createSliderMarks(rowFilter.indexingType, t),
+      filterSummary,
     };
-  }, [filter.rowsFilters, filterId, valuesByIndexType, timeFrequency, t]);
+  }, [filter.rowsFilters, filterId, valuesByIndexType, timeFrequency, t, filter.active]);
 
   const handleDeleteClick = useCallback(
     (e: React.MouseEvent) => {
@@ -194,6 +212,7 @@ function RowFilter({
         <Box sx={CONTAINER_STYLES.flexRow}>
           <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
             {t("matrix.filter.rowsFilter")}
+            {state.filterSummary}
           </Typography>
         </Box>
         {canRemove && (
