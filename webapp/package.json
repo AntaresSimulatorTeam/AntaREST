@@ -3,6 +3,7 @@
   "version": "2.21.0",
   "private": true,
   "type": "module",
+  "main": "dist-electron/main",
   "scripts": {
     "build": "tsc && vite build",
     "clean": "rm -rf dist node_modules/.vite",
@@ -11,7 +12,9 @@
     "lint": "tsc --noEmit && eslint . --report-unused-disable-directives",
     "preview": "vite preview",
     "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "transpile:electron": "tsc --project src/electron/tsconfig.json",
+    "dev:electron": "electron ."
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -108,6 +111,7 @@
     "@vitejs/plugin-react-swc": "3.7.0",
     "@vitest/coverage-v8": "2.1.1",
     "@vitest/ui": "2.1.1",
+    "electron": "36.4.0",
     "eslint": "9.18.0",
     "eslint-config-prettier": "10.0.1",
     "eslint-plugin-jsdoc": "50.6.1",
