@@ -38,7 +38,7 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",
-        summary="For a given directory, list sub directories that aren't studies",
+        summary="For a given directory, list sub directories.",
         response_model=List[FolderDTO],
     )
     def list_dir(workspace: str, path: str) -> List[FolderDTO]:
