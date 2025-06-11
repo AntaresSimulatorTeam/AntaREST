@@ -141,14 +141,29 @@ function MatrixGrid({
   const getCellContent = useCallback(
     (cell: Item): ReturnType<ReturnType<typeof useGridCellContent>> => {
       // Map the visible row to the actual data row
-      const [col, visibleRow] = cell;
+      const [visibleCol, visibleRow] = cell;
       const dataRow = getDataRowIndex(visibleRow);
 
-      const mappedCell: Item = [col, dataRow];
+      // When in preview mode, we need to map the visible column index to the original column index
+      let originalCol = visibleCol;
+
+      if (filterPreview.active) {
+        // Check if the column index is within bounds
+        if (visibleCol >= 0 && visibleCol < visibleColumns.length) {
+          const foundIndex = columns.findIndex((col) => col.id === visibleColumns[visibleCol].id);
+          // Only use the found index if it's valid (not -1)
+          originalCol = foundIndex !== -1 ? foundIndex : visibleCol;
+        } else {
+          // If out of bounds, pass the original column index which will be handled by useGridCellContent
+          originalCol = visibleCol;
+        }
+      }
+
+      const mappedCell: Item = [originalCol, dataRow];
 
       return originalGetCellContent(mappedCell);
     },
-    [getDataRowIndex, originalGetCellContent],
+    [getDataRowIndex, originalGetCellContent, filterPreview.active, columns, visibleColumns],
   );
 
   const selectionStats = useSelectionStats({
@@ -260,13 +275,20 @@ function MatrixGrid({
             const dataRow = getDataRowIndex(visibleRow);
 
             // When in preview mode, we need to map the visible column index to the original column index
-            const originalCol = filterPreview.active
-              ? columns.findIndex((col) => col.id === visibleColumns[visibleCol].id)
-              : visibleCol;
+            let originalCol = visibleCol;
+            let column = columns[originalCol];
+
+            if (filterPreview.active && visibleCol >= 0 && visibleCol < visibleColumns.length) {
+              const foundIndex = columns.findIndex(
+                (col) => col.id === visibleColumns[visibleCol].id,
+              );
+              if (foundIndex !== -1) {
+                originalCol = foundIndex;
+                column = visibleColumns[visibleCol];
+              }
+            }
 
             const mappedItem: Item = [originalCol, dataRow];
-
-            const column = filterPreview.active ? visibleColumns[visibleCol] : columns[originalCol];
 
             if (!column.editable || column.type !== GridCellKind.Number) {
               return;
@@ -301,7 +323,7 @@ function MatrixGrid({
           // Handle row selections
           else if (gridSelection.rows.length > 0) {
             for (const rowIndex of gridSelection.rows) {
-              for (let col = 0; col < columns.length; col++) {
+              for (let col = 0; col < visibleColumns.length; col++) {
                 addItemUpdate([col, rowIndex]);
               }
             }
