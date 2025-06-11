@@ -23,7 +23,7 @@ from antarest.study.model import (
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
     get_workspace_from_config,
-    has_non_study_folder,
+    has_children,
     is_study_folder,
     should_ignore_folder_for_scan,
 )
@@ -57,18 +57,18 @@ class Explorer:
                     if show and not should_ignore_folder_for_scan(child, workspace.filter_in, workspace.filter_out):
                         child_rel_path = PurePosixPath(child.relative_to(workspace.path))
                         if is_study_folder(child):
-                            has_children = False
+                            has_children_flag = False
                             is_study_folder_flag = True
                         else:
                             # we don't want to expose the full absolute path on the server
-                            has_children = has_non_study_folder(child, workspace.filter_in, workspace.filter_out)
+                            has_children_flag = has_children(child, workspace.filter_in, workspace.filter_out)
                             is_study_folder_flag = False
                         folders.append(
                             FolderDTO(
                                 path=child_rel_path,
                                 workspace=workspace_name,
                                 name=child.name,
-                                has_children=has_children,
+                                has_children=has_children_flag,
                                 is_study_folder=is_study_folder_flag,
                             )
                         )

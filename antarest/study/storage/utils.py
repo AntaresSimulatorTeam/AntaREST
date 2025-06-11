@@ -483,13 +483,11 @@ def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: 
     )
 
 
-def has_non_study_folder(
-    path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False
-) -> bool:
+def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False) -> bool:
     for sub_path in path.iterdir():
         try:
             show = show_hidden_file or not sub_path.name.startswith(".")
-            if is_non_study_folder(sub_path, filter_in, filter_out) and show:
+            if not should_ignore_folder_for_scan(sub_path, filter_in, filter_out) and show:
                 return True
         except (PermissionError, OSError):
             logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
