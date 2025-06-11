@@ -74,16 +74,6 @@ export const getFolders = async (workspace: string, folderPath: string) => {
   return res.data;
 };
 
-export const getStudiesPreview = async (workspace: string, folderPath: string) => {
-  const res = await client.get<FolderDTO[]>(
-    `/v1/private/explorer/${encodeURIComponent(workspace)}/_list_studies_preview?path=${encodeURIComponent(folderPath)}`,
-    {
-      timeout: 1000 * 300, // Wait for 5 minutes
-    },
-  );
-  return res.data;
-};
-
 export const getStudyVersions = async (): Promise<string[]> => {
   const res = await client.get("/v1/studies/_versions");
   return res.data;
