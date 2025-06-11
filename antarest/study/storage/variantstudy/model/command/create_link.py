@@ -141,8 +141,9 @@ class CreateLink(AbstractLinkCommand, ICommand):
 
         area_from, area_to = sorted((self.area1, self.area2))
         study_data.save_link_series(area_from, area_to, str(series))
-        study_data.save_link_direct_capacities(area_from, area_to, str(direct))
-        study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
+        if self.study_version >= STUDY_VERSION_8_2:
+            study_data.save_link_direct_capacities(area_from, area_to, str(direct))
+            study_data.save_link_indirect_capacities(area_from, area_to, str(indirect))
 
         return command_succeeded(f"Link between '{self.area1}' and '{self.area2}' created")
 
