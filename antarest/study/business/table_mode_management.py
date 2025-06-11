@@ -201,7 +201,7 @@ class TableModeManager:
             links_map = {tuple(key.split(" / ")): LinkUpdate(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
             data = {
-                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True)
+                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude_none=True)
                 for (area1_id, area2_id), link in updated_map.items()
             }
             return data
@@ -213,7 +213,9 @@ class TableModeManager:
                 thermals_by_areas[area_id][cluster_id] = ThermalClusterUpdate(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(
+                    by_alias=True, exclude={"id", "name"}, exclude_none=True
+                )
                 for area_id, thermals_by_ids in thermals_map.items()
                 for cluster_id, cluster in thermals_by_ids.items()
             }
@@ -226,7 +228,9 @@ class TableModeManager:
                 renewables_by_areas[area_id][cluster_id] = RenewableClusterUpdate(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(
+                    by_alias=True, exclude={"id", "name"}, exclude_none=True
+                )
                 for area_id, renewables_by_ids in renewables_map.items()
                 for cluster_id, cluster in renewables_by_ids.items()
             }
@@ -239,7 +243,9 @@ class TableModeManager:
                 storages_by_areas[area_id][cluster_id] = STStorageUpdate(**values)
             storages_map = self._st_storage_manager.update_storages_props(study, storages_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(
+                    by_alias=True, exclude={"id", "name"}, exclude_none=True
+                )
                 for area_id, storages_by_ids in storages_map.items()
                 for cluster_id, cluster in storages_by_ids.items()
             }
@@ -248,7 +254,8 @@ class TableModeManager:
             bcs_by_ids = {key: BindingConstraintUpdate(**values) for key, values in data.items()}
             bcs_map = self._binding_constraint_manager.update_binding_constraints(study, bcs_by_ids)
             return {
-                bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()
+                bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}, exclude_none=True)
+                for bc_id, bc in bcs_map.items()
             }
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")

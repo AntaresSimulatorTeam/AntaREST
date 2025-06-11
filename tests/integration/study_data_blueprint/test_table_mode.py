@@ -402,11 +402,7 @@ class TestTableMode:
         assert res.status_code == 200, res.json()
         expected_thermals = {
             "de / 01_solar": {
-                # "id": "01_solar",
-                # "name": "01_solar",
                 "co2": 0,
-                "costGeneration": None,
-                "efficiency": None,
                 "enabled": True,
                 "fixedCost": 0,
                 "genTs": "use global",
@@ -424,16 +420,11 @@ class TestTableMode:
                 "spreadCost": 0,
                 "startupCost": 0,
                 "unitCount": 17,
-                "variableOMCost": None,
                 "volatilityForced": 0,
                 "volatilityPlanned": 0,
             },
             "de / 02_wind_on": {
-                # "id": "02_wind_on",
-                # "name": "02_wind_on",
                 "co2": 123,
-                "costGeneration": None,
-                "efficiency": None,
                 "enabled": True,
                 "fixedCost": 0,
                 "genTs": "use global",
@@ -451,7 +442,6 @@ class TestTableMode:
                 "spreadCost": 0,
                 "startupCost": 0,
                 "unitCount": 15,
-                "variableOMCost": None,
                 "volatilityForced": 0,
                 "volatilityPlanned": 0,
             },
@@ -461,10 +451,6 @@ class TestTableMode:
             _values = dict.fromkeys(POLLUTANTS_860, 0)
             expected_thermals["de / 02_wind_on"].update(_values)
             expected_thermals["de / 01_solar"].update(_values, **{"so2": 8.25})
-        else:
-            _values = dict.fromkeys(POLLUTANTS_860)
-            expected_thermals["de / 02_wind_on"].update(_values)
-            expected_thermals["de / 01_solar"].update(_values)
 
         if study_version >= 870:
             _values = {"costGeneration": "SetManually", "efficiency": 100, "variableOMCost": 0}
@@ -742,10 +728,7 @@ class TestTableMode:
             actual = res.json()
             expected = {
                 "fr / siemens": {
-                    # "id": "siemens",
-                    # "name": "Siemens",
                     "efficiency": 1,
-                    "enabled": None,
                     "group": "battery",
                     "initialLevel": 0.5,
                     "initialLevelOptim": False,
@@ -754,10 +737,7 @@ class TestTableMode:
                     "withdrawalNominalCapacity": 1550,
                 },
                 "fr / tesla": {
-                    # "id": "tesla",
-                    # "name": "Tesla",
                     "efficiency": 0.75,
-                    "enabled": None,
                     "group": "battery",
                     "initialLevel": 0.89,
                     "initialLevelOptim": False,
@@ -766,10 +746,7 @@ class TestTableMode:
                     "withdrawalNominalCapacity": 1200,
                 },
                 "it / storage3": {
-                    # "id": "storage3",
-                    # "name": "storage3",
                     "efficiency": 1,
-                    "enabled": None,
                     "group": "pondage",
                     "initialLevel": 1,
                     "initialLevelOptim": False,
@@ -778,10 +755,7 @@ class TestTableMode:
                     "withdrawalNominalCapacity": 1020,
                 },
                 "it / storage4": {
-                    # "id": "storage4",
-                    # "name": "storage4",
                     "efficiency": 1,
-                    "enabled": None,
                     "group": "psp_open",
                     "initialLevel": 0.5,
                     "initialLevelOptim": True,
@@ -871,17 +845,17 @@ class TestTableMode:
         )
         assert res.status_code == 200, res.json()
 
-        res = client.post(
-            f"/v1/studies/{internal_study_id}/bindingconstraints",
-            json={
-                "name": "Binding Constraint 2",
-                "enabled": False,
-                "time_step": "daily",
-                "operator": "greater",
-                "comments": "This is a binding constraint",
-                "filter_synthesis": "hourly, daily, weekly",
-            },
-        )
+        body = {
+            "name": "Binding Constraint 2",
+            "enabled": False,
+            "time_step": "daily",
+            "operator": "greater",
+            "comments": "This is a binding constraint",
+        }
+        if study_version >= 830:
+            body["filter_synthesis"] = "hourly, daily, weekly"
+
+        res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=body)
         assert res.status_code == 200, res.json()
 
         # Get the schema of the binding constraints table
@@ -908,7 +882,10 @@ class TestTableMode:
 
         # Update some binding constraints using the table mode
         _bc1_values = {"comments": "Hello World!", "enabled": True}
-        _bc2_values = {"filterSynthesis": "hourly", "filterYearByYear": "hourly", "operator": "both"}
+        _bc2_values = {"operator": "both"}
+        if study_version >= 830:
+            _bc2_values["filterSynthesis"] = "hourly"
+            _bc2_values["filterYearByYear"] = "hourly"
         if study_version >= 870:
             _bc2_values["group"] = "My BC Group"
 
@@ -952,9 +929,8 @@ class TestTableMode:
             params={"columns": ""},
         )
         assert res.status_code == 200, res.json()
-        expected = expected_binding
         actual = res.json()
-        assert actual == expected
+        assert actual == expected_binding
 
 
 def test_table_type_aliases(client: TestClient, user_access_token: str) -> None:
