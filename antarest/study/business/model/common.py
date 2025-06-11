@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Annotated, TypeAlias
 
-from pydantic import BeforeValidator, PlainSerializer, ValidationError
+from pydantic import BeforeValidator, PlainSerializer
 
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
@@ -50,13 +50,13 @@ def validate_filters(filter_value: list[FilterOption] | str) -> list[FilterOptio
         if not filter_value:
             return []
 
-        valid_values = {str(e.value) for e in FilterOption}
+        valid_values = sorted(str(e.value) for e in FilterOption)
 
         options = filter_value.replace(" ", "").split(",")
 
         invalid_options = [opt for opt in options if opt not in valid_values]
         if invalid_options:
-            raise ValidationError(
+            raise ValueError(
                 f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
                 f"Allowed values are: {', '.join(valid_values)}."
             )
