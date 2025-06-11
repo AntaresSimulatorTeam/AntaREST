@@ -12,26 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, Tooltip } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { useTranslation } from "react-i18next";
 import { DESIGN_TOKENS, BUTTON_STYLES } from "../styles";
 
 interface FilterControlsProps {
   isFilterActive: boolean;
-  isPreviewActive: boolean;
   onToggleFilter: () => void;
-  onTogglePreview: () => void;
 }
 
-function FilterControls({
-  isFilterActive,
-  isPreviewActive,
-  onToggleFilter,
-  onTogglePreview,
-}: FilterControlsProps) {
+function FilterControls({ isFilterActive, onToggleFilter }: FilterControlsProps) {
   const { t } = useTranslation();
 
   return (
@@ -53,28 +44,6 @@ function FilterControls({
       >
         {isFilterActive ? t("matrix.filter.active") : t("matrix.filter.inactive")}
       </Button>
-
-      {isFilterActive && (
-        <Tooltip
-          title={t(
-            isPreviewActive ? "matrix.filter.preview.active" : "matrix.filter.preview.inactive",
-          )}
-        >
-          <Button
-            variant="outlined"
-            color={isPreviewActive ? "info" : "inherit"}
-            onClick={onTogglePreview}
-            size="small"
-            sx={BUTTON_STYLES.compactIconOnly}
-          >
-            {isPreviewActive ? (
-              <VisibilityIcon fontSize="small" />
-            ) : (
-              <VisibilityOffIcon fontSize="small" />
-            )}
-          </Button>
-        </Tooltip>
-      )}
     </Box>
   );
 }
