@@ -104,7 +104,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
             else:
                 study_data.config.bindings.append(constraint)
 
-            ini_key = id_by_key[constraint.id]
+            ini_key = id_by_key.get(constraint.id, str(len(ini_content)))
             ini_content[ini_key] = serialize_binding_constraint(study_version, constraint)
 
         study_data.tree.save(ini_content, ["input", "bindingconstraints", "bindingconstraints"])

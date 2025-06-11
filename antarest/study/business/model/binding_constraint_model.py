@@ -24,7 +24,7 @@ from antarest.core.exceptions import InvalidConstraintTerm, InvalidFieldForVersi
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
+from antarest.study.business.model.common import CommaSeparatedFilterOptions
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
@@ -262,7 +262,7 @@ class BindingConstraint(AntaresBaseModel):
     id: str
     name: str
     enabled: bool = True
-    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
+    time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
     operator: BindingConstraintOperator = DEFAULT_OPERATOR
     comments: str = ""
     terms: list[ConstraintTerm] = []
@@ -282,9 +282,11 @@ class BindingConstraintCreation(AntaresBaseModel):
     Most fields are optional: at creation time, default values of the constraint model will be used.
     """
 
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
     name: ItemName
     enabled: Optional[bool] = None
-    time_step: BindingConstraintFrequency = Field(DEFAULT_TIMESTEP, alias="type")
+    time_step: Optional[BindingConstraintFrequency] = None
     operator: Optional[BindingConstraintOperator] = None
     comments: Optional[str] = None
     terms: Optional[list[ConstraintTerm]] = None
@@ -313,8 +315,10 @@ class BindingConstraintUpdate(AntaresBaseModel):
     Only not-None fields will be used to update the constraint.
     """
 
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
     enabled: Optional[bool] = None
-    time_step: Optional[BindingConstraintFrequency] = Field(None, alias="type")
+    time_step: Optional[BindingConstraintFrequency] = None
     operator: Optional[BindingConstraintOperator] = None
     comments: Optional[str] = None
     terms: Optional[list[ConstraintTerm]] = None
@@ -396,7 +400,7 @@ def initialize_binding_constraint(constraint: BindingConstraint, version: StudyV
     """
     if version >= STUDY_VERSION_8_3:
         for field in ["filter_year_by_year", "filter_synthesis"]:
-            _initialize_field_default(constraint, field, FILTER_VALUES)
+            _initialize_field_default(constraint, field, [])
 
     if version >= STUDY_VERSION_8_7:
         _initialize_field_default(constraint, "group", DEFAULT_GROUP)

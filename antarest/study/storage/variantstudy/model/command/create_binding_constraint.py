@@ -24,6 +24,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_OPERATOR,
+    DEFAULT_TIMESTEP,
     BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
@@ -39,6 +40,7 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
@@ -220,9 +222,6 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     command_name: CommandName = CommandName.CREATE_BINDING_CONSTRAINT
 
-    # Properties of the `CREATE_BINDING_CONSTRAINT` command:
-    name: str
-
     # version 2: put all args inside `parameters` and type it as BindingConstraintCreation + put all matrices inside `matrices`
 
     parameters: BindingConstraintCreation
@@ -239,12 +238,13 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 # Validate parameters
                 excluded_keys = set(ICommand.model_fields) | {"coeffs"}
                 args = {}
-                for key in values:
+                for key in list(values.keys()):
                     if key not in excluded_keys:
                         args[key] = values.pop(key)
                 if "coeffs" in values:
                     args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"), update=False)
-                constraint = parse_binding_constraint(study_version, **args)
+                args["id"] = transform_name_to_id(args["name"])
+                constraint = parse_binding_constraint(study_version, args)
                 values["parameters"] = BindingConstraintCreation.from_constraint(constraint)
 
                 # Validate matrices
@@ -261,7 +261,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         validate_binding_constraint_against_version(self.study_version, self.parameters)
 
         # Validate matrices
-        time_step = self.parameters.time_step
+        time_step = self.parameters.time_step or DEFAULT_TIMESTEP
 
         if self.study_version < STUDY_VERSION_8_7:
             for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
