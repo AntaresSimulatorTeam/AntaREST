@@ -15,12 +15,13 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.study.business.binding_constraint_management import ConstraintInput
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ClusterTerm
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import BindingConstraintDTO, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_87,
 )
@@ -84,37 +85,41 @@ def study_data(file_study_tree_config):
 def file_study_tree_config():
     file_study_tree_config = Mock(spec=FileStudyTreeConfig)
     file_study_tree_config.bindings = [
-        BindingConstraintDTO(
-            id="bc_0",
-            group="old_group1",
-            areas=["area1"],
-            clusters=["cluster1"],
-            operator="greater",
-            time_step="daily",
+        BindingConstraint(
+            **{
+                "id": "bc_0",
+                "group": "old_group1",
+                "terms": [ClusterTerm(area="area1", cluster="cluster1")],
+                "operator": BindingConstraintOperator.GREATER,
+                "time_step": BindingConstraintFrequency.DAILY,
+            }
         ),
-        BindingConstraintDTO(
-            id="bc_1",
-            group="old_group1",
-            areas=["area1"],
-            clusters=["cluster1"],
-            operator="greater",
-            time_step="daily",
+        BindingConstraint(
+            **{
+                "id": "bc_1",
+                "group": "old_group1",
+                "terms": [ClusterTerm(area="area1", cluster="cluster1")],
+                "operator": BindingConstraintOperator.GREATER,
+                "time_step": BindingConstraintFrequency.DAILY,
+            }
         ),
-        BindingConstraintDTO(
-            id="bc_2",
-            group="old_group2",
-            areas=["area2"],
-            clusters=["cluster2"],
-            operator="less",
-            time_step="hourly",
+        BindingConstraint(
+            **{
+                "id": "bc_2",
+                "group": "old_group2",
+                "terms": [ClusterTerm(area="area2", cluster="cluster2")],
+                "operator": BindingConstraintOperator.LESS,
+                "time_step": BindingConstraintFrequency.HOURLY,
+            }
         ),
-        BindingConstraintDTO(
-            id="bc_3",
-            group="old_group2",
-            areas=["area2"],
-            clusters=["cluster2"],
-            operator="less",
-            time_step="hourly",
+        BindingConstraint(
+            **{
+                "id": "bc_3",
+                "group": "old_group2",
+                "terms": [ClusterTerm(area="area2", cluster="cluster2")],
+                "operator": BindingConstraintOperator.LESS,
+                "time_step": BindingConstraintFrequency.HOURLY,
+            }
         ),
     ]
     file_study_tree_config.study_id = "1"

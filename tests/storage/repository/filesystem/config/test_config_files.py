@@ -18,6 +18,7 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
@@ -32,7 +33,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
@@ -102,19 +102,8 @@ def test_parse_bindings(study_path: Path) -> None:
         path=study_path,
         version=0,
         bindings=[
-            BindingConstraintDTO(
-                id="bindA",
-                areas=set(),
-                clusters=set(),
-                time_step=BindingConstraintFrequency.HOURLY,
-            ),
-            BindingConstraintDTO(
-                id="bindB",
-                areas=set(),
-                clusters=set(),
-                time_step=BindingConstraintFrequency.WEEKLY,
-                group="My Group",
-            ),
+            BindingConstraint(**{"id": "bindA", "time_step": BindingConstraintFrequency.HOURLY}),
+            BindingConstraint(**{"id": "bindB", "time_step": BindingConstraintFrequency.WEEKLY, "group": "My Group"}),
         ],
         study_id="id",
         output_path=study_path / "output",
