@@ -27,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_87,
 )
@@ -72,21 +73,21 @@ def update_binding_constraints_command(bc_props_by_id, command_context: CommandC
 
 @pytest.fixture
 def study_data(file_study_tree_config):
-    fs = Mock()
+    fs = Mock(spec=FileStudy)
     fs.tree.get.return_value = {
         "1": {
             "id": "bc_1",
-            "group": "old_group1",
-            "areas": ["area1"],
-            "clusters": ["cluster1"],
+            "name": "bc_1",
+            "group": "new_group1",
+            "area1.cluster1": 3,
             "operator": "greater",
             "type": "hourly",
         },
         "2": {
             "id": "bc_2",
-            "group": "old_group2",
-            "areas": ["area2"],
-            "clusters": ["cluster2"],
+            "name": "BC_2",
+            "group": "new_group1",
+            "area2.cluster2": "4.1%2",
             "operator": "less",
             "type": "daily",
         },
@@ -137,6 +138,7 @@ def file_study_tree_config():
         ),
     ]
     file_study_tree_config.study_id = "1"
+    file_study_tree_config.version = STUDY_VERSION_8_7
     return file_study_tree_config
 
 
@@ -146,18 +148,26 @@ def test_apply(update_binding_constraints_command, study_data):
     study_data.tree.save.assert_called_with(
         {
             "1": {
-                "id": "bc_1",
+                "area1.cluster1": 3.0,
+                "comments": "",
+                "enabled": True,
+                "filter-synthesis": "",
+                "filter-year-by-year": "",
                 "group": "new_group1",
-                "areas": ["area1"],
-                "clusters": ["cluster1"],
+                "id": "bc_1",
+                "name": "bc_1",
                 "operator": "greater",
                 "type": "daily",
             },
             "2": {
-                "id": "bc_2",
+                "area2.cluster2": "4.1%2",
+                "comments": "",
+                "enabled": True,
+                "filter-synthesis": "",
+                "filter-year-by-year": "",
                 "group": "new_group2",
-                "areas": ["area2"],
-                "clusters": ["cluster2"],
+                "id": "bc_2",
+                "name": "BC_2",
                 "operator": "less",
                 "type": "hourly",
             },
