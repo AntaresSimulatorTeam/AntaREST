@@ -14,7 +14,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "transpile:electron": "tsc --project src/electron/tsconfig.json",
-    "dev:electron": "electron ."
+    "dev:electron": "npm run transpile:electron && electron ."
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

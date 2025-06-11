@@ -7,7 +7,7 @@ const createWindow = () => {
     height: 600
   })
 
-  win.loadURL('http://localhost:8080/static/index.html')
+  win.loadURL('http://localhost:3000/index.html')
 }
 
 app.whenReady().then(() => {
