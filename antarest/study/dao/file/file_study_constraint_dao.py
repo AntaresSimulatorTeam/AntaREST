@@ -140,8 +140,8 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         deleted_binding_constraints = []
         kept_binding_constraints = []
         old_groups = set()
-        for key, bc in ini_content.items():
-            constraint = parse_binding_constraint(study_data.config.version, bc)
+        for key in list(ini_content.keys()):
+            constraint = parse_binding_constraint(study_data.config.version, ini_content[key])
             if constraint.group:
                 old_groups.add(constraint.group)
             if constraint in constraints:

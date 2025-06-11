@@ -16,7 +16,6 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -53,7 +52,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         for bc_id in self.ids:
             if bc_id not in all_bcs:
                 return command_failed(f"Binding constraint '{bc_id}' not found.")
-            constraints.append(parse_binding_constraint(self.study_version, all_bcs[bc_id]))
+            constraints.append(all_bcs[bc_id])
         study_data.delete_constraints(constraints)
 
         return command_succeeded("Binding constraints successfully removed.")
