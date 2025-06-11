@@ -219,7 +219,10 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        return super().command_to_dto(self.parameters, self.matrices)
+        dto = super().command_to_dto(self.parameters, self.matrices)
+        assert isinstance(dto.args, dict)
+        dto.args["id"] = self.id
+        return dto
 
     @override
     def get_inner_matrices(self) -> list[str]:
