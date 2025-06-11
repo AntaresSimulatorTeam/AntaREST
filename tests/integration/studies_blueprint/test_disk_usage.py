@@ -46,7 +46,7 @@ class TestDiskUsage:
         res = client.post(
             f"/v1/studies/{internal_study_id}/copy",
             headers=user_headers,
-            params={"dest": "somewhere", "use_task": "false"},
+            params={"study_name": "somewhere", "use_task": "false"},
         )
         res.raise_for_status()
         parent_id: str = res.json()

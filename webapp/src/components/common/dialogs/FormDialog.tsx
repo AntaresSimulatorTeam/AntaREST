@@ -13,14 +13,14 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import SaveIcon from "@mui/icons-material/Save";
 import { Button } from "@mui/material";
+import * as RA from "ramda-adjunct";
 import { useId, useState } from "react";
 import type { FieldValues, FormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import * as RA from "ramda-adjunct";
-import SaveIcon from "@mui/icons-material/Save";
-import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 import Form, { type FormProps } from "../Form";
+import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 
 type SuperType<TFieldValues extends FieldValues, TContext, SubmitReturnValue> = Omit<
   BasicDialogProps,
@@ -35,7 +35,6 @@ export interface FormDialogProps<
 > extends SuperType<TFieldValues, TContext, SubmitReturnValue> {
   cancelButtonText?: string;
   onCancel: VoidFunction;
-  isCreationForm?: boolean;
 }
 
 // TODO: `formState.isSubmitting` doesn't update when auto submit enabled
@@ -56,7 +55,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     cancelButtonText,
     submitButtonText,
     submitButtonIcon,
-    isCreationForm = false,
+    allowSubmitOnPristine = false,
     ...dialogProps
   } = props;
 
@@ -72,17 +71,17 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
   const { t } = useTranslation();
   const formId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitAllowed, setIsSubmitAllowed] = useState(isCreationForm);
+  const [isSubmitAllowed, setIsSubmitAllowed] = useState(allowSubmitOnPristine);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleFormStateChange = (formState: FormState<TFieldValues>) => {
-    const { isSubmitting, isDirty } = formState;
+    const { isSubmitting, isDirty, disabled: isDisabled } = formState;
     onStateChange?.(formState);
     setIsSubmitting(isSubmitting);
-    setIsSubmitAllowed((isDirty || isCreationForm) && !isSubmitting);
+    setIsSubmitAllowed((isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -109,7 +108,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
-            {cancelButtonText || t("global.close")}
+            {cancelButtonText || t("global.cancel")}
           </Button>
           {!autoSubmit && (
             <Button

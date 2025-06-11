@@ -12,67 +12,61 @@
  * This file is part of the Antares project.
  */
 
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import TokenIcon from "@mui/icons-material/Token";
-import { IconButton, Paper, Tooltip } from "@mui/material";
+import { IconButton, Paper } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { usePromise as usePromiseWrapper } from "react-use";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import type { BotCreateDTO, BotDTO, GroupDTO, RoleType } from "../../../../../types/types";
-import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { createBot } from "../../../../../services/api/user";
+import type { BotCreateDTO, GroupDTO, RoleType } from "../../../../../types/types";
 import OkDialog from "../../../../common/dialogs/OkDialog";
-import TokenFormDialog, { type TokenFormDialogProps } from "./TokenFormDialog";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import TokenFormDialog from "./TokenFormDialog";
+import type { TokenFormDefaultValues } from "./utils";
 
-type InheritPropsToOmit = "title" | "titleIcon" | "onSubmit" | "onCancel";
-
-interface Props extends Omit<TokenFormDialogProps, InheritPropsToOmit> {
-  addToken: (token: BotDTO) => void;
+interface Props {
+  open: boolean;
+  onCancel: VoidFunction;
   reloadFetchTokens: VoidFunction;
-  closeDialog: VoidFunction;
 }
 
-function CreateTokenDialog(props: Props) {
-  const { addToken, reloadFetchTokens, closeDialog, ...dialogProps } = props;
+function CreateTokenDialog({ open, reloadFetchTokens, onCancel }: Props) {
   const [tokenValueToDisplay, setTokenValueToDisplay] = useState("");
-  const [showCopiedTooltip, setShowCopiedTooltip] = useState(false);
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const mounted = usePromiseWrapper();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus) => {
+  const handleSubmit = (data: SubmitHandlerPlus<TokenFormDefaultValues>) => {
     const { name, permissions } = data.values;
 
-    try {
-      const roles = permissions.map((perm: { group: GroupDTO; type: RoleType }) => ({
-        group: perm.group.id,
-        role: perm.type,
-      })) as BotCreateDTO["roles"];
+    const roles = permissions.map((perm: { group: GroupDTO; type: RoleType }) => ({
+      group: perm.group.id,
+      role: perm.type,
+    })) as BotCreateDTO["roles"];
 
-      const tokenValue = await mounted(createBot({ name, is_author: false, roles }));
-
-      setTokenValueToDisplay(tokenValue);
-
-      enqueueSnackbar(t("settings.success.tokenCreation", { 0: name }), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("settings.error.tokenSave", { 0: name }), e as Error);
-      closeDialog();
-    } finally {
-      reloadFetchTokens();
-    }
+    return createBot({ name, is_author: false, roles });
   };
 
-  const handleCopyClick = () => {
-    navigator.clipboard.writeText(tokenValueToDisplay).then(() => setShowCopiedTooltip(true));
+  const handleSubmitSuccessful = (
+    data: SubmitHandlerPlus<TokenFormDefaultValues>,
+    tokenValue: string,
+  ) => {
+    setTokenValueToDisplay(tokenValue);
+    reloadFetchTokens();
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(tokenValueToDisplay);
+    enqueueSnackbar(t("global.copied"), { variant: "success" });
+  };
+
+  const handleOk = () => {
+    setTokenValueToDisplay("");
+    onCancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -82,50 +76,33 @@ function CreateTokenDialog(props: Props) {
   return (
     <>
       <TokenFormDialog
+        open={open}
         title={t("settings.createToken")}
-        titleIcon={TokenIcon}
         onSubmit={handleSubmit}
-        onCancel={closeDialog}
-        {...dialogProps}
+        onSubmitSuccessful={handleSubmitSuccessful}
+        onCancel={onCancel}
+        submitButtonIcon={<TokenIcon />}
+        submitButtonText={t("global.create")}
       />
-      {tokenValueToDisplay && (
-        <OkDialog
-          open
-          title={t("settings.message.printToken") as string}
-          onOk={() => {
-            setTokenValueToDisplay("");
-            closeDialog();
+      <OkDialog
+        open={!!tokenValueToDisplay}
+        title={t("settings.message.printToken") as string}
+        onOk={handleOk}
+      >
+        <Paper
+          sx={{
+            p: 2,
+            pb: 6,
+            position: "relative",
+            overflowWrap: "break-word",
           }}
         >
-          <Paper
-            sx={{
-              p: 2,
-              pb: 6,
-              position: "relative",
-              overflowWrap: "break-word",
-              backgroundImage:
-                "linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05))",
-            }}
-          >
-            {tokenValueToDisplay}
-            <IconButton sx={{ position: "absolute", right: 3, bottom: 3 }} size="large">
-              <Tooltip
-                open={showCopiedTooltip}
-                PopperProps={{
-                  disablePortal: true,
-                }}
-                onClose={() => setShowCopiedTooltip(false)}
-                disableFocusListener
-                disableHoverListener
-                disableTouchListener
-                title={t("global.copied") as string}
-              >
-                <ContentCopyIcon onClick={handleCopyClick} />
-              </Tooltip>
-            </IconButton>
-          </Paper>
-        </OkDialog>
-      )}
+          {tokenValueToDisplay}
+          <IconButton onClick={handleCopy} sx={{ position: "absolute", right: 3, bottom: 3 }}>
+            <ContentCopyIcon />
+          </IconButton>
+        </Paper>
+      </OkDialog>
     </>
   );
 }

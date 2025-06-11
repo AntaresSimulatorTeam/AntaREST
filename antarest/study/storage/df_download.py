@@ -9,121 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import http
 from pathlib import Path
+from typing import Callable, Iterator, TypeAlias
 
 import pandas as pd
 from fastapi import HTTPException
 from starlette.responses import FileResponse
-from typing_extensions import override
 
 from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.jwt import JWTUser
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-
-try:
-    import tables  # type: ignore # noqa: F401
-    import xlsxwriter  # type: ignore # noqa: F401
-except ImportError:
-    raise ImportError("The 'xlsxwriter' and 'tables' packages are required") from None
-
-
-class TableExportFormat(EnumIgnoreCase):
-    """Export format for tables."""
-
-    XLSX = "xlsx"
-    HDF5 = "hdf5"
-    TSV = "tsv"
-    CSV = "csv"
-    CSV_SEMICOLON = "csv (semicolon)"
-
-    @override
-    def __str__(self) -> str:
-        """Return the format as a string for display."""
-        return self.value.title()
-
-    @property
-    def media_type(self) -> str:
-        """Return the media type used for the HTTP response."""
-        if self == TableExportFormat.XLSX:
-            # noinspection SpellCheckingInspection
-            return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        elif self == TableExportFormat.TSV:
-            return "text/tab-separated-values"
-        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
-            return "text/csv"
-        elif self == TableExportFormat.HDF5:
-            return "application/x-hdf5"
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Export format '{self}' is not implemented")
-
-    @property
-    def suffix(self) -> str:
-        """Return the file suffix for the format."""
-        if self == TableExportFormat.XLSX:
-            return ".xlsx"
-        elif self == TableExportFormat.TSV:
-            return ".tsv"
-        elif self in (TableExportFormat.CSV, TableExportFormat.CSV_SEMICOLON):
-            return ".csv"
-        elif self == TableExportFormat.HDF5:
-            return ".h5"
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Export format '{self}' is not implemented")
-
-    def export_table(
-        self,
-        df: pd.DataFrame,
-        export_path: str | Path,
-        *,
-        with_index: bool = True,
-        with_header: bool = True,
-    ) -> None:
-        """Export a table to a file in the given format."""
-        if self == TableExportFormat.XLSX:
-            return df.to_excel(
-                export_path,
-                index=with_index,
-                header=with_header,
-                engine="xlsxwriter",
-            )
-        elif self == TableExportFormat.TSV:
-            return df.to_csv(
-                export_path,
-                sep="\t",
-                index=with_index,
-                header=with_header,
-                float_format="%.6f",
-            )
-        elif self == TableExportFormat.CSV:
-            return df.to_csv(
-                export_path,
-                sep=",",
-                index=with_index,
-                header=with_header,
-                float_format="%.6f",
-            )
-        elif self == TableExportFormat.CSV_SEMICOLON:
-            return df.to_csv(
-                export_path,
-                sep=";",
-                decimal=",",
-                index=with_index,
-                header=with_header,
-                float_format="%.6f",
-            )
-        elif self == TableExportFormat.HDF5:
-            return df.to_hdf(
-                export_path,
-                key="data",
-                mode="w",
-                format="table",
-                data_columns=True,
-            )
-        else:  # pragma: no cover
-            raise NotImplementedError(f"Export format '{self}' is not implemented")
+from antarest.core.serde.matrix_export import TableExportFormat
 
 
 def export_file(
@@ -134,7 +30,6 @@ def export_file(
     with_header: bool,
     download_name: str,
     download_log: str,
-    current_user: JWTUser,
 ) -> FileResponse:
     """
     Exports a DataFrame to a file in the specified format and prepares it for download.
@@ -147,7 +42,6 @@ def export_file(
         with_header: Whether to include the DataFrame's header in the exported file.
         download_name: The name of the file to be downloaded (file name with suffix)
         download_log: The log message for the download operation for the end-user.
-        current_user: The current user performing the operation.
 
     Returns:
         A FileResponse object representing the file to be downloaded.
@@ -156,18 +50,47 @@ def export_file(
         HTTPException: If there is an error during the export operation.
     """
 
+    def file_writer(path: Path) -> None:
+        export_format.export_table(df_matrix, path, with_index=with_index, with_header=with_header)
+
+    return _export_file(file_transfer_manager, download_name, download_log, 10, file_writer, export_format.media_type)
+
+
+FileWriter: TypeAlias = Callable[[Path], None]
+
+
+def export_df_chunks(
+    df_chunks: Iterator[pd.DataFrame],
+    export_format: TableExportFormat,
+) -> FileWriter:
+    stream_writer = export_format.get_stream_writer()
+
+    def file_writer(export_path: Path) -> None:
+        stream_writer(export_path, df_chunks)
+
+    return file_writer
+
+
+def _export_file(
+    file_transfer_manager: FileTransferManager,
+    download_name: str,
+    download_log: str,
+    expiration_time_in_minutes: int,
+    writer: FileWriter,
+    media_type: str,
+) -> FileResponse:
+    """ """
     export_file_download = file_transfer_manager.request_download(
         download_name,
         download_log,
-        current_user,
         use_notification=False,
-        expiration_time_in_minutes=10,
+        expiration_time_in_minutes=expiration_time_in_minutes,
     )
     export_path = Path(export_file_download.path)
     export_id = export_file_download.id
 
     try:
-        export_format.export_table(df_matrix, export_path, with_index=with_index, with_header=with_header)
+        writer(export_path)
         file_transfer_manager.set_ready(export_id, use_notification=False)
     except ValueError as e:
         file_transfer_manager.fail(export_id, str(e))
@@ -186,7 +109,7 @@ def export_file(
         export_path,
         headers={
             "Content-Disposition": f'attachment; filename="{export_file_download.filename}"',
-            "Content-Type": f"{export_format.media_type}; charset=utf-8",
+            "Content-Type": f"{media_type}; charset=utf-8",
         },
-        media_type=export_format.media_type,
+        media_type=media_type,
     )

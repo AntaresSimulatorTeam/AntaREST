@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.core.config import InternalMatrixFormat, StorageConfig
+from antarest.core.config import Config, InternalMatrixFormat, StorageConfig
 
 
 @pytest.fixture
@@ -71,44 +71,86 @@ def test_storage_config_from_dict(storage_config_default):
     assert config.matrixstore_format == InternalMatrixFormat.TSV
 
 
-def test_storage_config_from_dict_validiation_errors(storage_config_default):
+@pytest.mark.parametrize(
+    "workspaces, desktop_mode, should_raise",
+    [
+        (
+            {
+                "workspace1": {"path": "./workspace1"},
+                "workspace2": {"path": "./workspace2"},
+            },
+            False,
+            False,  # multiple workspaces allowed when desktop_mode is False
+        ),
+        (
+            {
+                "workspace1": {"path": "./workspace1"},
+                "workspace2": {"path": "./workspace2"},
+            },
+            True,
+            True,  # multiple workspace not allowed when desktop_mode is True
+        ),
+        (
+            {
+                "default": {"path": "./workspace1"},
+            },
+            True,
+            False,  # desktop_mode is True but only default is set
+        ),
+        (
+            {
+                "workspace1": {"path": "./a/workspace1"},
+                "workspace2": {"path": "./a/"},
+            },
+            False,
+            True,  # workspaces overlap, should raise
+        ),
+        (
+            {
+                "workspace1": {"path": "./a/"},
+                "workspace2": {"path": "./a/workspace2"},
+            },
+            False,
+            True,  # workspaces overlap the other way around, should raise
+        ),
+        (
+            {
+                "workspace1": {"path": "./a/"},
+                "workspace2": {"path": "./a/"},
+            },
+            False,
+            True,  # workspaces path is duplicate, should raise
+        ),
+    ],
+)
+def test_storage_config_from_dict_validation_errors(storage_config_default, workspaces, desktop_mode, should_raise):
+    data = {
+        **storage_config_default,
+        "workspaces": workspaces,
+    }
+
+    config_data = {
+        "storage": data,
+        "desktop_mode": desktop_mode,
+    }
+
+    if should_raise:
+        with pytest.raises(ValueError):
+            Config.from_dict(config_data)
+    else:
+        Config.from_dict(config_data)
+
+
+def test_storage_config_from_dict_desktop_mode_true(storage_config_default):
     data = {
         **storage_config_default,
         "workspaces": {
-            "workspace1": {
-                "path": "./a/workspace1",
-            },
-            "workspace2": {
-                "path": "./a/",
+            "default": {
+                "path": "./default_workspace",
             },
         },
     }
 
-    with pytest.raises(ValueError):
-        StorageConfig.from_dict(data)
+    config = StorageConfig.from_dict(data, desktop_mode=True)
 
-    data = {
-        **storage_config_default,
-        "workspaces": {
-            "workspace1": {
-                "path": "./a/",
-            },
-            "workspace2": {
-                "path": "./a/workspace2",
-            },
-        },
-    }
-
-    with pytest.raises(ValueError):
-        StorageConfig.from_dict(data)
-
-    data = {
-        **storage_config_default,
-        "workspaces": {
-            "workspace1": {"path": "./a/", "some_other_config": "value1"},
-            "workspace2": {"path": "./a/", "some_other_config": "value2"},
-        },
-    }
-
-    with pytest.raises(ValueError):
-        StorageConfig.from_dict(data)
+    assert "local" in config.workspaces or "C:\\" in config.workspaces

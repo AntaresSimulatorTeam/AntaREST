@@ -11,15 +11,15 @@
 # This file is part of the Antares project.
 
 import multiprocessing
+import os
+import platform
+import string
 import tempfile
 from dataclasses import asdict, dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Dict, List, Optional, cast
+from typing import ClassVar, Dict, List, Optional
 
-import numpy as np
-import numpy.typing as npt
-import pandas as pd
 import yaml
 
 from antarest.core.model import JSON
@@ -28,10 +28,9 @@ from antarest.core.roles import RoleType
 DEFAULT_WORKSPACE_NAME = "default"
 
 
-class Launcher(StrEnum):
+class LauncherType(StrEnum):
     SLURM = "slurm"
     LOCAL = "local"
-    DEFAULT = "default"
 
 
 class InternalMatrixFormat(StrEnum):
@@ -39,31 +38,6 @@ class InternalMatrixFormat(StrEnum):
     HDF = "hdf"
     PARQUET = "parquet"
     FEATHER = "feather"
-
-    def load_matrix(self, path: Path) -> npt.NDArray[np.float64]:
-        if self == InternalMatrixFormat.TSV or path.stat().st_size == 0:
-            return np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2)
-        elif self == InternalMatrixFormat.HDF:
-            df = cast(pd.DataFrame, pd.read_hdf(path))
-            return df.to_numpy(dtype=np.float64)
-        elif self == InternalMatrixFormat.PARQUET:
-            return pd.read_parquet(path).to_numpy(dtype=np.float64)
-        elif self == InternalMatrixFormat.FEATHER:
-            return pd.read_feather(path).to_numpy(dtype=np.float64)
-        else:
-            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
-
-    def save_matrix(self, dataframe: pd.DataFrame, path: Path) -> None:
-        if self == InternalMatrixFormat.TSV:
-            np.savetxt(path, dataframe.to_numpy(), delimiter="\t", fmt="%.18f")
-        elif self == InternalMatrixFormat.HDF:
-            dataframe.to_hdf(str(path), key="data")
-        elif self == InternalMatrixFormat.PARQUET:
-            dataframe.to_parquet(path, compression=None)
-        elif self == InternalMatrixFormat.FEATHER:
-            dataframe.to_feather(path)
-        else:
-            raise NotImplementedError(f"Internal matrix format '{self}' is not implemented")
 
 
 @dataclass(frozen=True)
@@ -194,15 +168,16 @@ class StorageConfig:
     matrixstore_format: InternalMatrixFormat = InternalMatrixFormat.TSV
 
     @classmethod
-    def from_dict(cls, data: JSON) -> "StorageConfig":
+    def from_dict(cls, data: JSON, desktop_mode: bool = False) -> "StorageConfig":
         defaults = cls()
         workspaces = (
             {key: WorkspaceConfig.from_dict(value) for key, value in data["workspaces"].items()}
             if "workspaces" in data
             else defaults.workspaces
         )
-
-        cls._validate_workspaces(data, workspaces)
+        cls.validate_workspaces(workspaces, desktop_mode)
+        if desktop_mode:
+            workspaces = {**workspaces, **cls.system_workspaces()}
         return cls(
             matrixstore=Path(data["matrixstore"]) if "matrixstore" in data else defaults.matrixstore,
             archive_dir=Path(data["archive_dir"]) if "archive_dir" in data else defaults.archive_dir,
@@ -228,10 +203,17 @@ class StorageConfig:
         )
 
     @classmethod
-    def _validate_workspaces(cls, config_as_json: JSON, workspaces: Dict[str, WorkspaceConfig]) -> None:
+    def validate_workspaces(cls, workspaces: Dict[str, WorkspaceConfig], desktop_mode: bool) -> None:
         """
         Validate that no two workspaces have overlapping paths.
         """
+        workspace_names = list(workspaces.keys())
+        only_default = workspace_names == [DEFAULT_WORKSPACE_NAME]
+        if desktop_mode and not only_default:
+            raise ValueError(
+                f"Desktop mode is on, only default workspace should be configured. Instead conf has {workspace_names}"
+            )
+
         workspace_name_by_path = [(config.path, name) for name, config in workspaces.items()]
         for path, name in workspace_name_by_path:
             for path2, name2 in workspace_name_by_path:
@@ -239,6 +221,17 @@ class StorageConfig:
                     raise ValueError(
                         f"Overlapping workspace paths found: '{name}' and '{name2}' '{path}' is relative to '{path2}' "
                     )
+
+    @classmethod
+    def system_workspaces(cls) -> Dict[str, WorkspaceConfig]:
+        if platform.system().lower() == "linux":
+            return {"local": WorkspaceConfig(path=Path("/"))}
+        elif platform.system().lower() == "windows":
+            # TODO : After update to python 3.12 use os.listdrives()
+            drives = [f"{d}:\\" for d in string.ascii_uppercase if os.path.isdir(f"{d}:\\")]
+            return {drive: WorkspaceConfig(path=Path(drive)) for drive in drives}
+        else:
+            raise NotImplementedError("System workspaces are only implemented for Linux and Windows")
 
 
 @dataclass(frozen=True)
@@ -308,6 +301,9 @@ class TimeLimitConfig:
 class LocalConfig:
     """Sub config object dedicated to launcher module (local)"""
 
+    id: str
+    name: str
+    type: ClassVar[LauncherType] = LauncherType.LOCAL
     binaries: Dict[str, Path] = field(default_factory=dict)
     enable_nb_cores_detection: bool = True
     nb_cores: NbCoresConfig = NbCoresConfig()
@@ -323,16 +319,17 @@ class LocalConfig:
             data: Parse config from dict.
         Returns: object NbCoresConfig
         """
-        defaults = cls()
-        binaries = data.get("binaries", defaults.binaries)
-        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
-        nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
+        binaries = {str(k): Path(v) for k, v in data.get("binaries", {}).items()}
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", True)
+        nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
-        xpress_dir = data.get("xpress_dir", defaults.xpress_dir)
-        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else defaults.local_workspace
+        xpress_dir = data.get("xpress_dir")
+        local_workspace = Path(data["local_workspace"]) if "local_workspace" in data else Path("./local_workspace")
         return cls(
-            binaries={str(v): Path(p) for v, p in binaries.items()},
+            id=data["id"],
+            name=data["name"],
+            binaries=binaries,
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
             xpress_dir=xpress_dir,
@@ -357,6 +354,9 @@ class SlurmConfig:
     Sub config object dedicated to launcher module (slurm)
     """
 
+    id: str
+    name: str
+    type: ClassVar[LauncherType] = LauncherType.SLURM
     local_workspace: Path = Path()
     username: str = ""
     hostname: str = ""
@@ -366,13 +366,13 @@ class SlurmConfig:
     password: str = ""
     default_wait_time: int = 0
     time_limit: TimeLimitConfig = TimeLimitConfig()
+    nb_cores: NbCoresConfig = NbCoresConfig()
     default_json_db_name: str = ""
     slurm_script_path: str = ""
     partition: str = ""
     max_cores: int = 64
     antares_versions_on_remote_server: List[str] = field(default_factory=list)
     enable_nb_cores_detection: bool = False
-    nb_cores: NbCoresConfig = NbCoresConfig()
 
     @classmethod
     def from_dict(cls, data: JSON) -> "SlurmConfig":
@@ -383,9 +383,8 @@ class SlurmConfig:
              data: Parsed config from dict.
         Returns: object SlurmConfig
         """
-        defaults = cls()
-        enable_nb_cores_detection = data.get("enable_nb_cores_detection", defaults.enable_nb_cores_detection)
-        nb_cores = data.get("nb_cores", asdict(defaults.nb_cores))
+        enable_nb_cores_detection = data.get("enable_nb_cores_detection", False)
+        nb_cores = data.get("nb_cores", asdict(NbCoresConfig()))
         if "default_n_cpu" in data:
             # Use the old way to configure the NB cores for backward compatibility
             nb_cores["default"] = int(data["default_n_cpu"])
@@ -394,26 +393,28 @@ class SlurmConfig:
         if enable_nb_cores_detection:
             nb_cores.update(cls._autodetect_nb_cores())
         # In the configuration file, the default time limit is in seconds, so we convert it to hours
-        max_time_limit = data.get("default_time_limit", defaults.time_limit.max * 3600) // 3600
+        max_time_limit = data.get("default_time_limit", TimeLimitConfig().max * 3600) // 3600
         time_limit = TimeLimitConfig(min=1, default=max_time_limit, max=max_time_limit)
         return cls(
-            local_workspace=Path(data.get("local_workspace", defaults.local_workspace)),
-            username=data.get("username", defaults.username),
-            hostname=data.get("hostname", defaults.hostname),
-            port=data.get("port", defaults.port),
-            private_key_file=data.get("private_key_file", defaults.private_key_file),
-            key_password=data.get("key_password", defaults.key_password),
-            password=data.get("password", defaults.password),
-            default_wait_time=data.get("default_wait_time", defaults.default_wait_time),
+            id=data["id"],
+            name=data["name"],
+            local_workspace=Path(data.get("local_workspace", Path())),
+            username=data.get("username", ""),
+            hostname=data.get("hostname", ""),
+            port=data.get("port", 0),
+            private_key_file=data.get("private_key_file", Path()),
+            key_password=data.get("key_password", ""),
+            password=data.get("password", ""),
+            default_wait_time=data.get("default_wait_time", 0),
             time_limit=time_limit,
-            default_json_db_name=data.get("default_json_db_name", defaults.default_json_db_name),
-            slurm_script_path=data.get("slurm_script_path", defaults.slurm_script_path),
-            partition=data.get("partition", defaults.partition),
+            default_json_db_name=data.get("default_json_db_name", ""),
+            slurm_script_path=data.get("slurm_script_path", ""),
+            partition=data.get("partition", ""),
             antares_versions_on_remote_server=data.get(
                 "antares_versions_on_remote_server",
-                defaults.antares_versions_on_remote_server,
+                [],
             ),
-            max_cores=data.get("max_cores", defaults.max_cores),
+            max_cores=data.get("max_cores", 64),
             enable_nb_cores_detection=enable_nb_cores_detection,
             nb_cores=NbCoresConfig(**nb_cores),
         )
@@ -441,38 +442,40 @@ class LauncherConfig:
     """
 
     default: str = "local"
-    local: Optional[LocalConfig] = None
-    slurm: Optional[SlurmConfig] = None
+    configs: Optional[List[LocalConfig | SlurmConfig]] = None
     batch_size: int = 9999
 
     @classmethod
     def from_dict(cls, data: JSON) -> "LauncherConfig":
+        launchers: List[LocalConfig | SlurmConfig] = []
         defaults = cls()
         default = data.get("default", cls.default)
-        local = LocalConfig.from_dict(data["local"]) if "local" in data else defaults.local
-        slurm = SlurmConfig.from_dict(data["slurm"]) if "slurm" in data else defaults.slurm
         batch_size = data.get("batch_size", defaults.batch_size)
+        for launcher in data["launchers"]:
+            match launcher["type"]:
+                case LauncherType.LOCAL:
+                    launchers.append(LocalConfig.from_dict(launcher))
+                case LauncherType.SLURM:
+                    launchers.append(SlurmConfig.from_dict(launcher))
+                case _:
+                    raise InvalidConfigurationError(f"Unknown launcher type: {launcher['type']}")
+
+        if not any(launcher.id == default for launcher in launchers):
+            raise InvalidConfigurationError(f"Default launcher id '{default}' not found in launcher configs")
+
         return cls(
             default=default,
-            local=local,
-            slurm=slurm,
+            configs=launchers,
             batch_size=batch_size,
         )
 
-    def __post_init__(self) -> None:
-        possible = {"local", "slurm"}
-        if self.default in possible:
-            return
-        msg = f"Invalid configuration: {self.default=} must be one of {possible!r}"
-        raise ValueError(msg)
-
-    def get_nb_cores(self, launcher: Launcher) -> "NbCoresConfig":
+    def get_nb_cores(self, launcher: Optional[str]) -> "NbCoresConfig":
         """
         Retrieve the number of cores configuration for a given launcher: "local" or "slurm".
         If "default" is specified, retrieve the configuration of the default launcher.
 
         Args:
-            launcher: type of launcher "local", "slurm" or "default".
+            launcher: id of launcher.
 
         Returns:
             Number of cores of the given launcher.
@@ -481,20 +484,16 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 the number of cores of a launcher that doesn't exist in the configuration.
         """
-        config_map = {"local": self.local, "slurm": self.slurm}
-        config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher.value)
-        if launcher_config is None:
-            raise InvalidConfigurationError(launcher.value)
-        return launcher_config.nb_cores
+        config = self.get_launcher(launcher)
+        return config.nb_cores
 
-    def get_time_limit(self, launcher: Launcher) -> TimeLimitConfig:
+    def get_time_limit(self, launcher: Optional[str]) -> TimeLimitConfig:
         """
-        Retrieve the time limit for a job of the given launcher: "local" or "slurm".
+        Retrieve the time limit for a job of the given launcher.
         If "default" is specified, retrieve the configuration of the default launcher.
 
         Args:
-            launcher: type of launcher "local", "slurm" or "default".
+            launcher: id of launcher.
 
         Returns:
             Time limit for a job of the given launcher (in seconds).
@@ -503,12 +502,19 @@ class LauncherConfig:
             InvalidConfigurationError: Exception raised when an attempt is made to retrieve
                 a property of a launcher that doesn't exist in the configuration.
         """
-        config_map = {"local": self.local, "slurm": self.slurm}
-        config_map["default"] = config_map[self.default]
-        launcher_config = config_map.get(launcher.value)
-        if launcher_config is None:
-            raise InvalidConfigurationError(launcher)
-        return launcher_config.time_limit
+        config = self.get_launcher(launcher)
+        return config.time_limit
+
+    def get_slurm_configs(self) -> List[SlurmConfig]:
+        return [cfg for cfg in self.configs or [] if isinstance(cfg, SlurmConfig)]
+
+    def get_launcher(self, launcher_id: Optional[str]) -> LocalConfig | SlurmConfig:
+        if launcher_id is None:
+            launcher_id = self.default
+        try:
+            return next((launcher for launcher in self.configs or [] if launcher.id == launcher_id))
+        except StopIteration:
+            raise InvalidConfigurationError(launcher_id)
 
 
 @dataclass(frozen=True)
@@ -654,14 +660,21 @@ class Config:
     tasks: TaskConfig = TaskConfig()
     root_path: str = ""
     api_prefix: str = ""
+    desktop_mode: bool = False
 
     @classmethod
     def from_dict(cls, data: JSON) -> "Config":
         defaults = cls()
+        desktop_mode = data.get("desktop_mode", defaults.desktop_mode)
+        storage_config = (
+            StorageConfig.from_dict(data["storage"], desktop_mode=desktop_mode)
+            if "storage" in data
+            else defaults.storage
+        )
         return cls(
             server=ServerConfig.from_dict(data["server"]) if "server" in data else defaults.server,
             security=SecurityConfig.from_dict(data["security"]) if "security" in data else defaults.security,
-            storage=StorageConfig.from_dict(data["storage"]) if "storage" in data else defaults.storage,
+            storage=storage_config,
             launcher=LauncherConfig.from_dict(data["launcher"]) if "launcher" in data else defaults.launcher,
             db=DbConfig.from_dict(data["db"]) if "db" in data else defaults.db,
             logging=LoggingConfig.from_dict(data["logging"]) if "logging" in data else defaults.logging,
@@ -673,6 +686,7 @@ class Config:
             tasks=TaskConfig.from_dict(data["tasks"]) if "tasks" in data else defaults.tasks,
             root_path=data.get("root_path", defaults.root_path),
             api_prefix=data.get("api_prefix", defaults.api_prefix),
+            desktop_mode=desktop_mode,
         )
 
     @classmethod

@@ -13,16 +13,15 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable, Dict, List, NamedTuple, Optional
+from typing import Callable, Dict, List, NamedTuple, Optional, Protocol
 
 from antares.study.version import SolverVersion
 
-from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 
 
 class LauncherInitException(Exception):
@@ -43,6 +42,11 @@ class LauncherInitException(Exception):
         super().__init__(msg)
 
 
+class ImportCallBack(Protocol):
+    def __call__(self, job_id: str, output_path: Path, additional_logs: Dict[str, List[Path]]) -> Optional[str]:
+        pass
+
+
 class LauncherCallbacks(NamedTuple):
     # args: job_id, job status, message, output_id
     update_status: Callable[[str, JobStatus, Optional[str], Optional[str]], None]
@@ -51,18 +55,16 @@ class LauncherCallbacks(NamedTuple):
     append_before_log: Callable[[str, str], None]
     append_after_log: Callable[[str, str], None]
     # args: job_id, output_path, additional_logs
-    import_output: Callable[[str, Path, Dict[str, List[Path]]], Optional[str]]
+    import_output: ImportCallBack
 
 
 class AbstractLauncher(ABC):
     def __init__(
         self,
-        config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ):
-        self.config = config
         self.callbacks = callbacks
         self.event_bus = event_bus
         self.cache = cache
@@ -79,6 +81,14 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def kill_job(self, job_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_load(self) -> LauncherLoadDTO:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_solver_versions(self) -> List[str]:
         raise NotImplementedError()
 
     def create_update_log(self, job_id: str) -> Callable[[str], None]:

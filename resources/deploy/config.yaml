@@ -19,10 +19,14 @@ storage:
       path: ./examples/studies/
 
 launcher:
-  local:
-    binaries:
-      VER: ANTARES_SOLVER_PATH
-    local_workspace: ./local_workspace
+  default: local
+  launchers:
+    - id: local
+      name: my_local
+      type: local
+      local_workspace: ./local_workspace
+      binaries:
+        VER: ANTARES_SOLVER_PATH
 
 #  slurm:
 #    local_workspace: /path/to/slurm_workspace  # Path to the local SLURM workspace

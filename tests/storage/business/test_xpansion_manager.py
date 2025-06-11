@@ -27,7 +27,7 @@ from antarest.core.exceptions import (
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
-from antarest.study.business.model.link_model import LinkDTO
+from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
@@ -49,7 +49,7 @@ def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
 
 
 def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
-    link_manager.create_link(study, link_creation_dto=LinkDTO(area1="area1", area2="area2"))
+    link_manager.create_link(study, Link(area1="area1", area2="area2"))
 
 
 @pytest.mark.unit_test
@@ -515,9 +515,9 @@ def test_add_resources(
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[2.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "weights", filename3])
 
     settings = xpansion_manager.get_xpansion_settings(study)
@@ -615,16 +615,16 @@ def test_add_capa(
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[0.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename1])
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
     assert {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[1.0]],
-        "index": ["0"],
+        "index": [0],
     } == study.get_files().tree.get(["user", "expansion", "capa", filename2])
 
 
@@ -671,9 +671,9 @@ def test_get_single_capa(
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
     assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
-        "columns": ["0"],
+        "columns": [0],
         "data": [[0.0]],
-        "index": ["0"],
+        "index": [0],
     }
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)

@@ -13,43 +13,41 @@
  */
 
 import EditIcon from "@mui/icons-material/Edit";
+import { useSnackbar } from "notistack";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePromise as usePromiseWrapper } from "react-use";
-import { useSnackbar } from "notistack";
-import type { GroupDTO, RoleType, UserDetailsDTO } from "../../../../../types/types";
-import { createRole, deleteUserRoles } from "../../../../../services/api/user";
-import UserFormDialog, { type UserFormDialogProps } from "./UserFormDialog";
 import type { UserEdit } from "..";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
+import { createRole, deleteUserRoles } from "../../../../../services/api/user";
+import type { GroupDTO, RoleType, UserDetailsDTO } from "../../../../../types/types";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
+import UserFormDialog from "./UserFormDialog";
+import type { UserFormDefaultValues } from "./utils";
 
-type InheritPropsToOmit = "title" | "titleIcon" | "defaultValues" | "onSubmit" | "onCancel";
-
-interface Props extends Omit<UserFormDialogProps, InheritPropsToOmit> {
+interface Props {
+  open: boolean;
   user: UserDetailsDTO;
-  closeDialog: VoidFunction;
   editUser: (user: UserEdit) => void;
   reloadFetchUsers: VoidFunction;
+  onCancel: VoidFunction;
 }
 
-function UpdateUserDialog(props: Props) {
-  const { user, closeDialog, editUser, reloadFetchUsers, ...dialogProps } = props;
+function UpdateUserDialog({ open, user, onCancel, editUser, reloadFetchUsers }: Props) {
   const { t } = useTranslation();
   const mounted = usePromiseWrapper();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const defaultValues = useMemo(
-    () => ({
-      permissions: user.roles.map((role) => ({
+  const defaultPermissions = useMemo<UserFormDefaultValues["permissions"]>(
+    () =>
+      user.roles.map((role) => ({
         group: {
           id: role.group_id,
           name: role.group_name,
         },
         type: role.type,
       })),
-    }),
     [user],
   );
 
@@ -94,7 +92,7 @@ function UpdateUserDialog(props: Props) {
       enqueueErrorSnackbar(t("settings.error.userRolesSave", { 0: user.name }), e as Error);
     }
 
-    closeDialog();
+    onCancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -103,14 +101,13 @@ function UpdateUserDialog(props: Props) {
 
   return (
     <UserFormDialog
+      open={open}
       title={t("settings.updateUser")}
-      subtitle={t("settings.currentUser", { 0: user.name })}
       titleIcon={EditIcon}
-      defaultValues={defaultValues}
+      defaultValues={{ username: user.name, permissions: defaultPermissions }}
       onSubmit={handleSubmit}
-      onCancel={closeDialog}
+      onCancel={onCancel}
       onlyPermissions
-      {...dialogProps}
     />
   );
 }

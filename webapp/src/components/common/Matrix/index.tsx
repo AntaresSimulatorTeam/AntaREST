@@ -144,12 +144,13 @@ function Matrix({
         canUndo,
         canRedo,
         isDirty,
+        aggregateTypes,
       }}
     >
       <MatrixContainer>
         {/* The <Box> allows to keep the height on vertical resize */}
         <Box>
-          <CustomScrollbar options={{ overflow: { y: "hidden" } }}>
+          <CustomScrollbar>
             <MatrixHeader>
               <Tooltip title={title}>
                 <MatrixTitle>{title}</MatrixTitle>
@@ -171,6 +172,7 @@ function Matrix({
         </Box>
         {isNonEmptyMatrix(currentState.data) ? (
           <MatrixGrid
+            key={`matrix-${url}`}
             data={currentState.data}
             aggregates={aggregates}
             columns={columns}

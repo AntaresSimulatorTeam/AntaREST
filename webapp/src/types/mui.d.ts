@@ -26,6 +26,14 @@ declare module "@mui/material" {
     "extra-small": true;
   }
 
+  interface ButtonPropsSizeOverrides {
+    "extra-small": true;
+  }
+
+  interface ButtonGroupPropsSizeOverrides {
+    "extra-small": true;
+  }
+
   interface ToggleButtonGroupPropsSizeOverrides {
     "extra-small": true;
   }

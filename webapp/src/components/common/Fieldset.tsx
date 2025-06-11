@@ -41,14 +41,16 @@ function Fieldset(props: FieldsetProps) {
             display: "flex",
             flexWrap: "wrap",
             gap: 2,
-            ".MuiFormControl-root": {
-              width: fullFieldWidth ? 1 : fieldWidth,
-              m: 0,
-              // SwitchFE
-              ".MuiFormControlLabel-root": {
-                pl: 1.5,
+            // Ignore RadioGroupFE and its children
+            ".MuiFormControl-root:not(:has(> .MuiRadioGroup-root)):not(.MuiRadioGroup-root *), .FieldSkeleton":
+              {
+                width: fullFieldWidth ? 1 : fieldWidth,
+                m: 0,
+                // SwitchFE
+                ".MuiFormControlLabel-root": {
+                  pl: 1.5,
+                },
               },
-            },
             ".MuiAutocomplete-root": {
               width: fullFieldWidth ? 1 : fieldWidth,
             },

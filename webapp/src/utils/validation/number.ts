@@ -37,6 +37,7 @@ interface NumberValidationOptions {
  * @param [options] - Configuration options for validation.
  * @param [options.min=Number.MIN_SAFE_INTEGER] - Minimum allowed value.
  * @param [options.max=Number.MAX_SAFE_INTEGER] - Maximum allowed value.
+ * @param [options.integer=false] - Whether the number must be an integer.
  * @returns True if validation is successful, or a localized error message if it fails.
  */
 export function validateNumber(value: number, options?: NumberValidationOptions): ValidationReturn;
@@ -55,8 +56,8 @@ export function validateNumber(
 
   const value = valueOrOpts;
 
-  if (!isFinite(value)) {
-    return t("form.field.invalidNumber", { value });
+  if (!Number.isFinite(value)) {
+    return t("form.field.invalidValue", { value });
   }
 
   const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER, integer = false } = options;

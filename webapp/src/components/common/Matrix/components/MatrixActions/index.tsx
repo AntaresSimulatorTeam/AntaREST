@@ -67,18 +67,19 @@ function MatrixActions({
         </span>
       </Tooltip>
       <Tooltip title={t("global.save")}>
-        <Button
-          role="button"
-          aria-label={t("global.save")}
-          onClick={onSave}
-          loading={isSubmitting}
-          loadingPosition="start"
-          startIcon={<SaveIcon />}
-          variant="contained"
-          disabled={!isDirty}
-        >
-          ({updateCount})
-        </Button>
+        <span>
+          <Button
+            aria-label={t("global.save")}
+            onClick={onSave}
+            loading={isSubmitting}
+            loadingPosition="start"
+            startIcon={<SaveIcon />}
+            variant="contained"
+            disabled={!isDirty}
+          >
+            ({updateCount})
+          </Button>
+        </span>
       </Tooltip>
       <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
       {isTimeSeries && (

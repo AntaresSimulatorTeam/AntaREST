@@ -728,6 +728,15 @@ class WorkspaceNotFound(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class ScanDisabled(HTTPException):
+    """
+    This will be raised when we try to load a workspace that does not exist
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+
 class BadArchiveContent(Exception):
     """
     Exception raised when the archive file is corrupted (or unknown).
@@ -800,3 +809,8 @@ class CandidateNotFoundError(HTTPException):
 class FileAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class IncorrectArgumentsForCopy(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)

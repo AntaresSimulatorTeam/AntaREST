@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
@@ -27,7 +26,7 @@ class Desktop(IniFileNode):
     infotip = Antares Study7.0: STA-mini
     """
 
-    def __init__(self, context: ContextServer, config: FileStudyTreeConfig):
+    def __init__(self, config: FileStudyTreeConfig):
         types = {
             ".shellclassinfo": {
                 "iconfile": str,
@@ -36,4 +35,4 @@ class Desktop(IniFileNode):
             }
         }
 
-        IniFileNode.__init__(self, context, config, types=types)
+        IniFileNode.__init__(self, config, types=types)

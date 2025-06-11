@@ -40,16 +40,16 @@ class Input(FolderNode):
 
         # noinspection SpellCheckingInspection
         children: TREE = {
-            "areas": InputAreas(self.context, config.next_file("areas")),
-            "bindingconstraints": BindingConstraints(self.context, config.next_file("bindingconstraints")),
-            "hydro": InputHydro(self.context, config.next_file("hydro")),
-            "links": InputLink(self.context, config.next_file("links")),
-            "load": InputPreproSeries(self.context, config.next_file("load"), "load_"),
-            "misc-gen": InputMiscGen(self.context, config.next_file("misc-gen")),
-            "reserves": InputReserves(self.context, config.next_file("reserves")),
-            "solar": InputPreproSeries(self.context, config.next_file("solar"), "solar_"),
-            "thermal": InputThermal(self.context, config.next_file("thermal")),
-            "wind": InputPreproSeries(self.context, config.next_file("wind"), "wind_"),
+            "areas": InputAreas(self.matrix_mapper, config.next_file("areas")),
+            "bindingconstraints": BindingConstraints(self.matrix_mapper, config.next_file("bindingconstraints")),
+            "hydro": InputHydro(self.matrix_mapper, config.next_file("hydro")),
+            "links": InputLink(self.matrix_mapper, config.next_file("links")),
+            "load": InputPreproSeries(self.matrix_mapper, config.next_file("load"), "load_"),
+            "misc-gen": InputMiscGen(self.matrix_mapper, config.next_file("misc-gen")),
+            "reserves": InputReserves(self.matrix_mapper, config.next_file("reserves")),
+            "solar": InputPreproSeries(self.matrix_mapper, config.next_file("solar"), "solar_"),
+            "thermal": InputThermal(self.matrix_mapper, config.next_file("thermal")),
+            "wind": InputPreproSeries(self.matrix_mapper, config.next_file("wind"), "wind_"),
         }
 
         study_version = config.version
@@ -57,9 +57,9 @@ class Input(FolderNode):
             study_version >= STUDY_VERSION_8_1 and EnrModelling(config.enr_modelling) == EnrModelling.CLUSTERS
         )
         if has_renewables:
-            children["renewables"] = ClusteredRenewables(self.context, config.next_file("renewables"))
+            children["renewables"] = ClusteredRenewables(self.matrix_mapper, config.next_file("renewables"))
 
         if study_version >= STUDY_VERSION_8_6:
-            children["st-storage"] = InputSTStorage(self.context, config.next_file("st-storage"))
+            children["st-storage"] = InputSTStorage(self.matrix_mapper, config.next_file("st-storage"))
 
         return children

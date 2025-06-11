@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import client from "./client";
 import type {
   CommandDTO,
   FileStudyTreeConfigDTO,
@@ -21,10 +20,11 @@ import type {
   VariantTree,
 } from "../../types/types";
 import { convertStudyDtoToMetadata, convertVariantTreeDTO } from "../utils";
+import client from "./client";
 import type { FileDownloadTask } from "./downloads";
 import type { TaskDTO } from "./tasks/types";
 
-export const getVariantChildren = async (id: string): Promise<VariantTree> => {
+export const getVariantTree = async (id: string): Promise<VariantTree> => {
   const res = await client.get(`/v1/studies/${id}/variants`);
   return convertVariantTreeDTO(res.data);
 };

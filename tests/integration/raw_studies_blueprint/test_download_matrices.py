@@ -17,6 +17,7 @@ import typing as t
 import numpy as np
 import pandas as pd
 import pytest
+from pandas._testing import assert_frame_equal
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -38,7 +39,7 @@ class PreparerProxy(Proxy):
         # Prepare a managed study to test specific matrices for version 8.2
         res = self.client.post(
             f"/v1/studies/{ref_study_id}/copy",
-            params={"dest": "copied-820", "use_task": False},
+            params={"study_name": "copied-820", "use_task": False},
             headers=self.headers,
         )
         res.raise_for_status()
@@ -197,9 +198,7 @@ class TestDownloadMatrices:
 
             expected_matrix["index"] = time_column
             expected = pd.DataFrame(**expected_matrix)
-            assert dataframe.index.tolist() == expected.index.tolist()
-            assert dataframe.columns.tolist() == expected.columns.tolist()
-            assert dataframe.equals(expected)
+            assert_frame_equal(dataframe, expected)
 
         # =============================
         # TESTS INDEX AND HEADER PARAMETERS

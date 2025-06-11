@@ -13,17 +13,15 @@ from typing import Any, List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdates
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableConfig,
-    create_renewable_properties,
+from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdates, update_renewable_cluster
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand, OutputTuple
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -44,65 +42,26 @@ class UpdateRenewablesClusters(ICommand):
     cluster_properties: RenewableClusterUpdates
 
     @override
-    def _apply_config(self, study_data: FileStudyTreeConfig) -> OutputTuple:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        all_renewables = study_data.get_all_renewables()
+
         for area_id, value in self.cluster_properties.items():
-            if area_id not in study_data.areas:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found."), {}
+            if area_id not in all_renewables:
+                return command_failed(f"The area '{area_id}' is not found.")
 
-            renewable_mapping: dict[str, tuple[int, RenewableConfig]] = {}
-            for index, renewable in enumerate(study_data.areas[area_id].renewables):
-                renewable_mapping[transform_name_to_id(renewable.id)] = (index, renewable)
+            new_clusters = []
+            for cluster_id, new_properties in value.items():
+                lowered_id = cluster_id
+                if lowered_id not in all_renewables[area_id]:
+                    return command_failed(f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.")
 
-            for cluster_id in value:
-                if cluster_id not in renewable_mapping:
-                    return (
-                        CommandOutput(
-                            status=False,
-                            message=f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.",
-                        ),
-                        {},
-                    )
-                index, renewable = renewable_mapping[cluster_id]
-                current_properties = renewable.model_dump(mode="json")
-                current_properties.update(
-                    self.cluster_properties[area_id][cluster_id].model_dump(
-                        mode="json", exclude_unset=True, exclude_none=True
-                    )
-                )
-                study_data.areas[area_id].renewables[index] = RenewableConfig.model_validate(current_properties)
+                current_cluster = all_renewables[area_id][lowered_id]
+                new_cluster = update_renewable_cluster(current_cluster, new_properties)
+                new_clusters.append(new_cluster)
 
-        return CommandOutput(status=True, message="The renewable clusters were successfully updated."), {}
+            study_data.save_renewables(area_id, new_clusters)
 
-    @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        for area_id, value in self.cluster_properties.items():
-            ini_path = ["input", "renewables", "clusters", area_id, "list"]
-
-            try:
-                all_clusters_for_area = study_data.tree.get(ini_path)
-            except ChildNotFoundError:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
-
-            # Validates the Ini file
-            id_mapping = IdMapping(create_renewable_properties, all_clusters_for_area, self.study_version)
-
-            for cluster_id, properties in value.items():
-                if not id_mapping.asserts_id_exists(cluster_id):
-                    return CommandOutput(
-                        status=False,
-                        message=f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.",
-                    )
-                # Performs the update
-                new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                cluster_key, current_properties_obj = id_mapping.get_key_and_properties(cluster_id)
-                updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
-                all_clusters_for_area[cluster_key] = updated_obj.model_dump(mode="json", by_alias=True)
-
-            study_data.tree.save(data=all_clusters_for_area, url=ini_path)
-
-        output, _ = self._apply_config(study_data.config)
-
-        return output
+        return command_succeeded("The renewable clusters were successfully updated.")
 
     @override
     def to_dto(self) -> CommandDTO:

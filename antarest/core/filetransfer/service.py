@@ -11,22 +11,32 @@
 # This file is part of the Antares project.
 
 import datetime
+import http
 import logging
 import os
 import tempfile
+import time
 import uuid
 from pathlib import Path
 from typing import List, Optional
 
+from fastapi import HTTPException
 from starlette.background import BackgroundTasks
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadNotFound, FileDownloadNotReady
+from antarest.core.filetransfer.model import (
+    FileDownload,
+    FileDownloadDTO,
+    FileDownloadNotFound,
+    FileDownloadNotReady,
+)
 from antarest.core.filetransfer.repository import FileDownloadRepository
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.jwt import JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
-from antarest.core.requests import MustBeAuthenticatedError, RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.login.utils import get_current_user, require_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -54,13 +64,13 @@ class FileTransferManager:
         self,
         filename: str,
         name: Optional[str] = None,
-        owner: Optional[JWTUser] = None,
         use_notification: bool = True,
         expiration_time_in_minutes: int = 0,
     ) -> FileDownload:
         fh, path = tempfile.mkstemp(dir=self.tmp_dir, suffix=filename)
         os.close(fh)
         tmpfile = Path(path)
+        owner = get_current_user()
         download = FileDownload(
             id=str(uuid.uuid4()),
             filename=filename,
@@ -157,14 +167,9 @@ class FileTransferManager:
         background_tasks.add_task(FileTransferManager._cleanup_file, tmppath)
         return tmppath
 
-    def list_downloads(self, params: RequestParameters) -> List[FileDownloadDTO]:
-        if not params.user:
-            raise MustBeAuthenticatedError()
-        downloads = (
-            self.repository.get_all()
-            if params.user.is_site_admin()
-            else self.repository.get_all(params.user.impersonator)
-        )
+    def list_downloads(self) -> List[FileDownloadDTO]:
+        user = require_current_user()
+        downloads = self.repository.get_all() if user.is_site_admin() else self.repository.get_all(user.impersonator)
         self._clean_up_expired_downloads(downloads)
         return [d.to_dto() for d in downloads]
 
@@ -199,15 +204,43 @@ class FileTransferManager:
                 )
             )
 
-    def fetch_download(self, download_id: str, params: RequestParameters) -> FileDownload:
+    def fetch_download(self, download_id: str) -> FileDownload:
         download = self.repository.get(download_id)
         if not download:
             raise FileDownloadNotFound()
 
-        if not params.user or not (params.user.is_site_admin() or download.owner == params.user.impersonator):
+        user = get_current_user()
+        if not user or not (user.is_site_admin() or download.owner == user.impersonator):
             raise UserHasNotPermissionError()
 
         if not download.ready:
             raise FileDownloadNotReady()
 
         return download
+
+    def get_download_metadata(self, download_id: str, wait_for_availability: bool) -> FileDownloadDTO:
+        download = self.repository.get(download_id)
+        if not download:
+            raise FileDownloadNotFound()
+
+        # the user wants to wait for the download to be available
+        if wait_for_availability:
+            end = time.time() + DEFAULT_AWAIT_MAX_TIMEOUT
+
+            # disable download variable typing since it will always be defined
+            while time.time() < end and not download.ready and not download.failed:
+                with db():  # needs db context to refresh download
+                    download = self.repository.get(download_id)
+                    assert download is not None
+                time.sleep(2)
+
+        if download.failed:
+            raise HTTPException(
+                status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
+                detail=f"File was not successfully processed: {download.error_message}.",
+            )
+
+        if not download.ready:
+            raise HTTPException(status_code=http.HTTPStatus.EXPECTATION_FAILED, detail="File is still in process.")
+
+        return download.to_dto()

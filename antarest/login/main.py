@@ -24,9 +24,16 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.fastapi_jwt_auth.exceptions import AuthJWTException
 from antarest.login.ldap import LdapService
-from antarest.login.repository import BotRepository, GroupRepository, RoleRepository, UserLdapRepository, UserRepository
+from antarest.login.repository import (
+    BotRepository,
+    GroupRepository,
+    IdentityRepository,
+    RoleRepository,
+    UserLdapRepository,
+    UserRepository,
+)
 from antarest.login.service import LoginService
-from antarest.login.web import create_login_api
+from antarest.login.web import create_login_api, create_user_api
 
 
 def build_login(
@@ -50,6 +57,7 @@ def build_login(
 
     if service is None:
         user_repo = UserRepository()
+        identity_repo = IdentityRepository()
         bot_repo = BotRepository()
         group_repo = GroupRepository()
         role_repo = RoleRepository()
@@ -59,6 +67,7 @@ def build_login(
 
         service = LoginService(
             user_repo=user_repo,
+            identity_repo=identity_repo,
             bot_repo=bot_repo,
             group_repo=group_repo,
             role_repo=role_repo,
@@ -84,5 +93,6 @@ def build_login(
             return token_type == "bots" and service is not None and not service.exists_bot(user_id)
 
     if app_ctxt:
-        app_ctxt.api_root.include_router(create_login_api(service, config))
+        app_ctxt.api_root.include_router(create_login_api(service))
+        app_ctxt.api_root.include_router(create_user_api(service, config))
     return service

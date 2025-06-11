@@ -81,7 +81,6 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
       onCancel={onCancel}
       submitButtonText={t("global.create")}
       submitButtonIcon={null}
-      cancelButtonText={t("global.cancel")}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
     >

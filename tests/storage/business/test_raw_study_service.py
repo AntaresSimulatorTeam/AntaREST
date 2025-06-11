@@ -15,7 +15,7 @@ import os
 import platform
 import re
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import Mock
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -425,7 +425,7 @@ def test_copy_study(tmp_path: Path) -> None:
         version="700",
         groups=groups,
     )
-    md = study_service.copy(src_md, "dst_name", groups)
+    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath(), [], None)
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE

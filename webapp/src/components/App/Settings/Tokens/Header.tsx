@@ -12,22 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
 import TokenIcon from "@mui/icons-material/Token";
-import { useTranslation } from "react-i18next";
+import { Box, Button } from "@mui/material";
 import { useState } from "react";
-import type { BotDTO } from "../../../../types/types";
-import CreateTokenDialog from "./dialog/CreateTokenDialog";
+import { useTranslation } from "react-i18next";
 import SearchFE from "../../../common/fieldEditors/SearchFE";
+import CreateTokenDialog from "./dialog/CreateTokenDialog";
 
 interface Props {
   setSearchValue: (v: string) => void;
-  addToken: (user: BotDTO) => void;
-  reloadFetchTokens: () => void;
+  reloadFetchTokens: VoidFunction;
 }
 
-function Header(props: Props) {
-  const { setSearchValue, addToken, reloadFetchTokens } = props;
+function Header({ setSearchValue, reloadFetchTokens }: Props) {
   const { t } = useTranslation();
   const [showCreateTokenModal, setShowCreateTokenModal] = useState(false);
 
@@ -53,9 +50,8 @@ function Header(props: Props) {
       {showCreateTokenModal && (
         <CreateTokenDialog
           open
-          addToken={addToken}
           reloadFetchTokens={reloadFetchTokens}
-          closeDialog={() => setShowCreateTokenModal(false)}
+          onCancel={() => setShowCreateTokenModal(false)}
         />
       )}
     </>

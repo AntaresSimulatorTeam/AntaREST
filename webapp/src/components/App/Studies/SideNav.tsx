@@ -20,7 +20,7 @@ import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getFavoriteStudies } from "@/redux/selectors";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
-import FavoriteStudyToggle from "@/components/common/studies/FavoriteStudyToggle";
+import FavoriteStudyToggle from "@/components/App/shared/studies/FavoriteStudyToggle";
 import ListCollapse from "@/components/common/ListCollapse";
 
 function SideNav() {
@@ -29,7 +29,7 @@ function SideNav() {
   const { t } = useTranslation();
 
   return (
-    <Box sx={{ minWidth: 200, overflow: "auto" }}>
+    <Box sx={{ overflow: "auto" }}>
       {favorites.length > 0 && (
         <ListCollapse title={t("studies.favorites")} titleIcon={<StarBorderIcon />}>
           <List disablePadding dense>

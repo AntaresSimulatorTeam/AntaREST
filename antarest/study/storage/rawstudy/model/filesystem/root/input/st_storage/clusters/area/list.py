@@ -16,7 +16,6 @@ from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter, ValueSerializer
 from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.context import ContextServer
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 _VALUE_PARSERS = {any_section_option_matcher("group"): LOWER_CASE_PARSER}
@@ -53,7 +52,6 @@ def _get_group_serializer(study_version: StudyVersion) -> ValueSerializer:
 class InputSTStorageAreaList(IniFileNode):
     def __init__(
         self,
-        context: ContextServer,
         config: FileStudyTreeConfig,
         area: str,
     ):
@@ -70,7 +68,6 @@ class InputSTStorageAreaList(IniFileNode):
         types = {st_storage_id: dict for st_storage_id in config.get_st_storage_ids(area)}
         value_serializers = {any_section_option_matcher("group"): _get_group_serializer(config.version)}
         super().__init__(
-            context,
             config,
             types,
             reader=IniReader(value_parsers=_VALUE_PARSERS),

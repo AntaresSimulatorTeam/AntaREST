@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import StudyVersionInt
 
@@ -30,7 +31,6 @@ from .binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
 )
-from .renewable import RenewableConfigType
 from .st_storage import STStorageConfigType
 from .validation import extract_filtering, study_version_context
 
@@ -53,14 +53,12 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(AntaresBaseModel, extra="ignore"):
+class LinkConfig(AntaresBaseModel, extra="ignore"):
     """
     Object linked to /input/links/<link>/properties.ini information
-
     Attributes:
         filters_synthesis: list of filters for synthesis data
         filters_year: list of filters for year-by-year data
-
     Notes:
         Ignore extra fields, because we only need `filter-synthesis` and `filter-year-by-year`.
     """
@@ -84,9 +82,9 @@ class Area(AntaresBaseModel, extra="forbid"):
     """
 
     name: str
-    links: Dict[str, Link]
+    links: Dict[str, LinkConfig]
     thermals: List[ThermalCluster]
-    renewables: List[RenewableConfigType]
+    renewables: List[RenewableCluster]
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
@@ -264,20 +262,6 @@ class FileStudyTreeConfig(DTO):
         """
         lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
         return [grp for _, grp in sorted(lower_groups.items())]
-
-    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_synthesis
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_synthesis
-        return self.areas[area].filters_synthesis
-
-    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_year
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_year
-        return self.areas[area].filters_year
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):

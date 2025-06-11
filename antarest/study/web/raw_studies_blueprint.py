@@ -10,35 +10,26 @@
 #
 # This file is part of the Antares project.
 
-import collections
 import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any, List, Sequence
+from typing import Annotated, Any, List
 
-from fastapi import APIRouter, Body, Depends, File, HTTPException
+from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
-from antarest.core.jwt import JWTUser
 from antarest.core.model import SUB_JSON
-from antarest.core.requests import RequestParameters
 from antarest.core.serde.json import from_json, to_json
+from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.business.aggregator_management import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-)
 from antarest.study.service import StudyService
-from antarest.study.storage.df_download import TableExportFormat, export_file
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
+from antarest.study.storage.df_download import export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
 logger = logging.getLogger(__name__)
@@ -79,15 +70,6 @@ DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description
 PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
-def _split_comma_separated_values(value: str, *, default: Sequence[str] = ()) -> Sequence[str]:
-    """Split a comma-separated list of values into an ordered set of strings."""
-    values = value.split(",") if value else default
-    # drop whitespace around values
-    values = [v.strip() for v in values]
-    # remove duplicates and preserve order (to have a deterministic result for unit tests).
-    return list(collections.OrderedDict.fromkeys(values))
-
-
 def create_raw_study_routes(
     study_service: StudyService,
     config: Config,
@@ -101,21 +83,15 @@ def create_raw_study_routes(
     Returns:
 
     """
-    bp = APIRouter(prefix="/v1")
     auth = Auth(config)
+    bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
     @bp.get(
         "/studies/{uuid}/raw",
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study_data(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        depth: int = 3,
-        formatted: bool = True,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_data(uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True) -> Any:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -130,13 +106,12 @@ def create_raw_study_routes(
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
-        parameters = RequestParameters(user=current_user)
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted, params=parameters)
+        output = study_service.get(uuid, path, depth=depth, formatted=formatted)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
-            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True, params=parameters)
+            parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True)
             child = parent_cfg[resource_path.name]
             suffix = PurePosixPath(child).suffix
 
@@ -187,11 +162,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw file from a Study folder in its original format",
     )
-    def get_study_file(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def get_study_file(uuid: str, path: PATH_TYPE = "/") -> Any:
         """
         Fetches for a file in its original format from a study folder
 
@@ -202,8 +173,7 @@ def create_raw_study_routes(
         Returns the fetched file in its original format.
         """
         logger.info(f"📘 Fetching file at {path} from study {uuid}")
-        parameters = RequestParameters(user=current_user)
-        original_file = study_service.get_file(uuid, path, params=parameters)
+        original_file = study_service.get_file(uuid, path)
         filename = original_file.filename
         output = original_file.content
         suffix = original_file.suffix
@@ -232,279 +202,10 @@ def create_raw_study_routes(
                 },
             ),
         ] = "/",
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> Any:
         uuid = sanitize_uuid(uuid)
         logger.info(f"Deleting path {path} inside study {uuid}")
-        study_service.delete_user_file_or_folder(uuid, path, current_user)
-
-    @bp.get(
-        "/studies/{uuid}/areas/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_raw_data],
-        summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs individual Outputs",
-    )
-    def aggregate_areas_raw_data(
-        uuid: str,
-        output_id: str,
-        query_file: MCIndAreasQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: str = "",
-        areas_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> FileResponse:
-        # noinspection SpellCheckingInspection
-        """
-        Create an aggregation of areas raw data
-
-        Parameters:
-
-        - `uuid`: study ID
-        - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values", "details", "details-STstorage", "details-res"
-        - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
-        - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
-        - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
-        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
-        - `export_format`: Returned file format (csv by default).
-
-        Returns:
-            FileResponse that corresponds to a dataframe with the aggregated areas raw data
-        """
-        logger.info(
-            f"Aggregating areas output data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'"
-        )
-
-        # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
-        output_id = sanitize_string(output_id)
-
-        parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.aggregate_output_data(
-            uuid,
-            output_id=output_id,
-            query_file=query_file,
-            frequency=frequency,
-            columns_names=_split_comma_separated_values(columns_names),
-            ids_to_consider=_split_comma_separated_values(areas_ids),
-            params=parameters,
-            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_file(
-            df_matrix,
-            study_service.file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
-            current_user,
-        )
-
-    @bp.get(
-        "/studies/{uuid}/links/aggregate/mc-ind/{output_id}",
-        tags=[APITag.study_raw_data],
-        summary="Retrieve Aggregated Links Raw Data from Study Economy MCs individual Outputs",
-    )
-    def aggregate_links_raw_data(
-        uuid: str,
-        output_id: str,
-        query_file: MCIndLinksQueryFile,
-        frequency: MatrixFrequency,
-        mc_years: str = "",
-        links_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> FileResponse:
-        """
-        Create an aggregation of links raw data
-
-        Parameters:
-
-        - `uuid`: study ID
-        - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values" (currently the only available option)
-        - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
-        - `mc_years`: which Monte Carlo years to be selected. If empty, all are selected (comma separated)
-        - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
-        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
-        - `export_format`: Returned file format (csv by default).
-
-        Returns:
-            FileResponse that corresponds to a dataframe with the aggregated links raw data
-        """
-        logger.info(
-            f"Aggregating links output data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'"
-        )
-
-        # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
-        output_id = sanitize_string(output_id)
-
-        parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.aggregate_output_data(
-            uuid,
-            output_id=output_id,
-            query_file=query_file,
-            frequency=frequency,
-            columns_names=_split_comma_separated_values(columns_names),
-            ids_to_consider=_split_comma_separated_values(links_ids),
-            params=parameters,
-            mc_years=[int(mc_year) for mc_year in _split_comma_separated_values(mc_years)],
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_file(
-            df_matrix,
-            study_service.file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
-            current_user,
-        )
-
-    @bp.get(
-        "/studies/{uuid}/areas/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_raw_data],
-        summary="Retrieve Aggregated Areas Raw Data from Study Economy MCs All Outputs",
-    )
-    def aggregate_areas_raw_data__all(
-        uuid: str,
-        output_id: str,
-        query_file: MCAllAreasQueryFile,
-        frequency: MatrixFrequency,
-        areas_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> FileResponse:
-        # noinspection SpellCheckingInspection
-        """
-        Create an aggregation of areas raw data in mc-all
-
-        Parameters:
-
-        - `uuid`: study ID
-        - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values", "details", "details-STstorage", "details-res", "id"
-        - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
-        - `areas_ids`: which areas to be selected. If empty, all are selected (comma separated)
-        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
-        - `export_format`: Returned file format (csv by default).
-
-        Returns:
-            FileResponse that corresponds to a dataframe with the aggregated areas raw data
-        """
-        logger.info(
-            f"Aggregating areas output data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'"
-        )
-
-        # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
-        output_id = sanitize_string(output_id)
-
-        parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.aggregate_output_data(
-            uuid,
-            output_id=output_id,
-            query_file=query_file,
-            frequency=frequency,
-            columns_names=_split_comma_separated_values(columns_names),
-            ids_to_consider=_split_comma_separated_values(areas_ids),
-            params=parameters,
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_file(
-            df_matrix,
-            study_service.file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
-            current_user,
-        )
-
-    @bp.get(
-        "/studies/{uuid}/links/aggregate/mc-all/{output_id}",
-        tags=[APITag.study_raw_data],
-        summary="Retrieve Aggregated Links Raw Data from Study Economy MC-All Outputs",
-    )
-    def aggregate_links_raw_data__all(
-        uuid: str,
-        output_id: str,
-        query_file: MCAllLinksQueryFile,
-        frequency: MatrixFrequency,
-        links_ids: str = "",
-        columns_names: str = "",
-        export_format: TableExportFormat = DEFAULT_EXPORT_FORMAT,  # type: ignore
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> FileResponse:
-        """
-        Create an aggregation of links in mc-all
-
-        Parameters:
-
-        - `uuid`: study ID
-        - `output_id`: the output ID aka the simulation ID
-        - `query_file`: "values", "id"
-        - `frequency`: "hourly", "daily", "weekly", "monthly", "annual"
-        - `links_ids`: which links to be selected (ex: "be - fr"). If empty, all are selected (comma separated)
-        - `columns_names`: names or regexes (if `query_file` is of type `details`) to select columns (comma separated)
-        - `export_format`: Returned file format (csv by default).
-
-        Returns:
-            FileResponse that corresponds to a dataframe with the aggregated links raw data
-        """
-        logger.info(
-            f"Aggregating links mc-all data for study {uuid}, output {output_id},"
-            f"from files '{query_file}-{frequency}.txt'"
-        )
-
-        # Avoid vulnerabilities by sanitizing the `uuid` and `output_id` parameters
-        uuid = sanitize_uuid(uuid)
-        output_id = sanitize_string(output_id)
-
-        parameters = RequestParameters(user=current_user)
-        df_matrix = study_service.aggregate_output_data(
-            uuid,
-            output_id=output_id,
-            query_file=query_file,
-            frequency=frequency,
-            columns_names=_split_comma_separated_values(columns_names),
-            ids_to_consider=_split_comma_separated_values(links_ids),
-            params=parameters,
-        )
-
-        download_name = f"aggregated_output_{uuid}_{output_id}{export_format.suffix}"
-        download_log = f"Exporting aggregated output data for study '{uuid}' as {export_format} file"
-
-        return export_file(
-            df_matrix,
-            study_service.file_transfer_manager,
-            export_format,
-            False,
-            True,
-            download_name,
-            download_log,
-            current_user,
-        )
+        study_service.delete_user_file_or_folder(uuid, path)
 
     @bp.post(
         "/studies/{uuid}/raw",
@@ -512,12 +213,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Update study by posting formatted data",
     )
-    def edit_study(
-        uuid: str,
-        path: PATH_TYPE = "/",
-        data: SUB_JSON = Body(default=""),
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> Any:
+    def edit_study(uuid: str, path: PATH_TYPE = "/", data: SUB_JSON = Body(default="")) -> Any:
         """
         Updates raw data for a study by posting formatted data.
 
@@ -532,8 +228,7 @@ def create_raw_study_routes(
         """
         logger.info(f"Editing data at {path} for study {uuid}")
         path = sanitize_string(path)
-        params = RequestParameters(user=current_user)
-        return study_service.edit_study(uuid, path, data, params)
+        return study_service.edit_study(uuid, path, data)
 
     @bp.put(
         "/studies/{uuid}/raw",
@@ -550,7 +245,6 @@ def create_raw_study_routes(
             description="Create file or parent directories if missing.",
         ),  # type: ignore
         resource_type: ResourceType = ResourceType.FILE,
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> None:
         """
         Update raw data for a study by posting a raw file or by creating folder(s).
@@ -570,13 +264,12 @@ def create_raw_study_routes(
             raise HTTPException(status_code=422, detail="Argument mismatch: Must give a content to create a file")
 
         path = sanitize_string(path)
-        params = RequestParameters(user=current_user)
         if resource_type == ResourceType.FOLDER and create_missing:  # type: ignore
             logger.info(f"Creating folder {path} for study {uuid}")
-            study_service.create_user_folder(uuid, path, current_user)
+            study_service.create_user_folder(uuid, path)
         else:
             logger.info(f"Uploading new data file at {path} for study {uuid}")
-            study_service.edit_study(uuid, path, file, params, create_missing=create_missing)
+            study_service.edit_study(uuid, path, file, create_missing=create_missing)
 
     @bp.get(
         "/studies/{uuid}/raw/validate",
@@ -584,10 +277,7 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         response_model=List[str],
     )
-    def validate(
-        uuid: str,
-        current_user: JWTUser = Depends(auth.get_current_user),
-    ) -> List[str]:
+    def validate(uuid: str) -> List[str]:
         """
         Launches test validation on the raw data of a study.
         The validation is done recursively on all the files in the study
@@ -619,7 +309,6 @@ def create_raw_study_routes(
         with_index: bool = Query(  # type: ignore
             True, alias="index", description="Whether to include the index or not", title="With Index"
         ),
-        current_user: JWTUser = Depends(auth.get_current_user),
     ) -> FileResponse:
         """
         Download a matrix in a given format.
@@ -641,13 +330,8 @@ def create_raw_study_routes(
         uuid = sanitize_uuid(uuid)
         matrix_path = sanitize_string(matrix_path)
 
-        parameters = RequestParameters(user=current_user)
         df_matrix = study_service.get_matrix_with_index_and_header(
-            study_id=uuid,
-            path=matrix_path,
-            with_index=with_index,
-            with_header=with_header,
-            parameters=parameters,
+            study_id=uuid, path=matrix_path, with_index=with_index, with_header=with_header
         )
 
         matrix_name = Path(matrix_path).stem
@@ -662,7 +346,6 @@ def create_raw_study_routes(
             with_header,
             download_name,
             download_log,
-            current_user,
         )
 
     return bp

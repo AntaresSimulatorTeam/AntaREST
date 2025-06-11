@@ -17,17 +17,16 @@ import time
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Union
-from unittest.mock import Mock, call, patch
+from unittest.mock import Mock, call
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 from sqlalchemy import create_engine
-from typing_extensions import Literal
 
 from antarest.core.config import (
     Config,
-    Launcher,
+    InvalidConfigurationError,
     LauncherConfig,
     LocalConfig,
     NbCoresConfig,
@@ -40,7 +39,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo
-from antarest.core.requests import RequestParameters, UserHasNotPermissionError
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base
 from antarest.launcher.model import (
@@ -53,18 +52,19 @@ from antarest.launcher.model import (
     LogType,
 )
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
-from antarest.login.auth import Auth
 from antarest.login.model import Identity
+from antarest.login.utils import current_user_context
 from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.output_service import OutputService
+from tests.helpers import with_admin_user
 
 
 class TestLauncherService:
+    @with_admin_user
     @pytest.mark.unit_test
-    @patch.object(Auth, "get_current_user")
-    def test_service_run_study(self, get_current_user_mock) -> None:
-        get_current_user_mock.return_value = None
+    def test_service_run_study(self) -> None:
         storage_service_mock = Mock()
         # noinspection SpellCheckingInspection
         storage_service_mock.get_study_information.return_value = StudyMetadataDTO(
@@ -103,6 +103,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=storage_service_mock,
+            output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
@@ -113,18 +114,7 @@ class TestLauncherService:
         launcher_service._generate_new_id = lambda: str(uuid)
 
         storage_service_mock.get_user_name.return_value = "fake_user"
-        job_id = launcher_service.run_study(
-            "study_uuid",
-            "local",
-            LauncherParametersDTO(),
-            RequestParameters(
-                user=JWTUser(
-                    id=0,
-                    impersonator=0,
-                    type="users",
-                )
-            ),
-        )
+        job_id = launcher_service.run_study("study_uuid", "local", LauncherParametersDTO())
 
         assert job_id == str(uuid)
 
@@ -146,6 +136,7 @@ class TestLauncherService:
             )
         )
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_service_get_result_from_launcher(self) -> None:
         launcher_mock = Mock()
@@ -170,6 +161,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -179,11 +171,9 @@ class TestLauncherService:
         )
 
         job_id = uuid4()
-        assert (
-            launcher_service.get_result(job_uuid=job_id, params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == fake_execution_result
-        )
+        assert launcher_service.get_result(job_uuid=job_id) == fake_execution_result
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_service_get_result_from_database(self) -> None:
         launcher_mock = Mock()
@@ -208,6 +198,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -216,10 +207,7 @@ class TestLauncherService:
             cache=Mock(),
         )
 
-        assert (
-            launcher_service.get_result(job_uuid=uuid4(), params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == fake_execution_result
-        )
+        assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
     @pytest.mark.unit_test
     def test_service_get_jobs_from_database(self, db_session) -> None:
@@ -284,6 +272,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -293,44 +282,22 @@ class TestLauncherService:
         )
 
         study_id = uuid4()
-        assert (
-            launcher_service.get_jobs(str(study_id), params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == fake_execution_result
-        )
-        repository.find_by_study.assert_called_once_with(str(study_id))
-        assert (
-            launcher_service.get_jobs(None, params=RequestParameters(user=DEFAULT_ADMIN_USER))
-            == all_faked_execution_results
-        )
-        assert (
-            launcher_service.get_jobs(
-                None,
-                params=RequestParameters(
-                    user=JWTUser(
-                        id=2,
-                        impersonator=2,
-                        type="users",
-                        groups=[],
-                    )
-                ),
-            )
-            == []
-        )
+
+        with current_user_context(DEFAULT_ADMIN_USER):
+            assert launcher_service.get_jobs(str(study_id)) == fake_execution_result
+            repository.find_by_study.assert_called_once_with(str(study_id))
+            assert launcher_service.get_jobs(None) == all_faked_execution_results
+
+        jwt_user = JWTUser(id=2, impersonator=2, type="users", groups=[])
+        with current_user_context(jwt_user):
+            assert launcher_service.get_jobs(None) == []
 
         with pytest.raises(UserHasNotPermissionError):
-            launcher_service.remove_job(
-                "some job",
-                RequestParameters(
-                    user=JWTUser(
-                        id=2,
-                        impersonator=2,
-                        type="users",
-                        groups=[],
-                    )
-                ),
-            )
+            with current_user_context(jwt_user):
+                launcher_service.remove_job("some job")
 
-        launcher_service.remove_job("some job", RequestParameters(user=DEFAULT_ADMIN_USER))
+        with current_user_context(DEFAULT_ADMIN_USER):
+            launcher_service.remove_job("some job")
         repository.delete.assert_called_with("some job")
 
     @pytest.mark.unit_test
@@ -339,120 +306,229 @@ class TestLauncherService:
         [
             pytest.param(
                 {
-                    "default": "local",
-                    "local": [],
-                    "slurm": [],
+                    "default": "local_id",
+                    "launchers": [
+                        {"id": "local_id", "type": "local", "name": "name", "binaries": {}},
+                        {"id": "slurm_id", "type": "slurm", "name": "name", "antares_versions_on_remote_server": []},
+                    ],
                 },
-                "default",
+                None,
                 [],
                 id="empty-config",
             ),
             pytest.param(
                 {
-                    "default": "local",
-                    "local": ["456", "123", "798"],
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "name": "name",
+                            "binaries": {"456": "path", "123": "path", "798": "path"},
+                        }
+                    ],
                 },
-                "default",
+                None,
                 ["123", "456", "798"],
                 id="local-config-default",
             ),
             pytest.param(
                 {
-                    "default": "local",
-                    "local": ["456", "123", "798"],
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "name": "name",
+                            "binaries": {"456": "path", "123": "path", "798": "path"},
+                        }
+                    ],
                 },
-                "slurm",
+                "unknown",
                 [],
                 id="local-config-slurm",
+                marks=pytest.mark.xfail(
+                    reason="Unknown solver configuration: 'unknown'",
+                    raises=InvalidConfigurationError,
+                    strict=True,
+                ),
             ),
             pytest.param(
                 {
-                    "default": "local",
-                    "local": ["456", "123", "798"],
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "name": "name",
+                            "binaries": {"456": "path", "123": "path", "798": "path"},
+                        }
+                    ],
                 },
                 "unknown",
                 [],
                 id="local-config-unknown",
                 marks=pytest.mark.xfail(
                     reason="Unknown solver configuration: 'unknown'",
-                    raises=KeyError,
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "slurm": ["258", "147", "369"],
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "name": "name",
+                            "antares_versions_on_remote_server": ["258", "147", "369"],
+                        }
+                    ],
                 },
-                "default",
+                None,
                 ["147", "258", "369"],
                 id="slurm-config-default",
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "slurm": ["258", "147", "369"],
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "name": "name",
+                            "antares_versions_on_remote_server": ["258", "147", "369"],
+                        }
+                    ],
                 },
-                "local",
+                "local_id",
                 [],
                 id="slurm-config-local",
+                marks=pytest.mark.xfail(
+                    reason="Unknown solver configuration: 'unknown'",
+                    raises=InvalidConfigurationError,
+                    strict=True,
+                ),
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "slurm": ["258", "147", "369"],
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "name": "name",
+                            "antares_versions_on_remote_server": ["258", "147", "369"],
+                        }
+                    ],
                 },
                 "unknown",
                 [],
                 id="slurm-config-unknown",
                 marks=pytest.mark.xfail(
                     reason="Unknown solver configuration: 'unknown'",
-                    raises=KeyError,
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "local": ["456", "123", "798"],
-                    "slurm": ["258", "147", "369"],
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "name": "name",
+                            "binaries": {"456": "path", "123": "path", "798": "path"},
+                        },
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "name": "name",
+                            "antares_versions_on_remote_server": ["258", "147", "369"],
+                        },
+                    ],
                 },
-                "local",
+                "local_id",
                 ["123", "456", "798"],
                 id="local+slurm-config-local",
+            ),
+            pytest.param(
+                {
+                    "default": "default",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "name": "name",
+                            "binaries": {"456": "path", "123": "path", "798": "path"},
+                        }
+                    ],
+                },
+                "",
+                [],
+                id="default-config-not-found",
+                marks=pytest.mark.xfail(
+                    reason="Default launcher id default not found in launcher configs",
+                    raises=InvalidConfigurationError,
+                    strict=True,
+                ),
             ),
         ],
     )
     def test_service_get_solver_versions(
         self,
-        config: Dict[str, Union[str, List[str]]],
-        solver: Literal["default", "local", "slurm", "unknown"],
+        config: Dict[str, Union[str, List[Dict[str, Union[str, Dict[str, str]]]]]],
+        solver: str,
         expected: List[str],
     ) -> None:
-        # Prepare the configuration
-        # the default server version from the configuration file.
-        # the default server is initialised to local
-        default = config.get("default", "local")
-        local = LocalConfig(binaries={k: Path(f"solver-{k}.exe") for k in config.get("local", [])})
-        slurm = SlurmConfig(antares_versions_on_remote_server=config.get("slurm", []))
-        launcher_config = LauncherConfig(
-            default=default,
-            local=local if local else None,
-            slurm=slurm if slurm else None,
-        )
-        config = Config(launcher=launcher_config)
+        launcher_configs = []
+        for launcher in config["launchers"]:
+            if launcher["type"] == "local":
+                launcher_configs.append(
+                    LocalConfig(
+                        id=launcher["id"],
+                        name=launcher["name"],
+                        binaries={k: Path(f"solver-{k}.exe") for k in launcher.get("binaries", {})},
+                    )
+                )
+            elif launcher["type"] == "slurm":
+                launcher_configs.append(
+                    SlurmConfig(
+                        id=launcher["id"],
+                        name=launcher["name"],
+                        antares_versions_on_remote_server=list(launcher.get("antares_versions_on_remote_server", [])),
+                    )
+                )
+
+        launcher_config = LauncherConfig(default=config["default"], configs=launcher_configs)
+
+        full_config = Config(launcher=launcher_config)
+
+        mock_launcher = Mock()
+        mock_launcher.get_solver_versions.return_value = expected
+
+        mock_launchers = {}
+        for launcher in config["launchers"]:
+            if launcher["id"] == config["default"] or launcher["id"] == solver:
+                mock_launchers[launcher["id"]] = mock_launcher
+
+        mock_factory = Mock()
+        mock_factory.build_launcher.return_value = mock_launchers
+
         launcher_service = LauncherService(
-            config=config,
+            config=full_config,
             study_service=Mock(),
+            output_service=Mock(),
             job_result_repository=Mock(),
-            factory_launcher=Mock(),
+            factory_launcher=mock_factory,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
             task_service=Mock(),
             cache=Mock(),
         )
 
-        # Fetch the solver versions
         actual = launcher_service.get_solver_versions(solver)
         assert actual == expected
 
@@ -461,72 +537,123 @@ class TestLauncherService:
         "config_map, solver, expected",
         [
             pytest.param(
-                {"default": "local", "local": {}, "slurm": {}},
-                "default",
+                {"default": "local_id", "launchers": []},
+                None,
                 {},
                 id="empty-config",
+                marks=pytest.mark.xfail(
+                    raises=InvalidConfigurationError,
+                    strict=True,
+                    reason="Configuration is not available for the 'local_id' launcher",
+                ),
             ),
             pytest.param(
                 {
-                    "default": "local",
-                    "local": {"min": 1, "default": 11, "max": 12},
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "nb_cores": {"min": 1, "default": 11, "max": 12},
+                        }
+                    ],
                 },
-                "default",
+                None,
                 {"min": 1, "default": 11, "max": 12},
                 id="local-config-default",
             ),
             pytest.param(
                 {
-                    "default": "local",
-                    "local": {"min": 1, "default": 11, "max": 12},
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "nb_cores": {"min": 1, "default": 11, "max": 12},
+                        }
+                    ],
                 },
-                "slurm",
-                {},
+                None,
+                {"min": 1, "default": 11, "max": 12},
                 id="local-config-slurm",
             ),
             pytest.param(
                 {
-                    "default": "local",
-                    "local": {"min": 1, "default": 11, "max": 12},
+                    "default": "local_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "nb_cores": {"min": 1, "default": 11, "max": 12},
+                        }
+                    ],
                 },
-                "unknown",
-                {},
+                None,
+                {"min": 1, "default": 11, "max": 12},
                 id="local-config-unknown",
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "slurm": {"min": 4, "default": 8, "max": 16},
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "nb_cores": {"min": 4, "default": 8, "max": 16},
+                        }
+                    ],
                 },
-                "default",
+                None,
                 {"min": 4, "default": 8, "max": 16},
                 id="slurm-config-default",
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "slurm": {"min": 4, "default": 8, "max": 16},
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "nb_cores": {"min": 4, "default": 8, "max": 16},
+                        }
+                    ],
                 },
-                "local",
-                {},
+                None,
+                {"min": 4, "default": 8, "max": 16},
                 id="slurm-config-local",
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "slurm": {"min": 4, "default": 8, "max": 16},
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "nb_cores": {"min": 4, "default": 8, "max": 16},
+                        }
+                    ],
                 },
-                "unknown",
-                {},
+                None,
+                {"min": 4, "default": 8, "max": 16},
                 id="slurm-config-unknown",
             ),
             pytest.param(
                 {
-                    "default": "slurm",
-                    "local": {"min": 1, "default": 11, "max": 12},
-                    "slurm": {"min": 4, "default": 8, "max": 16},
+                    "default": "slurm_id",
+                    "launchers": [
+                        {
+                            "id": "local_id",
+                            "type": "local",
+                            "nb_cores": {"min": 1, "default": 11, "max": 12},
+                        },
+                        {
+                            "id": "slurm_id",
+                            "type": "slurm",
+                            "nb_cores": {"min": 4, "default": 8, "max": 16},
+                        },
+                    ],
                 },
-                "local",
+                "local_id",
                 {"min": 1, "default": 11, "max": 12},
                 id="local+slurm-config-local",
             ),
@@ -534,22 +661,46 @@ class TestLauncherService:
     )
     def test_get_nb_cores(
         self,
-        config_map: Dict[str, Union[str, Dict[str, int]]],
-        solver: Literal["default", "local", "slurm", "unknown"],
+        config_map: Dict[str, Union[str, List[Dict[str, Any]]]],
+        solver: str,
         expected: Dict[str, int],
     ) -> None:
-        # Prepare the configuration
-        default = config_map.get("default", "local")
-        local_nb_cores = config_map.get("local", {})
-        slurm_nb_cores = config_map.get("slurm", {})
-        launcher_config = LauncherConfig(
-            default=default,
-            local=LocalConfig.from_dict({"enable_nb_cores_detection": False, "nb_cores": local_nb_cores}),
-            slurm=SlurmConfig.from_dict({"enable_nb_cores_detection": False, "nb_cores": slurm_nb_cores}),
-        )
+        # Préparer les launchers
+        launchers = []
+        for launcher_dict in config_map.get("launchers", []):
+            if launcher_dict["type"] == "local":
+                launchers.append(
+                    LocalConfig.from_dict(
+                        {
+                            "id": launcher_dict["id"],
+                            "type": "local",
+                            "name": "name",
+                            "enable_nb_cores_detection": False,
+                            "nb_cores": launcher_dict.get("nb_cores", {}),
+                        }
+                    )
+                )
+            elif launcher_dict["type"] == "slurm":
+                launchers.append(
+                    SlurmConfig.from_dict(
+                        {
+                            "id": launcher_dict["id"],
+                            "type": "slurm",
+                            "name": "name",
+                            "enable_nb_cores_detection": False,
+                            "nb_cores": launcher_dict.get("nb_cores", {}),
+                        }
+                    )
+                )
+
+        # Créer la config complète
+        launcher_config = LauncherConfig(default=config_map.get("default"), configs=launchers)
+        config = Config(launcher=launcher_config)
+
         launcher_service = LauncherService(
-            config=Config(launcher=launcher_config),
+            config=config,
             study_service=Mock(),
+            output_service=Mock(),
             job_result_repository=Mock(),
             factory_launcher=Mock(),
             event_bus=Mock(),
@@ -558,15 +709,15 @@ class TestLauncherService:
             cache=Mock(),
         )
 
-        # Fetch the number of cores
+        # Exécution du test
         try:
-            actual = launcher_service.get_nb_cores(Launcher(solver))
+            actual = launcher_service.get_nb_cores(solver)
         except ValueError as e:
             assert e.args[0] == f"'{solver}' is not a valid Launcher"
         else:
-            # Check the result
             assert actual == NbCoresConfig(**expected)
 
+    @with_admin_user
     @pytest.mark.unit_test
     def test_service_kill_job(self, tmp_path: Path) -> None:
         study_service = Mock()
@@ -575,6 +726,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -592,10 +744,7 @@ class TestLauncherService:
         launcher_service.job_result_repository.get.return_value = job_result_mock
         launcher_service.launchers = {"slurm": Mock()}
 
-        job_status = launcher_service.kill_job(
-            job_id=job_id,
-            params=RequestParameters(user=DEFAULT_ADMIN_USER),
-        )
+        job_status = launcher_service.kill_job(job_id=job_id)
 
         launcher_service.launchers[launcher].kill_job.assert_called_once_with(job_id=job_id)
 
@@ -609,6 +758,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -645,6 +795,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -671,39 +822,28 @@ class TestLauncherService:
         launcher_service.launchers = {"slurm": slurm_launcher}
         slurm_launcher.get_log.return_value = "launcher logs"
 
-        logs = launcher_service.get_log(job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDOUT)
         assert logs == "first message\nsecond message\nlauncher logs\nlast message"
-        logs = launcher_service.get_log(job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "launcher logs"
 
         study_service.get_logs.side_effect = ["some sim log", "error log"]
 
         job_result_mock.output_id = "some id"
-        logs = launcher_service.get_log(job_id, LogType.STDOUT, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDOUT)
         assert logs == "first message\nsecond message\nsome sim log\nlast message"
 
-        logs = launcher_service.get_log(job_id, LogType.STDERR, RequestParameters(DEFAULT_ADMIN_USER))
+        logs = launcher_service.get_log(job_id, LogType.STDERR)
         assert logs == "error log"
 
         study_service.get_logs.assert_has_calls(
             [
-                call(
-                    "study_id",
-                    "some id",
-                    job_id,
-                    False,
-                    params=RequestParameters(DEFAULT_ADMIN_USER),
-                ),
-                call(
-                    "study_id",
-                    "some id",
-                    job_id,
-                    True,
-                    params=RequestParameters(DEFAULT_ADMIN_USER),
-                ),
+                call("study_id", "some id", job_id, False),
+                call("study_id", "some id", job_id, True),
             ]
         )
 
+    @with_admin_user
     def test_manage_output(self, tmp_path: Path) -> None:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
@@ -716,10 +856,13 @@ class TestLauncherService:
 
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
+        output_service = Mock(spec=OutputService)
+        output_service.import_output.return_value = ""
 
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=output_service,
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -769,10 +912,10 @@ class TestLauncherService:
 
         launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
-        launcher_service.study_service.import_output.assert_called()
+        launcher_service.output_service.import_output.assert_called()
 
-        launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER))
-        launcher_service.study_service.export_output.assert_called()
+        launcher_service.download_output("job_id")
+        launcher_service.output_service.export_output.assert_called()
 
         launcher_service._import_output(
             zipped_job_id,
@@ -791,7 +934,7 @@ class TestLauncherService:
             ]
         )
 
-        launcher_service.study_service.import_output.side_effect = [
+        launcher_service.output_service.import_output.side_effect = [
             StudyNotFoundError(""),
             StudyNotFoundError(""),
         ]
@@ -811,7 +954,7 @@ class TestLauncherService:
             JobResult(id=job_id, study_id=study_id, output_id=output_name),
         ]
         with pytest.raises(JobNotFound):
-            launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER))
+            launcher_service.download_output("job_id")
 
         study_service.get_study.reset_mock()
         study_service.get_study.side_effect = StudyNotFoundError("")
@@ -822,11 +965,9 @@ class TestLauncherService:
         )
         launcher_service.task_service.add_task.return_value = "some id"
 
-        assert launcher_service.download_output("job_id", RequestParameters(DEFAULT_ADMIN_USER)) == FileDownloadTaskDTO(
-            task="some id", file=export_file
-        )
+        assert launcher_service.download_output("job_id") == FileDownloadTaskDTO(task="some id", file=export_file)
 
-        launcher_service.remove_job(job_id, RequestParameters(user=DEFAULT_ADMIN_USER))
+        launcher_service.remove_job(job_id)
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
 
     def test_save_solver_stats(self, tmp_path: Path) -> None:
@@ -836,6 +977,7 @@ class TestLauncherService:
         launcher_service = LauncherService(
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -955,8 +1097,8 @@ class TestLauncherService:
                 "slurm",
                 id="slurm launcher with no config",
                 marks=pytest.mark.xfail(
-                    reason="Default launcher is slurm but it is not registered in the config file",
-                    raises=KeyError,
+                    reason="Configuration is not available for the slurm launcher",
+                    raises=InvalidConfigurationError,
                     strict=True,
                 ),
             ),
@@ -974,14 +1116,26 @@ class TestLauncherService:
 
         config = Config(
             storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default=default_launcher, local=LocalConfig(), slurm=None),
+            launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
         )
+
+        launcher_mock = Mock()
+        launcher_mock.get_load.return_value = LauncherLoadDTO.model_validate(expected_result)
+
+        launchers_dict = {}
+        if default_launcher == "local":
+            launchers_dict[default_launcher] = launcher_mock
+
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = launchers_dict
+
         launcher_service = LauncherService(
             config=config,
             study_service=study_service,
+            output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
             job_result_repository=job_repository,
             event_bus=Mock(),
-            factory_launcher=Mock(),
+            factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),
             task_service=Mock(),
             cache=Mock(),
@@ -990,7 +1144,7 @@ class TestLauncherService:
         job_repository.get_running.return_value = running_jobs
 
         launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
-        actual_result = launcher_service.get_load()
+        actual_result = launcher_service.get_load(default_launcher)
 
         assert launcher_expected_result.launcher_status == actual_result.launcher_status
         assert launcher_expected_result.nb_queued_jobs == actual_result.nb_queued_jobs
