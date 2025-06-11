@@ -462,8 +462,8 @@ class TestBindingConstraints:
             res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             args = commands[-1]["args"]
-            assert args["time_step"] == "daily"
-            assert args["values"] is not None, "We should have a matrix ID (sha256)"
+            assert args["parameters"] == {"timeStep": "daily"}
+            assert args["matrices"]["values"] is not None, "We should have a matrix ID (sha256)"
 
         # Check that the matrix is a daily/weekly matrix
         res = client.get(
