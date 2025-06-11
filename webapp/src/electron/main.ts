@@ -1,15 +1,36 @@
-import { app, BrowserWindow } from "electron"
+import { app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions } from "electron"
 import path from "node:path"
+import {openDialog} from "./dialog.js"
 
+
+function createMenu(window: BrowserWindow) {
+  const template: Array<MenuItemConstructorOptions> = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: "Open",
+          click: (menuItem, window, event) => openDialog(window)
+        },
+        {role: 'quit'}
+      ]
+    },
+  ]
+
+  const menu = Menu.buildFromTemplate(template)
+  window.setMenu(menu)
+}
 
 const createWindow = () => {
-  const win = new BrowserWindow({
-    webPreferences: {
-      preload: path.join(app.getAppPath(), "dist-electron", "preload.cjs")
-    }
-  })
+    const win = new BrowserWindow({
+      webPreferences: {
+        preload: path.join(app.getAppPath(), "dist-electron", "preload.cjs"),
+      }
+    })
 
-  win.loadURL('http://localhost:3000/index.html')
+    createMenu(win)
+
+    win.loadURL('http://localhost:3000/index.html')
 }
 
 app.whenReady().then(() => {
