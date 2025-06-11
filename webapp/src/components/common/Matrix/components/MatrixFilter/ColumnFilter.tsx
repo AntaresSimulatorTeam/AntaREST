@@ -21,6 +21,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Box,
   type SelectChangeEvent,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -34,6 +35,20 @@ import ListFilterControl from "./components/ListFilterControl";
 
 function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
   const { t } = useTranslation();
+
+  const getFilterSummary = () => {
+    if (filter.columnsFilter.type === FILTER_TYPES.RANGE && filter.columnsFilter.range) {
+      const { min, max } = filter.columnsFilter.range;
+      return t("matrix.filter.rangeSummary", { min, max });
+    }
+    if (filter.columnsFilter.type === FILTER_TYPES.LIST && filter.columnsFilter.list?.length) {
+      const count = filter.columnsFilter.list.length;
+      return t("matrix.filter.listSummary", { count });
+    }
+    return "";
+  };
+
+  const filterSummary = getFilterSummary();
   const {
     inputValue,
     handleListChange,
@@ -73,9 +88,16 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
         expandIcon={<ExpandMoreIcon fontSize="small" />}
         sx={ACCORDION_STYLES.summary}
       >
-        <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
-          {t("matrix.filter.columnsFilter")}
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
+          <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
+            {t("matrix.filter.columnsFilter")}
+          </Typography>
+          {filterSummary && (
+            <Typography sx={{ ...TYPOGRAPHY_STYLES.smallCaption, color: "text.secondary" }}>
+              {filterSummary}
+            </Typography>
+          )}
+        </Box>
       </AccordionSummary>
       <AccordionDetails sx={ACCORDION_STYLES.details}>
         <FormControl fullWidth size="small" sx={{ mb: DESIGN_TOKENS.spacing.lg }}>

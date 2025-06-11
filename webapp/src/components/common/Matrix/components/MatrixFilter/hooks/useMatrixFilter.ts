@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useMatrixContext } from "../../../context/MatrixContext";
 import { Operation } from "../../../shared/constants";
 import { calculateMatrixAggregates } from "../../../shared/utils";
@@ -30,7 +30,6 @@ interface UseMatrixFilterReturn {
   filter: FilterState;
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
   toggleFilter: () => void;
-  togglePreviewMode: (filteredData: FilterCriteria) => void;
   resetFilters: () => void;
   applyOperation: (filteredData: FilterCriteria) => void;
 }
@@ -49,46 +48,15 @@ export function useMatrixFilter({
   columnCount,
   timeFrequency,
 }: UseMatrixFilterParams): UseMatrixFilterReturn {
-  const { currentState, setMatrixData, aggregateTypes, filterPreview, setFilterPreview } =
-    useMatrixContext();
+  const { currentState, setMatrixData, aggregateTypes, setFilterPreview } = useMatrixContext();
 
   const [filter, setFilter] = useState<FilterState>(() =>
     getDefaultFilterState(rowCount, columnCount, timeFrequency),
   );
 
-  // Reset preview when filter is deactivated
-  useEffect(() => {
-    if (!filter.active) {
-      setFilterPreview({
-        active: false,
-        criteria: {
-          columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
-          rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
-        },
-      });
-    }
-  }, [filter.active, setFilterPreview, rowCount, columnCount]);
-
   const toggleFilter = useCallback(() => {
     setFilter((prev) => ({ ...prev, active: !prev.active }));
   }, []);
-
-  const togglePreviewMode = useCallback(
-    (filteredData: FilterCriteria) => {
-      const newActiveState = !filterPreview.active;
-
-      setFilterPreview({
-        active: newActiveState,
-        criteria: newActiveState
-          ? filteredData
-          : {
-              columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
-              rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
-            },
-      });
-    },
-    [filterPreview.active, setFilterPreview, rowCount, columnCount],
-  );
 
   const resetFilters = useCallback(() => {
     setFilter(getDefaultFilterState(rowCount, columnCount, timeFrequency));
@@ -134,7 +102,6 @@ export function useMatrixFilter({
     filter,
     setFilter,
     toggleFilter,
-    togglePreviewMode,
     resetFilters,
     applyOperation,
   };

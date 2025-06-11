@@ -31,7 +31,6 @@ import { useMatrixMutations } from "./hooks/useMatrixMutations";
 import { isNonEmptyMatrix, type AggregateConfig, type RowCountSource } from "./shared/types";
 import { getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
-import type { FilterCriteria } from "./components/MatrixFilter/types";
 
 interface MatrixProps {
   url: string;
@@ -69,16 +68,6 @@ function Matrix({
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
-  const [filterPreview, setFilterPreview] = useState<{
-    active: boolean;
-    criteria: FilterCriteria;
-  }>({
-    active: false,
-    criteria: {
-      columnsIndices: [],
-      rowsIndices: [],
-    },
-  });
 
   const aggregateTypes = useMemo(
     () => getAggregateTypes(aggregateColumns || []),
@@ -144,21 +133,16 @@ function Matrix({
 
   return (
     <MatrixProvider
-      {...{
-        data: currentState.data,
-        currentState,
-        isSubmitting,
-        updateCount,
-        aggregateTypes,
-        setMatrixData,
-        undo,
-        redo,
-        canUndo,
-        canRedo,
-        isDirty,
-        filterPreview,
-        setFilterPreview,
-      }}
+      currentState={currentState}
+      isSubmitting={isSubmitting}
+      updateCount={updateCount}
+      aggregateTypes={aggregateTypes}
+      setMatrixData={setMatrixData}
+      undo={undo}
+      redo={redo}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      isDirty={isDirty}
     >
       <MatrixContainer>
         <Box>

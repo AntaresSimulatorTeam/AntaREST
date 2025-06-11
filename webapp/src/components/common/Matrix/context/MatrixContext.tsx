@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import type { Actions, State } from "use-undo";
 import type { DataState, SetMatrixDataFunction } from "../hooks/useMatrixData";
 import type { AggregateType } from "../shared/types";
@@ -43,10 +43,81 @@ export interface MatrixContextValue {
 
 const MatrixContext = createContext<MatrixContextValue | undefined>(undefined);
 
+interface MatrixProviderProps {
+  children: React.ReactNode;
+  currentState: State<DataState>["present"];
+  isSubmitting: boolean;
+  updateCount: number;
+  aggregateTypes: AggregateType[];
+  setMatrixData: SetMatrixDataFunction;
+  undo: Actions<DataState>["undo"];
+  redo: Actions<DataState>["redo"];
+  canUndo: Actions<DataState>["canUndo"];
+  canRedo: Actions<DataState>["canRedo"];
+  isDirty: boolean;
+}
+
 export function MatrixProvider({
   children,
-  ...value
-}: React.PropsWithChildren<MatrixContextValue>) {
+  currentState,
+  isSubmitting,
+  updateCount,
+  aggregateTypes,
+  setMatrixData,
+  undo,
+  redo,
+  canUndo,
+  canRedo,
+  isDirty,
+}: MatrixProviderProps) {
+  // Initialize filterPreview state with proper default values
+  const [filterPreview, setFilterPreview] = useState<{
+    active: boolean;
+    criteria: FilterCriteria;
+  }>(() => {
+    const totalColumns = currentState.data[0]?.length || 0;
+    const totalRows = currentState.data.length;
+
+    return {
+      active: false,
+      criteria: {
+        columnsIndices: Array.from({ length: totalColumns }, (_, i) => i),
+        rowsIndices: Array.from({ length: totalRows }, (_, i) => i),
+      },
+    };
+  });
+
+  // Update filterPreview criteria when matrix data changes
+  useEffect(() => {
+    if (!filterPreview.active && currentState.data.length > 0) {
+      const totalColumns = currentState.data[0]?.length || 0;
+      const totalRows = currentState.data.length;
+
+      setFilterPreview((prev) => ({
+        ...prev,
+        criteria: {
+          columnsIndices: Array.from({ length: totalColumns }, (_, i) => i),
+          rowsIndices: Array.from({ length: totalRows }, (_, i) => i),
+        },
+      }));
+    }
+  }, [currentState.data, filterPreview.active]);
+
+  const value: MatrixContextValue = {
+    currentState,
+    isSubmitting,
+    updateCount,
+    aggregateTypes,
+    setMatrixData,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+    isDirty,
+    filterPreview,
+    setFilterPreview,
+  };
+
   return <MatrixContext.Provider value={value}>{children}</MatrixContext.Provider>;
 }
 

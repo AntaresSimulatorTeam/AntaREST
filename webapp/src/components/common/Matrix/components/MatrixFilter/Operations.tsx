@@ -40,6 +40,20 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { value, hasValidFilters, handleOperationTypeChange, handleValueChange } =
     useOperationControls({ filter, setFilter, onApplyOperation });
 
+  const getOperationSummary = () => {
+    if (!filter.active || !filter.operation.type) {
+      return "";
+    }
+
+    const operationType = t(`matrix.operation.${filter.operation.type.toLowerCase()}`);
+    if (filter.operation.type === Operation.Abs) {
+      return operationType;
+    }
+    return `${operationType} ${filter.operation.value || 0}`;
+  };
+
+  const operationSummary = getOperationSummary();
+
   const handleOperationTypeChangeEvent = (e: SelectChangeEvent<string>) => {
     handleOperationTypeChange(e.target.value);
   };
@@ -52,7 +66,16 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   return (
     <Accordion defaultExpanded sx={{ my: DESIGN_TOKENS.spacing.lg, borderTop: "none" }}>
       <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />}>
-        <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>{t("matrix.filter.operation")}</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
+          <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
+            {t("matrix.filter.operation")}
+          </Typography>
+          {operationSummary && (
+            <Typography sx={{ ...TYPOGRAPHY_STYLES.smallCaption, color: "text.secondary" }}>
+              ({operationSummary})
+            </Typography>
+          )}
+        </Box>
       </AccordionSummary>
       <AccordionDetails>
         <Box sx={FORM_STYLES.responsiveContainer}>

@@ -12,37 +12,30 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useMemo, useRef, useCallback } from "react";
-import { Box, Drawer, Divider, IconButton, Tooltip, Typography, Paper } from "@mui/material";
+import { useState, useMemo, useCallback } from "react";
+import { Box, Drawer, Divider, IconButton, Tooltip } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
+import CloseIcon from "@mui/icons-material/Close";
 import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
-import type { MatrixFilterProps, FilterCriteria } from "./types";
+import type { MatrixFilterProps } from "./types";
 import { useFilteredData } from "./hooks/useFilteredData";
 import { useMatrixFilter } from "./hooks/useMatrixFilter";
-import { areFilterCriteriaEqual } from "./utils/compareUtils";
+
 import ColumnFilter from "./ColumnFilter";
 import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
-import DrawerHeader from "./components/DrawerHeader";
 import FilterControls from "./components/FilterControls";
-import FilterSummaryChips from "./components/FilterSummaryChips";
 import { getMatrixDimensions } from "./utils";
-import {
-  DRAWER_STYLES,
-  COMPONENT_DIMENSIONS,
-  DESIGN_TOKENS,
-  LAYOUT_SPACING,
-  PREVIEW_STYLES,
-} from "./styles";
+import { DRAWER_STYLES, COMPONENT_DIMENSIONS, DESIGN_TOKENS } from "./styles";
 import { useUpdateEffect } from "react-use";
 
 function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterProps) {
   const { t } = useTranslation();
-  const { currentState, filterPreview, setFilterPreview } = useMatrixContext();
+  const { currentState, setFilterPreview } = useMatrixContext();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const prevFilteredDataRef = useRef<FilterCriteria | null>(null);
 
   // Matrix dimensions
   const { rowCount, columnCount } = useMemo(
@@ -51,12 +44,11 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
   );
 
   // Filter state and operations
-  const { filter, setFilter, toggleFilter, togglePreviewMode, resetFilters, applyOperation } =
-    useMatrixFilter({
-      rowCount,
-      columnCount,
-      timeFrequency,
-    });
+  const { filter, setFilter, toggleFilter, resetFilters, applyOperation } = useMatrixFilter({
+    rowCount,
+    columnCount,
+    timeFrequency,
+  });
 
   // Filtered data based on current filter settings
   const currentFilteredData = useFilteredData({
@@ -70,67 +62,28 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
 
   // Sync filter preview with filtered data when filter is active
   useUpdateEffect(() => {
-    if (!filter.active) {
-      return;
-    }
-
-    const hasChanged = !areFilterCriteriaEqual(prevFilteredDataRef.current, currentFilteredData);
-
-    if (hasChanged) {
-      prevFilteredDataRef.current = {
-        columnsIndices: [...currentFilteredData.columnsIndices],
-        rowsIndices: [...currentFilteredData.rowsIndices],
-      };
-
-      setFilterPreview({
-        active: filterPreview.active,
-        criteria: currentFilteredData,
-      });
-    }
-  }, [filter.active, currentFilteredData, setFilterPreview, filterPreview.active]);
+    setFilterPreview({
+      active: filter.active,
+      criteria: filter.active
+        ? currentFilteredData
+        : {
+            columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
+            rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
+          },
+    });
+  }, [filter.active, currentFilteredData, setFilterPreview, columnCount, rowCount]);
 
   const handleDrawerToggle = useCallback(() => {
-    requestAnimationFrame(() => {
-      setIsDrawerOpen((prev) => !prev);
-    });
+    setIsDrawerOpen((prev) => !prev);
   }, []);
 
   const handleFilterToggle = useCallback(() => {
-    const willBeActive = !filter.active;
     toggleFilter();
-
-    if (willBeActive && !filterPreview.active) {
-      setFilterPreview({
-        active: true,
-        criteria: currentFilteredData,
-      });
-    } else if (!willBeActive) {
-      setFilterPreview({
-        active: false,
-        // TODO remove indices generation logic as it seems unnecessary
-        criteria: {
-          columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
-          rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
-        },
-      });
-    }
-  }, [
-    filter.active,
-    filterPreview.active,
-    toggleFilter,
-    setFilterPreview,
-    currentFilteredData,
-    columnCount,
-    rowCount,
-  ]);
+  }, [toggleFilter]);
 
   const handleApplyOperation = useCallback(() => {
     applyOperation(currentFilteredData);
   }, [applyOperation, currentFilteredData]);
-
-  const handleTogglePreview = useCallback(() => {
-    togglePreviewMode(currentFilteredData);
-  }, [togglePreviewMode, currentFilteredData]);
 
   return (
     <>
@@ -154,41 +107,31 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         }}
         transitionDuration={COMPONENT_DIMENSIONS.drawer.transitionDuration}
       >
-        <DrawerHeader onResetFilters={resetFilters} onClose={handleDrawerToggle} />
-
-        <FilterControls
-          isFilterActive={filter.active}
-          isPreviewActive={filterPreview.active}
-          onToggleFilter={handleFilterToggle}
-          onTogglePreview={handleTogglePreview}
-        />
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: DESIGN_TOKENS.spacing.xl,
+            flexShrink: 0,
+          }}
+        >
+          <FilterControls isFilterActive={filter.active} onToggleFilter={handleFilterToggle} />
+          <Box sx={{ display: "flex", gap: DESIGN_TOKENS.spacing.sm }}>
+            <Tooltip title={t("matrix.filter.resetFilters")}>
+              <IconButton onClick={resetFilters} size="small">
+                <FilterAltOffIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t("matrix.filter.close")}>
+              <IconButton onClick={handleDrawerToggle} size="small">
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </Box>
 
         <Divider sx={{ mb: DESIGN_TOKENS.spacing.xl, flexShrink: 0 }} />
-
-        {filter.active && (
-          <Box sx={LAYOUT_SPACING.section}>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: DESIGN_TOKENS.spacing.md,
-                ...(filterPreview.active && PREVIEW_STYLES.container),
-              }}
-            >
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{
-                  fontSize: DESIGN_TOKENS.fontSize.sm,
-                  mb: DESIGN_TOKENS.spacing.xs,
-                  display: "block",
-                }}
-              >
-                {t("matrix.filter.activeFilters")}
-              </Typography>
-              <FilterSummaryChips filter={filter} isPreviewActive={filterPreview.active} />
-            </Paper>
-          </Box>
-        )}
 
         <Box sx={DRAWER_STYLES.scrollableContent}>
           <ColumnFilter filter={filter} setFilter={setFilter} columnCount={columnCount} />
@@ -209,7 +152,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
         </Box>
 
         <Box sx={{ mt: DESIGN_TOKENS.spacing.lg }}>
-          <SelectionSummary filteredData={currentFilteredData} previewMode={filterPreview.active} />
+          <SelectionSummary filteredData={currentFilteredData} previewMode={filter.active} />
         </Box>
       </Drawer>
     </>
