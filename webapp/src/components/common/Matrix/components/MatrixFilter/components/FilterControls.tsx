@@ -30,7 +30,6 @@ function FilterControls({ isFilterActive, onToggleFilter }: FilterControlsProps)
       sx={{
         display: "flex",
         gap: DESIGN_TOKENS.spacing.md,
-        mb: DESIGN_TOKENS.spacing.xl,
         flexShrink: 0,
       }}
     >

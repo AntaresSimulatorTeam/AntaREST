@@ -24,7 +24,6 @@ import {
   TextField,
   Box,
   Button,
-  Tooltip,
   type SelectChangeEvent,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -39,20 +38,6 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
   const { value, hasValidFilters, handleOperationTypeChange, handleValueChange } =
     useOperationControls({ filter, setFilter, onApplyOperation });
-
-  const getOperationSummary = () => {
-    if (!filter.active || !filter.operation.type) {
-      return "";
-    }
-
-    const operationType = t(`matrix.operation.${filter.operation.type.toLowerCase()}`);
-    if (filter.operation.type === Operation.Abs) {
-      return operationType;
-    }
-    return `${operationType} ${filter.operation.value || 0}`;
-  };
-
-  const operationSummary = getOperationSummary();
 
   const handleOperationTypeChangeEvent = (e: SelectChangeEvent<string>) => {
     handleOperationTypeChange(e.target.value);
@@ -70,59 +55,50 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
           <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
             {t("matrix.filter.operation")}
           </Typography>
-          {operationSummary && (
-            <Typography sx={{ ...TYPOGRAPHY_STYLES.smallCaption, color: "text.secondary" }}>
-              ({operationSummary})
-            </Typography>
-          )}
         </Box>
       </AccordionSummary>
       <AccordionDetails>
         <Box sx={FORM_STYLES.responsiveContainer}>
-          <Tooltip title={t("matrix.filter.operationType")} placement="top">
-            <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
-              <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
-              <Select
-                value={filter.operation.type}
-                label={t("matrix.filter.operationType")}
-                onChange={handleOperationTypeChangeEvent}
-                disabled={!filter.active}
-                sx={FORM_STYLES.sideBySideFormControl}
-              >
-                <MenuItem value={Operation.Eq} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.operation.equal")}
-                </MenuItem>
-                <MenuItem value={Operation.Add} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.operation.add")}
-                </MenuItem>
-                <MenuItem value={Operation.Sub} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.operation.subtract")}
-                </MenuItem>
-                <MenuItem value={Operation.Mul} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.operation.multiply")}
-                </MenuItem>
-                <MenuItem value={Operation.Div} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.operation.divide")}
-                </MenuItem>
-                <MenuItem value={Operation.Abs} sx={FORM_STYLES.menuItem}>
-                  {t("matrix.operation.absolute")}
-                </MenuItem>
-              </Select>
-            </FormControl>
-          </Tooltip>
+          <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+            <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
+            <Select
+              value={filter.operation.type}
+              label={t("matrix.filter.operationType")}
+              onChange={handleOperationTypeChangeEvent}
+              disabled={!filter.active}
+              sx={FORM_STYLES.sideBySideFormControl}
+            >
+              <MenuItem value={Operation.Eq} sx={FORM_STYLES.menuItem}>
+                {t("matrix.operation.equal")}
+              </MenuItem>
+              <MenuItem value={Operation.Add} sx={FORM_STYLES.menuItem}>
+                {t("matrix.operation.add")}
+              </MenuItem>
+              <MenuItem value={Operation.Sub} sx={FORM_STYLES.menuItem}>
+                {t("matrix.operation.subtract")}
+              </MenuItem>
+              <MenuItem value={Operation.Mul} sx={FORM_STYLES.menuItem}>
+                {t("matrix.operation.multiply")}
+              </MenuItem>
+              <MenuItem value={Operation.Div} sx={FORM_STYLES.menuItem}>
+                {t("matrix.operation.divide")}
+              </MenuItem>
+              <MenuItem value={Operation.Abs} sx={FORM_STYLES.menuItem}>
+                {t("matrix.operation.absolute")}
+              </MenuItem>
+            </Select>
+          </FormControl>
 
           {filter.operation.type !== Operation.Abs && (
-            <Tooltip title={t("matrix.filter.value")} placement="top">
-              <TextField
-                label={t("matrix.filter.value")}
-                type="number"
-                value={value}
-                onChange={handleValueChangeEvent}
-                size="small"
-                sx={{ ...FORM_STYLES.sideBySideFormControl, flex: 1 }}
-                disabled={!filter.active}
-              />
-            </Tooltip>
+            <TextField
+              label={t("matrix.filter.value")}
+              type="number"
+              value={value}
+              onChange={handleValueChangeEvent}
+              size="small"
+              sx={{ ...FORM_STYLES.sideBySideFormControl, flex: 1 }}
+              disabled={!filter.active}
+            />
           )}
         </Box>
 

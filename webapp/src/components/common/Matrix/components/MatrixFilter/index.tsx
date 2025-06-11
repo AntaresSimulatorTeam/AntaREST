@@ -111,8 +111,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
           sx={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
-            mb: DESIGN_TOKENS.spacing.xl,
+            mb: DESIGN_TOKENS.spacing.sm,
             flexShrink: 0,
           }}
         >
@@ -131,7 +130,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
           </Box>
         </Box>
 
-        <Divider sx={{ mb: DESIGN_TOKENS.spacing.xl, flexShrink: 0 }} />
+        <Divider sx={{ mb: DESIGN_TOKENS.spacing.sm, flexShrink: 0 }} />
 
         <Box sx={DRAWER_STYLES.scrollableContent}>
           <ColumnFilter filter={filter} setFilter={setFilter} columnCount={columnCount} />
