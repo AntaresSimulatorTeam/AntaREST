@@ -3,7 +3,7 @@
   "version": "2.21.0",
   "private": true,
   "type": "module",
-  "main": "dist-electron/main",
+  "main": "dist-electron/main.js",
   "scripts": {
     "build": "tsc && vite build",
     "clean": "rm -rf dist node_modules/.vite",
@@ -14,7 +14,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "transpile:electron": "tsc --project src/electron/tsconfig.json",
-    "dev:electron": "npm run transpile:electron && electron ."
+    "dev:electron": "npm run transpile:electron && NODE_ENV=development electron ."
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

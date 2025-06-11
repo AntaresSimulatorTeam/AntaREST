@@ -1,10 +1,12 @@
 import { app, BrowserWindow } from "electron"
+import path from "node:path"
 
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 800,
-    height: 600
+    webPreferences: {
+      preload: path.join(app.getAppPath(), "dist-electron", "preload.cjs")
+    }
   })
 
   win.loadURL('http://localhost:3000/index.html')
