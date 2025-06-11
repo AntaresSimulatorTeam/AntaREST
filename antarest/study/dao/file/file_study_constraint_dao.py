@@ -210,7 +210,7 @@ def _remove_groups_from_scenario_builder(study_data: FileStudy, removed_groups: 
     study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
 
 
-def _generate_replacement_matrices(
+def generate_replacement_matrices(
     bc_id: str,
     study_version: StudyVersion,
     new_time_step: BindingConstraintFrequency,
