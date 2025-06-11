@@ -496,6 +496,7 @@ class BindingConstraintManager:
         args: dict[str, Any] = {
             "id": binding_constraint_id,
             "parameters": data,
+            "matrices": matrices,
             "command_context": self._command_context,
             "study_version": study.version,
         }
@@ -575,10 +576,11 @@ class BindingConstraintManager:
     def _update_constraint_with_terms(
         self, study: StudyInterface, bc: BindingConstraint, terms: Mapping[str, ConstraintTerm]
     ) -> None:
-        constraint_update = BindingConstraintUpdate(**{"terms": terms})
+        constraint_update = BindingConstraintUpdate(**{"terms": terms.values()})
         args = {
             "id": bc.id,
             "parameters": constraint_update,
+            "matrices": {},
             "command_context": self._command_context,
             "study_version": study.version,
         }

@@ -777,12 +777,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_version() -> Any:
         study_service.check_and_update_all_study_versions_in_database()
 
-    @bp.get(
-        "/studies/{uuid}/bindingconstraints",
-        tags=[APITag.study_data],
-        summary="Get binding constraint list",
-        response_model_exclude_none=True,
-    )
+    @bp.get("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Get binding constraint list")
     def get_binding_constraint_list(
         uuid: str,
         enabled: Optional[bool] = Query(None, description="Filter results based on enabled status"),
@@ -835,7 +830,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model_exclude_none=True,
     )
     def get_binding_constraint(uuid: str, binding_constraint_id: str) -> BindingConstraint:
         logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")

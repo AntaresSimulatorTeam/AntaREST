@@ -244,8 +244,8 @@ class TestBindingConstraints:
         # Get Binding Constraint list
         binding_constraints_list = preparer.get_binding_constraints(study_id)
         assert len(binding_constraints_list) == 3
-        # Group section should not exist as the study version is prior to 8.7
-        assert "group" not in binding_constraints_list[0]
+        # Group section should be None as the study version is prior to 8.7
+        assert binding_constraints_list[0]["group"] is None
         # check whole structure
         expected = [
             {
@@ -258,6 +258,7 @@ class TestBindingConstraints:
                 "name": "binding_constraint_1",
                 "operator": "less",
                 "timeStep": "hourly",
+                "group": None,
             },
             {
                 "comments": "",
@@ -269,6 +270,7 @@ class TestBindingConstraints:
                 "name": "binding_constraint_2",
                 "operator": "less",
                 "timeStep": "hourly",
+                "group": None,
             },
             {
                 "comments": "New API",
@@ -280,6 +282,7 @@ class TestBindingConstraints:
                 "name": "binding_constraint_3",
                 "operator": "less",
                 "timeStep": "hourly",
+                "group": None,
             },
         ]
         assert binding_constraints_list == expected

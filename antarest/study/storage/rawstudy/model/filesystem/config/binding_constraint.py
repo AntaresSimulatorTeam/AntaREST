@@ -78,12 +78,12 @@ def _terms_from_ini(data: dict[str, Any]) -> dict[str, Any]:
     for key in list(data.keys()):
         if "%" in key:
             area_1, area_2 = key.split("%")
-            value = data.pop(key)
+            value = str(data.pop(key))
             weight, offset = value.split("%") if "%" in value else (value, None)
             terms.append(ConstraintTerm(weight=weight, offset=offset, data=LinkTerm(area1=area_1, area2=area_2)))
         elif "." in key:
             area, cluster = key.split(".")
-            value = data.pop(key)
+            value = str(data.pop(key))
             weight, offset = value.split("%") if "%" in value else (value, None)
             terms.append(ConstraintTerm(weight=weight, offset=offset, data=ClusterTerm(area=area, cluster=cluster)))
     if terms:
