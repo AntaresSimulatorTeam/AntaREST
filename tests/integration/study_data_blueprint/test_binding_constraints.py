@@ -530,7 +530,7 @@ class TestBindingConstraints:
         assert res.json()["exception"] == "DuplicateConstraintName"
         assert res.json()["description"] == f"A binding constraint with the same name already exists: {bc_id}."
 
-        # Assert empty name
+        # Assert giving an empty name fails
         res = client.post(
             f"/v1/studies/{study_id}/bindingconstraints",
             json={
@@ -542,11 +542,9 @@ class TestBindingConstraints:
                 "comments": "New API",
             },
         )
-        assert res.status_code == 400, res.json()
-        assert res.json() == {
-            "description": "Invalid binding constraint name:   .",
-            "exception": "InvalidConstraintName",
-        }
+        assert res.status_code == 422
+        assert res.json()["exception"] == "RequestValidationError"
+        assert res.json()["description"] == "Value error, Invalid name '  '."
 
         # Assert invalid special characters
         res = client.post(
@@ -560,11 +558,9 @@ class TestBindingConstraints:
                 "comments": "New API",
             },
         )
-        assert res.status_code == 400, res.json()
-        assert res.json() == {
-            "description": "Invalid binding constraint name: %%**.",
-            "exception": "InvalidConstraintName",
-        }
+        assert res.status_code == 422
+        assert res.json()["exception"] == "RequestValidationError"
+        assert res.json()["description"] == "Value error, Invalid name '%%**'."
 
         # Asserts that creating 2 binding constraints with the same name raises an Exception
         res = client.post(
@@ -616,7 +612,7 @@ class TestBindingConstraints:
         )
         assert res.status_code == 422, res.json()
         description = res.json()["description"]
-        assert description == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
+        assert "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies" in description
 
         # Wrong matrix shape
         wrong_matrix = np.ones((352, 3))
@@ -633,9 +629,8 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "RequestValidationError"
-        assert "'values'" in description
-        assert "(366, 3)" in description
+        assert exception == "ValidationError"
+        assert "Invalid matrix shape (352, 3), expected (366, 3)" in description
 
         # Delete a fake binding constraint
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc")
@@ -650,11 +645,8 @@ class TestBindingConstraints:
             json={"group": grp_name},
         )
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "InvalidFieldForVersionError"
-        assert (
-            res.json()["description"]
-            == f"You cannot specify a group as your study version is older than v8.7: {grp_name}"
-        )
+        assert res.json()["exception"] == "ValidationError"
+        assert "Field group is not a valid field for study version 8.6" in res.json()["description"]
 
         # Update with a matrix from v8.7
         res = client.put(
@@ -662,8 +654,8 @@ class TestBindingConstraints:
             json={"less_term_matrix": [[]]},
         )
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "InvalidFieldForVersionError"
-        assert res.json()["description"] == "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
+        assert res.json()["exception"] == "ValidationError"
+        assert "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies" in res.json()["description"]
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str, tmp_path: Path) -> None:

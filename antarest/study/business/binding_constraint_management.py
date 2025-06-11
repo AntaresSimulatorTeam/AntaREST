@@ -565,6 +565,11 @@ class BindingConstraintManager:
             binding_constraints_ids: The IDs of the binding constraints to remove.
         """
 
+        all_constraints = study.get_study_dao().get_all_constraints()
+        for bc_id in binding_constraints_ids:
+            if bc_id not in all_constraints:
+                raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
+
         command = RemoveMultipleBindingConstraints(
             ids=binding_constraints_ids,
             command_context=self._command_context,
