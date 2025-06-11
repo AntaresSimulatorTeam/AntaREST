@@ -77,7 +77,6 @@ function StudiesList({ studyIds }: StudiesListProps) {
         setSelectedStudyIds={setSelectedStudyIds}
         setStudiesToLaunch={setStudiesToLaunch}
       />
-      {/* <StudiesPreview /> */}
       <Box sx={{ flex: 1, pl: 1, pb: 1, overflowX: "hidden" }}>
         <AutoSizer>
           {({ height, width }) => {
