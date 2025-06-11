@@ -50,7 +50,8 @@ from antarest.launcher.model import (
     XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
-from antarest.login.utils import get_current_user
+from antarest.login.service import LoginService
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -81,6 +82,7 @@ class LauncherService:
         config: Config,
         study_service: StudyService,
         output_service: OutputService,
+        login_service: LoginService,
         job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
@@ -91,6 +93,7 @@ class LauncherService:
         self.config = config
         self.study_service = study_service
         self.output_service = output_service
+        self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -490,6 +493,7 @@ class LauncherService:
                 raise JobNotFound()
 
             study_id = job_result.study_id
+            job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             # this now can be a zip file instead of a directory !
@@ -542,12 +546,20 @@ class LauncherService:
                                 log_suffix,
                                 concat_files_to_str(log_paths),
                             )
-                    return self.output_service.import_output(
-                        study_id,
-                        final_output_path,
-                        output_suffix,
-                        job_launch_params.auto_unzip,
-                    )
+
+                    if job_launch_params.auto_unzip and job_owner_id:
+                        # We need to fetch the user that launched the study to launch the unarchiving task
+                        current_user = self.login_service.get_jwt(job_owner_id)
+                    else:
+                        current_user = get_current_user()
+
+                    with current_user_context(current_user):
+                        return self.output_service.import_output(
+                            study_id,
+                            final_output_path,
+                            output_suffix,
+                            job_launch_params.auto_unzip,
+                        )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
                         job_id,

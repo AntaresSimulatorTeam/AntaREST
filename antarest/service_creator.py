@@ -279,6 +279,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         config,
         study_service=core_services.study_service,
         output_service=core_services.output_service,
+        login_service=core_services.login_service,
         event_bus=core_services.event_bus,
         task_service=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,
