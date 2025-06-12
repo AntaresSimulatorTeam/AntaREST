@@ -105,10 +105,16 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 bc_id = constraint.id
                 existing_constraint = mapping_from_bc_id_to_key_in_ini_and_bc_object[bc_id][1]
                 if constraint.operator != existing_constraint.operator:
+                    # The user changed the operator, we have to rename matrices accordingly
                     update_matrices_names(study_data, bc_id, existing_constraint.operator, constraint.operator)
                 if constraint.time_step != existing_constraint.time_step:
-                    print("ok")
-                    # todo: change the matrices
+                    # The user changed the time step, we need to update the matrix accordingly
+                    for [target, new_matrix] in generate_replacement_matrices(
+                        bc_id, study_version, constraint.time_step, constraint.operator
+                    ):
+                        # prepare matrix as a dict to save it in the tree
+                        matrix_url = target.split("/")
+                        study_data.tree.save(data={"data": new_matrix}, url=matrix_url)
 
                 study_data.config.bindings[existing_bindings[bc_id]] = constraint
             else:
