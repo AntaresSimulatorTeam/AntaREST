@@ -23,7 +23,7 @@ import {
   type Item,
 } from "@glideapps/glide-data-grid";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useState } from "react";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import type {
@@ -34,7 +34,7 @@ import type {
 } from "../../shared/types";
 import { formatGridNumber } from "../../shared/utils";
 import { useTranslation } from "react-i18next";
-import { useMatrixContext } from "../../context/MatrixContext";
+import { MatrixContext } from "../../context/MatrixContext";
 import { Column } from "../../shared/constants";
 import MatrixStats from "../MatrixStats";
 
@@ -70,7 +70,22 @@ function MatrixGrid({
   showStats = true,
 }: MatrixGridProps) {
   const { t } = useTranslation();
-  const { filterPreview } = useMatrixContext();
+
+  // MatrixContext is optional to support standalone usage of MatrixGrid.
+  // When used within Matrix component, context provides filter preview functionality.
+  // When used standalone, we provide sensible defaults (no filtering).
+  const context = useContext(MatrixContext);
+
+  // If no context is available (standalone usage), create default filter preview
+  // that shows all rows and columns (no filtering applied)
+  const filterPreview = context?.filterPreview ?? {
+    active: false, // Filtering is disabled in standalone mode
+    criteria: {
+      columnsIndices: Array.from({ length: data[0]?.length || 0 }, (_, i) => i),
+      rowsIndices: Array.from({ length: rows }, (_, i) => i),
+    },
+  };
+
   const [gridSelection, setGridSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),

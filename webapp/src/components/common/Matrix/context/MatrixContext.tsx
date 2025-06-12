@@ -41,7 +41,20 @@ export interface MatrixContextValue {
   setFilterPreview: (preview: { active: boolean; criteria: FilterCriteria }) => void;
 }
 
-const MatrixContext = createContext<MatrixContextValue | undefined>(undefined);
+/**
+ * MatrixContext provides shared state and functionality for matrix components.
+ *
+ * This context is intentionally exported to support optional usage patterns:
+ * - Components that REQUIRE matrix functionality (like MatrixActions) use useMatrixContext()
+ *   which throws if context is missing
+ * - Components that can work WITHOUT matrix functionality (like MatrixGrid) use useContext()
+ *   directly and provide fallback behavior when context is undefined
+ *
+ * This design allows MatrixGrid to be used both:
+ * 1. Within Matrix component (with full features like filtering, undo/redo)
+ * 2. As a standalone component (basic grid functionality only)
+ */
+export const MatrixContext = createContext<MatrixContextValue | undefined>(undefined);
 
 interface MatrixProviderProps {
   children: React.ReactNode;
