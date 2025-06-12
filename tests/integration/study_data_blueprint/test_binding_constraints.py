@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import re
 import time
 from pathlib import Path
 
@@ -718,9 +717,9 @@ class TestBindingConstraints:
         if study_type == "variant":
             res = client.get(f"/v1/studies/{study_id}/commands")
             last_cmd_args = res.json()[-1]["args"]
-            less_term_matrix = last_cmd_args["less_term_matrix"]
-            equal_term_matrix = last_cmd_args["equal_term_matrix"]
-            greater_term_matrix = last_cmd_args["greater_term_matrix"]
+            less_term_matrix = last_cmd_args["matrices"]["less_term_matrix"]
+            equal_term_matrix = last_cmd_args["matrices"]["equal_term_matrix"]
+            greater_term_matrix = last_cmd_args["matrices"]["greater_term_matrix"]
             assert greater_term_matrix == less_term_matrix != equal_term_matrix
 
         # Check that raw matrices are created
@@ -1262,8 +1261,6 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
-        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
-
         assert (
             "the most common width in the group is 3 but we have: {'third bc': "
             + '"'
@@ -1334,9 +1331,13 @@ class TestBindingConstraints:
         exception = res.json()["exception"]
         description = res.json()["description"]
         assert exception == "MatrixWidthMismatchError"
-        assert re.search(r"'Group 1':", description, flags=re.IGNORECASE)
-        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
-        assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
+        assert (
+            description
+            == "'group 1': Mismatch widths: the most common width in the group is 3 but we have: {'third bc': "
+            + '"'
+            + "'less term' has 4 columns"
+            + '"}'
+        )
 
     @pytest.mark.parametrize("study_version", [870])
     @pytest.mark.parametrize("denormalize", [True, False])
