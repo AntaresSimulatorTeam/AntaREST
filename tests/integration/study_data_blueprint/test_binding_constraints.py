@@ -717,9 +717,9 @@ class TestBindingConstraints:
         if study_type == "variant":
             res = client.get(f"/v1/studies/{study_id}/commands")
             last_cmd_args = res.json()[-1]["args"]
-            less_term_matrix = last_cmd_args["matrices"]["less_term_matrix"]
-            equal_term_matrix = last_cmd_args["matrices"]["equal_term_matrix"]
-            greater_term_matrix = last_cmd_args["matrices"]["greater_term_matrix"]
+            less_term_matrix = last_cmd_args["matrices"]["lessTermMatrix"]
+            equal_term_matrix = last_cmd_args["matrices"]["equalTermMatrix"]
+            greater_term_matrix = last_cmd_args["matrices"]["greaterTermMatrix"]
             assert greater_term_matrix == less_term_matrix != equal_term_matrix
 
         # Check that raw matrices are created
@@ -953,13 +953,11 @@ class TestBindingConstraints:
             res = client.get(f"/v1/studies/{study_id}/commands")
             commands = res.json()
             command_args = commands[-1]["args"]
-            assert command_args["time_step"] == "daily"
-            assert "values" not in command_args
+            assert command_args["parameters"] == {"timeStep": "daily"}
+            matrices = command_args["matrices"]
+            assert "values" not in matrices
             assert (
-                command_args["less_term_matrix"]
-                == command_args["greater_term_matrix"]
-                == command_args["equal_term_matrix"]
-                is not None
+                matrices["lessTermMatrix"] == matrices["greaterTermMatrix"] == matrices["equalTermMatrix"] is not None
             )
 
         # Check that the matrices are daily/weekly matrices
