@@ -636,7 +636,7 @@ class TestBindingConstraints:
         res = client.delete(f"/v1/studies/{study_id}/bindingconstraints/fake_bc")
         assert res.status_code == 404, res.json()
         assert res.json()["exception"] == "BindingConstraintNotFound"
-        assert res.json()["description"] == "Binding constraint 'fake_bc' not found"
+        assert res.json()["description"] == "Binding constraint(s) '['fake_bc']' not found"
 
         # Add a group before v8.7
         grp_name = "random_grp"
@@ -1143,11 +1143,11 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         exception = res.json()["exception"]
         description = res.json()["description"]
-        assert exception == "RequestValidationError"
-        assert "'less_term_matrix'" in description
-        assert "'greater_term_matrix'" in description
-        assert "(8784, 3)" in description
-        assert "(8784, 2)" in description
+        assert exception == "ValidationError"
+        assert (
+            "Matrices 'less_term_matrix', 'greater_term_matrix' must have the same column sizes: '3', '2'"
+            in description
+        )
 
         #
         # Creation of 1 BC
@@ -1214,8 +1214,13 @@ class TestBindingConstraints:
         assert res.status_code == 422, res.json()
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
-        assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
-        assert re.search(r"'second bc_gt' has 4 columns", description, flags=re.IGNORECASE)
+        assert (
+            "the most common width in the group is 3 but we have: {'second bc': "
+            + '"'
+            + "'greater term' has 4 columns"
+            + '"}'
+            in description
+        )
 
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
@@ -1258,7 +1263,14 @@ class TestBindingConstraints:
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
         assert re.search(r"the most common width in the group is 3", description, flags=re.IGNORECASE)
-        assert re.search(r"'third bc_lt' has 4 columns", description, flags=re.IGNORECASE)
+
+        assert (
+            "the most common width in the group is 3 but we have: {'third bc': "
+            + '"'
+            + "'less term' has 4 columns"
+            + '"}'
+            in description
+        )
 
         # first change `second_bc` operator to greater
         client.put(

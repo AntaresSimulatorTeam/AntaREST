@@ -12,7 +12,6 @@
 
 import collections
 import logging
-from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from antares.study.version import StudyVersion
@@ -64,6 +63,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     EXPECTED_MATRIX_SHAPES,
     CreateBindingConstraint,
+    TermMatrices,
 )
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -199,11 +199,11 @@ def _get_references_by_widths(
             matrices = {}
             operator = bc.operator
             if operator == BindingConstraintOperator.EQUAL:
-                matrices["equal"] = study_dao.get_constraint_equal_term_matrix(bc.id)
+                matrices["equal term"] = study_dao.get_constraint_equal_term_matrix(bc.id)
             if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
-                matrices["greater"] = study_dao.get_constraint_greater_term_matrix(bc.id)
+                matrices["greater term"] = study_dao.get_constraint_greater_term_matrix(bc.id)
             if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
-                matrices["less"] = study_dao.get_constraint_less_term_matrix(bc.id)
+                matrices["less term"] = study_dao.get_constraint_less_term_matrix(bc.id)
 
         for matrix_id, matrix in matrices.items():
             if matrix.empty:
@@ -717,11 +717,6 @@ def _replace_matrices_according_to_frequency_and_version(
 
 
 def _check_matrices_coherence(constraint: BindingConstraint, matrices: BindingConstraintMatrices) -> None:
-    class TermMatrices(Enum):
-        LESS = "less_term_matrix"
-        GREATER = "greater_term_matrix"
-        EQUAL = "equal_term_matrix"
-
     OPERATOR_CONFLICT_MAP = {
         BindingConstraintOperator.EQUAL: [TermMatrices.LESS.value, TermMatrices.GREATER.value],
         BindingConstraintOperator.GREATER: [TermMatrices.LESS.value, TermMatrices.EQUAL.value],

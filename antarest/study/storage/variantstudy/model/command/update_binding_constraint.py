@@ -37,6 +37,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
+    TermMatrices,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -158,14 +159,15 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
         # Validate matrices
         if self.study_version < STUDY_VERSION_8_7:
-            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+            for matrix in [m.value for m in TermMatrices]:
                 if getattr(self.matrices, matrix) is not None:
                     raise InvalidFieldForVersionError(
                         "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
                     )
-
-        elif self.matrices.values is not None:
-            raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
+        else:
+            if self.matrices.values is not None:
+                raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
+            super().check_matrices_column_sizes_coherence(self.matrices)
 
         return self
 
@@ -175,7 +177,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 self.matrices.values, time_step, self.study_version, False
             )
         else:
-            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+            for matrix in [m.value for m in TermMatrices]:
                 setattr(
                     self.matrices,
                     matrix,
@@ -188,6 +190,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_constraint = study_data.get_constraint(self.id)
         constraint = update_binding_constraint(current_constraint, self.parameters)
+        study_data.save_constraints([constraint])
 
         self._validate_and_fill_matrices(constraint.time_step)
 
@@ -199,7 +202,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 assert isinstance(self.matrices.values, str)
                 study_data.save_constraint_values_matrix(constraint.id, self.matrices.values)
         else:
-            operator = self.parameters.operator
+            operator = constraint.operator
             if operator == BindingConstraintOperator.EQUAL:
                 if self.matrices.equal_term_matrix:
                     assert isinstance(self.matrices.equal_term_matrix, str)

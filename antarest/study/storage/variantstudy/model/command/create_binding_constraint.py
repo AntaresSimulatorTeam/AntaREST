@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABCMeta
+from enum import Enum
 from typing import Any, Dict, Final, List, Optional, Self, TypeAlias
 
 import numpy as np
@@ -53,6 +54,12 @@ EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.DAILY: (366, 3),
     BindingConstraintFrequency.WEEKLY: (366, 3),
 }
+
+
+class TermMatrices(Enum):
+    LESS = "less_term_matrix"
+    GREATER = "greater_term_matrix"
+    EQUAL = "equal_term_matrix"
 
 
 def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixType, version: StudyVersion) -> None:
@@ -198,6 +205,25 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
             study_version=self.study_version,
         )
 
+    def check_matrices_column_sizes_coherence(self, matrices: BindingConstraintMatrices) -> None:
+        if self.study_version < STUDY_VERSION_8_7:
+            return
+
+        all_cols_sizes = {}
+
+        for term_name in [m.value for m in TermMatrices]:
+            if isinstance(getattr(matrices, term_name), list):
+                term_size = len(getattr(matrices, term_name)[0])
+                if term_size > 1:
+                    all_cols_sizes[term_size] = term_name
+
+        if len(all_cols_sizes) > 1:
+            # Prepare a clear error message
+            _field_names = ", ".join(f"'{n}'" for n in all_cols_sizes.values())
+            _cols_size = ", ".join(f"'{n}'" for n in all_cols_sizes.keys())
+            err_msg = f"Matrices {_field_names} must have the same column sizes: {_cols_size}"
+            raise ValueError(err_msg)
+
 
 class CreateBindingConstraint(AbstractBindingConstraintCommand):
     """
@@ -248,7 +274,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         time_step = self.parameters.time_step or DEFAULT_TIMESTEP
 
         if self.study_version < STUDY_VERSION_8_7:
-            for matrix in ["less_term_matrix", "greater_term_matrix", "equal_term_matrix"]:
+            for matrix in [m.value for m in TermMatrices]:
                 if getattr(self.matrices, matrix) is not None:
                     raise InvalidFieldForVersionError(
                         "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
@@ -261,6 +287,8 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         else:
             if self.matrices.values is not None:
                 raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
+
+            super().check_matrices_column_sizes_coherence(self.matrices)
 
             self.matrices.less_term_matrix = self.get_corresponding_matrices(
                 self.matrices.less_term_matrix, time_step, self.study_version, True
