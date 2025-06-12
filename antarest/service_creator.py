@@ -19,7 +19,7 @@ from typing import Any, Dict, Mapping, Optional, Tuple
 import redis
 from sqlalchemy import create_engine  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.pool import NullPool  # type: ignore
+from sqlalchemy.pool import StaticPool  # type: ignore
 
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
@@ -82,8 +82,6 @@ def init_db_engine(
     config: Config,
     auto_upgrade_db: bool,
 ) -> Engine:
-    if auto_upgrade_db:
-        upgrade_db(config_file)
     connect_args: Dict[str, Any] = {}
     if config.db.db_url.startswith("sqlite"):
         connect_args["check_same_thread"] = False
@@ -92,7 +90,7 @@ def init_db_engine(
 
     extra = {}
     if config.db.pool_use_null:
-        extra["poolclass"] = NullPool
+        extra["poolclass"] = StaticPool
     elif not config.db.db_url.startswith("sqlite"):
         if config.db.pool_pre_ping:
             extra["pool_pre_ping"] = True
@@ -106,7 +104,8 @@ def init_db_engine(
             extra["pool_use_lifo"] = config.db.pool_use_lifo
 
     engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
-
+    if auto_upgrade_db:
+        upgrade_db(config_file, engine=engine)
     return engine
 
 
