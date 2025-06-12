@@ -1161,12 +1161,6 @@ class TestLauncherService:
         )
 
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
-        # Prepare the mocks for a slurm launcher
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default="slurm", configs=[SlurmConfig(id="local", name="name")]),
-        )
-
         # Create user
         jwt_user = JWTUser(id=2, impersonator=2, type="users")
         # Make the login service return this user
@@ -1186,7 +1180,7 @@ class TestLauncherService:
 
         # Builds the service
         launcher_service = LauncherService(
-            config=config,
+            config=Mock(),
             study_service=Mock(),
             output_service=output_service,
             login_service=login_service,
