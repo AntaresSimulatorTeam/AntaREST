@@ -1159,3 +1159,49 @@ class TestLauncherService:
             launcher_expected_result.allocated_cpu_rate,
             actual_result.allocated_cpu_rate,
         )
+
+    def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
+        # Prepare the mocks for a slurm launcher
+        config = Config(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(default="slurm", configs=[SlurmConfig(id="local", name="name")]),
+        )
+        output_service = Mock()
+        output_service.import_output.return_value = ""
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"slurm": Mock()}
+
+        # Create user
+        jwt_user = JWTUser(id=2, impersonator=2, type="users", groups=[])
+        # Make the login service return this user
+        login_service = Mock()
+        login_service.get_jwt.return_value = jwt_user
+        # Put this user as the job owner
+        job_result = JobResult(
+            id=str(uuid4()),
+            study_id="study_id",
+            job_status=JobStatus.SUCCESS,
+            msg="",
+            exit_code=0,
+            owner_id=jwt_user.id,
+        )
+        job_repository = Mock()
+        job_repository.get.return_value = job_result
+
+        launcher_service = LauncherService(
+            config=config,
+            study_service=Mock(),
+            output_service=output_service,
+            login_service=login_service,
+            job_result_repository=job_repository,
+            event_bus=Mock(),
+            factory_launcher=factory_launcher_mock,
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        # Call the `_import_output` method
+        launcher_service._import_output("job_id", tmp_path, {})
+        # Ensures the output_service.import_output method was called with the right user
+        # todo: know how to check the user that called the method
