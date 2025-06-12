@@ -15,6 +15,7 @@ import pytest
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
+from antarest.study.dao.file.file_study_constraint_dao import update_matrices_names
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
@@ -36,7 +37,6 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 )
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import (
     UpdateBindingConstraint,
-    update_matrices_names,
 )
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext

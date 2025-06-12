@@ -17,6 +17,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import (
+    OPERATOR_MATRICES_MAP,
     OPERATOR_MATRIX_FILE_MAP,
     BindingConstraint,
     BindingConstraintFrequency,
@@ -249,3 +250,64 @@ def generate_replacement_matrices(
             matrix_id = matrix_name.format(bc_id=bc_id)
             target = f"input/bindingconstraints/{matrix_id}"
             yield target, matrix
+
+
+def update_matrices_names(
+    file_study: FileStudy,
+    bc_id: str,
+    existing_operator: BindingConstraintOperator,
+    new_operator: BindingConstraintOperator,
+) -> None:
+    """
+    Update the matrix file name according to the new operator.
+    Due to legacy matrices generation, we need to check if the new matrix file already exists
+    and if it does, we need to first remove it before renaming the existing matrix file
+
+    Args:
+        file_study: the file study
+        bc_id: the binding constraint ID
+        existing_operator: the existing operator
+        new_operator: the new operator
+
+    Raises:
+        NotImplementedError: if the case is not handled
+    """
+
+    handled_operators = [
+        BindingConstraintOperator.EQUAL,
+        BindingConstraintOperator.LESS,
+        BindingConstraintOperator.GREATER,
+        BindingConstraintOperator.BOTH,
+    ]
+
+    if (existing_operator not in handled_operators) or (new_operator not in handled_operators):
+        raise NotImplementedError(
+            f"Case not handled yet: existing_operator={existing_operator}, new_operator={new_operator}"
+        )
+    elif existing_operator == new_operator:
+        return  # nothing to do
+
+    parent_folder_node = file_study.tree.get_node(["input", "bindingconstraints"])
+    error_msg = "Unhandled node type, expected InputSeriesMatrix, got "
+    if existing_operator != BindingConstraintOperator.BOTH and new_operator != BindingConstraintOperator.BOTH:
+        current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        current_node.rename_file(f"{bc_id}_{OPERATOR_MATRICES_MAP[new_operator][0]}")
+    elif new_operator == BindingConstraintOperator.BOTH:
+        current_node = parent_folder_node.get_node([f"{bc_id}_{OPERATOR_MATRICES_MAP[existing_operator][0]}"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        if existing_operator == BindingConstraintOperator.EQUAL:
+            current_node.copy_file(f"{bc_id}_gt")
+            current_node.rename_file(f"{bc_id}_lt")
+        else:
+            term = "lt" if existing_operator == BindingConstraintOperator.GREATER else "gt"
+            current_node.copy_file(f"{bc_id}_{term}")
+    else:
+        current_node = parent_folder_node.get_node([f"{bc_id}_lt"])
+        assert isinstance(current_node, InputSeriesMatrix), f"{error_msg}{type(current_node)}"
+        if new_operator == BindingConstraintOperator.GREATER:
+            current_node.delete()
+        else:
+            parent_folder_node.get_node([f"{bc_id}_gt"]).delete()
+            if new_operator == BindingConstraintOperator.EQUAL:
+                current_node.rename_file(f"{bc_id}_eq")
