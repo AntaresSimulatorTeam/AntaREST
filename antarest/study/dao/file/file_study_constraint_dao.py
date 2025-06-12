@@ -88,23 +88,34 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         study_version = study_data.config.version
         ini_content = _get_all_constraints_ini(study_data)
 
-        id_by_key = {}
+        mapping_from_bc_id_to_key_in_ini_and_bc_object: dict[str, tuple[str, BindingConstraint]] = {}
         old_groups = set()
         for key, bc in ini_content.items():
             constraint = parse_binding_constraint(study_data.config.version, bc)
-            id_by_key[constraint.id] = key
+            mapping_from_bc_id_to_key_in_ini_and_bc_object[constraint.id] = key, constraint
             if constraint.group:
                 old_groups.add(constraint.group)
 
         existing_bindings = {bc.id: k for k, bc in enumerate(study_data.config.bindings)}
 
         for constraint in constraints:
-            if constraint.id in existing_bindings:
-                study_data.config.bindings[existing_bindings[constraint.id]] = constraint
+            if constraint.id in mapping_from_bc_id_to_key_in_ini_and_bc_object:
+                # We're updating an existing constraint
+                bc_id = constraint.id
+                existing_constraint = mapping_from_bc_id_to_key_in_ini_and_bc_object[bc_id][1]
+                if constraint.operator != existing_constraint.operator:
+                    print("ok")
+                    # todo: change the matrices
+                if constraint.time_step != existing_constraint.time_step:
+                    print("ok")
+                    # todo: change the matrices
+
+                study_data.config.bindings[existing_bindings[bc_id]] = constraint
             else:
+                # We're creating a new constraint
                 study_data.config.bindings.append(constraint)
 
-            ini_key = id_by_key.get(constraint.id, str(len(ini_content)))
+            ini_key = mapping_from_bc_id_to_key_in_ini_and_bc_object.get(constraint.id, [str(len(ini_content))])[0]
             ini_content[ini_key] = serialize_binding_constraint(study_version, constraint)
 
         study_data.tree.save(ini_content, ["input", "bindingconstraints", "bindingconstraints"])
