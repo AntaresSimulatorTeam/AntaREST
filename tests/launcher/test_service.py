@@ -854,15 +854,6 @@ class TestLauncherService:
 
     @with_admin_user
     def test_manage_output(self, tmp_path: Path) -> None:
-        engine = create_engine("sqlite:///:memory:", echo=False)
-        Base.metadata.create_all(engine)
-        # noinspection SpellCheckingInspection
-        DBSessionMiddleware(
-            None,
-            custom_engine=engine,
-            session_args={"autocommit": False, "autoflush": False},
-        )
-
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
         output_service = Mock(spec=OutputService)
