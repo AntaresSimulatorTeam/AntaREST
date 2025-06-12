@@ -44,9 +44,9 @@ export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTe
     >;
 
     result[TIME_INDEXING.DAY_HOUR] = {
-      min: 1,
-      max: 24,
-      uniqueValues: Array.from({ length: 24 }, (_, i) => i + 1),
+      min: 0,
+      max: 23,
+      uniqueValues: Array.from({ length: 24 }, (_, i) => i),
     };
 
     result[TIME_INDEXING.WEEKDAY] = {
@@ -73,9 +73,15 @@ export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTe
 
       for (const indexType of dynamicTypes) {
         try {
-          const values = dateTime.map((dateStr, index) =>
-            extractValueFromDate(dateStr, indexType, index),
-          );
+          const values = dateTime
+            .map((dateStr) => {
+              try {
+                return extractValueFromDate(dateStr, indexType);
+              } catch {
+                return null;
+              }
+            })
+            .filter((value): value is number => value !== null);
 
           if (values.length > 0) {
             const min = Math.min(...values);
@@ -100,9 +106,15 @@ export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTe
     const result: Record<string, number[]> = {};
 
     for (const indexType of Object.values(TIME_INDEXING)) {
-      result[indexType] = dateTime.map((dateStr, index) =>
-        extractValueFromDate(dateStr, indexType, index),
-      );
+      result[indexType] = dateTime
+        .map((dateStr) => {
+          try {
+            return extractValueFromDate(dateStr, indexType);
+          } catch {
+            return null;
+          }
+        })
+        .filter((value): value is number => value !== null);
     }
 
     return result;

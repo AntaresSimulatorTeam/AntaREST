@@ -51,7 +51,6 @@ export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING
 export function extractTemporalValue(
   dateStr: string,
   indexingType: TimeIndexingType,
-  fallbackIndex: number,
   locale: SupportedLocale = "en",
 ): number {
   try {
@@ -86,7 +85,7 @@ export function extractTemporalValue(
           return getDate(parsedDate);
 
         case TIME_INDEXING.DAY_HOUR:
-          return getHours(parsedDate) + 1; // Convert 0-23 to 1-24
+          return getHours(parsedDate); // Keep 0-23
 
         case TIME_INDEXING.WEEK: {
           const dayOfYear = getDayOfYear(parsedDate);
@@ -100,7 +99,7 @@ export function extractTemporalValue(
           return getHourOfYear(parsedDate);
 
         default:
-          return fallbackIndex + 1;
+          throw new Error(`Unknown indexing type: ${indexingType}`);
       }
     }
 
@@ -115,20 +114,17 @@ export function extractTemporalValue(
     if (indexingType === TIME_INDEXING.DAY_HOUR) {
       const hour = extractHour(dateStr);
       if (hour !== null) {
-        return hour + 1; // Convert 0-23 to 1-24
+        return hour; // Keep 0-23
       }
     }
 
-    // Special handling for week calculation from hour index
-    if (indexingType === TIME_INDEXING.WEEK && fallbackIndex < HOURS_IN.YEAR) {
-      const dayOfYear = Math.floor(fallbackIndex / 24) + 1;
-      return getWeekFromDayOfYear(dayOfYear);
-    }
-
-    // Default fallback
-    return fallbackIndex + 1;
-  } catch {
-    return fallbackIndex + 1;
+    // If we couldn't parse the date, throw an error
+    throw new Error(`Unable to parse date: "${dateStr}" for indexing type: ${indexingType}`);
+  } catch (error) {
+    // Re-throw with more context
+    throw new Error(
+      `Failed to extract temporal value from "${dateStr}" for indexing type: ${indexingType}: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
   }
 }
 
@@ -150,7 +146,7 @@ export function getTemporalRange(indexingType: TimeIndexingType): { min: number;
       return { min: 1, max: DAYS_IN.WEEK };
 
     case TIME_INDEXING.DAY_HOUR:
-      return { min: 1, max: HOURS_IN.DAY };
+      return { min: 0, max: 23 };
 
     case TIME_INDEXING.DAY_OF_YEAR:
       return { min: 1, max: DAYS_IN.LEAP_YEAR };
@@ -290,7 +286,10 @@ export function formatTemporalValue(
     }
 
     case TIME_INDEXING.DAY_HOUR:
-      return `${String(value - 1).padStart(2, "0")}:00`;
+      // Format hour value (0-23) as "00:00" to "23:00"
+      // This provides standard 24-hour time notation for better UX
+      // Examples: 0 -> "00:00", 12 -> "12:00", 23 -> "23:00"
+      return `${String(value).padStart(2, "0")}:00`;
 
     case TIME_INDEXING.WEEK:
       return `Week ${value}`;

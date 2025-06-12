@@ -110,7 +110,7 @@ export const TEMPORAL_OPTIONS: readonly TemporalOption[] = [
   {
     value: TIME_INDEXING.DAY_HOUR,
     label: "matrix.filter.indexing.dayHour",
-    description: "Filter by hour of day (1-24)",
+    description: "Filter by hour of day (0-23)",
   },
   {
     value: TIME_INDEXING.WEEK,
