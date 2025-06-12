@@ -40,16 +40,18 @@ export function parseFlexibleDate(dateStr: string): Date | null {
  *
  * @param dateStr - The date string to process
  * @param indexingType - The type of temporal index to extract (day, month, etc.)
- * @param fallbackIndex - Fallback index to use if parsing fails
  * @returns A numeric value representing the requested temporal index
+ * @throws Error if the date string cannot be parsed
  */
-export function extractValueFromDate(
-  dateStr: string,
-  indexingType: string,
-  fallbackIndex: number,
-): number {
+export function extractValueFromDate(dateStr: string, indexingType: string): number {
   const locale = getCurrentLocale();
-  return extractTemporalValue(dateStr, indexingType as TimeIndexingType, fallbackIndex, locale);
+  const date = parseFlexibleDate(dateStr);
+
+  if (!date) {
+    throw new Error(`Invalid date format: "${dateStr}"`);
+  }
+
+  return extractTemporalValue(dateStr, indexingType as TimeIndexingType, locale);
 }
 
 /**

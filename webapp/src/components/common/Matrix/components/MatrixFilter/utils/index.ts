@@ -165,13 +165,21 @@ export function getTemporalIndices({
   }
 
   // Extract temporal values from date strings
-  const temporalIndices = dateTime.map((dateStr, index) => ({
-    index,
-    value:
-      timeFrequency === TimeFrequency.Annual
-        ? index + 1
-        : extractValueFromDate(dateStr, rowFilter.indexingType, index),
-  }));
+  const temporalIndices = dateTime
+    .map((dateStr, index) => {
+      if (timeFrequency === TimeFrequency.Annual) {
+        return { index, value: index + 1 };
+      }
+
+      try {
+        const value = extractValueFromDate(dateStr, rowFilter.indexingType);
+        return { index, value };
+      } catch {
+        // Skip invalid dates
+        return null;
+      }
+    })
+    .filter((item): item is IndexedValue => item !== null);
 
   return applyRowFilter(rowFilter, temporalIndices, totalRows);
 }

@@ -105,7 +105,7 @@ function TemporalFilterRenderer({
       const hourOfDay = remainingHours % 24;
 
       // Format: "Jan 1, 5h" (5th hour of Jan 1st)
-      return `${months[monthIndex]} ${dayOfMonth}, ${hourOfDay}h`;
+      return `${months[monthIndex]} ${dayOfMonth}, ${hourOfDay + 1}h`;
     };
   }, []);
 
@@ -166,28 +166,6 @@ function TemporalFilterRenderer({
   }
 
   if (filterType === "list") {
-    // Special handling for hour of year
-    if (indexingType === TIME_INDEXING.HOUR_YEAR) {
-      return (
-        <Box sx={{ mt: DESIGN_TOKENS.spacing.xl }}>
-          <ListFilterControl
-            inputValue={inputValue}
-            selectedValues={selectedValues}
-            operator={operator}
-            onInputChange={onInputChange}
-            onKeyPress={onKeyPress}
-            onAddValue={onAddValue}
-            onAddValues={onAddValues}
-            onRemoveValue={onRemoveValue}
-            onOperatorChange={onOperatorChange}
-            onClearAll={onClearAll}
-            placeholder="Enter hour number (1-8760)"
-            disabled={disabled}
-          />
-        </Box>
-      );
-    }
-
     // Weekday selector
     if (indexingType === TIME_INDEXING.WEEKDAY) {
       return (
