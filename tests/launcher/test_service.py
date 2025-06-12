@@ -1166,28 +1166,19 @@ class TestLauncherService:
             storage=StorageConfig(tmp_dir=tmp_path),
             launcher=LauncherConfig(default="slurm", configs=[SlurmConfig(id="local", name="name")]),
         )
-        factory_launcher_mock = Mock()
-        factory_launcher_mock.build_launcher.return_value = {"slurm": Mock()}
 
         # Create user
-        jwt_user = JWTUser(id=2, impersonator=2, type="users", groups=[])
+        jwt_user = JWTUser(id=2, impersonator=2, type="users")
         # Make the login service return this user
         login_service = Mock()
         login_service.get_jwt.return_value = jwt_user
         # Put this user as the job owner
-        job_result = JobResult(
-            id=str(uuid4()),
-            study_id="study_id",
-            job_status=JobStatus.SUCCESS,
-            msg="",
-            exit_code=0,
-            owner_id=jwt_user.id,
-        )
+        job_result = JobResult(study_id="study_id", owner_id=jwt_user.id)
         job_repository = Mock()
         job_repository.get.return_value = job_result
 
         # fake import_output function that checks the current user
-        def fake_import_output(uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool = True) -> None:
+        def fake_import_output(uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool) -> None:
             assert get_current_user() == jwt_user
 
         output_service = Mock()
@@ -1201,7 +1192,7 @@ class TestLauncherService:
             login_service=login_service,
             job_result_repository=job_repository,
             event_bus=Mock(),
-            factory_launcher=factory_launcher_mock,
+            factory_launcher=Mock(),
             file_transfer_manager=Mock(),
             task_service=Mock(),
             cache=Mock(),
