@@ -19,8 +19,9 @@ def remove_area_cluster_from_binding_constraints(
 ) -> None:
     for bc in study_data_config.bindings:
         for term in bc.terms:
-            if (isinstance(term, ClusterTerm) and term.area == area_id) or (
-                isinstance(term, LinkTerm) and (term.area1 == area_id or term.area2 == area_id)
+            data = term.data
+            if (isinstance(data, ClusterTerm) and data.area == area_id) or (
+                isinstance(data, LinkTerm) and (data.area1 == area_id or data.area2 == area_id)
             ):
                 study_data_config.bindings.remove(bc)
                 break
