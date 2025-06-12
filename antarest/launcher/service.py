@@ -547,8 +547,8 @@ class LauncherService:
                                 concat_files_to_str(log_paths),
                             )
 
-                    if job_launch_params.auto_unzip and job_owner_id:
-                        # We need to fetch the user that launched the study to launch the unarchiving task
+                    if job_owner_id:
+                        # We restore the user context as the following processes need it
                         current_user = self.login_service.get_jwt(job_owner_id)
                     else:
                         current_user = get_current_user()
