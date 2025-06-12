@@ -1,9 +1,11 @@
 import { app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions } from "electron"
 import path from "node:path"
 import {openDialog} from "./dialog.js"
+import { isDev } from "./utils.js"
 
 
 function createMenu(window: BrowserWindow) {
+  const devRoles: Array<MenuItemConstructorOptions> = [{ role: "toggleDevTools"}]
   const template: Array<MenuItemConstructorOptions> = [
     {
       label: 'File',
@@ -12,9 +14,10 @@ function createMenu(window: BrowserWindow) {
           label: "Open",
           click: (menuItem, window, event) => openDialog(window)
         },
-        {role: 'quit'}
+        {role: 'quit'},
       ]
     },
+    ...(isDev() ? devRoles : [])
   ]
 
   const menu = Menu.buildFromTemplate(template)
