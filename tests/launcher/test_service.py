@@ -53,7 +53,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.model import Identity
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -1166,8 +1166,6 @@ class TestLauncherService:
             storage=StorageConfig(tmp_dir=tmp_path),
             launcher=LauncherConfig(default="slurm", configs=[SlurmConfig(id="local", name="name")]),
         )
-        output_service = Mock()
-        output_service.import_output.return_value = ""
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"slurm": Mock()}
 
@@ -1188,6 +1186,14 @@ class TestLauncherService:
         job_repository = Mock()
         job_repository.get.return_value = job_result
 
+        # fake import_output function that checks the current user
+        def fake_import_output(uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool = True) -> None:
+            assert get_current_user() == jwt_user
+
+        output_service = Mock()
+        output_service.import_output.side_effect = fake_import_output
+
+        # Builds the service
         launcher_service = LauncherService(
             config=config,
             study_service=Mock(),
@@ -1201,7 +1207,5 @@ class TestLauncherService:
             cache=Mock(),
         )
 
-        # Call the `_import_output` method
-        launcher_service._import_output("job_id", tmp_path, {})
         # Ensures the output_service.import_output method was called with the right user
-        # todo: know how to check the user that called the method
+        launcher_service._import_output("job_id", tmp_path, {})
