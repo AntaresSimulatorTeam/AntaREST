@@ -1272,12 +1272,6 @@ class TestBindingConstraints:
             in description
         )
 
-        # first change `second_bc` operator to greater
-        client.put(
-            f"v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
-            json={"operator": "greater"},
-        )
-
         # So, we correct the shape of the matrix of the Second BC
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{second_bc_id}",
