@@ -105,8 +105,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 bc_id = constraint.id
                 existing_constraint = mapping_from_bc_id_to_key_in_ini_and_bc_object[bc_id][1]
                 if constraint.operator != existing_constraint.operator:
-                    print("ok")
-                    # todo: change the matrices
+                    update_matrices_names(study_data, bc_id, existing_constraint.operator, constraint.operator)
                 if constraint.time_step != existing_constraint.time_step:
                     print("ok")
                     # todo: change the matrices
