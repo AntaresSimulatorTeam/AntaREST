@@ -462,7 +462,8 @@ class TestBindingConstraints:
             commands = res.json()
             args = commands[-1]["args"]
             assert args["parameters"] == {"timeStep": "daily"}
-            assert args["matrices"]["values"] is not None, "We should have a matrix ID (sha256)"
+            # The matrix will be changed when applying the command, we don't need to reflect it in the command args
+            assert args["matrices"] == {}
 
         # Check that the matrix is a daily/weekly matrix
         res = client.get(
@@ -954,11 +955,7 @@ class TestBindingConstraints:
             commands = res.json()
             command_args = commands[-1]["args"]
             assert command_args["parameters"] == {"timeStep": "daily"}
-            matrices = command_args["matrices"]
-            assert "values" not in matrices
-            assert (
-                matrices["lessTermMatrix"] == matrices["greaterTermMatrix"] == matrices["equalTermMatrix"] is not None
-            )
+            assert command_args["matrices"] == {}
 
         # Check that the matrices are daily/weekly matrices
         expected_matrix = np.zeros((366, 1))

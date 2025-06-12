@@ -14,8 +14,6 @@ import collections
 import logging
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from antares.study.version import StudyVersion
-
 from antarest.core.exceptions import (
     BindingConstraintNotFound,
     ConstraintTermNotFound,
@@ -48,18 +46,6 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
-    default_bc_hourly as default_bc_hourly_87,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
-    default_bc_weekly_daily as default_bc_weekly_daily_87,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
-    default_bc_hourly as default_bc_hourly_86,
-)
-from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_before_v87 import (
-    default_bc_weekly_daily as default_bc_weekly_daily_86,
-)
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     EXPECTED_MATRIX_SHAPES,
     CreateBindingConstraint,
@@ -512,12 +498,6 @@ class BindingConstraintManager:
         if study.version >= STUDY_VERSION_8_7:
             _check_matrices_coherence(new_constraint, matrices)
 
-        if data.time_step is not None and data.time_step != existing_constraint.time_step:
-            # The user changed the time step, we need to update the matrix accordingly
-            args["matrices"] = _replace_matrices_according_to_frequency_and_version(
-                data.time_step, new_constraint.operator, study.version, matrices
-            )
-
         command = UpdateBindingConstraint(**args)
         study.add_commands([command])
 
@@ -676,44 +656,6 @@ class BindingConstraintManager:
     @staticmethod
     def get_table_schema() -> JSON:
         return BindingConstraint.model_json_schema()
-
-
-def _replace_matrices_according_to_frequency_and_version(
-    time_step: BindingConstraintFrequency,
-    operator: BindingConstraintOperator,
-    version: StudyVersion,
-    matrices: BindingConstraintMatrices,
-) -> BindingConstraintMatrices:
-    if version < STUDY_VERSION_8_7:
-        if not matrices.values:
-            matrix_mapping = {
-                BindingConstraintFrequency.HOURLY: default_bc_hourly_86,
-                BindingConstraintFrequency.DAILY: default_bc_weekly_daily_86,
-                BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_86,
-            }
-            matrices.values = matrix_mapping[time_step].tolist()
-    else:
-        matrix_mapping = {
-            BindingConstraintFrequency.HOURLY: default_bc_hourly_87,
-            BindingConstraintFrequency.DAILY: default_bc_weekly_daily_87,
-            BindingConstraintFrequency.WEEKLY: default_bc_weekly_daily_87,
-        }
-        matrix = matrix_mapping[time_step].tolist()
-
-        if operator == BindingConstraintOperator.EQUAL and not matrices.equal_term_matrix:
-            matrices.equal_term_matrix = matrix
-        if (
-            operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}
-            and not matrices.greater_term_matrix
-        ):
-            matrices.greater_term_matrix = matrix
-        if (
-            operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}
-            and not matrices.less_term_matrix
-        ):
-            matrices.less_term_matrix = matrix
-
-    return matrices
 
 
 def _check_matrices_coherence(constraint: BindingConstraint, matrices: BindingConstraintMatrices) -> None:
