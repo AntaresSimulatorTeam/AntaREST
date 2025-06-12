@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from abc import ABCMeta
-from enum import Enum
 from typing import Any, Dict, Final, List, Optional, Self, TypeAlias
 
 import numpy as np
@@ -23,7 +22,6 @@ from typing_extensions import override
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
-    DEFAULT_OPERATOR,
     DEFAULT_TIMESTEP,
     BindingConstraintCreation,
     BindingConstraintFrequency,
@@ -54,20 +52,6 @@ EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
     BindingConstraintFrequency.DAILY: (366, 3),
     BindingConstraintFrequency.WEEKLY: (366, 3),
-}
-
-
-class TermMatrices(Enum):
-    LESS = "less_term_matrix"
-    GREATER = "greater_term_matrix"
-    EQUAL = "equal_term_matrix"
-
-
-OPERATOR_CONFLICT_MAP = {
-    BindingConstraintOperator.EQUAL: [TermMatrices.LESS.value, TermMatrices.GREATER.value],
-    BindingConstraintOperator.GREATER: [TermMatrices.LESS.value, TermMatrices.EQUAL.value],
-    BindingConstraintOperator.LESS: [TermMatrices.EQUAL.value, TermMatrices.GREATER.value],
-    BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
 }
 
 
@@ -277,16 +261,6 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         else:
             if self.matrices.values is not None:
                 raise InvalidFieldForVersionError("You cannot fill 'values' as it refers to the matrix before v8.7")
-
-            operator = self.parameters.operator or DEFAULT_OPERATOR
-            matrices = self.matrices
-            conflicting_matrices = [
-                getattr(matrices, matrix) for matrix in OPERATOR_CONFLICT_MAP[operator] if getattr(matrices, matrix)
-            ]
-            if conflicting_matrices:
-                raise InvalidFieldForVersionError(
-                    f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[operator]}' while using the operator '{operator}'"
-                )
 
             self.matrices.less_term_matrix = self.get_corresponding_matrices(
                 self.matrices.less_term_matrix, time_step, self.study_version, True

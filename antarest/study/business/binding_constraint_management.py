@@ -12,6 +12,7 @@
 
 import collections
 import logging
+from enum import Enum
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 from antares.study.version import StudyVersion
@@ -22,6 +23,7 @@ from antarest.core.exceptions import (
     DuplicateConstraintName,
     DuplicateConstraintTerm,
     InvalidConstraintName,
+    InvalidFieldForVersionError,
     MatrixWidthMismatchError,
     WrongMatrixHeightError,
 )
@@ -407,6 +409,10 @@ class BindingConstraintManager:
         if bc_id in {bc.id for bc in self.get_binding_constraints(study)}:
             raise DuplicateConstraintName(f"A binding constraint with the same name already exists: {bc_id}.")
 
+        new_constraint = create_binding_constraint(data, study.version)
+        if study.version >= STUDY_VERSION_8_7:
+            _check_matrices_coherence(new_constraint, matrices)
+
         args = {
             "parameters": data,
             "matrices": matrices,
@@ -416,7 +422,7 @@ class BindingConstraintManager:
         command = CreateBindingConstraint(**args)
         study.add_commands([command])
 
-        return create_binding_constraint(data, study.version)
+        return new_constraint
 
     def duplicate_binding_constraint(
         self, study: StudyInterface, source_id: str, new_constraint_name: str
@@ -502,6 +508,9 @@ class BindingConstraintManager:
         }
 
         new_constraint = update_binding_constraint(existing_constraint, data)
+
+        if study.version >= STUDY_VERSION_8_7:
+            _check_matrices_coherence(new_constraint, matrices)
 
         if data.time_step is not None and data.time_step != existing_constraint.time_step:
             # The user changed the time step, we need to update the matrix accordingly
@@ -705,3 +714,27 @@ def _replace_matrices_according_to_frequency_and_version(
             matrices.less_term_matrix = matrix
 
     return matrices
+
+
+def _check_matrices_coherence(constraint: BindingConstraint, matrices: BindingConstraintMatrices) -> None:
+    class TermMatrices(Enum):
+        LESS = "less_term_matrix"
+        GREATER = "greater_term_matrix"
+        EQUAL = "equal_term_matrix"
+
+    OPERATOR_CONFLICT_MAP = {
+        BindingConstraintOperator.EQUAL: [TermMatrices.LESS.value, TermMatrices.GREATER.value],
+        BindingConstraintOperator.GREATER: [TermMatrices.LESS.value, TermMatrices.EQUAL.value],
+        BindingConstraintOperator.LESS: [TermMatrices.EQUAL.value, TermMatrices.GREATER.value],
+        BindingConstraintOperator.BOTH: [TermMatrices.EQUAL.value],
+    }
+
+    operator = constraint.operator
+
+    conflicting_matrices = [
+        getattr(matrices, matrix) for matrix in OPERATOR_CONFLICT_MAP[operator] if getattr(matrices, matrix)
+    ]
+    if conflicting_matrices:
+        raise InvalidFieldForVersionError(
+            f"You cannot fill matrices '{OPERATOR_CONFLICT_MAP[operator]}' while using the operator '{operator}'"
+        )
