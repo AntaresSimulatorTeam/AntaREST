@@ -104,7 +104,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 # We're updating an existing constraint
                 bc_id = constraint.id
                 existing_constraint = mapping_from_bc_id_to_key_in_ini_and_bc_object[bc_id][1]
-                if constraint.operator != existing_constraint.operator:
+                if study_version >= STUDY_VERSION_8_7 and (constraint.operator != existing_constraint.operator):
                     # The user changed the operator, we have to rename matrices accordingly
                     update_matrices_names(study_data, bc_id, existing_constraint.operator, constraint.operator)
                 if constraint.time_step != existing_constraint.time_step:
