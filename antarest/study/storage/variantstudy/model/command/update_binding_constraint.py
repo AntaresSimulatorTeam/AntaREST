@@ -35,8 +35,9 @@ from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     AbstractBindingConstraintCommand,
     TermMatrices,
+    get_matrices_keys,
+    get_parameters_keys,
 )
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -71,10 +72,10 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                 study_version = StudyVersion.parse(values["study_version"])
 
                 # Validate parameters
-                excluded_keys = set(ICommand.model_fields) | {"coeffs"}
+                parameters_keys = get_parameters_keys()
                 args = {}
-                for key in values:
-                    if key not in excluded_keys:
+                for key in list(values.keys()):
+                    if key in parameters_keys:
                         args[key] = values.pop(key)
                 if "coeffs" in values:
                     args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"), update=True)
@@ -82,8 +83,9 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
                 # Validate matrices
                 values["matrices"] = {}
-                for key in set(BindingConstraintMatrices.model_fields):
-                    if key in values:
+                matrices_keys = get_matrices_keys()
+                for key in list(values.keys()):
+                    if key in matrices_keys:
                         values["matrices"][key] = values.pop(key)
 
         return values

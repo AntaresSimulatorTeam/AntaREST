@@ -94,6 +94,24 @@ def check_matrix_values(time_step: BindingConstraintFrequency, values: MatrixTyp
         raise ValueError("Matrix values cannot contain NaN")
 
 
+def get_parameters_keys() -> set[str]:
+    """Used to parse legacy commands"""
+    parameters = BindingConstraintCreation(name="a")
+    parameters_keys = parameters.model_dump()
+    parameters_keys.update(parameters.model_dump(by_alias=True))
+    del parameters_keys["terms"]
+    parameters_keys["type"] = ""
+    return set(parameters_keys)
+
+
+def get_matrices_keys() -> set[str]:
+    """Used to parse legacy commands"""
+    matrices = BindingConstraintMatrices()
+    matrices_keys = matrices.model_dump()
+    matrices_keys.update(matrices.model_dump(by_alias=True))
+    return set(matrices_keys)
+
+
 # =================================================================================
 # Binding constraint command classes
 # =================================================================================
@@ -246,10 +264,10 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                 study_version = StudyVersion.parse(values["study_version"])
 
                 # Validate parameters
-                excluded_keys = set(ICommand.model_fields) | {"coeffs"}
+                parameters_keys = get_parameters_keys()
                 args = {}
                 for key in list(values.keys()):
-                    if key not in excluded_keys:
+                    if key in parameters_keys:
                         args[key] = values.pop(key)
                 if "coeffs" in values:
                     args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"), update=False)
@@ -259,8 +277,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
                 # Validate matrices
                 values["matrices"] = {}
-                for key in set(BindingConstraintMatrices.model_fields):
-                    if key in values:
+                matrices_keys = get_matrices_keys()
+                for key in list(values.keys()):
+                    if key in matrices_keys:
                         values["matrices"][key] = values.pop(key)
 
         return values
