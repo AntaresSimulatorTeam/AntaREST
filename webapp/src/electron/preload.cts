@@ -1,20 +1,28 @@
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
 // The preload file needs to be a CommonJS module
 // This is the only place we need to use required instead of import syntax
 
-const electron  = require("electron")
-const contextBridge = electron.contextBridge
+const electron = require("electron");
+const contextBridge = electron.contextBridge;
+const ipcRenderer = electron.ipcRenderer;
 
-contextBridge.exposeInMainWorld('versions', {
-  node: () => process.versions.node,
-  chrome: () => process.versions.chrome,
-  electron: () => process.versions.electron
-  // we can also expose variables, not just functions
-})
+contextBridge.exposeInMainWorld("openDialog", () => ipcRenderer.send("open-dialog"));
 
-contextBridge.exposeInMainWorld('openDialog',
-  () => electron.ipcRenderer.send("open-dialog")
-)
+contextBridge.exposeInMainWorld("isDesktop", true);
 
-contextBridge.exposeInMainWorld('isDesktop',
-  true
-)
+contextBridge.exposeInMainWorld("onOpenStudy", (callback: any) =>
+  ipcRenderer.on("open-study", (event, value) => callback(value)),
+);

@@ -1,53 +1,71 @@
-import { app, BrowserWindow, ipcMain, Menu, MenuItemConstructorOptions } from "electron"
-import path from "node:path"
-import {openDialog} from "./dialog.js"
-import { isDev } from "./utils.js"
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
 
+import { app, BrowserWindow, dialog, Menu, MenuItemConstructorOptions } from "electron";
+import path from "node:path";
+import { isDev } from "./utils.js";
 
 function createMenu(window: BrowserWindow) {
-  const devRoles: Array<MenuItemConstructorOptions> = [{ role: "toggleDevTools"}]
-  const template: Array<MenuItemConstructorOptions> = [
+  const devRoles: MenuItemConstructorOptions[] = [{ role: "toggleDevTools" }];
+  const template: MenuItemConstructorOptions[] = [
     {
-      label: 'File',
+      label: "File",
       submenu: [
         {
           label: "Open",
-          click: (menuItem, window, event) => openDialog(window)
+          click: (menuItem, _, event) => {
+            dialog.showOpenDialog(window, { properties: ["openDirectory"] }).then((ret) => {
+              const path = ret.filePaths[0];
+              console.log(`Got path ${path}`);
+              window.webContents.send("open-study", path);
+            });
+          },
         },
-        {role: 'quit'},
-      ]
+        { role: "quit" },
+      ],
     },
-    ...(isDev() ? devRoles : [])
-  ]
+    ...(isDev() ? devRoles : []),
+  ];
 
-  const menu = Menu.buildFromTemplate(template)
-  window.setMenu(menu)
+  const menu = Menu.buildFromTemplate(template);
+  window.setMenu(menu);
 }
 
 const createWindow = () => {
-    const win = new BrowserWindow({
-      webPreferences: {
-        preload: path.join(app.getAppPath(), "dist-electron", "preload.cjs"),
-      }
-    })
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: path.join(app.getAppPath(), "dist-electron", "preload.cjs"),
+    },
+  });
 
-    createMenu(win)
+  createMenu(win);
 
-    win.loadURL('http://localhost:3000/index.html')
-}
+  win.loadURL("http://localhost:3000/index.html");
+};
 
 app.whenReady().then(() => {
-  createWindow()
+  createWindow();
 
-  app.on('activate', () => {
+  app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow()
+      createWindow();
     }
-  })
-})
+  });
+});
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
   }
-})
+});
