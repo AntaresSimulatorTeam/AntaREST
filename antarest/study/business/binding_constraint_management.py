@@ -575,9 +575,9 @@ class BindingConstraintManager:
         """
 
         all_constraints = study.get_study_dao().get_all_constraints()
-        for bc_id in binding_constraints_ids:
-            if bc_id not in all_constraints:
-                raise BindingConstraintNotFound(f"Binding constraint '{bc_id}' not found")
+        missing_bc_ids = [bc_id for bc_id in binding_constraints_ids if bc_id not in all_constraints]
+        if missing_bc_ids:
+            raise BindingConstraintNotFound(f"Binding constraint(s) '{missing_bc_ids}' not found")
 
         command = RemoveMultipleBindingConstraints(
             ids=binding_constraints_ids,

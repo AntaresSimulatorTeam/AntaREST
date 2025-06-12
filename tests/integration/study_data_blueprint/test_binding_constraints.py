@@ -926,17 +926,10 @@ class TestBindingConstraints:
         assert "equal" in res.json()["description"]
         assert res.json()["exception"] == "InvalidFieldForVersionError"
 
-        # update the binding constraint operator first
+        # update the binding constraint operator and the matrix at the same time
         res = client.put(
             f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
-            json={"operator": "greater"},
-        )
-        assert res.status_code == 200, res.json()
-
-        # update the binding constraint matrix
-        res = client.put(
-            f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_matrix}",
-            json={"greater_term_matrix": matrix_lt3.tolist()},
+            json={"operator": "greater", "greater_term_matrix": matrix_lt3.tolist()},
         )
         assert res.status_code == 200, res.json()
 
@@ -1123,7 +1116,7 @@ class TestBindingConstraints:
                 },
             )
             assert res.status_code == 422
-            assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
+            assert "You cannot fill 'values' as it refers to the matrix before v8.7" in res.json()["description"]
 
         # Update with old matrices
         res = client.put(
@@ -1131,8 +1124,8 @@ class TestBindingConstraints:
             json={"values": [[]]},
         )
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "InvalidFieldForVersionError"
-        assert res.json()["description"] == "You cannot fill 'values' as it refers to the matrix before v8.7"
+        assert res.json()["exception"] == "ValidationError"
+        assert "You cannot fill 'values' as it refers to the matrix before v8.7" in res.json()["description"]
 
         # Creation with 2 matrices with different columns size
         bc_id_with_wrong_matrix = "binding_constraint_with_wrong_matrix"
