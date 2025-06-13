@@ -12,6 +12,7 @@
 
 import time
 from pathlib import Path
+from unittest.mock import ANY
 
 import numpy as np
 import pandas as pd
@@ -718,10 +719,7 @@ class TestBindingConstraints:
         if study_type == "variant":
             res = client.get(f"/v1/studies/{study_id}/commands")
             last_cmd_args = res.json()[-1]["args"]
-            less_term_matrix = last_cmd_args["matrices"]["lessTermMatrix"]
-            equal_term_matrix = last_cmd_args["matrices"]["equalTermMatrix"]
-            greater_term_matrix = last_cmd_args["matrices"]["greaterTermMatrix"]
-            assert greater_term_matrix == less_term_matrix != equal_term_matrix
+            assert last_cmd_args["matrices"] == {"equalTermMatrix": ANY}
 
         # Check that raw matrices are created
         for bc_id, operator in zip(

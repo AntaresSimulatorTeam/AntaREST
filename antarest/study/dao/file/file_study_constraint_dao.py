@@ -105,12 +105,13 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 bc_id = constraint.id
                 existing_constraint = mapping_from_bc_id_to_key_in_ini_and_bc_object[bc_id][1]
 
-                # Updates the config before everything as the tree is based on the config
-                study_data.config.bindings[existing_bindings[bc_id]] = constraint
-
                 if study_version >= STUDY_VERSION_8_7 and (constraint.operator != existing_constraint.operator):
                     # The user changed the operator, we have to rename matrices accordingly
                     update_matrices_names(study_data, bc_id, existing_constraint.operator, constraint.operator)
+
+                # Updates the config before as the tree is based on the config
+                study_data.config.bindings[existing_bindings[bc_id]] = constraint
+
                 if constraint.time_step != existing_constraint.time_step:
                     # The user changed the time step, we need to update the matrix accordingly
                     for [target, new_matrix] in generate_replacement_matrices(

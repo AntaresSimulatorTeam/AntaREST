@@ -122,7 +122,6 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_constraint = study_data.get_constraint(self.id)
         constraint = update_binding_constraint(current_constraint, self.parameters)
-        study_data.save_constraints([constraint])
 
         self._validate_and_fill_matrices(constraint.time_step)
 
