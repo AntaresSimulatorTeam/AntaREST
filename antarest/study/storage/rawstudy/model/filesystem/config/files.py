@@ -26,13 +26,14 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+)
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    DEFAULT_GROUP,
-    DEFAULT_OPERATOR,
-    DEFAULT_TIMESTEP,
+    parse_binding_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
@@ -41,7 +42,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
@@ -204,39 +204,14 @@ def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
     return store_new_set, archive_input_series, enr_modelling
 
 
-def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
+def _parse_bindings(root: Path) -> List[BindingConstraint]:
     bindings = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    output_list = []
-    for bind in bindings.values():
-        area_set = set()
-        # contains a set of strings in the following format: "area.cluster"
-        cluster_set = set()
-        # Default value for time_step
-        time_step = bind.get("type", DEFAULT_TIMESTEP)
-        # Default value for operator
-        operator = bind.get("operator", DEFAULT_OPERATOR)
-        # Default value for group
-        group = bind.get("group", DEFAULT_GROUP)
-        # Build areas and clusters based on terms
-        for key in bind:
-            if "%" in key:
-                areas = key.split("%", 1)
-                area_set.add(areas[0])
-                area_set.add(areas[1])
-            elif "." in key:
-                cluster_set.add(key)
-                area_set.add(key.split(".", 1)[0])
-
-        bc = BindingConstraintDTO(
-            id=bind["id"], areas=area_set, clusters=cluster_set, time_step=time_step, operator=operator, group=group
-        )
-        output_list.append(bc)
-
-    return output_list
+    version = _parse_version(root)
+    return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
 def _parse_sets(root: Path) -> Dict[str, DistrictSet]:

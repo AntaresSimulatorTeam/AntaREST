@@ -13,6 +13,7 @@
 import numpy as np
 from checksumdir import dirhash
 
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -79,17 +80,20 @@ class TestRemoveCluster:
                 less_term_matrix = array.tolist()
 
             bind1_cmd = CreateBindingConstraint(
-                name="BD 1",
-                time_step=BindingConstraintFrequency.HOURLY,
-                operator=BindingConstraintOperator.LESS,
-                coeffs={
-                    f"{area_id}.{cluster_id.lower()}": [800, 30],
-                },
-                comments="Hello",
-                command_context=command_context,
-                values=values,
-                less_term_matrix=less_term_matrix,
-                study_version=study_version,
+                **{
+                    "parameters": {
+                        "name": "BD 1",
+                        "time_step": BindingConstraintFrequency.HOURLY,
+                        "operator": BindingConstraintOperator.LESS,
+                        "terms": [
+                            ConstraintTerm(weight=800, offset=30, data=ClusterTerm(area=area_id, cluster=cluster_id)),
+                        ],
+                        "comments": "Hello",
+                    },
+                    "matrices": {"values": values, "less_term_matrix": less_term_matrix},
+                    "command_context": command_context,
+                    "study_version": study_version,
+                }
             )
             output = bind1_cmd.apply(study_data=empty_study)
             assert output.status, output.message

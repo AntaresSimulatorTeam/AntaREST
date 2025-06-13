@@ -606,7 +606,8 @@ class TestThermal:
         assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint
-        res = client.delete(f"/v1/studies/{internal_study_id}/bindingconstraints/{bc_obj['name']}")
+        bc_id = transform_name_to_id(bc_obj["name"])
+        res = client.delete(f"/v1/studies/{internal_study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
 
         # Now we can delete the thermal cluster

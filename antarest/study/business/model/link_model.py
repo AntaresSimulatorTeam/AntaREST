@@ -9,14 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, List, Optional, Self, Type, TypeAlias
+from typing import Optional, Self
 
-from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
 from antarest.study.storage.rawstudy.model.filesystem.config.model import LinkConfig
 
 
@@ -76,65 +77,7 @@ class LinkStyle(EnumIgnoreCase):
     OTHER = "other"
 
 
-class FilterOption(EnumIgnoreCase):
-    """
-    Enum representing the time filter options for data visualization or analysis in Antares Web.
-
-    Attributes:
-        HOURLY: Represents filtering data by the hour.
-        DAILY: Represents filtering data by the day.
-        WEEKLY: Represents filtering data by the week.
-        MONTHLY: Represents filtering data by the month.
-        ANNUAL: Represents filtering data by the year.
-    """
-
-    HOURLY = "hourly"
-    DAILY = "daily"
-    WEEKLY = "weekly"
-    MONTHLY = "monthly"
-    ANNUAL = "annual"
-
-
-def validate_filters(filter_value: List[FilterOption] | str, enum_cls: Type[FilterOption]) -> List[FilterOption]:
-    if isinstance(filter_value, str):
-        filter_value = filter_value.strip()
-        if not filter_value:
-            return []
-
-        valid_values = {str(e.value) for e in enum_cls}
-
-        options = filter_value.replace(" ", "").split(",")
-
-        invalid_options = [opt for opt in options if opt not in valid_values]
-        if invalid_options:
-            raise LinkValidationError(
-                f"Invalid value(s) in filters: {', '.join(invalid_options)}. "
-                f"Allowed values are: {', '.join(valid_values)}."
-            )
-        options_enum: List[FilterOption] = list(dict.fromkeys(enum_cls(opt) for opt in options))
-        return options_enum
-
-    return filter_value
-
-
-def join_with_comma(values: List[FilterOption]) -> str:
-    return ", ".join(value.name.lower() for value in values)
-
-
-CommaSeparatedFilterOptions: TypeAlias = Annotated[
-    List[FilterOption],
-    BeforeValidator(lambda x: validate_filters(x, FilterOption)),
-    PlainSerializer(lambda x: join_with_comma(x)),
-]
-
 DEFAULT_COLOR = 112
-FILTER_VALUES: List[FilterOption] = [
-    FilterOption.HOURLY,
-    FilterOption.DAILY,
-    FilterOption.WEEKLY,
-    FilterOption.MONTHLY,
-    FilterOption.ANNUAL,
-]
 
 
 class LinkUpdate(AntaresBaseModel):
