@@ -307,24 +307,6 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
-            args={"id": "id"},
-            study_version=STUDY_VERSION_8_8,
-        ),
-        None,
-        id="remove_binding_constraint",
-    ),
-    pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
-            args=[{"id": "id"}],
-            study_version=STUDY_VERSION_8_8,
-        ),
-        None,
-        id="remove_binding_constraint_list",
-    ),
-    pytest.param(
-        CommandDTO(
             action=CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value,
             args={"ids": ["id"]},
             study_version=STUDY_VERSION_8_8,
