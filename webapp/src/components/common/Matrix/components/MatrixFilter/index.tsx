@@ -101,7 +101,18 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: Matri
         anchor="right"
         open={isDrawerOpen}
         onClose={handleDrawerToggle}
-        keepMounted
+        keepMounted // Makes the opening/closing smoother
+        // hideBackdrop={true} removes the backdrop DOM element entirely,
+        // eliminating the click target that triggers onClose.
+        // Using transparent backdrop preserves the invisible click target
+        // for pointer events while removing the visual overlay.
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: "transparent",
+            },
+          },
+        }}
         PaperProps={{
           sx: DRAWER_STYLES.paper,
         }}
