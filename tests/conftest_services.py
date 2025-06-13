@@ -33,7 +33,7 @@ from antarest.core.tasks.service import ITaskService, NoopNotifier, Task
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, MatrixUriMapperType
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import MatrixService, SimpleMatrixService
 from antarest.study.service import StudyService
@@ -196,7 +196,8 @@ def uri_resolver_service_fixture(
     Returns:
         An instance of the UriResolverService class representing the URI resolver service.
     """
-    return MatrixUriMapper(matrix_service=simple_matrix_service)
+    factory = MatrixUriMapperFactory(matrix_service=simple_matrix_service)
+    return factory.create(MatrixUriMapperType.MANAGED)
 
 
 @pytest.fixture(name="core_cache", scope="session")
@@ -230,8 +231,9 @@ def study_factory_fixture(
     Returns:
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
+    factory = MatrixUriMapperFactory(matrix_service=simple_matrix_service)
     return StudyFactory(
-        matrix_mapper=uri_resolver_service,
+        matrix_mapper_factory=factory,
         cache=core_cache,
     )
 

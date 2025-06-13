@@ -870,13 +870,14 @@ class TestSnapshotGenerator:
             )
 
         # Check: the number of database queries is kept as low as possible.
-        # We expect 5 queries:
+        # We expect 6 queries:
         # - 1 query to fetch the ancestors of a variant study,
         # - 1 query to fetch the root study (with owner and groups for permission check),
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
+        # - 1 query to fetch raw study information,
         # - 1 query to update the variant study additional_data,
         # - 1 query to insert the variant study snapshot.
-        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
+        assert len(db_recorder.sql_statements) == 6, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
