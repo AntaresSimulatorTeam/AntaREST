@@ -252,15 +252,16 @@ COMMANDS = [
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args=[
                 {
-                    "name": "name",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "equal",
-                    "values": "values",
-                    "group": "group_1",
+                    "matrices": {
+                        "equalTermMatrix": "matrix://fake_matrix",
+                        "greaterTermMatrix": "matrix://fake_matrix",
+                        "lessTermMatrix": "matrix://fake_matrix",
+                    },
+                    "parameters": {"name": "name"},
                 },
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_binding_constraint_list",

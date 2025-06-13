@@ -112,18 +112,11 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
 
     def _validate_and_fill_matrices(self, time_step: BindingConstraintFrequency) -> None:
         if self.study_version < STUDY_VERSION_8_7:
-            self.matrices.values = self.get_corresponding_matrices(
-                self.matrices.values, time_step, self.study_version, False
-            )
+            self.matrices.values = self.validate_matrix(self.matrices.values, time_step)
         else:
-            for matrix in [m.value for m in TermMatrices]:
-                setattr(
-                    self.matrices,
-                    matrix,
-                    self.get_corresponding_matrices(
-                        getattr(self.matrices, matrix), time_step, self.study_version, False
-                    ),
-                )
+            self.matrices.less_term_matrix = self.validate_matrix(self.matrices.less_term_matrix, time_step)
+            self.matrices.greater_term_matrix = self.validate_matrix(self.matrices.greater_term_matrix, time_step)
+            self.matrices.equal_term_matrix = self.validate_matrix(self.matrices.equal_term_matrix, time_step)
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:

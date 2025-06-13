@@ -39,7 +39,6 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -123,38 +122,18 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
 
     _SERIALIZATION_VERSION: Final[int] = 2
 
-    def get_corresponding_matrices(
-        self,
-        v: Optional[MatrixType | str],
-        time_step: BindingConstraintFrequency,
-        version: StudyVersion,
-        create: bool,
-    ) -> Optional[str]:
-        constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
+    def get_corresponding_matrix(self, value: MatrixType, time_step: BindingConstraintFrequency) -> str:
+        check_matrix_values(time_step, value, self.study_version)
+        return validate_matrix(value, {"command_context": self.command_context})
 
+    def validate_matrix(self, v: Optional[MatrixType | str], time_step: BindingConstraintFrequency) -> Optional[str]:
         if v is None:
-            if not create:
-                # The matrix is not updated
-                return None
-            # Use already-registered default matrix
-            methods = {
-                "before_v87": {
-                    BindingConstraintFrequency.HOURLY: constants.get_binding_constraint_hourly_86,
-                    BindingConstraintFrequency.DAILY: constants.get_binding_constraint_daily_weekly_86,
-                    BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_86,
-                },
-                "after_v87": {
-                    BindingConstraintFrequency.HOURLY: constants.get_binding_constraint_hourly_87,
-                    BindingConstraintFrequency.DAILY: constants.get_binding_constraint_daily_weekly_87,
-                    BindingConstraintFrequency.WEEKLY: constants.get_binding_constraint_daily_weekly_87,
-                },
-            }
-            return methods["before_v87"][time_step]() if version < 870 else methods["after_v87"][time_step]()
+            return None
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(strip_matrix_protocol(v), {"command_context": self.command_context})
         if isinstance(v, list):
-            check_matrix_values(time_step, v, version)
+            check_matrix_values(time_step, v, self.study_version)
             return validate_matrix(v, {"command_context": self.command_context})
         # Invalid datatype
         # pragma: no cover
@@ -295,9 +274,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
                         "You cannot fill a 'matrix_term' as these values refer to v8.7+ studies"
                     )
 
-            self.matrices.values = self.get_corresponding_matrices(
-                self.matrices.values, time_step, self.study_version, True
-            )
+            self.matrices.values = self.validate_matrix(self.matrices.values, time_step)
 
         else:
             if self.matrices.values is not None:
@@ -305,15 +282,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
             super().check_matrices_column_sizes_coherence(self.matrices)
 
-            self.matrices.less_term_matrix = self.get_corresponding_matrices(
-                self.matrices.less_term_matrix, time_step, self.study_version, True
-            )
-            self.matrices.greater_term_matrix = self.get_corresponding_matrices(
-                self.matrices.greater_term_matrix, time_step, self.study_version, True
-            )
-            self.matrices.equal_term_matrix = self.get_corresponding_matrices(
-                self.matrices.equal_term_matrix, time_step, self.study_version, True
-            )
+            self.matrices.less_term_matrix = self.validate_matrix(self.matrices.less_term_matrix, time_step)
+            self.matrices.greater_term_matrix = self.validate_matrix(self.matrices.greater_term_matrix, time_step)
+            self.matrices.equal_term_matrix = self.validate_matrix(self.matrices.equal_term_matrix, time_step)
 
         return self
 
@@ -327,7 +298,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
             assert isinstance(self.matrices.values, str)
             study_data.save_constraint_values_matrix(constraint.id, self.matrices.values)
         else:
-            operator = self.parameters.operator
+            operator = constraint.operator
             if operator == BindingConstraintOperator.EQUAL:
                 assert isinstance(self.matrices.equal_term_matrix, str)
                 study_data.save_constraint_equal_term_matrix(constraint.id, self.matrices.equal_term_matrix)
