@@ -49,6 +49,7 @@ export interface MatrixFilterProps {
   dateTime?: string[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
+  readOnly?: boolean;
 }
 
 export interface FilterSectionProps {

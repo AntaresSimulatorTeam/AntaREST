@@ -32,7 +32,7 @@ import { getMatrixDimensions } from "./utils";
 import { DRAWER_STYLES, COMPONENT_DIMENSIONS, DESIGN_TOKENS } from "./styles";
 import { useUpdateEffect } from "react-use";
 
-function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterProps) {
+function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: MatrixFilterProps) {
   const { t } = useTranslation();
   const { currentState, setFilterPreview } = useMatrixContext();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -143,11 +143,13 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency }: MatrixFilterPro
             timeFrequency={timeFrequency}
           />
 
-          <Operations
-            filter={filter}
-            setFilter={setFilter}
-            onApplyOperation={handleApplyOperation}
-          />
+          {!readOnly && (
+            <Operations
+              filter={filter}
+              setFilter={setFilter}
+              onApplyOperation={handleApplyOperation}
+            />
+          )}
         </Box>
 
         <Box sx={{ mt: DESIGN_TOKENS.spacing.lg }}>
