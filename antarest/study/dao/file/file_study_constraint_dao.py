@@ -104,6 +104,10 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 # We're updating an existing constraint
                 bc_id = constraint.id
                 existing_constraint = mapping_from_bc_id_to_key_in_ini_and_bc_object[bc_id][1]
+
+                # Updates the config before everything as the tree is based on the config
+                study_data.config.bindings[existing_bindings[bc_id]] = constraint
+
                 if study_version >= STUDY_VERSION_8_7 and (constraint.operator != existing_constraint.operator):
                     # The user changed the operator, we have to rename matrices accordingly
                     update_matrices_names(study_data, bc_id, existing_constraint.operator, constraint.operator)
@@ -116,7 +120,6 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                         matrix_url = target.split("/")
                         study_data.tree.save(data={"data": new_matrix}, url=matrix_url)
 
-                study_data.config.bindings[existing_bindings[bc_id]] = constraint
             else:
                 # We're creating a new constraint
                 study_data.config.bindings.append(constraint)
