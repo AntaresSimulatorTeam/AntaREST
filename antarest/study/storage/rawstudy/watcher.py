@@ -113,7 +113,10 @@ class Watcher(IService):
         while True:
             try:
                 if not self.should_stop:
-                    self.scan()
+                    if not self.config.desktop_mode:
+                        self.scan()
+                    else:
+                        self.clean_desktop_studies()
             except Exception as e:
                 logger.error("Unexpected error when scanning workspaces", exc_info=e)
             sleep(2)
@@ -235,5 +238,31 @@ class Watcher(IService):
                 self.study_service.sync_studies_on_disk(studies, directory_path, recursive)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"{directory_path or 'All studies'} synchronized in {x}s"),
+                    since_start=True,
+                )
+
+    def clean_desktop_studies(
+        self,
+    ) -> None:
+        """
+        Scan recursively list of studies present on disk. Send updated list to study service.
+
+        Args:
+            recursive: if true, scan recursively all subfolders otherwise only the first level
+        Returns:
+
+        """
+        if not self.config.desktop_mode:
+            raise ScanDisabled("Recursive scan disables when desktop mode is on")
+
+        stopwatch = StopWatch()
+
+        with db():
+            logger.info("Waiting for FileLock to delete missing studies")
+            with FileLock(Watcher.SCAN_LOCK):
+                logger.info("FileLock acquired to to delete missing studies")
+                self.study_service.delete_missing_studies()
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(f"deleted missing studies in {x}s"),
                     since_start=True,
                 )

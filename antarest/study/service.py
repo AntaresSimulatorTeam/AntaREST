@@ -136,6 +136,7 @@ from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
     is_managed,
+    is_study_folder,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -1058,6 +1059,36 @@ class StudyService:
                 existing_study = studies_by_path_workspace[(workspace, study_path)]
                 if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(existing_study):
                     self.repository.save(existing_study)
+
+    def delete_missing_studies(self) -> None:
+        """
+        Used by watcher to send list of studies present on filesystem.
+
+        Args:
+            folders: list of studies currently present on folder
+            directory: directory of studies that will be watched
+            recursive: if False, the delta will apply only to the studies in "directory", otherwise
+                it will apply to all studies having a path that descend from "directory".
+
+        Returns:
+
+        """
+        all_studies = self.repository.get_all_raw()
+        desktop_studies = (
+            study
+            for study in all_studies
+            if study.workspace != DEFAULT_WORKSPACE_NAME and isinstance(study, RawStudy) and not study.archived
+        )
+
+        def get_path(study: RawStudy) -> Path:
+            wp = self.config.get_workspace_path(workspace=study.workspace)
+            return wp / str(study.folder)
+
+        missing_studies = (study for study in desktop_studies if not is_study_folder(get_path(study)))
+
+        # delete orphan studies on database
+        for study in missing_studies:
+            self.repository.delete(study.id)
 
     def copy_study(
         self,
