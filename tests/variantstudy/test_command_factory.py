@@ -226,9 +226,23 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
-            args={"name": "name"},
+            args={
+                "matrices": {
+                    "equalTermMatrix": "matrix://fake_matrix",
+                    "greaterTermMatrix": "matrix://fake_matrix",
+                    "lessTermMatrix": "matrix://fake_matrix",
+                },
+                "parameters": {
+                    "enabled": False,
+                    "filterSynthesis": "weekly",
+                    "group": "group 1",
+                    "name": "name",
+                    "operator": "equal",
+                    "timeStep": "hourly",
+                },
+            },
             study_version=STUDY_VERSION_8_8,
-            version=1,
+            version=2,
         ),
         None,
         id="create_binding_constraint",
