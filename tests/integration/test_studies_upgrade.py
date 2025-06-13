@@ -74,25 +74,17 @@ class TestStudyUpgrade:
         client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
         # create a raw study
-        res = client.post(
-            "/v1/studies",
-            params={"name": "My Study"},
-        )
+        res = client.post("/v1/studies", params={"name": "My Study"})
         assert res.status_code == 201, res.json()
         uuid = res.json()
 
         # create a child variant study
-        res = client.post(
-            f"/v1/studies/{uuid}/variants",
-            params={"name": "foo"},
-        )
+        res = client.post(f"/v1/studies/{uuid}/variants", params={"name": "foo"})
         assert res.status_code == 200, res.json()
         child_uuid = res.json()
 
         # upgrade the raw study
-        res = client.put(
-            f"/v1/studies/{uuid}/upgrade",
-        )
+        res = client.put(f"/v1/studies/{uuid}/upgrade")
 
         # check that the upgrade failed (HttpException:417, with the expected message)
         assert res.status_code == 417, res.json()
@@ -102,9 +94,7 @@ class TestStudyUpgrade:
         }
 
         # upgrade the variant study
-        res = client.put(
-            f"/v1/studies/{child_uuid}/upgrade",
-        )
+        res = client.put(f"/v1/studies/{child_uuid}/upgrade")
 
         # check that the upgrade failed (HttpException:417, with the expected message)
         assert res.status_code == 417, res.json()

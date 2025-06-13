@@ -18,20 +18,22 @@ from typing_extensions import override
 
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class ReadOnlyStudyDao(ReadOnlyLinkDao, ReadOnlyThermalDao, ReadOnlyRenewableDao):
+class ReadOnlyStudyDao(ReadOnlyLinkDao, ReadOnlyThermalDao, ReadOnlyRenewableDao, ReadOnlySTStorageDao):
     @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
 
-class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao):
+class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, STStorageDao):
     """
     Abstraction for access to study data. Handles all reading
     and writing from underlying storage format.
@@ -131,3 +133,59 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pd.DataFrame:
         return self._adaptee.get_renewable_series(area_id, renewable_id)
+
+    @override
+    def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
+        return self._adaptee.get_all_st_storages()
+
+    @override
+    def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
+        return self._adaptee.get_all_st_storages_for_area(area_id)
+
+    @override
+    def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
+        return self._adaptee.get_st_storage(area_id, storage_id)
+
+    @override
+    def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
+        return self._adaptee.st_storage_exists(area_id, storage_id)
+
+    @override
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_pmax_injection(area_id, storage_id)
+
+    @override
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_pmax_withdrawal(area_id, storage_id)
+
+    @override
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_lower_rule_curve(area_id, storage_id)
+
+    @override
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_upper_rule_curve(area_id, storage_id)
+
+    @override
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_inflows(area_id, storage_id)
+
+    @override
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_cost_injection(area_id, storage_id)
+
+    @override
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_cost_withdrawal(area_id, storage_id)
+
+    @override
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_cost_level(area_id, storage_id)
+
+    @override
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_cost_variation_injection(area_id, storage_id)
+
+    @override
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)

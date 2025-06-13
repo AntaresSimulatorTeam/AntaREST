@@ -50,6 +50,10 @@ export interface Storage {
   initialLevelOptim: boolean;
   // Since v8.8
   enabled: boolean;
+  // Since v9.2
+  efficiencyWithdrawal: number;
+  penalizeVariationInjection: boolean;
+  penalizeVariationWithdrawal: boolean;
 }
 
 ////////////////////////////////////////////////////////////////
