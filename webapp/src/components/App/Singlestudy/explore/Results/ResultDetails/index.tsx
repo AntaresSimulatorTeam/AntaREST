@@ -32,7 +32,7 @@ import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/t
 import { toError } from "../../../../../../utils/fnUtils";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
-import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index";
+import FilterableMatrixGrid from "../../../../../common/Matrix/components/FilterableMatrixGrid";
 import {
   generateCustomColumns,
   generateDateTime,
@@ -299,12 +299,13 @@ function ResultDetails() {
                   <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
                 ) : (
                   isNonEmptyMatrix(filteredData) && (
-                    <MatrixGrid
+                    <FilterableMatrixGrid
                       key={`grid-${resultColHeaders.length}`}
                       data={filteredData}
                       rows={filteredData.length}
                       columns={resultColumns}
                       dateTime={dateTime}
+                      timeFrequency={dateTimeMetadata?.level}
                       readOnly
                     />
                   )
