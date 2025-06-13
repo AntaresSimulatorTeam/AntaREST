@@ -90,12 +90,12 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
         ini_content = _get_all_constraints_ini(study_data)
 
         mapping_from_bc_id_to_key_in_ini_and_bc_object: dict[str, tuple[str, BindingConstraint]] = {}
-        old_groups = set()
+        old_groups: dict[str, list[str]] = {}
         for key, bc in ini_content.items():
             constraint = parse_binding_constraint(study_data.config.version, bc)
             mapping_from_bc_id_to_key_in_ini_and_bc_object[constraint.id] = key, constraint
             if constraint.group:
-                old_groups.add(constraint.group)
+                old_groups.setdefault(constraint.group, []).append(constraint.id)
 
         existing_bindings = {bc.id: k for k, bc in enumerate(study_data.config.bindings)}
 
@@ -121,6 +121,11 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                         matrix_url = target.split("/")
                         study_data.tree.save(data={"data": new_matrix}, url=matrix_url)
 
+                if constraint.group != existing_constraint.group:
+                    assert isinstance(existing_constraint.group, str)
+                    # We keep track of the removed groups for the scenario builder
+                    old_groups[existing_constraint.group].remove(constraint.id)
+
             else:
                 # We're creating a new constraint
                 study_data.config.bindings.append(constraint)
@@ -132,8 +137,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
         if study_version >= STUDY_VERSION_8_7:
             # Groups
-            new_groups = {bc.group for bc in constraints}
-            removed_groups = old_groups - new_groups
+            removed_groups = {group for group in old_groups if not old_groups[group]}
             _remove_groups_from_scenario_builder(study_data, removed_groups)
 
     @override
