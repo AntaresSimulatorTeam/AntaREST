@@ -942,7 +942,9 @@ class TestLauncherService:
 
         assert launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]}) is None
 
-        (new_output_path / "info.antares-output").write_text(f"[general]\nmode=eco\nname=foo\ntimestamp={time.time()}")
+        (new_output_path / "info.antares-output").write_text(
+            f"[general]\nmode=Economy\nname=foo\ntimestamp={time.time()}"
+        )
         output_name = launcher_service._import_output(job_id, output_path, {"out.log": [additional_log]})
         assert output_name is not None
         assert output_name.endswith("-hello")

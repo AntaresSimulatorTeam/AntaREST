@@ -19,14 +19,9 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel
 from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-class Mode(EnumIgnoreCase):
-    ECONOMY = "Economy"
-    ADEQUACY = "Adequacy"
-    DRAFT = "draft"
 
 
 class Month(EnumIgnoreCase):
