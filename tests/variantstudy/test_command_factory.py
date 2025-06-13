@@ -1134,8 +1134,6 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     assert dto.version == 2
     assert dto.args == {
         "matrices": {
-            "equalTermMatrix": "fake_matrix",
-            "greaterTermMatrix": "fake_matrix",
             "lessTermMatrix": "matrix://matrix",
         },
         "parameters": {
