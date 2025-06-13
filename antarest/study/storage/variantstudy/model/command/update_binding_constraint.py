@@ -78,7 +78,7 @@ class UpdateBindingConstraint(AbstractBindingConstraintCommand):
                     if key in parameters_keys:
                         args[key] = values.pop(key)
                 if "coeffs" in values:
-                    args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"), update=True)
+                    args["terms"] = cls.convert_coeffs_to_terms(values.pop("coeffs"))
                 args.update({"id": values["id"], "name": values["id"]})
                 values["parameters"] = parse_binding_constraint_for_update(study_version, args)
 

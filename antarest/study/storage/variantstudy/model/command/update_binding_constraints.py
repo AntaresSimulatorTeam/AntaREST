@@ -22,7 +22,9 @@ from antarest.study.business.model.binding_constraint_model import (
     validate_binding_constraint_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
+from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
+    parse_binding_constraint_for_update,
+)
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -71,7 +73,8 @@ class UpdateBindingConstraints(ICommand):
         bc_props_by_id_validated = {}
         if info.context and info.context.version < 2:
             for bc_id, bc_props in bc_props_by_id.items():
-                bc_props_validated = parse_binding_constraint(study_version, **bc_props)
+                bc_props.update({"id": bc_id, "name": bc_id})
+                bc_props_validated = parse_binding_constraint_for_update(study_version, bc_props)
                 bc_props_by_id_validated[bc_id] = bc_props_validated
             values["bc_props_by_id"] = bc_props_by_id_validated
         return values

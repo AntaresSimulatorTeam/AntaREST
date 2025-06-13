@@ -208,12 +208,15 @@ class ConstraintTermUpdate(AntaresBaseModel):
                 raise InvalidConstraintTerm("", "You should provide an id or data when updating an existing term")
 
             data = values["data"]
-            if "area1" in data:
-                values["id"] = "%".join((data["area1"], data["area2"]))
-            elif "cluster" in data:
-                values["id"] = ".".join([data["area"], data["cluster"]])
+            if isinstance(data, ClusterTerm) or isinstance(data, LinkTerm):
+                values["id"] = data.generate_id()
             else:
-                raise InvalidConstraintTerm(str(data), "Your term data is not well-formatted")
+                if "area1" in data:
+                    values["id"] = "%".join((data["area1"], data["area2"]))
+                elif "cluster" in data:
+                    values["id"] = ".".join([data["area"], data["cluster"]])
+                else:
+                    raise InvalidConstraintTerm(str(data), "Your term data is not well-formatted")
 
         values["id"] = validate_and_transform_term_id(values["id"])
         return values

@@ -1146,6 +1146,7 @@ def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory)
             "time_step": "hourly",
             "operator": "equal",
             "values": "values",
+            "coeffs": {"area1.cluster_x": [1, 2]},
         },
         study_version=STUDY_VERSION_8_6,
         version=1,
@@ -1158,12 +1159,48 @@ def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory)
     assert dto.args == {
         "id": "id",
         "matrices": {"values": "values"},
-        "parameters": {"enabled": True, "operator": "equal", "timeStep": "hourly"},
+        "parameters": {
+            "enabled": True,
+            "operator": "equal",
+            "timeStep": "hourly",
+            "terms": [{"data": {"area": "area1", "cluster": "cluster_x"}, "offset": 2, "weight": 1.0}],
+        },
     }
 
 
 def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory):
-    pass
+    dto = CommandDTO(
+        action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+        args={
+            "bc_props_by_id": {
+                "bc_1": {
+                    "enabled": False,
+                    "time_step": "weekly",
+                    "operator": "both",
+                    "comments": "Hello !",
+                    "filter_year_by_year": "annual, hourly",
+                }
+            }
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 2
+    assert dto.args == {
+        "bc_props_by_id": {
+            "bc_1": {
+                "comments": "Hello !",
+                "enabled": False,
+                "filter_year_by_year": "annual, hourly",
+                "operator": "both",
+                "time_step": "weekly",
+            }
+        }
+    }
 
 
 def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory):
