@@ -256,13 +256,11 @@ COMMANDS = [
             action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
             args={
                 "id": "id",
-                "enabled": True,
-                "time_step": "hourly",
-                "operator": "equal",
-                "values": "values",
+                "matrices": {"values": "values"},
+                "parameters": {"enabled": True, "operator": "equal", "timeStep": "hourly"},
             },
             study_version=STUDY_VERSION_8_6,
-            version=1,
+            version=2,
         ),
         None,
         id="update_binding_constraint",
@@ -273,12 +271,17 @@ COMMANDS = [
             args=[
                 {
                     "id": "id",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "equal",
+                    "matrices": {"lessTermMatrix": "matrix"},
+                    "parameters": {
+                        "enabled": True,
+                        "filterSynthesis": "annual, weekly",
+                        "timeStep": "daily",
+                        "terms": [{"data": {"area1": "area1", "area2": "area2"}, "offset": 1, "weight": 4.2}],
+                    },
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="udpate_binding_constraint_list",
