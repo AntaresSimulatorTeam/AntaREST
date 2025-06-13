@@ -228,9 +228,7 @@ COMMANDS = [
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args={
                 "matrices": {
-                    "equalTermMatrix": "matrix://fake_matrix",
                     "greaterTermMatrix": "matrix://fake_matrix",
-                    "lessTermMatrix": "matrix://fake_matrix",
                 },
                 "parameters": {
                     "enabled": False,
@@ -254,8 +252,6 @@ COMMANDS = [
                 {
                     "matrices": {
                         "equalTermMatrix": "matrix://fake_matrix",
-                        "greaterTermMatrix": "matrix://fake_matrix",
-                        "lessTermMatrix": "matrix://fake_matrix",
                     },
                     "parameters": {"name": "name"},
                 },
