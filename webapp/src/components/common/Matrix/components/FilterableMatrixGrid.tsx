@@ -118,6 +118,7 @@ function FilterableMatrixGrid({
             dateTime={dateTime}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
+            readOnly={readOnly}
           />
         </Box>
 
