@@ -40,6 +40,7 @@ def create_app(service: Mock) -> FastAPI:
         build_ctxt,
         study_service=Mock(),
         output_service=Mock(),
+        login_service=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
         service_launcher=service,
