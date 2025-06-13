@@ -13,6 +13,7 @@
 import datetime
 import io
 import json
+import os
 import re
 import typing as t
 import zipfile
@@ -123,6 +124,20 @@ class TestMatrixService:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             with pytest.raises(MatrixNotFound, match=f"Matrix {missing_hash} doesn't exist"):
                 matrix_service.get(missing_hash)
+
+    def test_get_matrices(self, matrix_service: MatrixService):
+        parent = resource_path.parent
+        matrices = os.listdir(parent)
+        key_word = "all"
+        with db():
+            for matrix in matrices:
+                if key_word in matrix:
+                    matrix_path = parent / matrix
+                    mat = pd.read_csv(matrix_path)
+                    matrix_service.create(mat)
+
+
+
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""

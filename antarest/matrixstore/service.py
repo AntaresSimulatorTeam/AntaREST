@@ -40,6 +40,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
+from antarest.matrixstore.matrix_model import MatrixModel
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -94,6 +95,10 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_matrices(self) -> list[MatrixModel]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def exists(self, matrix_id: str) -> bool:
         raise NotImplementedError()
 
@@ -136,6 +141,10 @@ class SimpleMatrixService(ISimpleMatrixService):
         return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
+    def get_matrices(self) -> list[MatrixModel]:
+        raise NotImplementedError()
+
+    @override
     def exists(self, matrix_id: str) -> bool:
         return self.matrix_content_repository.exists(matrix_id)
 
@@ -170,6 +179,14 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
                 raise MatrixNotSupported(
                     f"Supported matrix data types are 'string, np.number, datetime' and you provided {dtype}"
                 )
+
+
+def convert_matrix_into_model(matrix: Matrix) -> MatrixModel:
+    matrix_model = MatrixModel(
+        id=matrix.id, width=matrix.width, height=matrix.height, created_at=matrix.created_at, version=matrix.version
+    )
+
+    return matrix_model
 
 
 class MatrixService(ISimpleMatrixService):
@@ -388,6 +405,23 @@ class MatrixService(ISimpleMatrixService):
         if matrix is None:
             raise MatrixNotFound(matrix_id)
         return self.matrix_content_repository.get(matrix_id, matrix.version)
+
+    @override
+    def get_matrices(self) -> List[MatrixModel]:
+        """
+        Get a list of matrix objects from the database
+        Returns:#
+            A list of matrices of the repository
+        """
+
+        matrices = self.repo.get_matrices()
+        pydantic_friendly_matrices = []
+
+        for matrix in matrices:
+            matrix_model = convert_matrix_into_model(matrix)
+            pydantic_friendly_matrices.append(matrix_model)
+
+        return pydantic_friendly_matrices
 
     @override
     def exists(self, matrix_id: str) -> bool:
