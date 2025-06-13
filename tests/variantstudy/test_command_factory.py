@@ -312,6 +312,7 @@ COMMANDS = [
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="udpate_binding_constraints",
