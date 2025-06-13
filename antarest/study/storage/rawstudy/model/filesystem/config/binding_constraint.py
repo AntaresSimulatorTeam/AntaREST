@@ -66,7 +66,7 @@ class BindingConstraintFileData(AntaresBaseModel):
         return BindingConstraint.model_validate(self.model_dump(exclude_none=True, exclude={"id"}))
 
     def to_update_model(self) -> BindingConstraintUpdate:
-        return BindingConstraintUpdate.model_validate(self.model_dump(exclude_none=True, exclude={"id"}))
+        return BindingConstraintUpdate.model_validate(self.model_dump(exclude_none=True, exclude={"id", "name"}))
 
     @classmethod
     def from_model(cls, constraint: BindingConstraint) -> "BindingConstraintFileData":
