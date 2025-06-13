@@ -21,7 +21,7 @@ export function SingleStudyPlaceholder() {
   useEffect(() => {
     window.onOpenStudy((path) => {
       async function loadStudy() {
-        const res = await client.post(`/v1/studies/open`, { path: path });
+        const res = await client.post(`/v1/studies/_open`, { path: path });
         const studyId = res.data;
         navigate(`/studies/${studyId}/explore`);
       }
