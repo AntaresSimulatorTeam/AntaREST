@@ -19,7 +19,7 @@ import type { TableTemplate } from "../../components/App/Singlestudy/explore/Tab
 import type { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
 import type { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
-import type { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
+import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 export const StorageKey = {
   Version: "version",
@@ -44,7 +44,7 @@ interface TypeFromKey {
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
   [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
-  [StorageKey.StudyTreeFolders]: NonStudyFolderDTO[];
+  [StorageKey.StudyTreeFolders]: FolderDTO[];
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];
   [key: string]: unknown;
 }

@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, NonStudyFolderDTO, WorkspaceMetadata
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, FolderDTO, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
 
@@ -58,7 +58,7 @@ def config_scenario_a(tmp_path: Path) -> Config:
     d.mkdir(parents=True)
     (d / "trash").touch()
 
-    e = diese / "folder/to_skip_folder"
+    e = diese / "folder/study_folder"
     e.mkdir(parents=True)
     (e / "study.antares").touch()
 
@@ -90,7 +90,7 @@ def test_list_dir_empty_string(config_scenario_a: Config):
 
     # We don't want to see the .git folder or the $RECYCLE.BIN as they were ignored in the workspace config
     assert len(result) == 1
-    assert result[0] == NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True)
+    assert result[0] == FolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True)
 
 
 @pytest.mark.unit_test
@@ -101,10 +101,9 @@ def test_list_dir_show_hidden_file(config_scenario_a: Config):
     # explicit ask to show hidden files
     assert len(result) == 2
     assert (
-        NonStudyFolderDTO(path=Path(".hidden_folder"), workspace="diese", name=".hidden_folder", has_children=False)
-        in result
+        FolderDTO(path=Path(".hidden_folder"), workspace="diese", name=".hidden_folder", has_children=False) in result
     )
-    assert NonStudyFolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True) in result
+    assert FolderDTO(path=Path("folder"), workspace="diese", name="folder", has_children=True) in result
 
 
 @pytest.mark.unit_test
@@ -112,18 +111,31 @@ def test_list_dir_several_subfolders(config_scenario_a: Config):
     explorer = Explorer(config_scenario_a)
     result = explorer.list_dir("diese", "folder")
 
-    assert len(result) == 3
+    assert len(result) == 5
     folder_path = Path("folder")
     assert (
-        NonStudyFolderDTO(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1", has_children=False)
+        FolderDTO(path=(folder_path / "subfolder1"), workspace="diese", name="subfolder1", has_children=False) in result
+    )
+    assert (
+        FolderDTO(path=(folder_path / "subfolder2"), workspace="diese", name="subfolder2", has_children=False) in result
+    )
+    assert (
+        FolderDTO(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3", has_children=False) in result
+    )
+    assert (
+        FolderDTO(
+            path=(folder_path / "study_folder"),
+            workspace="diese",
+            name="study_folder",
+            has_children=False,
+            isStudyFolder=True,
+        )
         in result
     )
     assert (
-        NonStudyFolderDTO(path=(folder_path / "subfolder2"), workspace="diese", name="subfolder2", has_children=False)
-        in result
-    )
-    assert (
-        NonStudyFolderDTO(path=(folder_path / "subfolder3"), workspace="diese", name="subfolder3", has_children=False)
+        FolderDTO(
+            path=(folder_path / "studyC"), workspace="diese", name="studyC", has_children=False, isStudyFolder=True
+        )
         in result
     )
 

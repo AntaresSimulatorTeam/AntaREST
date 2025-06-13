@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 import { updateStudyFilters } from "../../../../redux/ducks/studies";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
+import { getStudies, getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
@@ -31,6 +31,7 @@ import storage, { StorageKey } from "@/services/utils/localStorage";
 import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
+  const studies = useAppSelector(getStudies);
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
   const [workspaces, setWorkspaces] = useState<string[]>([]);
@@ -91,15 +92,22 @@ function StudyTree() {
     // Fetch subfolders and insert them to the tree
     try {
       const newSubFolders = await api.getFolders(workspace, subPath.join("/"));
-
       if (newSubFolders.length > 0) {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
-        const nextSubfolders = [...newSubFolders, ...otherSubfolders];
-
+        const filteredStudyFolders = newSubFolders.filter(
+          (folder) =>
+            !folder.isStudyFolder ||
+            !studies.some(
+              (study) => folder.path === study.folder && study.workspace === folder.workspace,
+            ),
+        );
+        // if all subfolders happen to be already scanned studies we override hasChildren to false
+        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders].map((f) =>
+          filteredStudyFolders.length === 0 ? { ...f, hasChildren: false } : f,
+        );
         setSubFolders(nextSubfolders);
-
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
         setStudiesTree(nextStudyTree);
       }
@@ -154,8 +162,10 @@ function StudyTree() {
     }
   };
 
-  const handleTreeItemClick = (itemId: string) => {
-    dispatch(updateStudyFilters({ folder: itemId }));
+  const handleTreeItemClick = (itemId: string, isStudyFolder: boolean) => {
+    if (!isStudyFolder) {
+      dispatch(updateStudyFilters({ folder: itemId }));
+    }
   };
 
   ////////////////////////////////////////////////////////////////
