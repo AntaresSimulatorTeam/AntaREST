@@ -276,53 +276,57 @@ function ResultDetails() {
             }
           />
         ) : (
-          <>
-            <ResultFilters
-              year={year}
-              setYear={setYear}
-              dataType={dataType}
-              setDataType={setDataType}
-              timestep={timestep}
-              setTimestep={setTimestep}
-              maxYear={maxYear}
-              studyId={study.id}
-              path={path}
-              colHeaders={matrixRes.data?.columns || []}
-              onColHeadersChange={handleColHeadersChange}
-            />
-            <UsePromiseCond
-              response={mergeResponses(outputRes, matrixRes)}
-              ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-              ifFulfilled={([, matrix]) =>
-                matrix &&
-                (resultColHeaders.length === 0 ? (
-                  <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
-                ) : (
-                  isNonEmptyMatrix(filteredData) && (
-                    <FilterableMatrixGrid
-                      key={`grid-${resultColHeaders.length}`}
-                      data={filteredData}
-                      rows={filteredData.length}
-                      columns={resultColumns}
-                      dateTime={dateTime}
-                      timeFrequency={dateTimeMetadata?.level}
-                      readOnly
-                    />
-                  )
-                ))
-              }
-              ifRejected={(err) => (
-                <EmptyView
-                  title={
-                    toError(err).message.includes("404")
-                      ? t("study.results.noData")
-                      : t("data.error.matrix")
-                  }
-                  icon={GridOffIcon}
-                />
-              )}
-            />
-          </>
+          <Box sx={{ display: "flex", flexDirection: "column", height: 1, width: 1 }}>
+            <Box sx={{ flexShrink: 0 }}>
+              <ResultFilters
+                year={year}
+                setYear={setYear}
+                dataType={dataType}
+                setDataType={setDataType}
+                timestep={timestep}
+                setTimestep={setTimestep}
+                maxYear={maxYear}
+                studyId={study.id}
+                path={path}
+                colHeaders={matrixRes.data?.columns || []}
+                onColHeadersChange={handleColHeadersChange}
+              />
+            </Box>
+            <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <UsePromiseCond
+                response={mergeResponses(outputRes, matrixRes)}
+                ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+                ifFulfilled={([, matrix]) =>
+                  matrix &&
+                  (resultColHeaders.length === 0 ? (
+                    <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
+                  ) : (
+                    isNonEmptyMatrix(filteredData) && (
+                      <FilterableMatrixGrid
+                        key={`grid-${resultColHeaders.length}`}
+                        data={filteredData}
+                        rows={filteredData.length}
+                        columns={resultColumns}
+                        dateTime={dateTime}
+                        timeFrequency={dateTimeMetadata?.level}
+                        readOnly
+                      />
+                    )
+                  ))
+                }
+                ifRejected={(err) => (
+                  <EmptyView
+                    title={
+                      toError(err).message.includes("404")
+                        ? t("study.results.noData")
+                        : t("data.error.matrix")
+                    }
+                    icon={GridOffIcon}
+                  />
+                )}
+              />
+            </Box>
+          </Box>
         )}
       </ViewWrapper>
     </SplitView>

@@ -44,7 +44,7 @@ function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWra
     width: 1,
     height: 1,
     p: disablePadding ? 0 : 2,
-    overflow: "auto",
+    overflow: flex ? "hidden" : "auto",
     position: "relative",
     borderRadius: 0,
     // Remove padding for components that manage their own padding

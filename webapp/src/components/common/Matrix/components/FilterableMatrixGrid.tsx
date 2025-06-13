@@ -31,8 +31,6 @@ function FilterableMatrixGrid({
   dateTime,
   aggregates,
   rowHeaders,
-  width = "100%",
-  height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
   readOnly = true,
@@ -101,8 +99,8 @@ function FilterableMatrixGrid({
         sx={{
           display: "flex",
           flexDirection: "column",
-          width,
-          height,
+          width: 1,
+          height: 1,
           position: "relative",
         }}
       >
@@ -122,7 +120,7 @@ function FilterableMatrixGrid({
           />
         </Box>
 
-        <Box sx={{ flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
           <MatrixGrid
             data={data}
             rows={rows}
