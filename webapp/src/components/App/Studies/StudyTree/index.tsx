@@ -103,10 +103,11 @@ function StudyTree() {
               (study) => folder.path === study.folder && study.workspace === folder.workspace,
             ),
         );
-        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
-
+        // if all subfolders happen to be already scanned studies we override hasChildren to false
+        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders].map((f) =>
+          filteredStudyFolders.length === 0 ? { ...f, hasChildren: false } : f,
+        );
         setSubFolders(nextSubfolders);
-
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
         setStudiesTree(nextStudyTree);
       }
