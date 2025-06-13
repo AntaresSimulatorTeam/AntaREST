@@ -1167,4 +1167,16 @@ def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory
 
 
 def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory):
-    pass
+    dto = CommandDTO(
+        action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
+        args={"id": "id"},
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "remove_multiple_binding_constraints"
+    assert dto.version == 1
+    assert dto.args == {"ids": ["id"]}
