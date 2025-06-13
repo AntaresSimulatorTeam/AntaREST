@@ -13,12 +13,12 @@
 import collections
 import logging
 from http import HTTPStatus
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile
 from markupsafe import escape
-from pydantic import NonNegativeInt
+from pydantic import BaseModel, NonNegativeInt
 
 from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
@@ -556,5 +556,16 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         """
         logger.info("Retrieving study disk usage")
         return study_service.get_disk_usage(uuid=uuid)
+
+    class OpenStudy(BaseModel):
+        path: str
+
+    @bp.post(
+        "/studies/_open",
+        summary="Open an external study on filesystem and return its UUID",
+        tags=[APITag.study_management],
+    )
+    def open_study(params: OpenStudy) -> str:
+        return study_service.open(Path(params.path))
 
     return bp

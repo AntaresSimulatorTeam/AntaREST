@@ -1,16 +1,12 @@
-from logging.config import fileConfig
 import os
 from pathlib import Path
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-
-from antarest.dbmodel import Base
 from antarest.core.config import Config
 from antarest.core.utils import utils
-
+from antarest.dbmodel import Base
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -19,9 +15,9 @@ config = context.config
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 # uncomment this to have
-#fileConfig(config.config_file_name)
+# fileConfig(config.config_file_name)
 
-config_path = os.getenv('ANTAREST_CONF') or utils.get_default_config_path()
+config_path = os.getenv("ANTAREST_CONF") or utils.get_default_config_path()
 if config_path and Path(config_path).exists():
     antarest_conf = Config.from_yaml_file(config_path)
     config.set_main_option("sqlalchemy.url", antarest_conf.db.db_admin_url or antarest_conf.db.db_url)
@@ -70,17 +66,22 @@ def run_migrations_online():
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
-
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
 
-    with connectable.connect() as connection:
+    # First check if we have provided a connection programmatically
+    engine = config.attributes.get("engine", None)
+    if not engine:
+        engine = engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+
+    with engine.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata, render_as_batch=True,
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=True,
         )
 
         with context.begin_transaction():

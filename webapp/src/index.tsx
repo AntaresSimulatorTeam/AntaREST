@@ -15,6 +15,7 @@
 import { initConfig } from "./services/config";
 import { createRoot } from "react-dom/client";
 import App from "./components/App";
+import DesktopApp from "./components/DesktopApp";
 import storage, { StorageKey } from "./services/utils/localStorage";
 
 initConfig().then((config) => {
@@ -30,5 +31,10 @@ initConfig().then((config) => {
     throw new Error("Root container not found");
   }
 
-  createRoot(container).render(<App />);
+  if (window.isDesktop) {
+    createRoot(container).render(<DesktopApp />);
+  }
+  else {
+    createRoot(container).render(<App />);
+  }
 });

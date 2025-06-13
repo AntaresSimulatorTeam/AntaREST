@@ -955,7 +955,6 @@ class StudyService:
                 it will apply to all studies having a path that descend from "directory".
 
         Returns:
-
         """
         now = datetime.utcnow()
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
@@ -2354,3 +2353,29 @@ class StudyService:
         cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
+
+    def open(self, path: Path) -> str:
+        if not path.is_absolute():
+            raise ValueError(f"Path to study must be absolute, got {path}")
+
+        study = RawStudy(
+            id=str(uuid4()),
+            name=path.name,
+            path=str(path),
+            folder="",
+            workspace="external",
+            owner=None,
+            groups=[],
+            public_mode=PublicMode.FULL,
+        )
+        self.storage_service.raw_study_service.update_from_raw_meta(study, fallback_on_default=True)
+        self.repository.save(study)
+        self.event_bus.push(
+            Event(
+                type=EventType.STUDY_CREATED,
+                payload=study.to_json_summary(),
+                permissions=PermissionInfo.from_study(study),
+            )
+        )
+
+        return study.id

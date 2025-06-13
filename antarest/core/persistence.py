@@ -14,7 +14,9 @@ import logging
 import os
 from io import StringIO
 from pathlib import Path
+from typing import Optional
 
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import declarative_base  # type: ignore
 
 from alembic import command
@@ -27,7 +29,7 @@ logger = logging.getLogger(__name__)
 Base = declarative_base()
 
 
-def upgrade_db(config_file: Path) -> None:
+def upgrade_db(config_file: Path, engine: Optional[Engine] = None) -> None:
     os.environ.setdefault("ANTAREST_CONF", str(config_file))
     alembic_cfg = Config(str(get_local_path() / "alembic.ini"))
     alembic_cfg.stdout = StringIO()
@@ -49,5 +51,8 @@ def upgrade_db(config_file: Path) -> None:
     head = head_output.split(" ")[0].strip()
     if current_version != head:
         logger.info(f"Upgrading database from {current_version} to {head}")
+        if engine:
+            alembic_cfg.attributes["engine"] = engine
         command.upgrade(alembic_cfg, head)
+
     logger.info("Database up to date")
