@@ -27,7 +27,7 @@ from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNot
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperType
+from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -488,7 +488,7 @@ class RawStudyService(AbstractStorageService):
                     study_id="",
                     version=StudyVersion.parse(0),
                 )
-                raw_study = self.study_factory.create_from_config(config, MatrixUriMapperType.MANAGED)
+                raw_study = self.study_factory.create_from_config(config, NormalizedMatrixUriMapper.NORMALIZED)
                 file_metadata = raw_study.get(url=["study", "antares"])
                 study_version = str(file_metadata.get("version", study.version))
                 if study_version != study.version:

@@ -36,16 +36,16 @@ def build_matrix_uri(id: str) -> str:
     return f"{MATRIX_PROTOCOL_PREFIX}{id}"
 
 
-class MatrixUriMapperType(StrEnum):
-    MANAGED = "managed"
-    UNMANAGED = "unmanaged"
+class NormalizedMatrixUriMapper(StrEnum):
+    NORMALIZED = "normalized"
+    DENORMALIZED = "denormalized"
 
 
-def get_mapper_type(is_managed: bool) -> MatrixUriMapperType:
-    if is_managed:
-        return MatrixUriMapperType.MANAGED
+def get_mapper_type(with_matrix_normalization: bool) -> NormalizedMatrixUriMapper:
+    if with_matrix_normalization:
+        return NormalizedMatrixUriMapper.NORMALIZED
     else:
-        return MatrixUriMapperType.UNMANAGED
+        return NormalizedMatrixUriMapper.DENORMALIZED
 
 
 class MatrixUriMapper(ABC):
@@ -152,10 +152,10 @@ class MatrixUriMapperFactory:
     def __init__(self, matrix_service: ISimpleMatrixService):
         self._matrix_service = matrix_service
 
-    def create(self, mapper_type: MatrixUriMapperType = MatrixUriMapperType.MANAGED) -> MatrixUriMapper:
-        if mapper_type == MatrixUriMapperType.MANAGED:
+    def create(self, mapper_type: NormalizedMatrixUriMapper = NormalizedMatrixUriMapper.NORMALIZED) -> MatrixUriMapper:
+        if mapper_type == NormalizedMatrixUriMapper.NORMALIZED:
             return MatrixUriMapperManaged(self._matrix_service)
-        elif mapper_type == MatrixUriMapperType.UNMANAGED:
+        elif mapper_type == NormalizedMatrixUriMapper.DENORMALIZED:
             return MatrixUriMapperUnmanaged(self._matrix_service)
         else:
             raise ValueError(f"Matrix uri mapper type not supported: {mapper_type}")

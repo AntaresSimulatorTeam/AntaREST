@@ -23,7 +23,7 @@ from antares.study.version import StudyVersion
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
 from antarest.matrixstore.matrix_uri_mapper import (
     MatrixUriMapperFactory,
-    MatrixUriMapperType,
+    NormalizedMatrixUriMapper,
     get_mapper_type,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
@@ -71,7 +71,7 @@ class StudyFactory:
     def create_from_fs(
         self,
         path: Path,
-        is_managed: bool,
+        with_matrix_normalization: bool,
         study_id: str,
         output_path: Optional[Path] = None,
         use_cache: bool = True,
@@ -83,7 +83,7 @@ class StudyFactory:
 
         Args:
             path: full path of the study directory to parse.
-            is_managed: boolean indicating if the study is managed or not.
+            with_matrix_normalization: boolean indicating if the study is managed or not.
             study_id: ID of the study (if known).
             output_path: full path of the "output" directory in the study directory.
             use_cache: Whether to use cache or not.
@@ -98,17 +98,17 @@ class StudyFactory:
         lock_file = os.path.join(self._lock_dir, self._lock_fmt.format(basename=lock_basename))
         with filelock.FileLock(lock_file):
             logger.info(f"🏗 Creating a study by reading the configuration from the directory '{path}'...")
-            return self._create_from_fs_unsafe(path, is_managed, study_id, output_path, use_cache)
+            return self._create_from_fs_unsafe(path, with_matrix_normalization, study_id, output_path, use_cache)
 
     def _create_from_fs_unsafe(
         self,
         path: Path,
-        is_managed: bool,
+        with_matrix_normalization: bool,
         study_id: str,
         output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> FileStudy:
-        mapper_type = get_mapper_type(is_managed)
+        mapper_type = get_mapper_type(with_matrix_normalization)
         cache_id = study_config_cache_key(study_id)
         matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
         if study_id and use_cache:
@@ -134,6 +134,6 @@ class StudyFactory:
             )
         return result
 
-    def create_from_config(self, config: FileStudyTreeConfig, mapper_type: MatrixUriMapperType) -> FileStudyTree:
+    def create_from_config(self, config: FileStudyTreeConfig, mapper_type: NormalizedMatrixUriMapper) -> FileStudyTree:
         matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
         return FileStudyTree(matrix_mapper, config)
