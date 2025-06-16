@@ -94,14 +94,11 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
 
         if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
             link_path = self.get_link_path()
-            self.matrix_mapper.handle_matrix_save(self, data, link_path)
-            return None
-
-        super().save(data, url)
-
-        if self.get_link_path().exists():
-            self.get_link_path().unlink()
-        return None
+            self.matrix_mapper.save_matrix(self, data, link_path)
+        else:
+            super().save(data, url)
+            if self.get_link_path().exists():
+                self.get_link_path().unlink()
 
     @override
     def get(

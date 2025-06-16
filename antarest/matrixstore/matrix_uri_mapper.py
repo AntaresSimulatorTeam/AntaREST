@@ -76,7 +76,7 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         pass
 
 
@@ -108,7 +108,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         pass
 
 
@@ -119,7 +119,7 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
 
     @override
-    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         link_path.write_text(matrix_uri)
         if data.config.path.exists():
             data.config.path.unlink()
@@ -133,7 +133,7 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
 
     @override
-    def handle_matrix_save(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
         matrix = self.get_matrix(matrix_uri)
         data.dump(matrix)
 
