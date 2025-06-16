@@ -173,7 +173,10 @@ export const getDefaultFilterState = (
       min: 1,
       max: Math.max(columnCount, 1),
     },
-    list: [],
+    // Initialize with all columns selected by default.
+    // This ensures that when users apply row filters, the grid displays all columns
+    // rather than appearing empty.
+    list: Array.from({ length: Math.max(columnCount, 1) }, (_, i) => i + 1),
     operator: FILTER_OPERATORS.EQUALS,
   },
   rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],

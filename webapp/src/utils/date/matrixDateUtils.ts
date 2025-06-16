@@ -226,7 +226,6 @@ export function createLocalizedTemporalLabels(
 export function getTemporalValueFromHeader(
   header: string,
   indexingType: TimeIndexingType,
-  index: number,
   locale: SupportedLocale = "en",
 ): number {
   // If header is purely numeric, use it directly for certain index types
@@ -241,7 +240,7 @@ export function getTemporalValueFromHeader(
   }
 
   // Otherwise extract based on type
-  return extractTemporalValue(header, indexingType, index, locale);
+  return extractTemporalValue(header, indexingType, locale);
 }
 
 /**
