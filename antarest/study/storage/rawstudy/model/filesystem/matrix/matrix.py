@@ -169,7 +169,6 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         logger.info(f"Denormalizing matrix {self.config.path}")
         self.matrix_mapper.denormalize(self, self.get_path())
 
-
     @override
     def load(
         self,
