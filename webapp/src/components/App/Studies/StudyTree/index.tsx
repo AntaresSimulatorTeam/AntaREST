@@ -28,7 +28,6 @@ import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { insertIfNotExist } from "./utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
-import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
   const studies = useAppSelector(getStudies);
@@ -38,6 +37,7 @@ function StudyTree() {
   const [subFolders, setSubFolders] = useState(storage.getItem(StorageKey.StudyTreeFolders) || []);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
+  const [exploredFolders, setExploredFolders] = useState<string[]>([]);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
@@ -53,10 +53,6 @@ function StudyTree() {
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStudiesTree]);
-
-  useUpdateEffect(() => {
-    storage.setItem(StorageKey.StudyTreeFolders, subFolders);
-  }, [subFolders]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -96,6 +92,8 @@ function StudyTree() {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
+        // keep only studies that aren't scanned yet (those that arent in studies
+        // which is the list of studies we got from database)
         const filteredStudyFolders = newSubFolders.filter(
           (folder) =>
             !folder.isStudyFolder ||
@@ -103,13 +101,12 @@ function StudyTree() {
               (study) => folder.path === study.folder && study.workspace === folder.workspace,
             ),
         );
-        // if all subfolders happen to be already scanned studies we override hasChildren to false
-        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders].map((f) =>
-          filteredStudyFolders.length === 0 ? { ...f, hasChildren: false } : f,
-        );
+        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
         setSubFolders(nextSubfolders);
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
         setStudiesTree(nextStudyTree);
+        storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
+        setExploredFolders([...exploredFolders.filter((e) => e !== itemId), itemId]);
       }
     } catch (err) {
       enqueueErrorSnackbar(
@@ -182,6 +179,7 @@ function StudyTree() {
       <StudyTreeNodeComponent
         node={studiesTree}
         itemsLoading={itemsLoading}
+        exploredFolders={exploredFolders}
         onNodeClick={handleTreeItemClick}
       />
     </SimpleTreeView>

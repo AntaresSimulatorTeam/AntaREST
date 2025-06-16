@@ -33,4 +33,5 @@ export interface StudyTreeNodeProps {
   node: StudyTreeNode;
   itemsLoading: string[];
   onNodeClick: (id: string, isStudyFolder: boolean) => void;
+  exploredFolders: string[];
 }

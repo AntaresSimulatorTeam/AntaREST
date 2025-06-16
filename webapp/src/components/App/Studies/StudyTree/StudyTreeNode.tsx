@@ -32,10 +32,16 @@ function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): numb
 const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
 const defaultFirstSort = R.sortWith([prioritizeDefault]);
 
-export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
+export default function StudyTreeNode({
+  node,
+  itemsLoading,
+  onNodeClick,
+  exploredFolders,
+}: StudyTreeNodeProps) {
   const { hasChildren, children, path, name, isStudyFolder } = node;
   const isLoading = itemsLoading.includes(node.path);
-  const hasUnloadedChildren = hasChildren && children.length === 0;
+  const hasUnloadedChildren =
+    hasChildren && children.length === 0 && !exploredFolders.includes(node.path);
   const { t } = useTranslation();
 
   const sortedChildren = useMemo(() => {
@@ -58,6 +64,8 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
       onClick={() => onNodeClick(node.path, !!isStudyFolder)}
       loading={isLoading}
     >
+      {/* the loading tree item bellow may seem useless but it's mandatory to display  
+        /* the little arrow on the left on folders without scanned studies*/}
       {hasUnloadedChildren && (
         <TreeItemEnhanced
           itemId={`${path}//loading`}
@@ -71,6 +79,7 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
           node={child}
           itemsLoading={itemsLoading}
           onNodeClick={onNodeClick}
+          exploredFolders={exploredFolders}
         />
       ))}
     </TreeItemEnhanced>
