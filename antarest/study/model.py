@@ -19,7 +19,15 @@ from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    alias_generators,
+    computed_field,
+    field_validator,
+)
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -392,14 +400,11 @@ class FolderDTO(AntaresBaseModel):
     path: PurePosixPath
     workspace: str
     name: str
-    has_children: bool = Field(
-        alias="hasChildren",
-    )  # true when has at least one non-study-folder children
+    has_children: bool  # true when has at least one non-study-folder children
     is_study_folder: bool = Field(
-        alias="isStudyFolder",
         default=False,
     )  # true when this folder is a study folder, used to display the icon in the front
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
     @computed_field(alias="parentPath")
     def parent_path(self) -> PurePosixPath:

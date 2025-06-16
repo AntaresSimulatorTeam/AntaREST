@@ -44,6 +44,9 @@ class Explorer:
         """
         return a list of all directories under workspace_directory_path.
         """
+        import time
+
+        time.sleep(2)
         workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         folders = []
@@ -60,7 +63,6 @@ class Explorer:
                             has_children_flag = False
                             is_study_folder_flag = True
                         else:
-                            # we don't want to expose the full absolute path on the server
                             has_children_flag = has_children(child, workspace.filter_in, workspace.filter_out)
                             is_study_folder_flag = False
                         folders.append(
