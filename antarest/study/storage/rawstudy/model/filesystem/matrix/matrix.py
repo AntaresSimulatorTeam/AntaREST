@@ -96,7 +96,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         self._assert_url_end(url)
 
         if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
-            self.matrix_mapper.save_matrix(self, data, self.get_path())
+            self.matrix_mapper.save_matrix(self, data)
         else:
             super().save(data, url)
             if self.get_link_path().exists():
@@ -157,7 +157,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         Raises:
             DenormalizationException: if the original matrix retrieval fails.
         """
-        self.matrix_mapper.normalize(self, self.get_path())
+        self.matrix_mapper.normalize(self)
 
     @override
     def denormalize(self) -> None:
@@ -167,7 +167,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         before removing the link file.
         """
         logger.info(f"Denormalizing matrix {self.config.path}")
-        self.matrix_mapper.denormalize(self, self.get_path())
+        self.matrix_mapper.denormalize(self)
 
     @override
     def load(
@@ -197,8 +197,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
         self._assert_url_end(url)
-        if self.get_link_path().exists():
-            self.get_link_path().unlink()
+        self.matrix_mapper.delete(self)
         super().delete(url)
 
     @override

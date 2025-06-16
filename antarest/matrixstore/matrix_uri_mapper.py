@@ -14,7 +14,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 import pandas as pd
 from typing_extensions import override
@@ -48,6 +48,10 @@ def get_mapper_type(with_matrix_normalization: bool) -> NormalizedMatrixUriMappe
         return NormalizedMatrixUriMapper.DENORMALIZED
 
 
+def get_path(node: MatrixNode) -> Path:
+    return node.config.path.parent / node.config.path.name
+
+
 class MatrixUriMapper(ABC):
     """
     Abstract base class for mapping matrix URIs to actual data and vice versa.
@@ -76,15 +80,19 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
         pass
 
     @abstractmethod
-    def normalize(self, node: MatrixNode, path: Path) -> None:
+    def normalize(self, node: MatrixNode) -> None:
         pass
 
     @abstractmethod
-    def denormalize(self, node: MatrixNode, path: Path) -> None:
+    def denormalize(self, node: MatrixNode) -> None:
+        pass
+
+    @abstractmethod
+    def delete(self, node: MatrixNode) -> None:
         pass
 
 
@@ -116,12 +124,12 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
         pass
 
     @override
-    def normalize(self, node: MatrixNode, path: Path) -> None:
-        link_path = Path(f"{path}.link")
+    def normalize(self, node: MatrixNode) -> None:
+        link_path = Path(f"{get_path(node)}.link")
         if link_path.exists() or node.config.archive_path:
             return
 
@@ -131,8 +139,8 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         node.config.path.unlink()
 
     @override
-    def denormalize(self, node: MatrixNode, path: Path) -> None:
-        link_path = Path(f"{path}.link")
+    def denormalize(self, node: MatrixNode) -> None:
+        link_path = Path(f"{get_path(node)}.link")
         if node.config.path.exists() or not link_path.exists():
             return
 
@@ -140,6 +148,12 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         matrix = self.get_matrix(uuid)
         node.dump(matrix)
         link_path.unlink()
+
+    @override
+    def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
+        link_path = Path(f"{get_path(node)}.link")
+        if link_path.exists():
+            link_path.unlink()
 
 
 class MatrixUriMapperManaged(BaseMatrixUriMapper):
@@ -149,8 +163,8 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
-        link_path = Path(f"{path}.link")
+    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
+        link_path = Path(f"{get_path(node)}.link")
         link_path.write_text(matrix_uri)
         if node.config.path.exists():
             node.config.path.unlink()
@@ -164,7 +178,7 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
         matrix = self.get_matrix(matrix_uri)
         node.dump(matrix)
 
