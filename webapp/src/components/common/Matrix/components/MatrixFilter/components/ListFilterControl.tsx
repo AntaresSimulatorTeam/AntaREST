@@ -16,7 +16,6 @@ import {
   TextField,
   Box,
   Typography,
-  Stack,
   Chip,
   InputAdornment,
   IconButton,
@@ -31,7 +30,14 @@ import {
 import ClearIcon from "@mui/icons-material/Clear";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useTranslation } from "react-i18next";
-import { DESIGN_TOKENS, FORM_STYLES, ICON_BUTTON_STYLES, TYPOGRAPHY_STYLES } from "../styles";
+import { useMemo } from "react";
+import {
+  CHIP_SELECTOR_STYLES,
+  DESIGN_TOKENS,
+  FORM_STYLES,
+  ICON_BUTTON_STYLES,
+  TYPOGRAPHY_STYLES,
+} from "../styles";
 import { FILTER_OPERATORS, type FilterOperatorType } from "../constants";
 
 interface ListFilterControlProps {
@@ -64,6 +70,48 @@ function ListFilterControl({
   disabled = false,
 }: ListFilterControlProps) {
   const { t } = useTranslation();
+
+  // Format selected values as ranges (e.g., "1-5, 7, 10-15")
+  const formattedValues = useMemo(() => {
+    if (selectedValues.length === 0) {
+      return "";
+    }
+
+    const sorted = [...selectedValues].sort((a, b) => a - b);
+
+    const formatRange = (start: number, end: number): string => {
+      if (start === end) {
+        return start.toString();
+      }
+
+      if (end === start + 1) {
+        return `${start}, ${end}`;
+      }
+
+      return `${start}-${end}`;
+    };
+
+    const ranges = sorted.reduce<Array<[number, number]>>((acc, curr, idx) => {
+      if (idx === 0) {
+        return [[curr, curr]];
+      }
+
+      const lastRange = acc[acc.length - 1];
+      const [, lastEnd] = lastRange;
+
+      if (curr === lastEnd + 1) {
+        // Extend the current range
+        lastRange[1] = curr;
+      } else {
+        // Start a new range
+        acc.push([curr, curr]);
+      }
+
+      return acc;
+    }, []);
+
+    return ranges.map(([start, end]) => formatRange(start, end)).join(", ");
+  }, [selectedValues]);
 
   const handleOperatorChange = (e: SelectChangeEvent) => {
     if (onOperatorChange) {
@@ -204,7 +252,7 @@ function ListFilterControl({
             }}
           >
             <Typography color="text.secondary" sx={TYPOGRAPHY_STYLES.smallCaption}>
-              {t("matrix.filter.selectedValues")}:
+              {t("matrix.filter.selectedValues")} ({selectedValues.length}):
             </Typography>
             {onClearAll && (
               <Button
@@ -225,18 +273,13 @@ function ListFilterControl({
               </Button>
             )}
           </Box>
-          <Stack direction="row" spacing={DESIGN_TOKENS.spacing.sm} flexWrap="wrap" useFlexGap>
-            {selectedValues.map((value) => (
-              <Chip
-                key={value}
-                label={value}
-                size="small"
-                color="primary"
-                onDelete={() => onRemoveValue(value)}
-                disabled={disabled}
-              />
-            ))}
-          </Stack>
+          <Chip
+            label={formattedValues}
+            size="small"
+            color="primary"
+            disabled={disabled}
+            sx={CHIP_SELECTOR_STYLES.dense}
+          />
         </Box>
       )}
     </>
