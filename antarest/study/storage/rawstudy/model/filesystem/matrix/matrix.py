@@ -87,14 +87,16 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         path = self.config.path.parent / (self.config.path.name + ".link")
         return path
 
+    def get_path(self) -> Path:
+        return self.config.path.parent / self.config.path.name
+
     @override
     def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 
         if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
-            link_path = self.get_link_path()
-            self.matrix_mapper.save_matrix(self, data, link_path)
+            self.matrix_mapper.save_matrix(self, data, self.get_path())
         else:
             super().save(data, url)
             if self.get_link_path().exists():
@@ -155,13 +157,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         Raises:
             DenormalizationException: if the original matrix retrieval fails.
         """
-        if self.get_link_path().exists() or self.config.archive_path:
-            return
-
-        matrix = self.parse_as_dataframe()
-        matrix_uri = self.matrix_mapper.create_matrix(matrix)
-        self.get_link_path().write_text(matrix_uri)
-        self.config.path.unlink()
+        self.matrix_mapper.normalize(self, self.get_path())
 
     @override
     def denormalize(self) -> None:
@@ -170,15 +166,9 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         and write the matrix data to the file specified by `self.config.path`
         before removing the link file.
         """
-        if self.config.path.exists() or not self.get_link_path().exists():
-            return
-
-        # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
-        uuid = self.get_link_path().read_text()
-        matrix = self.matrix_mapper.get_matrix(uuid)
-        self.dump(matrix)
-        self.get_link_path().unlink()
+        self.matrix_mapper.denormalize(self, self.get_path())
+
 
     @override
     def load(
@@ -212,13 +202,6 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             self.get_link_path().unlink()
         super().delete(url)
 
-    @abstractmethod
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
-        """
-        Parse the matrix content and return it as a DataFrame object
-        """
-        raise NotImplementedError()
-
     @override
     def dump(
         self,
@@ -246,3 +229,10 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             else:
                 df = data
             dump_dataframe(df, self.config.path)
+
+    @abstractmethod
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+        """
+        Parse the matrix content and return it as a DataFrame object
+        """
+        raise NotImplementedError()

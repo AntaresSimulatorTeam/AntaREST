@@ -76,7 +76,15 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
+        pass
+
+    @abstractmethod
+    def normalize(self, node: "MatrixNode", path: Path) -> None:
+        pass
+
+    @abstractmethod
+    def denormalize(self, node: "MatrixNode", path: Path) -> None:
         pass
 
 
@@ -108,8 +116,30 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
         pass
+
+    @override
+    def normalize(self, node: "MatrixNode", path: Path) -> None:
+        link_path = Path(f"{path}.link")
+        if link_path.exists() or node.config.archive_path:
+            return
+
+        matrix = node.parse_as_dataframe()
+        matrix_uri = self.create_matrix(matrix)
+        link_path.write_text(matrix_uri)
+        node.config.path.unlink()
+
+    @override
+    def denormalize(self, node: "MatrixNode", path: Path) -> None:
+        link_path = Path(f"{path}.link")
+        if node.config.path.exists() or not link_path.exists():
+            return
+
+        uuid = link_path.read_text()
+        matrix = self.get_matrix(uuid)
+        node.dump(matrix)
+        link_path.unlink()
 
 
 class MatrixUriMapperManaged(BaseMatrixUriMapper):
@@ -119,10 +149,11 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
+        link_path = Path(f"{path}.link")
         link_path.write_text(matrix_uri)
-        if data.config.path.exists():
-            data.config.path.unlink()
+        if node.config.path.exists():
+            node.config.path.unlink()
 
 
 class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
@@ -133,9 +164,9 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, data: "MatrixNode", matrix_uri: str, link_path: Path) -> None:
+    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
         matrix = self.get_matrix(matrix_uri)
-        data.dump(matrix)
+        node.dump(matrix)
 
 
 class MatrixUriMapperFactory:

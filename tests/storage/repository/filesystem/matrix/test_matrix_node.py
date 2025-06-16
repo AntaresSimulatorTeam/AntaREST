@@ -71,11 +71,14 @@ class TestMatrixNode:
         link = file.parent / f"{file.name}.link"
         link.write_text("my-id")
 
-        resolver = Mock()
-        resolver.get_matrix.return_value = MOCK_MATRIX
+        matrix_service = Mock()
+        matrix_service.get.return_value = MOCK_MATRIX
+
+        factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+        matrix_mapper = factory.create(NormalizedMatrixUriMapper.NORMALIZED)
 
         node = MockMatrixNode(
-            matrix_mapper=resolver,
+            matrix_mapper=matrix_mapper,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 
