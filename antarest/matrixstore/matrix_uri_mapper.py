@@ -76,15 +76,15 @@ class MatrixUriMapper(ABC):
         pass
 
     @abstractmethod
-    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
         pass
 
     @abstractmethod
-    def normalize(self, node: "MatrixNode", path: Path) -> None:
+    def normalize(self, node: MatrixNode, path: Path) -> None:
         pass
 
     @abstractmethod
-    def denormalize(self, node: "MatrixNode", path: Path) -> None:
+    def denormalize(self, node: MatrixNode, path: Path) -> None:
         pass
 
 
@@ -116,11 +116,11 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         return self._matrix_service.exists(extract_matrix_id(uri))
 
     @override
-    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
         pass
 
     @override
-    def normalize(self, node: "MatrixNode", path: Path) -> None:
+    def normalize(self, node: MatrixNode, path: Path) -> None:
         link_path = Path(f"{path}.link")
         if link_path.exists() or node.config.archive_path:
             return
@@ -131,7 +131,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         node.config.path.unlink()
 
     @override
-    def denormalize(self, node: "MatrixNode", path: Path) -> None:
+    def denormalize(self, node: MatrixNode, path: Path) -> None:
         link_path = Path(f"{path}.link")
         if node.config.path.exists() or not link_path.exists():
             return
@@ -149,7 +149,7 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
         link_path = Path(f"{path}.link")
         link_path.write_text(matrix_uri)
         if node.config.path.exists():
@@ -164,7 +164,7 @@ class MatrixUriMapperUnmanaged(BaseMatrixUriMapper):
     """
 
     @override
-    def save_matrix(self, node: "MatrixNode", matrix_uri: str, path: Path) -> None:
+    def save_matrix(self, node: MatrixNode, matrix_uri: str, path: Path) -> None:
         matrix = self.get_matrix(matrix_uri)
         node.dump(matrix)
 
