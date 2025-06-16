@@ -19,17 +19,18 @@ import {
   FILTER_OPERATORS,
   type TimeIndexingType,
   type FilterType,
+  type FilterOperatorType,
 } from "../../constants";
 import type { FilterState } from "../../types";
 
 describe("Filter Combination Logic", () => {
   const createMockFilter = (
-    rowsFilterLogic: "AND" | "OR" = "AND",
     filters: Array<{
       indexingType: TimeIndexingType;
       type: FilterType;
       list?: number[];
       range?: { min: number; max: number };
+      operator?: FilterOperatorType;
     }> = [],
   ): FilterState => ({
     active: true,
@@ -44,9 +45,8 @@ describe("Filter Combination Logic", () => {
       type: f.type,
       list: f.list,
       range: f.range,
-      operator: FILTER_OPERATORS.EQUALS,
+      operator: f.operator || FILTER_OPERATORS.EQUALS,
     })),
-    rowsFilterLogic,
     operation: {
       type: "Eq",
       value: 0,
@@ -59,9 +59,9 @@ describe("Filter Combination Logic", () => {
     return date.toISOString();
   });
 
-  describe("AND Logic (Intersection)", () => {
-    it("should return only rows matching ALL filters", () => {
-      const filter = createMockFilter("AND", [
+  describe("Mixed Type Filters (AND between types, OR within types)", () => {
+    it("should apply AND logic between different indexingTypes", () => {
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
@@ -90,7 +90,7 @@ describe("Filter Combination Logic", () => {
     });
 
     it("should return empty array when filters have no intersection", () => {
-      const filter = createMockFilter("AND", [
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
@@ -107,8 +107,8 @@ describe("Filter Combination Logic", () => {
       expect(result).toEqual([]);
     });
 
-    it("should handle range filters with AND logic", () => {
-      const filter = createMockFilter("AND", [
+    it("should handle range filters with AND logic between types", () => {
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.RANGE,
@@ -134,15 +134,45 @@ describe("Filter Combination Logic", () => {
         expect([0, 6]).toContain(dayOfWeek); // Sunday is 0, Saturday is 6
       }
     });
-  });
 
-  describe("OR Logic (Union)", () => {
-    it("should return rows matching ANY filter", () => {
-      const filter = createMockFilter("OR", [
+    it("should apply OR logic within same indexingType", () => {
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
           list: [1], // January
+        },
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [3], // March
+        },
+      ]);
+
+      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+
+      // Should include all days in January OR March
+      expect(result.length).toBe(62); // January (31) + March (31) = 62 days
+
+      // Verify each result is either in January or March
+      for (const index of result) {
+        const date = new Date(mockDateTime[index]);
+        const month = date.getMonth();
+        expect([0, 2]).toContain(month); // January is 0, March is 2
+      }
+    });
+
+    it("should apply OR within type and AND between types", () => {
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [1], // January
+        },
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [3], // March
         },
         {
           indexingType: TIME_INDEXING.WEEKDAY,
@@ -153,23 +183,19 @@ describe("Filter Combination Logic", () => {
 
       const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
 
-      // Should include all January days + all Mondays in the year
-      // January has 31 days, year has ~52 Mondays
-      // Some Mondays are in January, so total should be less than 31 + 52
-      expect(result.length).toBeGreaterThan(31); // At least all January days
-      expect(result.length).toBeLessThan(83); // Less than sum due to overlap
-
-      // Verify each result is either in January OR is a Monday
+      // Should include only Mondays in January OR March
       for (const index of result) {
         const date = new Date(mockDateTime[index]);
-        const isJanuary = date.getMonth() === 0;
-        const isMonday = date.getDay() === 1;
-        expect(isJanuary || isMonday).toBe(true);
+        const month = date.getMonth();
+        const dayOfWeek = date.getDay();
+
+        expect(dayOfWeek).toBe(1); // Must be Monday
+        expect([0, 2]).toContain(month); // Must be January or March
       }
     });
 
-    it("should handle multiple filters with no overlap", () => {
-      const filter = createMockFilter("OR", [
+    it("should handle multiple filters of different types correctly", () => {
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
@@ -180,16 +206,30 @@ describe("Filter Combination Logic", () => {
           type: FILTER_TYPES.LIST,
           list: [9], // September
         },
+        {
+          indexingType: TIME_INDEXING.WEEKDAY,
+          type: FILTER_TYPES.LIST,
+          list: [6, 7], // Weekend
+        },
       ]);
 
       const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
 
-      // March has 31 days, September has 30 days = 61 total
-      expect(result.length).toBe(61);
-    });
+      // Should include only weekends in March OR September
+      for (const index of result) {
+        const date = new Date(mockDateTime[index]);
+        const month = date.getMonth();
+        const dayOfWeek = date.getDay();
 
-    it("should remove duplicates when using OR logic", () => {
-      const filter = createMockFilter("OR", [
+        expect([0, 6]).toContain(dayOfWeek); // Must be Saturday or Sunday
+        expect([2, 8]).toContain(month); // Must be March or September
+      }
+    });
+  });
+
+  describe("Same Type Duplicates", () => {
+    it("should not duplicate results when same filter is applied multiple times", () => {
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.DAY_OF_MONTH,
           type: FILTER_TYPES.LIST,
@@ -213,48 +253,9 @@ describe("Filter Combination Logic", () => {
     });
   });
 
-  describe("Default Behavior", () => {
-    it("should default to AND logic when rowsFilterLogic is not specified", () => {
-      const filter: FilterState = {
-        active: true,
-        columnsFilter: {
-          type: FILTER_TYPES.LIST,
-          list: [1],
-          operator: FILTER_OPERATORS.EQUALS,
-        },
-        rowsFilters: [
-          {
-            id: "filter-1",
-            indexingType: TIME_INDEXING.MONTH,
-            type: FILTER_TYPES.LIST,
-            list: [1], // January
-            operator: FILTER_OPERATORS.EQUALS,
-          },
-          {
-            id: "filter-2",
-            indexingType: TIME_INDEXING.WEEKDAY,
-            type: FILTER_TYPES.LIST,
-            list: [1], // Monday
-            operator: FILTER_OPERATORS.EQUALS,
-          },
-        ],
-        // rowsFilterLogic is not specified
-        operation: {
-          type: "Eq",
-          value: 0,
-        },
-      };
-
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
-
-      // Should behave like AND logic
-      expect(result.length).toBeLessThanOrEqual(5); // Only Mondays in January
-    });
-  });
-
   describe("Edge Cases", () => {
     it("should handle empty filter lists", () => {
-      const filter = createMockFilter("AND", [
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
@@ -267,7 +268,7 @@ describe("Filter Combination Logic", () => {
     });
 
     it("should handle single filter", () => {
-      const filter = createMockFilter("AND", [
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
@@ -280,13 +281,13 @@ describe("Filter Combination Logic", () => {
     });
 
     it("should handle no filters", () => {
-      const filter = createMockFilter("AND", []);
+      const filter = createMockFilter([]);
       const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
       expect(result.length).toBe(365); // All rows
     });
 
-    it("should handle three or more filters with AND logic", () => {
-      const filter = createMockFilter("AND", [
+    it("should handle three or more filters correctly", () => {
+      const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
           type: FILTER_TYPES.LIST,
@@ -312,6 +313,168 @@ describe("Filter Combination Logic", () => {
         expect(date.getMonth()).toBe(6); // July is month 6
         expect(date.getDay()).toBe(5); // Friday
         expect(date.getDate()).toBeLessThanOrEqual(15);
+      }
+    });
+
+    it("should handle complex scenario with multiple same-type filters", () => {
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [1], // January
+        },
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [3], // March
+        },
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [5], // May
+        },
+        {
+          indexingType: TIME_INDEXING.WEEKDAY,
+          type: FILTER_TYPES.LIST,
+          list: [2, 4], // Tuesday and Thursday
+        },
+      ]);
+
+      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+
+      // Should include only Tuesdays and Thursdays in January, March, or May
+      for (const index of result) {
+        const date = new Date(mockDateTime[index]);
+        const month = date.getMonth();
+        const dayOfWeek = date.getDay();
+
+        expect([2, 4]).toContain(dayOfWeek); // Must be Tuesday or Thursday
+        expect([0, 2, 4]).toContain(month); // Must be January, March, or May
+      }
+    });
+
+    it("should handle mix of range and list filters of same type", () => {
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.DAY_OF_MONTH,
+          type: FILTER_TYPES.RANGE,
+          range: { min: 1, max: 5 }, // First 5 days
+        },
+        {
+          indexingType: TIME_INDEXING.DAY_OF_MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [28, 29, 30, 31], // Last days
+        },
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [6], // June
+        },
+      ]);
+
+      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+
+      // Should include days 1-5 OR 28-31 in June only
+      for (const index of result) {
+        const date = new Date(mockDateTime[index]);
+        const month = date.getMonth();
+        const day = date.getDate();
+
+        expect(month).toBe(5); // Must be June (month 5)
+        const isFirstFiveDays = day >= 1 && day <= 5;
+        const isLastDays = day >= 28 && day <= 31;
+        expect(isFirstFiveDays || isLastDays).toBe(true);
+      }
+    });
+
+    it("should handle filters with different operators correctly", () => {
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.DAY_OF_MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [15], // Using greater than operator (day > 15)
+          operator: FILTER_OPERATORS.GREATER_THAN,
+        },
+        {
+          indexingType: TIME_INDEXING.DAY_OF_MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [5], // Using less than operator (day < 5)
+          operator: FILTER_OPERATORS.LESS_THAN,
+        },
+      ]);
+
+      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+
+      // With OR logic within same type, should include days where (day > 15) OR (day < 5)
+      // This includes days 1-4 and 16-31 of each month
+      // January: 4 + 16 = 20 days, February: 4 + 13 = 17 days (28 days total)
+      // Months with 30 days: 4 + 15 = 19 days each
+      // Months with 31 days: 4 + 16 = 20 days each
+
+      // Verify the results match the criteria
+      for (const index of result) {
+        const date = new Date(mockDateTime[index]);
+        const dayOfMonth = date.getDate();
+        const matchesGreaterThan = dayOfMonth > 15;
+        const matchesLessThan = dayOfMonth < 5;
+        expect(matchesGreaterThan || matchesLessThan).toBe(true);
+      }
+
+      // Rough calculation: ~19-20 days per month * 12 months = ~228-240 days
+      expect(result.length).toBeGreaterThan(220);
+      expect(result.length).toBeLessThan(250);
+    });
+
+    it("should return empty when no filter matches", () => {
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [2], // February
+        },
+        {
+          indexingType: TIME_INDEXING.DAY_OF_MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [30, 31], // Days that don't exist in February
+        },
+      ]);
+
+      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      expect(result).toEqual([]);
+    });
+
+    it("should handle hour-based filters correctly", () => {
+      // Create hourly mock data for a single day
+      const hourlyDateTime = Array.from({ length: 24 }, (_, i) => {
+        const date = new Date(Date.UTC(2024, 0, 1, i, 0, 0));
+        return date.toISOString();
+      });
+
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.DAY_HOUR,
+          type: FILTER_TYPES.LIST,
+          list: [0, 1, 2], // Hours 0-2 (midnight to 2 AM)
+        },
+        {
+          indexingType: TIME_INDEXING.DAY_HOUR,
+          type: FILTER_TYPES.LIST,
+          list: [22, 23], // Hours 22-23 (10 PM to 11 PM)
+        },
+      ]);
+
+      const result = processRowFilters(filter, hourlyDateTime, true, undefined, 24);
+
+      // Should include hours 0-2 OR 22-23 (5 total hours)
+      const resultHours = result.map((index) => new Date(hourlyDateTime[index]).getUTCHours());
+      const expectedHours = [0, 1, 2, 22, 23];
+
+      // Check that we have the right number of results
+      expect(result.length).toBe(5);
+
+      // Check that all result hours are in our expected set
+      for (const hour of resultHours) {
+        expect(expectedHours).toContain(hour);
       }
     });
   });

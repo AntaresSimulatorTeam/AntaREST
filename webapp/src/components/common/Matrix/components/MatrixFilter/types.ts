@@ -33,7 +33,6 @@ export interface FilterState {
     operator?: FilterOperatorType;
   };
   rowsFilters: RowFilter[];
-  rowsFilterLogic?: "AND" | "OR"; // How to combine multiple row filters
   operation: {
     type: string;
     value: number;

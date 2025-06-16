@@ -292,6 +292,8 @@ export function getFilteredTemporalOptions(
 
 /**
  * Processes multiple row filters and combines their results
+ * Applies OR logic within filters of the same indexingType
+ * Applies AND logic between different indexingTypes
  *
  * @param filter - The filter state containing row filters configuration
  * @param dateTime - Array of date/time strings for temporal indexing
@@ -326,23 +328,28 @@ export function processRowFilters(
     });
   }
 
-  // Get results from each filter
-  const filterResults = rowsFilters.map((rowFilter) =>
-    getTemporalIndices({
-      filter,
-      rowFilter,
-      dateTime,
-      isTimeSeries,
-      timeFrequency,
-      totalRows,
-    }),
-  );
+  // Group filters by indexingType
+  const filtersByType = R.groupBy((rowFilter: RowFilter) => rowFilter.indexingType, rowsFilters);
 
-  // Combine using the specified logic (default to AND)
-  const combineLogic = filter.rowsFilterLogic || "AND";
-  return combineLogic === "AND"
-    ? combineFilterResultsAND(filterResults)
-    : combineFilterResultsOR(filterResults);
+  // Process each group: apply OR within group
+  const groupResults = Object.entries(filtersByType).map(([indexingType, filters]) => {
+    const filterResults = filters.map((rowFilter) =>
+      getTemporalIndices({
+        filter,
+        rowFilter,
+        dateTime,
+        isTimeSeries,
+        timeFrequency,
+        totalRows,
+      }),
+    );
+
+    // Apply OR logic within the same indexingType group
+    return combineFilterResultsOR(filterResults);
+  });
+
+  // Apply AND logic between different groups
+  return combineFilterResultsAND(groupResults);
 }
 
 /**
