@@ -14,6 +14,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import { toError } from "@/utils/fnUtils";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
@@ -148,7 +149,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
       ? () => {
           const fn = config?.defaultValues as () => Promise<TFieldValues>;
           return fn().catch((err) => {
-            enqueueErrorSnackbar(t("form.asyncDefaultValues.error"), err);
+            enqueueErrorSnackbar(t("form.asyncDefaultValues.error"), toError(err));
             throw err;
           });
         }
@@ -273,7 +274,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
           };
         })
         .catch((err) => {
-          enqueueErrorSnackbar(t("form.submit.error"), err);
+          enqueueErrorSnackbar(t("form.submit.error"), toError(err));
 
           // Any error under the `root` key are not persisted with each submission.
           // They will be deleted automatically.

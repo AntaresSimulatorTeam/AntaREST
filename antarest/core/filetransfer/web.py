@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +18,7 @@ from starlette.responses import FileResponse
 from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadDTO
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 
@@ -44,5 +44,14 @@ def create_file_transfer_api(filetransfer_manager: FileTransferManager, config: 
             headers={"Content-Disposition": f'attachment; filename="{download.filename}"'},
             media_type="application/zip",
         )
+
+    @bp.get(
+        "/downloads/{download_id}/metadata",
+        tags=[APITag.downloads],
+        summary="Retrieve information on a file's state of preparation",
+    )
+    def get_download_metadata(download_id: str, wait_for_availability: bool = False) -> FileDownloadDTO:
+        sanitized_download_id = sanitize_uuid(download_id)
+        return filetransfer_manager.get_download_metadata(sanitized_download_id, wait_for_availability)
 
     return bp

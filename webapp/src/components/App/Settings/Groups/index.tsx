@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { toError } from "@/utils/fnUtils";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import GroupIcon from "@mui/icons-material/Group";
@@ -167,7 +168,7 @@ function Groups() {
         });
       })
       .catch((err) => {
-        enqueueErrorSnackbar(t("settings.error.groupDelete", { 0: group.name }), err);
+        enqueueErrorSnackbar(t("settings.error.groupDelete", { 0: group.name }), toError(err));
       })
       .finally(() => {
         setGroupsInLoading((prev) => prev.filter((u) => u !== group));

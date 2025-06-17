@@ -18,6 +18,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.command_factory import CommandValidationContext
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -151,7 +152,7 @@ class TestCreateLink:
             "filter-synthesis": "hourly",
             "filter-year-by-year": "hourly",
         }
-
+        legacy_command_version = CommandValidationContext(version=1)  # old format
         create_link_command: ICommand = CreateLink.model_validate(
             {
                 "area1": area3_id,
@@ -160,7 +161,8 @@ class TestCreateLink:
                 "command_context": command_context,
                 "series": [[0]],
                 "study_version": study_version,
-            }
+            },
+            context=legacy_command_version,
         )
         output = create_link_command.apply(
             study_data=empty_study,
@@ -176,7 +178,8 @@ class TestCreateLink:
                     "direct": [[0]],
                     "command_context": command_context,
                     "study_version": study_version,
-                }
+                },
+                context=legacy_command_version,
             )
 
         assert (study_path / "input" / "links" / area1_id / f"{area3_id}.txt.link").exists()

@@ -455,6 +455,13 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
@@ -484,6 +491,14 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
@@ -513,6 +528,14 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
@@ -544,6 +567,13 @@ class TestRawDataAggregationMCInd:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             assert res.content.strip() == b""
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
@@ -562,8 +592,11 @@ class TestRawDataAggregationMCInd:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
+        assert res.status_code == 200, res.json()
+
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, res.json()
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
         # for links
@@ -574,11 +607,13 @@ class TestRawDataAggregationMCInd:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, res.json()
         assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
 
-        # Asserts that requests with non-existing folders send an HTTP 404 Exception
+        # Asserts that requests with non-existing folders send an HTTP 422 Exception
         # the mc-ind folder
         mc_ind_folder = tmp_path.joinpath("ext_workspace/STA-mini/output/20201014-1425eco-goodbye/economy/mc-ind")
         # delete the folder
@@ -587,9 +622,13 @@ class TestRawDataAggregationMCInd:
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
             params={"query_file": "values", "frequency": "hourly"},
         )
-        assert res.status_code == 404, res.json()
+        assert res.status_code == 200, res.json()
+
+        file_data_id = res.json()
+
+        res = client.get(f"v1/downloads/{file_data_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, res.json()
         assert "economy/mc-ind" in res.json()["description"]
-        assert res.json()["exception"] == "OutputSubFolderNotFound"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -606,6 +645,12 @@ class TestRawDataAggregationMCInd:
                 "columns_names": "fake_col",
             },
         )
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
+
+        res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -618,6 +663,12 @@ class TestRawDataAggregationMCInd:
                 "columns_names": "fake_col",
             },
         )
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
+
+        res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -643,6 +694,14 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
@@ -672,6 +731,14 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
@@ -701,6 +768,14 @@ class TestRawDataAggregationMCAll:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             export_format = params["format"]
             if export_format == TableExportFormat.CSV.value:
@@ -758,9 +833,18 @@ class TestRawDataAggregationMCAll:
         expected_df = pd.read_csv(resource_file, sep="\t", header=0)
         expected_df = expected_df.replace({np.nan: None})
 
-        for uuid, output_id in [(study_id, raw_output_id), (variant_id, variant_output_id)]:
-            res = client.get(f"/v1/studies/{uuid}/links/aggregate/mc-all/{output_id}", params=params)
+        for study_id, output_id in [(study_id, raw_output_id), (variant_id, variant_output_id)]:
+            res = client.get(f"/v1/studies/{study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
+            assert res.status_code == 200, res.json()
+
             content = io.BytesIO(res.content)
             df = pd.read_csv(content, sep=",")
             for col in expected_df.columns:
@@ -776,6 +860,13 @@ class TestRawDataAggregationMCAll:
         for params in INCOHERENT_REQUESTS_BODIES__ALL:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+            assert res.status_code == 200, res.json()
+            download_id = res.json()
+
+            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+            assert res.status_code == 200, res.json()
+
+            res = client.get(f"v1/downloads/{download_id}")
             assert res.status_code == 200, res.json()
             assert res.content.strip() == b""
 
@@ -795,9 +886,11 @@ class TestRawDataAggregationMCAll:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
-        assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, res.json()
+        assert "Output 'unknown_id' not found" in res.json()["description"], "The output_id should be in the message"
 
         # for links
         res = client.get(
@@ -807,11 +900,15 @@ class TestRawDataAggregationMCAll:
                 "frequency": "hourly",
             },
         )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputNotFound"
-        assert "unknown_id" in res.json()["description"], "The output_id should be in the message"
+        download_id = res.json()
 
-        # Asserts that an error 404 is raised when the `economy/mc-all` folder does not exist
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, res.json()
+        assert "Output 'unknown_id' not found" in res.json()["description"], (
+            "The output_id that wasn't found should be in the message"
+        )
+
+        # Asserts that a 422 error is raised when the `economy/mc-all` folder does not exist
         mc_all_path = tmp_path.joinpath("ext_workspace/STA-mini/output/20241807-1540eco-extra-outputs/economy/mc-all")
         # delete the folder
         shutil.rmtree(mc_all_path)
@@ -819,9 +916,11 @@ class TestRawDataAggregationMCAll:
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
             params={"query_file": "values", "frequency": "daily"},
         )
-        assert res.status_code == 404, res.json()
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, res.json()
         assert "economy/mc-all" in res.json()["description"]
-        assert res.json()["exception"] == "OutputSubFolderNotFound"
 
     def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
         """
@@ -839,6 +938,12 @@ class TestRawDataAggregationMCAll:
                 "columns_names": "fake_col",
             },
         )
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
+
+        res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -851,6 +956,12 @@ class TestRawDataAggregationMCAll:
                 "columns_names": "fake_col",
             },
         )
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
+
+        res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200, res.json()
         assert res.content.strip() == b""
 
@@ -881,9 +992,74 @@ class TestRawDataAggregationColumnsFormatting:
                 "frequency": "annual",
             },
         )
+        download_id = res.json()
+
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
+
+        res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200
         content = io.BytesIO(res.content)
         actual_df = pd.read_csv(content, sep=",")
         expected_df_path = ASSETS_DIR / "aggregate_areas_raw_data" / "expected_result_sts.csv"
         expected_df = pd.read_csv(expected_df_path, sep=",")
         assert actual_df.equals(expected_df)
+
+
+@pytest.mark.integration
+class TestDataAggregationCreationOperations:
+    def test_get_aggregated_output_task_result(
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+    ) -> None:
+        """
+        Test all return values when requesting the results of aggregation operations
+
+        - test the result of an aggregation operation with a bad output_id must return a 422 code
+        - try to request the results of an aggregation operation
+            while the task is not completed yet and must return a 417 code
+        - request the results of a correct aggregation operation: Success, 200
+        """
+        output_id = "20201014-1422eco-hello"
+        params = {
+            "query_file": "values",
+            "frequency": "hourly",
+        }
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # create a bad aggregated output task and get its id
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/fake_output_id/aggregate/areas/mc-ind", params=params)
+        assert res.json(), res.status_code == 200
+
+        download_id = res.json()
+
+        # get error from task results
+        # must return a 422 code
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422, "Output 'fake_output_id not found'" in res.json()["description"]
+
+        # create a correct aggregated output task and get its id
+        res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+        assert res.status_code == 200
+        download_id = res.json()
+
+        # download metadata returns an error explaining that the file is not ready
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": False})
+        assert res.status_code == 417
+        assert res.json()["description"] == "File is still in process."
+
+        # in that case, attempting to get aggregated must return an exception
+        res = client.get(f"v1/downloads/{download_id}")
+        assert res.json()["exception"] == "FileDownloadNotReady"
+        assert "Requested file is not ready for download." in res.json()["description"]
+
+        # wait for the task to be completed
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
+
+        res = client.get(f"v1/downloads/{download_id}")
+
+        # get successful results
+        assert res.status_code == 200, res.content

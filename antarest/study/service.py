@@ -771,10 +771,16 @@ class StudyService:
             study_settings["horizon"] = metadata_patch.horizon
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
 
-        if metadata_patch.author:
+        if metadata_patch.author or metadata_patch.name:
             study_antares_url = "study/antares"
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
-            study_antares["author"] = metadata_patch.author
+
+            if metadata_patch.author:
+                study_antares["author"] = metadata_patch.author
+
+            if metadata_patch.name:
+                study_antares["caption"] = metadata_patch.name
+
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
         study.additional_data = study.additional_data or StudyAdditionalData()

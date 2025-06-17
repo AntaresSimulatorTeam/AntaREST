@@ -859,7 +859,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "enabled": False,
         "group": "other res 1",
         "id": "cluster renewable 1",
-        "name": "cluster renewable 1 renamed",
+        "name": "cluster renewable 1",  # Ensures we did not rename the cluster as we don't support it for now
         "nominalCapacity": 3.0,
         "tsInterpretation": "production-factor",
         "unitCount": 9,

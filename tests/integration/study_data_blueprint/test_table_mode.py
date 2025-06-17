@@ -638,12 +638,12 @@ class TestTableMode:
             )
             assert res.status_code == 200, res.json()
             expected = {
-                "fr / Dieppe": {"enabled": False, "group": "wind offshore", "nominalCapacity": 8, "unitCount": 62},
-                "fr / La Rochelle": {"enabled": True, "group": "solar pv", "nominalCapacity": 3.1, "unitCount": 2},
-                "fr / Oleron": {"enabled": True, "group": "wind offshore", "nominalCapacity": 15, "unitCount": 70},
-                "it / Pouilles": {"enabled": False, "group": "wind onshore", "nominalCapacity": 11, "unitCount": 40},
-                "it / Sardaigne": {"enabled": True, "group": "wind offshore", "nominalCapacity": 12, "unitCount": 86},
-                "it / Sicile": {"enabled": True, "group": "solar pv", "nominalCapacity": 1.8, "unitCount": 1},
+                "fr / dieppe": {"enabled": False, "group": "wind offshore", "nominalCapacity": 8, "unitCount": 62},
+                "fr / la rochelle": {"enabled": True, "group": "solar pv", "nominalCapacity": 3.1, "unitCount": 2},
+                "fr / oleron": {"enabled": True, "group": "wind offshore", "nominalCapacity": 15, "unitCount": 70},
+                "it / pouilles": {"enabled": False, "group": "wind onshore", "nominalCapacity": 11, "unitCount": 40},
+                "it / sardaigne": {"enabled": True, "group": "wind offshore", "nominalCapacity": 12, "unitCount": 86},
+                "it / sicile": {"enabled": True, "group": "solar pv", "nominalCapacity": 1.8, "unitCount": 1},
             }
             actual = res.json()
             assert actual == expected
