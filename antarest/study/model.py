@@ -19,6 +19,7 @@ from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
 import numpy as np
+import numpy.typing as npt
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
 from sqlalchemy import (  # type: ignore
@@ -600,15 +601,15 @@ class MatrixIndex(AntaresBaseModel):
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
-def _np_to_list(array: np.ndarray) -> list[float]:
-    return array.tolist()
+def _np_to_list(array: npt.NDArray[np.float64]) -> list[float]:
+    return cast(list[float], array.tolist())
 
 
-NpArray: TypeAlias = Annotated[np.ndarray, PlainSerializer(_np_to_list)]
+NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list)]
 
 
 class TimeSerie(AntaresBaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
 
     name: str
     unit: str
