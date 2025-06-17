@@ -53,7 +53,7 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.service import EXECUTION_INFO_FILE, LAUNCHER_PARAM_NAME_SUFFIX, JobNotFound, LauncherService
 from antarest.login.model import Identity
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.model import STUDY_VERSION_8_8, OwnerInfo, PublicMode, Study, StudyMetadataDTO
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
@@ -104,6 +104,7 @@ class TestLauncherService:
             config=Config(),
             study_service=storage_service_mock,
             output_service=OutputService(storage_service_mock, Mock(), Mock(), Mock(), event_bus),
+            login_service=Mock(),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
@@ -162,6 +163,7 @@ class TestLauncherService:
             config=Config(),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -199,6 +201,7 @@ class TestLauncherService:
             config=Config(),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -273,6 +276,7 @@ class TestLauncherService:
             config=Config(),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=repository,
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -521,6 +525,7 @@ class TestLauncherService:
             config=full_config,
             study_service=Mock(),
             output_service=Mock(),
+            login_service=Mock(),
             job_result_repository=Mock(),
             factory_launcher=mock_factory,
             event_bus=Mock(),
@@ -701,6 +706,7 @@ class TestLauncherService:
             config=config,
             study_service=Mock(),
             output_service=Mock(),
+            login_service=Mock(),
             job_result_repository=Mock(),
             factory_launcher=Mock(),
             event_bus=Mock(),
@@ -727,6 +733,7 @@ class TestLauncherService:
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -759,6 +766,7 @@ class TestLauncherService:
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -796,6 +804,7 @@ class TestLauncherService:
             config=Config(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -845,15 +854,6 @@ class TestLauncherService:
 
     @with_admin_user
     def test_manage_output(self, tmp_path: Path) -> None:
-        engine = create_engine("sqlite:///:memory:", echo=False)
-        Base.metadata.create_all(engine)
-        # noinspection SpellCheckingInspection
-        DBSessionMiddleware(
-            None,
-            custom_engine=engine,
-            session_args={"autocommit": False, "autoflush": False},
-        )
-
         study_service = Mock()
         study_service.get_study.return_value = Mock(spec=Study, groups=[], owner=None, public_mode=PublicMode.NONE)
         output_service = Mock(spec=OutputService)
@@ -863,6 +863,7 @@ class TestLauncherService:
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
             output_service=output_service,
+            login_service=Mock(),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -980,6 +981,7 @@ class TestLauncherService:
             config=Mock(storage=StorageConfig(tmp_dir=tmp_path)),
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
@@ -1135,6 +1137,7 @@ class TestLauncherService:
             config=config,
             study_service=study_service,
             output_service=OutputService(study_service, Mock(), Mock(), Mock(), Mock()),
+            login_service=Mock(),
             job_result_repository=job_repository,
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
@@ -1158,3 +1161,38 @@ class TestLauncherService:
             launcher_expected_result.allocated_cpu_rate,
             actual_result.allocated_cpu_rate,
         )
+
+    def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
+        # Create user
+        jwt_user = JWTUser(id=2, impersonator=2, type="users")
+        # Make the login service return this user
+        login_service = Mock()
+        login_service.get_jwt.return_value = jwt_user
+        # Put this user as the job owner
+        job_result = JobResult(study_id="study_id", owner_id=jwt_user.id)
+        job_repository = Mock()
+        job_repository.get.return_value = job_result
+
+        # fake import_output function that checks the current user
+        def fake_import_output(uuid: str, output: Path, output_name_suffix: None, auto_unzip: bool) -> None:
+            assert get_current_user() == jwt_user
+
+        output_service = Mock()
+        output_service.import_output.side_effect = fake_import_output
+
+        # Builds the service
+        launcher_service = LauncherService(
+            config=Mock(),
+            study_service=Mock(),
+            output_service=output_service,
+            login_service=login_service,
+            job_result_repository=job_repository,
+            event_bus=Mock(),
+            factory_launcher=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        # Ensures the output_service.import_output method was called with the right user
+        launcher_service._import_output("job_id", tmp_path, {})
