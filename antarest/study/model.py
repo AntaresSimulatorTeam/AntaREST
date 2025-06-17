@@ -600,15 +600,11 @@ class MatrixIndex(AntaresBaseModel):
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
-def _np_to_list(array: np.ndarray) -> List[float]:
+def _np_to_list(array: np.ndarray) -> list[float]:
     return array.tolist()
 
 
-def _list_to_np(array: List[float]) -> np.ndarray:
-    return np.array(array)
-
-
-NpArray: TypeAlias = Annotated[np.ndarray, PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
+NpArray: TypeAlias = Annotated[np.ndarray, PlainSerializer(_np_to_list)]
 
 
 class TimeSerie(AntaresBaseModel):
