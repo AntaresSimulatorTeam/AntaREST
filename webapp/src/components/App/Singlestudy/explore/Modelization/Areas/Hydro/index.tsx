@@ -22,7 +22,7 @@ import TabWrapper from "../../../TabWrapper";
 function Hydro() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const areaId = useAppSelector(getCurrentAreaId);
-  const studyVersion = parseInt(study.version, 10);
+  const studyVersion = Number(study.version);
 
   const tabList = useMemo(() => {
     const basePath = `/studies/${study?.id}/explore/modelization/area/${encodeURI(areaId)}/hydro`;

@@ -29,7 +29,7 @@ function StorageConfig() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { storageId = "" } = useParams();
   const { t } = useTranslation();
-  const studyVersion = parseInt(study.version, 10);
+  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX

@@ -48,6 +48,7 @@ export interface GroupedDataTableProps<
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: Array<MRT_ColumnDef<TData, any>>;
   groups: TGroups;
+  allowNewGroups?: boolean;
   onCreate?: (values: TRow<TGroups[number]>) => Promise<TData>;
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
@@ -68,6 +69,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   data,
   columns,
   groups,
+  allowNewGroups = false,
   onCreate,
   onDuplicate,
   onDelete,
@@ -395,6 +397,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
           open
           onClose={closeDialog}
           groups={groups}
+          allowNewGroups={allowNewGroups}
           existingNames={existingNames}
           onSubmit={handleCreate}
         />

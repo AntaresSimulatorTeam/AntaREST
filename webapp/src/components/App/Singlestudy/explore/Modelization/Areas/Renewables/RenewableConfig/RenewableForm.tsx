@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
@@ -20,15 +22,12 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import Form from "../../../../../../../common/Form";
 import {
+  getRenewableCluster,
   RENEWABLE_GROUPS,
   TS_INTERPRETATION_OPTIONS,
-  type RenewableCluster,
   updateRenewableCluster,
-  getRenewableCluster,
+  type RenewableCluster,
 } from "../utils";
-import type { Area, Cluster, StudyMetadata } from "@/types/types";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import { useCallback } from "react";
 
 interface Props {
   study: StudyMetadata;
@@ -38,9 +37,6 @@ interface Props {
 
 function RenewableForm({ study, areaId, clusterId }: Props) {
   const { t } = useTranslation();
-
-  // Prevents re-fetch while `useNavigateOnCondition` event occurs in parent component
-  const defaultValues = useCallback(() => getRenewableCluster(study.id, areaId, clusterId), []);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -56,8 +52,8 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
 
   return (
     <Form
-      key={study.id + areaId}
-      config={{ defaultValues }}
+      key={study.id + areaId + clusterId}
+      config={{ defaultValues: () => getRenewableCluster(study.id, areaId, clusterId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
       disableStickyFooter
