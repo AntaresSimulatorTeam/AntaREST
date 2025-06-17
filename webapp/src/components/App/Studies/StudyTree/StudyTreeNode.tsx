@@ -19,7 +19,7 @@ import { useTranslation } from "react-i18next";
 import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 import RadarIcon from "@mui/icons-material/Radar";
-import Tooltip from "@mui/material/Tooltip";
+import { Tooltip } from "@mui/material";
 
 function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
   if (folderA.name === DEFAULT_WORKSPACE_NAME) {
