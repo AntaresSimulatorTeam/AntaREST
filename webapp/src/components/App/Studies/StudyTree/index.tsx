@@ -92,8 +92,7 @@ function StudyTree() {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
-        // keep only studies that aren't scanned yet (those that arent in studies
-        // which is the list of studies we got from database)
+        // Keep non-study folders and study folders that haven't been scanned yet
         const filteredStudyFolders = newSubFolders.filter(
           (folder) =>
             !folder.isStudyFolder ||
@@ -103,10 +102,12 @@ function StudyTree() {
         );
         const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
         setSubFolders(nextSubfolders);
+
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
         setStudiesTree(nextStudyTree);
         storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
-        setExploredFolders([...exploredFolders.filter((e) => e !== itemId), itemId]);
+
+        setExploredFolders((prev) => [...prev.filter((e) => e !== itemId), itemId]);
       }
     } catch (err) {
       enqueueErrorSnackbar(
@@ -159,10 +160,8 @@ function StudyTree() {
     }
   };
 
-  const handleTreeItemClick = (itemId: string, isStudyFolder: boolean) => {
-    if (!isStudyFolder) {
-      dispatch(updateStudyFilters({ folder: itemId }));
-    }
+  const handleTreeItemClick = (itemId: string) => {
+    dispatch(updateStudyFilters({ folder: itemId }));
   };
 
   ////////////////////////////////////////////////////////////////

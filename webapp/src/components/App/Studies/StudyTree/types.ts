@@ -32,6 +32,6 @@ export interface FolderDTO {
 export interface StudyTreeNodeProps {
   node: StudyTreeNode;
   itemsLoading: string[];
-  onNodeClick: (id: string, isStudyFolder: boolean) => void;
+  onNodeClick: (id: string) => void;
   exploredFolders: string[];
 }

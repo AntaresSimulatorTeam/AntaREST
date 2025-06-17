@@ -68,11 +68,18 @@ export default function StudyTreeNode({
           color: "primary",
         },
       }}
-      onClick={() => onNodeClick(node.path, !!isStudyFolder)}
+      onClick={isStudyFolder ? undefined : () => onNodeClick(node.path)}
+      disabled={isStudyFolder}
+      sx={{
+        ".Mui-disabled": {
+          opacity: 1,
+          cursor: "default",
+        },
+      }}
       loading={isLoading}
     >
       {/* the loading tree item bellow may seem useless but it's mandatory to display  
-        /* the little arrow on the left on folders without scanned studies*/}
+          the little arrow on the left on folders without scanned studies*/}
       {hasUnloadedChildren && (
         <TreeItemEnhanced
           itemId={`${path}//loading`}
