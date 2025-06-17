@@ -31,8 +31,6 @@ from antarest.study.business.allocation_management import AllocationField, Alloc
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
     STStorageManager,
-    STStorageMatrix,
-    STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
     ThermalManager,
@@ -70,6 +68,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
@@ -79,7 +78,6 @@ from antarest.study.business.optimization_management import OptimizationFormFiel
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -381,10 +379,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=ThematicTrimmingFormFields,
         response_model_exclude_none=True,
     )
-    def get_thematic_trimming(uuid: str) -> ThematicTrimmingFormFields:
+    def get_thematic_trimming(uuid: str) -> ThematicTrimming:
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -395,7 +392,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
-    def set_thematic_trimming(uuid: str, field_values: ThematicTrimmingFormFields) -> None:
+    def set_thematic_trimming(uuid: str, field_values: ThematicTrimming) -> None:
         logger.info(f"Updating thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1711,85 +1708,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.st_storage_manager.get_storages(study_interface, area_id)
-
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
-        tags=[APITag.study_data],
-        summary="Get a short-term storage time series",
-        response_model=STStorageMatrix,
-    )
-    def get_st_storage_matrix(
-        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries
-    ) -> STStorageMatrix:
-        """
-        Retrieve the matrix of the specified time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-        - `ts_name`: the name of the time series to retrieve.
-
-        Returns: The time series matrix with the following attributes:
-        - `index`: a list of 0-indexed time series lines (8760 lines).
-        - `columns`: a list of 0-indexed time series columns (1 column).
-        - `data`: a 2D-array matrix representing the time series.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Retrieving time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.st_storage_manager.get_matrix(study_interface, area_id, storage_id, ts_name)
-
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
-        tags=[APITag.study_data],
-        summary="Update a short-term storage time series",
-    )
-    def update_st_storage_matrix(
-        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries, ts: STStorageMatrix
-    ) -> None:
-        """
-        Update the matrix of the specified time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-        - `ts_name`: the name of the time series to retrieve.
-        - `ts`: the time series matrix to update.
-
-        Permissions:
-        - User must have WRITE permission on the study.
-        """
-        logger.info(f"Update time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
-
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/validate",
-        tags=[APITag.study_data],
-        summary="Validate all the short-term storage time series",
-    )
-    def validate_st_storage_matrices(uuid: str, area_id: str, storage_id: str) -> bool:
-        """
-        Validate the consistency of all time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Validating time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.st_storage_manager.validate_matrices(study_interface, area_id, storage_id)
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/storages",

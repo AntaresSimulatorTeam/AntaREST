@@ -100,7 +100,7 @@ export interface AdvancedParamsFormFields {
   dayAheadReserveManagement: string;
   hydroHeuristicPolicy: string;
   hydroPricingMode: string;
-  initialReservoirLevels: string;
+  initialReservoirLevels?: string; // Not present since v9.2
   numberOfCoresMode: string;
   powerFluctuations: string;
   renewableGenerationModelling: string;
