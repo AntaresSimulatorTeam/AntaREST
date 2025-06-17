@@ -135,19 +135,7 @@ class CreateSTStorage(ICommand):
         """
         values = {"command_context": self.command_context}
         if v is None:
-            if self.study_version >= STUDY_VERSION_8_8:
-                return None
-            # use an already-registered default matrix
-            constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
-            # Directly access the methods instead of using `getattr` for maintainability
-            methods = {
-                "pmax_injection": constants.get_st_storage_pmax_injection,
-                "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal,
-                "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
-                "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
-                "inflows": constants.get_st_storage_inflows,
-            }
-            return methods[field]()
+            return None
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, values)
@@ -212,47 +200,23 @@ class CreateSTStorage(ICommand):
         study_data.save_st_storage(self.area_id, storage)
 
         # Matrices
-        empty_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
+        matrices = self._fill_none_matrices()
 
-        matrix = empty_matrix if not self.pmax_injection else self.pmax_injection
-        assert isinstance(matrix, str)
-        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, matrix)
-
-        matrix = empty_matrix if not self.pmax_withdrawal else self.pmax_withdrawal
-        assert isinstance(matrix, str)
-        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, matrix)
-
-        matrix = empty_matrix if not self.upper_rule_curve else self.upper_rule_curve
-        assert isinstance(matrix, str)
-        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, matrix)
-
-        matrix = empty_matrix if not self.lower_rule_curve else self.lower_rule_curve
-        assert isinstance(matrix, str)
-        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, matrix)
-
-        matrix = empty_matrix if not self.inflows else self.inflows
-        assert isinstance(matrix, str)
-        study_data.save_st_storage_inflows(self.area_id, storage.id, matrix)
+        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, matrices["pmax_injection"])
+        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, matrices["pmax_withdrawal"])
+        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, matrices["upper_rule_curve"])
+        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, matrices["lower_rule_curve"])
+        study_data.save_st_storage_inflows(self.area_id, storage.id, matrices["inflows"])
 
         if self.study_version >= STUDY_VERSION_9_2:
-            matrix = empty_matrix if not self.cost_injection else self.cost_injection
-            assert isinstance(matrix, str)
-            study_data.save_st_storage_cost_injection(self.area_id, storage.id, matrix)
+            study_data.save_st_storage_cost_injection(self.area_id, storage.id, matrices["cost_injection"])
+            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, matrices["cost_withdrawal"])
+            study_data.save_st_storage_cost_level(self.area_id, storage.id, matrices["cost_level"])
 
-            matrix = empty_matrix if not self.cost_withdrawal else self.cost_withdrawal
-            assert isinstance(matrix, str)
-            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, matrix)
-
-            matrix = empty_matrix if not self.cost_level else self.cost_level
-            assert isinstance(matrix, str)
-            study_data.save_st_storage_cost_level(self.area_id, storage.id, matrix)
-
-            matrix = empty_matrix if not self.cost_variation_injection else self.cost_variation_injection
-            assert isinstance(matrix, str)
+            matrix = matrices["cost_variation_injection"]
             study_data.save_st_storage_cost_variation_injection(self.area_id, storage.id, matrix)
 
-            matrix = empty_matrix if not self.cost_variation_withdrawal else self.cost_variation_withdrawal
-            assert isinstance(matrix, str)
+            matrix = matrices["cost_variation_withdrawal"]
             study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
 
         return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
@@ -290,3 +254,25 @@ class CreateSTStorage(ICommand):
             if matrix_data is not None:
                 matrices.append(strip_matrix_protocol(matrix_data))
         return matrices
+
+    def _fill_none_matrices(self) -> dict[str, str]:
+        constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
+        empty_matrix = constants.get_null_matrix()
+
+        v_8_6_matrices = {
+            "pmax_injection": constants.get_st_storage_pmax_injection,
+            "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal,
+            "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
+            "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
+            "inflows": constants.get_st_storage_inflows,
+        }
+
+        matrices = self._get_matrices()
+        for matrix_name, matrix_data in matrices.items():
+            if matrix_data is None:
+                if self.study_version >= STUDY_VERSION_8_8:
+                    matrices[matrix_name] = empty_matrix
+                else:
+                    matrices[matrix_name] = v_8_6_matrices[matrix_name]()
+
+        return cast(dict[str, str], matrices)

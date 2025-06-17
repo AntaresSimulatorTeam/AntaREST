@@ -540,11 +540,6 @@ class TestSTStorage:
             "args": {
                 "area_id": "fr",
                 "parameters": {"name": siemens_battery, "group": "battery"},
-                "pmax_injection": ANY,
-                "pmax_withdrawal": ANY,
-                "lower_rule_curve": ANY,
-                "upper_rule_curve": ANY,
-                "inflows": ANY,
             },
             "version": 3,
             "updated_at": ANY,
