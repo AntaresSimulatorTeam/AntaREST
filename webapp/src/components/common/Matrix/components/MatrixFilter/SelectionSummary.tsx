@@ -15,41 +15,21 @@
 import { Typography, Paper, Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { SelectionSummaryProps } from "./types";
-import { SELECTION_SUMMARY_STYLES, PREVIEW_STYLES } from "./styles";
+import { SELECTION_SUMMARY_STYLES } from "./styles";
 
-function SelectionSummary({ filteredData, previewMode = false }: SelectionSummaryProps) {
+function SelectionSummary({ filteredData }: SelectionSummaryProps) {
   const { t } = useTranslation();
 
   const totalCells = filteredData.rowsIndices.length * filteredData.columnsIndices.length;
 
   return (
-    <Paper
-      variant="outlined"
-      sx={{
-        ...SELECTION_SUMMARY_STYLES.container,
-        ...(previewMode && PREVIEW_STYLES.container),
-      }}
-    >
-      <Typography
-        variant="caption"
-        color={previewMode ? "info.main" : "primary.main"}
-        gutterBottom
-        sx={{ display: "block", textAlign: "center" }}
-      >
-        {t("matrix.filter.selectionSummary")}
-      </Typography>
-
+    <Paper variant="outlined" sx={SELECTION_SUMMARY_STYLES.container}>
       <Box sx={SELECTION_SUMMARY_STYLES.statsContainer}>
         <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
           <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedRows")}
           </Typography>
-          <Typography
-            variant="caption"
-            color={previewMode ? "info.main" : "text.primary"}
-            fontWeight="medium"
-            sx={SELECTION_SUMMARY_STYLES.value}
-          >
+          <Typography variant="caption" fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
             {filteredData.rowsIndices.length}
           </Typography>
         </Box>
@@ -58,12 +38,7 @@ function SelectionSummary({ filteredData, previewMode = false }: SelectionSummar
           <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedColumns")}
           </Typography>
-          <Typography
-            variant="caption"
-            color={previewMode ? "info.main" : "text.primary"}
-            fontWeight="medium"
-            sx={SELECTION_SUMMARY_STYLES.value}
-          >
+          <Typography variant="caption" fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
             {filteredData.columnsIndices.length}
           </Typography>
         </Box>
@@ -72,12 +47,7 @@ function SelectionSummary({ filteredData, previewMode = false }: SelectionSummar
           <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedCells")}
           </Typography>
-          <Typography
-            variant="body2"
-            color={previewMode ? "info.main" : "primary.main"}
-            fontWeight="medium"
-            sx={SELECTION_SUMMARY_STYLES.value}
-          >
+          <Typography variant="body2" fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
             {totalCells}
           </Typography>
         </Box>

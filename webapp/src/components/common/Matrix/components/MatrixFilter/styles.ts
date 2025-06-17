@@ -321,7 +321,7 @@ export const CHIP_SELECTOR_STYLES = {
 
 export const SELECTION_SUMMARY_STYLES = {
   container: {
-    p: DESIGN_TOKENS.spacing.sm,
+    p: DESIGN_TOKENS.spacing.xs,
   },
   statsContainer: {
     display: "flex",

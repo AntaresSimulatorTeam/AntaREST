@@ -141,6 +141,10 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: Matri
           </Box>
         </Box>
 
+        <Box sx={{ mb: DESIGN_TOKENS.spacing.sm }}>
+          <SelectionSummary filteredData={currentFilteredData} />
+        </Box>
+
         <Divider sx={{ mb: DESIGN_TOKENS.spacing.sm, flexShrink: 0 }} />
 
         <Box sx={DRAWER_STYLES.scrollableContent}>
@@ -161,10 +165,6 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: Matri
               onApplyOperation={handleApplyOperation}
             />
           )}
-        </Box>
-
-        <Box sx={{ mt: DESIGN_TOKENS.spacing.lg }}>
-          <SelectionSummary filteredData={currentFilteredData} previewMode={filter.active} />
         </Box>
       </Drawer>
     </>

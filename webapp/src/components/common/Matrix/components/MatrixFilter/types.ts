@@ -78,7 +78,6 @@ export interface OperationsProps extends FilterSectionProps {
 
 export interface SelectionSummaryProps {
   filteredData: FilterCriteria;
-  previewMode?: boolean;
 }
 
 export interface TemporalIndexingParams {
