@@ -18,6 +18,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
+import RadarIcon from "@mui/icons-material/Radar";
 
 function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
   if (folderA.name === DEFAULT_WORKSPACE_NAME) {
@@ -55,12 +56,18 @@ export default function StudyTreeNode({
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
   return (
     <TreeItemEnhanced
       itemId={path}
       label={name}
-      badge={isStudyFolder ? t("studies.tree.unscannedStudyFolder") : ""}
+      slots={{
+        ...(isStudyFolder && { endIcon: RadarIcon }),
+      }}
+      slotProps={{
+        endIcon: {
+          color: "primary",
+        },
+      }}
       onClick={() => onNodeClick(node.path, !!isStudyFolder)}
       loading={isLoading}
     >

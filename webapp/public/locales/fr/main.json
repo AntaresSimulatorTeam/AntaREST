@@ -706,7 +706,6 @@
   "studies.variant": "Variant",
   "studies.tree.error.failToFetchWorkspace": "Échec lors de la récupération de l'espace de travail",
   "studies.tree.error.failToFetchFolder": "Échec lors de la récupération des sous dossiers de {{path}}",
-  "studies.tree.unscannedStudyFolder": "Étude non scannée",
   "variants.createNewVariant": "Créer une nouvelle variante",
   "variants.newVariant": "Nouvelle variante",
   "variants.newCommand": "Ajouter une nouvelle commande",
