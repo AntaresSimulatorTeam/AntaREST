@@ -279,8 +279,12 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Also removes thermal cluster from constraint terms
         # Cluster IDs are stored in lower case in the binding constraints file.
         thermal_id = thermal.id.lower()
+        bindings_to_remove = []
         for bc in study_data.bindings:
             for term in bc.terms:
-                if isinstance(term, ClusterTerm) and term.cluster == thermal_id:
-                    study_data.bindings.remove(bc)
+                term_data = term.data
+                if isinstance(term_data, ClusterTerm) and term_data.cluster == thermal_id:
+                    bindings_to_remove.append(bc)
                     break
+        for bc in bindings_to_remove:
+            study_data.bindings.remove(bc)
