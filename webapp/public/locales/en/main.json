@@ -913,7 +913,7 @@
       "operation": "Operation",
       "operationType": "Operation type",
       "value": "Value",
-      "applyOperation": "Apply operation",
+      "applyOperation": "Apply",
       "selectionSummary": "Selection summary",
       "selectedRows": "Rows",
       "selectedColumns": "Columns",

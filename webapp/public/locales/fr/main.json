@@ -915,7 +915,7 @@
       "operation": "Opération",
       "operationType": "Type d'opération",
       "value": "Valeur",
-      "applyOperation": "Appliquer l'opération",
+      "applyOperation": "Appliquer",
       "selectionSummary": "Résumé de la sélection",
       "selectedRows": "Lignes",
       "selectedColumns": "Colonnes",

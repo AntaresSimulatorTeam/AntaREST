@@ -44,7 +44,6 @@ export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING
  *
  * @param dateStr - The date string to process
  * @param indexingType - The type of temporal index to extract
- * @param fallbackIndex - Fallback index to use if parsing fails
  * @param locale - Locale for parsing
  * @returns A numeric value representing the requested temporal index
  */
@@ -219,7 +218,6 @@ export function createLocalizedTemporalLabels(
  *
  * @param header - The header string
  * @param indexingType - The temporal indexing type
- * @param index - The numeric index
  * @param locale - Locale for parsing
  * @returns The temporal value
  */
