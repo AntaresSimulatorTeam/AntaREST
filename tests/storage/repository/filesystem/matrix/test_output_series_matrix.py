@@ -71,6 +71,9 @@ class TestOutputSeriesMatrix:
             index=["01/02", "01/01"],
         )
 
+        print(matrix.columns[0])
+        print(matrix[matrix.columns[0]].to_numpy())
+
         node = OutputSeriesMatrix(
             matrix_mapper=Mock(),
             config=my_study_config,

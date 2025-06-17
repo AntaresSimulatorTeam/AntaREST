@@ -73,9 +73,9 @@ class StudyDownloader:
     ) -> None:
         parts = [item for item in url.split("/") if item]
         try:
-            elm = study.get(parts)
-            columns = elm["columns"]
-            rows = elm["data"]
+            elm = study.get_node(parts)
+            df = cast(OutputSeriesMatrix, elm).parse_dataframe()
+            columns = df.columns
 
             for index, column in enumerate(columns):
                 if len(column) > 0:
@@ -94,7 +94,7 @@ class StudyDownloader:
                         TimeSerie.model_construct(
                             name=column_name,
                             unit=column[1] if len(column) > 1 else "",
-                            data=[row[index] for row in rows],
+                            data=df[column].to_numpy(),
                         )
                     )
                 else:
