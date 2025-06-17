@@ -13,10 +13,6 @@
  */
 
 import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
   FormControl,
   InputLabel,
   Select,
@@ -26,13 +22,12 @@ import {
   Button,
   type SelectChangeEvent,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useTranslation } from "react-i18next";
 import type { OperationsProps } from "./types";
 import { Operation } from "../../shared/constants";
 import { useOperationControls } from "./hooks/useOperationControls";
-import { TYPOGRAPHY_STYLES, FORM_STYLES, DESIGN_TOKENS, OPERATION_STYLES } from "./styles";
+import { FORM_STYLES, DESIGN_TOKENS } from "./styles";
 
 function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
@@ -49,17 +44,10 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   };
 
   return (
-    <Accordion defaultExpanded sx={{ my: DESIGN_TOKENS.spacing.lg, borderTop: "none" }}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
-          <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
-            {t("matrix.filter.operation")}
-          </Typography>
-        </Box>
-      </AccordionSummary>
-      <AccordionDetails>
+    <Box>
+      <Box sx={{ ...FORM_STYLES.sideBySideContainer, mt: 3 }}>
         <Box sx={FORM_STYLES.responsiveContainer}>
-          <FormControl size="small" sx={{ flex: 1, ...FORM_STYLES.sideBySideFormControl }}>
+          <FormControl size="small" sx={FORM_STYLES.sideBySideFormControl}>
             <InputLabel>{t("matrix.filter.operationType")}</InputLabel>
             <Select
               value={filter.operation.type}
@@ -90,33 +78,35 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
           </FormControl>
 
           {filter.operation.type !== Operation.Abs && (
-            <TextField
-              label={t("matrix.filter.value")}
-              type="number"
-              value={value}
-              onChange={handleValueChangeEvent}
-              size="small"
-              sx={{ ...FORM_STYLES.sideBySideFormControl, flex: 1 }}
-              disabled={!filter.active}
-            />
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                label={t("matrix.filter.value")}
+                type="number"
+                value={value}
+                onChange={handleValueChangeEvent}
+                size="small"
+                sx={FORM_STYLES.textField}
+                disabled={!filter.active}
+              />
+            </Box>
           )}
-        </Box>
 
-        <Box sx={OPERATION_STYLES.container}>
           <Button
-            variant="contained"
-            color="primary"
-            onClick={onApplyOperation}
             startIcon={<PlayArrowIcon fontSize="small" />}
-            disabled={!hasValidFilters}
+            onClick={onApplyOperation}
+            variant="outlined"
             size="small"
-            sx={OPERATION_STYLES.submitButton}
+            disabled={!hasValidFilters}
+            sx={{
+              fontSize: DESIGN_TOKENS.fontSize.xs,
+              alignSelf: "flex-end",
+            }}
           >
             {t("matrix.filter.applyOperation")}
           </Button>
         </Box>
-      </AccordionDetails>
-    </Accordion>
+      </Box>
+    </Box>
   );
 }
 

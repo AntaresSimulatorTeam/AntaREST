@@ -63,7 +63,6 @@ function ListFilterControl({
   onKeyPress,
   onAddValue,
   onAddValues,
-  onRemoveValue,
   onOperatorChange,
   onClearAll,
   placeholder,
