@@ -743,12 +743,6 @@ class TestTableMode:
                     "injectionNominalCapacity": 1550,
                     "reservoirCapacity": 1500,
                     "withdrawalNominalCapacity": 1550,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
                 },
                 "fr / tesla": {
                     "efficiency": 0.75,
@@ -758,12 +752,6 @@ class TestTableMode:
                     "injectionNominalCapacity": 1200,
                     "reservoirCapacity": 1200,
                     "withdrawalNominalCapacity": 1200,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
                 },
                 "it / storage3": {
                     "efficiency": 1,
@@ -773,12 +761,6 @@ class TestTableMode:
                     "injectionNominalCapacity": 1234,
                     "reservoirCapacity": 1357,
                     "withdrawalNominalCapacity": 1020,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
                 },
                 "it / storage4": {
                     "efficiency": 1,
@@ -788,12 +770,6 @@ class TestTableMode:
                     "injectionNominalCapacity": 567,
                     "reservoirCapacity": 500,
                     "withdrawalNominalCapacity": 456,
-                    # v8.8 field
-                    "enabled": None,
-                    # v9.2 fields
-                    "efficiencyWithdrawal": None,
-                    "penalizeVariationInjection": None,
-                    "penalizeVariationWithdrawal": None,
                 },
             }
 
