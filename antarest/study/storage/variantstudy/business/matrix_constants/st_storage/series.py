@@ -26,3 +26,6 @@ lower_rule_curve.flags.writeable = False
 
 upper_rule_curve = np.ones((8760, 1), dtype=np.float64)
 upper_rule_curve.flags.writeable = False
+
+costs = np.zeros((8760, 1), dtype=np.float64)
+costs.flags.writeable = False

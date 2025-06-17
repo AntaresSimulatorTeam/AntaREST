@@ -27,10 +27,11 @@ interface Props {
   onClose: VoidFunction;
   onSubmit: (values: TRow) => Promise<void>;
   groups: string[];
+  allowNewGroups: boolean;
   existingNames: Array<TRow["name"]>;
 }
 
-function CreateDialog({ open, onClose, onSubmit, groups, existingNames }: Props) {
+function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existingNames }: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -65,13 +66,23 @@ function CreateDialog({ open, onClose, onSubmit, groups, existingNames }: Props)
             }}
             sx={{ m: 0 }}
           />
-          <SelectFE
-            label={t("global.group")}
-            name="group"
-            control={control}
-            options={groups}
-            rules={{ required: t("form.field.required") }}
-          />
+          {allowNewGroups ? (
+            // Add autocomplete with `groups`
+            <StringFE
+              label={t("global.group")}
+              name="group"
+              control={control}
+              rules={{ required: t("form.field.required") }}
+            />
+          ) : (
+            <SelectFE
+              label={t("global.group")}
+              name="group"
+              control={control}
+              options={groups}
+              rules={{ required: t("form.field.required") }}
+            />
+          )}
         </Fieldset>
       )}
     </FormDialog>
