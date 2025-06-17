@@ -85,6 +85,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
 
     @override
     def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
+        """This method can be called to save new constraints or to update existing ones."""
         study_data = self.get_file_study()
         study_version = study_data.config.version
         ini_content = _get_all_constraints_ini(study_data)

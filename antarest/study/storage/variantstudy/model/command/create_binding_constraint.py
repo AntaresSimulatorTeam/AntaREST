@@ -236,6 +236,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         if info.context:
             version = info.context.version
             if version == 1:
+                # We need to handle the legacy format for already existing commands in the database.
                 study_version = StudyVersion.parse(values["study_version"])
 
                 # Validate parameters
