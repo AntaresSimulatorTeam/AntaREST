@@ -22,7 +22,6 @@ from antarest.study.business.model.sts_model import STStorageCreation, STStorage
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -80,14 +79,18 @@ class TestCreateSTStorage:
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
         assert cmd.parameters == STStorageCreation(**expected_parameters)
 
-        # check the matrices links
+        # Ensures no matrix is filled in the command if not specified
+        assert cmd.pmax_injection is not None
+        assert cmd.inflows is not None
 
-        constants = command_context.generator_matrix_constants
-        assert cmd.pmax_injection != constants.get_st_storage_pmax_injection()
-        assert cmd.pmax_withdrawal == constants.get_st_storage_pmax_withdrawal()
-        assert cmd.lower_rule_curve == constants.get_st_storage_lower_rule_curve()
-        assert cmd.upper_rule_curve == constants.get_st_storage_upper_rule_curve()
-        assert cmd.inflows != constants.get_st_storage_inflows()
+        assert cmd.pmax_withdrawal is None
+        assert cmd.lower_rule_curve is None
+        assert cmd.upper_rule_curve is None
+        assert cmd.cost_injection is None
+        assert cmd.cost_withdrawal is None
+        assert cmd.cost_level is None
+        assert cmd.cost_variation_injection is None
+        assert cmd.cost_variation_withdrawal is None
 
     @pytest.mark.parametrize("group", ["Battery", "battery"])
     def test_init__lower_and_upper_case_groups_are_valid(self, command_context: CommandContext, group: str):
@@ -400,19 +403,8 @@ class TestCreateSTStorage:
                 parameters=STStorageCreation(**PARAMETERS),
                 study_version=study_version,
             )
-            actual = cmd.get_inner_matrices()
-            constants = command_context.generator_matrix_constants
-            # Ensures in v8.8 and in v9.2 we don't create default matrices
-            if study_version == STUDY_VERSION_8_6:
-                assert actual == [
-                    strip_matrix_protocol(constants.get_st_storage_pmax_injection()),
-                    strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-                    strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
-                    strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
-                    strip_matrix_protocol(constants.get_st_storage_inflows()),
-                ]
-            else:
-                assert actual == []
+            # Ensures we don't fill default matrices inside the command parameters
+            assert cmd.get_inner_matrices() == []
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
