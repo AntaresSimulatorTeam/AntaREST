@@ -61,7 +61,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
       onSubmit={onSubmit}
       onCancel={onCancel}
     >
-      {({ control, setValue, getValues }) => (
+      {({ control, setValue, watch }) => (
         <Fieldset fullFieldWidth>
           <StringFE
             label={t("global.name")}
@@ -85,7 +85,7 @@ function TableTemplateFormDialog(props: TableTemplateFormDialogProps) {
           />
           <ListFE
             label={t("study.columns")}
-            options={[...getTableColumnsForType(getValues("type"))]}
+            options={[...getTableColumnsForType(watch("type"))]}
             getOptionLabel={startCase}
             name="columns"
             control={control}

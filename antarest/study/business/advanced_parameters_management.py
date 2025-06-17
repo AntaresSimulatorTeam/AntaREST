@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 from typing import Any, Dict, List
 
 from pydantic import field_validator
@@ -20,7 +19,7 @@ from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -48,6 +47,7 @@ class PowerFluctuation(EnumIgnoreCase):
 
 class SheddingPolicy(EnumIgnoreCase):
     SHAVE_PEAKS = "shave peaks"
+    ACCURATE_SHAVE_PEAKS = "accurate shave peaks"
     MINIMIZE_DURATION = "minimize duration"
 
 
@@ -134,6 +134,7 @@ FIELDS_INFO: Dict[str, FieldInfo] = {
     "initial_reservoir_levels": {
         "path": f"{OTHER_PREFERENCES_PATH}/initial-reservoir-levels",
         "default_value": InitialReservoirLevel.COLD_START.value,
+        "end_version": STUDY_VERSION_9_2,
     },
     "power_fluctuations": {
         "path": f"{OTHER_PREFERENCES_PATH}/power-fluctuations",
@@ -230,6 +231,12 @@ class AdvancedParamsManager:
         seeds = general_data.get("seeds - Mersenne Twister", {})
 
         def get_value(field_info: FieldInfo) -> Any:
+            start_version = field_info.get("start_version", 0)
+            end_version = field_info.get("end_version", 10000)
+            is_in_version = study.version >= start_version and file_study.config.version < end_version
+            if not is_in_version:
+                return None
+
             path = field_info["path"]
             target_name = path.split("/")[-1]
             if ADVANCED_PARAMS_PATH in path:
