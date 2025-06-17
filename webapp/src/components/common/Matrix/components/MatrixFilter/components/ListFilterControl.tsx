@@ -215,7 +215,7 @@ function ListFilterControl({
               value={inputValue}
               onChange={(e) => onInputChange(e.target.value)}
               onKeyDown={handleKeyPress}
-              type={operator === FILTER_OPERATORS.RANGE ? "text" : "number"}
+              type="text"
               disabled={disabled}
               sx={FORM_STYLES.textField}
               slotProps={{

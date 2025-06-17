@@ -902,7 +902,7 @@
       "listValues": "Values (comma separated)",
       "enterValue": "Enter a value",
       "pressEnterOrComma": "Press Enter or comma to add",
-      "listTooltip": "Enter values separated by commas or press Enter to add them. You can also enter ranges like '1-10' when using the Range operator to add multiple consecutive values at once.",
+      "listTooltip": "Enter values separated by commas or press Enter to add them. You can also enter ranges like '1-10' to add multiple consecutive values at once.",
       "selectedValues": "Selected values",
       "clearAll": "Clear all",
       "selectMonths": "Select months",

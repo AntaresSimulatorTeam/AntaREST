@@ -904,7 +904,7 @@
       "listValues": "Valeurs (séparées par des virgules)",
       "enterValue": "Entrer une valeur",
       "pressEnterOrComma": "Appuyez sur Entrée ou virgule pour ajouter",
-      "listTooltip": "Entrez des valeurs séparées par des virgules ou appuyez sur Entrée pour les ajouter. Vous pouvez également entrer des plages comme '1-10' lors de l'utilisation de l'opérateur Plage pour ajouter plusieurs valeurs consécutives d'un coup.",
+      "listTooltip": "Entrez des valeurs séparées par des virgules ou appuyez sur Entrée pour les ajouter. Vous pouvez également entrer des plages comme '1-10' pour ajouter plusieurs valeurs consécutives d'un coup.",
       "selectedValues": "Valeurs sélectionnées",
       "clearAll": "Tout effacer",
       "selectMonths": "Sélectionner les mois",
