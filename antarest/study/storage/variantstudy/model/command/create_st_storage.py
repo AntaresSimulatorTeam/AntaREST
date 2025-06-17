@@ -57,7 +57,7 @@ class CreateSTStorage(ICommand):
 
     # version 2: parameters changed from STStorageConfigType to STStoragePropertiesType
     #            This actually did not require a version increment, but was done by mistake.
-    # version 3: type parameters as ThermalClusterCreation
+    # version 3: type parameters as STStorageCreation
     _SERIALIZATION_VERSION: Final[int] = 3
 
     # Command parameters
@@ -65,46 +65,18 @@ class CreateSTStorage(ICommand):
 
     area_id: AreaId
     parameters: STStorageCreation
-    pmax_injection: MatrixType = Field(
-        default=None,
-        description="Charge capacity (modulation)",
-    )
-    pmax_withdrawal: MatrixType = Field(
-        default=None,
-        description="Discharge capacity (modulation)",
-    )
-    lower_rule_curve: MatrixType = Field(
-        default=None,
-        description="Lower rule curve (coefficient)",
-    )
-    upper_rule_curve: MatrixType = Field(
-        default=None,
-        description="Upper rule curve (coefficient)",
-    )
-    inflows: MatrixType = Field(
-        default=None,
-        description="Inflows (MW)",
-    )
-    cost_injection: MatrixType = Field(
-        default=None,
-        description="Charge Cost (€/MWh)",
-    )
-    cost_withdrawal: MatrixType = Field(
-        default=None,
-        description="Discharge Cost (€/MWh)",
-    )
-    cost_level: MatrixType = Field(
-        default=None,
-        description="Level Cost (€/MWh)",
-    )
-    cost_variation_injection: MatrixType = Field(
-        default=None,
-        description="Cost of injection variation (€/MWh)",
-    )
-    cost_variation_withdrawal: MatrixType = Field(
-        default=None,
-        description="Cost of withdrawal variation (€/MWh)",
-    )
+
+    # Matrices
+    pmax_injection: MatrixType = Field(default=None, description="Charge capacity (modulation)")
+    pmax_withdrawal: MatrixType = Field(default=None, description="Discharge capacity (modulation)")
+    lower_rule_curve: MatrixType = Field(default=None, description="Lower rule curve (coefficient)")
+    upper_rule_curve: MatrixType = Field(default=None, description="Upper rule curve (coefficient)")
+    inflows: MatrixType = Field(default=None, description="Inflows (MW)")
+    cost_injection: MatrixType = Field(default=None, description="Charge Cost (€/MWh)")
+    cost_withdrawal: MatrixType = Field(default=None, description="Discharge Cost (€/MWh)")
+    cost_level: MatrixType = Field(default=None, description="Level Cost (€/MWh)")
+    cost_variation_injection: MatrixType = Field(default=None, description="Cost of injection variation (€/MWh)")
+    cost_variation_withdrawal: MatrixType = Field(default=None, description="Cost of withdrawal variation (€/MWh)")
 
     @property
     def storage_id(self) -> str:
@@ -163,11 +135,10 @@ class CreateSTStorage(ICommand):
         """
         values = {"command_context": self.command_context}
         if v is None:
-            # use an already-registered default matrix
-            constants: GeneratorMatrixConstants
-            constants = self.command_context.generator_matrix_constants
             if self.study_version >= STUDY_VERSION_8_8:
-                return constants.get_null_matrix()
+                return None
+            # use an already-registered default matrix
+            constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
             # Directly access the methods instead of using `getattr` for maintainability
             methods = {
                 "pmax_injection": constants.get_st_storage_pmax_injection,
@@ -241,38 +212,48 @@ class CreateSTStorage(ICommand):
         study_data.save_st_storage(self.area_id, storage)
 
         # Matrices
-        assert isinstance(self.pmax_injection, str)
-        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, self.pmax_injection)
+        empty_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
 
-        assert isinstance(self.pmax_withdrawal, str)
-        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, self.pmax_withdrawal)
+        matrix = empty_matrix if not self.pmax_injection else self.pmax_injection
+        assert isinstance(matrix, str)
+        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, matrix)
 
-        assert isinstance(self.upper_rule_curve, str)
-        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, self.upper_rule_curve)
+        matrix = empty_matrix if not self.pmax_withdrawal else self.pmax_withdrawal
+        assert isinstance(matrix, str)
+        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, matrix)
 
-        assert isinstance(self.lower_rule_curve, str)
-        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, self.lower_rule_curve)
+        matrix = empty_matrix if not self.upper_rule_curve else self.upper_rule_curve
+        assert isinstance(matrix, str)
+        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, matrix)
 
-        assert isinstance(self.inflows, str)
-        study_data.save_st_storage_inflows(self.area_id, storage.id, self.inflows)
+        matrix = empty_matrix if not self.lower_rule_curve else self.lower_rule_curve
+        assert isinstance(matrix, str)
+        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, matrix)
+
+        matrix = empty_matrix if not self.inflows else self.inflows
+        assert isinstance(matrix, str)
+        study_data.save_st_storage_inflows(self.area_id, storage.id, matrix)
 
         if self.study_version >= STUDY_VERSION_9_2:
-            assert isinstance(self.cost_injection, str)
-            study_data.save_st_storage_cost_injection(self.area_id, storage.id, self.cost_injection)
+            matrix = empty_matrix if not self.cost_injection else self.cost_injection
+            assert isinstance(matrix, str)
+            study_data.save_st_storage_cost_injection(self.area_id, storage.id, matrix)
 
-            assert isinstance(self.cost_withdrawal, str)
-            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, self.cost_withdrawal)
+            matrix = empty_matrix if not self.cost_withdrawal else self.cost_withdrawal
+            assert isinstance(matrix, str)
+            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, matrix)
 
-            assert isinstance(self.cost_level, str)
-            study_data.save_st_storage_cost_level(self.area_id, storage.id, self.cost_level)
+            matrix = empty_matrix if not self.cost_level else self.cost_level
+            assert isinstance(matrix, str)
+            study_data.save_st_storage_cost_level(self.area_id, storage.id, matrix)
 
-            assert isinstance(self.cost_variation_injection, str)
-            study_data.save_st_storage_cost_variation_injection(self.area_id, storage.id, self.cost_variation_injection)
+            matrix = empty_matrix if not self.cost_variation_injection else self.cost_variation_injection
+            assert isinstance(matrix, str)
+            study_data.save_st_storage_cost_variation_injection(self.area_id, storage.id, matrix)
 
-            assert isinstance(self.cost_variation_withdrawal, str)
-            study_data.save_st_storage_cost_variation_withdrawal(
-                self.area_id, storage.id, self.cost_variation_withdrawal
-            )
+            matrix = empty_matrix if not self.cost_variation_withdrawal else self.cost_variation_withdrawal
+            assert isinstance(matrix, str)
+            study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
 
         return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
 
