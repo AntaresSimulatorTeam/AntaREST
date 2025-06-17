@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata, Area } from "../../../../../../../types/types";
 import client from "../../../../../../../services/api/client";
-import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
+import type { Area, StudyMetadata } from "../../../../../../../types/types";
+import type { ExcludeNullFromProps, PartialExceptFor } from "../../../../../../../utils/tsUtils";
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -38,10 +38,10 @@ export const STORAGE_GROUPS = [
 
 export type StorageGroup = (typeof STORAGE_GROUPS)[number];
 
-export interface Storage {
+export interface Storage<LegacyGroup extends boolean = false> {
   id: string;
   name: string;
-  group: StorageGroup;
+  group: LegacyGroup extends true ? StorageGroup : string; // Before v9.2 => StorageGroup, since v9.2 => string
   injectionNominalCapacity: number;
   withdrawalNominalCapacity: number;
   reservoirCapacity: number;
@@ -49,12 +49,14 @@ export interface Storage {
   initialLevel: number;
   initialLevelOptim: boolean;
   // Since v8.8
-  enabled: boolean;
+  enabled: boolean | null;
   // Since v9.2
-  efficiencyWithdrawal: number;
-  penalizeVariationInjection: boolean;
-  penalizeVariationWithdrawal: boolean;
+  efficiencyWithdrawal: number | null;
+  penalizeVariationInjection: boolean | null;
+  penalizeVariationWithdrawal: boolean | null;
 }
+
+export type FormalizedStorage = ExcludeNullFromProps<Storage>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -87,9 +89,27 @@ const getStorageUrl = (
 // API
 ////////////////////////////////////////////////////////////////
 
+/**
+ * Formalizes a storage object by ensuring all properties are defined.
+ * Using condition with the study version doesn't allow TypeScript
+ * to infer properties types.
+ *
+ * @param storage - Storage object to formalize.
+ * @returns Formalized storage object with all properties defined.
+ */
+function formalizeStorage(storage: Storage): FormalizedStorage {
+  return {
+    ...storage,
+    enabled: storage.enabled ?? false,
+    efficiencyWithdrawal: storage.efficiencyWithdrawal ?? -1,
+    penalizeVariationInjection: storage.penalizeVariationInjection ?? false,
+    penalizeVariationWithdrawal: storage.penalizeVariationWithdrawal ?? false,
+  };
+}
+
 export async function getStorages(studyId: StudyMetadata["id"], areaId: Area["name"]) {
   const res = await client.get<Storage[]>(getStoragesUrl(studyId, areaId));
-  return res.data;
+  return res.data.map(formalizeStorage);
 }
 
 export async function getStorage(
@@ -98,7 +118,7 @@ export async function getStorage(
   storageId: Storage["id"],
 ) {
   const res = await client.get<Storage>(getStorageUrl(studyId, areaId, storageId));
-  return res.data;
+  return formalizeStorage(res.data);
 }
 
 export async function updateStorage(
@@ -117,7 +137,7 @@ export async function createStorage(
   data: PartialExceptFor<Storage, "name">,
 ) {
   const res = await client.post<Storage>(getStoragesUrl(studyId, areaId), data);
-  return res.data;
+  return formalizeStorage(res.data);
 }
 
 export async function duplicateStorage(
@@ -131,7 +151,7 @@ export async function duplicateStorage(
     null,
     { params: { newName } },
   );
-  return res.data;
+  return formalizeStorage(res.data);
 }
 
 export async function deleteStorages(
