@@ -385,19 +385,10 @@ class TestCreateSTStorage:
         expected_parameters = PARAMETERS.copy()
         expected_parameters["group"] = "battery"  # the group is now in lower case
 
-        null_matrix = strip_matrix_protocol(command_context.generator_matrix_constants.get_null_matrix())
         assert actual == CommandDTO(
             action=CommandName.CREATE_ST_STORAGE.value,
             version=3,
-            args={
-                "area_id": "area_fr",
-                "parameters": expected_parameters,
-                "pmax_injection": null_matrix,
-                "pmax_withdrawal": null_matrix,
-                "lower_rule_curve": null_matrix,
-                "upper_rule_curve": null_matrix,
-                "inflows": null_matrix,
-            },
+            args={"area_id": "area_fr", "parameters": expected_parameters},
             study_version=STUDY_VERSION_8_8,
         )
 
@@ -421,11 +412,7 @@ class TestCreateSTStorage:
                     strip_matrix_protocol(constants.get_st_storage_inflows()),
                 ]
             else:
-                null_matrix = strip_matrix_protocol(constants.get_null_matrix())
-                if study_version == STUDY_VERSION_8_8:
-                    assert actual == 5 * [null_matrix]
-                else:
-                    assert actual == 10 * [null_matrix]  # 5 new cost matrices
+                assert actual == []
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
