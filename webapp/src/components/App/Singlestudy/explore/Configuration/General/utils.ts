@@ -117,7 +117,12 @@ export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
   { label: "SUN - SAT", value: WeekDay.Sunday },
 ];
 
-export const MODE_OPTIONS = Object.values(Mode);
+export const MODE_OPTIONS: Array<{ label: string; value: Mode }> = [
+  { label: "Economy", value: Mode.Economy },
+  { label: "Adequacy", value: Mode.Adequacy },
+  { label: "Economy (linear relaxation)", value: Mode.Expansion },
+];
+
 export const BUILDING_MODE_OPTIONS = Object.values(BuildingMode);
 export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
 
