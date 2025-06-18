@@ -18,6 +18,8 @@ from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
+import numpy as np
+import numpy.typing as npt
 from antares.study.version import StudyVersion
 from pydantic import (
     BeforeValidator,
@@ -608,10 +610,23 @@ class MatrixIndex(AntaresBaseModel):
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
+def _list_to_np(array: list[float]) -> npt.NDArray[np.float64]:
+    return np.array(array, dtype=np.float64)
+
+
+def _np_to_list(array: npt.NDArray[np.float64]) -> list[float]:
+    return cast(list[float], array.tolist())
+
+
+NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
+
+
 class TimeSerie(AntaresBaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
+
     name: str
     unit: str
-    data: List[Optional[float]] = []
+    data: NpArray = np.zeros(shape=(0,))
 
 
 class TimeSeriesData(AntaresBaseModel):
