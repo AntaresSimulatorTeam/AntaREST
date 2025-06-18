@@ -17,18 +17,21 @@ export interface StudyTreeNode {
   path: string;
   children: StudyTreeNode[];
   hasChildren?: boolean;
+  isStudyFolder?: boolean;
 }
 
-export interface NonStudyFolderDTO {
+export interface FolderDTO {
   name: string;
   path: string;
   workspace: string;
   parentPath: string;
   hasChildren?: boolean;
+  isStudyFolder?: boolean;
 }
 
 export interface StudyTreeNodeProps {
   node: StudyTreeNode;
   itemsLoading: string[];
   onNodeClick: (id: string) => void;
+  exploredFolders: string[];
 }
