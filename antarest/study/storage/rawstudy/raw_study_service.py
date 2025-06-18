@@ -23,12 +23,14 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed
+from antarest.core.exceptions import IncorrectArgumentsForCopy, StudyDeletionNotAllowed, StudyImportFailed
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
+from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, Patch, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
@@ -103,7 +105,7 @@ class RawStudyService(AbstractStorageService):
         try:
             raw_meta = study.tree.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
-            metadata.version = raw_meta["version"]
+            metadata.version = str(raw_meta["version"])
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
@@ -362,6 +364,11 @@ class RawStudyService(AbstractStorageService):
             shutil.rmtree(study_path)
             raise
 
+        try:
+            self.checks_antares_web_compatibility(metadata)
+        except NotImplementedError as e:
+            raise StudyImportFailed(metadata.name, e.args[0]) from e
+
         metadata.path = str(study_path)
         return metadata
 
@@ -518,3 +525,19 @@ class RawStudyService(AbstractStorageService):
     @override
     def get_output_path(self, study: Study, output_id: str) -> Path:
         return self.get_study_path(study) / "output" / output_id
+
+    @staticmethod
+    def checks_antares_web_compatibility(study: Study) -> None:
+        """
+        A new compatibility section has been introduced with the Simulator version 9.2
+        For now AntaresWeb doesn't support the field `hydro-pmax` when it's set at `hourly`.
+        If we find this value, we want to raise an Exception
+        """
+        if StudyVersion.parse(study.version) >= STUDY_VERSION_9_2:
+            general_data_path = Path(study.path) / "settings" / "generaldata.ini"
+            ini_content = read_ini(general_data_path)
+            # The section is optional and AntaresWeb supports the default Simulator value
+            if "compatibility" in ini_content and "hydro-pmax" in ini_content["compatibility"]:
+                hydro_pmax_value = ini_content["compatibility"]["hydro-pmax"]
+                if hydro_pmax_value == "hourly":
+                    raise NotImplementedError("AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'")
