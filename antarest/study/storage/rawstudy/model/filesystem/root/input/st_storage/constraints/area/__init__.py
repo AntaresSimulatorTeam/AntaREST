@@ -21,14 +21,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants.st_storage im
 
 
 class InputSTStorageConstraintsArea(FolderNode):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        area: str,
-    ):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(matrix_mapper, config)
-        self.area = area
 
     @override
     def build(self) -> TREE:
