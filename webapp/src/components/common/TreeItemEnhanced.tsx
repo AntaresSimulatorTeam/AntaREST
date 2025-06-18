@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Chip, CircularProgress, Tooltip } from "@mui/material";
+import { Box, CircularProgress, Tooltip } from "@mui/material";
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import * as R from "ramda";
 import { Children } from "react";
@@ -20,7 +20,6 @@ import { mergeSxProp } from "../../utils/muiUtils";
 
 export interface TreeItemEnhancedProps extends TreeItemProps {
   loading?: boolean;
-  badge?: string;
 }
 
 function TreeItemEnhanced({
@@ -28,7 +27,6 @@ function TreeItemEnhanced({
   sx,
   label: labelFromProps,
   loading,
-  badge,
   ...rest
 }: TreeItemEnhancedProps) {
   const canExpand = Children.toArray(rest.children).length > 0;
@@ -38,29 +36,9 @@ function TreeItemEnhanced({
   ////////////////////////////////////////////////////////////////
 
   const addLabelTooltip = (label: TreeItemEnhancedProps["label"]) => {
-    const badgeChip = badge ? (
-      <Chip
-        label={badge}
-        size="small"
-        sx={{
-          backgroundColor: "gray",
-          color: "white",
-          height: "auto",
-          fontSize: "0.75rem",
-          "& .MuiChip-label": {
-            padding: "0 4px",
-          },
-        }}
-      />
-    ) : (
-      ""
-    );
-
     return typeof label === "string" ? (
       <Tooltip title={label}>
-        <span>
-          {badgeChip} {label}
-        </span>
+        <span>{label}</span>
       </Tooltip>
     ) : (
       label

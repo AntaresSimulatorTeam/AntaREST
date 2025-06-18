@@ -21,7 +21,7 @@ from filelock import FileLock
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import ScanDisabled
+from antarest.core.exceptions import CleanDisabled, ScanDisabled
 from antarest.core.interfaces.service import IService
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -245,15 +245,20 @@ class Watcher(IService):
         self,
     ) -> None:
         """
-        Scan recursively list of studies present on disk. Send updated list to study service.
+        Removes studies from the database that no longer exist on disk in desktop mode.
 
-        Args:
-            recursive: if true, scan recursively all subfolders otherwise only the first level
-        Returns:
+        This method is intended for use in desktop mode only. It does not perform a full
+        recursive scan of the filesystem. Instead, it checks previously scanned studies
+        and deletes those that are no longer present on disk.
 
+        The operation is protected by a file lock to prevent concurrent access, and logs
+        the time taken to complete the cleanup.
+
+        Raises:
+            CleanDisabled: If the application is not running in desktop mode.
         """
         if not self.config.desktop_mode:
-            raise ScanDisabled("Recursive scan disables when desktop mode is on")
+            raise CleanDisabled("Clean is disabled when desktop mode is off")
 
         stopwatch = StopWatch()
 

@@ -1063,16 +1063,8 @@ class StudyService:
 
     def delete_missing_studies(self) -> None:
         """
-        Used by watcher to send list of studies present on filesystem.
-
-        Args:
-            folders: list of studies currently present on folder
-            directory: directory of studies that will be watched
-            recursive: if False, the delta will apply only to the studies in "directory", otherwise
-                it will apply to all studies having a path that descend from "directory".
-
-        Returns:
-
+        Removes from the database any non-archived desktop studies whose folders
+        no longer exist on disk. Used to clean up orphaned study entries.
         """
         all_studies = self.repository.get_all_raw()
         desktop_studies = (
