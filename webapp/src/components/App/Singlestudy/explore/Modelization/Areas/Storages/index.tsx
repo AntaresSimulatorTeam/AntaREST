@@ -31,18 +31,17 @@ import {
   getStorages,
   getStoragesTotals,
   STORAGE_GROUPS,
-  type Storage,
-  type StorageGroup,
+  type FormalizedStorage,
 } from "./utils";
 
-const columnHelper = createMRTColumnHelper<Storage>();
+const columnHelper = createMRTColumnHelper<FormalizedStorage>();
 
 function Storages() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const areaId = useAppSelector(getCurrentAreaId);
-  const studyVersion = parseInt(study.version, 10);
+  const studyVersion = Number(study.version);
 
   const { data: storages = [], isLoading } = usePromiseWithSnackbarError(
     () => getStorages(study.id, areaId),
@@ -132,6 +131,12 @@ function Storages() {
         filterVariant: "checkbox",
         Cell: BooleanCell,
       }),
+      studyVersion >= 920 &&
+        columnHelper.accessor("efficiencyWithdrawal", {
+          header: t("study.modelization.storages.efficiencyWithdrawal"),
+          size: 50,
+          Cell: ({ cell }) => `${Math.round(cell.getValue() * 100)}`,
+        }),
     ].filter(Boolean);
   }, [studyVersion, t, totals]);
 
@@ -139,20 +144,20 @@ function Storages() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: TRow<StorageGroup>) => {
+  const handleCreate = (values: TRow) => {
     return createStorage(study.id, areaId, values);
   };
 
-  const handleDuplicate = (row: Storage, newName: string) => {
+  const handleDuplicate = (row: FormalizedStorage, newName: string) => {
     return duplicateStorage(study.id, areaId, row.id, newName);
   };
 
-  const handleDelete = (rows: Storage[]) => {
+  const handleDelete = (rows: FormalizedStorage[]) => {
     const ids = rows.map((row) => row.id);
     return deleteStorages(study.id, areaId, ids);
   };
 
-  const handleNameClick = (row: Storage) => {
+  const handleNameClick = (row: FormalizedStorage) => {
     navigate(row.id);
   };
 
@@ -165,7 +170,8 @@ function Storages() {
       isLoading={isLoading}
       data={storages || []}
       columns={columns}
-      groups={[...STORAGE_GROUPS]}
+      groups={[...STORAGE_GROUPS] as string[]}
+      allowNewGroups={studyVersion >= 920}
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}

@@ -1153,3 +1153,20 @@ class TestLoginService:
             with current_user_context(group_admin):
                 login_service.delete_all_roles_from_user(user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
+
+    @with_db_context
+    def test_get_all_users_or_groups_with_bots(self, login_service: LoginService) -> None:
+        # Create a bot with some group rights
+        admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
+        with current_user_context(admin_user):
+            login_service.save_bot(
+                BotCreateDTO(name="Bot", roles=[BotRoleCreateDTO(group="metropolis", role=RoleType.READER.value)])
+            )
+
+        # Ensure user from the `metropolis` group are still able to fetch the users and the groups list
+        freder_id = 5
+        user = get_user(login_service, user_id=freder_id, group_id="metropolis")
+        with current_user_context(user):
+            # Shouldn't crash
+            login_service.get_all_users()
+            login_service.get_all_groups()

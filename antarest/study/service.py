@@ -1040,6 +1040,7 @@ class StudyService:
                         )
 
                     self.storage_service.raw_study_service.update_from_raw_meta(study, fallback_on_default=True)
+                    self.storage_service.raw_study_service.checks_antares_web_compatibility(study)
 
                     logger.warning("Skipping study format error analysis")
                     # TODO re enable this on an async worker
@@ -1336,6 +1337,7 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)

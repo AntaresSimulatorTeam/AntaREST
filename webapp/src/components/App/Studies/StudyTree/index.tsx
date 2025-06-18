@@ -28,7 +28,6 @@ import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { insertIfNotExist } from "./utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
-import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
   const studies = useAppSelector(getStudies);
@@ -38,6 +37,7 @@ function StudyTree() {
   const [subFolders, setSubFolders] = useState(storage.getItem(StorageKey.StudyTreeFolders) || []);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
+  const [exploredFolders, setExploredFolders] = useState<string[]>([]);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
@@ -53,10 +53,6 @@ function StudyTree() {
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStudiesTree]);
-
-  useUpdateEffect(() => {
-    storage.setItem(StorageKey.StudyTreeFolders, subFolders);
-  }, [subFolders]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -96,6 +92,7 @@ function StudyTree() {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
+        // Keep non-study folders and study folders that haven't been scanned yet
         const filteredStudyFolders = newSubFolders.filter(
           (folder) =>
             !folder.isStudyFolder ||
@@ -104,11 +101,13 @@ function StudyTree() {
             ),
         );
         const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
-
         setSubFolders(nextSubfolders);
 
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
         setStudiesTree(nextStudyTree);
+        storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
+
+        setExploredFolders((prev) => [...prev.filter((e) => e !== itemId), itemId]);
       }
     } catch (err) {
       enqueueErrorSnackbar(
@@ -161,10 +160,8 @@ function StudyTree() {
     }
   };
 
-  const handleTreeItemClick = (itemId: string, isStudyFolder: boolean) => {
-    if (!isStudyFolder) {
-      dispatch(updateStudyFilters({ folder: itemId }));
-    }
+  const handleTreeItemClick = (itemId: string) => {
+    dispatch(updateStudyFilters({ folder: itemId }));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -181,6 +178,7 @@ function StudyTree() {
       <StudyTreeNodeComponent
         node={studiesTree}
         itemsLoading={itemsLoading}
+        exploredFolders={exploredFolders}
         onNodeClick={handleTreeItemClick}
       />
     </SimpleTreeView>
