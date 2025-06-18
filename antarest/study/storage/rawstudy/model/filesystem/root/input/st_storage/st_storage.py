@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.clusters.clusters import (
@@ -29,5 +30,7 @@ class InputSTStorage(FolderNode):
             "clusters": InputSTStorageClusters(self.matrix_mapper, self.config.next_file("clusters")),
             "series": InputSTStorageSeries(self.matrix_mapper, self.config.next_file("series")),
         }
+        if self.config.version >= STUDY_VERSION_9_2:
+            children["constraints"]
 
         return children
