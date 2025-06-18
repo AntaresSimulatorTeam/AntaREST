@@ -14,7 +14,7 @@
 
 import { FIXTURES } from "./fixtures";
 import { insertFoldersIfNotExist } from "../utils";
-import type { NonStudyFolderDTO, StudyTreeNode } from "../types";
+import type { FolderDTO, StudyTreeNode } from "../types";
 
 describe("StudyTree Utils", () => {
   describe("mergeStudyTreeAndFolders", () => {
@@ -49,7 +49,7 @@ describe("StudyTree Utils", () => {
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],
       };
-      const invalidFolder: NonStudyFolderDTO = {
+      const invalidFolder: FolderDTO = {
         name: "invalid",
         path: "/invalid",
         workspace: "nonexistent",
