@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile
 
+import numpy as np
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -385,7 +386,9 @@ class StudyDownloader:
                     str(row_date),
                     int(year),
                 ]
-                csv_row.extend([column_data.data[i] for column_data in columns])
+                values = [column_data.data[i] for column_data in columns]
+                values = [v if not np.isnan(v) else None for v in values]
+                csv_row.extend(values)
                 writer.writerow(csv_row)
                 if index.level == StudyDownloadLevelDTO.WEEKLY and i == 0:
                     row_date = row_date + timedelta(days=index.first_week_size)
