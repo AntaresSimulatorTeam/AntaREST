@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { unarchiveStudy as callUnarchiveStudy } from "../../../../../services/api/study";
 import type { StudyMetadata, VariantTree } from "../../../../../types/types";
-import LauncherDialog from "../../../shared/studies/dialogs/LauncherDialog";
+import LaunchStudyDialog from "../../../shared/studies/dialogs/LaunchStudyDialog";
 import CreateVariantDialog from "./CreateVariantDialog";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
@@ -116,7 +116,7 @@ function InformationView({ study, variantTree }: Props) {
         />
       )}
       {openLauncherModal && (
-        <LauncherDialog
+        <LaunchStudyDialog
           open={openLauncherModal}
           studyIds={[study.id]}
           onClose={() => setOpenLauncherModal(false)}
