@@ -265,7 +265,7 @@ class Watcher(IService):
         with db():
             logger.info("Waiting for FileLock to delete missing studies")
             with FileLock(Watcher.SCAN_LOCK):
-                logger.info("FileLock acquired to to delete missing studies")
+                logger.info("FileLock acquired to delete missing studies")
                 self.study_service.delete_missing_studies()
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"deleted missing studies in {x}s"),
