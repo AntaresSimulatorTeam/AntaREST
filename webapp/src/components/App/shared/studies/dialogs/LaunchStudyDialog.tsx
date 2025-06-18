@@ -57,7 +57,7 @@ interface Props {
   onClose: () => void;
 }
 
-function LauncherDialog(props: Props) {
+function LaunchStudyDialog(props: Props) {
   const { studyIds, open, onClose } = props;
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
@@ -475,4 +475,4 @@ function LauncherDialog(props: Props) {
   );
 }
 
-export default LauncherDialog;
+export default LaunchStudyDialog;

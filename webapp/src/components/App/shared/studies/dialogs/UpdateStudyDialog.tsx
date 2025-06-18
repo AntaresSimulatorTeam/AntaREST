@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { validateString } from "@/utils/validation/string";
+import { validateStudyName } from "@/utils/studiesUtils";
 import type { AxiosError } from "axios";
 import debug from "debug";
 import { useSnackbar } from "notistack";
@@ -47,7 +47,7 @@ interface Props {
   study: StudyMetadata;
 }
 
-function PropertiesDialog({ open, onClose, study }: Props) {
+function UpdateStudyDialog({ open, onClose, study }: Props) {
   const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -81,7 +81,7 @@ function PropertiesDialog({ open, onClose, study }: Props) {
       // Update metadata
       if (name || tags) {
         await updateStudyMetadata(studyId, {
-          name: data.values.name,
+          name: data.values.name.trim(),
           tags: data.values.tags,
         });
       }
@@ -105,7 +105,7 @@ function PropertiesDialog({ open, onClose, study }: Props) {
         updateStudy({
           id: study.id,
           changes: {
-            name: data.values.name,
+            name: data.values.name.trim(),
             tags: data.values.tags,
           },
         }),
@@ -141,7 +141,7 @@ function PropertiesDialog({ open, onClose, study }: Props) {
               label={t("studies.studyName")}
               name="name"
               control={control}
-              rules={{ validate: (v) => validateString(v) }}
+              rules={{ validate: validateStudyName }}
             />
           </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>
@@ -180,4 +180,4 @@ function PropertiesDialog({ open, onClose, study }: Props) {
   );
 }
 
-export default PropertiesDialog;
+export default UpdateStudyDialog;

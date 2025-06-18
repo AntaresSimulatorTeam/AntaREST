@@ -77,6 +77,9 @@ export type ReactHookFormSupportProps<
       shouldUnregister?: never;
     };
 
+// Allow to prevent to start with a space
+const defaultSetValueAs = (v: any) => (typeof v === "string" ? v.trimStart() : v);
+
 /**
  * Provides React Hook Form support to a field editor component, enhancing it with form control and validation capabilities.
  * It integrates custom validation logic, value transformation, and handles form submission state.
@@ -87,7 +90,7 @@ export type ReactHookFormSupportProps<
  * @returns A function that takes a field editor component and returns a new component wrapped with React Hook Form functionality.
  */
 function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}) {
-  const { preValidate, setValueAs = R.identity } = options;
+  const { preValidate, setValueAs = defaultSetValueAs } = options;
 
   /**
    * Wraps the provided field editor component with React Hook Form functionality,

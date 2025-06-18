@@ -34,7 +34,7 @@ const defaultValues = {
   version: "",
 };
 
-function UpgradeDialog({ study, onClose, open }: Props) {
+function UpgradeStudyDialog({ study, onClose, open }: Props) {
   const { t } = useTranslation();
   const versions = useAppSelector(getStudyVersionsFormatted);
 
@@ -81,4 +81,4 @@ function UpgradeDialog({ study, onClose, open }: Props) {
   );
 }
 
-export default UpgradeDialog;
+export default UpgradeStudyDialog;
