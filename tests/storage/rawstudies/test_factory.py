@@ -24,6 +24,8 @@ from tests.storage.rawstudies.samples import ASSETS_DIR
 def test_renewable_subtree() -> None:
     path = ASSETS_DIR / "v810/sample1"
     matrix_mapper: MatrixUriMapper = Mock()
+    matrix_mapper.get_link_content.return_value = None
+
     config = build(path, "")
     assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
 

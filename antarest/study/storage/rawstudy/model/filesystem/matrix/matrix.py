@@ -83,13 +83,6 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         LazyNode.__init__(self, matrix_mapper, config)
         self.freq = freq
 
-    def get_link_path(self) -> Path:
-        path = self.config.path.parent / (self.config.path.name + ".link")
-        return path
-
-    def get_path(self) -> Path:
-        return self.config.path.parent / self.config.path.name
-
     @override
     def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
@@ -99,8 +92,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             self.matrix_mapper.save_matrix(self, data)
         else:
             super().save(data, url)
-            if self.get_link_path().exists():
-                self.get_link_path().unlink()
+            self.matrix_mapper.remove_link(self)
 
     @override
     def get(
@@ -129,8 +121,9 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             return self
 
         if expanded:
-            if self.get_link_path().exists():
-                return self.get_link_path().read_text()
+            link_content = self.matrix_mapper.get_link_content(self)
+            if link_content is not None:
+                return link_content
             return self.get_lazy_content()
 
         return cast("str | G", self.load(url, depth, expanded, formatted))

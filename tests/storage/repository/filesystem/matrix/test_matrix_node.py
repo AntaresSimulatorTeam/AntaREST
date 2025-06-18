@@ -58,7 +58,7 @@ class TestMatrixNode:
         node.normalize()
 
         # check the result
-        assert node.get_link_path().read_text() == "matrix://my-id"
+        assert node.matrix_mapper.get_link_content(node) == "matrix://my-id"
         assert not file.exists()
         matrix_service.create.assert_called_once()
         args = matrix_service.create.call_args.args

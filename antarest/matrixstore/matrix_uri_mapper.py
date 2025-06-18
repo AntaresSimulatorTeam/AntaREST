@@ -95,6 +95,26 @@ class MatrixUriMapper(ABC):
     def delete(self, node: MatrixNode) -> None:
         pass
 
+    @abstractmethod
+    def get_link_path(self, node: MatrixNode) -> Path:
+        """Returns the path of the .link file associated with the matrix"""
+        pass
+
+    @abstractmethod
+    def has_link(self, node: MatrixNode) -> bool:
+        """Checks if a .link file exists for this matrix"""
+        pass
+
+    @abstractmethod
+    def get_link_content(self, node: MatrixNode) -> Optional[str]:
+        """Returns the content of the .link file if it exists, otherwise None"""
+        pass
+
+    @abstractmethod
+    def remove_link(self, node: MatrixNode) -> None:
+        """Deletes the .link file if it exists"""
+        pass
+
 
 class BaseMatrixUriMapper(MatrixUriMapper):
     """
@@ -129,7 +149,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
 
     @override
     def normalize(self, node: MatrixNode) -> None:
-        link_path = Path(f"{get_path(node)}.link")
+        link_path = self.get_link_path(node)
         if link_path.exists() or node.config.archive_path:
             return
 
@@ -140,7 +160,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
 
     @override
     def denormalize(self, node: MatrixNode) -> None:
-        link_path = Path(f"{get_path(node)}.link")
+        link_path = self.get_link_path(node)
         if node.config.path.exists() or not link_path.exists():
             return
 
@@ -155,6 +175,27 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         if link_path.exists():
             link_path.unlink()
 
+    @override
+    def get_link_path(self, node: MatrixNode) -> Path:
+        return node.config.path.parent / (node.config.path.name + ".link")
+
+    @override
+    def has_link(self, node: MatrixNode) -> bool:
+        return self.get_link_path(node).exists()
+
+    @override
+    def get_link_content(self, node: MatrixNode) -> Optional[str]:
+        link_path = self.get_link_path(node)
+        if link_path.exists():
+            return link_path.read_text()
+        return None
+
+    @override
+    def remove_link(self, node: MatrixNode) -> None:
+        link_path = self.get_link_path(node)
+        if link_path.exists():
+            link_path.unlink()
+
 
 class MatrixUriMapperManaged(BaseMatrixUriMapper):
     """
@@ -164,7 +205,7 @@ class MatrixUriMapperManaged(BaseMatrixUriMapper):
 
     @override
     def save_matrix(self, node: MatrixNode, matrix_uri: str) -> None:
-        link_path = Path(f"{get_path(node)}.link")
+        link_path = self.get_link_path(node)
         link_path.write_text(matrix_uri)
         if node.config.path.exists():
             node.config.path.unlink()
