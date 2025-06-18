@@ -510,8 +510,8 @@ def test_partial_sync_studies_from_disk() -> None:
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
     ma = RawStudy(id="a", folder="folder/studyA", workspace="workspace1")
     mb = RawStudy(id="b", folder="folder/studyB", workspace="workspace1")
-    mc = RawStudy(id="c", folder="fodler/studyC", workspace="workspace1")
-    mc2 = RawStudy(id="c2", folder="fodler/studyC", workspace="workspace2")
+    mc = RawStudy(id="c", folder="folder/studyC", workspace="workspace1")
+    mc2 = RawStudy(id="c2", folder="folder/studyC", workspace="workspace2")
     md = RawStudy(id="managed", folder="managed", workspace="default")
 
     repository = Mock()
