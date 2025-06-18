@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import contextlib
+import logging
 import os
 import textwrap
 import typing as t
@@ -21,6 +22,8 @@ from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
+import numpy as np
+import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
@@ -76,6 +79,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -332,7 +336,8 @@ def test_sync_studies_from_disk() -> None:
             }
         )
     )
-    service = build_study_service(Mock(), repository, config)
+    raw_service = Mock(spec=RawStudyService)
+    service = build_study_service(raw_service, repository, config)
 
     # call function with scanned folders
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
@@ -383,6 +388,49 @@ def test_sync_studies_from_disk() -> None:
                 )
             ),
         ]
+    )
+
+
+@pytest.mark.unit_test
+def test_sync_unsuppported_study_from_disk(caplog) -> None:
+    folder_a = StudyFolder(path=Path("a"), workspace="workspace1", groups=[])
+    folder_b = StudyFolder(path=Path("b"), workspace="workspace1", groups=[])
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[]]
+    config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
+    raw_service = Mock(spec=RawStudyService)
+    service = build_study_service(raw_service, repository, config)
+
+    def fake_compatibility_check(study: Study):
+        if not hasattr(fake_compatibility_check, "call_count"):
+            fake_compatibility_check.call_count = 0
+
+        fake_compatibility_check.call_count += 1
+
+        if fake_compatibility_check.call_count >= 2:
+            raise RecursionError("Custom message")
+
+    raw_service.checks_antares_web_compatibility.side_effect = fake_compatibility_check
+
+    with caplog.at_level(level=logging.ERROR):
+        service.sync_studies_on_disk([folder_a, folder_b])
+
+    # Ensures the 2nd study wasn't added and went through the mock method
+    assert len(caplog.records) == 1
+    assert caplog.records[0].msg == "Failed to add study b"
+    assert isinstance(caplog.records[0].exc_info[1], RecursionError)
+
+    repository.save.assert_called_once_with(
+        RawStudy(
+            id=ANY,
+            path="a",
+            name="a",
+            folder="a",
+            workspace="workspace1",
+            missing=None,
+            public_mode=PublicMode.FULL,
+        )
     )
 
 
@@ -633,11 +681,6 @@ def test_download_output() -> None:
         service.event_bus,
     )
 
-    res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
-    res_study_details = {
-        "columns": [["some cluster", "Euro/MWh"]],
-        "data": [[0.8]],
-    }
     study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)
     output_config = {
         "general": {
@@ -651,11 +694,19 @@ def test_download_output() -> None:
     }
     file_study_tree.get.side_effect = [
         output_config,
+        output_config,
+        output_config,
+    ]
+
+    res_study = Mock(spec=OutputSeriesMatrix)
+    res_study.parse_dataframe.return_value = pd.DataFrame(columns=[("H. VAL", "Euro/MWh")], data=[[0.5]])
+    res_study_details = Mock(spec=OutputSeriesMatrix)
+    res_study_details.parse_dataframe.return_value = pd.DataFrame(columns=[("some cluster", "Euro/MWh")], data=[[0.8]])
+
+    file_study_tree.get_node.side_effect = [
         res_study,
         res_study_details,
-        output_config,
         res_study,
-        output_config,
         res_study,
         res_study_details,
     ]
@@ -674,8 +725,8 @@ def test_download_output() -> None:
                 type=StudyDownloadType.AREA,
                 data={
                     "1": [
-                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
-                        TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
                     ]
                 },
             )
@@ -688,6 +739,7 @@ def test_download_output() -> None:
             "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
+    print(res.body)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
@@ -725,7 +777,7 @@ def test_download_output() -> None:
             TimeSeriesData(
                 name="east^west",
                 type=StudyDownloadType.LINK,
-                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
+                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5]))]},
             )
         ],
         warnings=[],
@@ -755,8 +807,8 @@ def test_download_output() -> None:
                 type=StudyDownloadType.DISTRICT,
                 data={
                     "1": [
-                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
-                        TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
                     ]
                 },
             )

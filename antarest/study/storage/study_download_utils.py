@@ -22,10 +22,10 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile
 
+import numpy as np
 from fastapi import HTTPException
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.serde.json import to_json
 from antarest.study.model import (
     STUDY_VERSION_8_1,
     ExportFormat,
@@ -73,9 +73,9 @@ class StudyDownloader:
     ) -> None:
         parts = [item for item in url.split("/") if item]
         try:
-            elm = study.get(parts)
-            columns = elm["columns"]
-            rows = elm["data"]
+            elm = study.get_node(parts)
+            df = cast(OutputSeriesMatrix, elm).parse_dataframe()
+            columns = df.columns
 
             for index, column in enumerate(columns):
                 if len(column) > 0:
@@ -94,7 +94,7 @@ class StudyDownloader:
                         TimeSerie.model_construct(
                             name=column_name,
                             unit=column[1] if len(column) > 1 else "",
-                            data=[row[index] for row in rows],
+                            data=df[column].to_numpy(),
                         )
                     )
                 else:
@@ -346,8 +346,8 @@ class StudyDownloader:
         target_file: Path,
     ) -> None:
         if filetype == ExportFormat.JSON:
-            with open(target_file, "wb") as fh:
-                fh.write(to_json(matrix.model_dump()))
+            with open(target_file, "w", encoding="utf-8") as fh:
+                fh.write(matrix.model_dump_json())
         else:
             StudyDownloader.write_inside_archive(target_file, filetype, matrix)
 
@@ -386,7 +386,9 @@ class StudyDownloader:
                     str(row_date),
                     int(year),
                 ]
-                csv_row.extend([column_data.data[i] for column_data in columns])
+                values = [column_data.data[i] for column_data in columns]
+                values = [v if not np.isnan(v) else None for v in values]
+                csv_row.extend(values)
                 writer.writerow(csv_row)
                 if index.level == StudyDownloadLevelDTO.WEEKLY and i == 0:
                     row_date = row_date + timedelta(days=index.first_week_size)
