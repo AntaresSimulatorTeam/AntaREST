@@ -12,6 +12,7 @@
 
 from checksumdir import dirhash
 
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, TimeSeriesInterpretation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.model import STUDY_VERSION_8_8
@@ -180,16 +181,21 @@ class TestRemoveArea:
                 assert output.status, output.message
 
             bind1_cmd = CreateBindingConstraint(
-                name="BD 2",
-                time_step=BindingConstraintFrequency.HOURLY,
-                operator=BindingConstraintOperator.LESS,
-                coeffs={
-                    f"{area_id}%{area_id2}": [400, 30],
-                    f"{area_id2}.cluster": [400, 30],
-                },
-                comments="Hello",
-                command_context=command_context,
-                study_version=study_version,
+                **{
+                    "parameters": {
+                        "name": "BD 2",
+                        "time_step": BindingConstraintFrequency.HOURLY,
+                        "operator": BindingConstraintOperator.LESS,
+                        "terms": [
+                            ConstraintTerm(weight=400, offset=30, data=LinkTerm(area1=area_id, area2=area_id2)),
+                            ConstraintTerm(weight=400, offset=30, data=ClusterTerm(area=area_id2, cluster="cluster")),
+                        ],
+                        "comments": "Hello",
+                    },
+                    "matrices": {},
+                    "command_context": command_context,
+                    "study_version": study_version,
+                }
             )
             output = bind1_cmd.apply(study_data=empty_study)
             assert output.status, output.message

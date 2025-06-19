@@ -15,9 +15,9 @@ from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.common import CommaSeparatedFilterOptions
 from antarest.study.business.model.link_model import (
     AssetType,
-    CommaSeparatedFilterOptions,
     Link,
     LinkStyle,
     LinkUpdate,
