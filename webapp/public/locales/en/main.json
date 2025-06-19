@@ -349,7 +349,7 @@
   "study.configuration.general.legend.monteCarloScenarios": "Monte-Carlo Scenarios",
   "study.configuration.general.legend.outputProfile": "Output profile",
   "study.configuration.general.mode": "Mode",
-  "study.configuration.general.mode.tooltip": "First iteration only that corresponds to the linear relaxation of the problem in Economy mode. Please note the results are not valid",
+  "study.configuration.general.mode.expansion.tooltip": "First iteration only that corresponds to the linear relaxation of the problem in Economy mode. Please note the results are not valid",
   "study.configuration.general.firstDay": "First day",
   "study.configuration.general.lastDay": "Last day",
   "study.configuration.general.day.error.leapYearMax": "Maximum is 366 for a leap year",

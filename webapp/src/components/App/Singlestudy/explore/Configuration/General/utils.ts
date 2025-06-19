@@ -117,10 +117,14 @@ export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
   { label: "SUN - SAT", value: WeekDay.Sunday },
 ];
 
-export const MODE_OPTIONS: Array<{ label: string; value: Mode }> = [
+export const MODE_OPTIONS: Array<{ label: string; value: Mode; tooltip?: string }> = [
   { label: "Economy", value: Mode.Economy },
   { label: "Adequacy", value: Mode.Adequacy },
-  { label: "Economy (linear relaxation)", value: Mode.Expansion },
+  {
+    label: "Economy (linear relaxation)",
+    value: Mode.Expansion,
+    tooltip: "study.configuration.general.mode.expansion.tooltip",
+  },
 ];
 
 export const BUILDING_MODE_OPTIONS = Object.values(BuildingMode);
