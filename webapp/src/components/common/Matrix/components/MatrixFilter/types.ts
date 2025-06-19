@@ -13,7 +13,11 @@
  */
 
 import type { TimeFrequencyType } from "../../shared/types";
-import type { FilterOperatorType, FilterType, TimeIndexingType } from "./constants";
+import type { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "./constants";
+
+export type FilterType = (typeof FILTER_TYPES)[keyof typeof FILTER_TYPES];
+export type FilterOperatorType = (typeof FILTER_OPERATORS)[keyof typeof FILTER_OPERATORS];
+export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING];
 
 export interface RowFilter {
   id: string;

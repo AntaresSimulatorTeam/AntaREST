@@ -14,14 +14,12 @@
 
 import { Operation, TimeFrequency } from "../../shared/constants";
 import type { TimeFrequencyType } from "../../shared/types";
-import type { FilterState, RowFilter, TemporalOption } from "./types";
+import type { FilterState, RowFilter, TemporalOption, TimeIndexingType } from "./types";
 
 export const FILTER_TYPES = {
   RANGE: "range",
   LIST: "list",
 } as const;
-
-export type FilterType = (typeof FILTER_TYPES)[keyof typeof FILTER_TYPES];
 
 export const FILTER_OPERATORS = {
   EQUALS: "equals",
@@ -31,8 +29,6 @@ export const FILTER_OPERATORS = {
   LESS_EQUAL: "lessEqual",
   RANGE: "range",
 } as const;
-
-export type FilterOperatorType = (typeof FILTER_OPERATORS)[keyof typeof FILTER_OPERATORS];
 
 export const TIME_INDEXING = {
   DAY_OF_MONTH: "dayOfMonth",
@@ -44,13 +40,11 @@ export const TIME_INDEXING = {
   WEEKDAY: "weekday",
 } as const;
 
-export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING];
-
 /**
  * Maps time frequency to appropriate indexing options.
  * Each frequency has its most relevant temporal indexing types ordered by relevance.
  */
-export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, readonly TimeIndexingType[]> = {
+export const TIME_FREQUENCY_INDEXING_MAP: Record<TimeFrequencyType, TimeIndexingType[]> = {
   [TimeFrequency.Annual]: [], // No temporal subdivisions make sense for annual data
   [TimeFrequency.Monthly]: [TIME_INDEXING.MONTH],
   [TimeFrequency.Weekly]: [TIME_INDEXING.WEEK, TIME_INDEXING.WEEKDAY, TIME_INDEXING.DAY_OF_MONTH],

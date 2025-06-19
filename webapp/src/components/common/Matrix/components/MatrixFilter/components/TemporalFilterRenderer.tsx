@@ -16,12 +16,13 @@ import { Box } from "@mui/material";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { type FilterOperatorType, TIME_INDEXING } from "../constants";
+import { TIME_INDEXING } from "../constants";
 import { DESIGN_TOKENS } from "../styles";
 import { getLocalizedTimeLabels } from "../utils/dateUtils";
 import ChipSelector from "./ChipSelector";
 import ListFilterControl from "./ListFilterControl";
 import RangeFilterControl from "./RangeFilterControl";
+import type { FilterOperatorType } from "../types";
 
 interface TemporalFilterRendererProps {
   indexingType: string;
