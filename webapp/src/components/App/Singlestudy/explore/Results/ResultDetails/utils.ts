@@ -57,7 +57,7 @@ export function createPath(params: Params): string {
   const itemType = isLink ? OutputItemType.Links : OutputItemType.Areas;
   const itemFolder = isLink ? `${item.area1}/${item.area2}` : item.id;
 
-  return `output/${id}/${mode}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${timestep}`;
+  return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${timestep}`;
 }
 
 export const SYNTHESIS_ITEMS = [
