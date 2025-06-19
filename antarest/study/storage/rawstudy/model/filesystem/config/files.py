@@ -46,6 +46,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
+    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
@@ -302,17 +303,16 @@ def _parse_xpansion_version(path: Path) -> str:
         raise XpansionParsingError(xpansion_json, f"key '{exc}' not found in JSON object") from exc
 
 
-_regex_eco_adq = re.compile(r"^(\d{8}-\d{4})(eco|adq)-?(.*)")
-match_eco_adq = _regex_eco_adq.match
+_regex_simulation_mode = re.compile(r"^(\d{8}-\d{4})(eco|adq|exp)-?(.*)")
+match_simulation_mode = _regex_simulation_mode.match
 
 
 def parse_simulation(path: Path, canonical_name: str) -> Simulation:
-    modes = {"eco": "economy", "adq": "adequacy"}
-    match = match_eco_adq(canonical_name)
+    match = match_simulation_mode(canonical_name)
     if match is None:
         raise SimulationParsingError(
             path,
-            reason=f"Filename '{canonical_name}' doesn't match {_regex_eco_adq.pattern}",
+            reason=f"Filename '{canonical_name}' doesn't match {_regex_simulation_mode.pattern}",
         )
 
     try:
@@ -335,7 +335,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
     error = not (path / "checkIntegrity.txt").exists()
     return Simulation(
         date=match.group(1),
-        mode=modes[match.group(2)],
+        mode=Mode.from_output_suffix(match.group(2)),
         name=match.group(3),
         nbyears=obj["general"]["nbyears"],
         by_year=obj["general"]["year-by-year"],

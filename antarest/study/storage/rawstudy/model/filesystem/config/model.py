@@ -107,6 +107,37 @@ class DistrictSet(AntaresBaseModel):
         return sorted(areas)
 
 
+class Mode(EnumIgnoreCase):
+    """
+    Simulation mode of an Antares study.
+    """
+
+    ECONOMY = "Economy"
+    ADEQUACY = "Adequacy"
+    EXPANSION = "Expansion"
+
+    def get_output_suffix(self) -> str:
+        if self == Mode.ECONOMY:
+            return "eco"
+        elif self == Mode.ADEQUACY:
+            return "adq"
+        elif self == Mode.EXPANSION:
+            return "exp"
+        else:
+            raise ValueError(f"Unknown mode: {self}")
+
+    @staticmethod
+    def from_output_suffix(suffix: str) -> "Mode":
+        if suffix == "eco":
+            return Mode.ECONOMY
+        elif suffix == "adq":
+            return Mode.ADEQUACY
+        elif suffix == "exp":
+            return Mode.EXPANSION
+        else:
+            raise ValueError(f"Unknown suffix: {suffix}")
+
+
 class Simulation(AntaresBaseModel):
     """
     Object linked to /output/<simulation_name>/about-the-study/** information
@@ -114,7 +145,7 @@ class Simulation(AntaresBaseModel):
 
     name: str
     date: str
-    mode: str
+    mode: Mode
     nbyears: int
     synthesis: bool
     by_year: bool
@@ -124,9 +155,8 @@ class Simulation(AntaresBaseModel):
     xpansion: str
 
     def get_file(self) -> str:
-        modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
         dash = "-" if self.name else ""
-        return f"{self.date}{modes[self.mode]}{dash}{self.name}"
+        return f"{self.date}{self.mode.get_output_suffix()}{dash}{self.name}"
 
 
 class FileStudyTreeConfig(DTO):

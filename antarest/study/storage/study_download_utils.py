@@ -306,7 +306,7 @@ class StudyDownloader:
         if file_study.config.outputs and output_id in file_study.config.outputs:
             sim = file_study.config.outputs[output_id]
             if sim:
-                url += f"/{sim.mode}" if sim.mode != "draft" else "/adequacy-draft"
+                url += f"/{sim.mode}"
 
                 if data.synthesis:
                     url += "/mc-all"
@@ -446,32 +446,12 @@ def get_output_variables_information(study: FileStudy, output_name: str) -> Dict
     if not study.config.outputs[output_name].by_year:
         raise BadOutputFormat("Not a year by year simulation")
 
-    first_year_result: Dict[str, INode[Any, Any, Any]] = cast(
-        FolderNode,
-        find_first_child(
-            cast(
-                FolderNode,
-                study.tree.get_node(
-                    [
-                        "output",
-                        output_name,
-                        study.config.outputs[output_name].mode,
-                        "mc-ind",
-                    ]
-                ),
-            ),
-        ),
-    ).build()
-    mc_all_result = cast(
-        FolderNode,
-        study.tree.get_node(
-            [
-                "output",
-                output_name,
-                study.config.outputs[output_name].mode,
-                "mc-all",
-            ]
-        ),
+    mode = study.config.outputs[output_name].mode.value.lower()
+
+    mc_all_result = cast(FolderNode, study.tree.get_node(["output", output_name, mode, "mc-all"])).build()
+
+    first_year_result = cast(
+        FolderNode, find_first_child(cast(FolderNode, study.tree.get_node(["output", output_name, mode, "mc-ind"])))
     ).build()
 
     output_variables: Dict[str, List[List[str]]] = {
