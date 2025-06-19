@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { FilterState } from "../types";
 
 interface UseOperationControlsProps {

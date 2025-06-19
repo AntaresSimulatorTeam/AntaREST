@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { processRowFilters } from "../index";
 import {
-  FILTER_TYPES,
-  TIME_INDEXING,
   FILTER_OPERATORS,
-  type TimeIndexingType,
-  type FilterType,
+  FILTER_TYPES,
   type FilterOperatorType,
+  type FilterType,
+  TIME_INDEXING,
+  type TimeIndexingType,
 } from "../../constants";
 import type { FilterState } from "../../types";
+import { processRowFilters } from "../index";
 
 describe("Filter Combination Logic", () => {
   const createMockFilter = (

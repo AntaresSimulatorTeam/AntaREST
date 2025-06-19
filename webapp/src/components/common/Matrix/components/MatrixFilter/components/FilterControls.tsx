@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
+import { Box, Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { DESIGN_TOKENS, BUTTON_STYLES } from "../styles";
+import { BUTTON_STYLES, DESIGN_TOKENS } from "../styles";
 
 interface FilterControlsProps {
   isFilterActive: boolean;

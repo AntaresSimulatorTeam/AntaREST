@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useMatrixContext } from "../../../context/MatrixContext";
 import { Operation } from "../../../shared/constants";
+import type { TimeFrequencyType } from "../../../shared/types";
 import { calculateMatrixAggregates } from "../../../shared/utils";
 import { getDefaultFilterState } from "../constants";
-import type { FilterState, FilterCriteria } from "../types";
-import type { TimeFrequencyType } from "../../../shared/types";
+import type { FilterCriteria, FilterState } from "../types";
 
 interface UseMatrixFilterParams {
   rowCount: number;

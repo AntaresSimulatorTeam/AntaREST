@@ -12,22 +12,22 @@
  * This file is part of the Antares project.
  */
 
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import {
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TextField,
   Box,
   Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
   type SelectChangeEvent,
+  TextField,
 } from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useTranslation } from "react-i18next";
-import type { OperationsProps } from "./types";
 import { Operation } from "../../shared/constants";
 import { useOperationControls } from "./hooks/useOperationControls";
-import { FORM_STYLES, DESIGN_TOKENS } from "./styles";
+import { DESIGN_TOKENS, FORM_STYLES } from "./styles";
+import type { OperationsProps } from "./types";
 
 function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();

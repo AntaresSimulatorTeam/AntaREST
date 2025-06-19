@@ -12,25 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useMemo, useCallback } from "react";
-import { Box, Drawer, Divider, IconButton, Tooltip } from "@mui/material";
-import FilterListIcon from "@mui/icons-material/FilterList";
-import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import CloseIcon from "@mui/icons-material/Close";
+import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import { Box, Divider, Drawer, IconButton, Tooltip } from "@mui/material";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
 import { useMatrixContext } from "../../context/MatrixContext";
-import type { MatrixFilterProps } from "./types";
+import ColumnFilter from "./ColumnFilter";
+import FilterControls from "./components/FilterControls";
 import { useFilteredData } from "./hooks/useFilteredData";
 import { useMatrixFilter } from "./hooks/useMatrixFilter";
-
-import ColumnFilter from "./ColumnFilter";
 import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
-import FilterControls from "./components/FilterControls";
+import { COMPONENT_DIMENSIONS, DESIGN_TOKENS, DRAWER_STYLES } from "./styles";
+import type { MatrixFilterProps } from "./types";
 import { getMatrixDimensions } from "./utils";
-import { DRAWER_STYLES, COMPONENT_DIMENSIONS, DESIGN_TOKENS } from "./styles";
-import { useUpdateEffect } from "react-use";
 
 function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: MatrixFilterProps) {
   const { t } = useTranslation();

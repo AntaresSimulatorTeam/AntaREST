@@ -12,25 +12,25 @@
  * This file is part of the Antares project.
  */
 
+import type { TFunction } from "i18next";
 import * as R from "ramda";
+import { TimeFrequency } from "../../../shared/constants";
+import type { TimeFrequencyType } from "../../../shared/types";
 import {
+  FILTER_OPERATORS,
   FILTER_TYPES,
   TIME_FREQUENCY_INDEXING_MAP,
-  FILTER_OPERATORS,
   TIME_INDEXING,
 } from "../constants";
 import type {
   FilterState,
-  TemporalIndexingParams,
-  TemporalOption,
+  IndexedValue,
   RowFilter,
   SliderMark,
-  IndexedValue,
+  TemporalIndexingParams,
+  TemporalOption,
 } from "../types";
-import { TimeFrequency } from "../../../shared/constants";
-import type { TimeFrequencyType } from "../../../shared/types";
 import { extractValueFromDate, getLocalizedTimeLabels } from "./dateUtils";
-import type { TFunction } from "i18next";
 
 const createRowIndices = R.memoizeWith(
   (size: number) => String(size),
