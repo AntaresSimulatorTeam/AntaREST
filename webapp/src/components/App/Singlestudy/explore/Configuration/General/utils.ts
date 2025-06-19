@@ -23,7 +23,7 @@ import client from "../../../../../../services/api/client";
 enum Mode {
   Economy = "Economy",
   Adequacy = "Adequacy",
-  Draft = "draft",
+  Expansion = "Expansion",
 }
 
 export enum BuildingMode {
@@ -117,7 +117,16 @@ export const WEEK_OPTIONS: Array<{ label: string; value: WeekDay }> = [
   { label: "SUN - SAT", value: WeekDay.Sunday },
 ];
 
-export const MODE_OPTIONS = Object.values(Mode);
+export const MODE_OPTIONS: Array<{ label: string; value: Mode; tooltip?: string }> = [
+  { label: "Economy", value: Mode.Economy },
+  { label: "Adequacy", value: Mode.Adequacy },
+  {
+    label: "Economy (linear relaxation)",
+    value: Mode.Expansion,
+    tooltip: "study.configuration.general.mode.expansion.tooltip",
+  },
+];
+
 export const BUILDING_MODE_OPTIONS = Object.values(BuildingMode);
 export const FIRST_JANUARY_OPTIONS = Object.values(WeekDay);
 
