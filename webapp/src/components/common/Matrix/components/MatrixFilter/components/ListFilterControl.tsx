@@ -31,7 +31,7 @@ import {
 } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FILTER_OPERATORS, type FilterOperatorType } from "../constants";
+import { FILTER_OPERATORS } from "../constants";
 import {
   CHIP_SELECTOR_STYLES,
   DESIGN_TOKENS,
@@ -39,6 +39,7 @@ import {
   ICON_BUTTON_STYLES,
   TYPOGRAPHY_STYLES,
 } from "../styles";
+import type { FilterOperatorType } from "../types";
 
 interface ListFilterControlProps {
   inputValue: string;

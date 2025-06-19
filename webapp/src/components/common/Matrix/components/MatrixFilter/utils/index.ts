@@ -332,7 +332,7 @@ export function processRowFilters(
   const filtersByType = R.groupBy((rowFilter: RowFilter) => rowFilter.indexingType, rowsFilters);
 
   // Process each group: apply OR within group
-  const groupResults = Object.entries(filtersByType).map(([indexingType, filters]) => {
+  const groupResults = Object.entries(filtersByType).map(([, filters]) => {
     const filterResults = filters.map((rowFilter) =>
       getTemporalIndices({
         filter,

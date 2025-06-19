@@ -13,8 +13,7 @@
  */
 
 import { useCallback, useState } from "react";
-import type { FilterOperatorType, FilterType } from "../constants";
-import type { FilterState, RowFilter } from "../types";
+import type { FilterOperatorType, FilterState, FilterType, RowFilter } from "../types";
 
 interface UseFilterControlsProps {
   filter: FilterState;
@@ -38,7 +37,6 @@ interface UseFilterControlsReturn {
 }
 
 export function useFilterControls({
-  filter,
   setFilter,
   filterId,
 }: UseFilterControlsProps): UseFilterControlsReturn {

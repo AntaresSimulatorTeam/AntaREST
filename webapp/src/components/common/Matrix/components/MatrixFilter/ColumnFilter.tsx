@@ -28,10 +28,10 @@ import {
 import { useTranslation } from "react-i18next";
 import ListFilterControl from "./components/ListFilterControl";
 import RangeFilterControl from "./components/RangeFilterControl";
-import { FILTER_TYPES, type FilterOperatorType, type FilterType } from "./constants";
+import { FILTER_TYPES } from "./constants";
 import { useFilterControls } from "./hooks/useFilterControls";
 import { ACCORDION_STYLES, DESIGN_TOKENS, FORM_STYLES, TYPOGRAPHY_STYLES } from "./styles";
-import type { ColumnFilterProps } from "./types";
+import type { ColumnFilterProps, FilterOperatorType, FilterType } from "./types";
 
 function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
   const { t } = useTranslation();

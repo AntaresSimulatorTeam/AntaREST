@@ -30,13 +30,7 @@ import {
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import TemporalFilterRenderer from "./components/TemporalFilterRenderer";
-import {
-  FILTER_TYPES,
-  type FilterOperatorType,
-  type FilterType,
-  TEMPORAL_OPTIONS,
-  type TimeIndexingType,
-} from "./constants";
+import { FILTER_TYPES, TEMPORAL_OPTIONS } from "./constants";
 import { useFilterControls } from "./hooks/useFilterControls";
 import { useTemporalData } from "./hooks/useTemporalData";
 import {
@@ -47,7 +41,13 @@ import {
   ICON_BUTTON_STYLES,
   TYPOGRAPHY_STYLES,
 } from "./styles";
-import type { RowFilterProps, RowFilter as RowFilterType } from "./types";
+import type {
+  FilterOperatorType,
+  FilterType,
+  RowFilterProps,
+  RowFilter as RowFilterType,
+  TimeIndexingType,
+} from "./types";
 import { createSliderMarks, getFilteredTemporalOptions } from "./utils";
 
 interface RowFilterState {
@@ -106,7 +106,7 @@ function RowFilter({
             ? `${rowFilter.list.slice(0, 3).join(", ")}...`
             : rowFilter.list.join(", ");
 
-        filterSummary = ` (${indexTypeLabel}: [${displayItems}])`;
+        filterSummary = ` ${indexTypeLabel}: [${displayItems}]`;
       }
     }
 

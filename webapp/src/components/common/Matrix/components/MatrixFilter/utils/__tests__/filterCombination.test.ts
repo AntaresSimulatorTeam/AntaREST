@@ -12,15 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import {
-  FILTER_OPERATORS,
-  FILTER_TYPES,
-  type FilterOperatorType,
-  type FilterType,
-  TIME_INDEXING,
-  type TimeIndexingType,
-} from "../../constants";
-import type { FilterState } from "../../types";
+import { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "../../constants";
+import type { FilterOperatorType, FilterState, FilterType, TimeIndexingType } from "../../types";
 import { processRowFilters } from "../index";
 
 describe("Filter Combination Logic", () => {

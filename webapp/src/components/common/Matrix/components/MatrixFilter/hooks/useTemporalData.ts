@@ -23,7 +23,7 @@ interface UseTemporalDataProps {
   timeFrequency?: TimeFrequencyType;
 }
 
-export function useTemporalData({ dateTime, isTimeSeries, timeFrequency }: UseTemporalDataProps) {
+export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps) {
   const indexTypeRanges = useMemo(() => {
     // Create a map of all default ranges
     return Object.values(TIME_INDEXING).reduce(
