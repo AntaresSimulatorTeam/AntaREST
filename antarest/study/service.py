@@ -2247,7 +2247,7 @@ class StudyService:
             path,
             with_index=with_index,
             with_header=with_header,
-            study_version=int(study.version),
+            study_version=study_interface.version,
         )
 
         return df_matrix
