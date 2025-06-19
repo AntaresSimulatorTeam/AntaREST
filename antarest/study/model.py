@@ -18,8 +18,18 @@ from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
+import numpy as np
+import numpy.typing as npt
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, computed_field, field_validator
+from pydantic import (
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    alias_generators,
+    computed_field,
+    field_validator,
+)
 from sqlalchemy import (  # type: ignore
     Boolean,
     Column,
@@ -384,7 +394,7 @@ class StudyFolder:
     groups: List[Group]
 
 
-class NonStudyFolderDTO(AntaresBaseModel):
+class FolderDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list directories that aren't studies directory, this will be usefull for the front
     so the user can navigate in the hierarchy
@@ -393,11 +403,11 @@ class NonStudyFolderDTO(AntaresBaseModel):
     path: PurePosixPath
     workspace: str
     name: str
-    has_children: bool = Field(
-        alias="hasChildren",
-    )  # true when has at least one non-study-folder children
-
-    model_config = ConfigDict(populate_by_name=True)
+    has_children: bool  # true when has at least one non-study-folder children
+    is_study_folder: bool = Field(
+        default=False,
+    )  # true when this folder is a study folder, used to display the icon in the front
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
     @computed_field(alias="parentPath")
     def parent_path(self) -> PurePosixPath:
@@ -600,10 +610,23 @@ class MatrixIndex(AntaresBaseModel):
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
 
 
+def _list_to_np(array: list[float]) -> npt.NDArray[np.float64]:
+    return np.array(array, dtype=np.float64)
+
+
+def _np_to_list(array: npt.NDArray[np.float64]) -> list[float]:
+    return cast(list[float], array.tolist())
+
+
+NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
+
+
 class TimeSerie(AntaresBaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
+
     name: str
     unit: str
-    data: List[Optional[float]] = []
+    data: NpArray = np.zeros(shape=(0,))
 
 
 class TimeSeriesData(AntaresBaseModel):
