@@ -12,43 +12,43 @@
  * This file is part of the Antares project.
  */
 
-import { memo, useMemo, useCallback } from "react";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
-  AccordionSummary,
   AccordionDetails,
-  Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  AccordionSummary,
   Box,
+  FormControl,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
   type SelectChangeEvent,
+  Typography,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { RowFilterProps, RowFilter as RowFilterType } from "./types";
+import TemporalFilterRenderer from "./components/TemporalFilterRenderer";
 import {
   FILTER_TYPES,
+  type FilterOperatorType,
+  type FilterType,
   TEMPORAL_OPTIONS,
   type TimeIndexingType,
-  type FilterType,
-  type FilterOperatorType,
 } from "./constants";
 import { useFilterControls } from "./hooks/useFilterControls";
 import { useTemporalData } from "./hooks/useTemporalData";
-import TemporalFilterRenderer from "./components/TemporalFilterRenderer";
-import { createSliderMarks, getFilteredTemporalOptions } from "./utils";
 import {
   ACCORDION_STYLES,
-  TYPOGRAPHY_STYLES,
-  FORM_STYLES,
-  DESIGN_TOKENS,
   CONTAINER_STYLES,
+  DESIGN_TOKENS,
+  FORM_STYLES,
   ICON_BUTTON_STYLES,
+  TYPOGRAPHY_STYLES,
 } from "./styles";
+import type { RowFilterProps, RowFilter as RowFilterType } from "./types";
+import { createSliderMarks, getFilteredTemporalOptions } from "./utils";
 
 interface RowFilterState {
   rowFilter: RowFilterType;

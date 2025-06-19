@@ -12,26 +12,26 @@
  * This file is part of the Antares project.
  */
 
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
-  AccordionSummary,
   AccordionDetails,
-  Typography,
+  AccordionSummary,
+  Box,
   FormControl,
   InputLabel,
-  Select,
   MenuItem,
-  Box,
+  Select,
   type SelectChangeEvent,
+  Typography,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useTranslation } from "react-i18next";
-import type { ColumnFilterProps } from "./types";
-import { FILTER_TYPES, type FilterType, type FilterOperatorType } from "./constants";
-import { ACCORDION_STYLES, TYPOGRAPHY_STYLES, FORM_STYLES, DESIGN_TOKENS } from "./styles";
-import { useFilterControls } from "./hooks/useFilterControls";
-import RangeFilterControl from "./components/RangeFilterControl";
 import ListFilterControl from "./components/ListFilterControl";
+import RangeFilterControl from "./components/RangeFilterControl";
+import { FILTER_TYPES, type FilterOperatorType, type FilterType } from "./constants";
+import { useFilterControls } from "./hooks/useFilterControls";
+import { ACCORDION_STYLES, DESIGN_TOKENS, FORM_STYLES, TYPOGRAPHY_STYLES } from "./styles";
+import type { ColumnFilterProps } from "./types";
 
 function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
   const { t } = useTranslation();

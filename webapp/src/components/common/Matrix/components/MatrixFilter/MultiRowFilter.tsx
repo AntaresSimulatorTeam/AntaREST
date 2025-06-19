@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Button, IconButton, Tooltip } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useCallback, useState, useMemo } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import RowFilter from "./RowFilter";
+import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import { useCallback, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createDefaultRowFilter } from "./constants";
+import RowFilter from "./RowFilter";
 import { DESIGN_TOKENS, ICON_BUTTON_STYLES } from "./styles";
 import type { RowFilterProps } from "./types";
 

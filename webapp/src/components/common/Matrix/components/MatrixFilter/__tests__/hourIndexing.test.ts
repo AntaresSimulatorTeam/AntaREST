@@ -12,10 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { describe, it, expect } from "vitest";
+import { formatTemporalValue } from "@/utils/date/matrixDateUtils";
 import { TIME_INDEXING } from "../constants";
 import { extractValueFromDate, getDefaultRangeForIndexType } from "../utils/dateUtils";
-import { formatTemporalValue } from "@/utils/date/matrixDateUtils";
 
 describe("Hour Indexing", () => {
   describe("Hour of Year (HOUR_YEAR)", () => {

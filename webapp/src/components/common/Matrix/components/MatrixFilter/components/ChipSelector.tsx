@@ -13,7 +13,7 @@
  */
 
 import { Box, Chip, Stack, Typography } from "@mui/material";
-import { DESIGN_TOKENS, CHIP_SELECTOR_STYLES } from "../styles";
+import { CHIP_SELECTOR_STYLES, DESIGN_TOKENS } from "../styles";
 
 export interface ChipOption {
   value: number;

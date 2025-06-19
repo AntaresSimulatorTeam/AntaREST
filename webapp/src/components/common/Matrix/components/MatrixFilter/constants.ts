@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { TimeFrequency, Operation } from "../../shared/constants";
-import type { FilterState, TemporalOption, RowFilter } from "./types";
+import { Operation, TimeFrequency } from "../../shared/constants";
 import type { TimeFrequencyType } from "../../shared/types";
+import type { FilterState, RowFilter, TemporalOption } from "./types";
 
 export const FILTER_TYPES = {
   RANGE: "range",

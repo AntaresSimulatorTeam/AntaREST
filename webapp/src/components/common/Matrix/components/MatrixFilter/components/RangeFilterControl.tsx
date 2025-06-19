@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography, Slider } from "@mui/material";
-import { useMemo, useCallback, memo } from "react";
+import { Box, Slider, Typography } from "@mui/material";
+import { memo, useCallback, useMemo } from "react";
 import { DESIGN_TOKENS, TYPOGRAPHY_STYLES } from "../styles";
 
 interface RangeFilterControlProps {

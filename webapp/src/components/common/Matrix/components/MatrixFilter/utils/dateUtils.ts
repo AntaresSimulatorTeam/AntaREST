@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import type { TFunction } from "i18next";
 import {
-  parseFlexibleDate as parseFlexibleDateBase,
   getCurrentLocale,
+  parseFlexibleDate as parseFlexibleDateBase,
 } from "@/utils/date/dateUtils";
 import {
+  createLocalizedTemporalLabels,
   extractTemporalValue,
   getTemporalRange,
-  createLocalizedTemporalLabels,
   type TimeIndexingType,
 } from "@/utils/date/matrixDateUtils";
-import type { TFunction } from "i18next";
 
 /**
  * Attempts to parse a date string using multiple formats

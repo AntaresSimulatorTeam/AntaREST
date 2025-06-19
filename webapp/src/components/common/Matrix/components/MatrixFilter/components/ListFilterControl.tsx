@@ -12,25 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import {
-  TextField,
-  Box,
-  Typography,
-  Chip,
-  InputAdornment,
-  IconButton,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Tooltip,
-  type SelectChangeEvent,
-} from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { useTranslation } from "react-i18next";
+import {
+  Box,
+  Button,
+  Chip,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  MenuItem,
+  Select,
+  type SelectChangeEvent,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { FILTER_OPERATORS, type FilterOperatorType } from "../constants";
 import {
   CHIP_SELECTOR_STYLES,
   DESIGN_TOKENS,
@@ -38,7 +39,6 @@ import {
   ICON_BUTTON_STYLES,
   TYPOGRAPHY_STYLES,
 } from "../styles";
-import { FILTER_OPERATORS, type FilterOperatorType } from "../constants";
 
 interface ListFilterControlProps {
   inputValue: string;

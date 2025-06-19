@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo } from "react";
 import * as R from "ramda";
-import type { FilterState, FilterCriteria } from "../types";
+import { useMemo } from "react";
 import type { TimeFrequencyType } from "../../../shared/types";
 import { FILTER_OPERATORS, FILTER_TYPES, type FilterOperatorType } from "../constants";
+import type { FilterCriteria, FilterState } from "../types";
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {

@@ -13,9 +13,9 @@
  */
 
 import { useMemo } from "react";
-import { TIME_INDEXING } from "../constants";
-import { getDefaultRangeForIndexType, extractValueFromDate } from "../utils/dateUtils";
 import type { TimeFrequencyType } from "../../../shared/types";
+import { TIME_INDEXING } from "../constants";
+import { extractValueFromDate, getDefaultRangeForIndexType } from "../utils/dateUtils";
 
 interface UseTemporalDataProps {
   dateTime?: string[];

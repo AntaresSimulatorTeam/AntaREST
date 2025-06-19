@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
+import type { FilterOperatorType, FilterType } from "../constants";
 import type { FilterState, RowFilter } from "../types";
-import type { FilterType, FilterOperatorType } from "../constants";
 
 interface UseFilterControlsProps {
   filter: FilterState;

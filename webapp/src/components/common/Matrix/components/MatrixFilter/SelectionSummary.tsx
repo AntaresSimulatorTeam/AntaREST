@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { Typography, Paper, Box } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { SelectionSummaryProps } from "./types";
 import { SELECTION_SUMMARY_STYLES } from "./styles";
+import type { SelectionSummaryProps } from "./types";
 
 function SelectionSummary({ filteredData }: SelectionSummaryProps) {
   const { t } = useTranslation();

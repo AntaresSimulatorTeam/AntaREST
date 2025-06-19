@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo, memo } from "react";
 import { Box } from "@mui/material";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
-import { TIME_INDEXING, type FilterOperatorType } from "../constants";
-import { getLocalizedTimeLabels } from "../utils/dateUtils";
+import { type FilterOperatorType, TIME_INDEXING } from "../constants";
 import { DESIGN_TOKENS } from "../styles";
-import RangeFilterControl from "./RangeFilterControl";
-import ListFilterControl from "./ListFilterControl";
+import { getLocalizedTimeLabels } from "../utils/dateUtils";
 import ChipSelector from "./ChipSelector";
+import ListFilterControl from "./ListFilterControl";
+import RangeFilterControl from "./RangeFilterControl";
 
 interface TemporalFilterRendererProps {
   indexingType: string;
