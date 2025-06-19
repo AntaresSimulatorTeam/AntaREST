@@ -18,11 +18,19 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    ClusterTerm,
+    ConstraintTerm,
+    LinkTerm,
+)
+from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageGroup
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
+    _parse_bindings,
     _parse_links_filtering,
     _parse_renewables,
     _parse_sets,
@@ -33,7 +41,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
@@ -89,38 +96,47 @@ def test_parse_bindings(study_path: Path) -> None:
     content = """\
     [bindA]
     id = bindA
+    name = bindA
+    filter-synthesis = hourly
+    area_1%area_2 = 4
+    area_3.thermal_1 = 5.3%2
     
     [bindB]
     id = bindB
+    name = bindB
     type = weekly
     group = My Group
+    filter-year-by-year = weekly, annual
     """
     (study_path / "input/bindingconstraints/bindingconstraints.ini").write_text(textwrap.dedent(content))
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 870")
 
-    config = FileStudyTreeConfig(
-        study_path=study_path,
-        path=study_path,
-        version=0,
-        bindings=[
-            BindingConstraintDTO(
-                id="bindA",
-                areas=set(),
-                clusters=set(),
-                time_step=BindingConstraintFrequency.HOURLY,
-            ),
-            BindingConstraintDTO(
-                id="bindB",
-                areas=set(),
-                clusters=set(),
-                time_step=BindingConstraintFrequency.WEEKLY,
-                group="My Group",
-            ),
-        ],
-        study_id="id",
-        output_path=study_path / "output",
-    )
-
-    assert build(study_path, "id") == config
+    actual = _parse_bindings(study_path)
+    expected = [
+        BindingConstraint(
+            **{
+                "name": "bindA",
+                "time_step": BindingConstraintFrequency.HOURLY,
+                "group": "default",
+                "filter_synthesis": [FilterOption.HOURLY],
+                "filter_year_by_year": [],
+                "terms": [
+                    ConstraintTerm(weight=4.0, offset=None, data=LinkTerm(area1="area_1", area2="area_2")),
+                    ConstraintTerm(weight=5.3, offset=2, data=ClusterTerm(area="area_3", cluster="thermal_1")),
+                ],
+            }
+        ),
+        BindingConstraint(
+            **{
+                "name": "bindB",
+                "time_step": BindingConstraintFrequency.WEEKLY,
+                "group": "My Group",
+                "filter_synthesis": [],
+                "filter_year_by_year": [FilterOption.WEEKLY, FilterOption.ANNUAL],
+            }
+        ),
+    ]
+    assert actual == expected
 
 
 def test_parse_outputs(study_path: Path) -> None:

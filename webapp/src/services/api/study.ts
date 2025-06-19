@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
@@ -34,6 +33,7 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
+import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 interface Workspace {
   name: string;
@@ -65,7 +65,7 @@ export const getWorkspaces = async () => {
  * @returns list of folders that are not studies, under the given path
  */
 export const getFolders = async (workspace: string, folderPath: string) => {
-  const res = await client.get<NonStudyFolderDTO[]>(
+  const res = await client.get<FolderDTO[]>(
     `/v1/private/explorer/${encodeURIComponent(workspace)}/_list_dir?path=${encodeURIComponent(folderPath)}`,
     {
       timeout: 1000 * 300, // Wait for 5 minutes

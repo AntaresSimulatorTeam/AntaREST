@@ -18,6 +18,7 @@ from typing import Any, Dict
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+import numpy as np
 import pytest
 
 from antarest.study.model import (
@@ -42,12 +43,12 @@ def test_output_downloads_export(tmp_path: Path):
                 type=StudyDownloadType.AREA,
                 data={
                     "1": [
-                        TimeSerie(name="A", unit="", data=[1, 2, 3, 4]),
-                        TimeSerie(name="B", unit="", data=[5, 6, 7, 8]),
+                        TimeSerie(name="A", unit="", data=np.array([1, 2, 3, 4], dtype=np.float64)),
+                        TimeSerie(name="B", unit="", data=np.array([5, 6, 7, 8], dtype=np.float64)),
                     ],
                     "2": [
-                        TimeSerie(name="A", unit="", data=[10, 11, 12, 13]),
-                        TimeSerie(name="B", unit="", data=[14, None, None, 15]),
+                        TimeSerie(name="A", unit="", data=np.array([10, 11, 12, 13], dtype=np.float64)),
+                        TimeSerie(name="B", unit="", data=np.array([14, None, None, 15], dtype=np.float64)),
                     ],
                 },
             ),
@@ -56,12 +57,12 @@ def test_output_downloads_export(tmp_path: Path):
                 type=StudyDownloadType.AREA,
                 data={
                     "1": [
-                        TimeSerie(name="A", unit="", data=[16, 17, 18, 19]),
-                        TimeSerie(name="B", unit="", data=[20, 21, 22, 23]),
+                        TimeSerie(name="A", unit="", data=np.array([16, 17, 18, 19], dtype=np.float64)),
+                        TimeSerie(name="B", unit="", data=np.array([20, 21, 22, 23], dtype=np.float64)),
                     ],
                     "2": [
-                        TimeSerie(name="A", unit="", data=[24, None, 25, 26]),
-                        TimeSerie(name="B", unit="", data=[27, 28, 29, 30]),
+                        TimeSerie(name="A", unit="", data=np.array([24, None, 25, 26], dtype=np.float64)),
+                        TimeSerie(name="B", unit="", data=np.array([27, 28, 29, 30], dtype=np.float64)),
                     ],
                 },
             ),
@@ -72,6 +73,7 @@ def test_output_downloads_export(tmp_path: Path):
     StudyDownloader.export(matrix, ExportFormat.ZIP, zip_file)
     with ZipFile(zip_file) as zip_input:
         assert zip_input.namelist() == ["a1.csv", "a2.csv"]
+        print(zip_input.read("a1.csv"))
         assert md5(zip_input.read("a1.csv")).hexdigest() == "e183e79f2184d6f6dacb8ad215cb056c"
         assert md5(zip_input.read("a2.csv")).hexdigest() == "c007db83f2769e6128e0f8c6b04d43eb"
 
