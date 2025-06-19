@@ -14,12 +14,12 @@ from pathlib import Path
 
 import pytest
 
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
@@ -62,14 +62,7 @@ def config() -> FileStudyTreeConfig:
                 xpansion="",
             )
         },
-        bindings=[
-            BindingConstraintDTO(
-                id="b1",
-                areas=set(),
-                clusters=set(),
-                time_step=BindingConstraintFrequency.DAILY,
-            )
-        ],
+        bindings=[BindingConstraint(**{"name": "b1", "time_step": BindingConstraintFrequency.DAILY})],
         store_new_set=False,
         archive_input_series=["?"],
         enr_modelling="aggregated",
