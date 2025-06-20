@@ -112,7 +112,7 @@ class CreateLink(AbstractLinkCommand, ICommand):
     @model_validator(mode="before")
     @classmethod
     def _validate_parameters(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
-        if "parameters" not in values:
+        if "parameters" not in values or not values["parameters"]:
             values["parameters"] = LinkCreation()
 
         elif isinstance(values["parameters"], dict):
