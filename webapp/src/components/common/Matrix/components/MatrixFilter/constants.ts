@@ -134,17 +134,21 @@ export const TEMPORAL_OPTIONS: readonly TemporalOption[] = [
 export const createDefaultRowFilter = (
   rowCount: number,
   timeFrequency?: TimeFrequencyType,
-): RowFilter => ({
-  id: crypto.randomUUID(), // TODO: temp ID generation, may not be necessary to keep, if so use UUID or useId()
-  indexingType: getDefaultIndexingType(timeFrequency),
-  type: FILTER_TYPES.LIST,
-  range: {
-    min: 1,
-    max: Math.max(rowCount, 1),
-  },
-  list: [],
-  operator: FILTER_OPERATORS.EQUALS,
-});
+): RowFilter => {
+  const indexingType = getDefaultIndexingType(timeFrequency);
+
+  return {
+    id: crypto.randomUUID(), // TODO: temp ID generation, may not be necessary to keep, if so use UUID or useId()
+    indexingType,
+    type: FILTER_TYPES.LIST,
+    range: {
+      min: 1,
+      max: Math.max(rowCount, 1),
+    },
+    list: [], // Empty list means "show all"
+    operator: FILTER_OPERATORS.EQUALS,
+  };
+};
 
 /**
  * Creates the default filter state for the matrix.
@@ -167,10 +171,8 @@ export const getDefaultFilterState = (
       min: 1,
       max: Math.max(columnCount, 1),
     },
-    // Initialize with all columns selected by default.
-    // This ensures that when users apply row filters, the grid displays all columns
-    // rather than appearing empty.
-    list: Array.from({ length: Math.max(columnCount, 1) }, (_, i) => i + 1),
+    // Initialize with empty list - "show all"
+    list: [],
     operator: FILTER_OPERATORS.EQUALS,
   },
   rowsFilters: [createDefaultRowFilter(rowCount, timeFrequency)],

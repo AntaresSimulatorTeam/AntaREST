@@ -247,7 +247,7 @@ describe("Filter Combination Logic", () => {
   });
 
   describe("Edge Cases", () => {
-    it("should handle empty filter lists", () => {
+    it("should handle empty filter lists as no filter (show all rows)", () => {
       const filter = createMockFilter([
         {
           indexingType: TIME_INDEXING.MONTH,
@@ -257,7 +257,43 @@ describe("Filter Combination Logic", () => {
       ]);
 
       const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
-      expect(result).toEqual([]);
+      expect(result.length).toBe(365); // Should show all rows when list is empty
+    });
+
+    it("should treat empty list filters as no filter applied", () => {
+      // Test with multiple empty list filters
+      const filter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.WEEKDAY,
+          type: FILTER_TYPES.LIST,
+          list: [], // Empty weekday filter
+        },
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [], // Empty month filter
+        },
+      ]);
+
+      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      expect(result.length).toBe(365); // All rows should be shown
+
+      // Test mixing empty and non-empty filters
+      const mixedFilter = createMockFilter([
+        {
+          indexingType: TIME_INDEXING.MONTH,
+          type: FILTER_TYPES.LIST,
+          list: [6], // Only June
+        },
+        {
+          indexingType: TIME_INDEXING.WEEKDAY,
+          type: FILTER_TYPES.LIST,
+          list: [], // Empty weekday filter (should not restrict)
+        },
+      ]);
+
+      const mixedResult = processRowFilters(mixedFilter, mockDateTime, true, undefined, 365);
+      expect(mixedResult.length).toBe(30); // Should show all days in June
     });
 
     it("should handle single filter", () => {

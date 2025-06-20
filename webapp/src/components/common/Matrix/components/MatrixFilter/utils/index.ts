@@ -241,7 +241,7 @@ function filterByList(rowFilter: RowFilter, indices: IndexedValue[]): IndexedVal
   const list = rowFilter.list || [];
 
   if (R.isEmpty(list)) {
-    return [];
+    return indices;
   }
 
   const getValue = (item: IndexedValue): number => item.value;
