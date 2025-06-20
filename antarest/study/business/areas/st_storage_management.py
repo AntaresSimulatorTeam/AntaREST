@@ -258,44 +258,22 @@ class STStorageManager:
         matrices: list[tuple[str, list[list[float]]]] = []
         study_dao = study.get_study_dao()
 
-        pmax_injection = study_dao.get_st_storage_pmax_injection(area_id, lower_source_id).to_numpy().tolist()
-        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/pmax_injection", pmax_injection))
-
-        pmax_withdrawal = study_dao.get_st_storage_pmax_withdrawal(area_id, lower_source_id).to_numpy().tolist()
-        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/pmax_withdrawal", pmax_withdrawal))
-
-        lower_rule_curve = study_dao.get_st_storage_lower_rule_curve(area_id, lower_source_id).to_numpy().tolist()
-        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/lower_rule_curve", lower_rule_curve))
-
-        upper_rule_curve = study_dao.get_st_storage_upper_rule_curve(area_id, lower_source_id).to_numpy().tolist()
-        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/lower_rule_curve", upper_rule_curve))
-
-        inflows = study_dao.get_st_storage_inflows(area_id, lower_source_id).to_numpy().tolist()
-        matrices.append((f"input/st-storage/series/{area_id}/{new_id}/inflows", inflows))
-
+        matrices_names = {"pmax_injection", "pmax_withdrawal", "lower_rule_curve", "upper_rule_curve", "inflows"}
         if study.version >= STUDY_VERSION_9_2:
-            cost_injection = study_dao.get_st_storage_cost_injection(area_id, lower_source_id).to_numpy().tolist()
-            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/cost_injection", cost_injection))
-
-            cost_withdrawal = study_dao.get_st_storage_cost_withdrawal(area_id, lower_source_id).to_numpy().tolist()
-            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/cost_withdrawal", cost_withdrawal))
-
-            cost_level = study_dao.get_st_storage_cost_level(area_id, lower_source_id).to_numpy().tolist()
-            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/cost_level", cost_level))
-
-            cost_variation_injection = (
-                study_dao.get_st_storage_cost_variation_injection(area_id, lower_source_id).to_numpy().tolist()
-            )
-            matrices.append(
-                (f"input/st-storage/series/{area_id}/{new_id}/cost_variation_injection", cost_variation_injection)
+            matrices_names.update(
+                {
+                    "cost_injection",
+                    "cost_withdrawal",
+                    "cost_level",
+                    "cost_variation_injection",
+                    "cost_variation_withdrawal",
+                }
             )
 
-            cost_variation_withdrawal = (
-                study_dao.get_st_storage_cost_variation_withdrawal(area_id, lower_source_id).to_numpy().tolist()
-            )
-            matrices.append(
-                (f"input/st-storage/series/{area_id}/{new_id}/cost_variation_withdrawal", cost_variation_withdrawal)
-            )
+        for matrix_name in matrices_names:
+            method = getattr(study_dao, f"get_st_storage_{matrix_name}")
+            matrix = method(area_id, lower_source_id).to_numpy().tolist()
+            matrices.append((f"input/st-storage/series/{area_id}/{new_id}/{matrix_name}", matrix))
 
         # Add commands
         for matrix in matrices:

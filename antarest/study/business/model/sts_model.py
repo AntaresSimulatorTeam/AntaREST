@@ -177,9 +177,7 @@ def validate_st_storage_against_version(
 
     if storage_data.group is not None and version < STUDY_VERSION_9_2:
         # We need to be sure we're able to cast the group to a STStorageGroup enum value
-        try:
-            STStorageGroup(storage_data.group)
-        except ValueError:
+        if storage_data.group not in [e.value for e in STStorageGroup]:
             raise InvalidFieldForVersionError(f"Free groups are available since v9.2 and your study is in {version}")
 
     if version < STUDY_VERSION_8_8:
