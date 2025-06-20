@@ -1080,8 +1080,7 @@ class StudyService:
         missing_studies = (study for study in desktop_studies if not is_study_folder(get_path(study)))
 
         # delete orphan studies on database
-        for study in missing_studies:
-            self.repository.delete(study.id)
+        self.repository.delete(*[study.id for study in missing_studies])
 
     def copy_study(
         self,

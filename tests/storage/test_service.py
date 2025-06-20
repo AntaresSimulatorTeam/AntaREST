@@ -528,8 +528,7 @@ def test_delete_missing_studies_desktop(study_tree: Path) -> None:
 
     service.delete_missing_studies()
 
-    repository.delete.assert_has_calls([call(mc.id), call(mc2.id)], any_order=True)
-    assert repository.delete.call_count == 2
+    repository.delete.assert_called_once_with(mc.id, mc2.id)
 
 
 @with_db_context
