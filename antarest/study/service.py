@@ -1080,8 +1080,8 @@ class StudyService:
         missing_studies = [study for study in desktop_studies if not is_study_folder(get_path(study))]
 
         # delete orphan studies on database
-        ids = [study.id for study in missing_studies]
-        if ids:
+        if missing_studies:
+            ids = [study.id for study in missing_studies]
             self.repository.delete(*ids)
             for study in missing_studies:
                 self.event_bus.push(
