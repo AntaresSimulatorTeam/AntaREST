@@ -1067,20 +1067,20 @@ class StudyService:
         no longer exist on disk. Used to clean up orphaned study entries.
         """
         all_studies = self.repository.get_all_raw()
-        desktop_studies = (
+        desktop_studies = [
             study
             for study in all_studies
             if study.workspace != DEFAULT_WORKSPACE_NAME and isinstance(study, RawStudy) and not study.archived
-        )
+        ]
 
         def get_path(study: RawStudy) -> Path:
             wp = self.config.get_workspace_path(workspace=study.workspace)
             return wp / str(study.folder)
 
-        missing_studies = (study for study in desktop_studies if not is_study_folder(get_path(study)))
+        missing_studies_ids = [study.id for study in desktop_studies if not is_study_folder(get_path(study))]
 
         # delete orphan studies on database
-        self.repository.delete(*[study.id for study in missing_studies])
+        self.repository.delete(*missing_studies_ids)
 
     def copy_study(
         self,
