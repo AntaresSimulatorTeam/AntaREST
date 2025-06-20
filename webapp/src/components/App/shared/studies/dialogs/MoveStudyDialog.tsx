@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { validateStudyFolder } from "@/utils/studiesUtils";
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
 import { type DialogProps } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -99,7 +100,14 @@ function MoveStudyDialog(props: Props) {
       submitButtonText={t("global.move")}
     >
       {({ control }) => (
-        <StudyPathFE name="path" control={control} margin="dense" fullWidth autoFocus />
+        <StudyPathFE
+          name="path"
+          control={control}
+          margin="dense"
+          fullWidth
+          autoFocus
+          rules={{ validate: validateStudyFolder }}
+        />
       )}
     </FormDialog>
   );

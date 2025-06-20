@@ -22,7 +22,7 @@ import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
 import useDebounce from "../../../../hooks/useDebounce";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import LauncherDialog from "../../shared/studies/dialogs/LauncherDialog";
+import LaunchStudyDialog from "../../shared/studies/dialogs/LaunchStudyDialog";
 import Header from "./Header";
 import StudyCardCell, { type StudyCardCellProps } from "./StudyCardCell";
 
@@ -116,7 +116,7 @@ function StudiesList({ studyIds }: StudiesListProps) {
         </AutoSizer>
       </Box>
       {studiesToLaunch.length > 0 && (
-        <LauncherDialog open studyIds={studiesToLaunch} onClose={handleLauncherClose} />
+        <LaunchStudyDialog open studyIds={studiesToLaunch} onClose={handleLauncherClose} />
       )}
     </>
   );

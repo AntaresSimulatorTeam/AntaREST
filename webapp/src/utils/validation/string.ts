@@ -21,7 +21,12 @@ interface StringValidationOptions {
   isCaseSensitive?: boolean;
   allowEmpty?: boolean;
   allowSpecialChars?: boolean;
-  specialChars?: string;
+  specialChars?:
+    | string
+    | {
+        chars: string;
+        mode: "allow" | "deny";
+      };
   allowSpaces?: boolean;
   editedValue?: string;
   minLength?: number;
@@ -96,10 +101,6 @@ export function validateString(
     return t("form.field.invalidValue");
   }
 
-  if (!allowSpaces && trimmedValue.includes(" ")) {
-    return t("form.field.spacesNotAllowed");
-  }
-
   if (trimmedValue.length < minLength) {
     return t("form.field.minLength", { length: minLength });
   }
@@ -108,16 +109,39 @@ export function validateString(
     return t("form.field.maxLength", { length: maxLength });
   }
 
-  // Compiles a regex pattern based on allowed characters and flags.
-  const specialCharsPattern = new RegExp(
-    generatePattern(allowSpaces, allowSpecialChars, specialChars),
-  );
+  const specialCharsObj =
+    typeof specialChars === "object" ? specialChars : { chars: specialChars, mode: "allow" };
 
-  // Validates the string against the allowed characters regex.
-  if (!specialCharsPattern.test(trimmedValue)) {
-    return specialChars === "" || !allowSpecialChars
-      ? t("form.field.specialCharsNotAllowed")
-      : t("form.field.specialChars", { 0: specialChars });
+  function validateChar(char: string): ValidationReturn {
+    if (/[a-zA-Z0-9]/.test(char)) {
+      return true;
+    }
+
+    if (char === " ") {
+      return allowSpaces ? true : t("form.field.spacesNotAllowed");
+    }
+
+    if (allowSpecialChars) {
+      const { chars, mode } = specialCharsObj;
+      const isIncluded = chars.includes(char);
+
+      if (mode === "allow") {
+        return isIncluded ? true : t("form.field.specialCharsAllowedList", { chars });
+      }
+
+      if (mode === "deny") {
+        return isIncluded ? t("form.field.specialCharsNotAllowedList", { chars }) : true;
+      }
+    }
+
+    return t("form.field.specialCharsNotAllowed");
+  }
+
+  for (const char of trimmedValue) {
+    const validation = validateChar(char);
+    if (validation !== true) {
+      return validation;
+    }
   }
 
   // Normalize the value for comparison, based on case sensitivity option.
@@ -182,33 +206,6 @@ export function validatePassword(password: string): ValidationReturn {
   }
 
   return true;
-}
-
-// Escape special characters in specialChars
-function escapeSpecialChars(chars: string) {
-  return chars.replace(/[-\\^$*+?.()|[\]{}]/g, "\\$&");
-}
-
-/**
- * Generates a regular expression pattern for string validation based on specified criteria.
- * This pattern includes considerations for allowing spaces, special characters, and any additional
- * characters specified in `specialChars`.
- *
- * @param allowSpaces - Indicates if spaces are permitted in the string.
- * @param allowSpecialChars - Indicates if special characters are permitted.
- * @param specialChars - Specifies additional characters to allow in the string.
- * @returns The regular expression pattern as a string.
- */
-function generatePattern(
-  allowSpaces: boolean,
-  allowSpecialChars: boolean,
-  specialChars: string,
-): string {
-  const basePattern = "^[a-zA-Z0-9";
-  const spacePattern = allowSpaces ? " " : "";
-  const specialCharsPattern =
-    allowSpecialChars && specialChars ? escapeSpecialChars(specialChars) : "";
-  return basePattern + spacePattern + specialCharsPattern + "]*$";
 }
 
 interface PathValidationOptions {

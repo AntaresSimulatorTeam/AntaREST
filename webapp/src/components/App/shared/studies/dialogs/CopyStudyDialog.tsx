@@ -23,7 +23,7 @@ import usePromise from "@/hooks/usePromise";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, StudyOutput } from "@/types/types";
-import { validateString } from "@/utils/validation/string";
+import { validateStudyFolder, validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
 import { Box, Chip } from "@mui/material";
@@ -66,7 +66,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
   }: SubmitHandlerPlus<DefaultValues>) => {
     return copyStudy({
       studyId: study.id,
-      studyName,
+      studyName: studyName.trim(),
       destinationFolder,
       outputIds,
     });
@@ -96,12 +96,14 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             name="studyName"
             label={t("global.name")}
             control={control}
-            rules={{
-              validate: validateString(),
-            }}
+            rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyPathFE name="destinationFolder" control={control} />
+          <StudyPathFE
+            name="destinationFolder"
+            control={control}
+            rules={{ validate: validateStudyFolder }}
+          />
           <UsePromiseCond
             response={outputsRes}
             ifPending={() => (
