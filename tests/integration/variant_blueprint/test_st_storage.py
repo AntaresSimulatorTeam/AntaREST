@@ -230,7 +230,7 @@ class TestSTStorage:
         )
         assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
         description = res.json()["description"]
-        assert "Input should be 'psp_open'," in description
+        assert "Free groups are available since v9.2 and your study is in 8.6" in description
 
         args["parameters"]["group"] = "psp_open"
         res = client.post(

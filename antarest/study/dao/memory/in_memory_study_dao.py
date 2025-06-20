@@ -22,6 +22,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -72,6 +73,18 @@ class InMemoryStudyDao(StudyDao):
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
+        # Short-term storages
+        self._st_storages: Dict[ClusterKey, STStorage] = {}
+        self._storage_pmax_injection: Dict[ClusterKey, str] = {}
+        self._storage_pmax_withdrawal: Dict[ClusterKey, str] = {}
+        self._storage_lower_rule_curve: Dict[ClusterKey, str] = {}
+        self._storage_upper_rule_curve: Dict[ClusterKey, str] = {}
+        self._storage_inflows: Dict[ClusterKey, str] = {}
+        self._storage_cost_injection: Dict[ClusterKey, str] = {}
+        self._storage_cost_withdrawal: Dict[ClusterKey, str] = {}
+        self._storage_cost_level: Dict[ClusterKey, str] = {}
+        self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
+        self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
@@ -296,3 +309,125 @@ class InMemoryStudyDao(StudyDao):
     def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
         for constraint in constraints:
             del self._constraints[constraint.id]
+
+    @override
+    def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
+        all_storages: dict[str, dict[str, STStorage]] = {}
+        for key, storage in self._st_storages.items():
+            all_storages.setdefault(key.area_id, {})[key.cluster_id] = storage
+        return all_storages
+
+    @override
+    def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
+        return [storage for key, storage in self._st_storages.items() if key.area_id == area_id]
+
+    @override
+    def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
+        return self._st_storages[cluster_key(area_id, storage_id)]
+
+    @override
+    def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
+        return cluster_key(area_id, storage_id) in self._st_storages
+
+    @override
+    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_pmax_injection[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_lower_rule_curve[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_upper_rule_curve[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_inflows[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_cost_injection[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_cost_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_cost_level[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_cost_variation_injection[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        matrix_id = self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)]
+        return self._matrix_service.get(matrix_id)
+
+    @override
+    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
+        self._st_storages[cluster_key(area_id, st_storage.id)] = st_storage
+
+    @override
+    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
+        for storage in storages:
+            self.save_st_storage(area_id, storage)
+
+    @override
+    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_pmax_injection[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_pmax_withdrawal[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_lower_rule_curve[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_upper_rule_curve[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_inflows[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_cost_injection[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_cost_withdrawal[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_cost_level[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_cost_variation_injection[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
+        self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
+
+    @override
+    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+        del self._st_storages[cluster_key(area_id, storage.id)]

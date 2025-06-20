@@ -22,12 +22,9 @@ from antarest.core.model import PublicMode
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.matrixstore.service import SimpleMatrixService
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageGroup,
-    STStorageProperties,
-)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -129,7 +126,7 @@ class TestRawStudyService:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
-            parameters=STStorageProperties(
+            parameters=STStorageCreation(
                 name="Storage1",
                 group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=1500,
