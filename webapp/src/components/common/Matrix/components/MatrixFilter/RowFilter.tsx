@@ -211,8 +211,7 @@ function RowFilter({
       >
         <Box sx={CONTAINER_STYLES.flexRow}>
           <Typography sx={TYPOGRAPHY_STYLES.sectionTitle}>
-            {t("matrix.filter.rowsFilter")}
-            {state.filterSummary}
+            {state.filterSummary || t("matrix.filter.rowsFilter")}
           </Typography>
         </Box>
         {canRemove && (

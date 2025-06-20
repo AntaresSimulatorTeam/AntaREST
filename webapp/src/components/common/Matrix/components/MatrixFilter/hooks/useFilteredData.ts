@@ -42,7 +42,7 @@ function applyOperator(
   values: number[],
 ): number[] {
   if (R.isEmpty(values)) {
-    return [];
+    return indices; // Empty filter means no filter - show all
   }
 
   const predicates: Record<FilterOperatorType, (index: number) => boolean> = {
@@ -79,6 +79,11 @@ function filterColumns(columnFilter: FilterState["columnsFilter"], columnCount: 
   if (columnFilter.type === FILTER_TYPES.LIST) {
     const operator = columnFilter.operator || FILTER_OPERATORS.EQUALS;
     const list = columnFilter.list || [];
+
+    // If list is empty, treat as "no filter" - show all columns
+    if (list.length === 0) {
+      return R.range(0, columnCount);
+    }
 
     // Work with 1-based values for user-facing logic, but return 0-based indices
     const allIndices = R.range(1, columnCount + 1);
