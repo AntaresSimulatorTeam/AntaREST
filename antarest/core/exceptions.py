@@ -730,7 +730,16 @@ class WorkspaceNotFound(HTTPException):
 
 class ScanDisabled(HTTPException):
     """
-    This will be raised when we try to load a workspace that does not exist
+    This will be raised when we try to run a scan when we shouldn't
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+
+class CleanDisabled(HTTPException):
+    """
+    This will be raised when we try to run a clean when we shouldn't
     """
 
     def __init__(self, message: str) -> None:
