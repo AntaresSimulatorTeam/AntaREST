@@ -72,7 +72,7 @@ from antarest.study.business.areas.properties_management import AreaPropertiesMa
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters, LinkTerm
+from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
@@ -80,6 +80,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
@@ -2298,7 +2299,7 @@ class StudyService:
             path,
             with_index=with_index,
             with_header=with_header,
-            study_version=int(study.version),
+            study_version=study_interface.version,
         )
 
         return df_matrix

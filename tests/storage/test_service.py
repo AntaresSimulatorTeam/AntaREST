@@ -22,6 +22,8 @@ from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, call, patch, seal
 
+import numpy as np
+import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session  # type: ignore
@@ -70,12 +72,14 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
+    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -693,7 +697,7 @@ def test_download_output() -> None:
     sim = Simulation(
         name="",
         date="",
-        mode="",
+        mode=Mode.ECONOMY,
         nbyears=1,
         synthesis=True,
         by_year=True,
@@ -727,11 +731,6 @@ def test_download_output() -> None:
         service.event_bus,
     )
 
-    res_study = {"columns": [["H. VAL", "Euro/MWh"]], "data": [[0.5]]}
-    res_study_details = {
-        "columns": [["some cluster", "Euro/MWh"]],
-        "data": [[0.8]],
-    }
     study_service.get_raw.return_value = FileStudy(config=file_study_tree_config, tree=file_study_tree)
     output_config = {
         "general": {
@@ -745,11 +744,19 @@ def test_download_output() -> None:
     }
     file_study_tree.get.side_effect = [
         output_config,
+        output_config,
+        output_config,
+    ]
+
+    res_study = Mock(spec=OutputSeriesMatrix)
+    res_study.parse_dataframe.return_value = pd.DataFrame(columns=[("H. VAL", "Euro/MWh")], data=[[0.5]])
+    res_study_details = Mock(spec=OutputSeriesMatrix)
+    res_study_details.parse_dataframe.return_value = pd.DataFrame(columns=[("some cluster", "Euro/MWh")], data=[[0.8]])
+
+    file_study_tree.get_node.side_effect = [
         res_study,
         res_study_details,
-        output_config,
         res_study,
-        output_config,
         res_study,
         res_study_details,
     ]
@@ -768,8 +775,8 @@ def test_download_output() -> None:
                 type=StudyDownloadType.AREA,
                 data={
                     "1": [
-                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
-                        TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
                     ]
                 },
             )
@@ -782,6 +789,7 @@ def test_download_output() -> None:
             "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
+    print(res.body)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
 
     # AREA TYPE - ZIP & TASK
@@ -819,7 +827,7 @@ def test_download_output() -> None:
             TimeSeriesData(
                 name="east^west",
                 type=StudyDownloadType.LINK,
-                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5])]},
+                data={"1": [TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5]))]},
             )
         ],
         warnings=[],
@@ -849,8 +857,8 @@ def test_download_output() -> None:
                 type=StudyDownloadType.DISTRICT,
                 data={
                     "1": [
-                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=[0.5]),
-                        TimeSerie(name="some cluster", unit="Euro/MWh", data=[0.8]),
+                        TimeSerie(name="H. VAL", unit="Euro/MWh", data=np.array([0.5])),
+                        TimeSerie(name="some cluster", unit="Euro/MWh", data=np.array([0.8])),
                     ]
                 },
             )

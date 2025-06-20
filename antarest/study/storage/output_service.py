@@ -26,7 +26,6 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
-from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -366,7 +365,7 @@ class OutputService:
                 return FileResponse(tmp_export_file, headers=headers, media_type=filetype)
 
             else:
-                json_response = to_json(matrix.model_dump(mode="json"))
+                json_response = matrix.model_dump_json()
                 return Response(content=json_response, media_type="application/json")
 
     def delete_output(self, uuid: str, output_name: str) -> None:

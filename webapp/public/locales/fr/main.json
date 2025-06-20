@@ -349,6 +349,7 @@
   "study.configuration.general.legend.monteCarloScenarios": "Scénarios Monte-Carlo",
   "study.configuration.general.legend.outputProfile": "Profil de sortie",
   "study.configuration.general.mode": "Mode",
+  "study.configuration.general.mode.expansion.tooltip": "Résolution de la première itération uniquement qui correspond à la relaxation linéaire du problème en mode Economy. Attention, les résultats ne sont pas valides.",
   "study.configuration.general.firstDay": "Premier jour",
   "study.configuration.general.lastDay": "Dernier jour",
   "study.configuration.general.day.error.leapYearMax": "Le maximum est 366 pour une année bissextile",
