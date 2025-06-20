@@ -1094,22 +1094,22 @@ def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
 
 
 def test_parse_create_link_dto_v1(command_factory: CommandFactory):
-    dto = CommandDTO(
-        action=CommandName.CREATE_LINK.value,
-        version=1,
-        args={
-            "area1": "area1",
-            "area2": "area2",
-            "parameters": {"link-width": 0.56},  # old format
-        },
-        study_version=STUDY_VERSION_8_8,
-    )
-    commands = command_factory.to_command(dto)
-    assert len(commands) == 1
-    command = commands[0]
-    dto = command.to_dto()
-    assert dto.version == 2
-    assert dto.args["parameters"]["linkWidth"] == 0.56
+    for parameters in [{"link-width": 0.56}, None]:  # legacy cases
+        dto = CommandDTO(
+            action=CommandName.CREATE_LINK.value,
+            version=1,
+            args={"area1": "area1", "area2": "area2", "parameters": parameters},
+            study_version=STUDY_VERSION_8_8,
+        )
+        commands = command_factory.to_command(dto)
+        assert len(commands) == 1
+        command = commands[0]
+        dto = command.to_dto()
+        assert dto.version == 2
+        if parameters is None:
+            assert dto.args["parameters"] == {}
+        else:
+            assert dto.args["parameters"]["linkWidth"] == 0.56
 
 
 def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory):
