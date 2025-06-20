@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
@@ -27,6 +26,7 @@ import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import { DataType, matchesSearchTerm, Timestep } from "./utils";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface ColumnHeader {
   variable: string;
@@ -315,7 +315,6 @@ function ResultFilters({
             alignItems: "center",
           }}
         >
-          {/* Column Filters Group */}
           <Box
             sx={{
               display: "flex",
@@ -327,23 +326,11 @@ function ResultFilters({
             {COLUMN_FILTERS.map(({ id, field }) => (
               <Fragment key={id}>{field}</Fragment>
             ))}
+            {RESULT_FILTERS.map(({ id, field }) => (
+              <Fragment key={id}>{field}</Fragment>
+            ))}
           </Box>
           <DownloadMatrixButton studyId={studyId} path={path} />
-        </Box>
-      </CustomScrollbar>
-
-      {/* Result Filters Group */}
-      <CustomScrollbar>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          {RESULT_FILTERS.map(({ id, field }) => (
-            <Fragment key={id}>{field}</Fragment>
-          ))}
         </Box>
       </CustomScrollbar>
     </Box>
