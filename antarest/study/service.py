@@ -1077,10 +1077,20 @@ class StudyService:
             wp = self.config.get_workspace_path(workspace=study.workspace)
             return wp / str(study.folder)
 
-        missing_studies_ids = [study.id for study in desktop_studies if not is_study_folder(get_path(study))]
+        missing_studies = [study for study in desktop_studies if not is_study_folder(get_path(study))]
 
         # delete orphan studies on database
-        self.repository.delete(*missing_studies_ids)
+        ids = [study.id for study in missing_studies]
+        if ids:
+            self.repository.delete(*ids)
+            for study in missing_studies:
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_DELETED,
+                        payload=study.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study),
+                    )
+                )
 
     def copy_study(
         self,
