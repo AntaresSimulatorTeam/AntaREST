@@ -62,10 +62,9 @@ class InputSeriesMatrix(MatrixNode):
         file_path = file_path or self.config.path
         try:
             stopwatch = StopWatch()
-            link_path = self.get_link_path()
-            if link_path.exists():
-                link = link_path.read_text()
-                matrix = self.matrix_mapper.get_matrix(link)
+            link_content = self.matrix_mapper.get_link_content(self)
+            if link_content:
+                matrix = self.matrix_mapper.get_matrix(link_content)
             else:
                 try:
                     matrix = pd.read_csv(
@@ -110,11 +109,12 @@ class InputSeriesMatrix(MatrixNode):
         return errors
 
     def _infer_path(self) -> Path:
-        if self.get_link_path().exists():
-            return self.get_link_path()
+        link_path = self.matrix_mapper.get_link_path(self)
+        if link_path.exists():
+            return link_path
         elif self.config.path.exists():
             return self.config.path
-        raise ChildNotFoundError(f"Neither link file {self.get_link_path()} nor matrix file {self.config.path} exists")
+        raise ChildNotFoundError(f"Neither link file {link_path} nor matrix file {self.config.path} exists")
 
     def rename_file(self, target: str) -> None:
         target_path = self.config.path.parent.joinpath(f"{target}{''.join(self._infer_path().suffixes)}")
@@ -134,7 +134,7 @@ class InputSeriesMatrix(MatrixNode):
             content = read_original_file_in_archive(
                 self.config.archive_path, self.get_relative_path_inside_archive(self.config.archive_path)
             )
-        elif self.get_link_path().is_file():
+        elif self.matrix_mapper.has_link(self):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()

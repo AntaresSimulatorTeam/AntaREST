@@ -28,6 +28,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
+from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
@@ -99,7 +100,7 @@ class RawStudyService(AbstractStorageService):
             study_path: optional study path
         """
         path = study_path or self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(path, study_id="")
+        study = self.study_factory.create_from_fs(path, is_managed(metadata), study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
             metadata.name = raw_meta["caption"]
@@ -137,7 +138,7 @@ class RawStudyService(AbstractStorageService):
         """
         path = self.get_study_path(metadata)
         try:
-            study = self.study_factory.create_from_fs(path, study_id="")
+            study = self.study_factory.create_from_fs(path, is_managed(metadata), study_id="")
             raw_meta = study.tree.get(["study", "antares"])
             version_as_string = str(raw_meta["version"])
             if metadata.name != raw_meta["caption"] or metadata.version != version_as_string:
@@ -191,13 +192,15 @@ class RawStudyService(AbstractStorageService):
         """
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        return self.study_factory.create_from_fs(study_path, metadata.id, output_dir, use_cache=use_cache)
+        return self.study_factory.create_from_fs(
+            study_path, is_managed(metadata), metadata.id, output_dir, use_cache=use_cache
+        )
 
     @override
     def get_synthesis(self, metadata: RawStudy) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, metadata.id)
+        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
@@ -222,7 +225,7 @@ class RawStudyService(AbstractStorageService):
 
         create_new_empty_study(version=StudyVersion.parse(metadata.version), path_study=path_study)
 
-        study = self.study_factory.create_from_fs(path_study, metadata.id)
+        study = self.study_factory.create_from_fs(path_study, is_managed(metadata), metadata.id)
         update_antares_info(metadata, study.tree, update_author=True)
 
         metadata.path = str(path_study)
@@ -264,7 +267,7 @@ class RawStudyService(AbstractStorageService):
 
         copy_output_folders(src_path / "output", dest_path / "output", with_outputs, output_ids)
 
-        study = self.study_factory.create_from_fs(dest_path, study_id=dest_study.id)
+        study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
         update_antares_info(dest_study, study.tree, update_author=False)
 
         return dest_study
@@ -388,6 +391,7 @@ class RawStudyService(AbstractStorageService):
                 outputs,
                 output_list_filter,
                 denormalize,
+                is_study_managed=is_managed(metadata),
             )
 
         finally:
@@ -407,7 +411,7 @@ class RawStudyService(AbstractStorageService):
 
         """
         path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(path, metadata.id)
+        study = self.study_factory.create_from_fs(path, is_managed(metadata), metadata.id)
         return study.tree.check_errors(study.tree.get())
 
     def archive(self, study: RawStudy) -> Path:
@@ -468,6 +472,7 @@ class RawStudyService(AbstractStorageService):
         try:
             study = self.study_factory.create_from_fs(
                 self.get_study_path(raw_study),
+                is_managed(raw_study),
                 study_id=raw_study.id,
             )
             raw_study.additional_data = self._read_additional_data_from_files(study)
@@ -489,7 +494,7 @@ class RawStudyService(AbstractStorageService):
                     study_id="",
                     version=StudyVersion.parse(0),
                 )
-                raw_study = self.study_factory.create_from_config(config)
+                raw_study = self.study_factory.create_from_config(config, NormalizedMatrixUriMapper.NORMALIZED)
                 file_metadata = raw_study.get(url=["study", "antares"])
                 study_version = str(file_metadata.get("version", study.version))
                 if study_version != study.version:
