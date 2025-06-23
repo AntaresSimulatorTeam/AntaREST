@@ -39,10 +39,10 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import CopyStudyDialog from "./dialogs/CopyStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
-import LauncherDialog from "./dialogs/LauncherDialog";
+import LaunchStudyDialog from "./dialogs/LaunchStudyDialog";
 import MoveStudyDialog from "./dialogs/MoveStudyDialog";
-import PropertiesDialog from "./dialogs/PropertiesDialog";
-import UpgradeDialog from "./dialogs/UpgradeDialog";
+import UpdateStudyDialog from "./dialogs/UpdateStudyDialog";
+import UpgradeStudyDialog from "./dialogs/UpgradeStudyDialog";
 
 export type DialogType = "launch" | "properties" | "upgrade" | "export" | "move" | "copy";
 
@@ -174,10 +174,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
       </Menu>
       {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
       {openDialog === "launch" && (
-        <LauncherDialog open studyIds={[study.id]} onClose={closeDialog} />
+        <LaunchStudyDialog open studyIds={[study.id]} onClose={closeDialog} />
       )}
-      {openDialog === "properties" && <PropertiesDialog open study={study} onClose={closeDialog} />}
-      {openDialog === "upgrade" && <UpgradeDialog open study={study} onClose={closeDialog} />}
+      {openDialog === "properties" && (
+        <UpdateStudyDialog open study={study} onClose={closeDialog} />
+      )}
+      {openDialog === "upgrade" && <UpgradeStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "export" && <ExportModal open study={study} onClose={closeDialog} />}
       {openDialog === "move" && <MoveStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
