@@ -37,6 +37,12 @@ class JobResultRepository:
         db.session.commit()
         return job
 
+    def save_all(self, jobs: List[JobResult]) -> List[JobResult]:
+        logger.debug(f"Saving {len(jobs)} new JobResults")
+        db.session.add_all(jobs)
+        db.session.commit()
+        return jobs
+
     def get(self, id: str) -> Optional[JobResult]:
         logger.debug(f"Retrieving JobResult {id}")
         job: JobResult = db.session.query(JobResult).get(id)

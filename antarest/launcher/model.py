@@ -11,8 +11,10 @@
 # This file is part of the Antares project.
 
 import enum
+import typing
 from datetime import datetime
-from typing import Any, Dict, Iterator, List, MutableMapping, Optional, Tuple
+from typing import Any, Dict, List, MutableMapping, Optional
+from uuid import uuid4
 
 from pydantic import Field
 from pydantic.alias_generators import to_camel
@@ -233,12 +235,17 @@ class JobResult(Base):  # type: ignore
             f" owner_id={self.owner_id!r})>"
         )
 
-    def __iter__(self) -> Iterator[Tuple[str, Any]]:
-        for attr in self.__mapper__.column_attrs:
-            yield attr.key, getattr(self, attr.key)
-
-    def items(self) -> Iterator[Tuple[str, Any]]:
-        return iter(self)
+    def copy_jobs_for_study(self, study_id: str) -> typing.Self:
+        data = {
+            column.key: getattr(self, column.key)
+            for column in self.__table__.columns
+            if column.key not in ["id", "study_id"]
+        }
+        return JobResult(
+            **data,
+            id=str(uuid4()),
+            study_id=study_id,
+        )
 
 
 class JobCreationDTO(AntaresBaseModel):
