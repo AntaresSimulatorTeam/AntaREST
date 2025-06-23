@@ -101,6 +101,31 @@ from tests.helpers import with_admin_user, with_db_context
 JWT_USER = JWTUser(id=0, impersonator=0, type="users")
 
 
+@pytest.fixture
+def study_tree(tmp_path: Path) -> Path:
+    """
+    Create this hierarchy
+
+    tmp_path
+    └── workspace1
+        └── folder
+            ├── studyA
+            │   └── study.antares
+            ├── studyB
+            │   └── study.antares
+    """
+    workspace = tmp_path / "workspace1"
+    c = workspace / "folder/studyA"
+    c.mkdir(parents=True)
+    (c / "study.antares").touch()
+
+    f = workspace / "folder/studyB"
+    f.mkdir(parents=True)
+    (f / "study.antares").touch()
+
+    return tmp_path
+
+
 def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
     @wraps(f)
     def wrapper(*args: t.Any, **kwargs: t.Any) -> t.Any:
@@ -484,6 +509,31 @@ def test_partial_sync_studies_from_disk() -> None:
             workspace="workspace1",
         )
     )
+
+
+@pytest.mark.unit_test
+def test_delete_missing_studies_desktop(study_tree: Path) -> None:
+    ma = RawStudy(id="a", folder="folder/studyA", workspace="workspace1")
+    mb = RawStudy(id="b", folder="folder/studyB", workspace="workspace1")
+    mc = RawStudy(id="c", folder="folder/studyC", workspace="workspace1")
+    mc2 = RawStudy(id="c2", folder="folder/studyC", workspace="workspace2")
+    md = RawStudy(id="managed", folder="managed", workspace="default")
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, mc2, md]]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={
+                "workspace1": WorkspaceConfig(path=study_tree / "workspace1"),
+                "workspace2": WorkspaceConfig(path=study_tree / "workspace2"),
+            }
+        )
+    )
+    service = build_study_service(Mock(), repository, config)
+
+    service.delete_missing_studies()
+
+    repository.delete.assert_called_once_with(mc.id, mc2.id)
 
 
 @with_db_context
