@@ -54,8 +54,7 @@ elif [ "$use_uvicorn" = true ]; then
              --bind=0.0.0.0:$((5000 + $i)) \
              --workers=1 \
              --log-level info \
-             --timeout 600 \
-             --keep-alive $((24 * 60 * 60)) \
+             --timeout 1200 \
               antarest.wsgi:app &
     pids+=($!) # Store background process IDs
   done
