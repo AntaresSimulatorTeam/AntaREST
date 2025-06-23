@@ -730,7 +730,16 @@ class WorkspaceNotFound(HTTPException):
 
 class ScanDisabled(HTTPException):
     """
-    This will be raised when we try to load a workspace that does not exist
+    This will be raised when we try to run a scan when we shouldn't
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+
+class CleanDisabled(HTTPException):
+    """
+    This will be raised when we try to run a clean when we shouldn't
     """
 
     def __init__(self, message: str) -> None:
@@ -814,3 +823,9 @@ class FileAlreadyExistsError(HTTPException):
 class IncorrectArgumentsForCopy(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class StudyImportFailed(HTTPException):
+    def __init__(self, study_name: str, reason: str) -> None:
+        message = f"Study '{study_name}' could not be imported: {reason}"
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

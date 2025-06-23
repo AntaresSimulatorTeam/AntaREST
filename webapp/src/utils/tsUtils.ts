@@ -56,3 +56,14 @@ export function includes<T, U extends any[]>(value: T, list: U): value is L.Unio
  * const invalid: NonEmptyArray<number> = []; // Error
  */
 export type NonEmptyArray<T> = [T, ...T[]];
+
+/**
+ * Type that excludes `null` from all properties of T.
+ * Useful for types that may have nullable properties.
+ *
+ * @template T - The type to exclude null from
+ * @example
+ * type MyType = { a: string | null; b: number | null };
+ * type NonNullMyType = ExcludeNullFromProps<MyType>; // { a: string; b: number }
+ */
+export type ExcludeNullFromProps<T> = { [K in keyof T]: Exclude<T[K], null> };

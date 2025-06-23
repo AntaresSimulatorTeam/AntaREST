@@ -15,6 +15,7 @@
 import { Box, CircularProgress, Tooltip } from "@mui/material";
 import { TreeItem, type TreeItemProps } from "@mui/x-tree-view/TreeItem";
 import * as R from "ramda";
+import { Children } from "react";
 import { mergeSxProp } from "../../utils/muiUtils";
 
 export interface TreeItemEnhancedProps extends TreeItemProps {
@@ -28,7 +29,7 @@ function TreeItemEnhanced({
   loading,
   ...rest
 }: TreeItemEnhancedProps) {
-  const canExpand = rest.children && R.isNotEmpty(rest.children);
+  const canExpand = Children.toArray(rest.children).length > 0;
 
   ////////////////////////////////////////////////////////////////
   // Label

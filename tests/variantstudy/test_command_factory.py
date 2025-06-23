@@ -20,7 +20,7 @@ import pytest
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -226,8 +226,21 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
-            args={"name": "name"},
+            args={
+                "matrices": {
+                    "greaterTermMatrix": "matrix://fake_matrix",
+                },
+                "parameters": {
+                    "enabled": False,
+                    "filterSynthesis": "weekly",
+                    "group": "group 1",
+                    "name": "name",
+                    "operator": "equal",
+                    "timeStep": "hourly",
+                },
+            },
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_binding_constraint",
@@ -237,15 +250,14 @@ COMMANDS = [
             action=CommandName.CREATE_BINDING_CONSTRAINT.value,
             args=[
                 {
-                    "name": "name",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "equal",
-                    "values": "values",
-                    "group": "group_1",
+                    "matrices": {
+                        "equalTermMatrix": "matrix://fake_matrix",
+                    },
+                    "parameters": {"name": "name"},
                 },
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="create_binding_constraint_list",
@@ -255,12 +267,11 @@ COMMANDS = [
             action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
             args={
                 "id": "id",
-                "enabled": True,
-                "time_step": "hourly",
-                "operator": "equal",
-                "values": "values",
+                "matrices": {"values": "values"},
+                "parameters": {"enabled": True, "operator": "equal", "timeStep": "hourly"},
             },
-            study_version=STUDY_VERSION_8_8,
+            study_version=STUDY_VERSION_8_6,
+            version=2,
         ),
         None,
         id="update_binding_constraint",
@@ -271,12 +282,17 @@ COMMANDS = [
             args=[
                 {
                     "id": "id",
-                    "enabled": True,
-                    "time_step": "hourly",
-                    "operator": "equal",
+                    "matrices": {"lessTermMatrix": "matrix"},
+                    "parameters": {
+                        "enabled": True,
+                        "filterSynthesis": "annual, weekly",
+                        "timeStep": "daily",
+                        "terms": [{"data": {"area1": "area1", "area2": "area2"}, "offset": 1, "weight": 4.2}],
+                    },
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="udpate_binding_constraint_list",
@@ -296,27 +312,10 @@ COMMANDS = [
                 }
             ],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="udpate_binding_constraints",
-    ),
-    pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
-            args={"id": "id"},
-            study_version=STUDY_VERSION_8_8,
-        ),
-        None,
-        id="remove_binding_constraint",
-    ),
-    pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
-            args=[{"id": "id"}],
-            study_version=STUDY_VERSION_8_8,
-        ),
-        None,
-        id="remove_binding_constraint_list",
     ),
     pytest.param(
         CommandDTO(
@@ -899,9 +898,19 @@ def command_factory() -> CommandFactory:
     def get_matrix_id(matrix: str) -> str:
         return matrix.removeprefix("matrix://")
 
+    matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
+
+    class FakeGeneratorMatrixConstants(GeneratorMatrixConstants):
+        """Made to avoid having Mock objects in commands arguments"""
+
+        def __getattribute__(self, name):
+            if name in ("_return_value", "__class__"):  # Avoid infinite loop
+                return super().__getattribute__(name)
+            return lambda *args, **kwargs: "fake_matrix"
+
     return CommandFactory(
-        generator_matrix_constants=Mock(spec=GeneratorMatrixConstants),
-        matrix_service=Mock(spec=MatrixService, get_matrix_id=get_matrix_id),
+        generator_matrix_constants=FakeGeneratorMatrixConstants(matrix_service),
+        matrix_service=matrix_service,
     )
 
 
@@ -1082,14 +1091,37 @@ def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory):
 
 
 def test_parse_create_link_dto_v1(command_factory: CommandFactory):
+    for parameters in [{"link-width": 0.56}, None]:  # legacy cases
+        dto = CommandDTO(
+            action=CommandName.CREATE_LINK.value,
+            version=1,
+            args={"area1": "area1", "area2": "area2", "parameters": parameters},
+            study_version=STUDY_VERSION_8_8,
+        )
+        commands = command_factory.to_command(dto)
+        assert len(commands) == 1
+        command = commands[0]
+        dto = command.to_dto()
+        assert dto.version == 2
+        if parameters is None:
+            assert dto.args["parameters"] == {}
+        else:
+            assert dto.args["parameters"]["linkWidth"] == 0.56
+
+
+def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory):
     dto = CommandDTO(
-        action=CommandName.CREATE_LINK.value,
-        version=1,
-        args={
-            "area1": "area1",
-            "area2": "area2",
-            "parameters": {"link-width": 0.56},  # old format
-        },
+        action=CommandName.CREATE_BINDING_CONSTRAINT.value,
+        args=[
+            {
+                "name": "name",
+                "enabled": True,
+                "time_step": "hourly",
+                "operator": "equal",
+                "less_term_matrix": "matrix",
+                "group": "group_1",
+            },
+        ],
         study_version=STUDY_VERSION_8_8,
     )
     commands = command_factory.to_command(dto)
@@ -1097,4 +1129,101 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory):
     command = commands[0]
     dto = command.to_dto()
     assert dto.version == 2
-    assert dto.args["parameters"]["linkWidth"] == 0.56
+    assert dto.args == {
+        "matrices": {
+            "lessTermMatrix": "matrix://matrix",
+        },
+        "parameters": {
+            "comments": "",
+            "enabled": True,
+            "filterSynthesis": "",
+            "filterYearByYear": "",
+            "group": "group_1",
+            "name": "name",
+            "operator": "equal",
+            "terms": [],
+            "timeStep": "hourly",
+        },
+    }
+
+
+def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_BINDING_CONSTRAINT.value,
+        args={
+            "id": "id",
+            "enabled": True,
+            "time_step": "hourly",
+            "operator": "equal",
+            "values": "values",
+            "coeffs": {"area1.cluster_x": [1, 2]},
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 2
+    assert dto.args == {
+        "id": "id",
+        "matrices": {"values": "values"},
+        "parameters": {
+            "enabled": True,
+            "operator": "equal",
+            "timeStep": "hourly",
+            "terms": [{"data": {"area": "area1", "cluster": "cluster_x"}, "offset": 2, "weight": 1.0}],
+        },
+    }
+
+
+def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
+        args={
+            "bc_props_by_id": {
+                "bc_1": {
+                    "enabled": False,
+                    "time_step": "weekly",
+                    "operator": "both",
+                    "comments": "Hello !",
+                    "filter_year_by_year": "annual, hourly",
+                }
+            }
+        },
+        study_version=STUDY_VERSION_8_8,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.version == 2
+    assert dto.args == {
+        "bc_props_by_id": {
+            "bc_1": {
+                "comments": "Hello !",
+                "enabled": False,
+                "filter_year_by_year": "annual, hourly",
+                "operator": "both",
+                "time_step": "weekly",
+            }
+        }
+    }
+
+
+def test_parse_legacy_command_remove_binding_constraint(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.REMOVE_BINDING_CONSTRAINT.value,
+        args={"id": "id"},
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "remove_multiple_binding_constraints"
+    assert dto.version == 1
+    assert dto.args == {"ids": ["id"]}

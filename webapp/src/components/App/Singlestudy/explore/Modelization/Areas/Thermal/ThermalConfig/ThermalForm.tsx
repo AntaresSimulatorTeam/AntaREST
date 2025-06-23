@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { validateNumber } from "@/utils/validation/number";
 import { useTranslation } from "react-i18next";
 import type { Area, Cluster, StudyMetadata } from "../../../../../../../../types/types";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
@@ -30,9 +32,6 @@ import {
   getThermalCluster,
   updateThermalCluster,
 } from "../utils";
-import { validateNumber } from "@/utils/validation/number";
-import { useCallback } from "react";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 
 interface Props {
   study: StudyMetadata;
@@ -43,9 +42,6 @@ interface Props {
 function ThermalForm({ study, areaId, clusterId }: Props) {
   const { t } = useTranslation();
   const studyVersion = Number(study.version);
-
-  // Prevents re-fetch while `useNavigateOnCondition` event occurs in parent component
-  const defaultValues = useCallback(() => getThermalCluster(study.id, areaId, clusterId), []);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -61,8 +57,8 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
 
   return (
     <Form
-      key={study.id + areaId}
-      config={{ defaultValues }}
+      key={study.id + areaId + clusterId}
+      config={{ defaultValues: () => getThermalCluster(study.id, areaId, clusterId) }}
       onSubmit={handleSubmit}
       enableUndoRedo
       disableStickyFooter
