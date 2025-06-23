@@ -1152,7 +1152,8 @@ class StudyService:
             for job in jobs:
                 new_jobs.append(job.copy_jobs_for_study(study.id))
 
-            self.job_result_repository.save_all(new_jobs)
+            if new_jobs:
+                self.job_result_repository.save_all(new_jobs)
 
             self.event_bus.push(
                 Event(
