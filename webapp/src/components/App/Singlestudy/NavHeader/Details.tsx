@@ -93,10 +93,12 @@ function Details({ study, parentStudy, variantNb }: Props) {
           </Tooltip>
         </Item>
       )}
-      <Item>
-        <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
-        <TinyText>{variantNb}</TinyText>
-      </Item>
+      {typeof variantNb === "number" && (
+        <Item>
+          <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
+          <TinyText>{variantNb}</TinyText>
+        </Item>
+      )}
       <StyledDivider />
       <Item>
         <PersonOutlineOutlinedIcon sx={{ color: "text.secondary" }} />

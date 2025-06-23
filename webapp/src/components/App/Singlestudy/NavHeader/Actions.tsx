@@ -36,10 +36,11 @@ export type DialogType = "commands";
 interface Props {
   study: StudyMetadata;
   parentStudy?: StudyMetadata;
+  variantNb?: number;
   isExplorer?: boolean;
 }
 
-function Actions({ study, parentStudy, isExplorer }: Props) {
+function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -166,6 +167,7 @@ function Actions({ study, parentStudy, isExplorer }: Props) {
         anchorEl={anchorEl}
         study={study}
         parentStudy={parentStudy}
+        variantNb={variantNb}
         onClose={() => setAnchorEl(null)}
       />
       <CommandsDrawer open={openDialog === "commands"} studyId={study.id} onClose={closeDialog} />

@@ -27,7 +27,7 @@ interface Props {
 
 function NavHeader({ study, parentStudy, variantTree, isExplorer }: Props) {
   const tree = variantTree && findNodeInTree(study.id, variantTree);
-  const variantNb = tree ? countDescendants(tree) : 0;
+  const variantNb = tree && countDescendants(tree);
 
   return (
     <Box
@@ -41,7 +41,12 @@ function NavHeader({ study, parentStudy, variantTree, isExplorer }: Props) {
         gap: 1,
       }}
     >
-      <Actions study={study} parentStudy={parentStudy} isExplorer={isExplorer} />
+      <Actions
+        study={study}
+        parentStudy={parentStudy}
+        variantNb={variantNb}
+        isExplorer={isExplorer}
+      />
       <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
     </Box>
   );
