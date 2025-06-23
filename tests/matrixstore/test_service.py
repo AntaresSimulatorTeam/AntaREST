@@ -128,6 +128,15 @@ class TestMatrixService:
     def test_get_matrices(self, matrix_service: MatrixService):
         parent = resource_path.parent
         matrices = os.listdir(parent)
+        expected_matrices_id = [
+            "b508399a33d3adb6a9ce11b4f70b2a8fa5cb8e8a37642f699637d1666e966a72",
+            "10d7ca7b8f935d013dd6304466668b87e25f51eb179b92bc995b6f2cc70641a7",
+            "d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
+            "e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
+            "ff7589e7632c1f8304949a27fa3ac86107d8ecf198980e67ae7ca062f9036789",
+            "2d62ca219846080b38e2ddf8d0f8f46a9fdeb7854234bfc751519b7502708b93",
+            "87e70e8b6af459b33be2dbd65d5c814a9225ae77112c9ea791d3abe92379334c",
+        ]
         key_word = "all"
         with db():
             for matrix in matrices:
@@ -136,8 +145,10 @@ class TestMatrixService:
                     mat = pd.read_csv(matrix_path)
                     matrix_service.create(mat)
 
-
-
+            get_matrices = matrix_service.get_matrices()
+            assert len(get_matrices) == 7
+            assert get_matrices[0].id == expected_matrices_id[0]
+            assert get_matrices[1].id == expected_matrices_id[1]
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""
