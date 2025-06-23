@@ -12,7 +12,7 @@
 
 import enum
 from datetime import datetime
-from typing import Any, Dict, List, MutableMapping, Optional
+from typing import Any, Dict, Iterator, List, MutableMapping, Optional, Tuple
 
 from pydantic import Field
 from pydantic.alias_generators import to_camel
@@ -232,6 +232,13 @@ class JobResult(Base):  # type: ignore
             f" solver_stats={self.solver_stats!r},"
             f" owner_id={self.owner_id!r})>"
         )
+
+    def __iter__(self) -> Iterator[Tuple[str, Any]]:
+        for attr in self.__mapper__.column_attrs:
+            yield attr.key, getattr(self, attr.key)
+
+    def items(self) -> Iterator[Tuple[str, Any]]:
+        return iter(self)
 
 
 class JobCreationDTO(AntaresBaseModel):

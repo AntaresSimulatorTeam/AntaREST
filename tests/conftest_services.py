@@ -435,6 +435,7 @@ def study_service_fixture(
         command_context,
         Mock(),
         Mock(),
+        Mock(),
         event_bus,
         Mock(),
         task_service,

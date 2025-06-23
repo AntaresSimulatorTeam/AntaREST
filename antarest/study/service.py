@@ -13,6 +13,7 @@
 import base64
 import collections
 import contextlib
+import copy
 import http
 import logging
 import os
@@ -59,6 +60,8 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifie
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.model import JobResult
+from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, require_current_user
@@ -478,6 +481,7 @@ class StudyService:
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
+        job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -487,6 +491,7 @@ class StudyService:
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.repository = repository
+        self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -1108,7 +1113,19 @@ class StudyService:
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
             )
+
             self._save_study(study, group_ids)
+
+            jobs = self.job_result_repository.find_by_study(origin_study.id)
+
+            for job in jobs:
+                job_data = {k: copy.deepcopy(v) for k, v in job if k not in ["id", "study_id"]}
+                new_job = JobResult(**job_data)
+                new_job.study_id = study.id
+                new_job.id = str(uuid4())
+
+                self.job_result_repository.save(new_job)
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_CREATED,

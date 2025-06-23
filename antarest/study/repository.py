@@ -430,7 +430,7 @@ class StudyMetadataRepository:
         Get list of duplicates as tuples (id, path).
         """
         session = self.session
-        subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1).subquery()
+        subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1)
         query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
         return cast(List[Tuple[str, str]], query.all())
 
