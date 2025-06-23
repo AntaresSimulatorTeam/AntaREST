@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Self
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -43,6 +44,13 @@ class UpdateSTStorages(ICommand):
     # ==================
 
     storage_properties: STStorageUpdates
+
+    @model_validator(mode="after")
+    def validate_properties_against_version(self) -> Self:
+        for value in self.storage_properties.values():
+            for properties in value.values():
+                properties.validate_model_against_version(self.study_version)
+        return self
 
     def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
         for area_id, value in self.storage_properties.items():

@@ -18,6 +18,8 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
+import RadarIcon from "@mui/icons-material/Radar";
+import { Tooltip } from "@mui/material";
 
 function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
   if (folderA.name === DEFAULT_WORKSPACE_NAME) {
@@ -32,10 +34,16 @@ function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): numb
 const nameSort = R.sortBy(R.compose(R.toLower, R.prop("name")));
 const defaultFirstSort = R.sortWith([prioritizeDefault]);
 
-export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: StudyTreeNodeProps) {
-  const { hasChildren, children, path, name } = node;
+export default function StudyTreeNode({
+  node,
+  itemsLoading,
+  onNodeClick,
+  exploredFolders,
+}: StudyTreeNodeProps) {
+  const { hasChildren, children, path, name, isStudyFolder } = node;
   const isLoading = itemsLoading.includes(node.path);
-  const hasUnloadedChildren = hasChildren && children.length === 0;
+  const hasUnloadedChildren =
+    hasChildren && children.length === 0 && !exploredFolders.includes(node.path);
   const { t } = useTranslation();
 
   const sortedChildren = useMemo(() => {
@@ -49,14 +57,33 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
   return (
     <TreeItemEnhanced
       itemId={path}
       label={name}
-      onClick={() => onNodeClick(node.path)}
+      slots={
+        isStudyFolder
+          ? {
+              icon: () => (
+                <Tooltip title={t("studies.tree.unscannedStudyFolder")}>
+                  <RadarIcon color="warning" />
+                </Tooltip>
+              ),
+            }
+          : undefined
+      }
+      onClick={isStudyFolder ? undefined : () => onNodeClick(node.path)}
+      disabled={isStudyFolder}
+      sx={{
+        ".Mui-disabled": {
+          opacity: 1,
+          cursor: "default",
+        },
+      }}
       loading={isLoading}
     >
+      {/* the loading tree item bellow may seem useless but it's mandatory to display  
+          the little arrow on the left on folders without scanned studies*/}
       {hasUnloadedChildren && (
         <TreeItemEnhanced
           itemId={`${path}//loading`}
@@ -70,6 +97,7 @@ export default function StudyTreeNode({ node, itemsLoading, onNodeClick }: Study
           node={child}
           itemsLoading={itemsLoading}
           onNodeClick={onNodeClick}
+          exploredFolders={exploredFolders}
         />
       ))}
     </TreeItemEnhanced>

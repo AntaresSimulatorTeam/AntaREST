@@ -17,7 +17,7 @@ from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.login.auth import Auth
-from antarest.study.model import NonStudyFolderDTO, WorkspaceMetadata
+from antarest.study.model import FolderDTO, WorkspaceMetadata
 from antarest.study.storage.explorer_service import Explorer
 
 logger = logging.getLogger(__name__)
@@ -38,10 +38,10 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
 
     @bp.get(
         "/explorer/{workspace}/_list_dir",
-        summary="For a given directory, list sub directories that aren't studies",
-        response_model=List[NonStudyFolderDTO],
+        summary="For a given directory, list sub directories.",
+        response_model=List[FolderDTO],
     )
-    def list_dir(workspace: str, path: str) -> List[NonStudyFolderDTO]:
+    def list_dir(workspace: str, path: str) -> List[FolderDTO]:
         """
         Endpoint to list sub directories of a given directory
         Args:

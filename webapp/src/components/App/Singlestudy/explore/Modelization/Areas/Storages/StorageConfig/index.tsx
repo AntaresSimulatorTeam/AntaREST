@@ -29,6 +29,7 @@ function StorageConfig() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { storageId = "" } = useParams();
   const { t } = useTranslation();
+  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -41,7 +42,12 @@ function StorageConfig() {
       <Divider sx={{ my: 2 }} variant="middle">
         <Chip label={t("global.matrices")} size="small" />
       </Divider>
-      <StorageMatrices study={study} areaId={areaId} storageId={nameToId(storageId)} />
+      <StorageMatrices
+        study={study}
+        areaId={areaId}
+        storageId={nameToId(storageId)}
+        studyVersion={studyVersion}
+      />
     </>
   );
 }
