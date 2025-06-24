@@ -19,6 +19,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Tooltip,
   type SelectProps,
 } from "@mui/material";
 import startCase from "lodash/startCase";
@@ -33,6 +34,7 @@ type OptionObj<T extends O.Object = O.Object> = {
   label: string;
   value: string | number;
   icon?: SvgIconComponent;
+  tooltip?: string;
 } & T;
 
 export interface SelectFEProps extends Omit<SelectProps, "labelId"> {
@@ -98,10 +100,16 @@ function SelectFE(props: SelectFEProps) {
             <em>{t("global.none")}</em>
           </MenuItem>
         )}
-        {optionsFormatted.map(({ id, value, label, icon: Icon }) => (
+        {optionsFormatted.map(({ id, value, label, icon: Icon, tooltip }) => (
           <MenuItem key={id} value={value}>
             {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
-            {label}
+            {tooltip ? (
+              <Tooltip title={t(tooltip)} placement="right">
+                <span>{label}</span>
+              </Tooltip>
+            ) : (
+              label
+            )}
           </MenuItem>
         ))}
       </Select>

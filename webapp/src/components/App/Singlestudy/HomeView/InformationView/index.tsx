@@ -22,14 +22,14 @@ import { useNavigate } from "react-router-dom";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import { unarchiveStudy as callUnarchiveStudy } from "../../../../../services/api/study";
 import type { StudyMetadata, VariantTree } from "../../../../../types/types";
-import LauncherDialog from "../../../shared/studies/dialogs/LauncherDialog";
+import LaunchStudyDialog from "../../../shared/studies/dialogs/LaunchStudyDialog";
 import CreateVariantDialog from "./CreateVariantDialog";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 
 interface Props {
   study: StudyMetadata;
-  variantTree?: VariantTree;
+  variantTree: VariantTree;
 }
 
 function InformationView({ study, variantTree }: Props) {
@@ -107,7 +107,7 @@ function InformationView({ study, variantTree }: Props) {
           {study.archived ? t("global.unarchive") : t("global.launch")}
         </Button>
       </Box>
-      {variantTree && openVariantModal && (
+      {openVariantModal && (
         <CreateVariantDialog
           parentId={study.id}
           open={openVariantModal}
@@ -116,7 +116,7 @@ function InformationView({ study, variantTree }: Props) {
         />
       )}
       {openLauncherModal && (
-        <LauncherDialog
+        <LaunchStudyDialog
           open={openLauncherModal}
           studyIds={[study.id]}
           onClose={() => setOpenLauncherModal(false)}

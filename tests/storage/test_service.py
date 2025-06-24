@@ -72,6 +72,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
+    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -98,6 +99,31 @@ from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import with_admin_user, with_db_context
 
 JWT_USER = JWTUser(id=0, impersonator=0, type="users")
+
+
+@pytest.fixture
+def study_tree(tmp_path: Path) -> Path:
+    """
+    Create this hierarchy
+
+    tmp_path
+    └── workspace1
+        └── folder
+            ├── studyA
+            │   └── study.antares
+            ├── studyB
+            │   └── study.antares
+    """
+    workspace = tmp_path / "workspace1"
+    c = workspace / "folder/studyA"
+    c.mkdir(parents=True)
+    (c / "study.antares").touch()
+
+    f = workspace / "folder/studyB"
+    f.mkdir(parents=True)
+    (f / "study.antares").touch()
+
+    return tmp_path
 
 
 def with_jwt_user(f: t.Callable[..., t.Any]) -> t.Callable[..., t.Any]:
@@ -484,6 +510,31 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
+@pytest.mark.unit_test
+def test_delete_missing_studies_desktop(study_tree: Path) -> None:
+    ma = RawStudy(id="a", folder="folder/studyA", workspace="workspace1")
+    mb = RawStudy(id="b", folder="folder/studyB", workspace="workspace1")
+    mc = RawStudy(id="c", folder="folder/studyC", workspace="workspace1")
+    mc2 = RawStudy(id="c2", folder="folder/studyC", workspace="workspace2")
+    md = RawStudy(id="managed", folder="managed", workspace="default")
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[ma, mb, mc, mc2, md]]
+    config = Config(
+        storage=StorageConfig(
+            workspaces={
+                "workspace1": WorkspaceConfig(path=study_tree / "workspace1"),
+                "workspace2": WorkspaceConfig(path=study_tree / "workspace2"),
+            }
+        )
+    )
+    service = build_study_service(Mock(), repository, config)
+
+    service.delete_missing_studies()
+
+    repository.delete.assert_called_once_with(mc.id, mc2.id)
+
+
 @with_db_context
 def test_remove_duplicate(db_session: Session) -> None:
     with db_session:
@@ -646,7 +697,7 @@ def test_download_output() -> None:
     sim = Simulation(
         name="",
         date="",
-        mode="",
+        mode=Mode.ECONOMY,
         nbyears=1,
         synthesis=True,
         by_year=True,
@@ -738,8 +789,11 @@ def test_download_output() -> None:
             "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
-    print(res.body)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+    # Ensures it was called with economy in lower case
+    file_study_tree.get_node.assert_called_with(
+        ["output", "output-id", "economy", "mc-ind", "00001", "areas", "east", "details-annual"]
+    )
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(

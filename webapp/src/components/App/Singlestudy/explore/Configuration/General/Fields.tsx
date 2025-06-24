@@ -152,6 +152,7 @@ function Fields({ study }: Props) {
           label={t("study.configuration.general.mode")}
           options={MODE_OPTIONS}
           control={control}
+          sx={{ minWidth: "250px" }}
         />
         <NumberFE
           name="firstDay"
