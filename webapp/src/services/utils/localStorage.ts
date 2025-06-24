@@ -31,6 +31,8 @@ export const StorageKey = {
   StudyTreeFolders: "studyTree.folders",
   // UI
   UIMenuCollapsed: "ui.menuCollapsed",
+  // Tasks
+  TasksUserFilter: "tasks.userFilter",
 } as const;
 
 type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
@@ -45,6 +47,7 @@ interface TypeFromKey {
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
   [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
   [StorageKey.StudyTreeFolders]: FolderDTO[];
+  [StorageKey.TasksUserFilter]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];
   [key: string]: unknown;
 }

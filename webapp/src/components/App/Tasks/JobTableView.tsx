@@ -43,6 +43,8 @@ import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
 import * as R from "ramda";
 import CustomScrollbar from "@/components/common/CustomScrollbar";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -68,6 +70,9 @@ function JobTableView(props: Props) {
   const [t] = useTranslation();
   const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
+  const [userFilterValue, setUserFilterValue] = useState<string>(
+    storage.getItem(StorageKey.TasksUserFilter) || "",
+  );
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
 
   const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
@@ -84,6 +89,7 @@ function JobTableView(props: Props) {
         [
           filterRunningStatus && (({ status }: TaskView) => status === "running"),
           filterType && (({ type }: TaskView) => type === filterType),
+          userFilterValue && (({ userName }: TaskView) => userName?.includes(userFilterValue)),
         ].filter(Boolean),
       ),
       content,
@@ -93,7 +99,7 @@ function JobTableView(props: Props) {
       dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
       filteredContent,
     );
-  }, [content, dateOrder, filterRunningStatus, filterType]);
+  }, [content, dateOrder, filterRunningStatus, filterType, userFilterValue]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -111,10 +117,14 @@ function JobTableView(props: Props) {
     setDateOrder(dateOrder === "asc" ? "desc" : "asc");
   };
 
+  const handleUserValueFilterChange = (input: string) => {
+    setUserFilterValue(input);
+    storage.setItem(StorageKey.TasksUserFilter, input);
+  };
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
   return (
     <>
       {/* Header */}
@@ -182,6 +192,13 @@ function JobTableView(props: Props) {
               onChange={handleFilterStatusChange}
               sx={{ textWrap: "nowrap" }}
             />
+
+            <SearchFE
+              size="extra-small"
+              value={userFilterValue}
+              onSearchValueChange={handleUserValueFilterChange}
+              sx={{ maxWidth: 200 }}
+            />
             <SelectFE
               label={t("tasks.typeFilter")}
               value={filterType}
@@ -210,6 +227,7 @@ function JobTableView(props: Props) {
                   {t("global.date")}
                 </TableSortLabel>
               </TableCell>
+              <TableCell align="right">{"user"}</TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
             </TableRow>
           </TableHead>
@@ -221,6 +239,7 @@ function JobTableView(props: Props) {
                 </TableCell>
                 <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
                 <TableCell align="right">{row.dateView}</TableCell>
+                <TableCell align="right">{row.userName}</TableCell>
                 <TableCell align="right">{row.action}</TableCell>
               </TableRow>
             ))}
