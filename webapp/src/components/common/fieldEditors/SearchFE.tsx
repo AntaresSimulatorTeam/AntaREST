@@ -21,6 +21,7 @@ import { useUpdateEffect } from "react-use";
 import * as RA from "ramda-adjunct";
 import StringFE, { type StringFEProps } from "./StringFE";
 import { mergeSxProp } from "@/utils/muiUtils";
+import { t } from "i18next";
 
 export interface SearchFE extends Omit<StringFEProps, "placeholder"> {
   onSearchValueChange?: (value: string) => void;
@@ -48,6 +49,7 @@ function SearchFE({
   return (
     <StringFE
       {...rest}
+      placeholder={t("global.search")}
       className={clsx("SearchFE", className)}
       sx={mergeSxProp(
         {
