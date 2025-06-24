@@ -17,6 +17,7 @@ from pathlib import Path
 from unittest.mock import Mock, call
 
 import pytest
+from antares.study.version import SolverVersion
 
 from antarest.core.config import LocalConfig
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -94,6 +95,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig):
         study_uuid="study-id",
         job_id=job_id,
         launcher_parameters=launcher_parameters,
+        version=SolverVersion.parse("700"),
         current_user=DEFAULT_ADMIN_USER,
     )
 
@@ -109,24 +111,30 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig):
 @pytest.mark.unit_test
 def test_parse_launcher_arguments(launcher_config: LocalConfig):
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    solver_version_8_8 = SolverVersion.parse("8.8")
+    solver_version_9_2 = SolverVersion.parse("9.2")
+
+    # Easy cases
     launcher_parameters = LauncherParametersDTO(launcher_id="id", nb_cpu=4)
-    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
     assert sim_args == ["--force-parallel=4"]
 
     launcher_parameters = LauncherParametersDTO(launcher_id="id", nb_cpu=8)
-    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
     assert sim_args == ["--force-parallel=8"]
 
-    launcher_parameters.other_options = "coin"
-    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
-    assert sim_args == ["--force-parallel=8", "--use-ortools", "--ortools-solver=coin"]
+    for solver in ["coin", "xpress"]:
+        launcher_parameters = LauncherParametersDTO(other_options=solver)
+        for version in [solver_version_8_8, solver_version_9_2]:
+            sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, version)
+            if version == solver_version_8_8:
+                assert sim_args == ["--use-ortools", f"--ortools-solver={solver}"]
+            else:
+                assert sim_args == [f"--solver={solver}"]
 
-    launcher_parameters.other_options = "xpress"
-    sim_args, blabla = local_launcher._parse_launcher_options(launcher_parameters)
-    assert sim_args == ["--force-parallel=8", "--use-ortools", "--ortools-solver=xpress"]
-
+    # Xpress cases
     launcher_parameters.other_options = "xpress presolve"
-    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters)
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_2)
     assert sim_args == [
         "--force-parallel=8",
         "--use-ortools",
@@ -146,7 +154,7 @@ def test_parse_xpress_dir(tmp_path: Path):
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = LocalConfig.from_dict(data)
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
-    _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO())
+    _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO(), SolverVersion.parse("9.2"))
     assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
 
 
