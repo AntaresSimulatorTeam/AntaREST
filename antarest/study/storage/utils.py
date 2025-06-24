@@ -88,8 +88,10 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_au
     study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
     version = StudyVersion.parse(metadata.version)
     study_data_info["antares"]["version"] = f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
-    if update_author and metadata.additional_data:
-        study_data_info["antares"]["author"] = metadata.additional_data.author
+    if metadata.additional_data:
+        study_data_info["antares"]["editor"] = metadata.additional_data.editor
+        if update_author:
+            study_data_info["antares"]["author"] = metadata.additional_data.author
     study_tree.save(study_data_info, ["study"])
 
 
@@ -199,7 +201,7 @@ def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
         msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
+    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown", editor="Unknown")
     app()
 
 
