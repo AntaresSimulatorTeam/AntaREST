@@ -21,6 +21,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.serde.matrix_export import TableExportFormat
+from tests.conftest import get_fast_subset
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR
 
@@ -451,7 +452,9 @@ class TestRawDataAggregationMCInd:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in AREAS_REQUESTS__IND:
+        test_cases = get_fast_subset(AREAS_REQUESTS__IND)
+
+        for params, expected_result_filename in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -487,7 +490,9 @@ class TestRawDataAggregationMCInd:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in LINKS_REQUESTS__IND:
+        test_cases = get_fast_subset(LINKS_REQUESTS__IND)
+
+        for params, expected_result_filename in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -524,7 +529,9 @@ class TestRawDataAggregationMCInd:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__IND:
+        test_cases = get_fast_subset(SAME_REQUEST_DIFFERENT_FORMATS__IND)
+
+        for params, expected_result_filename in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -562,8 +569,10 @@ class TestRawDataAggregationMCInd:
     ):
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
+        test_cases = get_fast_subset(INCOHERENT_REQUESTS_BODIES__IND)
+
         # Asserts that requests with incoherent bodies don't crash but send empty dataframes
-        for params in INCOHERENT_REQUESTS_BODIES__IND:
+        for params in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -690,7 +699,9 @@ class TestRawDataAggregationMCAll:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in AREAS_REQUESTS__ALL:
+        test_cases = get_fast_subset(AREAS_REQUESTS__ALL)
+
+        for params, expected_result_filename in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -727,7 +738,9 @@ class TestRawDataAggregationMCAll:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in LINKS_REQUESTS__ALL:
+        test_cases = get_fast_subset(LINKS_REQUESTS__ALL)
+
+        for params, expected_result_filename in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -764,7 +777,9 @@ class TestRawDataAggregationMCAll:
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__ALL:
+        test_cases = get_fast_subset(SAME_REQUEST_DIFFERENT_FORMATS__ALL)
+
+        for params, expected_result_filename in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
@@ -856,8 +871,10 @@ class TestRawDataAggregationMCAll:
     ):
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
+        test_cases = get_fast_subset(INCOHERENT_REQUESTS_BODIES__ALL)
+
         # Asserts that requests with incoherent bodies don't crash but send empty dataframes
-        for params in INCOHERENT_REQUESTS_BODIES__ALL:
+        for params in test_cases:
             output_id = params.pop("output_id")
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()

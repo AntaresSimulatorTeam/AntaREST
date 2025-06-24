@@ -40,6 +40,26 @@ from tests.conftest_services import *  # noqa: F403
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
+pytest.FAST_MODE = False
+
+
+def pytest_addoption(parser):
+    parser.addoption("--fast", action="store_true", default=False, help="Run tests in fast mode (subset of cases)")
+
+
+def pytest_configure(config):
+    if config.getoption("--fast"):
+        pytest.FAST_MODE = True
+
+
+def get_fast_subset(test_cases, subset_size=1):
+    """
+    Returns a subset of test cases in fast mode,
+    or all cases in normal mode.
+    """
+    if pytest.FAST_MODE:  # type: ignore
+        return test_cases[:subset_size]
+    return test_cases
 
 
 @pytest.fixture(scope="session")

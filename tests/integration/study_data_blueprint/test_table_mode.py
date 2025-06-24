@@ -17,6 +17,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from tests.conftest import get_fast_subset
 from tests.integration.utils import wait_task_completion
 
 # noinspection SpellCheckingInspection
@@ -33,7 +34,7 @@ class TestTableMode:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    @pytest.mark.parametrize("study_version", [0, 810, 830, 860, 870, 880, 920])
+    @pytest.mark.parametrize("study_version", get_fast_subset([0, 810, 830, 860, 870, 880, 920], 3))
     def test_lifecycle__nominal(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ) -> None:
