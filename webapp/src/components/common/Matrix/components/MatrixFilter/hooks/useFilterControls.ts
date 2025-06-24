@@ -50,6 +50,7 @@ export function useFilterControls({
   const addValueToList = useCallback(
     (id?: string) => {
       const newValue = Number.parseInt(inputValue.trim(), 10);
+
       if (Number.isNaN(newValue)) {
         return;
       }

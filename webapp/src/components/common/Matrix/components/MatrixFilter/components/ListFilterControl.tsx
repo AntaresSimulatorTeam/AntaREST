@@ -40,6 +40,11 @@ import {
   TYPOGRAPHY_STYLES,
 } from "../styles";
 import type { FilterOperatorType } from "../types";
+import { parseRangeInput } from "../utils";
+
+const isValidFilterOperator = (value: string): value is FilterOperatorType => {
+  return Object.values(FILTER_OPERATORS).includes(value as FilterOperatorType);
+};
 
 interface ListFilterControlProps {
   inputValue: string;
@@ -115,49 +120,27 @@ function ListFilterControl({
 
   const handleOperatorChange = (e: SelectChangeEvent) => {
     if (onOperatorChange) {
-      onOperatorChange(e.target.value as FilterOperatorType);
-    }
-  };
+      const operatorValue = e.target.value;
 
-  const parseRangeInput = (input: string): number[] => {
-    const trimmed = input.trim();
-
-    // Check if input contains a range (e.g., "8-100", "5 - 10")
-    const rangeMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-    if (rangeMatch) {
-      const start = Number.parseInt(rangeMatch[1], 10);
-      const end = Number.parseInt(rangeMatch[2], 10);
-      if (!Number.isNaN(start) && !Number.isNaN(end) && start <= end) {
-        return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+      if (isValidFilterOperator(operatorValue)) {
+        onOperatorChange(operatorValue);
       }
     }
-
-    // Check for comma-separated values
-    const values = trimmed
-      .split(",")
-      .map((v) => {
-        const num = Number.parseInt(v.trim(), 10);
-        return Number.isNaN(num) ? null : num;
-      })
-      .filter((v) => v !== null) as number[];
-
-    return values;
   };
 
   const handleAddValue = () => {
     const values = parseRangeInput(inputValue);
+
     if (values.length > 1 && onAddValues) {
       // Use onAddValues for multiple values (ranges)
       const newValues = values.filter((value) => !selectedValues.includes(value));
+
       if (newValues.length > 0) {
         onAddValues(newValues);
         onInputChange("");
       }
     } else if (values.length === 1) {
       // Use onAddValue for single values
-      onAddValue();
-    } else {
-      // Fallback to onAddValue for invalid input
       onAddValue();
     }
   };

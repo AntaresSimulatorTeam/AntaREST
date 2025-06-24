@@ -30,7 +30,7 @@ import {
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import TemporalFilterRenderer from "./components/TemporalFilterRenderer";
-import { FILTER_TYPES, TEMPORAL_OPTIONS } from "./constants";
+import { FILTER_TYPES, TEMPORAL_OPTIONS, TIME_INDEXING } from "./constants";
 import { useFilterControls } from "./hooks/useFilterControls";
 import { useTemporalData } from "./hooks/useTemporalData";
 import {
@@ -49,6 +49,10 @@ import type {
   TimeIndexingType,
 } from "./types";
 import { createSliderMarks, getFilteredTemporalOptions } from "./utils";
+
+const isValidTimeIndexingType = (value: string): value is TimeIndexingType => {
+  return Object.values(TIME_INDEXING).includes(value as TimeIndexingType);
+};
 
 interface RowFilterState {
   rowFilter: RowFilterType;
@@ -134,25 +138,28 @@ function RowFilter({
 
   const handleIndexingTypeChange = useCallback(
     (e: SelectChangeEvent) => {
-      const newType = e.target.value as TimeIndexingType;
-      const newAvailableValues = valuesByIndexType[newType] || { min: 1, max: 100 };
+      const newType = e.target.value;
 
-      setFilter((prevFilter) => ({
-        ...prevFilter,
-        rowsFilters: prevFilter.rowsFilters.map((rf) =>
-          rf.id === state.rowFilter.id
-            ? {
-                ...rf,
-                indexingType: newType,
-                range: {
-                  min: newAvailableValues.min,
-                  max: newAvailableValues.max,
-                },
-                list: [],
-              }
-            : rf,
-        ),
-      }));
+      if (isValidTimeIndexingType(newType)) {
+        const newAvailableValues = valuesByIndexType[newType] || { min: 1, max: 100 };
+
+        setFilter((prevFilter) => ({
+          ...prevFilter,
+          rowsFilters: prevFilter.rowsFilters.map((rf) =>
+            rf.id === state.rowFilter.id
+              ? {
+                  ...rf,
+                  indexingType: newType,
+                  range: {
+                    min: newAvailableValues.min,
+                    max: newAvailableValues.max,
+                  },
+                  list: [],
+                }
+              : rf,
+          ),
+        }));
+      }
     },
     [valuesByIndexType, setFilter, state.rowFilter.id],
   );

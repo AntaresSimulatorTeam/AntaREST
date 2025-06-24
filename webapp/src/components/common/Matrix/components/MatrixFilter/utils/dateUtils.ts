@@ -23,6 +23,7 @@ import {
   getTemporalRange,
   type TimeIndexingType,
 } from "@/utils/date/matrixDateUtils";
+import type { LocalizedTimeLabel, TemporalRange } from "../types";
 
 /**
  * Attempts to parse a date string using multiple formats
@@ -43,7 +44,7 @@ export function parseFlexibleDate(dateStr: string): Date | null {
  * @returns A numeric value representing the requested temporal index
  * @throws Error if the date string cannot be parsed
  */
-export function extractValueFromDate(dateStr: string, indexingType: string): number {
+export function extractValueFromDate(dateStr: string, indexingType: TimeIndexingType): number {
   const locale = getCurrentLocale();
   const date = parseFlexibleDate(dateStr);
 
@@ -51,7 +52,7 @@ export function extractValueFromDate(dateStr: string, indexingType: string): num
     throw new Error(`Invalid date format: "${dateStr}"`);
   }
 
-  return extractTemporalValue(dateStr, indexingType as TimeIndexingType, locale);
+  return extractTemporalValue(dateStr, indexingType, locale);
 }
 
 /**
@@ -60,8 +61,8 @@ export function extractValueFromDate(dateStr: string, indexingType: string): num
  * @param indexingType - The type of temporal index (day, month, etc.)
  * @returns An object with the min and max values
  */
-export function getDefaultRangeForIndexType(indexingType: string): { min: number; max: number } {
-  return getTemporalRange(indexingType as TimeIndexingType);
+export function getDefaultRangeForIndexType(indexingType: TimeIndexingType): TemporalRange {
+  return getTemporalRange(indexingType);
 }
 
 /**
@@ -74,6 +75,6 @@ export function getDefaultRangeForIndexType(indexingType: string): { min: number
 export function getLocalizedTimeLabels(
   type: "month" | "weekday",
   t: TFunction,
-): Array<{ value: number; label: string; shortLabel: string }> {
+): LocalizedTimeLabel[] {
   return createLocalizedTemporalLabels(type, t);
 }

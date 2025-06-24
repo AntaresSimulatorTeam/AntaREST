@@ -96,7 +96,6 @@ export interface TemporalIndexingParams {
 export interface TemporalOption {
   value: TimeIndexingType;
   label: string;
-  description: string;
 }
 
 export interface IndexedValue {
@@ -107,4 +106,15 @@ export interface IndexedValue {
 export interface SliderMark {
   value: number;
   label: string;
+}
+
+export interface TemporalRange {
+  min: number;
+  max: number;
+}
+
+export interface LocalizedTimeLabel {
+  value: number;
+  label: string;
+  shortLabel: string;
 }

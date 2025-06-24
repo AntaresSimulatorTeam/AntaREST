@@ -26,25 +26,25 @@ function SelectionSummary({ filteredData }: SelectionSummaryProps) {
     <Paper variant="outlined" sx={SELECTION_SUMMARY_STYLES.container}>
       <Box sx={SELECTION_SUMMARY_STYLES.statsContainer}>
         <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
-          <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
+          <Typography color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedRows")}
           </Typography>
-          <Typography variant="caption" fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
+          <Typography fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
             {filteredData.rowsIndices.length}
           </Typography>
         </Box>
 
         <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
-          <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
+          <Typography color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedColumns")}
           </Typography>
-          <Typography variant="caption" fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
+          <Typography fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>
             {filteredData.columnsIndices.length}
           </Typography>
         </Box>
 
         <Box sx={SELECTION_SUMMARY_STYLES.statItem}>
-          <Typography variant="caption" color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
+          <Typography color="text.secondary" sx={SELECTION_SUMMARY_STYLES.label}>
             {t("matrix.filter.selectedCells")}
           </Typography>
           <Typography variant="body2" fontWeight="medium" sx={SELECTION_SUMMARY_STYLES.value}>

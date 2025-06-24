@@ -89,37 +89,30 @@ export const TEMPORAL_OPTIONS: readonly TemporalOption[] = [
   {
     value: TIME_INDEXING.DAY_OF_MONTH,
     label: "matrix.filter.indexing.dayOfMonth",
-    description: "Filter by day of month (1-31)",
   },
   {
     value: TIME_INDEXING.MONTH,
     label: "matrix.filter.indexing.month",
-    description: "Filter by month (1-12)",
   },
   {
     value: TIME_INDEXING.WEEKDAY,
     label: "matrix.filter.indexing.weekday",
-    description: "Filter by weekday (1-7, Monday to Sunday)",
   },
   {
     value: TIME_INDEXING.DAY_HOUR,
     label: "matrix.filter.indexing.dayHour",
-    description: "Filter by hour of day (0-23)",
   },
   {
     value: TIME_INDEXING.WEEK,
     label: "matrix.filter.indexing.week",
-    description: "Filter by week of year (1-53)",
   },
   {
     value: TIME_INDEXING.DAY_OF_YEAR,
     label: "matrix.filter.indexing.dayOfYear",
-    description: "Filter by day of year (1-366)",
   },
   {
     value: TIME_INDEXING.HOUR_YEAR,
     label: "matrix.filter.indexing.hourYear",
-    description: "Filter by hour of year (1-8760)",
   },
 ] as const;
 
@@ -138,14 +131,14 @@ export const createDefaultRowFilter = (
   const indexingType = getDefaultIndexingType(timeFrequency);
 
   return {
-    id: crypto.randomUUID(), // TODO: temp ID generation, may not be necessary to keep, if so use UUID or useId()
+    id: crypto.randomUUID(),
     indexingType,
     type: FILTER_TYPES.LIST,
     range: {
       min: 1,
       max: Math.max(rowCount, 1),
     },
-    list: [], // Empty list means "show all"
+    list: [],
     operator: FILTER_OPERATORS.EQUALS,
   };
 };
@@ -171,7 +164,6 @@ export const getDefaultFilterState = (
       min: 1,
       max: Math.max(columnCount, 1),
     },
-    // Initialize with empty list - "show all"
     list: [],
     operator: FILTER_OPERATORS.EQUALS,
   },

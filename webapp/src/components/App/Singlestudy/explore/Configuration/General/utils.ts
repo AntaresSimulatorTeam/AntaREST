@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import type { Month } from "date-fns";
 import * as R from "ramda";
-import type { StudyMetadata } from "../../../../../../types/types";
+import { WeekDay } from "@/utils/date/constants";
 import client from "../../../../../../services/api/client";
-import { WeekDay, type Month } from "@/utils/date";
+import type { StudyMetadata } from "../../../../../../types/types";
 
 ////////////////////////////////////////////////////////////////
 // Enums

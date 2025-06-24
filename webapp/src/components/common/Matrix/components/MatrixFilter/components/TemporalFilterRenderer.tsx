@@ -13,16 +13,16 @@
  */
 
 import { Box } from "@mui/material";
-import { memo, useMemo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { TIME_INDEXING } from "../constants";
 import { DESIGN_TOKENS } from "../styles";
+import type { FilterOperatorType } from "../types";
 import { getLocalizedTimeLabels } from "../utils/dateUtils";
 import ChipSelector from "./ChipSelector";
 import ListFilterControl from "./ListFilterControl";
 import RangeFilterControl from "./RangeFilterControl";
-import type { FilterOperatorType } from "../types";
 
 interface TemporalFilterRendererProps {
   indexingType: string;
@@ -70,6 +70,15 @@ function TemporalFilterRenderer({
   onOperatorChange,
 }: TemporalFilterRendererProps) {
   const { t } = useTranslation();
+
+  const handleChipChange = useCallback(
+    (value: number, _isSelected: boolean) => {
+      // Call onCheckboxChange regardless of isSelected state
+      // as it handles the toggle logic internally
+      onCheckboxChange(value);
+    },
+    [onCheckboxChange],
+  );
 
   // Format hour of year as human-readable text (Jan 1, 5h)
   const formatHourOfYear = useMemo(() => {
@@ -177,7 +186,7 @@ function TemporalFilterRenderer({
             label: item.label,
           }))}
           selectedValues={selectedValues}
-          onChange={onCheckboxChange}
+          onChange={handleChipChange}
           disabled={disabled}
         />
       );
@@ -193,7 +202,7 @@ function TemporalFilterRenderer({
             label: item.label,
           }))}
           selectedValues={selectedValues}
-          onChange={onCheckboxChange}
+          onChange={handleChipChange}
           disabled={disabled}
         />
       );
@@ -206,7 +215,7 @@ function TemporalFilterRenderer({
           title={t("matrix.filter.selectDays")}
           options={dayOfMonthOptions}
           selectedValues={selectedValues}
-          onChange={onCheckboxChange}
+          onChange={handleChipChange}
           disabled={disabled}
           dense={true}
           size="small"
@@ -216,7 +225,6 @@ function TemporalFilterRenderer({
 
     // Week selector
     if (indexingType === TIME_INDEXING.WEEK) {
-      // Generate week options (1-53)
       const weekOptions = Array.from({ length: 53 }, (_, i) => ({
         value: i + 1,
         label: `${t("global.time.weekShort")} ${i + 1}`,
@@ -227,7 +235,7 @@ function TemporalFilterRenderer({
           title={t("matrix.filter.selectWeeks")}
           options={weekOptions}
           selectedValues={selectedValues}
-          onChange={onCheckboxChange}
+          onChange={handleChipChange}
           disabled={disabled}
           dense={true}
           size="small"

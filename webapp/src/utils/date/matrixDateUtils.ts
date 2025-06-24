@@ -14,17 +14,18 @@
 
 import { getDate, getDayOfYear, getHours, getMonth } from "date-fns";
 import type { TFunction } from "i18next";
+import { toError } from "../fnUtils";
+import { DAYS_IN, HOURS_IN, MONTH_NAMES, type SupportedLocale, WEEKDAY_NAMES } from "./constants";
 import {
-  findWeekdayIndex,
-  findMonthIndex,
-  parseFlexibleDate,
-  getWeekdayIndex,
-  getWeekFromDayOfYear,
-  getHourOfYear,
   extractDayOfMonth,
   extractHour,
+  findMonthIndex,
+  findWeekdayIndex,
+  getHourOfYear,
+  getWeekdayIndex,
+  getWeekFromDayOfYear,
+  parseFlexibleDate,
 } from "./dateUtils";
-import { MONTH_NAMES, WEEKDAY_NAMES, DAYS_IN, HOURS_IN, type SupportedLocale } from "./constants";
 
 // Time indexing types from matrix constants
 export const TIME_INDEXING = {
@@ -117,12 +118,12 @@ export function extractTemporalValue(
       }
     }
 
-    // If we couldn't parse the date, throw an error
-    throw new Error(`Unable to parse date: "${dateStr}" for indexing type: ${indexingType}`);
-  } catch (error) {
-    // Re-throw with more context
     throw new Error(
-      `Failed to extract temporal value from "${dateStr}" for indexing type: ${indexingType}: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `Unable to extract temporal value from "${dateStr}" for indexing type: ${indexingType}`,
+    );
+  } catch (error) {
+    throw new Error(
+      `Failed to extract temporal value from "${dateStr}" for indexing type: ${indexingType}: ${toError(error)}`,
     );
   }
 }
@@ -211,34 +212,6 @@ export function createLocalizedTemporalLabels(
     label: t(`date.${key}`),
     shortLabel: t(`date.short${key.charAt(0).toUpperCase() + key.slice(1)}`),
   }));
-}
-
-/**
- * Get temporal value from column/row header
- *
- * @param header - The header string
- * @param indexingType - The temporal indexing type
- * @param locale - Locale for parsing
- * @returns The temporal value
- */
-export function getTemporalValueFromHeader(
-  header: string,
-  indexingType: TimeIndexingType,
-  locale: SupportedLocale = "en",
-): number {
-  // If header is purely numeric, use it directly for certain index types
-  const numericHeader = Number.parseInt(header);
-  if (
-    !Number.isNaN(numericHeader) &&
-    (indexingType === TIME_INDEXING.DAY_OF_YEAR ||
-      indexingType === TIME_INDEXING.HOUR_YEAR ||
-      indexingType === TIME_INDEXING.WEEK)
-  ) {
-    return numericHeader;
-  }
-
-  // Otherwise extract based on type
-  return extractTemporalValue(header, indexingType, locale);
 }
 
 /**

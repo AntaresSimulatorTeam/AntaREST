@@ -12,11 +12,9 @@
  * This file is part of the Antares project.
  */
 
-// Supported locales
 export const SUPPORTED_LOCALES = ["en", "fr"] as const;
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
-// Weekday names in different languages
 export const WEEKDAY_NAMES = {
   en: {
     long: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
@@ -30,7 +28,6 @@ export const WEEKDAY_NAMES = {
   },
 } as const;
 
-// Month names in different languages
 export const MONTH_NAMES = {
   en: {
     long: [
@@ -107,8 +104,6 @@ export const WeekDay = {
   Sunday: "Sunday",
 } as const;
 
-export type WeekDay = (typeof WeekDay)[keyof typeof WeekDay];
-
 // Month object for configuration
 export const Month = {
   January: "january",
@@ -124,8 +119,6 @@ export const Month = {
   November: "november",
   December: "december",
 } as const;
-
-export type Month = (typeof Month)[keyof typeof Month];
 
 // Weekday index mapping (Monday = 1, Sunday = 7)
 export const WEEKDAY_INDEX_MAP = {
@@ -163,22 +156,6 @@ export const MONTH_INDEX_MAP = {
   october: 10,
   november: 11,
   december: 12,
-} as const;
-
-// Reverse mapping for month indices
-export const INDEX_TO_MONTH_MAP = {
-  1: Month.January,
-  2: Month.February,
-  3: Month.March,
-  4: Month.April,
-  5: Month.May,
-  6: Month.June,
-  7: Month.July,
-  8: Month.August,
-  9: Month.September,
-  10: Month.October,
-  11: Month.November,
-  12: Month.December,
 } as const;
 
 // Common date formats used in the application
@@ -261,6 +238,8 @@ export const YEAR_OPTIONS = [
 ];
 
 // Type helpers
+export type Month = (typeof Month)[keyof typeof Month];
+export type WeekDay = (typeof WeekDay)[keyof typeof WeekDay];
 export type WeekDayKey = keyof typeof WEEKDAY_INDEX_MAP;
 export type MonthKey = keyof typeof MONTH_INDEX_MAP;
 export type WeekDayIndex = (typeof WEEKDAY_INDEX_MAP)[WeekDayKey];

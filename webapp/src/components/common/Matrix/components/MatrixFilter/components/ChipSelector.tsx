@@ -12,29 +12,33 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Chip, Stack, Typography } from "@mui/material";
+import { Box, Chip, type ChipProps, Stack, Typography } from "@mui/material";
+import { memo, useCallback, useMemo } from "react";
 import { CHIP_SELECTOR_STYLES, DESIGN_TOKENS } from "../styles";
 
-export interface ChipOption {
-  value: number;
+export interface ChipOption<T extends string | number = number> {
+  value: T;
   label: string;
   shortLabel?: string;
+  disabled?: boolean;
 }
 
-interface ChipSelectorProps {
-  options: ChipOption[];
-  selectedValues: number[];
-  onChange: (value: number) => void;
+interface ChipSelectorProps<T extends string | number = number> {
+  options: ReadonlyArray<ChipOption<T>>;
+  selectedValues: readonly T[];
+  onChange: (value: T, isSelected: boolean) => void;
   title?: string;
-  size?: "small" | "medium";
-  color?: "primary" | "secondary" | "default" | "error" | "info" | "success" | "warning";
-  variant?: "filled" | "outlined";
+  size?: ChipProps["size"];
+  color?: ChipProps["color"];
+  variant?: ChipProps["variant"];
   dense?: boolean;
   disabled?: boolean;
-  renderOption?: (option: ChipOption, isSelected: boolean) => React.ReactNode;
+  renderOption?: (option: ChipOption<T>, isSelected: boolean) => React.ReactNode;
+  "aria-label"?: string;
+  multiple?: boolean;
 }
 
-function ChipSelector({
+function ChipSelectorComponent<T extends string | number = number>({
   options,
   selectedValues,
   onChange,
@@ -45,37 +49,70 @@ function ChipSelector({
   dense = true,
   disabled = false,
   renderOption,
-}: ChipSelectorProps) {
-  const handleChipClick = (value: number) => {
-    if (!disabled) {
-      onChange(value);
-    }
-  };
+  "aria-label": ariaLabel,
+  multiple = true,
+}: ChipSelectorProps<T>) {
+  const selectedSet = useMemo(() => new Set(selectedValues), [selectedValues]);
+
+  const handleChipClick = useCallback(
+    (value: T) => {
+      if (!disabled) {
+        const isSelected = selectedSet.has(value);
+        onChange(value, !isSelected);
+      }
+    },
+    [disabled, selectedSet, onChange],
+  );
+
+  const containerStyles = useMemo(
+    () => ({
+      ...(dense ? { maxWidth: "100%" } : undefined),
+    }),
+    [dense],
+  );
+
+  const spacing = dense ? DESIGN_TOKENS.spacing.sm : DESIGN_TOKENS.spacing.lg;
 
   return (
-    <Box>
+    <Box role={multiple ? "group" : "radiogroup"} aria-label={ariaLabel || title}>
       {title && (
-        <Typography sx={{ fontSize: DESIGN_TOKENS.fontSize.xs, mb: DESIGN_TOKENS.spacing.sm }}>
+        <Typography
+          component="h3"
+          sx={{
+            fontSize: DESIGN_TOKENS.fontSize.xs,
+            mb: DESIGN_TOKENS.spacing.sm,
+          }}
+        >
           {title}
         </Typography>
       )}
-      <Stack
-        direction="row"
-        spacing={dense ? DESIGN_TOKENS.spacing.sm : DESIGN_TOKENS.spacing.lg}
-        flexWrap="wrap"
-        useFlexGap
-        sx={dense ? { maxWidth: "100%" } : undefined}
-      >
+      <Stack direction="row" spacing={spacing} flexWrap="wrap" useFlexGap sx={containerStyles}>
         {options.map((option) => {
-          const isSelected = selectedValues.includes(option.value);
+          const isSelected = selectedSet.has(option.value);
+          const isOptionDisabled = disabled || option.disabled;
 
           if (renderOption) {
             return (
               <Box
-                key={option.value}
-                style={{
-                  cursor: disabled ? "default" : "pointer",
-                  opacity: disabled ? 0.7 : 1,
+                key={String(option.value)}
+                onClick={() => !isOptionDisabled && handleChipClick(option.value)}
+                sx={{
+                  cursor: isOptionDisabled ? "default" : "pointer",
+                  opacity: isOptionDisabled ? 0.7 : 1,
+                  transition: "opacity 0.2s",
+                  userSelect: "none",
+                }}
+                role={multiple ? "checkbox" : "radio"}
+                aria-checked={isSelected}
+                aria-disabled={isOptionDisabled}
+                tabIndex={isOptionDisabled ? -1 : 0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    if (!isOptionDisabled) {
+                      handleChipClick(option.value);
+                    }
+                  }
                 }}
               >
                 {renderOption(option, isSelected)}
@@ -85,14 +122,17 @@ function ChipSelector({
 
           return (
             <Chip
-              key={option.value}
-              label={option.label}
+              key={String(option.value)}
+              label={option.shortLabel || option.label}
               onClick={() => handleChipClick(option.value)}
               color={isSelected ? color : "default"}
               variant={isSelected ? "filled" : variant}
               size={size}
-              disabled={disabled}
+              disabled={isOptionDisabled}
               sx={dense ? CHIP_SELECTOR_STYLES.dense : CHIP_SELECTOR_STYLES.normal}
+              aria-pressed={isSelected}
+              role={multiple ? "checkbox" : "radio"}
+              aria-checked={isSelected}
             />
           );
         })}
@@ -101,4 +141,6 @@ function ChipSelector({
   );
 }
 
-export default ChipSelector;
+export default memo(ChipSelectorComponent) as <T extends string | number = number>(
+  props: ChipSelectorProps<T>,
+) => React.ReactElement;

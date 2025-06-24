@@ -12,18 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { parse, format, getDate, getDay, getHours, getDayOfYear, isValid } from "date-fns";
+import { getDate, getDay, getDayOfYear, getHours, isValid, parse } from "date-fns";
 import { enUS, fr } from "date-fns/locale";
-import {
-  WEEKDAY_NAMES,
-  MONTH_NAMES,
-  DATE_FORMATS,
-  WEEKDAY_INDEX_MAP,
-  MONTH_INDEX_MAP,
-  type SupportedLocale,
-  type WeekDayKey,
-  type MonthKey,
-} from "./constants";
+import { DATE_FORMATS, MONTH_NAMES, type SupportedLocale, WEEKDAY_NAMES } from "./constants";
 
 /**
  * Get the appropriate date-fns locale object
@@ -88,22 +79,6 @@ export function parseFlexibleDate(dateStr: string, locale: SupportedLocale = "en
   }
 
   return null;
-}
-
-/**
- * Format a date using a predefined format
- *
- * @param date - The date to format
- * @param formatKey - Key from DATE_FORMATS
- * @param locale - The locale to use
- * @returns The formatted date string
- */
-export function formatDate(
-  date: Date,
-  formatKey: keyof typeof DATE_FORMATS,
-  locale: SupportedLocale = "en",
-): string {
-  return format(date, DATE_FORMATS[formatKey], { locale: getDateFnsLocale(locale) });
 }
 
 /**
@@ -176,30 +151,6 @@ export function getWeekdayIndex(date: Date): number {
 }
 
 /**
- * Get weekday key from index
- *
- * @param index - Weekday index (1-7)
- * @returns WeekDay enum value
- */
-export function getWeekdayFromIndex(index: number): WeekDayKey | null {
-  const weekdays = Object.entries(WEEKDAY_INDEX_MAP);
-  const entry = weekdays.find(([_, idx]) => idx === index);
-  return entry ? (entry[0] as WeekDayKey) : null;
-}
-
-/**
- * Get month key from index
- *
- * @param index - Month index (1-12)
- * @returns Month enum value
- */
-export function getMonthFromIndex(index: number): MonthKey | null {
-  const months = Object.entries(MONTH_INDEX_MAP);
-  const entry = months.find(([_, idx]) => idx === index);
-  return entry ? (entry[0] as MonthKey) : null;
-}
-
-/**
  * Extract day of month from a string
  *
  * @param dateStr - The string to extract from
@@ -253,78 +204,6 @@ export function getWeekFromDayOfYear(dayOfYear: number): number {
  */
 export function getHourOfYear(date: Date): number {
   return (getDayOfYear(date) - 1) * 24 + getHours(date) + 1;
-}
-
-/**
- * Create localized date label
- *
- * @param type - Type of label (month or weekday)
- * @param index - 1-based index
- * @param format - Long or short format
- * @param locale - Locale to use
- * @returns The localized label
- */
-export function getLocalizedDateLabel(
-  type: "month" | "weekday",
-  index: number,
-  format: "long" | "short" = "long",
-  locale: SupportedLocale = "en",
-): string {
-  if (type === "month" && index >= 1 && index <= 12) {
-    return MONTH_NAMES[locale][format][index - 1];
-  }
-
-  if (type === "weekday" && index >= 1 && index <= 7) {
-    // Convert from Monday=1 to array index
-    const arrayIndex = index === 7 ? 0 : index;
-    return WEEKDAY_NAMES[locale][format][arrayIndex];
-  }
-
-  return "";
-}
-
-/**
- * Parse matrix date format (e.g., "Mon 1 Jan 00:00")
- *
- * @param dateStr - Matrix format date string
- * @param locale - Locale to use
- * @returns Parsed date or null
- */
-export function parseMatrixDate(dateStr: string, locale: SupportedLocale = "en"): Date | null {
-  // First try with locale-aware parsing
-  const date = parseFlexibleDate(dateStr, locale);
-  if (date) {
-    return date;
-  }
-
-  // If that fails, try manual parsing
-  const monthIndex = findMonthIndex(dateStr, locale);
-  const dayOfMonth = extractDayOfMonth(dateStr);
-  const hour = extractHour(dateStr) ?? 0;
-
-  if (monthIndex && dayOfMonth) {
-    const year = new Date().getFullYear();
-    return new Date(year, monthIndex - 1, dayOfMonth, hour);
-  }
-
-  return null;
-}
-
-/**
- * Format date to matrix format
- *
- * @param date - Date to format
- * @param includeYear - Whether to include year
- * @param locale - Locale to use
- * @returns The formatted matrix date
- */
-export function formatMatrixDate(
-  date: Date,
-  includeYear = false,
-  locale: SupportedLocale = "en",
-): string {
-  const formatKey = includeYear ? "HOURLY_MATRIX_WITH_YEAR" : "HOURLY_MATRIX";
-  return formatDate(date, formatKey, locale);
 }
 
 /**

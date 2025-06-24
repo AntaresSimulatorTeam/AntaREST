@@ -83,7 +83,6 @@ export function MatrixProvider({
   canRedo,
   isDirty,
 }: MatrixProviderProps) {
-  // Initialize filterPreview state with proper default values
   const [filterPreview, setFilterPreview] = useState<{
     active: boolean;
     criteria: FilterCriteria;
@@ -92,7 +91,7 @@ export function MatrixProvider({
     const totalRows = currentState.data.length;
 
     return {
-      active: false,
+      active: true,
       criteria: {
         columnsIndices: Array.from({ length: totalColumns }, (_, i) => i),
         rowsIndices: Array.from({ length: totalRows }, (_, i) => i),

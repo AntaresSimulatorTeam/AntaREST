@@ -58,6 +58,7 @@ const combineFilterResultsAND = (results: number[][]): number[] => {
   if (results.length === 0) {
     return [];
   }
+
   if (results.length === 1) {
     return results[0];
   }
@@ -91,44 +92,6 @@ export function getMatrixDimensions(matrixData: number[][]): {
     columnCount: matrixData[0]?.length || 0,
   };
 }
-
-/**
- * Type guard to validate matrix data structure
- *
- * @param data - The data to validate as a matrix
- * @returns True if the data is a valid 2D number array, false otherwise
- */
-export function isValidMatrix(data: unknown): data is number[][] {
-  if (!Array.isArray(data) || data.length === 0) {
-    return false;
-  }
-
-  const firstRowLength = data[0]?.length;
-
-  return (
-    typeof firstRowLength === "number" &&
-    data.every(
-      (row): row is number[] =>
-        Array.isArray(row) &&
-        row.length === firstRowLength &&
-        row.every((cell) => typeof cell === "number" && !Number.isNaN(cell)),
-    )
-  );
-}
-
-/**
- * Creates default index arrays for a given matrix size using Ramda
- *
- * @param rowCount
- * @param columnCount
- */
-export const createDefaultIndices = R.memoizeWith(
-  (rowCount: number, columnCount: number) => `${rowCount}-${columnCount}`,
-  (rowCount: number, columnCount: number) => ({
-    rowsIndices: getAllRowIndices(rowCount),
-    columnsIndices: R.range(0, columnCount),
-  }),
-);
 
 /**
  * Creates an array of indexed values using Ramda
@@ -328,7 +291,6 @@ export function processRowFilters(
     });
   }
 
-  // Group filters by indexingType
   const filtersByType = R.groupBy((rowFilter: RowFilter) => rowFilter.indexingType, rowsFilters);
 
   // Process each group: apply OR within group
@@ -401,7 +363,7 @@ export function createSliderMarks(indexingType: string, t: TFunction): SliderMar
       ];
 
     case TIME_INDEXING.HOUR_YEAR:
-      // TODO: localize months names
+      // TODO: use the existing localized i18n keys for months names
       return [
         { value: 1, label: "Jan" },
         { value: 744, label: "Feb" },
@@ -433,4 +395,35 @@ export function createSliderMarks(indexingType: string, t: TFunction): SliderMar
     default:
       return [];
   }
+}
+
+/**
+ * Parses a string input into an array of numbers representing a range.
+ *
+ * @param input - The input string to parse.
+ * @returns An array of numbers representing the parsed range.
+ */
+export function parseRangeInput(input: string): number[] {
+  const trimmed = input.trim();
+
+  // Check if input contains a range (e.g., "8-100", "5 - 10")
+  const rangeMatch = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
+  if (rangeMatch) {
+    const start = Number.parseInt(rangeMatch[1], 10);
+    const end = Number.parseInt(rangeMatch[2], 10);
+    if (!Number.isNaN(start) && !Number.isNaN(end) && start <= end) {
+      return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    }
+  }
+
+  // Check for comma-separated values
+  const values = trimmed
+    .split(",")
+    .map((v) => {
+      const num = Number.parseInt(v.trim(), 10);
+      return Number.isNaN(num) ? null : num;
+    })
+    .filter((v) => v !== null) as number[];
+
+  return values;
 }

@@ -104,6 +104,17 @@ function FilterableMatrixGrid({
           position: "relative",
         }}
       >
+        {/* TODO: The MatrixFilter button is absolutely positioned because this component
+            is used in the results view where the parent controls the layout, preventing
+            us from properly placing the filter button in the natural flow.
+
+            This is not ideal and we should find a better solution:
+            - Option 1: Accept an optional prop to render the filter in a designated slot/area
+            - Option 2: Use a render prop pattern to let the parent decide where to place the filter
+            - Option 3: Create a separate non-filterable MatrixGrid and compose them differently
+            - Option 4: Refactor the results view to provide better layout control
+
+            The current solution is fragile and breaks if the parent layout changes. */}
         <Box
           sx={{
             position: "absolute",

@@ -42,7 +42,7 @@ function applyOperator(
   values: number[],
 ): number[] {
   if (R.isEmpty(values)) {
-    return indices; // Empty filter means no filter - show all
+    return indices; // When no filter values are specified, return all indices unfiltered
   }
 
   const predicates: Record<FilterOperatorType, (index: number) => boolean> = {
