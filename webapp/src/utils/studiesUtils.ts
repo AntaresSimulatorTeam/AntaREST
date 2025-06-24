@@ -123,4 +123,5 @@ export const validateStudyName = validateString({
 
 export const validateStudyFolder = validateString({
   specialChars: { chars: "=", mode: "deny" },
+  allowEmpty: true, // `default` folder is set if empty
 });
