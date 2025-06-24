@@ -71,7 +71,7 @@ class GroupDTO(AntaresBaseModel):
     name: str
 
 
-class GroupCreation(AntaresBaseModel):
+class GroupCreationDTO(AntaresBaseModel):
     name: str
     id: Optional[str] = None
 

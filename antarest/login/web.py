@@ -31,7 +31,7 @@ from antarest.login.model import (
     BotIdentityDTO,
     CredentialsDTO,
     Group,
-    GroupCreation,
+    GroupCreationDTO,
     GroupDetailDTO,
     GroupDTO,
     IdentityDTO,
@@ -152,7 +152,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
             return HTTPException(status_code=404, detail=f"Group {id} not found")
 
     @bp.post("/groups", tags=[APITag.users], response_model=GroupDTO)
-    def groups_create(group_dto: GroupCreation) -> Any:
+    def groups_create(group_dto: GroupCreationDTO) -> Any:
         logger.info(f"Creating new group '{group_dto.name}'")
         group = Group(
             id=group_dto.id if group_dto.id else None,
