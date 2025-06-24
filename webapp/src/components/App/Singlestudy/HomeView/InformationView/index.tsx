@@ -29,7 +29,7 @@ import Notes from "./Notes";
 
 interface Props {
   study: StudyMetadata;
-  variantTree?: VariantTree;
+  variantTree: VariantTree;
 }
 
 function InformationView({ study, variantTree }: Props) {
@@ -107,7 +107,7 @@ function InformationView({ study, variantTree }: Props) {
           {study.archived ? t("global.unarchive") : t("global.launch")}
         </Button>
       </Box>
-      {variantTree && openVariantModal && (
+      {openVariantModal && (
         <CreateVariantDialog
           parentId={study.id}
           open={openVariantModal}
