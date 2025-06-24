@@ -69,6 +69,7 @@ function JobTableView(props: Props) {
   const { content, refresh } = props;
   const [t] = useTranslation();
   const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
+  const [userOrder, setUserOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
   const [userFilterValue, setUserFilterValue] = useState<string>(
     storage.getItem(StorageKey.TasksUserFilter) || "",
@@ -95,11 +96,16 @@ function JobTableView(props: Props) {
       content,
     );
 
-    return R.sort(
+    const sortedByDate = R.sort(
       dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
       filteredContent,
     );
-  }, [content, dateOrder, filterRunningStatus, filterType, userFilterValue]);
+
+    return R.sort(
+      userOrder === "asc" ? R.ascend(R.prop("userName")) : R.descend(R.prop("userName")),
+      sortedByDate,
+    );
+  }, [content, dateOrder, filterRunningStatus, filterType, userFilterValue, userOrder]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -115,6 +121,10 @@ function JobTableView(props: Props) {
 
   const handleRequestDateSort = () => {
     setDateOrder(dateOrder === "asc" ? "desc" : "asc");
+  };
+
+  const handleRequestUserSort = () => {
+    setUserOrder(userOrder === "asc" ? "desc" : "asc");
   };
 
   const handleUserValueFilterChange = (input: string) => {
@@ -227,7 +237,11 @@ function JobTableView(props: Props) {
                   {t("global.date")}
                 </TableSortLabel>
               </TableCell>
-              <TableCell align="right">{"user"}</TableCell>
+              <TableCell align="right">
+                <TableSortLabel active direction={userOrder} onClick={handleRequestUserSort}>
+                  {t("tasks.user")}
+                </TableSortLabel>
+              </TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
             </TableRow>
           </TableHead>

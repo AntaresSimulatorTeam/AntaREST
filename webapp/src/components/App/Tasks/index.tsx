@@ -87,6 +87,13 @@ function JobsListing() {
   const dispatch = useAppDispatch();
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
 
+  const getUser = (userId: number | undefined) => {
+    if (!userId || !usersByID || !usersByID[userId]) {
+      return "";
+    }
+    return usersByID[userId].name || "";
+  };
+
   useMount(() => {
     dispatch(resetTaskNotifications());
   });
@@ -341,6 +348,7 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
+        userName: "",
       })),
     [jobs, studyJobsProgress],
   );
@@ -395,6 +403,7 @@ function JobsListing() {
         date: moment(download.expirationDate).subtract(1, "days").format("YYYY-MM-DD HH:mm:ss"),
         type: "DOWNLOAD",
         status: !download.ready && !download.failed ? "running" : "",
+        userName: "",
       })),
     [downloads],
   );
@@ -457,7 +466,7 @@ function JobsListing() {
         date: task.completion_date_utc || task.creation_date_utc,
         type: task.type || "UNKNOWN",
         status: task.status === TaskStatus.Running ? "running" : "",
-        userName: task.owner ? usersByID[task.owner]?.name : "unknown",
+        userName: getUser(task.owner),
       })),
     [tasks],
   );
@@ -468,7 +477,6 @@ function JobsListing() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  console.log("tasks", tasks, "jobs", jobs);
   return (
     <RootPage title={t("tasks.title")} titleIcon={AssignmentIcon}>
       <ViewWrapper flex={{ gap: 1 }}>
