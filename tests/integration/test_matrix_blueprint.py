@@ -39,4 +39,3 @@ def test_matrix(client: TestClient, admin_access_token: str) -> None:
 
     assert len(actual_width) == 2
     assert len(actual_height) == 2
-
