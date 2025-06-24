@@ -12,17 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
-import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { deleteStudy } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getLatestStudyVersion } from "@/redux/selectors";
 import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
-import type { SvgIconComponent } from "@mui/icons-material";
+import { type SvgIconComponent } from "@mui/icons-material";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import BoltIcon from "@mui/icons-material/Bolt";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -36,15 +32,22 @@ import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { ListItemIcon, ListItemText, Menu, MenuItem, type MenuProps } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import CopyStudyDialog from "./dialogs/CopyStudyDialog";
+import DeleteStudyDialog from "./dialogs/DeleteStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
 import LaunchStudyDialog from "./dialogs/LaunchStudyDialog";
 import MoveStudyDialog from "./dialogs/MoveStudyDialog";
 import UpdateStudyDialog from "./dialogs/UpdateStudyDialog";
 import UpgradeStudyDialog from "./dialogs/UpgradeStudyDialog";
 
-export type DialogType = "launch" | "properties" | "upgrade" | "export" | "move" | "copy";
+export type DialogType =
+  | "launch"
+  | "properties"
+  | "upgrade"
+  | "export"
+  | "move"
+  | "copy"
+  | "delete";
 
 interface Props {
   open: boolean;
@@ -52,16 +55,14 @@ interface Props {
   onClose: VoidFunction;
   study: StudyMetadata;
   parentStudy?: StudyMetadata;
+  variantNb?: number;
 }
 
-function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props) {
+function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variantNb }: Props) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
-  const deleteAction = useConfirm();
   const latestVersion = useAppSelector(getLatestStudyVersion);
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
 
   const isLatestVersion = study.version === latestVersion;
   const isVariant = study.type === "variantstudy";
@@ -94,23 +95,6 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
   const handleUnarchive = () => {
     unarchiveStudy(study.id).catch((err) => {
       enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
-    });
-
-    onClose();
-  };
-
-  const handleDeleteClick = () => {
-    deleteAction.showConfirm().then((confirm) => {
-      if (confirm) {
-        dispatch(deleteStudy({ id: study.id, deleteChildren: true }))
-          .unwrap()
-          .then(() => {
-            navigate(parentStudy ? `/studies/${parentStudy.id}` : "/studies");
-          })
-          .catch((err) => {
-            enqueueErrorSnackbar(t("studies.error.deleteStudy"), toError(err));
-          });
-      }
     });
 
     onClose();
@@ -163,13 +147,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
             ArchiveOutlinedIcon,
             handleArchive,
           ),
-          menuItem(
-            isManaged,
-            t("global.delete"),
-            DeleteOutlinedIcon,
-            handleDeleteClick,
-            "error.light",
-          ),
+          menuItem(isManaged, t("global.delete"), DeleteOutlinedIcon, "delete", "error.light"),
         ]}
       </Menu>
       {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
@@ -183,17 +161,15 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy }: Props
       {openDialog === "export" && <ExportModal open study={study} onClose={closeDialog} />}
       {openDialog === "move" && <MoveStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
-      {/* Confirm deletion */}
-      <ConfirmationDialog
-        open={deleteAction.isPending}
-        onConfirm={deleteAction.yes}
-        onCancel={deleteAction.no}
-        titleIcon={DeleteOutlinedIcon}
-        alert="error"
-        maxWidth="xs"
-      >
-        {t("studies.question.delete")}
-      </ConfirmationDialog>
+      {openDialog === "delete" && (
+        <DeleteStudyDialog
+          open
+          study={study}
+          parentStudy={parentStudy}
+          variantNb={variantNb}
+          onClose={closeDialog}
+        />
+      )}
     </>
   );
 }

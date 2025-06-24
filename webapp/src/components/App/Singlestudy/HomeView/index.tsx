@@ -22,7 +22,7 @@ import StudyTreeView from "./StudyTreeView";
 
 interface Props {
   study: StudyMetadata;
-  variantTree?: VariantTree;
+  variantTree: VariantTree;
 }
 
 function HomeView({ study, variantTree }: Props) {
