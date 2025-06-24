@@ -584,7 +584,7 @@ class SlurmLauncher(AbstractLauncher):
         """
         if launcher_params:
             launcher_args = LauncherArgs(self.launcher_args)
-            launcher_args.apply_other_options(launcher_params)
+            launcher_args.other_options = launcher_params.other_options or ""
             launcher_args.apply_xpansion_mode(launcher_params)
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
             launcher_args.apply_post_processing(launcher_params)
