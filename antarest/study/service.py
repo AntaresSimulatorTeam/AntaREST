@@ -873,7 +873,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author),
+            additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)

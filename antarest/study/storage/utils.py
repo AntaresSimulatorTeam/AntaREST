@@ -89,7 +89,7 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_au
     version = StudyVersion.parse(metadata.version)
     study_data_info["antares"]["version"] = f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
     if metadata.additional_data:
-        study_data_info["antares"]["editor"] = metadata.additional_data.editor
+        study_data_info["antares"]["editor"] = metadata.additional_data.editor or metadata.additional_data.autho
         if update_author:
             study_data_info["antares"]["author"] = metadata.additional_data.author
     study_tree.save(study_data_info, ["study"])
