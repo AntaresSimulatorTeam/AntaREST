@@ -789,7 +789,6 @@ def test_download_output() -> None:
             "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
-    print(res.body)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
     # Ensures it was called with economy in lower case
     file_study_tree.get_node.assert_called_with(
