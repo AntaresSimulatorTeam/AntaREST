@@ -208,6 +208,7 @@ function JobTableView(props: Props) {
               value={userFilterValue}
               onSearchValueChange={handleUserValueFilterChange}
               sx={{ maxWidth: 200 }}
+              label={t("tasks.user")}
             />
             <SelectFE
               label={t("tasks.typeFilter")}

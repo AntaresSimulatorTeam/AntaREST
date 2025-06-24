@@ -23,9 +23,8 @@ import * as RA from "ramda-adjunct";
 import StringFE, { type StringFEProps } from "./StringFE";
 import { mergeSxProp } from "@/utils/muiUtils";
 
-export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
+export interface SearchFE extends Omit<StringFEProps, "placeholder"> {
   onSearchValueChange?: (value: string) => void;
-  useLabel?: boolean;
   onClear?: VoidFunction;
   sx?: SxProps<Theme>;
 }
@@ -35,16 +34,10 @@ function SearchFE({
   onChange,
   onClear,
   slotProps,
-  useLabel,
   className,
   sx,
   ...rest
 }: SearchFE) {
-  const { t } = useTranslation();
-  const placeholderOrLabel = {
-    [useLabel ? "label" : "placeholder"]: t("global.search"),
-  };
-
   const [isFieldFilled, setIsFieldFilled] = useState(
     RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue,
   );
@@ -56,7 +49,6 @@ function SearchFE({
   return (
     <StringFE
       {...rest}
-      {...placeholderOrLabel}
       className={clsx("SearchFE", className)}
       sx={mergeSxProp(
         {
