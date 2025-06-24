@@ -58,6 +58,7 @@ from antarest.study.model import (
     StudyDownloadLevelDTO,
     StudyMetadataDTO,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
@@ -164,7 +165,8 @@ def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None
 
     date = datetime.fromtimestamp(int(general_info["timestamp"])).strftime("%Y%m%d-%H%M")
 
-    mode = "eco" if general_info["mode"] == "Economy" else "adq"
+    mode = Mode(general_info["mode"]).get_output_suffix()
+
     suffix_name = general_info["name"] or ""
     if new_suffix_name:
         suffix_name = new_suffix_name

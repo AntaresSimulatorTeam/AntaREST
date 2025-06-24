@@ -14,17 +14,17 @@
 
 import { type BindingConstraint, OPERATORS, OUTPUT_FILTERS, TIME_STEPS } from "./utils";
 
-import Fieldset from "../../../../../../common/Fieldset";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
-import StringFE from "../../../../../../common/fieldEditors/StringFE";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
-import { useFormContextPlus } from "../../../../../../common/Form";
+import { validateString } from "@/utils/validation/string";
+import DatasetIcon from "@mui/icons-material/Dataset";
+import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Box, Button } from "@mui/material";
-import DatasetIcon from "@mui/icons-material/Dataset";
-import { validateString } from "@/utils/validation/string";
+import type { StudyMetadata } from "../../../../../../../types/types";
+import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
+import StringFE from "../../../../../../common/fieldEditors/StringFE";
+import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
+import Fieldset from "../../../../../../common/Fieldset";
+import { useFormContextPlus } from "../../../../../../common/Form";
 import ConstraintMatrix from "./Matrix";
 
 interface Props {
@@ -91,11 +91,14 @@ function Fields({ study, constraintId }: Props) {
             label={t("global.group")}
             control={control}
             rules={{
-              validate: (v) =>
-                validateString(v, {
-                  maxLength: 20,
-                  specialChars: "-",
-                }),
+              validate: (v) => {
+                if (typeof v === "string") {
+                  return validateString(v, {
+                    maxLength: 20,
+                    specialChars: "-",
+                  });
+                }
+              },
             }}
             sx={{ m: 0, minWidth: 280 }} // TODO: Remove margin reset when updating MUI Theme
           />
