@@ -151,8 +151,8 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         else:
             return HTTPException(status_code=404, detail=f"Group {id} not found")
 
-    @bp.post("/groups", tags=[APITag.users], response_model=GroupDTO)
-    def groups_create(group_dto: GroupCreationDTO) -> Any:
+    @bp.post("/groups", tags=[APITag.users])
+    def groups_create(group_dto: GroupCreationDTO) -> GroupDTO:
         logger.info(f"Creating new group '{group_dto.name}'")
         group = Group(
             id=group_dto.id if group_dto.id else None,
