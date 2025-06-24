@@ -14,6 +14,7 @@
 
 import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
+import { countDescendants, findNodeInTree } from "@/services/utils";
 import { WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { Box, Divider } from "@mui/material";
@@ -49,10 +50,13 @@ function SingleStudy({ isExplorer }: Props) {
     const parents = await getVariantParents(studyId);
     const parentStudy = parents.length > 0 ? parents[0] : undefined;
 
-    const root = parents.length > 0 ? parents.at(-1) : study;
-    const variantTree = root ? await getVariantTree(root.id) : undefined;
+    const root = parents.length > 0 ? parents[parents.length - 1] : study;
+    const variantTree = await getVariantTree(root.id);
 
-    return { study, parentStudy, variantTree };
+    const tree = findNodeInTree(study.id, variantTree);
+    const variantNb = tree ? countDescendants(tree) : 0;
+
+    return { study, parentStudy, variantTree, variantNb };
   }, [studyId]);
 
   useEffect(() => {
@@ -98,7 +102,7 @@ function SingleStudy({ isExplorer }: Props) {
     <UsePromiseCond
       response={res}
       keepLastResolvedOnReload
-      ifFulfilled={({ study, parentStudy, variantTree }) => (
+      ifFulfilled={({ study, parentStudy, variantTree, variantNb }) => (
         <Box
           width="100%"
           height="100%"
@@ -113,7 +117,7 @@ function SingleStudy({ isExplorer }: Props) {
             study={study}
             parentStudy={parentStudy}
             isExplorer={isExplorer}
-            variantTree={variantTree}
+            variantNb={variantNb}
           />
           {!isExplorer && <Divider flexItem />}
           <Box
