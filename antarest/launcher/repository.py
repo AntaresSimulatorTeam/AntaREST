@@ -68,6 +68,16 @@ class JobResultRepository:
         job_results: List[JobResult] = db.session.query(JobResult).filter(JobResult.study_id == study_id).all()
         return job_results
 
+    def find_by_study_and_output_ids(self, study_id: str, output_ids: List[str]) -> List[JobResult]:
+        logger.debug(f"Retrieving JobResults from study {study_id}")
+        job_results: List[JobResult] = (
+            db.session.query(JobResult)
+            .filter(JobResult.study_id == study_id)
+            .filter(JobResult.output_id.in_(output_ids))  # type: ignore
+            .all()
+        )
+        return job_results
+
     def delete(self, id: str) -> None:
         logger.debug(f"Deleting JobResult {id}")
         g = db.session.query(JobResult).get(id)

@@ -1147,7 +1147,7 @@ class StudyService:
             self._save_study(study, group_ids)
 
             # Copying all jobs associated with the study
-            jobs = self.job_result_repository.find_by_study(origin_study.id)
+            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
 
             new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
 

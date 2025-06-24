@@ -1403,11 +1403,10 @@ def test_copy_with_jobs(client: TestClient, admin_access_token: str, tmp_path: P
     raw = client.post("/v1/studies?name=raw")
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
 
-    copy = client.post(
+    client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"study_name": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output1"]},  # type: ignore
+        params={"study_name": "copied", "use_task": False, "output_ids": ["output1"]},  # type: ignore
     )
-    client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
     jobs_src_study = client.get(f"/v1/launcher/jobs?study={variant.json()}")
     assert jobs_src_study.status_code == 200
     copied_study = client.get("/v1/studies?name=copied")
