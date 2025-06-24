@@ -155,7 +155,7 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
     def groups_create(group_dto: GroupCreationDTO) -> GroupDTO:
         logger.info(f"Creating new group '{group_dto.name}'")
         group = Group(
-            id=group_dto.id if group_dto.id else None,
+            id=group_dto.id,
             name=group_dto.name,
         )
         return service.save_group(group).to_dto()
