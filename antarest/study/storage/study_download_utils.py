@@ -306,7 +306,7 @@ class StudyDownloader:
         if file_study.config.outputs and output_id in file_study.config.outputs:
             sim = file_study.config.outputs[output_id]
             if sim:
-                url += f"/{sim.mode}"
+                url += f"/{sim.mode.lower()}"
 
                 if data.synthesis:
                     url += "/mc-all"
