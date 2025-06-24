@@ -75,7 +75,9 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
     """
     study_id = f"study_id_{study_version}"
     study_path: Path = tmp_path / study_id
-    app = CreateApp(study_dir=study_path, caption="empty_study", version=study_version, author="Unknown")
+    app = CreateApp(
+        study_dir=study_path, caption="empty_study", version=study_version, author="Unknown", editor="Unknown"
+    )
     app()
 
     config = FileStudyTreeConfig(

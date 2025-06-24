@@ -85,6 +85,7 @@ def create_study_variant_routes(
                                 "created": variant_study.created_at.timestamp(),
                                 "lastsave": variant_study.created_at.timestamp(),
                                 "author": author,
+                                "editor": author,
                             }
                         },
                         command_context=command_context,

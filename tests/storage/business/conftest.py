@@ -54,7 +54,9 @@ def link_manager(command_context: CommandContext) -> LinkManager:
 def study(tmp_path: Path, matrix_service: ISimpleMatrixService) -> StudyInterface:
     study_id = "5c22caca-b100-47e7-bbea-8b1b97aa26d9"
     study_path = tmp_path.joinpath(study_id)
-    app = CreateApp(study_dir=study_path, caption="empty_study_810", version=STUDY_VERSION_8_1, author="Unknown")
+    app = CreateApp(
+        study_dir=study_path, caption="empty_study_810", version=STUDY_VERSION_8_1, author="Unknown", editor="Unknown"
+    )
     app()
     config = build(study_path, study_id)
     empty_study_810 = FileStudy(config, FileStudyTree(MatrixUriMapper(matrix_service), config))
