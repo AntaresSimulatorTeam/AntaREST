@@ -217,10 +217,10 @@ class LocalLauncher(AbstractLauncher):
                 solver_parameters_optim1 += ["PRESOLVE 1"]
                 solver_parameters_optim2 += ["PRESOLVE 1"]
             for opt in options:
-                if opt.startswith("param-optim1"):
-                    solver_parameters_optim1 += [opt.removeprefix('param-optim1="')[:-1]]
-                if opt.startswith("param-optim2"):
-                    solver_parameters_optim1 += [opt.removeprefix('param-optim2="')[:-1]]
+                if opt.startswith("param-optim1="):
+                    solver_parameters_optim1 += [opt.removeprefix("param-optim1=")]
+                if opt.startswith("param-optim2="):
+                    solver_parameters_optim2 += [opt.removeprefix("param-optim2=")]
             if solver_parameters_optim1:
                 simulator_args += [f'--lp-solver-param-optim-1="{" ".join(solver_parameters_optim1)}"']
             if solver_parameters_optim2:

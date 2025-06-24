@@ -123,6 +123,10 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
     assert sim_args == ["--force-parallel=8"]
 
+    launcher_parameters = LauncherParametersDTO(other_options="solver-logs")
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
+    assert sim_args == ["--solver-logs"]
+
     for solver in ["coin", "xpress"]:
         launcher_parameters = LauncherParametersDTO(other_options=solver)
         for version in [solver_version_8_8, solver_version_9_2]:
@@ -141,6 +145,16 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
         "--solver=xpress",
         '--lp-solver-param-optim-1="PRESOLVE 1"',
         '--lp-solver-param-optim-2="PRESOLVE 1"',
+    ]
+    options = 'xpress nobasis1 nobasis2 param-optim1="PRESOLVE 2 THREADS 4" param-optim2="LPFLAGS 5"'
+    launcher_parameters = LauncherParametersDTO(other_options=options)
+    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_2)
+    assert sim_args == [
+        "--solver=xpress",
+        "--use-optim-1-basis-next-week=false",
+        "--use-optim-1-basis-optim-2=false",
+        '--lp-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
+        '--lp-solver-param-optim-2="LPFLAGS 5"',
     ]
 
 
