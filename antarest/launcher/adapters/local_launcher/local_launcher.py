@@ -222,9 +222,9 @@ class LocalLauncher(AbstractLauncher):
                 if opt.startswith("param-optim2"):
                     solver_parameters_optim1 += [opt.removeprefix('param-optim2="')[:-1]]
             if solver_parameters_optim1:
-                simulator_args += ["--lp-solver-param-optim-1=,", " ".join(solver_parameters_optim1)]
+                simulator_args += [f'--lp-solver-param-optim-1="{" ".join(solver_parameters_optim1)}"']
             if solver_parameters_optim2:
-                simulator_args += ["--lp-solver-param-optim-2=,", " ".join(solver_parameters_optim2)]
+                simulator_args += [f'--lp-solver-param-optim-2="{" ".join(solver_parameters_optim2)}"']
 
         return simulator_args, environment_variables
 

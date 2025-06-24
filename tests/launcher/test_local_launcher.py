@@ -133,20 +133,15 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
                 assert sim_args == [f"--solver={solver}"]
 
     # Xpress cases
-    launcher_parameters.other_options = "xpress presolve"
-    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_2)
-    assert sim_args == [
-        "--force-parallel=8",
-        "--use-ortools",
-        "--ortools-solver=xpress",
-        "--solver-parameters",
-        "PRESOLVE 1",
-    ]
-
     os.environ["XPRESS_DIR"] = "fake_path_for_test"
     launcher_parameters.other_options = "xpress presolve"
-    _, env_variables = local_launcher._parse_launcher_options(launcher_parameters)
+    sim_args, env_variables = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_2)
     assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+    assert sim_args == [
+        "--solver=xpress",
+        '--lp-solver-param-optim-1="PRESOLVE 1"',
+        '--lp-solver-param-optim-2="PRESOLVE 1"',
+    ]
 
 
 @pytest.mark.unit_test
