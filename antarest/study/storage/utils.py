@@ -201,7 +201,7 @@ def create_new_empty_study(version: StudyVersion, path_study: Path) -> None:
         msg = f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
         raise UnsupportedStudyVersion(msg)
 
-    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown", editor="Unknown")
+    app = CreateApp(study_dir=path_study, caption="To be replaced", version=version, author="Unknown")
     app()
 
 
