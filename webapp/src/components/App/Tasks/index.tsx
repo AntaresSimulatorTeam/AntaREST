@@ -91,7 +91,7 @@ function JobsListing() {
     if (!userId || !usersByID || !usersByID[userId]) {
       return "";
     }
-    return usersByID[userId].name || "";
+    return usersByID?.userId?.name || "";
   };
 
   useMount(() => {
