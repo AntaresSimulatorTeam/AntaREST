@@ -137,6 +137,8 @@ class TestMatrixService:
             "2d62ca219846080b38e2ddf8d0f8f46a9fdeb7854234bfc751519b7502708b93",
             "87e70e8b6af459b33be2dbd65d5c814a9225ae77112c9ea791d3abe92379334c",
         ]
+        actual_matrices_id = []
+        expected_matrices_id.sort()
         key_word = "all"
         with db():
             for matrix in matrices:
@@ -145,10 +147,14 @@ class TestMatrixService:
                     mat = pd.read_csv(matrix_path)
                     matrix_service.create(mat)
 
-            get_matrices = matrix_service.get_matrices()
-            assert len(get_matrices) == 7
-            assert get_matrices[0].id == expected_matrices_id[0]
-            assert get_matrices[1].id == expected_matrices_id[1]
+            for matrix in matrix_service.get_matrices():
+                actual_matrices_id.append(matrix.id)
+
+            actual_matrices_id.sort()
+
+            assert len(actual_matrices_id) == 7
+
+            assert actual_matrices_id == expected_matrices_id
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""
