@@ -1146,11 +1146,10 @@ class StudyService:
 
             self._save_study(study, group_ids)
 
+            # Copying all jobs associated with the study
             jobs = self.job_result_repository.find_by_study(origin_study.id)
 
-            new_jobs = []
-            for job in jobs:
-                new_jobs.append(job.copy_jobs_for_study(study.id))
+            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
 
             if new_jobs:
                 self.job_result_repository.save_all(new_jobs)

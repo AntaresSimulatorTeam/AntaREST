@@ -37,11 +37,10 @@ class JobResultRepository:
         db.session.commit()
         return job
 
-    def save_all(self, jobs: List[JobResult]) -> List[JobResult]:
+    def save_all(self, jobs: List[JobResult]) -> None:
         logger.debug(f"Saving {len(jobs)} new JobResults")
         db.session.add_all(jobs)
         db.session.commit()
-        return jobs
 
     def get(self, id: str) -> Optional[JobResult]:
         logger.debug(f"Retrieving JobResult {id}")
