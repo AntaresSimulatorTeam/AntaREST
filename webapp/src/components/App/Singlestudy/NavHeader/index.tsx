@@ -12,23 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { countDescendants, findNodeInTree } from "@/services/utils";
 import { Box } from "@mui/material";
-import type { StudyMetadata, VariantTree } from "../../../../types/types";
+import type { StudyMetadata } from "../../../../types/types";
 import Actions from "./Actions";
 import Details from "./Details";
 
 interface Props {
   study: StudyMetadata;
   parentStudy?: StudyMetadata;
-  variantTree?: VariantTree;
+  variantNb: number;
   isExplorer?: boolean;
 }
 
-function NavHeader({ study, parentStudy, variantTree, isExplorer }: Props) {
-  const tree = variantTree && findNodeInTree(study.id, variantTree);
-  const variantNb = tree && countDescendants(tree);
-
+function NavHeader({ study, parentStudy, variantNb, isExplorer }: Props) {
   return (
     <Box
       sx={{

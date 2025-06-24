@@ -36,7 +36,7 @@ export type DialogType = "commands";
 interface Props {
   study: StudyMetadata;
   parentStudy?: StudyMetadata;
-  variantNb?: number;
+  variantNb: number;
   isExplorer?: boolean;
 }
 

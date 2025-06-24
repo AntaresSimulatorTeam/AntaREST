@@ -42,8 +42,6 @@ export enum StudyType {
   RAW = "rawstudy",
 }
 
-export type GroupDTO = IdentityDTO;
-
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
   type: StudyType;
@@ -53,11 +51,11 @@ export interface StudyMetadataDTO extends IdentityDTO {
   workspace: string;
   managed: boolean;
   archived: boolean;
-  groups: GroupDTO[];
+  groups: IdentityDTO[];
   public_mode: StudyPublicMode;
   folder?: string;
   horizon?: string;
-  tags: string[];
+  tags?: string[];
 }
 
 export interface StudyMetadata {
@@ -217,6 +215,8 @@ export interface UserDetailsDTO extends UserDTO {
 export interface UserRoleDTO extends IdentityDTO<number> {
   role: RoleType;
 }
+
+export type GroupDTO = IdentityDTO;
 
 export interface GroupDetailsDTO extends GroupDTO {
   users: UserRoleDTO[];

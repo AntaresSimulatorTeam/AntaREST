@@ -67,7 +67,7 @@ class UserCreateDTO(AntaresBaseModel):
 
 
 class GroupDTO(AntaresBaseModel):
-    id: str
+    id: Optional[str] = None
     name: str
 
 
@@ -286,9 +286,7 @@ class Group(Base):  # type: ignore
     name = Column(String(255))
 
     def to_dto(self) -> GroupDTO:
-        # In rare cases, the database may not have ID (legacy issue), so we use the name as a fallback identifier
-        # to avoid having a None ID in the DTO
-        return GroupDTO(id=self.id or self.name, name=self.name)
+        return GroupDTO(id=self.id, name=self.name)
 
     # Implementing a `__eq__` method is superfluous, since the default implementation
     # is to compare the identity of the objects using the primary key.

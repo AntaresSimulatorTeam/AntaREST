@@ -56,7 +56,7 @@ const Item = styled(Box)(({ theme }) => ({
 interface Props {
   study: StudyMetadata;
   parentStudy?: StudyMetadata;
-  variantNb?: number;
+  variantNb: number;
 }
 
 function Details({ study, parentStudy, variantNb }: Props) {
@@ -93,12 +93,10 @@ function Details({ study, parentStudy, variantNb }: Props) {
           </Tooltip>
         </Item>
       )}
-      {typeof variantNb === "number" && (
-        <Item>
-          <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
-          <TinyText>{variantNb}</TinyText>
-        </Item>
-      )}
+      <Item>
+        <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
+        <TinyText>{variantNb}</TinyText>
+      </Item>
       <StyledDivider />
       <Item>
         <PersonOutlineOutlinedIcon sx={{ color: "text.secondary" }} />
