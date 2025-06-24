@@ -52,7 +52,7 @@ export const SVGText = styled("text")({
 
 interface Props {
   study: StudyMetadata;
-  variantTree?: VariantTree;
+  variantTree: VariantTree;
   onClick: (studyId: string) => void;
 }
 
@@ -210,10 +210,8 @@ export default function StudyTreeView({ study, variantTree, onClick }: Props) {
 
   useEffect(() => {
     const buildStudyTree = async () => {
-      if (variantTree) {
-        const tmp = await getTreeNodes(variantTree);
-        setStudyTree(tmp);
-      }
+      const tmp = await getTreeNodes(variantTree);
+      setStudyTree(tmp);
     };
     buildStudyTree();
   }, [study, variantTree]);
