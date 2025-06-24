@@ -15,7 +15,6 @@
 import { IconButton, InputAdornment, type SxProps, type Theme } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
-import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 import { useState } from "react";
 import { useUpdateEffect } from "react-use";
