@@ -16,10 +16,8 @@ from pathlib import Path
 from typing import Any, List, Sequence
 
 from fastapi import APIRouter, Depends, Query, Request, UploadFile
-from starlette.responses import FileResponse, Response
 
 from antarest.core.config import Config
-from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -111,7 +109,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         request: Request,
         use_task: bool = False,
         tmp_export_file: Path = Depends(output_service._file_transfer_manager.request_tmp_file),
-    ) -> Response | FileDownloadTaskDTO | FileResponse:
+    ) -> Any:
         study_id = sanitize_uuid(study_id)
         output_id = sanitize_string(output_id)
         logger.info(f"Fetching batch outputs of simulation {output_id} for study {study_id}")
