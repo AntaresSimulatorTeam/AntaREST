@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import random
 from pathlib import Path
 from typing import Callable
 
@@ -58,7 +57,7 @@ def get_fast_subset(test_cases, subset_size=1):
     or all cases in normal mode.
     """
     if pytest.FAST_MODE:  # type: ignore
-        return random.sample(test_cases, min(subset_size, len(test_cases)))
+        return test_cases[:subset_size]
     return test_cases
 
 
