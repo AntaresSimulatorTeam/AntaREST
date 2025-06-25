@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import i18n, { type TFunction } from "i18next";
+import moment from "moment";
 import * as R from "ramda";
 import {
   RoleType,
-  type StudyMetadataDTO,
-  type StudyMetadata,
-  type JWTGroup,
-  type UserInfo,
-  type VariantTreeDTO,
-  type VariantTree,
   type GenericInfo,
+  type JWTGroup,
+  type StudyMetadata,
+  type StudyMetadataDTO,
+  type UserInfo,
+  type VariantTree,
+  type VariantTreeDTO,
 } from "../../types/types";
 
 export const convertStudyDtoToMetadata = (
@@ -200,13 +200,7 @@ export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
   return res;
 };
 
-export const sortByProp = <T extends object>(getProp: (obj: T) => string, list: T[]): T[] => {
-  return R.sortBy(R.compose(R.toLower, getProp), list);
-};
-
-export const sortByName = <T extends { name: string }>(list: T[]): T[] => {
-  return sortByProp((v) => v.name, list);
-};
+export const sortByName = R.sortBy(R.compose(R.toLower, R.prop("name")));
 
 /**
  * Converts a name string to an ID format.

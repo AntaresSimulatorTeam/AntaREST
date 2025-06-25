@@ -317,7 +317,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def copy_study(
         uuid: str,
-        dest: str,
+        study_name: str,
         output_ids: Annotated[list[str], Query(default_factory=list)],
         with_outputs: bool | None = None,
         groups: str = "",
@@ -330,7 +330,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
 
         Args:
         - `uuid`: The identifier of the study you wish to duplicate.
-        - `dest`: The destination workspace where the study will be copied.
+        - `study_name`: The name of the new study.
         - `with_outputs`: Indicates whether the study's outputs should also be duplicated.
         - `groups`: Specifies the groups to which your duplicated study will be assigned.
         - `use_task`: Determines whether this duplication operation should trigger a task.
@@ -341,14 +341,14 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         Returns:
         - The unique identifier of the task copying the study.
         """
-        logger.info(f"Copying study {uuid} into new study '{dest}'")
+        logger.info(f"Copying study {uuid} into new study '{study_name}'")
 
         user = require_current_user()
         group_ids_raw = _split_comma_separated_values(groups, default=[group.id for group in user.groups])
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         uuid_sanitized = sanitize_uuid(uuid)
-        destination_name_sanitized = escape(dest)
+        destination_name_sanitized = escape(study_name)
 
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,

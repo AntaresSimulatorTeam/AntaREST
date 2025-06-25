@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Dict, NamedTuple, Sequence
 
 import pandas as pd
+from antares.study.version import StudyVersion
 
 from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7
 from antarest.study.storage.utils import MONTHS
@@ -178,7 +179,7 @@ _SPECIFIC_MATRICES_8_7["input/bindingconstraints/*"] = _MatrixProfile(cols=[], r
 
 
 def adjust_matrix_columns_index(
-    df: pd.DataFrame, matrix_path: str, with_index: bool, with_header: bool, study_version: int
+    df: pd.DataFrame, matrix_path: str, with_index: bool, with_header: bool, study_version: StudyVersion
 ) -> None:
     """
     Adjust the column names and index of a dataframe according to the matrix profile.

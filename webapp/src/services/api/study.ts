@@ -14,26 +14,26 @@
 
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
-import client from "./client";
+import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
 import type {
+  AreasConfig,
   FileStudyTreeConfigDTO,
   LaunchJob,
+  LaunchJobDTO,
+  LaunchOptions,
   MatrixAggregationResult,
-  StudyOutputDownloadDTO,
+  StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
-  StudyOutput,
-  StudyPublicMode,
-  AreasConfig,
-  LaunchJobDTO,
   StudyMetadataPatchDTO,
-  LaunchOptions,
-  StudyLayer,
+  StudyOutput,
+  StudyOutputDownloadDTO,
+  StudyPublicMode,
 } from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
+import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
-import type { NonStudyFolderDTO } from "@/components/App/Studies/StudyTree/types";
+import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
 
 interface Workspace {
   name: string;
@@ -65,10 +65,10 @@ export const getWorkspaces = async () => {
  * @returns list of folders that are not studies, under the given path
  */
 export const getFolders = async (workspace: string, folderPath: string) => {
-  const res = await client.get<NonStudyFolderDTO[]>(
-    `/v1/private/explorer/${workspace}/_list_dir?path=${encodeURIComponent(folderPath)}`,
+  const res = await client.get<FolderDTO[]>(
+    `/v1/private/explorer/${encodeURIComponent(workspace)}/_list_dir?path=${encodeURIComponent(folderPath)}`,
     {
-      timeout: 1000 * 3, // Wait for 3 seconds
+      timeout: 1000 * 300, // Wait for 5 minutes
     },
   );
   return res.data;
@@ -163,13 +163,6 @@ export const editStudy = async (
         "content-type": "application/json",
       },
     },
-  );
-  return res.data;
-};
-
-export const copyStudy = async (sid: string, name: string, withOutputs: boolean): Promise<void> => {
-  const res = await client.post(
-    `/v1/studies/${sid}/copy?dest=${encodeURIComponent(name)}&with_outputs=${withOutputs}`,
   );
   return res.data;
 };

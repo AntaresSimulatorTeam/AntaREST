@@ -26,12 +26,14 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+)
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    DEFAULT_GROUP,
-    DEFAULT_OPERATOR,
-    DEFAULT_TIMESTEP,
+    parse_binding_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
@@ -40,16 +42,13 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    BindingConstraintDTO,
     DistrictSet,
     FileStudyTreeConfig,
-    Link,
+    LinkConfig,
+    Mode,
     Simulation,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.renewable import (
-    RenewableConfigType,
-    create_renewable_config,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     STStorageConfigType,
     create_st_storage_config,
@@ -206,39 +205,14 @@ def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
     return store_new_set, archive_input_series, enr_modelling
 
 
-def _parse_bindings(root: Path) -> List[BindingConstraintDTO]:
+def _parse_bindings(root: Path) -> List[BindingConstraint]:
     bindings = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    output_list = []
-    for bind in bindings.values():
-        area_set = set()
-        # contains a set of strings in the following format: "area.cluster"
-        cluster_set = set()
-        # Default value for time_step
-        time_step = bind.get("type", DEFAULT_TIMESTEP)
-        # Default value for operator
-        operator = bind.get("operator", DEFAULT_OPERATOR)
-        # Default value for group
-        group = bind.get("group", DEFAULT_GROUP)
-        # Build areas and clusters based on terms
-        for key in bind:
-            if "%" in key:
-                areas = key.split("%", 1)
-                area_set.add(areas[0])
-                area_set.add(areas[1])
-            elif "." in key:
-                cluster_set.add(key)
-                area_set.add(key.split(".", 1)[0])
-
-        bc = BindingConstraintDTO(
-            id=bind["id"], areas=area_set, clusters=cluster_set, time_step=time_step, operator=operator, group=group
-        )
-        output_list.append(bc)
-
-    return output_list
+    version = _parse_version(root)
+    return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
 def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
@@ -331,17 +305,16 @@ def _parse_xpansion_version(path: Path) -> str:
         raise XpansionParsingError(xpansion_json, f"key '{exc}' not found in JSON object") from exc
 
 
-_regex_eco_adq = re.compile(r"^(\d{8}-\d{4})(eco|adq)-?(.*)")
-match_eco_adq = _regex_eco_adq.match
+_regex_simulation_mode = re.compile(r"^(\d{8}-\d{4})(eco|adq|exp)-?(.*)")
+match_simulation_mode = _regex_simulation_mode.match
 
 
 def parse_simulation(path: Path, canonical_name: str) -> Simulation:
-    modes = {"eco": "economy", "adq": "adequacy"}
-    match = match_eco_adq(canonical_name)
+    match = match_simulation_mode(canonical_name)
     if match is None:
         raise SimulationParsingError(
             path,
-            reason=f"Filename '{canonical_name}' doesn't match {_regex_eco_adq.pattern}",
+            reason=f"Filename '{canonical_name}' doesn't match {_regex_simulation_mode.pattern}",
         )
 
     try:
@@ -364,7 +337,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
     error = not (path / "checkIntegrity.txt").exists()
     return Simulation(
         date=match.group(1),
-        mode=modes[match.group(2)],
+        mode=Mode.from_output_suffix(match.group(2)),
         name=match.group(3),
         nbyears=obj["general"]["nbyears"],
         by_year=obj["general"]["year-by-year"],
@@ -449,7 +422,7 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     return config_list
 
 
-def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
+def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
     """
     Parse the renewables INI file, return an empty list if missing.
     """
@@ -470,7 +443,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableConfigType]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(create_renewable_config(version, **values, id=section))
+            config_list.append(parse_renewable_cluster(values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid renewable configuration: '{section}' in '{config_path}'", exc_info=exc)
@@ -503,13 +476,13 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     return config_list
 
 
-def _parse_links_filtering(root: Path, area: str) -> Dict[str, Link]:
+def _parse_links_filtering(root: Path, area: str) -> Dict[str, LinkConfig]:
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: Link(**obj) for link_id, obj in properties_ini.items()}
+    links_by_ids = {link_id: LinkConfig(**obj) for link_id, obj in properties_ini.items()}
     return links_by_ids
 
 

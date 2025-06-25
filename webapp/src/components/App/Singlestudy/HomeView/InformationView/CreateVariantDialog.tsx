@@ -12,29 +12,28 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { useTranslation } from "react-i18next";
+import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import type { GenericInfo, VariantTree } from "../../../../../types/types";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
+import type { GenericInfo, VariantTree } from "../../../../../types/types";
 import FormDialog from "../../../../common/dialogs/FormDialog";
+import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
-import { validateString } from "@/utils/validation/string";
 
 interface Props {
   parentId: string;
   open: boolean;
-  tree: VariantTree;
+  variantTree: VariantTree;
   onClose: () => void;
 }
 
-function CreateVariantDialog(props: Props) {
-  const { parentId, open, tree, onClose } = props;
+function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const [sourceList, setSourceList] = useState<GenericInfo[]>([]);
@@ -43,8 +42,8 @@ function CreateVariantDialog(props: Props) {
   const existingVariants = useMemo(() => sourceList.map((variant) => variant.name), [sourceList]);
 
   useEffect(() => {
-    setSourceList(createListFromTree(tree));
-  }, [tree]);
+    setSourceList(createListFromTree(variantTree));
+  }, [variantTree]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

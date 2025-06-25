@@ -72,7 +72,7 @@ from antarest.study.business.areas.properties_management import AreaPropertiesMa
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters, LinkTerm
+from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
@@ -80,7 +80,8 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidateDTO,
@@ -96,6 +97,8 @@ from antarest.study.business.timeseries_config_management import TimeSeriesConfi
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -134,6 +137,7 @@ from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
     is_managed,
+    is_study_folder,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -391,12 +395,16 @@ class RawStudyInterface(StudyInterface):
         return self._cached_file_study
 
     @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.get_files()).read_only()
+
+    @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
         file_study = self.get_files()
 
         for command in commands:
-            result = command.apply(file_study, listener)
+            result = command.apply(FileStudyTreeDao(self.get_files()), listener)
             if not result.status:
                 raise CommandApplicationError(result.message)
         remove_from_cache(self._raw_study_service.cache, study.id)
@@ -448,6 +456,10 @@ class VariantStudyInterface(StudyInterface):
     @override
     def get_files(self) -> FileStudy:
         return self._variant_service.get_raw(self._study)
+
+    @override
+    def get_study_dao(self) -> ReadOnlyStudyDao:
+        return FileStudyTreeDao(self.get_files()).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
@@ -529,7 +541,6 @@ class StudyService:
             url: route to follow inside study structure
             depth: depth to expand tree when route matched
             formatted: indicate if raw files must be parsed and formatted
-            params: request parameters
 
         Returns: data study formatted in json
 
@@ -546,7 +557,6 @@ class StudyService:
         Args:
             uuid: study uuid
             url: route to follow inside study structure
-            params: request parameters
 
         Returns: data study formatted in json
 
@@ -727,7 +737,6 @@ class StudyService:
 
         Args:
             uuid: The UUID of the study.
-            params: The request parameters.
 
         Returns:
             Information about the study.
@@ -764,10 +773,16 @@ class StudyService:
             study_settings["horizon"] = metadata_patch.horizon
             self._edit_study_using_command(study=study, url=study_settings_url, data=study_settings)
 
-        if metadata_patch.author:
+        if metadata_patch.author or metadata_patch.name:
             study_antares_url = "study/antares"
             study_antares = self.storage_service.get_storage(study).get(study, study_antares_url)
-            study_antares["author"] = metadata_patch.author
+
+            if metadata_patch.author:
+                study_antares["author"] = metadata_patch.author
+
+            if metadata_patch.name:
+                study_antares["caption"] = metadata_patch.name
+
             self._edit_study_using_command(study=study, url=study_antares_url, data=study_antares)
 
         study.additional_data = study.additional_data or StudyAdditionalData()
@@ -823,7 +838,6 @@ class StudyService:
         Retrieve study path
         Args:
             uuid: study uuid
-            params: request parameters
 
         Returns:
 
@@ -842,9 +856,6 @@ class StudyService:
             study_name: The name of the study to create.
             version: The version number of the study to choose the template for creation.
             group_ids: A possibly empty list of user group IDs to associate with the study.
-            params:
-                The parameters of the HTTP request for creation, used to determine
-                the currently logged-in user (ID and name).
 
         Returns:
             str: The ID of the newly created study.
@@ -880,14 +891,8 @@ class StudyService:
 
     def get_user_name(self) -> str:
         """
-        Retrieves the name of a user based on the provided request parameters.
-
-        Args:
-            params: The request parameters which includes user information.
-
-        Returns:
-            Returns the user's name or, if the logged user is a "bot"
-            (i.e., an application's token), it returns the token's author name.
+        Returns the user's name
+        If the logged user is a "bot" (i.e., an application's token), it returns the token's author name.
         """
         user = get_current_user()
         if user:
@@ -902,7 +907,6 @@ class StudyService:
 
         Args:
             study_id: The ID of the study.
-            params: The parameters of the HTTP request containing the user information.
 
         Returns: study synthesis
         """
@@ -1037,6 +1041,7 @@ class StudyService:
                         )
 
                     self.storage_service.raw_study_service.update_from_raw_meta(study, fallback_on_default=True)
+                    self.storage_service.raw_study_service.checks_antares_web_compatibility(study)
 
                     logger.warning("Skipping study format error analysis")
                     # TODO re enable this on an async worker
@@ -1056,6 +1061,37 @@ class StudyService:
                 existing_study = studies_by_path_workspace[(workspace, study_path)]
                 if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(existing_study):
                     self.repository.save(existing_study)
+
+    def delete_missing_studies(self) -> None:
+        """
+        Removes from the database any non-archived desktop studies whose folders
+        no longer exist on disk. Used to clean up orphaned study entries.
+        """
+        all_studies = self.repository.get_all_raw()
+        desktop_studies = [
+            study
+            for study in all_studies
+            if study.workspace != DEFAULT_WORKSPACE_NAME and isinstance(study, RawStudy) and not study.archived
+        ]
+
+        def get_path(study: RawStudy) -> Path:
+            wp = self.config.get_workspace_path(workspace=study.workspace)
+            return wp / str(study.folder)
+
+        missing_studies = [study for study in desktop_studies if not is_study_folder(get_path(study))]
+
+        # delete orphan studies on database
+        ids = [study.id for study in missing_studies]
+        if ids:
+            self.repository.delete(*ids)
+            for study in missing_studies:
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_DELETED,
+                        payload=study.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study),
+                    )
+                )
 
     def copy_study(
         self,
@@ -1168,7 +1204,6 @@ class StudyService:
         Export study to a zip file.
         Args:
             uuid: study id
-            params: request parameters
             outputs: integrate output folder in zip file
 
         """
@@ -1226,7 +1261,6 @@ class StudyService:
         Args:
             uuid: study uuid
             children: delete children or not
-            params: request parameters
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
@@ -1287,7 +1321,6 @@ class StudyService:
         Args:
             stream: binary content of the study compressed in ZIP or 7z format.
             group_ids: group to attach to study
-            params: request parameters
 
         Returns:
             New study UUID.
@@ -1306,6 +1339,7 @@ class StudyService:
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
+
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)
@@ -1463,7 +1497,6 @@ class StudyService:
             uuid: study id
             url: path data target in study
             new: new data to replace
-            params: request parameters
             create_missing: Flag to indicate whether to create file or parent directories if missing.
 
         Returns: new data replaced
@@ -1495,7 +1528,6 @@ class StudyService:
         Args:
             study_id: study uuid
             owner_id: new owner id
-            params: request parameters
 
         Returns:
 
@@ -1531,7 +1563,6 @@ class StudyService:
         Args:
             study_id: study uuid
             group_id: group id to attach
-            params: request parameters
 
         Returns:
 
@@ -1563,7 +1594,6 @@ class StudyService:
         Args:
             study_id: study uuid
             group_id: group to detach
-            params: request parameters
 
         Returns:
 
@@ -1593,7 +1623,6 @@ class StudyService:
         Args:
             study_id: study uuid
             mode: new public permission
-            params: request parameters
 
         Returns:
 
@@ -1638,7 +1667,7 @@ class StudyService:
     def get_all_links(
         self,
         uuid: str,
-    ) -> List[LinkDTO]:
+    ) -> List[Link]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         return self.links_manager.get_all_links(self.get_study_interface(study))
@@ -1664,8 +1693,8 @@ class StudyService:
     def create_link(
         self,
         uuid: str,
-        link_creation_dto: LinkDTO,
-    ) -> LinkDTO:
+        link_creation_dto: Link,
+    ) -> Link:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1684,8 +1713,8 @@ class StudyService:
         uuid: str,
         area_from: str,
         area_to: str,
-        link_update_dto: LinkBaseDTO,
-    ) -> LinkDTO:
+        link_update_dto: LinkUpdate,
+    ) -> Link:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -1721,7 +1750,6 @@ class StudyService:
         Args:
             uuid: The study ID.
             area_id: The area ID to delete.
-            params: The request parameters used to check user permissions.
 
         Raises:
             ReferencedObjectDeletionNotAllowed: If the area is referenced by a binding constraint.
@@ -1759,7 +1787,6 @@ class StudyService:
             uuid: The study ID.
             area_from: The area from which the link starts.
             area_to: The area to which the link ends.
-            params: The request parameters used to check user permissions.
 
         Raises:
             ReferencedObjectDeletionNotAllowed: If the link is referenced by a binding constraint.
@@ -1887,7 +1914,6 @@ class StudyService:
 
         Args:
             study: The study to be saved or updated.
-            owner: The owner of the study (current authenticated user).
             group_ids: The list of group IDs to associate with the study.
 
         Raises:
@@ -2067,7 +2093,6 @@ class StudyService:
             uuid: The UUID of the study.
             path: The path of the matrix to update.
             matrix_edit_instruction: A list of edit instructions to be applied to the matrix.
-            params: Additional request parameters.
 
         Raises:
             BadEditInstructionException: If an error occurs while updating the matrix.
@@ -2089,9 +2114,6 @@ class StudyService:
         This function updates studies version on the db.
 
         **Warnings: Only users with Admins rights should be able to run this function.**
-
-        Args:
-            params: Request parameters holding user ID and groups
 
         Raises:
             UserHasNotPermissionError: if params user is not admin.
@@ -2204,7 +2226,6 @@ class StudyService:
 
         Args:
             uuid: the study ID.
-            params: user request parameters.
 
         Returns:
             Disk usage of the study in bytes.
@@ -2229,7 +2250,6 @@ class StudyService:
             path: The relative path to the matrix within the study.
             with_index: A boolean indicating whether to include the index in the retrieved matrix.
             with_header: A boolean indicating whether to include the header in the retrieved matrix.
-            parameters: The request parameters, including the user information.
 
         Returns:
             A DataFrame representing the matrix.
@@ -2279,7 +2299,7 @@ class StudyService:
             path,
             with_index=with_index,
             with_header=with_header,
-            study_version=int(study.version),
+            study_version=study_interface.version,
         )
 
         return df_matrix

@@ -27,7 +27,12 @@ def _lower_case(input: str) -> str:
     return input.lower()
 
 
+def _to_string(input: Any) -> str:
+    return str(input)
+
+
 LOWER_CASE_PARSER: ValueParser = _lower_case
+STRING_PARSER: ValueParser = _to_string
 
 
 def _convert_value(value: str) -> PrimitiveType:

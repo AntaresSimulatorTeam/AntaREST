@@ -23,13 +23,13 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from antares.study.version import SolverVersion
 from typing_extensions import override
 
-from antarest.core.config import Config
+from antarest.core.config import LocalConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, LauncherInitException
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -42,36 +42,33 @@ class LocalLauncher(AbstractLauncher):
 
     def __init__(
         self,
-        config: Config,
+        config: LocalConfig,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
-        super().__init__(config, callbacks, event_bus, cache)
-        if self.config.launcher.local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        self.local_workspace = self.config.launcher.local.local_workspace
+        super().__init__(callbacks, event_bus, cache)
+        self.local_config: LocalConfig = config
+        self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
         self.log_tail_manager = LogTailManager(self.local_workspace)
+        self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
         self.job_id_to_study_id: Dict[str, Tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: Dict[str, str] = {}
 
     def _select_best_binary(self, version: str) -> Path:
-        local = self.config.launcher.local
-        if local is None:
-            raise LauncherInitException("Missing parameter 'launcher.local'")
-        elif version in local.binaries:
-            antares_solver_path = local.binaries[version]
+        if version in self.local_config.binaries:
+            antares_solver_path = self.local_config.binaries[version]
         else:
             # sourcery skip: extract-method, max-min-default
             # fixme: `version` must remain a string, consider using a `Version` class
             version_int = int(version)
-            keys = list(map(int, local.binaries.keys()))
+            keys = list(map(int, self.local_config.binaries.keys()))
             keys_sup = [k for k in keys if k > version_int]
             best_existing_version = min(keys_sup) if keys_sup else max(keys)
-            antares_solver_path = local.binaries[str(best_existing_version)]
+            antares_solver_path = self.local_config.binaries[str(best_existing_version)]
             logger.warning(
                 f"Version {version} is not available. Version {best_existing_version} has been selected instead"
             )
@@ -82,6 +79,7 @@ class LocalLauncher(AbstractLauncher):
         self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
     ) -> None:
         antares_solver_path = self._select_best_binary(f"{version:ddd}")
+        self.submitted_jobs[job_id] = launcher_parameters
 
         job = threading.Thread(
             target=LocalLauncher._compute,
@@ -159,6 +157,7 @@ class LocalLauncher(AbstractLauncher):
                     None,
                 )
             finally:
+                del self.submitted_jobs[job_id]
                 logger.info(f"Removing launch {job_id} export path at {export_path}")
                 shutil.rmtree(export_path, ignore_errors=True)
 
@@ -176,7 +175,7 @@ class LocalLauncher(AbstractLauncher):
             solver = []
             if "xpress" in launcher_parameters.other_options:
                 solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.config.launcher.local.xpress_dir:  # type: ignore
+                if xpress_dir_path := self.local_config.xpress_dir:
                     environment_variables["XPRESSDIR"] = xpress_dir_path
                     environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
             elif "coin" in launcher_parameters.other_options:
@@ -218,3 +217,22 @@ class LocalLauncher(AbstractLauncher):
                 None,
                 None,
             )
+
+    @override
+    def get_solver_versions(self) -> List[str]:
+        return sorted(self.local_config.binaries)
+
+    @override
+    def get_load(self) -> LauncherLoadDTO:
+        local_used_cpus = sum(params.nb_cpu or 1 for params in self.submitted_jobs.values())
+
+        # The cluster load is approximated by the percentage of used CPUs.
+        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
+
+        args = {
+            "allocatedCpuRate": cluster_load_approx,
+            "clusterLoadRate": cluster_load_approx,
+            "nbQueuedJobs": 0,
+            "launcherStatus": "SUCCESS",
+        }
+        return LauncherLoadDTO(**args)

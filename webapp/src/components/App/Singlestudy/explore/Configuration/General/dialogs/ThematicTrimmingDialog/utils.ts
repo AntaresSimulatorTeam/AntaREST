@@ -102,6 +102,7 @@ const fieldLabelsByGroup: Record<
     stsInjByPlant: "STS INJ BY PLANT",
     stsLvlByPlant: "STS LVL BY PLANT",
     stsWithdrawalByPlant: "STS WITHDRAWAL BY PLANT",
+    stsByGroup: "STS BY GROUP",
   },
   generationThermals: {
     avlDtg: "AVL DTG",

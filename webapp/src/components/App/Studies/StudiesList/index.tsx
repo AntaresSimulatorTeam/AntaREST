@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { useCallback, useState } from "react";
+import { setStudyScrollPosition } from "@/redux/ducks/studies";
+import { getStudiesScrollPosition } from "@/redux/selectors";
+import type { StudyMetadata } from "@/types/types";
 import { Box } from "@mui/material";
+import { useCallback, useState } from "react";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeGrid, type GridOnScrollProps } from "react-window";
-import type { StudyMetadata } from "@/types/types";
-import { setStudyScrollPosition } from "@/redux/ducks/studies";
-import LauncherDialog from "../LauncherDialog";
 import useDebounce from "../../../../hooks/useDebounce";
-import { getStudiesScrollPosition } from "@/redux/selectors";
-import useAppSelector from "../../../../redux/hooks/useAppSelector";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import StudyCardCell from "./StudyCardCell";
+import useAppSelector from "../../../../redux/hooks/useAppSelector";
+import LaunchStudyDialog from "../../shared/studies/dialogs/LaunchStudyDialog";
 import Header from "./Header";
+import StudyCardCell, { type StudyCardCellProps } from "./StudyCardCell";
 
 const CARD_TARGET_WIDTH = 500;
 const CARD_HEIGHT = 250;
@@ -42,10 +42,6 @@ function StudiesList({ studyIds }: StudiesListProps) {
   ////////////////////////////////////////////////////////////////
   // Actions
   ////////////////////////////////////////////////////////////////
-
-  const setStudyToLaunch = useCallback((studyId: StudyMetadata["id"]) => {
-    setStudiesToLaunch([studyId]);
-  }, []);
 
   const toggleStudySelection = useCallback((studyId: StudyMetadata["id"]) => {
     setSelectedStudyIds((prev) =>
@@ -102,15 +98,16 @@ function StudiesList({ studyIds }: StudiesListProps) {
                 initialScrollTop={scrollPosition}
                 onScroll={handleScroll}
                 useIsScrolling
-                itemData={{
-                  studyIds,
-                  setStudyToLaunch,
-                  columnCount,
-                  columnWidth,
-                  rowHeight,
-                  selectedStudyIds,
-                  toggleStudySelection,
-                }}
+                itemData={
+                  {
+                    studyIds,
+                    columnCount,
+                    columnWidth,
+                    rowHeight,
+                    selectedStudyIds,
+                    toggleStudySelection,
+                  } satisfies StudyCardCellProps["data"]
+                }
               >
                 {StudyCardCell}
               </FixedSizeGrid>
@@ -119,7 +116,7 @@ function StudiesList({ studyIds }: StudiesListProps) {
         </AutoSizer>
       </Box>
       {studiesToLaunch.length > 0 && (
-        <LauncherDialog open studyIds={studiesToLaunch} onClose={handleLauncherClose} />
+        <LaunchStudyDialog open studyIds={studiesToLaunch} onClose={handleLauncherClose} />
       )}
     </>
   );

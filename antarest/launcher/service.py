@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, Launcher, NbCoresConfig
+from antarest.core.config import Config, InvalidConfigurationError, NbCoresConfig
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -50,9 +50,8 @@ from antarest.launcher.model import (
     XpansionParametersDTO,
 )
 from antarest.launcher.repository import JobResultRepository
-from antarest.launcher.ssh_client import calculates_slurm_load
-from antarest.launcher.ssh_config import SSHConfigDTO
-from antarest.login.utils import get_current_user
+from antarest.login.service import LoginService
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
@@ -83,6 +82,7 @@ class LauncherService:
         config: Config,
         study_service: StudyService,
         output_service: OutputService,
+        login_service: LoginService,
         job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
@@ -93,6 +93,7 @@ class LauncherService:
         self.config = config
         self.study_service = study_service
         self.output_service = output_service
+        self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -118,7 +119,7 @@ class LauncherService:
     def get_launchers(self) -> List[str]:
         return list(self.launchers.keys())
 
-    def get_nb_cores(self, launcher: Launcher) -> NbCoresConfig:
+    def get_nb_cores(self, launcher: Optional[str]) -> NbCoresConfig:
         """
         Retrieve the configuration of the launcher's nb of cores.
 
@@ -492,6 +493,7 @@ class LauncherService:
                 raise JobNotFound()
 
             study_id = job_result.study_id
+            job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             # this now can be a zip file instead of a directory !
@@ -544,12 +546,20 @@ class LauncherService:
                                 log_suffix,
                                 concat_files_to_str(log_paths),
                             )
-                    return self.output_service.import_output(
-                        study_id,
-                        final_output_path,
-                        output_suffix,
-                        job_launch_params.auto_unzip,
-                    )
+
+                    if job_owner_id:
+                        # We restore the user context as the following processes need it
+                        current_user = self.login_service.get_jwt(job_owner_id)
+                    else:
+                        current_user = get_current_user()
+
+                    with current_user_context(current_user):
+                        return self.output_service.import_output(
+                            study_id,
+                            final_output_path,
+                            output_suffix,
+                            job_launch_params.auto_unzip,
+                        )
                 except StudyNotFoundError:
                     return self._import_fallback_output(
                         job_id,
@@ -603,74 +613,41 @@ class LauncherService:
             return self.output_service.export_output(job_result.study_id, job_result.output_id)
         raise JobNotFound()
 
-    def get_load(self) -> LauncherLoadDTO:
+    def get_load(self, launcher_id: Optional[str]) -> LauncherLoadDTO:
         """
-        Get the load of the SLURM cluster or the local machine.
+        Get the load of the specified launcher.
         """
-        # SLURM load calculation
-        if self.config.launcher.default == "slurm":
-            if slurm_config := self.config.launcher.slurm:
-                ssh_config = SSHConfigDTO(
-                    config_path=Path(),
-                    username=slurm_config.username,
-                    hostname=slurm_config.hostname,
-                    port=slurm_config.port,
-                    private_key_file=slurm_config.private_key_file,
-                    key_password=slurm_config.key_password,
-                    password=slurm_config.password,
-                )
-                partition = slurm_config.partition
-                allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
-                args = {
-                    "allocatedCpuRate": allocated_cpus,
-                    "clusterLoadRate": cluster_load,
-                    "nbQueuedJobs": queued_jobs,
-                    "launcherStatus": "SUCCESS",
-                }
-                return LauncherLoadDTO(**args)
-            else:
-                raise KeyError("Default launcher is slurm but it is not registered in the config file")
+        if launcher_id is None:
+            launcher_id = self.config.launcher.default
 
-        # local load calculation
-        local_used_cpus = sum(
-            LauncherParametersDTO.from_launcher_params(job.launcher_params).nb_cpu or 1
-            for job in self.job_result_repository.get_running()
-        )
+        launcher = self.launchers.get(launcher_id)
+        if launcher is None:
+            raise InvalidConfigurationError(launcher_id)
 
-        # The cluster load is approximated by the percentage of used CPUs.
-        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
+        return launcher.get_load()
 
-        args = {
-            "allocatedCpuRate": cluster_load_approx,
-            "clusterLoadRate": cluster_load_approx,
-            "nbQueuedJobs": 0,
-            "launcherStatus": "SUCCESS",
-        }
-        return LauncherLoadDTO(**args)
-
-    def get_solver_versions(self, solver: str) -> List[str]:
+    def get_solver_versions(self, launcher_id: Optional[str]) -> List[str]:
         """
         Fetch the list of solver versions from the configuration.
 
         Args:
-            solver: name of the configuration to read: "default", "slurm" or "local".
+            launcher_id: id of the configuration to read.
 
         Returns:
             The list of solver versions.
             This list is empty if the configuration is not available.
 
         Raises:
-            KeyError: if the configuration is not "default", "slurm" or "local".
+            InvalidConfigurationError: if the launcher doesn't exist in the configuration.
         """
-        local_config = self.config.launcher.local
-        slurm_config = self.config.launcher.slurm
-        default_config = self.config.launcher.default
-        versions_map = {
-            "local": sorted(local_config.binaries) if local_config else [],
-            "slurm": sorted(slurm_config.antares_versions_on_remote_server) if slurm_config else [],
-        }
-        versions_map["default"] = versions_map[default_config]
-        return versions_map[solver]
+        if launcher_id is None:
+            launcher_id = self.config.launcher.default
+
+        launcher = self.launchers.get(launcher_id)
+        if launcher is None:
+            raise InvalidConfigurationError(launcher_id)
+
+        return launcher.get_solver_versions()
 
     def get_launch_progress(self, job_id: str) -> float:
         job_result = self.job_result_repository.get(job_id)

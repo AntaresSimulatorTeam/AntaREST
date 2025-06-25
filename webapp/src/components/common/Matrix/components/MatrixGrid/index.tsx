@@ -12,29 +12,29 @@
  * This file is part of the Antares project.
  */
 
+import DataGrid from "@/components/common/DataGrid";
 import {
   CompactSelection,
   GridCellKind,
-  type GridSelection,
   type EditableGridCell,
   type EditListItem,
-  type Item,
   type GridKeyEventArgs,
+  type GridSelection,
+  type Item,
 } from "@glideapps/glide-data-grid";
-import { useGridCellContent } from "../../hooks/useGridCellContent";
 import { useCallback, useState } from "react";
-import DataGrid from "@/components/common/DataGrid";
+import { useTranslation } from "react-i18next";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
+import { useGridCellContent } from "../../hooks/useGridCellContent";
+import { useSelectionStats } from "../../hooks/useSelectionStats";
 import type {
   EnhancedGridColumn,
-  MatrixAggregates,
   GridUpdate,
+  MatrixAggregates,
   NonEmptyMatrix,
 } from "../../shared/types";
-import MatrixStats from "../MatrixStats";
-import { useSelectionStats } from "../../hooks/useSelectionStats";
 import { formatGridNumber } from "../../shared/utils";
-import { useTranslation } from "react-i18next";
+import MatrixStats from "../MatrixStats";
 
 export interface MatrixGridProps {
   data: NonEmptyMatrix;
@@ -164,7 +164,7 @@ function MatrixGrid({
           const value = Number(userInput);
 
           if (Number.isNaN(value)) {
-            alert(t("form.field.invalidNumber"));
+            alert(t("form.field.invalidValue"));
             return;
           }
 

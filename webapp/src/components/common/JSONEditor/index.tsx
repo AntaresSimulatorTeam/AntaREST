@@ -13,37 +13,61 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import JSONEditorClass, { type JSONEditorOptions, type HistoryItem } from "jsoneditor";
-import { useMemo, useRef } from "react";
-import { useDeepCompareEffect, useMount } from "react-use";
-import type { PromiseAny } from "../../../utils/tsUtils";
-import useUpdatedRef from "../../../hooks/useUpdatedRef";
-import { createSaveButton } from "./utils";
+import { mergeSxProp } from "@/utils/muiUtils";
+import { Box, setRef, type SxProps, type Theme } from "@mui/material";
+import JSONEditorClass, { type HistoryItem, type JSONEditorOptions } from "jsoneditor";
+import "jsoneditor/dist/jsoneditor.min.css";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeepCompareEffect, useMount, useUpdateEffect } from "react-use";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import { toError } from "../../../utils/fnUtils";
-import { Box, type SxProps, type Theme } from "@mui/material";
-import "jsoneditor/dist/jsoneditor.min.css";
+import type { PromiseAny } from "../../../utils/tsUtils";
+import BackdropLoading from "../loaders/BackdropLoading";
 import "./dark-theme.css";
-import { mergeSxProp } from "@/utils/muiUtils";
+import { createSaveButton } from "./utils";
+
+export interface JSONApi {
+  save: VoidFunction;
+}
+
+export interface JSONState {
+  isDirty: boolean;
+  isSaving: boolean;
+}
 
 export interface JSONEditorProps extends JSONEditorOptions {
   json: any;
   onSave?: (json: any) => PromiseAny;
   onSaveSuccessful?: (json: any) => any;
   sx?: SxProps<Theme>;
+  hideSaveButton?: boolean;
+  apiRef?: React.Ref<JSONApi>;
+  onStateChange?: (state: JSONState) => void;
 }
 
-function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEditorProps) {
+function JSONEditor({
+  json,
+  onSave,
+  onSaveSuccessful,
+  sx,
+  hideSaveButton,
+  apiRef,
+  onStateChange,
+  ...options
+}: JSONEditorProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const editorRef = useRef<JSONEditorClass>();
   const onSaveRef = useUpdatedRef(onSave);
   const callbackOptionsRef = useUpdatedRef<Partial<JSONEditorOptions>>(
     R.pickBy(RA.isFunction, options),
   );
-  const saveBtn = useMemo(() => createSaveButton(handleSaveClick), []);
+  const saveBtn = useMemo(() => createSaveButton(handleSave), []);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   /**
    * The history item corresponding to the saved JSON.
@@ -82,6 +106,16 @@ function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEdit
     }
   }, [json]);
 
+  useEffect(() => {
+    setRef(apiRef, {
+      save: handleSave,
+    });
+  });
+
+  useUpdateEffect(() => {
+    onStateChange?.({ isDirty, isSaving });
+  }, [isDirty, isSaving]);
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -109,21 +143,16 @@ function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEdit
     initSave();
   }
 
-  async function handleSaveClick() {
+  async function handleSave() {
     const onSave = onSaveRef.current;
     const editor = editorRef.current;
 
     if (onSave && editor) {
-      let json;
+      setIsSaving(true);
 
       try {
-        json = editor.get();
-      } catch (err) {
-        enqueueErrorSnackbar("Invalid JSON", toError(err));
-        return;
-      }
+        const json = editor.get();
 
-      try {
         await onSave(json);
 
         updateSaveState(false);
@@ -131,8 +160,10 @@ function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEdit
 
         presentHistoryItem.current = editor?.history?.history?.[editor.history.index] ?? null;
       } catch (err) {
-        enqueueErrorSnackbar("test", toError(err));
+        enqueueErrorSnackbar("Cannot save JSON changes", toError(err));
       }
+
+      setIsSaving(false);
     }
   }
 
@@ -147,23 +178,27 @@ function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEdit
     saveBtn.remove();
 
     if (
+      !hideSaveButton &&
       // The save button is added to the menu only when the `onSave` callback is provided
       onSaveRef.current &&
       editor &&
       ["tree", "form", "code", "text"].includes(editor.getMode())
     ) {
-      updateSaveState(false);
       editor.menu.append(saveBtn);
     }
+
+    updateSaveState(false);
   }
 
   function updateSaveState(enable: boolean) {
+    setIsDirty(enable);
+
     // Update the save button style
     saveBtn.style.opacity = enable ? "1" : "0.1";
     saveBtn.disabled = !enable;
 
     // Changing the mode resets undo/redo history and undo/redo are not available in all modes.
-    // So the change mode mode button is disabled when the JSON is dirty.
+    // So the change mode button is disabled when the JSON is dirty.
 
     const editorModeBtn = editorRef.current?.menu.querySelector("button.jsoneditor-modes");
 
@@ -179,15 +214,16 @@ function JSONEditor({ json, onSave, onSaveSuccessful, sx, ...options }: JSONEdit
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={mergeSxProp(
-        {
-          overflow: "auto", // Fix when parent use `flex-direction: "column"`
-        },
-        sx,
-      )}
-      ref={ref}
-    />
+    <Box sx={mergeSxProp(sx, { position: "relative" })}>
+      <Box
+        ref={ref}
+        sx={{
+          // Allow to keep the menu visible when parent has scroll
+          height: 1,
+        }}
+      />
+      <BackdropLoading open={isSaving} />
+    </Box>
   );
 }
 

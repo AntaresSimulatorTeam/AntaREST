@@ -22,24 +22,26 @@ import { useTranslation } from "react-i18next";
 import { updateStudyFilters } from "../../../../redux/ducks/studies";
 import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../../redux/hooks/useAppSelector";
-import { getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
+import { getStudies, getStudiesTree, getStudyFilters } from "../../../../redux/selectors";
 import * as api from "../../../../services/api/study";
 import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { insertIfNotExist } from "./utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
-import { useUpdateEffect } from "react-use";
 
 function StudyTree() {
+  const studies = useAppSelector(getStudies);
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
   const [workspaces, setWorkspaces] = useState<string[]>([]);
   const [subFolders, setSubFolders] = useState(storage.getItem(StorageKey.StudyTreeFolders) || []);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
+  const [exploredFolders, setExploredFolders] = useState<string[]>([]);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const [t] = useTranslation();
+  const isDesktopMode = import.meta.env.MODE === "desktop";
 
   useEffect(() => {
     getWorkspaces().then((nextWorkspaces) => {
@@ -51,10 +53,6 @@ function StudyTree() {
     // otherwise we'll override studiesTree with initialStudiesTree each time the trigger a subFolders update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialStudiesTree]);
-
-  useUpdateEffect(() => {
-    storage.setItem(StorageKey.StudyTreeFolders, subFolders);
-  }, [subFolders]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -90,17 +88,26 @@ function StudyTree() {
     // Fetch subfolders and insert them to the tree
     try {
       const newSubFolders = await api.getFolders(workspace, subPath.join("/"));
-
       if (newSubFolders.length > 0) {
         // use union to prioritize new subfolders
         const thisParent = ["", workspace, ...subPath].join("/");
         const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
-        const nextSubfolders = [...newSubFolders, ...otherSubfolders];
-
+        // Keep non-study folders and study folders that haven't been scanned yet
+        const filteredStudyFolders = newSubFolders.filter(
+          (folder) =>
+            !folder.isStudyFolder ||
+            !studies.some(
+              (study) => folder.path === study.folder && study.workspace === folder.workspace,
+            ),
+        );
+        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
         setSubFolders(nextSubfolders);
 
         const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
         setStudiesTree(nextStudyTree);
+        storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
+
+        setExploredFolders((prev) => [...prev.filter((e) => e !== itemId), itemId]);
       }
     } catch (err) {
       enqueueErrorSnackbar(
@@ -123,10 +130,14 @@ function StudyTree() {
    *
    * @returns The list of workspaces
    */
-  // eslint-disable-next-line require-await
   async function getWorkspaces() {
-    if (import.meta.env.MODE === "desktop") {
-      return api.getWorkspaces();
+    if (isDesktopMode) {
+      try {
+        return await api.getWorkspaces();
+      } catch (err) {
+        enqueueErrorSnackbar(t("studies.tree.error.failToFetchWorkspace"), toError(err));
+        return [];
+      }
     }
     return workspaces;
   }
@@ -167,6 +178,7 @@ function StudyTree() {
       <StudyTreeNodeComponent
         node={studiesTree}
         itemsLoading={itemsLoading}
+        exploredFolders={exploredFolders}
         onNodeClick={handleTreeItemClick}
       />
     </SimpleTreeView>

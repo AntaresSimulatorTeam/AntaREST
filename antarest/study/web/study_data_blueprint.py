@@ -31,20 +31,11 @@ from antarest.study.business.allocation_management import AllocationField, Alloc
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
     STStorageManager,
-    STStorageMatrix,
-    STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
     ThermalManager,
 )
-from antarest.study.business.binding_constraint_management import (
-    ConstraintCreation,
-    ConstraintFilters,
-    ConstraintInput,
-    ConstraintOutput,
-    ConstraintTerm,
-    ConstraintTermUpdate,
-)
+from antarest.study.business.binding_constraint_management import ConstraintFilters
 from antarest.study.business.correlation_management import (
     AreaCoefficientItem,
     CorrelationFormFields,
@@ -54,6 +45,15 @@ from antarest.study.business.district_manager import DistrictCreationDTO, Distri
 from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
+    BindingConstraintCreationWithMatrices,
+    BindingConstraintFrequency,
+    BindingConstraintOperator,
+    BindingConstraintUpdateWithMatrices,
+    ConstraintTerm,
+    ConstraintTermUpdate,
+)
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -61,13 +61,14 @@ from antarest.study.business.model.hydro_model import (
     InflowStructure,
     InflowStructureUpdate,
 )
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO
+from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterCreation,
-    RenewableClusterOutput,
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
@@ -77,13 +78,8 @@ from antarest.study.business.optimization_management import OptimizationFormFiel
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.thematic_trimming_field_infos import ThematicTrimmingFormFields
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
-)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
@@ -137,13 +133,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         areas_list = study_service.get_all_areas(uuid, type, ui)
         return areas_list
 
-    @bp.get(
-        "/studies/{uuid}/links",
-        tags=[APITag.study_data],
-        summary="Get all links",
-        response_model=List[LinkDTO],
-    )
-    def get_links(uuid: str) -> List[LinkDTO]:
+    @bp.get("/studies/{uuid}/links", tags=[APITag.study_data], summary="Get all links")
+    def get_links(uuid: str) -> List[Link]:
         logger.info(f"Fetching link list for study {uuid}")
         areas_list = study_service.get_all_links(uuid)
         return areas_list
@@ -158,23 +149,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Creating new area for study {uuid}")
         return study_service.create_area(uuid, area_creation_info)
 
-    @bp.post(
-        "/studies/{uuid}/links",
-        tags=[APITag.study_data],
-        summary="Create a link",
-        response_model=LinkDTO,
-    )
-    def create_link(uuid: str, link_creation_info: LinkDTO) -> LinkDTO:
+    @bp.post("/studies/{uuid}/links", tags=[APITag.study_data], summary="Create a link")
+    def create_link(
+        uuid: str,
+        link_creation_info: Link,
+    ) -> Link:
         logger.info(f"Creating new link for study {uuid}")
         return study_service.create_link(uuid, link_creation_info)
 
-    @bp.put(
-        "/studies/{uuid}/links/{area_from}/{area_to}",
-        tags=[APITag.study_data],
-        summary="Update a link",
-        response_model=LinkDTO,
-    )
-    def update_link(uuid: str, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> Any:
+    @bp.put("/studies/{uuid}/links/{area_from}/{area_to}", tags=[APITag.study_data], summary="Update a link")
+    def update_link(uuid: str, area_from: str, area_to: str, link_update_dto: LinkUpdate) -> Link:
         logger.info(f"Updating link {area_from} -> {area_to} for study {uuid}")
         return study_service.update_link(uuid, area_from, area_to, link_update_dto)
 
@@ -395,10 +379,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Get thematic trimming config",
-        response_model=ThematicTrimmingFormFields,
         response_model_exclude_none=True,
     )
-    def get_thematic_trimming(uuid: str) -> ThematicTrimmingFormFields:
+    def get_thematic_trimming(uuid: str) -> ThematicTrimming:
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -409,7 +392,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
-    def set_thematic_trimming(uuid: str, field_values: ThematicTrimmingFormFields) -> None:
+    def set_thematic_trimming(uuid: str, field_values: ThematicTrimming) -> None:
         logger.info(f"Updating thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -791,12 +774,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def update_version() -> Any:
         study_service.check_and_update_all_study_versions_in_database()
 
-    @bp.get(
-        "/studies/{uuid}/bindingconstraints",
-        tags=[APITag.study_data],
-        summary="Get binding constraint list",
-        response_model=List[ConstraintOutput],
-    )
+    @bp.get("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Get binding constraint list")
     def get_binding_constraint_list(
         uuid: str,
         enabled: Optional[bool] = Query(None, description="Filter results based on enabled status"),
@@ -828,7 +806,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
             description="Filter results based on cluster ID ('area.cluster')",
             alias="clusterId",
         ),
-    ) -> Sequence[ConstraintOutput]:
+    ) -> Sequence[BindingConstraint]:
         logger.info(f"Fetching binding constraint list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -849,9 +827,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
         tags=[APITag.study_data],
         summary="Get binding constraint",
-        response_model=ConstraintOutput,  # TODO: redundant ?
     )
-    def get_binding_constraint(uuid: str, binding_constraint_id: str) -> ConstraintOutput:
+    def get_binding_constraint(uuid: str, binding_constraint_id: str) -> BindingConstraint:
         logger.info(f"Fetching binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -862,12 +839,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Update binding constraint",
     )
-    def update_binding_constraint(uuid: str, binding_constraint_id: str, data: ConstraintInput) -> ConstraintOutput:
+    def update_binding_constraint(
+        uuid: str, binding_constraint_id: str, data: BindingConstraintUpdateWithMatrices
+    ) -> BindingConstraint:
         logger.info(f"Update binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.binding_constraint_manager.update_binding_constraint(
-            study_interface, binding_constraint_id, data
+            study_interface, binding_constraint_id, data.update_model(), data.matrices()
         )
 
     @bp.get(
@@ -875,7 +854,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get the list of binding constraint groups",
     )
-    def get_grouped_constraints(uuid: str) -> Mapping[str, Sequence[ConstraintOutput]]:
+    def get_grouped_constraints(uuid: str) -> Mapping[str, Sequence[BindingConstraint]]:
         """
         Get the list of binding constraint groups for the study.
 
@@ -922,7 +901,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get the binding constraint group",
     )
-    def get_constraints_by_group(uuid: str, group: str) -> Sequence[ConstraintOutput]:
+    def get_constraints_by_group(uuid: str, group: str) -> Sequence[BindingConstraint]:
         """
         Get the binding constraint group for the study.
 
@@ -970,11 +949,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return study_service.binding_constraint_manager.validate_constraint_group(study_interface, group)
 
     @bp.post("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Create a binding constraint")
-    def create_binding_constraint(uuid: str, data: ConstraintCreation) -> ConstraintOutput:
+    def create_binding_constraint(uuid: str, data: BindingConstraintCreationWithMatrices) -> BindingConstraint:
         logger.info(f"Creating a new binding constraint for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.create_binding_constraint(study_interface, data)
+        return study_service.binding_constraint_manager.create_binding_constraint(
+            study_interface, data.creation_model(), data.matrices()
+        )
 
     @bp.post(
         "/studies/{uuid}/bindingconstraints/{binding_constraint_id}",
@@ -983,7 +964,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     )
     def duplicate_binding_constraint(
         uuid: str, binding_constraint_id: str, new_constraint_name: str
-    ) -> ConstraintOutput:
+    ) -> BindingConstraint:
         logger.info(f"Duplicates constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1001,8 +982,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Deleting the binding constraint {binding_constraint_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.binding_constraint_manager.remove_binding_constraint(
-            study_interface, binding_constraint_id
+        return study_service.binding_constraint_manager.remove_multiple_binding_constraints(
+            study_interface, [binding_constraint_id]
         )
 
     @bp.delete(
@@ -1426,9 +1407,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
         summary="Get all renewable clusters",
-        response_model=Sequence[RenewableClusterOutput],
     )
-    def get_renewable_clusters(uuid: str, area_id: str) -> Sequence[RenewableClusterOutput]:
+    def get_renewable_clusters(uuid: str, area_id: str) -> Sequence[RenewableCluster]:
         logger.info("Getting renewable clusters for study %s and area %s", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1438,9 +1418,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
         tags=[APITag.study_data],
         summary="Get a single renewable cluster",
-        response_model=RenewableClusterOutput,
     )
-    def get_renewable_cluster(uuid: str, area_id: str, cluster_id: str) -> RenewableClusterOutput:
+    def get_renewable_cluster(uuid: str, area_id: str, cluster_id: str) -> RenewableCluster:
         logger.info("Getting renewable cluster values for study %s and cluster %s", uuid, cluster_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -1464,11 +1443,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
         tags=[APITag.study_data],
         summary="Create a new renewable cluster",
-        response_model=RenewableClusterOutput,
     )
-    def create_renewable_cluster(
-        uuid: str, area_id: str, cluster_data: RenewableClusterCreation
-    ) -> RenewableClusterOutput:
+    def create_renewable_cluster(uuid: str, area_id: str, cluster_data: RenewableClusterCreation) -> RenewableCluster:
         """
         Create a new renewable cluster.
 
@@ -1489,11 +1465,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}",
         tags=[APITag.study_data],
         summary="Update a renewable cluster",
-        response_model=RenewableClusterOutput,
     )
     def update_renewable_cluster(
         uuid: str, area_id: str, cluster_id: str, cluster_data: RenewableClusterUpdate
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         logger.info(f"Updating renewable cluster for study '{uuid}' and cluster '{cluster_id}'")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -1503,12 +1478,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable/{cluster_id}/form",
         tags=[APITag.study_data],
         summary="Get renewable configuration for a given cluster (deprecated)",
-        response_model=RenewableClusterOutput,
         deprecated=True,
     )
     def redirect_update_renewable_cluster(
         uuid: str, area_id: str, cluster_id: str, cluster_data: RenewableClusterUpdate
-    ) -> RenewableClusterOutput:
+    ) -> RenewableCluster:
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
         return update_renewable_cluster(uuid, area_id, cluster_id, cluster_data)
 
@@ -1645,28 +1619,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         # We cannot perform redirection, because we have a PUT, where a PATCH is required.
         return update_thermal_cluster(uuid, area_id, cluster_id, cluster_data)
 
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/clusters/thermal/{cluster_id}/validate",
-        tags=[APITag.study_data],
-        summary="Validates the thermal cluster series",
-    )
-    def validate_cluster_series(uuid: str, area_id: str, cluster_id: str) -> bool:
-        """
-        Validate the consistency of all time series for the given thermal cluster.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `cluster_id`: the ID of the thermal cluster.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Validating thermal series values for study {uuid} and cluster {cluster_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.thermal_manager.validate_series(study_interface, area_id, cluster_id)
-
     @bp.delete(
         path="/studies/{uuid}/areas/{area_id}/clusters/thermal",
         tags=[APITag.study_data],
@@ -1756,85 +1708,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.st_storage_manager.get_storages(study_interface, area_id)
-
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
-        tags=[APITag.study_data],
-        summary="Get a short-term storage time series",
-        response_model=STStorageMatrix,
-    )
-    def get_st_storage_matrix(
-        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries
-    ) -> STStorageMatrix:
-        """
-        Retrieve the matrix of the specified time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-        - `ts_name`: the name of the time series to retrieve.
-
-        Returns: The time series matrix with the following attributes:
-        - `index`: a list of 0-indexed time series lines (8760 lines).
-        - `columns`: a list of 0-indexed time series columns (1 column).
-        - `data`: a 2D-array matrix representing the time series.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Retrieving time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.st_storage_manager.get_matrix(study_interface, area_id, storage_id, ts_name)
-
-    @bp.put(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
-        tags=[APITag.study_data],
-        summary="Update a short-term storage time series",
-    )
-    def update_st_storage_matrix(
-        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries, ts: STStorageMatrix
-    ) -> None:
-        """
-        Update the matrix of the specified time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-        - `ts_name`: the name of the time series to retrieve.
-        - `ts`: the time series matrix to update.
-
-        Permissions:
-        - User must have WRITE permission on the study.
-        """
-        logger.info(f"Update time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
-
-    @bp.get(
-        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/validate",
-        tags=[APITag.study_data],
-        summary="Validate all the short-term storage time series",
-    )
-    def validate_st_storage_matrices(uuid: str, area_id: str, storage_id: str) -> bool:
-        """
-        Validate the consistency of all time series for the given short-term storage.
-
-        Args:
-        - `uuid`: The UUID of the study.
-        - `area_id`: the area ID.
-        - `storage_id`: the ID of the short-term storage.
-
-        Permissions:
-        - User must have READ permission on the study.
-        """
-        logger.info(f"Validating time series for study {uuid} and short-term storage {storage_id}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.st_storage_manager.validate_matrices(study_interface, area_id, storage_id)
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/storages",
@@ -1956,7 +1829,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_type: ClusterType,
         source_cluster_id: str,
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
-    ) -> STStorageOutput | ThermalCluster | RenewableClusterOutput:
+    ) -> STStorageOutput | ThermalCluster | RenewableCluster:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
 

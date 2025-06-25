@@ -10,13 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import List, Mapping, Tuple
 
-from antarest.core.exceptions import LinkNotFound
 from antarest.core.model import JSON
-from antarest.study.business.model.link_model import LinkBaseDTO, LinkDTO, LinkInternal
+from antarest.study.business.model.link_model import Link, LinkCreation, LinkUpdate
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
@@ -27,88 +25,54 @@ class LinkManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_links(self, study: StudyInterface) -> List[LinkDTO]:
-        file_study = study.get_files()
-        result: List[LinkDTO] = []
+    def get_all_links(self, study: StudyInterface) -> List[Link]:
+        return list(study.get_study_dao().get_links())
 
-        for area_id, area in file_study.config.areas.items():
-            links_config = file_study.tree.get(["input", "links", area_id, "properties"])
+    def get_link(self, study: StudyInterface, area_from: str, area_to: str) -> Link:
+        return study.get_study_dao().get_link(area_from, area_to)
 
-            for link in area.links:
-                link_tree_config: Dict[str, Any] = links_config[link]
-                link_tree_config.update({"area1": area_id, "area2": link})
-
-                link_internal = LinkInternal.model_validate(link_tree_config)
-
-                result.append(link_internal.to_dto())
-
-        return result
-
-    def get_link(self, study: StudyInterface, link: LinkInternal) -> LinkInternal:
-        file_study = study.get_files()
-
-        link_properties = self._get_link_if_exists(file_study, link)
-
-        link_properties.update({"area1": link.area1, "area2": link.area2})
-
-        updated_link = LinkInternal.model_validate(link_properties)
-
-        return updated_link
-
-    def create_link(self, study: StudyInterface, link_creation_dto: LinkDTO) -> LinkDTO:
-        link = link_creation_dto.to_internal(study.version)
-
+    def create_link(self, study: StudyInterface, new_link: Link) -> Link:
         command = CreateLink(
-            area1=link.area1,
-            area2=link.area2,
-            parameters=link.model_dump(exclude_none=True),
+            area1=new_link.area1,
+            area2=new_link.area2,
+            parameters=LinkCreation.from_link(new_link),
             command_context=self._command_context,
             study_version=study.version,
         )
 
         study.add_commands([command])
 
-        return link_creation_dto
+        return new_link
 
     def _create_update_link_command(
-        self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO
-    ) -> tuple[UpdateLink, LinkInternal]:
-        link_dto = LinkDTO(area1=area_from, area2=area_to, **link_update_dto.model_dump(exclude_unset=True))
-
-        file_study = study.get_files()
-        link = link_dto.to_internal(study.version)
-
-        self._get_link_if_exists(file_study, link)
+        self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkUpdate
+    ) -> UpdateLink:
+        self.get_link(study, area_from, area_to)
 
         command = UpdateLink(
-            area1=link.area1,
-            area2=link.area2,
-            parameters=link.model_dump(
-                include=link_update_dto.model_fields_set, exclude={"area1", "area2"}, exclude_none=True
-            ),
+            area1=area_from,
+            area2=area_to,
+            parameters=link_update_dto,
             command_context=self._command_context,
             study_version=study.version,
         )
-        return command, link
+        return command
 
-    def update_link(self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkBaseDTO) -> LinkDTO:
-        command, link = self._create_update_link_command(study, area_from, area_to, link_update_dto)
+    def update_link(self, study: StudyInterface, area_from: str, area_to: str, link_update_dto: LinkUpdate) -> Link:
+        command = self._create_update_link_command(study, area_from, area_to, link_update_dto)
 
         study.add_commands([command])
-
-        updated_link = self.get_link(study, link)
-
-        return updated_link.to_dto()
+        return self.get_link(study, area_from, area_to)
 
     def update_links(
         self,
         study: StudyInterface,
-        update_links_by_ids: Mapping[Tuple[str, str], LinkBaseDTO],
-    ) -> Mapping[Tuple[str, str], LinkDTO]:
+        update_links_by_ids: Mapping[Tuple[str, str], LinkUpdate],
+    ) -> Mapping[Tuple[str, str], Link]:
         # Build all commands
         commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():
-            command = self._create_update_link_command(study, area1, area2, update_link_dto)[0]
+            command = self._create_update_link_command(study, area1, area2, update_link_dto)
             commands.append(command)
 
         study.add_commands(commands)
@@ -134,12 +98,6 @@ class LinkManager:
         )
         study.add_commands([command])
 
-    def _get_link_if_exists(self, file_study: FileStudy, link: LinkInternal) -> dict[str, Any]:
-        try:
-            return file_study.tree.get(["input", "links", link.area1, "properties", link.area2])
-        except KeyError:
-            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
-
     @staticmethod
     def get_table_schema() -> JSON:
-        return LinkBaseDTO.model_json_schema()
+        return LinkUpdate.model_json_schema()

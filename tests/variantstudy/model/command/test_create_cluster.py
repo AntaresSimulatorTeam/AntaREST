@@ -54,7 +54,6 @@ class TestCreateCluster:
         prepro_id = command_context.matrix_service.create(pd.DataFrame(prepro))
         modulation_id = command_context.matrix_service.create(pd.DataFrame(modulation))
         assert cl.area_id == "foo"
-        assert cl.cluster_name == "Cluster1"
         assert cl.parameters == ThermalClusterCreation(
             name="Cluster1", group=ThermalClusterGroup.NUCLEAR, unit_count=2, nominal_capacity=2400
         )
@@ -152,13 +151,14 @@ class TestCreateCluster:
         ).apply(empty_study)
         assert output.status is False
         assert re.match(
-            r"Thermal cluster 'cluster-1' already exists in the area 'de'",
+            r"Thermal cluster 'Cluster-1' already exists in the area 'de'",
             output.message,
             flags=re.IGNORECASE,
         )
 
+        fake_area_id = "non_existent_area"
         output = CreateCluster(
-            area_id="non_existent_area",
+            area_id=fake_area_id,
             parameters=parameters,
             prepro=prepro,
             modulation=modulation,
@@ -166,11 +166,7 @@ class TestCreateCluster:
             study_version=STUDY_VERSION_8_8,
         ).apply(empty_study)
         assert output.status is False
-        assert re.match(
-            r"Area 'non_existent_area' does not exist",
-            output.message,
-            flags=re.IGNORECASE,
-        )
+        assert f"The area '{fake_area_id}' does not exist" in output.message
 
     def test_to_dto(self, command_context: CommandContext):
         prepro = GEN.random((365, 6)).tolist()

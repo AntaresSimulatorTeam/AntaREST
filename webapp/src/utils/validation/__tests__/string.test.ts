@@ -34,7 +34,7 @@ describe("validateString", () => {
 
   test("should return an error for an empty string", () => {
     expect(validateString("")).toBe("form.field.required");
-    expect(validateString("   ")).toBe("form.field.required");
+    expect(validateString("   ")).toBe("form.field.invalidValue");
   });
 
   test("should handle length restrictions", () => {
@@ -63,7 +63,19 @@ describe("validateString", () => {
         allowSpecialChars: true,
         specialChars: "!@#",
       }),
-    ).toBe('form.field.specialChars: {"0":"!@#"}');
+    ).toBe('form.field.specialCharsAllowedList: {"chars":"!@#"}');
+    expect(
+      validateString("abc123!@#", {
+        allowSpecialChars: true,
+        specialChars: { chars: "?&", mode: "deny" },
+      }),
+    ).toBe(true);
+    expect(
+      validateString("abc123!@#", {
+        allowSpecialChars: true,
+        specialChars: { chars: "!@#", mode: "deny" },
+      }),
+    ).toBe('form.field.specialCharsNotAllowedList: {"chars":"!@#"}');
   });
 
   test("should handle duplicate checks", () => {

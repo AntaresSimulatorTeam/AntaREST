@@ -32,11 +32,13 @@ storage:
 
 launcher:
   default: local
-
-  local:
-    binaries:
-      800: /antares_simulator/antares-8.2-solver
-    enable_nb_cores_detection: true
+  launchers:
+    - id: local
+      name: my_local
+      type: local
+      binaries:
+        800: /antares_simulator/antares-8.2-solver
+      enable_nb_cores_detection: true
 
 #  slurm:
 #    local_workspace: path/to/workspace

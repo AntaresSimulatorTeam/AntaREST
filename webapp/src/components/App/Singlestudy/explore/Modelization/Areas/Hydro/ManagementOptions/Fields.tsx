@@ -18,8 +18,11 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
+import type { StudyMetadata } from "@/types/types";
+import { useOutletContext } from "react-router-dom";
 
 function Fields() {
+  const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { control, watch } = useFormContextPlus<HydroFormFields>();
   const [reservoirDisabled, waterValuesDisabled, heuristicDisabled, leeWayDisabled] = watch([
     "reservoir",
@@ -27,6 +30,7 @@ function Fields() {
     "useHeuristic",
     "useLeeway",
   ]);
+  const studyVersion = Number(study.version);
 
   return (
     <>
@@ -80,6 +84,14 @@ function Fields() {
           disabled={!reservoirDisabled}
           sx={{ alignSelf: "center" }}
         />
+        {studyVersion >= 920 && (
+          <NumberFE
+            name="overflowSpilledCostDifference"
+            label="Overflow Spilled Cost Difference"
+            control={control}
+            disabled={!reservoirDisabled}
+          />
+        )}
       </Fieldset>
       <Fieldset legend="Water values">
         <SwitchFE name="useWater" label="Use water values" control={control} />

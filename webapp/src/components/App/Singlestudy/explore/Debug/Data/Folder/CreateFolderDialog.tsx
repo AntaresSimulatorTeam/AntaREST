@@ -19,7 +19,9 @@ import Fieldset from "@/components/common/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { createFolder } from "@/services/api/studies/raw";
 import type { StudyMetadata } from "@/types/types";
+import { validateStudyFolder } from "@/utils/studiesUtils";
 import { validatePath } from "@/utils/validation/string";
+import { combineValidators } from "@/utils/validation/utils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -81,7 +83,6 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
       onCancel={onCancel}
       submitButtonText={t("global.create")}
       submitButtonIcon={null}
-      cancelButtonText={t("global.cancel")}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
     >
@@ -93,7 +94,10 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
             name="folder"
             control={control}
             rules={{
-              validate: validatePath({ allowToStartWithSlash: false, allowToEndWithSlash: false }),
+              validate: combineValidators(
+                validatePath({ allowToStartWithSlash: false, allowToEndWithSlash: false }),
+                validateStudyFolder,
+              ),
             }}
           />
           <CheckBoxFE

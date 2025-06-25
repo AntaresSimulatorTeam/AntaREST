@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.model import NonStudyFolderDTO, WorkspaceMetadata
+from antarest.study.model import FolderDTO, WorkspaceMetadata
 
 BAD_REQUEST_STATUS_CODE = 400
 # Status code for directory listing with invalid parameters
@@ -65,9 +65,10 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
     )
     res.raise_for_status()
     directories_res = res.json()
-    directories_res = [NonStudyFolderDTO(**d) for d in directories_res]
+    directories_res = list(sorted([FolderDTO(**d) for d in directories_res], key=lambda f: f.name))
     directorires_expected = [
-        NonStudyFolderDTO(path=Path("folder/trash"), workspace="ext", name="trash", hasChildren=False)
+        FolderDTO(path=Path("folder/studyC"), workspace="ext", name="studyC", hasChildren=False, isStudyFolder=True),
+        FolderDTO(path=Path("folder/trash"), workspace="ext", name="trash", hasChildren=False, isStudyFolder=False),
     ]
     assert directories_res == directorires_expected
 

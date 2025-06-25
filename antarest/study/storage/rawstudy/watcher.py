@@ -21,6 +21,7 @@ from filelock import FileLock
 from typing_extensions import override
 
 from antarest.core.config import Config
+from antarest.core.exceptions import CleanDisabled, ScanDisabled
 from antarest.core.interfaces.service import IService
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -112,7 +113,10 @@ class Watcher(IService):
         while True:
             try:
                 if not self.should_stop:
-                    self.scan()
+                    if not self.config.desktop_mode:
+                        self.scan()
+                    else:
+                        self.clean_desktop_studies()
             except Exception as e:
                 logger.error("Unexpected error when scanning workspaces", exc_info=e)
             sleep(2)
@@ -163,11 +167,12 @@ class Watcher(IService):
         Scan a folder and add studies found to database.
 
         Args:
-            params: user parameters
             workspace: workspace to scan
             path: relative path to folder to scan
             recursive: if true, scan recursively all subfolders otherwise only the first level
         """
+        if self.config.desktop_mode and recursive:
+            raise ScanDisabled("Recursive scan disables when desktop mode is on")
 
         # noinspection PyUnusedLocal
         def scan_task(notifier: ITaskNotifier) -> TaskResult:
@@ -197,6 +202,9 @@ class Watcher(IService):
         Returns:
 
         """
+        if self.config.desktop_mode and recursive:
+            raise ScanDisabled("Recursive scan disables when desktop mode is on")
+
         stopwatch = StopWatch()
         studies: List[StudyFolder] = list()
         directory_path: Optional[Path] = None
@@ -230,5 +238,36 @@ class Watcher(IService):
                 self.study_service.sync_studies_on_disk(studies, directory_path, recursive)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"{directory_path or 'All studies'} synchronized in {x}s"),
+                    since_start=True,
+                )
+
+    def clean_desktop_studies(
+        self,
+    ) -> None:
+        """
+        Removes studies from the database that no longer exist on disk in desktop mode.
+
+        This method is intended for use in desktop mode only. It does not perform a full
+        recursive scan of the filesystem. Instead, it checks previously scanned studies
+        and deletes those that are no longer present on disk.
+
+        The operation is protected by a file lock to prevent concurrent access, and logs
+        the time taken to complete the cleanup.
+
+        Raises:
+            CleanDisabled: If the application is not running in desktop mode.
+        """
+        if not self.config.desktop_mode:
+            raise CleanDisabled("Clean is disabled when desktop mode is off")
+
+        stopwatch = StopWatch()
+
+        with db():
+            logger.info("Waiting for FileLock to delete missing studies")
+            with FileLock(Watcher.SCAN_LOCK):
+                logger.info("FileLock acquired to delete missing studies")
+                self.study_service.delete_missing_studies()
+                stopwatch.log_elapsed(
+                    lambda x: logger.info(f"deleted missing studies in {x}s"),
                     since_start=True,
                 )

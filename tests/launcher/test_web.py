@@ -40,6 +40,7 @@ def create_app(service: Mock) -> FastAPI:
         build_ctxt,
         study_service=Mock(),
         output_service=Mock(),
+        login_service=Mock(),
         file_transfer_manager=Mock(),
         task_service=Mock(),
         service_launcher=service,
@@ -144,21 +145,9 @@ def test_get_solver_versions() -> None:
 @pytest.mark.parametrize(
     "solver, status_code, expected",
     [
-        pytest.param(
-            "",
-            http.HTTPStatus.UNPROCESSABLE_ENTITY,
-            "Input should be 'slurm', 'local' or 'default'",
-            id="empty",
-        ),
         pytest.param("default", http.HTTPStatus.OK, ["1", "2", "3"], id="default"),
         pytest.param("slurm", http.HTTPStatus.OK, ["1", "2", "3"], id="slurm"),
         pytest.param("local", http.HTTPStatus.OK, ["1", "2", "3"], id="local"),
-        pytest.param(
-            "remote",
-            http.HTTPStatus.UNPROCESSABLE_ENTITY,
-            "Input should be 'slurm', 'local' or 'default'",
-            id="remote",
-        ),
     ],
 )
 def test_get_solver_versions__with_query_string(

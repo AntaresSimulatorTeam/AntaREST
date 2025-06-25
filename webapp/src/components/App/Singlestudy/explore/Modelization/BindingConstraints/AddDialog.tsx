@@ -12,23 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { useMemo } from "react";
+import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import FormDialog from "../../../../../common/dialogs/FormDialog";
-import { BindingConstraintOperator, TimeStep } from "../../../Commands/Edition/commandTypes";
-import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
-import { OPERATORS, TIME_STEPS, type BindingConstraint } from "./BindingConstView/utils";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
+import type { StudyMetadata } from "../../../../../../types/types";
+import FormDialog from "../../../../../common/dialogs/FormDialog";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
-import type { StudyMetadata } from "../../../../../../types/types";
-import { setCurrentBindingConst } from "../../../../../../redux/ducks/studySyntheses";
-import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
-import { useOutletContext } from "react-router";
-import { validateString } from "@/utils/validation/string";
+import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import {
+  BindingConstraintOperator,
+  TimeStep,
+} from "../../../CommandsDrawer/EditionView/commandTypes";
+import { OPERATORS, TIME_STEPS, type BindingConstraint } from "./BindingConstView/utils";
 
 interface Props {
   open: boolean;
@@ -47,7 +50,7 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
 
   const defaultValues = {
     name: "",
-    group: studyVersion >= 870 ? "default" : "",
+    group: studyVersion >= 870 ? "default" : undefined,
     enabled: true,
     timeStep: TimeStep.HOURLY,
     operator: BindingConstraintOperator.LESS,
@@ -155,11 +158,14 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
               label={t("global.group")}
               control={control}
               rules={{
-                validate: (v) =>
-                  validateString(v, {
-                    maxLength: 20,
-                    specialChars: "-",
-                  }),
+                validate: (v) => {
+                  if (typeof v === "string") {
+                    return validateString(v, {
+                      maxLength: 20,
+                      specialChars: "-",
+                    });
+                  }
+                },
               }}
             />
           )}

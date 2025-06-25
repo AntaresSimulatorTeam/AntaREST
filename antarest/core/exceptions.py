@@ -728,6 +728,24 @@ class WorkspaceNotFound(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
+class ScanDisabled(HTTPException):
+    """
+    This will be raised when we try to run a scan when we shouldn't
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+
+class CleanDisabled(HTTPException):
+    """
+    This will be raised when we try to run a clean when we shouldn't
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+
 class BadArchiveContent(Exception):
     """
     Exception raised when the archive file is corrupted (or unknown).
@@ -805,3 +823,9 @@ class FileAlreadyExistsError(HTTPException):
 class IncorrectArgumentsForCopy(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class StudyImportFailed(HTTPException):
+    def __init__(self, study_name: str, reason: str) -> None:
+        message = f"Study '{study_name}' could not be imported: {reason}"
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

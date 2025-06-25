@@ -76,7 +76,7 @@ class IStudyStorage(ABC):
     def copy(
         self,
         src_meta: Study,
-        dest_name: str,
+        dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
         output_ids: List[str],

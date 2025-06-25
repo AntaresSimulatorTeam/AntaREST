@@ -19,6 +19,7 @@ from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, call
 
+import numpy as np
 import pytest
 from fastapi import FastAPI
 from markupsafe import Markup
@@ -205,7 +206,7 @@ def test_copy_study(tmp_path: Path) -> None:
 
     client = create_test_client(storage_service)
 
-    result = client.post(f"/v1/studies/{UUID}/copy?dest=study-copied")
+    result = client.post(f"/v1/studies/{UUID}/copy?study_name=study-copied")
 
     storage_service.copy_study.assert_called_with(
         src_uuid=UUID,
@@ -400,7 +401,7 @@ def test_output_download(tmp_path: Path) -> None:
                         TimeSerie(
                             name="H. VAL",
                             unit="Euro/MWh",
-                            data=[0.5, 0.6, 0.7],
+                            data=np.array([0.5, 0.6, 0.7]),
                         )
                     ]
                 },

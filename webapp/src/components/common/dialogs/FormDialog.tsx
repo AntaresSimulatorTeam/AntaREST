@@ -108,7 +108,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
       actions={
         <>
           <Button onClick={onCancel} disabled={isSubmitting}>
-            {cancelButtonText || t("global.close")}
+            {cancelButtonText || t("global.cancel")}
           </Button>
           {!autoSubmit && (
             <Button

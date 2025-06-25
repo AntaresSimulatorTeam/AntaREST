@@ -23,16 +23,16 @@ from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
-from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintInput
+from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.area_model import AreaOutput
-from antarest.study.business.model.link_model import LinkBaseDTO
+from antarest.study.business.model.binding_constraint_model import BindingConstraintUpdate
+from antarest.study.business.model.link_model import LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate, RenewableClusterUpdates
 from antarest.study.business.model.sts_model import STStorageUpdate, STStorageUpdates
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate, ThermalClusterUpdates
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_2
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -106,11 +106,7 @@ class TableModeManager:
             data = {area_id: area.model_dump(mode="json", by_alias=True) for area_id, area in areas_map.items()}
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links(study)
-            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
-            data = {
-                f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True, exclude=excludes)
-                for link in links_map
-            }
+            data = {f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True) for link in links_map}
         elif table_type == TableModeType.THERMAL:
             thermals_by_areas = self._thermal_manager.get_all_thermals_props(study)
             data = {
@@ -202,11 +198,10 @@ class TableModeManager:
             data = {area_id: area.model_dump(by_alias=True, exclude_none=True) for area_id, area in areas_map.items()}
             return data
         elif table_type == TableModeType.LINK:
-            links_map = {tuple(key.split(" / ")): LinkBaseDTO(**values) for key, values in data.items()}
+            links_map = {tuple(key.split(" / ")): LinkUpdate(**values) for key, values in data.items()}
             updated_map = self._link_manager.update_links(study, links_map)  # type: ignore
-            excludes = set() if study.version >= STUDY_VERSION_8_2 else {"filter_synthesis", "filter_year_by_year"}
             data = {
-                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude=excludes)
+                f"{area1_id} / {area2_id}": link.model_dump(by_alias=True, exclude_none=True)
                 for (area1_id, area2_id), link in updated_map.items()
             }
             return data
@@ -218,7 +213,9 @@ class TableModeManager:
                 thermals_by_areas[area_id][cluster_id] = ThermalClusterUpdate(**values)
             thermals_map = self._thermal_manager.update_thermals_props(study, thermals_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(
+                    by_alias=True, exclude={"id", "name"}, exclude_none=True
+                )
                 for area_id, thermals_by_ids in thermals_map.items()
                 for cluster_id, cluster in thermals_by_ids.items()
             }
@@ -231,7 +228,9 @@ class TableModeManager:
                 renewables_by_areas[area_id][cluster_id] = RenewableClusterUpdate(**values)
             renewables_map = self._renewable_manager.update_renewables_props(study, renewables_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(
+                    by_alias=True, exclude={"id", "name"}, exclude_none=True
+                )
                 for area_id, renewables_by_ids in renewables_map.items()
                 for cluster_id, cluster in renewables_by_ids.items()
             }
@@ -244,16 +243,19 @@ class TableModeManager:
                 storages_by_areas[area_id][cluster_id] = STStorageUpdate(**values)
             storages_map = self._st_storage_manager.update_storages_props(study, storages_by_areas)
             data = {
-                f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
+                f"{area_id} / {cluster_id}": cluster.model_dump(
+                    by_alias=True, exclude={"id", "name"}, exclude_none=True
+                )
                 for area_id, storages_by_ids in storages_map.items()
                 for cluster_id, cluster in storages_by_ids.items()
             }
             return data
         elif table_type == TableModeType.BINDING_CONSTRAINT:
-            bcs_by_ids = {key: ConstraintInput(**values) for key, values in data.items()}
+            bcs_by_ids = {key: BindingConstraintUpdate(**values) for key, values in data.items()}
             bcs_map = self._binding_constraint_manager.update_binding_constraints(study, bcs_by_ids)
             return {
-                bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}) for bc_id, bc in bcs_map.items()
+                bc_id: bc.model_dump(by_alias=True, exclude={"id", "name", "terms"}, exclude_none=True)
+                for bc_id, bc in bcs_map.items()
             }
         else:  # pragma: no cover
             raise NotImplementedError(f"Table type {table_type} not implemented")

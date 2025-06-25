@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import Any, Dict, List, MutableMapping, Optional, Set
+from typing import Any, Dict, List, MutableMapping, Optional
 
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
@@ -20,17 +20,13 @@ from typing_extensions import override
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import StudyVersionInt
-
-from .binding_constraint import (
-    DEFAULT_GROUP,
-    DEFAULT_OPERATOR,
-    DEFAULT_TIMESTEP,
-    BindingConstraintFrequency,
-    BindingConstraintOperator,
+from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
 )
-from .renewable import RenewableConfigType
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.model import STUDY_VERSION_8_7, StudyVersionInt
+
 from .st_storage import STStorageConfigType
 from .validation import extract_filtering, study_version_context
 
@@ -53,14 +49,12 @@ class EnrModelling(EnumIgnoreCase):
         return self.value
 
 
-class Link(AntaresBaseModel, extra="ignore"):
+class LinkConfig(AntaresBaseModel, extra="ignore"):
     """
     Object linked to /input/links/<link>/properties.ini information
-
     Attributes:
         filters_synthesis: list of filters for synthesis data
         filters_year: list of filters for year-by-year data
-
     Notes:
         Ignore extra fields, because we only need `filter-synthesis` and `filter-year-by-year`.
     """
@@ -84,9 +78,9 @@ class Area(AntaresBaseModel, extra="forbid"):
     """
 
     name: str
-    links: Dict[str, Link]
+    links: Dict[str, LinkConfig]
     thermals: List[ThermalCluster]
-    renewables: List[RenewableConfigType]
+    renewables: List[RenewableCluster]
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
@@ -113,6 +107,37 @@ class DistrictSet(AntaresBaseModel):
         return sorted(areas)
 
 
+class Mode(EnumIgnoreCase):
+    """
+    Simulation mode of an Antares study.
+    """
+
+    ECONOMY = "Economy"
+    ADEQUACY = "Adequacy"
+    EXPANSION = "Expansion"
+
+    def get_output_suffix(self) -> str:
+        if self == Mode.ECONOMY:
+            return "eco"
+        elif self == Mode.ADEQUACY:
+            return "adq"
+        elif self == Mode.EXPANSION:
+            return "exp"
+        else:
+            raise ValueError(f"Unknown mode: {self}")
+
+    @staticmethod
+    def from_output_suffix(suffix: str) -> "Mode":
+        if suffix == "eco":
+            return Mode.ECONOMY
+        elif suffix == "adq":
+            return Mode.ADEQUACY
+        elif suffix == "exp":
+            return Mode.EXPANSION
+        else:
+            raise ValueError(f"Unknown suffix: {suffix}")
+
+
 class Simulation(AntaresBaseModel):
     """
     Object linked to /output/<simulation_name>/about-the-study/** information
@@ -120,7 +145,7 @@ class Simulation(AntaresBaseModel):
 
     name: str
     date: str
-    mode: str
+    mode: Mode
     nbyears: int
     synthesis: bool
     by_year: bool
@@ -130,31 +155,8 @@ class Simulation(AntaresBaseModel):
     xpansion: str
 
     def get_file(self) -> str:
-        modes = {"economy": "eco", "adequacy": "adq", "draft": "dft"}
         dash = "-" if self.name else ""
-        return f"{self.date}{modes[self.mode]}{dash}{self.name}"
-
-
-class BindingConstraintDTO(AntaresBaseModel):
-    """
-    Object linked to `input/bindingconstraints/bindingconstraints.ini` information
-
-    Attributes:
-        id: The ID of the binding constraint.
-        areas: List of area IDs on which the BC applies (links or clusters).
-        clusters: List of thermal cluster IDs on which the BC applies (format: "area.cluster").
-        time_step: The time_step of the BC
-        operator: The operator of the BC
-        group: The group for the scenario of BC (optional, required since v8.7).
-    """
-
-    id: str
-    areas: Set[str]
-    clusters: Set[str]
-    time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
-    operator: BindingConstraintOperator = DEFAULT_OPERATOR
-    # since v8.7
-    group: str = DEFAULT_GROUP
+        return f"{self.date}{self.mode.get_output_suffix()}{dash}{self.name}"
 
 
 class FileStudyTreeConfig(DTO):
@@ -172,7 +174,7 @@ class FileStudyTreeConfig(DTO):
         areas: Optional[Dict[str, Area]] = None,
         sets: Optional[Dict[str, DistrictSet]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
-        bindings: Optional[List[BindingConstraintDTO]] = None,
+        bindings: Optional[List[BindingConstraint]] = None,
         store_new_set: bool = False,
         archive_input_series: Optional[List[str]] = None,
         enr_modelling: str = str(EnrModelling.AGGREGATED),
@@ -262,22 +264,10 @@ class FileStudyTreeConfig(DTO):
         sorted alphabetically (case-insensitive).
         Note that groups are stored in lower case in the binding constraints file.
         """
-        lower_groups = {bc.group.lower(): bc.group for bc in self.bindings}
-        return [grp for _, grp in sorted(lower_groups.items())]
-
-    def get_filters_synthesis(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_synthesis
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_synthesis
-        return self.areas[area].filters_synthesis
-
-    def get_filters_year(self, area: str, link: Optional[str] = None) -> List[str]:
-        if link:
-            return self.areas[area].links[link].filters_year
-        if area in self.sets and self.sets[area].output:
-            return self.sets[area].filters_year
-        return self.areas[area].filters_year
+        if self.version < STUDY_VERSION_8_7:
+            return []
+        lower_groups = {bc.group: bc.group for bc in self.bindings}
+        return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):
@@ -289,7 +279,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     areas: Dict[str, Area] = dict()
     sets: Dict[str, DistrictSet] = dict()
     outputs: Dict[str, Simulation] = dict()
-    bindings: List[BindingConstraintDTO] = list()
+    bindings: List[BindingConstraint] = list()
     store_new_set: bool = False
     archive_input_series: List[str] = list()
     enr_modelling: str = str(EnrModelling.AGGREGATED)

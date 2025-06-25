@@ -144,8 +144,8 @@ class CoreServices:
 def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) -> CoreServices:
     event_bus, redis_client = create_event_bus(app_ctxt, config)
     cache = build_cache(config=config, redis_client=redis_client)
-    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
     task_service = build_taskjob_manager(app_ctxt, config, event_bus)
+    filetransfer_service = build_filetransfer_service(app_ctxt, event_bus, config)
     login_service = build_login(app_ctxt, config, event_bus=event_bus)
     matrix_service = build_matrix_service(
         app_ctxt,
@@ -279,6 +279,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
         config,
         study_service=core_services.study_service,
         output_service=core_services.output_service,
+        login_service=core_services.login_service,
         event_bus=core_services.event_bus,
         task_service=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,

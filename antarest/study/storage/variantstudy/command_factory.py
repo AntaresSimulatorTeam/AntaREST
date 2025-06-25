@@ -40,7 +40,6 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
-from antarest.study.storage.variantstudy.model.command.remove_binding_constraint import RemoveBindingConstraint
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
@@ -90,7 +89,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_BINDING_CONSTRAINT.value: CreateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINT.value: UpdateBindingConstraint,
     CommandName.UPDATE_BINDING_CONSTRAINTS.value: UpdateBindingConstraints,
-    CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveBindingConstraint,
+    CommandName.REMOVE_BINDING_CONSTRAINT.value: RemoveMultipleBindingConstraints,
     CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS.value: RemoveMultipleBindingConstraints,
     CommandName.CREATE_THERMAL_CLUSTER.value: CreateCluster,
     CommandName.REMOVE_THERMAL_CLUSTER.value: RemoveCluster,
@@ -178,12 +177,9 @@ class CommandFactory:
         """
         args = command_dto.args
         if isinstance(args, dict):
-            # In some cases, pydantic can modify inplace the given args.
-            # We don't want that so before doing so we copy the dictionary.
-            new_args = copy.deepcopy(args)
             return [
                 self._to_single_command(
-                    command_dto.action, new_args, command_dto.version, command_dto.study_version, command_dto.id
+                    command_dto.action, args, command_dto.version, command_dto.study_version, command_dto.id
                 )
             ]
         elif isinstance(args, list):
