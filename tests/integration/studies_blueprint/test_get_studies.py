@@ -872,7 +872,8 @@ class TestStudiesListing:
         ##########################
         # 1. Database initialization
         ##########################
-
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         users = {"user_1": "pass_1", "user_2": "pass_2", "user_3": "pass_3"}
         users_tokens = {}
         users_ids = {}

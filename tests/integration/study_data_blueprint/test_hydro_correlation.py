@@ -272,6 +272,8 @@ class TestHydroCorrelation:
         Other columns must be updated to reflect the area deletion.
         """
         # First change the coefficients to avoid zero values (which are defaults).
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         correlation_cfg = {
             "annual": {
                 "de%es": 0.12,
@@ -319,6 +321,8 @@ class TestHydroCorrelation:
     def test_get_correlation_values__empty_annual(
         self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path
     ):
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         area_id = "it"
 
         correlation_file_path = tmp_path.joinpath("ext_workspace/STA-mini/input/hydro/prepro/correlation.ini")

@@ -51,6 +51,8 @@ def _create_link(
 
 
 def test_xpansion_with_upgrade(client: TestClient, tmp_path: Path, user_access_token: str) -> None:
+    if pytest.FAST_MODE:
+        pytest.skip("Skipping test")
     headers = {"Authorization": f"Bearer {user_access_token}"}
     client.headers = headers
 

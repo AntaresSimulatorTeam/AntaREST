@@ -643,6 +643,8 @@ class TestRawDataAggregationMCInd:
         """
         Asserts that requests get an empty dataframe when columns are not existing
         """
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # test for areas
@@ -816,6 +818,8 @@ class TestRawDataAggregationMCAll:
         Imports the STA-mini study and create a variant from it. Then imports the parent output inside it
         Then asserts the aggregation endpoint works the same for parent and variant
         """
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Imports STA-mini
@@ -943,6 +947,8 @@ class TestRawDataAggregationMCAll:
         """
         Asserts that requests get an empty dataframe when columns are not existing
         """
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
 
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 

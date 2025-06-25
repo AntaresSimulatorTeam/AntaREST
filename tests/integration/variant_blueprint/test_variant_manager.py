@@ -319,6 +319,9 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
 
 
 def test_recursive_variant_tree(client: TestClient, admin_access_token: str, base_study_id: str) -> None:
+    if pytest.FAST_MODE:
+        pytest.skip("Skipping test")
+
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
     parent_id = base_study_id
     for k in range(200):

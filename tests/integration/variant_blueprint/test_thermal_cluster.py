@@ -57,6 +57,8 @@ class TestThermalCluster:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         """
         This test is based on the study "STA-mini.zip", which is a RAW study.
         We will first convert this study to a managed study, and then we will

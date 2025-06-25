@@ -86,6 +86,9 @@ class TestFetchRawData:
         5. Checks for a 415 error when the extension of a file is unknown.
         """
 
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
+
         # =============================
         #  SET UP
         # =============================
@@ -323,6 +326,8 @@ class TestFetchRawData:
         # =============================
         #  SET UP
         # =============================
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         if study_type == "variant":

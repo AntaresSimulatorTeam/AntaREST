@@ -222,6 +222,8 @@ class TestHydroAllocation:
         Other columns must be updated to reflect the area deletion.
         """
         # First change the coefficients to avoid zero values (which are defaults).
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         obj = {
             "de": {"[allocation]": {"de": 10, "es": 20, "fr": 30, "it": 40}},
             "es": {"[allocation]": {"de": 11, "es": 21, "fr": 31, "it": 41}},

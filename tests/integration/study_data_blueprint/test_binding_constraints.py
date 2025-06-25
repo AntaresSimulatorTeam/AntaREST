@@ -660,6 +660,8 @@ class TestBindingConstraints:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str, tmp_path: Path) -> None:
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         # =============================

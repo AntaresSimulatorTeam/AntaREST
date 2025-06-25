@@ -14,6 +14,7 @@ import io
 import time
 from xml.etree import ElementTree
 
+import pytest
 from starlette.testclient import TestClient
 
 from tests.integration.studies_blueprint.assets import ASSETS_DIR
@@ -38,6 +39,8 @@ class TestStudyComments:
         This test verifies that we can retrieve and modify the comments of a study.
         It also performs performance measurements and analyzes.
         """
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
         # Get the comments of the study and compare with the expected file
         res = client.get(f"/v1/studies/{internal_study_id}/comments")

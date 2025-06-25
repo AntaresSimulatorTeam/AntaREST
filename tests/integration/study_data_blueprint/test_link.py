@@ -21,6 +21,8 @@ from tests.integration.prepare_proxy import PreparerProxy
 class TestLink:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_update(self, client: TestClient, user_access_token: str, study_type: str) -> None:
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
 
         preparer = PreparerProxy(client, user_access_token)

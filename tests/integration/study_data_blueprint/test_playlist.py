@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import pytest
 from starlette.testclient import TestClient
 
 
@@ -19,6 +19,8 @@ class TestConfigPlaylist:
     """
 
     def test_nominal_case(self, client: TestClient, user_access_token: str):
+        if pytest.FAST_MODE:
+            pytest.skip("Skipping test")
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         base_study_res = client.post("/v1/studies?name=foo")
