@@ -14,18 +14,18 @@ v2.22.0 (2025-06-25)
 * **ui-study,ui-studies**: uniformize context menu [`2496`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2496)
 * **ui-study**: add copy dialog and rename action in context menu [`2514`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2514)
 * **ui-study**: add destination folder in copy dialog [`2516`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2516)
-* **output**: result aggregation as a task [`2485`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2485)
+* **output**: result aggregation as a task [`2485`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2485) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
 * **ui-study**: add outputs list in copy dialog [`2518`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2518)
 * **ui-debug**: move the save button on menu bar in JSON view [`2520`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2520)
 * **ui-debug**: update style of JSON view [`2521`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2521)
-* **version**: support Simulator version 9.2 [`2428`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2428)
+* **version**: support Simulator version 9.2 [`2428`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2428) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
 * **study-tree,ui-study-tree**: preview studies not scanned yet [`2524`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2524)
 * **sts**: handle additional constraints files inside the tree [`2533`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2533)
 * **ui-studies**: update name and folder fields validation [`2534`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2534)
 
 ### Bug fixes
 
-* **study**: rename variable for study copy [`2486`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2486)
+* **study**: rename variable for study copy [`2486`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2486) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
 * **launcher**: fix local launcher unit test [`2498`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2498)
 * **bc**: allow updates for bc with a name as an integer [`2497`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2497)
 * **ui-studies**: minor workspaces related fixes [`2499`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2499)
@@ -52,17 +52,10 @@ v2.22.0 (2025-06-25)
 ### Refactorings
 
 * **links**: introduce a DAO layer and improve classes design [`2454`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2454)
-* **thermal**: introduce the DAO layer for thermal clusters [`2502`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2502)
+* **thermal**: introduce the DAO layer for thermal clusters [`2502`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2502) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
 * **ui-tokens**: optimize the view [`2508`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2508)
 * **renewable**: introduce the DAO layer and improve classes design [`2509`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2509)
 * **bc**: introduce the DAO layer and improve classes design [`2523`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2523)
-
-### BREAKING CHANGES 
-
-* **study**: rename variable for study copy [`2486`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2486)
-* **thermal**: introduce the DAO layer for thermal clusters [`2502`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2502)
-* **output**: result aggregation as a task [`2485`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2485)
-* **version**: support Simulator version 9.2 [`2428`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2428)
 
 **Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.21.0...v2.22.0
 
