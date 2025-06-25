@@ -64,7 +64,7 @@ v2.22.0 (2025-06-25)
 * **output**: result aggregation as a task [`2485`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2485)
 * **version**: support Simulator version 9.2 [`2428`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2428)
 
-**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.21.0...v2.20.0
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.21.0...v2.22.0
 
 v2.21.0 (2025-05-26)
 --------------------
