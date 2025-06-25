@@ -492,6 +492,8 @@ def test_sta_mini_copy(storage_service) -> None:
     source_study_name = UUID
     destination_study_name = "copy-STA-mini"
 
+    storage_service.job_result_repository.find_by_study_and_output_ids.return_value = []
+
     client = create_test_client(storage_service)
     result = client.post(f"/v1/studies/{source_study_name}/copy?study_name={destination_study_name}&use_task=false")
 
