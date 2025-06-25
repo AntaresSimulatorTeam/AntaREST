@@ -87,13 +87,6 @@ function JobsListing() {
   const dispatch = useAppDispatch();
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
 
-  const getUser = (userId: number | undefined) => {
-    if (!userId || !usersByID || !usersByID[userId]) {
-      return "";
-    }
-    return usersByID?.userId?.name || "";
-  };
-
   useMount(() => {
     dispatch(resetTaskNotifications());
   });
@@ -466,7 +459,7 @@ function JobsListing() {
         date: task.completion_date_utc || task.creation_date_utc,
         type: task.type || "UNKNOWN",
         status: task.status === TaskStatus.Running ? "running" : "",
-        userName: getUser(task.owner),
+        userName: (task.owner && usersByID[task.owner]?.name) || "",
       })),
     [tasks],
   );
