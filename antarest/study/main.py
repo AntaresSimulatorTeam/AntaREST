@@ -18,6 +18,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
+from antarest.launcher.repository import JobResultRepository
 from antarest.login.service import LoginService
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -49,6 +50,7 @@ def build_study_service(
     task_service: ITaskService,
     metadata_repository: Optional[StudyMetadataRepository] = None,
     variant_repository: Optional[VariantStudyRepository] = None,
+    job_result_repository: Optional[JobResultRepository] = None,
     study_service: Optional[StudyService] = None,
     output_service: Optional[OutputService] = None,
     generator_matrix_constants: Optional[GeneratorMatrixConstants] = None,
@@ -80,6 +82,7 @@ def build_study_service(
     study_factory = StudyFactory(matrix_mapper_factory=mapper_factory, cache=cache)
     metadata_repository = metadata_repository or StudyMetadataRepository(cache)
     variant_repository = variant_repository or VariantStudyRepository(cache)
+    job_result_repository = job_result_repository or JobResultRepository()
 
     raw_study_service = RawStudyService(
         config=config,
@@ -111,6 +114,7 @@ def build_study_service(
         command_context=command_factory.command_context,
         user_service=user_service,
         repository=metadata_repository,
+        job_result_repository=job_result_repository,
         event_bus=event_bus,
         file_transfer_manager=file_transfer_manager,
         task_service=task_service,
