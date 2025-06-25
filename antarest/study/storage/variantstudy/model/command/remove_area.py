@@ -16,14 +16,12 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_2, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    remove_area_cluster_from_binding_constraints,
-)
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -64,8 +62,6 @@ class RemoveArea(ICommand):
 
         self._remove_area_from_links_in_config(study_data_config)
         self._remove_area_from_sets_in_config(study_data_config)
-
-        remove_area_cluster_from_binding_constraints(study_data_config, self.id)
 
     def _remove_area_from_links(self, study_data: FileStudy) -> None:
         for area_name, area in study_data.config.areas.items():
@@ -166,6 +162,21 @@ class RemoveArea(ICommand):
     # noinspection SpellCheckingInspection
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        # Checks that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in study_data.config.bindings:
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == self.id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == self.id or data.area2 == self.id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(self.id, binding_ids, object_type="Area")
+
+        # Delete files
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])

@@ -16,7 +16,6 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
-from antarest.study.business.model.binding_constraint_model import ClusterTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -183,7 +182,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
-        return self._remove_from_config(study_data.config, area_id, thermal)
+        study_data.config.areas[area_id].thermals.remove(thermal)
 
     @staticmethod
     def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
@@ -222,20 +221,3 @@ class FileStudyThermalDao(ThermalDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
-
-    @staticmethod
-    def _remove_from_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
-        study_data.areas[area_id].thermals.remove(thermal)
-
-        # Also removes thermal cluster from constraint terms
-        # Cluster IDs are stored in lower case in the binding constraints file.
-        thermal_id = thermal.id.lower()
-        bindings_to_remove = []
-        for bc in study_data.bindings:
-            for term in bc.terms:
-                term_data = term.data
-                if isinstance(term_data, ClusterTerm) and term_data.cluster == thermal_id:
-                    bindings_to_remove.append(bc)
-                    break
-        for bc in bindings_to_remove:
-            study_data.bindings.remove(bc)
