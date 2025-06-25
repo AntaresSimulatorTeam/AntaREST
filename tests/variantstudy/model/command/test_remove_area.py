@@ -247,6 +247,7 @@ class TestRemoveArea:
             remove_area_command: ICommand = RemoveArea(
                 id=area_id2, command_context=command_context, study_version=study_version
             )
+            # Ensures the command fails cause the area is referenced in a constraint term
             output = remove_area_command.apply(study_data=empty_study)
             assert not output.status
             assert (
