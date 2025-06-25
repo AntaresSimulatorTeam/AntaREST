@@ -44,10 +44,12 @@ def test_reading(tmp_path: Path):
     with open(log2, "a") as fh:
         fh.write("world\n")
 
-    count = 5
-    while count > 0 and len(logs) == 0:
-        count -= 1
-        time.sleep(1)
+    timeout = 0.5
+    interval = 0.01
+    elapsed = 0
+    while elapsed < timeout and len(logs) == 0:
+        time.sleep(interval)
+        elapsed += interval
 
     assert len(logs) > 0
 
@@ -57,8 +59,10 @@ def test_reading(tmp_path: Path):
     with open(log1, "a") as fh:
         fh.write("world\n")
 
-    count = 2
-    while count > 0:
-        count -= 1
-        time.sleep(1)
-    assert len(logs) == 0
+    timeout = 0.5
+    interval = 0.01
+    elapsed = 0
+    while elapsed < timeout:
+        assert len(logs) == 0
+        time.sleep(interval)
+        elapsed += interval
