@@ -67,8 +67,13 @@ class UserCreateDTO(AntaresBaseModel):
 
 
 class GroupDTO(AntaresBaseModel):
-    id: Optional[str] = None
+    id: str
     name: str
+
+
+class GroupCreationDTO(AntaresBaseModel):
+    name: str
+    id: Optional[str] = None
 
 
 class RoleCreationDTO(AntaresBaseModel):

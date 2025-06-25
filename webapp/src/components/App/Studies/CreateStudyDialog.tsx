@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosError } from "axios";
-import debug from "debug";
+import { validateStudyName } from "@/utils/studiesUtils";
+import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import { Button, IconButton } from "@mui/material";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { usePromise } from "react-use";
-import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
+import { useNavigate } from "react-router-dom";
 import { createStudy } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getGroups, getStudyVersionsFormatted } from "../../../redux/selectors";
-import type { StudyPublicMode } from "../../../types/types";
+import type { StudyMetadata, StudyPublicMode } from "../../../types/types";
 import FormDialog from "../../common/dialogs/FormDialog";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import SelectFE from "../../common/fieldEditors/SelectFE";
@@ -31,8 +31,6 @@ import StringFE from "../../common/fieldEditors/StringFE";
 import Fieldset from "../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../common/Form/types";
 import { PUBLIC_MODE_LIST } from "../../common/utils/constants";
-
-const logErr = debug("antares:createstudyform:error");
 
 interface FieldValues {
   name: string;
@@ -47,45 +45,52 @@ interface Props {
   onClose: VoidFunction;
 }
 
-function CreateStudyDialog(props: Props) {
-  const [t] = useTranslation();
-  const { open, onClose } = props;
-  const { enqueueSnackbar } = useSnackbar();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+function CreateStudyDialog({ open, onClose }: Props) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const versionList = useAppSelector(getStudyVersionsFormatted);
   const groupList = useAppSelector(getGroups);
-  const mounted = usePromise();
   const dispatch = useAppDispatch();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async (data: SubmitHandlerPlus<FieldValues>) => {
-    const { name, ...rest } = data.values;
+  const handleSubmit = ({ values: { name, ...rest } }: SubmitHandlerPlus<FieldValues>) => {
+    return dispatch(
+      createStudy({
+        name: name.trim(),
+        ...rest,
+      }),
+    ).unwrap();
+  };
 
-    if (name && name.replace(/\s+/g, "") !== "") {
-      try {
-        await mounted(
-          dispatch(
-            createStudy({
-              name,
-              ...rest,
-            }),
-          ).unwrap(),
-        );
+  const handleSubmitSuccessful = (
+    { values: { name } }: SubmitHandlerPlus<FieldValues>,
+    newStudy: StudyMetadata,
+  ) => {
+    const snackbarId = enqueueSnackbar(t("studies.success.createStudy", { name }), {
+      variant: "success",
+      preventDuplicate: false,
+      action: (
+        <>
+          <Button
+            onClick={() => {
+              navigate(`/studies/${newStudy.id}`);
+              closeSnackbar(snackbarId);
+            }}
+          >
+            {t("button.explore")}
+          </Button>
+          <IconButton onClick={() => closeSnackbar(snackbarId)}>
+            <CloseRoundedIcon />
+          </IconButton>
+        </>
+      ),
+    });
 
-        enqueueSnackbar(t("studies.success.createStudy", { studyname: name }), {
-          variant: "success",
-        });
-      } catch (e) {
-        logErr("Failed to create new study", name, e);
-        enqueueErrorSnackbar(t("studies.error.createStudy", { studyname: name }), e as AxiosError);
-      }
-      onClose();
-    } else {
-      enqueueSnackbar(t("global.error.emptyName"), { variant: "error" });
-    }
+    onClose();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -98,6 +103,7 @@ function CreateStudyDialog(props: Props) {
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={handleSubmitSuccessful}
       config={{
         defaultValues: {
           name: "",
@@ -115,7 +121,7 @@ function CreateStudyDialog(props: Props) {
               label={t("studies.studyName")}
               name="name"
               control={control}
-              rules={{ required: true }}
+              rules={{ validate: validateStudyName }}
             />
             <SelectFE
               label={t("global.version")}
