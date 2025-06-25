@@ -32,6 +32,9 @@ from antarest.study.storage.variantstudy.model.command.create_renewables_cluster
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -244,6 +247,21 @@ class TestRemoveArea:
             remove_area_command: ICommand = RemoveArea(
                 id=area_id2, command_context=command_context, study_version=study_version
             )
+            output = remove_area_command.apply(study_data=empty_study)
+            assert not output.status
+            assert (
+                "Area 'area2' is not allowed to be deleted, because it is referenced in the following binding constraints"
+                in output.message
+            )
+            assert "bd 2" in output.message
+
+            # First remove the constraint
+            output = RemoveMultipleBindingConstraints(
+                id="bd 2", command_context=command_context, study_version=study_version
+            ).apply(study_data=empty_study)
+            assert output.status, output.message
+
+            # Then remove the area
             output = remove_area_command.apply(study_data=empty_study)
             assert output.status, output.message
             assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
