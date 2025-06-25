@@ -18,12 +18,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
-from antarest.study.model import (
-    STUDY_VERSION_6_5,
-    STUDY_VERSION_8_1,
-    STUDY_VERSION_8_2,
-    STUDY_VERSION_8_6
-)
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_2, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
