@@ -69,6 +69,7 @@ interface Props {
 function JobTableView(props: Props) {
   const { content, refresh } = props;
   const [t] = useTranslation();
+  const [orderBy, setOrderBy] = useState<"date" | "user">("date");
   const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [userOrder, setUserOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
@@ -98,10 +99,15 @@ function JobTableView(props: Props) {
     const getUserName = R.compose(R.toLower, R.propOr("userName", ""));
 
     return R.sortWith(
-      [
-        dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
-        userOrder === "asc" ? R.ascend(getUserName) : R.descend(getUserName),
-      ],
+      orderBy === "date"
+        ? [
+            dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
+            userOrder === "asc" ? R.ascend(getUserName) : R.descend(getUserName),
+          ]
+        : [
+            userOrder === "asc" ? R.ascend(getUserName) : R.descend(getUserName),
+            dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
+          ],
       filteredContent,
     );
   }, [content, dateOrder, filterRunningStatus, filterType, filterUser, userOrder]);
@@ -120,10 +126,12 @@ function JobTableView(props: Props) {
 
   const handleRequestDateSort = () => {
     setDateOrder(dateOrder === "asc" ? "desc" : "asc");
+    setOrderBy("date");
   };
 
   const handleRequestUserSort = () => {
     setUserOrder(userOrder === "asc" ? "desc" : "asc");
+    setOrderBy("user");
   };
 
   const handleUserValueFilterChange = (input: string) => {
