@@ -303,3 +303,19 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
     operator: Optional[AdditionalConstraintOperator] = None
     hours: Optional[NpArray] = None
     enabled: Optional[bool] = None
+
+
+def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:
+    """
+    Creates a short-term storage constraint from a creation request
+    """
+    return STStorageAdditionalConstraint.model_validate(cluster_data.model_dump(exclude_none=True))
+
+
+def update_st_storage_constraint(
+    storage: STStorageAdditionalConstraint, data: STStorageAdditionalConstraintUpdate
+) -> STStorageAdditionalConstraint:
+    """
+    Updates a short-term storage constraint according to the provided update data.
+    """
+    return storage.model_copy(update=data.model_dump(exclude_none=True))
