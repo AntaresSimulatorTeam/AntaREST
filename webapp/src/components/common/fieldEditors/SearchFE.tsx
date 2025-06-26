@@ -38,10 +38,10 @@ function SearchFE({
   sx,
   ...rest
 }: SearchFE) {
+  const { t } = useTranslation();
   const [isFieldFilled, setIsFieldFilled] = useState(
     RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue,
   );
-  const { t } = useTranslation();
 
   useUpdateEffect(() => {
     setIsFieldFilled(!!rest.value);
