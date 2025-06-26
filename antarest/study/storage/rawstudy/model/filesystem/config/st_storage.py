@@ -9,14 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import ast
+import copy
 from typing import Any, Optional
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
+from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
+    AdditionalConstraintOperator,
+    AdditionalConstraintVariable,
+    Hours,
     STStorage,
+    STStorageAdditionalConstraint,
     initialize_st_storage,
     validate_st_storage_against_version,
 )
@@ -64,3 +71,50 @@ def parse_st_storage(study_version: StudyVersion, data: Any) -> STStorage:
 def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dict[str, Any]:
     validate_st_storage_against_version(study_version, storage)
     return STStorageFileData.from_model(storage).model_dump(mode="json", by_alias=True, exclude_none=True)
+
+
+##########################
+# Additional constraints part
+##########################
+
+
+class STStorageAdditionalConstraintFileData(AntaresBaseModel):
+    """
+    Short-term storage additional constraint data parsed from INI file.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    cluster: LowerCaseId
+    variable: AdditionalConstraintVariable
+    operator: AdditionalConstraintOperator
+    hours: Hours
+    enabled: bool = True
+
+    def to_ini(self) -> dict[str, Any]:
+        content = self.model_dump(mode="json", exclude={"hours"})
+        content["hours"] = str(self.hours)
+        return content
+
+    @staticmethod
+    def from_ini(data: dict[str, Any]) -> "STStorageAdditionalConstraintFileData":
+        args = copy.deepcopy(data)
+        args["hours"] = list(ast.literal_eval(args["hours"]))
+        return STStorageAdditionalConstraintFileData.model_validate(args)
+
+    def to_model(self) -> STStorageAdditionalConstraint:
+        return STStorageAdditionalConstraint.model_validate(self.model_dump(mode="json"))
+
+    @classmethod
+    def from_model(
+        cls, additional_constraint: STStorageAdditionalConstraint
+    ) -> "STStorageAdditionalConstraintFileData":
+        return cls.model_validate(additional_constraint.model_dump(exclude={"id"}))
+
+
+def parse_st_storage_additional_constraint(data: Any) -> STStorageAdditionalConstraint:
+    return STStorageAdditionalConstraintFileData.from_ini(data).to_model()
+
+
+def serialize_st_storage_additional_constraint(additional_constraint: STStorageAdditionalConstraint) -> dict[str, Any]:
+    return STStorageAdditionalConstraintFileData.from_model(additional_constraint).to_ini()

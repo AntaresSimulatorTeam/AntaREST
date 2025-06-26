@@ -9,12 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Optional, TypeAlias, cast
+from typing import Annotated, Any, Optional, TypeAlias
 
-import numpy as np
-import numpy.typing as npt
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
+from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
@@ -249,15 +247,7 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-def _list_to_np(array: list[int]) -> npt.NDArray[np.int64]:
-    return np.array(array, dtype=np.float64)
-
-
-def _np_to_list(array: npt.NDArray[np.int64]) -> list[int]:
-    return cast(list[int], array.tolist())
-
-
-NpArray: TypeAlias = Annotated[npt.NDArray[np.int64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
+Hours: TypeAlias = list[list[int]]
 
 
 class STStorageAdditionalConstraint(AntaresBaseModel):
@@ -270,7 +260,7 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     cluster: LowerCaseId
     variable: AdditionalConstraintVariable
     operator: AdditionalConstraintOperator
-    hours: NpArray
+    hours: Hours
     enabled: bool = True
 
 
@@ -286,7 +276,7 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     name: ItemName
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
-    hours: Optional[NpArray] = None
+    hours: Optional[Hours] = None
     enabled: Optional[bool] = None
 
 
@@ -301,7 +291,7 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
-    hours: Optional[NpArray] = None
+    hours: Optional[Hours] = None
     enabled: Optional[bool] = None
 
 
