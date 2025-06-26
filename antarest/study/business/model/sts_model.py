@@ -272,3 +272,34 @@ class STStorageAdditionalConstraints(AntaresBaseModel):
     operator: AdditionalConstraintOperator
     hours: NpArray
     enabled: bool = True
+
+
+class STStorageAdditionalConstraintsCreation(AntaresBaseModel):
+    """
+    Represents a creation request for a short-term storage additional constraint.
+
+    Most fields are optional: at creation time, default values of the constraint will be used.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    name: ItemName
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    hours: Optional[NpArray] = None
+    enabled: Optional[bool] = None
+
+
+class STStorageAdditionalConstraintsUpdate(AntaresBaseModel):
+    """
+    Represents an update of a short-term storage additional constraint.
+
+    Only not-None fields will be used to update the constraint.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    hours: Optional[NpArray] = None
+    enabled: Optional[bool] = None
