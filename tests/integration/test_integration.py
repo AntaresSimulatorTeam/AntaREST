@@ -1397,6 +1397,40 @@ def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> Non
     assert copied_areas.json() == client.get(f"/v1/studies/{parent_id}/areas").json()
 
 
+def test_copy_with_jobs(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    raw = client.post("/v1/studies?name=raw")
+    variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
+
+    client.post(
+        f"/v1/studies/{variant.json()}/copy",
+        params={"study_name": "copied", "use_task": False, "output_ids": ["output1"]},  # type: ignore
+    )
+    jobs_src_study = client.get(f"/v1/launcher/jobs?study={variant.json()}")
+    assert jobs_src_study.status_code == 200
+    copied_study = client.get("/v1/studies?name=copied")
+    copied_id = next(iter(copied_study.json()))
+
+    jobs_new_study = client.get(f"/v1/launcher/jobs?study={copied_id}")
+    assert jobs_new_study.status_code == 200
+
+    src_jobs = jobs_src_study.json()
+    new_jobs = jobs_new_study.json()
+    assert len(src_jobs) == len(new_jobs), "The number of jobs should be the same in both studies"
+
+    # Compare each job, field by field
+    for i, (src_job, new_job) in enumerate(zip(src_jobs, new_jobs)):
+        # Verify IDs are different
+        assert src_job["id"] != new_job["id"], f"Job {i}: IDs should be different"
+        assert src_job["study_id"] != new_job["study_id"], f"Job {i}: study_ids should be different"
+
+        # Compare all other fields
+        for field in src_job.keys():
+            if field not in ("id", "study_id"):
+                assert src_job[field] == new_job[field], f"Job {i}: Field '{field}' does not match"
+
+
 def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
