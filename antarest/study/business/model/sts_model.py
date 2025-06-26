@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Optional, TypeAlias
+from typing import Annotated, Any, Optional, TypeAlias, cast
 
+import numpy as np
+import numpy.typing as npt
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
@@ -228,3 +230,45 @@ def update_st_storage(storage: STStorage, data: STStorageUpdate) -> STStorage:
     Updates a short-term storage according to the provided update data.
     """
     return storage.model_copy(update=data.model_dump(exclude_none=True))
+
+
+##########################
+# Additional constraints part
+##########################
+
+
+class AdditionalConstraintVariable(EnumIgnoreCase):
+    WITHDRAWAL = "withdrawal"
+    INJECTION = "injection"
+    NETTING = "netting"
+
+
+class AdditionalConstraintOperator(EnumIgnoreCase):
+    LESS = "less"
+    GREATER = "greater"
+    EQUAL = "equal"
+
+
+def _list_to_np(array: list[int]) -> npt.NDArray[np.int64]:
+    return np.array(array, dtype=np.float64)
+
+
+def _np_to_list(array: npt.NDArray[np.int64]) -> list[int]:
+    return cast(list[int], array.tolist())
+
+
+NpArray: TypeAlias = Annotated[npt.NDArray[np.int64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
+
+
+class STStorageAdditionalConstraints(AntaresBaseModel):
+    """
+    Short-term storage additional constraints model.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    cluster: LowerCaseId
+    variable: AdditionalConstraintVariable
+    operator: AdditionalConstraintOperator
+    hours: NpArray
+    enabled: bool = True
