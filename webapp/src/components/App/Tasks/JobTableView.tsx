@@ -45,6 +45,7 @@ import * as R from "ramda";
 import CustomScrollbar from "@/components/common/CustomScrollbar";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
 import storage, { StorageKey } from "@/services/utils/localStorage";
+import { isSearchMatching } from "@/utils/stringUtils";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -71,9 +72,7 @@ function JobTableView(props: Props) {
   const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [userOrder, setUserOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
-  const [filterUser, setFilterUser] = useState<string>(
-    storage.getItem(StorageKey.TasksFilterUser) || "",
-  );
+  const [filterUser, setFilterUser] = useState(storage.getItem(StorageKey.TasksFilterUser) || "");
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
 
   const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
@@ -90,9 +89,7 @@ function JobTableView(props: Props) {
         [
           filterRunningStatus && (({ status }: TaskView) => status === "running"),
           filterType && (({ type }: TaskView) => type === filterType),
-          filterUser &&
-            (({ userName }: TaskView) =>
-              userName?.toLowerCase().includes(filterUser.toLowerCase())),
+          filterUser && (({ userName }: TaskView) => isSearchMatching(filterUser, userName)),
         ].filter(Boolean),
       ),
       content,
