@@ -72,7 +72,6 @@ function JobTableView(props: Props) {
   const [orderBy, setOrderBy] = useState<"date" | "user">("date");
   const [orderDirection, setOrderDirection] =
     useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
-  const [userOrder, setUserOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
   const [filterUser, setFilterUser] = useState(storage.getItem(StorageKey.TasksFilterUser) || "");
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
@@ -104,7 +103,7 @@ function JobTableView(props: Props) {
       orderDirection === "asc" ? R.ascend(criterion) : R.descend(criterion),
       filteredContent,
     );
-  }, [content, orderBy, filterRunningStatus, filterType, filterUser, userOrder]);
+  }, [content, orderBy, orderDirection, filterRunningStatus, filterType, filterUser]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -119,14 +118,13 @@ function JobTableView(props: Props) {
   };
 
   const handleRequestDateSort = () => {
-    setDateOrder(dateOrder === "asc" ? "desc" : "asc");
+    setOrderDirection(orderDirection === "asc" ? "desc" : "asc");
     setOrderBy("date");
   };
 
   const handleRequestUserSort = () => {
-    setUserOrder(userOrder === "asc" ? "desc" : "asc");
+    setOrderDirection(orderDirection === "asc" ? "desc" : "asc");
     setOrderBy("user");
-    console.log("set order by user ");
   };
 
   const handleUserValueFilterChange = (input: string) => {
@@ -238,7 +236,7 @@ function JobTableView(props: Props) {
               <TableCell align="right">
                 <TableSortLabel
                   active={orderBy === "date"}
-                  direction={dateOrder}
+                  direction={orderDirection}
                   onClick={handleRequestDateSort}
                 >
                   {t("global.date")}
@@ -247,7 +245,7 @@ function JobTableView(props: Props) {
               <TableCell align="right">
                 <TableSortLabel
                   active={orderBy === "user"}
-                  direction={userOrder}
+                  direction={orderDirection}
                   onClick={handleRequestUserSort}
                 >
                   {t("global.user")}

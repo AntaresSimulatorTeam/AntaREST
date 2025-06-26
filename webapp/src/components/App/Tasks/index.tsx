@@ -188,10 +188,6 @@ function JobsListing() {
       setOpenConfirmationDialog(undefined);
     })();
   };
-  const getRandomName = () => {
-    const names = ["Alice", "alice", "Bob", "Charlie", "David", "zidi", "Eve"];
-    return names[Math.floor(Math.random() * names.length)];
-  };
   useEffect(() => {
     const listener = async (ev: WsEvent) => {
       if (ev.type === WsEventType.TaskCompleted || ev.type === WsEventType.TaskFailed) {
@@ -344,7 +340,6 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
-        userName: getRandomName(),
       })),
     [jobs, studyJobsProgress],
   );
@@ -461,7 +456,7 @@ function JobsListing() {
         date: task.completion_date_utc || task.creation_date_utc,
         type: task.type || "UNKNOWN",
         status: task.status === TaskStatus.Running ? "running" : "",
-        userName: getRandomName(),
+        userName: (task.owner && usersByID[task.owner]?.name) || "",
       })),
     [tasks],
   );
