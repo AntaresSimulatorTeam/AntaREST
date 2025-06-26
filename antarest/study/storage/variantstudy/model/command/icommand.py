@@ -13,9 +13,7 @@
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
-
-import typing_extensions as te
+from typing import List, Optional
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.dao.api.study_dao import StudyDao
@@ -27,11 +25,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
-
-# note: we ought to use a named tuple here ;-)
-OutputTuple: te.TypeAlias = Tuple[CommandOutput, Dict[str, Any]]
 
 
 class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):

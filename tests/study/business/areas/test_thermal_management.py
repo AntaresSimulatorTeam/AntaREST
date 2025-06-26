@@ -86,7 +86,7 @@ def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path:
 
 
 @pytest.fixture
-def manager(matrix_service: ISimpleMatrixService, study_path) -> ThermalManager:
+def manager(matrix_service: ISimpleMatrixService) -> ThermalManager:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
     return ThermalManager(CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service))
