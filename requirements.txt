@@ -15,9 +15,9 @@ antares-timeseries-generation==0.1.7
 
 # We prefer to add only the specific libraries we need for our project
 # and **manage their versions** for better control and to avoid unnecessary dependencies.
-fastapi~=0.110.3
+fastapi~=0.115.13
 uvicorn[standard]~=0.30.6
-pydantic~=2.10.0
+pydantic~=2.11.7
 httpx~=0.27.0
 python-multipart~=0.0.9
 

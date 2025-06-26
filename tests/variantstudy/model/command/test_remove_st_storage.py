@@ -76,14 +76,18 @@ class TestRemoveSTStorage:
                 storage_id="?%$$",  # bad name
                 study_version=STUDY_VERSION_8_8,
             )
-        assert ctx.value.errors() == [
+
+        errors = ctx.value.errors()
+        for error in errors:
+            error.pop("url", None)
+
+        assert errors == [
             {
                 "ctx": {"pattern": "[a-z0-9_(),& -]+"},
                 "input": "?%$$",
                 "loc": ("storage_id",),
                 "msg": "String should match pattern '[a-z0-9_(),& -]+'",
                 "type": "string_pattern_mismatch",
-                "url": "https://errors.pydantic.dev/2.10/v/string_pattern_mismatch",
             }
         ]
 
