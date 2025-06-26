@@ -70,7 +70,8 @@ function JobTableView(props: Props) {
   const { content, refresh } = props;
   const [t] = useTranslation();
   const [orderBy, setOrderBy] = useState<"date" | "user">("date");
-  const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
+  const [orderDirection, setOrderDirection] =
+    useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [userOrder, setUserOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
   const [filterUser, setFilterUser] = useState(storage.getItem(StorageKey.TasksFilterUser) || "");
@@ -96,21 +97,14 @@ function JobTableView(props: Props) {
       content,
     );
 
-    const getUserName = R.compose(R.toLower, R.propOr("userName", ""));
+    const getUserName = R.compose(R.toLower, R.propOr("", "userName"));
 
-    return R.sortWith(
-      orderBy === "date"
-        ? [
-            dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
-            userOrder === "asc" ? R.ascend(getUserName) : R.descend(getUserName),
-          ]
-        : [
-            userOrder === "asc" ? R.ascend(getUserName) : R.descend(getUserName),
-            dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
-          ],
+    const criterion: (t: TaskView) => string = orderBy === "date" ? R.prop("date") : getUserName;
+    return R.sort(
+      orderDirection === "asc" ? R.ascend(criterion) : R.descend(criterion),
       filteredContent,
     );
-  }, [content, dateOrder, filterRunningStatus, filterType, filterUser, userOrder]);
+  }, [content, orderBy, filterRunningStatus, filterType, filterUser, userOrder]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -132,6 +126,7 @@ function JobTableView(props: Props) {
   const handleRequestUserSort = () => {
     setUserOrder(userOrder === "asc" ? "desc" : "asc");
     setOrderBy("user");
+    console.log("set order by user ");
   };
 
   const handleUserValueFilterChange = (input: string) => {
@@ -241,12 +236,20 @@ function JobTableView(props: Props) {
               <TableCell>{t("global.jobs")}</TableCell>
               <TableCell align="right">{t("study.type")}</TableCell>
               <TableCell align="right">
-                <TableSortLabel active direction={dateOrder} onClick={handleRequestDateSort}>
+                <TableSortLabel
+                  active={orderBy === "date"}
+                  direction={dateOrder}
+                  onClick={handleRequestDateSort}
+                >
                   {t("global.date")}
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">
-                <TableSortLabel active direction={userOrder} onClick={handleRequestUserSort}>
+                <TableSortLabel
+                  active={orderBy === "user"}
+                  direction={userOrder}
+                  onClick={handleRequestUserSort}
+                >
                   {t("global.user")}
                 </TableSortLabel>
               </TableCell>
