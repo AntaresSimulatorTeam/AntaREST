@@ -56,7 +56,7 @@ const Item = styled(Box)(({ theme }) => ({
 interface Props {
   study: StudyMetadata;
   parentStudy?: StudyMetadata;
-  variantNb?: number;
+  variantNb: number;
 }
 
 function Details({ study, parentStudy, variantNb }: Props) {

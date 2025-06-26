@@ -59,6 +59,7 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifie
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, require_current_user
@@ -137,6 +138,7 @@ from antarest.study.storage.utils import (
     assert_permission,
     get_start_date,
     is_managed,
+    is_study_folder,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -478,6 +480,7 @@ class StudyService:
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
+        job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -487,6 +490,7 @@ class StudyService:
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.repository = repository
+        self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -1061,6 +1065,37 @@ class StudyService:
                 if self.storage_service.raw_study_service.update_name_and_version_from_raw_meta(existing_study):
                     self.repository.save(existing_study)
 
+    def delete_missing_studies(self) -> None:
+        """
+        Removes from the database any non-archived desktop studies whose folders
+        no longer exist on disk. Used to clean up orphaned study entries.
+        """
+        all_studies = self.repository.get_all_raw()
+        desktop_studies = [
+            study
+            for study in all_studies
+            if study.workspace != DEFAULT_WORKSPACE_NAME and isinstance(study, RawStudy) and not study.archived
+        ]
+
+        def get_path(study: RawStudy) -> Path:
+            wp = self.config.get_workspace_path(workspace=study.workspace)
+            return wp / str(study.folder)
+
+        missing_studies = [study for study in desktop_studies if not is_study_folder(get_path(study))]
+
+        # delete orphan studies on database
+        ids = [study.id for study in missing_studies]
+        if ids:
+            self.repository.delete(*ids)
+            for study in missing_studies:
+                self.event_bus.push(
+                    Event(
+                        type=EventType.STUDY_DELETED,
+                        payload=study.to_json_summary(),
+                        permissions=PermissionInfo.from_study(study),
+                    )
+                )
+
     def copy_study(
         self,
         src_uuid: str,
@@ -1108,7 +1143,17 @@ class StudyService:
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
             )
+
             self._save_study(study, group_ids)
+
+            # Copying all jobs associated with the study
+            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
+
+            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
+
+            if new_jobs:
+                self.job_result_repository.save_all(new_jobs)
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_CREATED,

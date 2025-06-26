@@ -128,6 +128,9 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     # noinspection PyArgumentList
     user_service.get_user.return_value = User(id=0, name="test")
 
+    job_result_repository = Mock()
+    job_result_repository.find_by_study.return_value = []
+
     matrix_path = tmp_path / "matrices"
     matrix_path.mkdir()
     matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
@@ -142,6 +145,7 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
         config=config,
         metadata_repository=repo,
         variant_repository=variant_repo,
+        job_result_repository=job_result_repository,
     )
 
     return storage_service

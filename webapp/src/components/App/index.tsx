@@ -81,13 +81,13 @@ function App() {
   return (
     <Provider store={store}>
       <ThemeProvider>
-        <SnackbarProvider
-          maxSnack={5}
-          autoHideDuration={3000}
-          action={(key) => <SnackbarCloseButton snackbarKey={key} />}
-          preventDuplicate
-        >
-          <Router>
+        <Router>
+          <SnackbarProvider
+            maxSnack={5}
+            autoHideDuration={3000}
+            action={(key) => <SnackbarCloseButton snackbarKey={key} />}
+            preventDuplicate
+          >
             <MaintenanceMode>
               <Login>
                 <Container>
@@ -186,8 +186,8 @@ function App() {
                 </Container>
               </Login>
             </MaintenanceMode>
-          </Router>
-        </SnackbarProvider>
+          </SnackbarProvider>
+        </Router>
       </ThemeProvider>
     </Provider>
   );

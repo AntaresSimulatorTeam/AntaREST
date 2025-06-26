@@ -48,7 +48,14 @@ elif [ "$use_uvicorn" = true ]; then
   pids=() # Initialize empty array to store background process IDs
   for ((i=0; i<workers; i++))
   do
-    uvicorn antarest.wsgi:app --host 0.0.0.0 --port $((5000 + $i)) --log-level info --timeout-keep-alive 600 &
+    # we still use gunicorn in that case to restart workers in case they are killed,
+    # although each gunicorn instance has only one worker
+    gunicorn --worker-class=uvicorn.workers.UvicornWorker \
+             --bind=0.0.0.0:$((5000 + $i)) \
+             --workers=1 \
+             --log-level info \
+             --timeout 1200 \
+              antarest.wsgi:app &
     pids+=($!) # Store background process IDs
   done
   for pid in ${pids[*]};

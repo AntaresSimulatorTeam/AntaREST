@@ -15,7 +15,6 @@ from datetime import timedelta
 from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, HTTPException
-from markupsafe import escape
 
 from antarest.core.config import Config
 from antarest.core.jwt import JWTGroup, JWTUser
@@ -32,6 +31,7 @@ from antarest.login.model import (
     BotIdentityDTO,
     CredentialsDTO,
     Group,
+    GroupCreationDTO,
     GroupDetailDTO,
     GroupDTO,
     IdentityDTO,
@@ -151,11 +151,11 @@ def create_user_api(service: LoginService, config: Config) -> APIRouter:
         else:
             return HTTPException(status_code=404, detail=f"Group {id} not found")
 
-    @bp.post("/groups", tags=[APITag.users], response_model=GroupDTO)
-    def groups_create(group_dto: GroupDTO) -> Any:
+    @bp.post("/groups", tags=[APITag.users])
+    def groups_create(group_dto: GroupCreationDTO) -> GroupDTO:
         logger.info(f"Creating new group '{group_dto.name}'")
         group = Group(
-            id=escape(group_dto.id) if group_dto.id else None,
+            id=group_dto.id,
             name=group_dto.name,
         )
         return service.save_group(group).to_dto()

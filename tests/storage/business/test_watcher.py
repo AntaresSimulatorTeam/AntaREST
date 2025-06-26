@@ -85,6 +85,7 @@ def build_study_service(
         user_service=user_service,
         command_context=Mock(),
         repository=repository,
+        job_result_repository=Mock(),
         event_bus=Mock(),
         task_service=task_service,
         file_transfer_manager=Mock(),

@@ -61,7 +61,6 @@ export interface ConstraintTerm {
 export interface BindingConstraint {
   id: string;
   name: string;
-  group: string;
   enabled: boolean;
   timeStep: TimeStep;
   operator: Operator;
@@ -69,6 +68,8 @@ export interface BindingConstraint {
   filterSynthesis: OutputFilter[];
   filterYearByYear: OutputFilter[];
   terms: ConstraintTerm[];
+  // Since v8.7
+  group?: string | null;
 }
 
 ////////////////////////////////////////////////////////////////
