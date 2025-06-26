@@ -193,7 +193,6 @@
   "downloads.newDownload": "New download created",
   "downloads.downloadReady": "Download ready",
   "tasks.refresh": "Reload tasks",
-  "tasks.user": "User",
   "tasks.action": "Action",
   "tasks.scan": "Scan",
   "tasks.typeFilter": "Filter by type",

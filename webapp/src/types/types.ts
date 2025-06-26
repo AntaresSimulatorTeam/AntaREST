@@ -564,7 +564,7 @@ export interface TaskView {
   date: string;
   type: TaskTypeValue | "DOWNLOAD" | "LAUNCH" | "UNKNOWN";
   status: string;
-  userName: string;
+  userName?: string;
 }
 
 export type ValidationReturn = string | true;

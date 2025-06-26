@@ -71,8 +71,8 @@ function JobTableView(props: Props) {
   const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [userOrder, setUserOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
-  const [userFilterValue, setUserFilterValue] = useState<string>(
-    storage.getItem(StorageKey.TasksUserFilter) || "",
+  const [filterUser, setFilterUser] = useState<string>(
+    storage.getItem(StorageKey.TasksFilterUser) || "",
   );
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
 
@@ -90,22 +90,24 @@ function JobTableView(props: Props) {
         [
           filterRunningStatus && (({ status }: TaskView) => status === "running"),
           filterType && (({ type }: TaskView) => type === filterType),
-          userFilterValue && (({ userName }: TaskView) => userName?.includes(userFilterValue)),
+          filterUser &&
+            (({ userName }: TaskView) =>
+              userName?.toLowerCase().includes(filterUser.toLowerCase())),
         ].filter(Boolean),
       ),
       content,
     );
 
-    const sortedByDate = R.sort(
-      dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
+    const getUserName = R.compose(R.toLower, R.propOr("userName", ""));
+
+    return R.sortWith(
+      [
+        dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
+        userOrder === "asc" ? R.ascend(getUserName) : R.descend(getUserName),
+      ],
       filteredContent,
     );
-
-    return R.sort(
-      userOrder === "asc" ? R.ascend(R.prop("userName")) : R.descend(R.prop("userName")),
-      sortedByDate,
-    );
-  }, [content, dateOrder, filterRunningStatus, filterType, userFilterValue, userOrder]);
+  }, [content, dateOrder, filterRunningStatus, filterType, filterUser, userOrder]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -128,8 +130,8 @@ function JobTableView(props: Props) {
   };
 
   const handleUserValueFilterChange = (input: string) => {
-    setUserFilterValue(input);
-    storage.setItem(StorageKey.TasksUserFilter, input);
+    setFilterUser(input);
+    storage.setItem(StorageKey.TasksFilterUser, input);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -205,10 +207,10 @@ function JobTableView(props: Props) {
 
             <SearchFE
               size="extra-small"
-              value={userFilterValue}
+              value={filterUser}
               onSearchValueChange={handleUserValueFilterChange}
               sx={{ maxWidth: 200 }}
-              label={t("tasks.user")}
+              label={t("global.user")}
             />
             <SelectFE
               label={t("tasks.typeFilter")}
@@ -240,7 +242,7 @@ function JobTableView(props: Props) {
               </TableCell>
               <TableCell align="right">
                 <TableSortLabel active direction={userOrder} onClick={handleRequestUserSort}>
-                  {t("tasks.user")}
+                  {t("global.user")}
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
@@ -254,7 +256,7 @@ function JobTableView(props: Props) {
                 </TableCell>
                 <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
                 <TableCell align="right">{row.dateView}</TableCell>
-                <TableCell align="right">{row.userName}</TableCell>
+                <TableCell align="right">{row.userName || ""}</TableCell>
                 <TableCell align="right">{row.action}</TableCell>
               </TableRow>
             ))}

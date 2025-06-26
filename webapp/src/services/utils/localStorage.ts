@@ -32,7 +32,7 @@ export const StorageKey = {
   // UI
   UIMenuCollapsed: "ui.menuCollapsed",
   // Tasks
-  TasksUserFilter: "tasks.userFilter",
+  TasksFilterUser: "tasks.filter.user",
 } as const;
 
 type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
@@ -47,7 +47,7 @@ interface TypeFromKey {
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
   [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
   [StorageKey.StudyTreeFolders]: FolderDTO[];
-  [StorageKey.TasksUserFilter]: string;
+  [StorageKey.TasksFilterUser]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];
   [key: string]: unknown;
 }

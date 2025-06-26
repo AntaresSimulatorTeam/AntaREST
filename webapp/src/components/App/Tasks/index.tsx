@@ -341,7 +341,6 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
-        userName: "",
       })),
     [jobs, studyJobsProgress],
   );
@@ -396,7 +395,6 @@ function JobsListing() {
         date: moment(download.expirationDate).subtract(1, "days").format("YYYY-MM-DD HH:mm:ss"),
         type: "DOWNLOAD",
         status: !download.ready && !download.failed ? "running" : "",
-        userName: "",
       })),
     [downloads],
   );
