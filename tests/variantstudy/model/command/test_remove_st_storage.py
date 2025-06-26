@@ -83,7 +83,7 @@ class TestRemoveSTStorage:
 
         errors = ctx.value.errors()
         for error in errors:
-            error.pop('url', None)
+            error.pop("url", None)
 
         assert errors == [
             {
