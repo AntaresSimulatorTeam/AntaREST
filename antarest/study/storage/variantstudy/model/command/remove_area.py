@@ -16,20 +16,12 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
+from antarest.core.exceptions import ChildNotFoundError, ReferencedObjectDeletionNotAllowed
 from antarest.core.model import JSON
-from antarest.study.model import (
-    STUDY_VERSION_6_5,
-    STUDY_VERSION_8_1,
-    STUDY_VERSION_8_2,
-    STUDY_VERSION_8_6,
-    STUDY_VERSION_8_7,
-)
+from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_2, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils_binding_constraint import (
-    remove_area_cluster_from_binding_constraints,
-)
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -71,8 +63,6 @@ class RemoveArea(ICommand):
         self._remove_area_from_links_in_config(study_data_config)
         self._remove_area_from_sets_in_config(study_data_config)
 
-        remove_area_cluster_from_binding_constraints(study_data_config, self.id)
-
     def _remove_area_from_links(self, study_data: FileStudy) -> None:
         for area_name, area in study_data.config.areas.items():
             for link in area.links:
@@ -92,55 +82,6 @@ class RemoveArea(ICommand):
                             f" in study {study_data.config.study_id}",
                             exc_info=e,
                         )
-
-    def _remove_area_from_binding_constraints(self, study_data: FileStudy) -> None:
-        """
-        Remove the binding constraints that are related to the area.
-
-        Notes:
-            A binding constraint has properties, a list of terms (which form a linear equation) and
-            a right-hand side (which is the matrix of the binding constraint).
-            The terms are of the form `area1%area2` or `area.cluster` where `area` is the ID of the area
-            and `cluster` is the ID of the cluster.
-
-            When an area is removed, it has an impact on the terms of the binding constraints.
-            At first, we could decide to remove the terms that are related to the area.
-            However, this would lead to a linear equation that is not valid anymore.
-
-            Instead, we decide to remove the binding constraints that are related to the area.
-        """
-        # See also `RemoveArea`
-        # noinspection SpellCheckingInspection
-        url = ["input", "bindingconstraints", "bindingconstraints"]
-        binding_constraints = study_data.tree.get(url)
-
-        # Collect the binding constraints that are related to the area to remove
-        # by searching the terms that contain the ID of the area.
-        bc_to_remove = {}
-        lower_area_id = self.id.lower()
-        for bc_index, bc in list(binding_constraints.items()):
-            for key in bc:
-                # Term IDs are in the form `area1%area2` or `area.cluster`
-                if "%" in key:
-                    related_areas = key.split("%")
-                elif "." in key:
-                    related_areas = key.split(".")[:-1]
-                else:
-                    # This key belongs to the set of properties, it isn't a term ID, so we skip it
-                    continue
-                related_areas = [area.lower() for area in related_areas]
-                if lower_area_id in related_areas:
-                    bc_to_remove[bc_index] = binding_constraints.pop(bc_index)
-                    break
-
-        matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= STUDY_VERSION_8_7 else [""]
-
-        for bc_index, bc in bc_to_remove.items():
-            for suffix in matrix_suffixes:
-                # noinspection SpellCheckingInspection
-                study_data.tree.delete(["input", "bindingconstraints", f"{bc['id']}{suffix}"])
-
-        study_data.tree.save(binding_constraints, url)
 
     def _remove_area_from_hydro_allocation(self, study_data: FileStudy) -> None:
         """
@@ -221,6 +162,21 @@ class RemoveArea(ICommand):
     # noinspection SpellCheckingInspection
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        # Checks that the area is not referenced in any binding constraint
+        referencing_binding_constraints = []
+        for bc in study_data.config.bindings:
+            for term in bc.terms:
+                data = term.data
+                if (isinstance(data, ClusterTerm) and data.area == self.id) or (
+                    isinstance(data, LinkTerm) and (data.area1 == self.id or data.area2 == self.id)
+                ):
+                    referencing_binding_constraints.append(bc)
+                    break
+        if referencing_binding_constraints:
+            binding_ids = [bc.id for bc in referencing_binding_constraints]
+            raise ReferencedObjectDeletionNotAllowed(self.id, binding_ids, object_type="Area")
+
+        # Delete files
         study_data.tree.delete(["input", "areas", self.id])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxpower_{self.id}"])
         study_data.tree.delete(["input", "hydro", "common", "capacity", f"reservoir_{self.id}"])
@@ -265,7 +221,6 @@ class RemoveArea(ICommand):
             study_data.tree.delete(["input", "st-storage", "series", self.id])
 
         self._remove_area_from_links(study_data)
-        self._remove_area_from_binding_constraints(study_data)
         self._remove_area_from_correlation_matrices(study_data)
         self._remove_area_from_hydro_allocation(study_data)
         self._remove_area_from_districts(study_data)
