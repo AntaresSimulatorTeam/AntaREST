@@ -260,7 +260,7 @@ def _np_to_list(array: npt.NDArray[np.int64]) -> list[int]:
 NpArray: TypeAlias = Annotated[npt.NDArray[np.int64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
 
 
-class STStorageAdditionalConstraints(AntaresBaseModel):
+class STStorageAdditionalConstraint(AntaresBaseModel):
     """
     Short-term storage additional constraints model.
     """
@@ -274,7 +274,7 @@ class STStorageAdditionalConstraints(AntaresBaseModel):
     enabled: bool = True
 
 
-class STStorageAdditionalConstraintsCreation(AntaresBaseModel):
+class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     """
     Represents a creation request for a short-term storage additional constraint.
 
@@ -290,7 +290,7 @@ class STStorageAdditionalConstraintsCreation(AntaresBaseModel):
     enabled: Optional[bool] = None
 
 
-class STStorageAdditionalConstraintsUpdate(AntaresBaseModel):
+class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
     """
     Represents an update of a short-term storage additional constraint.
 
