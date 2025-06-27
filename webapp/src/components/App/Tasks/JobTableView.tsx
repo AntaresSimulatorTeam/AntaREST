@@ -117,14 +117,10 @@ function JobTableView(props: Props) {
     setFilterRunningStatus(!filterRunningStatus);
   };
 
-  const handleRequestDateSort = () => {
-    setOrderDirection(orderDirection === "asc" ? "desc" : "asc");
-    setOrderBy("date");
-  };
-
-  const handleRequestUserSort = () => {
-    setOrderDirection(orderDirection === "asc" ? "desc" : "asc");
-    setOrderBy("user");
+  const handleRequestSort = (column: "date" | "user") => {
+    const isAsc = orderBy === column && orderDirection === "asc";
+    setOrderDirection(isAsc ? "desc" : "asc");
+    setOrderBy(column);
   };
 
   const handleUserValueFilterChange = (input: string) => {
@@ -236,8 +232,8 @@ function JobTableView(props: Props) {
               <TableCell align="right">
                 <TableSortLabel
                   active={orderBy === "date"}
-                  direction={orderDirection}
-                  onClick={handleRequestDateSort}
+                  direction={orderBy === "date" ? orderDirection : "asc"}
+                  onClick={() => handleRequestSort("date")}
                 >
                   {t("global.date")}
                 </TableSortLabel>
@@ -245,8 +241,8 @@ function JobTableView(props: Props) {
               <TableCell align="right">
                 <TableSortLabel
                   active={orderBy === "user"}
-                  direction={orderDirection}
-                  onClick={handleRequestUserSort}
+                  direction={orderBy === "user" ? orderDirection : "asc"}
+                  onClick={() => handleRequestSort("user")}
                 >
                   {t("global.user")}
                 </TableSortLabel>
