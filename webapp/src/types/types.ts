@@ -164,6 +164,7 @@ export interface LaunchJob {
   msg: string;
   outputId: string;
   exitCode: number;
+  ownerId: number;
 }
 
 export interface LaunchJobDTO {
@@ -176,6 +177,10 @@ export interface LaunchJobDTO {
   msg: string;
   output_id: string;
   exit_code: number;
+  owner: {
+    id: number;
+    name: string;
+  };
 }
 
 export interface LaunchJobProgressDTO {

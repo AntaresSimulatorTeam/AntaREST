@@ -90,7 +90,7 @@ function JobTableView(props: Props) {
         [
           filterRunningStatus && (({ status }: TaskView) => status === "running"),
           filterType && (({ type }: TaskView) => type === filterType),
-          filterUser && (({ userName }: TaskView) => isSearchMatching(filterUser, userName)),
+          filterUser && (({ userName }: TaskView) => isSearchMatching(filterUser, userName || "")),
         ].filter(Boolean),
       ),
       content,

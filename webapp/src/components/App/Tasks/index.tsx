@@ -340,6 +340,7 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
+        userName: (job.ownerId && usersByID[job.ownerId]?.name) || "",
       })),
     [jobs, studyJobsProgress],
   );
