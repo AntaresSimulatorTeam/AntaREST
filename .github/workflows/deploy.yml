@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "feature/3469-hide-web-specefic-component-on-desktop"
 
 jobs:
   binary:
