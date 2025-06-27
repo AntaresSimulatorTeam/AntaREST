@@ -79,6 +79,7 @@ function Container({ children }: Props) {
   const currentStudyId = useAppSelector(getCurrentStudyId);
   const isWsConnected = useAppSelector(isWebSocketConnected);
   const dispatch = useAppDispatch();
+  const isDesktopMode = import.meta.env.MODE === "desktop";
 
   const { version } = getConfig().versionInfo;
 
@@ -164,12 +165,14 @@ function Container({ children }: Props) {
                 link={link}
               />
             ))}
-            <MenuItem
-              title={t("global.signOut")}
-              icon={<LogoutIcon />}
-              isMenuOpen={isDrawerOpen}
-              onClick={() => setOpenLogoutDialog(true)}
-            />
+            {!isDesktopMode && (
+              <MenuItem
+                title={t("global.signOut")}
+                icon={<LogoutIcon />}
+                isMenuOpen={isDrawerOpen}
+                onClick={() => setOpenLogoutDialog(true)}
+              />
+            )}
           </List>
           <Divider />
           <List>
