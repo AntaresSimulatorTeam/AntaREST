@@ -225,11 +225,13 @@ class STStorageManager:
         ]
         study.add_commands(commands)
 
-    def get_all_additional_constraints(self, study: StudyInterface) -> list[STStorageAdditionalConstraint]:
+    def get_all_additional_constraints(self, study: StudyInterface) -> dict[str, list[STStorageAdditionalConstraint]]:
         return study.get_study_dao().get_all_st_storage_additional_constraints()
 
-    def get_additional_constraints(self, study: StudyInterface, storage_id: str) -> list[STStorageAdditionalConstraint]:
-        return study.get_study_dao().get_st_storage_additional_constraints(storage_id)
+    def get_additional_constraints(
+        self, study: StudyInterface, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
 
     def create_additional_constraints(
         self, study: StudyInterface, storage_id: str, constraints: list[STStorageAdditionalConstraintCreation]

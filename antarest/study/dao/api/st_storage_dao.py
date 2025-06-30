@@ -80,19 +80,21 @@ class ReadOnlySTStorageDao(ABC):
     ##########################
 
     @abstractmethod
-    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
+    def st_storage_additional_constraint_exists(self, area_id: str, constraint_id: str) -> bool:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
 

@@ -219,17 +219,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
-    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
-        return self._adaptee.st_storage_additional_constraint_exists(storage_id, constraint_id)
+    def st_storage_additional_constraint_exists(self, area_id: str, constraint_id: str) -> bool:
+        return self._adaptee.st_storage_additional_constraint_exists(area_id, constraint_id)
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
         return self._adaptee.get_all_st_storage_additional_constraints()
 
     @override
-    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
-        return self._adaptee.get_st_storage_additional_constraints(storage_id)
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self._adaptee.get_st_storage_additional_constraints(area_id, storage_id)
 
     @override
-    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return self._adaptee.get_st_storage_constraint_matrix(constraint_id)
+    def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_constraint_matrix(area_id, constraint_id)

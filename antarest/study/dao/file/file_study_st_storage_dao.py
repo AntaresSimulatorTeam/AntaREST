@@ -262,23 +262,23 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data.config.areas[area_id].st_storages.remove(storage)
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
         file_study = self.get_file_study()
         path = ["input", "st-storage", "constraints"]
         try:
-            all_constraints = []
-            storages = file_study.tree.get(path, depth=1)
-            for storage in storages:
-                constraints = self.get_st_storage_additional_constraints(storage)
-                all_constraints.extend(constraints)
+            all_constraints = {}
+            areas = file_study.tree.get(path, depth=1)
+            for area in areas:
+                constraints = self._get_st_storage_additional_constraints(area)
+                all_constraints[area] = constraints
             return all_constraints
         except ChildNotFoundError:
-            return []
+            return {}
 
     @override
-    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
+    def st_storage_additional_constraint_exists(self, area_id: str, constraint_id: str) -> bool:
         file_study = self.get_file_study()
-        path = ["input", "st-storage", "constraints", storage_id, "additional-constraints", constraint_id]
+        path = ["input", "st-storage", "constraints", area_id, "additional-constraints", constraint_id]
         try:
             file_study.tree.get(path, depth=1)
             return True
@@ -286,9 +286,15 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return False
 
     @override
-    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        all_area_constraints = self._get_st_storage_additional_constraints(area_id)
+        return [c for c in all_area_constraints if c.cluster == storage_id]
+
+    def _get_st_storage_additional_constraints(self, area_id: str) -> list[STStorageAdditionalConstraint]:
         file_study = self.get_file_study()
-        path = ["input", "st-storage", "constraints", storage_id, "additional-constraints"]
+        path = ["input", "st-storage", "constraints", area_id, "additional-constraints"]
         try:
             constraints = []
             ini_content = file_study.tree.get(path)
@@ -299,7 +305,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return []
 
     @override
-    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
+    def get_st_storage_constraint_matrix(self, storage_id: str, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
     @staticmethod

@@ -40,6 +40,12 @@ class ClusterKey:
     cluster_id: str
 
 
+@dataclass(frozen=True)
+class AdditionalConstraintKey:
+    area_id: str
+    constraint_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
@@ -47,6 +53,10 @@ def link_key(area1_id: str, area2_id: str) -> LinkKey:
 
 def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
+
+
+def additional_constraint_key(area_id: str, constraint_id: str) -> AdditionalConstraintKey:
+    return AdditionalConstraintKey(area_id, constraint_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -86,8 +96,8 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
-        self._st_storages_constraints: list[STStorageAdditionalConstraint] = []
-        self._st_storages_constraints_terms: Dict[str, pd.DataFrame] = {}
+        self._st_storages_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
+        self._st_storages_constraints_terms: Dict[AdditionalConstraintKey, pd.DataFrame] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
@@ -436,20 +446,22 @@ class InMemoryStudyDao(StudyDao):
         del self._st_storages[cluster_key(area_id, storage.id)]
 
     @override
-    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
-        for constraint in self._st_storages_constraints:
-            if constraint.id == constraint_id and constraint.cluster == storage_id:
+    def st_storage_additional_constraint_exists(self, area_id: str, constraint_id: str) -> bool:
+        for constraint in self._st_storages_constraints.get(area_id, []):
+            if constraint.id == constraint_id:
                 return True
         return False
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
         return self._st_storages_constraints
 
     @override
-    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
-        return [c for c in self._st_storages_constraints if c.cluster == storage_id]
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return [c for c in self._st_storages_constraints.get(area_id, []) if c.cluster == storage_id]
 
     @override
-    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
-        return self._st_storages_constraints_terms[constraint_id]
+    def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        return self._st_storages_constraints_terms[additional_constraint_key(area_id, constraint_id)]
