@@ -17,7 +17,7 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorageConfigNotFound, STStorageNotFound
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage, serialize_st_storage
@@ -260,6 +260,18 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    @override
+    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    @override
+    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:

@@ -22,7 +22,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -85,6 +85,9 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_level: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
+        # Short-term storages additional constraints
+        self._st_storages_constraints: list[STStorageAdditionalConstraint] = []
+        self._st_storages_constraints_terms: Dict[str, pd.DataFrame] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
@@ -431,3 +434,15 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+        return self._st_storages_constraints
+
+    @override
+    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        return [c for c in self._st_storages_constraints if c.cluster == storage_id]
+
+    @override
+    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
+        return self._st_storages_constraints_terms[constraint_id]

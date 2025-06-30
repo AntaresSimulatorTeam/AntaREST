@@ -15,7 +15,7 @@ from typing import Sequence
 
 import pandas as pd
 
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -73,6 +73,18 @@ class ReadOnlySTStorageDao(ABC):
 
     @abstractmethod
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
 

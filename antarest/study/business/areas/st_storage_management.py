@@ -20,6 +20,9 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.study.business.model.sts_model import (
     STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintCreation,
+    STStorageAdditionalConstraintUpdate,
     STStorageCreation,
     STStorageUpdate,
     STStorageUpdates,
@@ -221,6 +224,22 @@ class STStorageManager:
             for storage_id in storage_ids
         ]
         study.add_commands(commands)
+
+    def get_all_additional_constraints(self, study: StudyInterface) -> dict[str, STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    def get_additional_constraints(self, study: StudyInterface, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    def create_additional_constraints(
+        self, study: StudyInterface, storage_id: str, constraints: list[STStorageAdditionalConstraintCreation]
+    ) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
+    def update_additional_constraint(
+        self, study: StudyInterface, storage_id: str, constraint_id: str, contraint: STStorageAdditionalConstraintUpdate
+    ) -> STStorageAdditionalConstraint:
+        raise NotImplementedError()
 
     def duplicate_cluster(
         self, study: StudyInterface, area_id: str, source_id: str, new_cluster_name: str

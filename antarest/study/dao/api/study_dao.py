@@ -19,7 +19,7 @@ from typing_extensions import override
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
@@ -217,3 +217,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
+        return self._adaptee.get_all_st_storage_additional_constraints()
+
+    @override
+    def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        return self._adaptee.get_st_storage_additional_constraints(storage_id)
+
+    @override
+    def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:
+        return self._adaptee.get_st_storage_constraint_matrix(constraint_id)
