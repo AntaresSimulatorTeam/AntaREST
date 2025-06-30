@@ -266,8 +266,27 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         raise NotImplementedError()
 
     @override
+    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
+        file_study = self.get_file_study()
+        path = ["input", "st-storage", "constraints", storage_id, "additional-constraints", constraint_id]
+        try:
+            file_study.tree.get(path, depth=1)
+            return True
+        except (KeyError, ChildNotFoundError):
+            return False
+
+    @override
     def get_st_storage_additional_constraints(self, storage_id: str) -> list[STStorageAdditionalConstraint]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        path = ["input", "st-storage", "constraints", storage_id, "additional-constraints"]
+        try:
+            constraints = []
+            ini_content = file_study.tree.get(path)
+            for key, value in ini_content.items():
+                constraints.append(STStorageAdditionalConstraint.model_validate({"id": key, **value}))
+            return constraints
+        except ChildNotFoundError:
+            return []
 
     @override
     def get_st_storage_constraint_matrix(self, constraint_id: str) -> pd.DataFrame:

@@ -75,6 +75,14 @@ class ReadOnlySTStorageDao(ABC):
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
+    ##########################
+    # Additional constraints part
+    ##########################
+
+    @abstractmethod
+    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
+        raise NotImplementedError()
+
     @abstractmethod
     def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
         raise NotImplementedError()

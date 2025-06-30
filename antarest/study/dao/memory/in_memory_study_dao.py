@@ -436,6 +436,13 @@ class InMemoryStudyDao(StudyDao):
         del self._st_storages[cluster_key(area_id, storage.id)]
 
     @override
+    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
+        for constraint in self._st_storages_constraints:
+            if constraint.id == constraint_id and constraint.cluster == storage_id:
+                return True
+        return False
+
+    @override
     def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
         return self._st_storages_constraints
 

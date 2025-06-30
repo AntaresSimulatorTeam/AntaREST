@@ -219,6 +219,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
+    def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
+        return self._adaptee.st_storage_additional_constraint_exists(storage_id, constraint_id)
+
+    @override
     def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
         return self._adaptee.get_all_st_storage_additional_constraints()
 
