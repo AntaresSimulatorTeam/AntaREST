@@ -305,8 +305,12 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return []
 
     @override
-    def get_st_storage_constraint_matrix(self, storage_id: str, constraint_id: str) -> pd.DataFrame:
-        raise NotImplementedError()
+    def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
+        study_data = self.get_file_study()
+        path = ["input", "st-storage", "constraints", area_id, f"rhs_{constraint_id}"]
+        node = study_data.tree.get_node(path)
+        assert isinstance(node, InputSeriesMatrix)
+        return node.parse_as_dataframe()
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
