@@ -836,14 +836,25 @@ class DuplicateSTStorageConstraintName(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, f"The constraint '{constraint_id}' already exists in area '{area_id}'")
 
 
-class ObjectReferencedInsideSTStorageAdditionalConstraints(HTTPException):
+class AreaReferencedInsideSTStorageAdditionalConstraints(HTTPException):
     """
-    Exception raised when an object is not allowed to be deleted because it is referenced inside some st-storage additional constraints.
-    Possible objects are: areas or short-term storages.
+    Exception raised when an area is not allowed to be deleted because it has inside some st-storage additional constraints.
     """
 
-    def __init__(self, object_id: str, object_type: str) -> None:
+    def __init__(self, area_id: str) -> None:
         super().__init__(
             HTTPStatus.CONFLICT,
-            f"The {object_type} '{object_id}' is not allowed to be deleted as it's already referenced inside some short-term storage additional-constraints.",
+            f"The Area '{area_id}' is not allowed to be deleted as it contains some short-term storage additional-constraints.",
+        )
+
+
+class STStorageReferencedInsideAdditionalConstraints(HTTPException):
+    """
+    Exception raised when a sts is not allowed to be deleted because it is referenced inside some additional constraints.
+    """
+
+    def __init__(self, storage_id: str, constraint_id: str) -> None:
+        super().__init__(
+            HTTPStatus.CONFLICT,
+            f"The Short-term storage '{storage_id}' is not allowed to be deleted as it is referenced inside this additional-constraint {constraint_id}.",
         )

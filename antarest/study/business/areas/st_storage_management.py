@@ -17,6 +17,7 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import (
     DuplicateSTStorage,
     DuplicateSTStorageConstraintName,
+    STStorageReferencedInsideAdditionalConstraints,
 )
 from antarest.core.model import JSON
 from antarest.study.business.model.sts_model import (
@@ -222,6 +223,13 @@ class STStorageManager:
             area_id: The area ID of the short-term storage.
             storage_ids: IDs list of short-term storages to remove.
         """
+        # Checks the storage is not referenced in any constraint
+        existing_constraints = study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
+        for constraint in existing_constraints:
+            for storage_id in storage_ids:
+                if constraint.cluster == storage_id:
+                    raise STStorageReferencedInsideAdditionalConstraints(storage_id, constraint.id)
+
         commands = [
             RemoveSTStorage(
                 area_id=area_id,
