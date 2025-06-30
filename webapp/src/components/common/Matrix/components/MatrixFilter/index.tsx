@@ -72,6 +72,10 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: Matri
     });
   }, [filter.active, currentFilteredData, setFilterPreview, columnCount, rowCount]);
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleDrawerToggle = useCallback(() => {
     setIsDrawerOpen((prev) => !prev);
   }, []);
@@ -83,6 +87,10 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly }: Matri
   const handleApplyOperation = useCallback(() => {
     applyOperation(currentFilteredData);
   }, [applyOperation, currentFilteredData]);
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>

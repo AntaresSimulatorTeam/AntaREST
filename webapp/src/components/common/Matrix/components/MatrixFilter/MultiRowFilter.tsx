@@ -35,6 +35,10 @@ function MultiRowFilter({
     filter.rowsFilters.map((rf) => rf.id),
   );
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleAddFilter = useCallback(() => {
     const newFilter = createDefaultRowFilter(
       filter.rowsFilters[0]?.range?.max || 100,
@@ -89,6 +93,10 @@ function MultiRowFilter({
     () => expandedFilters.length === filter.rowsFilters.length,
     [expandedFilters.length, filter.rowsFilters.length],
   );
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>

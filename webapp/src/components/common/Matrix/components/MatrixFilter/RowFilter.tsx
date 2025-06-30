@@ -124,6 +124,10 @@ function RowFilter({
     };
   }, [filter.rowsFilters, filterId, valuesByIndexType, timeFrequency, t, filter.active]);
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleDeleteClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -203,6 +207,10 @@ function RowFilter({
   );
 
   const canRemove = onRemoveFilter && filter.rowsFilters.length > 1;
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Accordion

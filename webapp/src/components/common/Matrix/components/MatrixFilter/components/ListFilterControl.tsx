@@ -118,6 +118,10 @@ function ListFilterControl({
     return ranges.map(([start, end]) => formatRange(start, end)).join(", ");
   }, [selectedValues]);
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleOperatorChange = (e: SelectChangeEvent) => {
     if (onOperatorChange) {
       const operatorValue = e.target.value;
@@ -153,6 +157,10 @@ function ListFilterControl({
       onKeyPress(event);
     }
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <>

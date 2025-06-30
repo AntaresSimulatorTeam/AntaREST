@@ -43,6 +43,10 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
     handleValueChange(newValue);
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Box>
       <Box sx={{ ...FORM_STYLES.sideBySideContainer, mt: 3 }}>

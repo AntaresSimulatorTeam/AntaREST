@@ -48,6 +48,10 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
     handleOperatorChange,
   } = useFilterControls({ filter, setFilter });
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
   const handleTypeChangeEvent = (e: SelectChangeEvent) => {
     handleTypeChange(e.target.value as FilterType);
   };
@@ -68,6 +72,10 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
       },
     });
   };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
     <Accordion defaultExpanded sx={ACCORDION_STYLES.marginBottom}>

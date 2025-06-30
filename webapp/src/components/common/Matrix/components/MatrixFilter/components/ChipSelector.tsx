@@ -73,6 +73,10 @@ function ChipSelectorComponent<T extends string | number = number>({
 
   const spacing = dense ? DESIGN_TOKENS.spacing.sm : DESIGN_TOKENS.spacing.lg;
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
     <Box role={multiple ? "group" : "radiogroup"} aria-label={ariaLabel || title}>
       {title && (
