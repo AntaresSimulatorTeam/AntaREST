@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from datetime import datetime
+
 from starlette.testclient import TestClient
 
 
@@ -16,7 +18,8 @@ def test_get_matrices(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     matrix = [[1, 2], [1, 7]]
-    matrix_1 = [[3, 6], [5, 10]]
+    matrix_1 = [[3, 6], [5, 10, 28]]
+    time_format = "%Y-%m-%d %H:%M:%S.%f"
 
     # Creating matrix and checking the metadata inside it
     res = client.post(
@@ -38,16 +41,20 @@ def test_get_matrices(client: TestClient, admin_access_token: str) -> None:
     matrices = res.json()
 
     second_last_matrix = matrices[-2]
+    is_date_format_ok = bool(datetime.strptime(second_last_matrix["created_at"], time_format))
     assert second_last_matrix["width"] == 2
     assert second_last_matrix["height"] == 2
     assert second_last_matrix["version"] == 2
     assert second_last_matrix["id"] == second_last_matrix_id
+    assert "created_at" in second_last_matrix and is_date_format_ok
 
     last_matrix = matrices[-1]
-    assert last_matrix["width"] == 2
+    is_date_format_ok = bool(datetime.strptime(last_matrix["created_at"], time_format))
+    assert last_matrix["width"] == 3
     assert last_matrix["height"] == 2
     assert last_matrix["version"] == 2
     assert last_matrix["id"] == last_matrix_id
+    assert "created_at" in second_last_matrix and is_date_format_ok
 
 
 def test_get_matrix(client: TestClient, admin_access_token: str) -> None:

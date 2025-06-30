@@ -198,26 +198,11 @@ class TestMatrixService:
 
             assert len(actual_matrices) == len(expected_matrices)
 
-            assert actual_matrices[0].id == expected_matrices[0].id
-            assert (
-                actual_matrices[0].height == expected_matrices[0].height
-                and actual_matrices[0].width == expected_matrices[0].width
-            )
-            assert actual_matrices[0].version == expected_matrices[0].version
-
-            assert actual_matrices[1].id == expected_matrices[1].id
-            assert (
-                actual_matrices[1].height == expected_matrices[1].height
-                and actual_matrices[0].width == expected_matrices[0].width
-            )
-            assert actual_matrices[1].version == expected_matrices[1].version
-
-            assert actual_matrices[2].id == expected_matrices[2].id
-            assert (
-                actual_matrices[2].height == expected_matrices[2].height
-                and actual_matrices[2].width == expected_matrices[2].width
-            )
-            assert actual_matrices[2].version == expected_matrices[2].version
+            for i in range(len(actual_matrices)):
+                assert actual_matrices[i].version == expected_matrices[i].version
+                assert actual_matrices[i].id == expected_matrices[i].id
+                assert actual_matrices[i].height == expected_matrices[i].height
+                assert actual_matrices[i].width == expected_matrices[i].width
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""

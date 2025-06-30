@@ -14,6 +14,7 @@ import datetime
 import uuid
 from typing import Any, List, TypeAlias
 
+from pydantic import field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
@@ -93,6 +94,9 @@ class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True)
     created_at: datetime.datetime
     version: int
 
+    @field_serializer("created_at")
+    def serialize_created_at(self, created_at: datetime.datetime) -> str:
+        return created_at.strftime("%Y-%m-%d %H:%M:%S.%f")
 
 class MatrixDataSetRelation(Base):  # type: ignore
     # noinspection SpellCheckingInspection
