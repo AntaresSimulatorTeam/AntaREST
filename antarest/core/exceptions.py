@@ -380,8 +380,8 @@ class FolderCreationNotAllowed(HTTPException):
 
 class ReferencedObjectDeletionNotAllowed(HTTPException):
     """
-    Exception raised when a binding constraint is not allowed to be deleted because it references
-    other objects: areas, links or thermal clusters.
+    Exception raised when an object is not allowed to be deleted because it is referenced inside some binding constraints.
+    Possible objects are: areas, links or thermal clusters.
     """
 
     def __init__(self, object_id: str, binding_ids: Sequence[str], *, object_type: str) -> None:
@@ -834,3 +834,16 @@ class StudyImportFailed(HTTPException):
 class DuplicateSTStorageConstraintName(HTTPException):
     def __init__(self, area_id: str, constraint_id: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, f"The constraint '{constraint_id}' already exists in area '{area_id}'")
+
+
+class ObjectReferencedInsideSTStorageAdditionalConstraints(HTTPException):
+    """
+    Exception raised when an object is not allowed to be deleted because it is referenced inside some st-storage additional constraints.
+    Possible objects are: areas or short-term storages.
+    """
+
+    def __init__(self, object_id: str, object_type: str) -> None:
+        super().__init__(
+            HTTPStatus.CONFLICT,
+            f"The {object_type} '{object_id}' is not allowed to be deleted as it's already referenced inside some short-term storage additional-constraints.",
+        )

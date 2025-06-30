@@ -16,7 +16,11 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    ObjectReferencedInsideSTStorageAdditionalConstraints,
+    ReferencedObjectDeletionNotAllowed,
+)
 from antarest.core.model import JSON
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_2, STUDY_VERSION_8_6
@@ -175,6 +179,13 @@ class RemoveArea(ICommand):
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(self.id, binding_ids, object_type="Area")
+
+        # Checks that the area is not referenced in any st-storage constraint
+        path = ["input", "st-storage", "constraints", self.id]
+        with contextlib.suppress(ChildNotFoundError):
+            files = study_data.tree.get(path, depth=1)
+            if files:
+                raise ObjectReferencedInsideSTStorageAdditionalConstraints(self.id, "Area")
 
         # Delete files
         study_data.tree.delete(["input", "areas", self.id])
