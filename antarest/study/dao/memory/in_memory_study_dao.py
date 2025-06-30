@@ -446,13 +446,6 @@ class InMemoryStudyDao(StudyDao):
         del self._st_storages[cluster_key(area_id, storage.id)]
 
     @override
-    def st_storage_additional_constraint_exists(self, area_id: str, constraint_id: str) -> bool:
-        for constraint in self._st_storages_constraints.get(area_id, []):
-            if constraint.id == constraint_id:
-                return True
-        return False
-
-    @override
     def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
         return self._st_storages_constraints
 
@@ -465,11 +458,6 @@ class InMemoryStudyDao(StudyDao):
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
         return [c for c in self._st_storages_constraints.get(area_id, []) if c.cluster == storage_id]
-
-    @override
-    def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
-        matrix_id = self._st_storages_constraints_terms[additional_constraint_key(area_id, constraint_id)]
-        return self._matrix_service.get(matrix_id)
 
     @override
     def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:

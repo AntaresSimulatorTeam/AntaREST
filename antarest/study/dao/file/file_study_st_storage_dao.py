@@ -280,16 +280,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return {}
 
     @override
-    def st_storage_additional_constraint_exists(self, area_id: str, constraint_id: str) -> bool:
-        file_study = self.get_file_study()
-        path = ["input", "st-storage", "constraints", area_id, "additional-constraints", constraint_id]
-        try:
-            file_study.tree.get(path, depth=1)
-            return True
-        except (KeyError, ChildNotFoundError):
-            return False
-
-    @override
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
@@ -308,14 +298,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             return constraints
         except ChildNotFoundError:
             return []
-
-    @override
-    def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
-        study_data = self.get_file_study()
-        path = ["input", "st-storage", "constraints", area_id, f"rhs_{constraint_id}"]
-        node = study_data.tree.get_node(path)
-        assert isinstance(node, InputSeriesMatrix)
-        return node.parse_as_dataframe()
 
     @override
     def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
