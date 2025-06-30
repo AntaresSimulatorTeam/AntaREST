@@ -102,8 +102,8 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
         args["hours"] = list(ast.literal_eval(args["hours"]))
         return STStorageAdditionalConstraintFileData.model_validate(args)
 
-    def to_model(self) -> STStorageAdditionalConstraint:
-        return STStorageAdditionalConstraint.model_validate(self.model_dump(mode="json"))
+    def to_model(self, constraint_id: str) -> STStorageAdditionalConstraint:
+        return STStorageAdditionalConstraint.model_validate({"id": constraint_id, **self.model_dump(mode="json")})
 
     @classmethod
     def from_model(
@@ -112,8 +112,8 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
         return cls.model_validate(additional_constraint.model_dump(exclude={"id"}))
 
 
-def parse_st_storage_additional_constraint(data: Any) -> STStorageAdditionalConstraint:
-    return STStorageAdditionalConstraintFileData.from_ini(data).to_model()
+def parse_st_storage_additional_constraint(constraint_id: str, data: Any) -> STStorageAdditionalConstraint:
+    return STStorageAdditionalConstraintFileData.from_ini(data).to_model(constraint_id)
 
 
 def serialize_st_storage_additional_constraint(additional_constraint: STStorageAdditionalConstraint) -> dict[str, Any]:

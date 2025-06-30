@@ -291,6 +291,7 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
+    cluster: Optional[LowerCaseId] = None
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
     hours: Optional[Hours] = None

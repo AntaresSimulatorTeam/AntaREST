@@ -20,7 +20,11 @@ from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorage
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.model import STUDY_VERSION_9_2
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage, serialize_st_storage
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    parse_st_storage,
+    serialize_st_storage,
+    serialize_st_storage_additional_constraint,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
@@ -328,7 +332,19 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def save_storage_additional_constraints(
         self, area_id: str, constraints: list[STStorageAdditionalConstraint]
     ) -> None:
-        raise NotImplementedError()
+        existing_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
+        existing_map = {}
+        for constraint in existing_constraints:
+            existing_map[constraint.id] = constraint
+
+        for constraint in constraints:
+            existing_map[constraint.id] = constraint
+
+        ini_content = {}
+        for key, value in existing_map.items():
+            ini_content[key] = serialize_st_storage_additional_constraint(value)
+        study_data = self.get_file_study()
+        study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional-constraints"])
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
