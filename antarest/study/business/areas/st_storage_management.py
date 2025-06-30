@@ -33,6 +33,9 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_constraints import (
+    RemoveMultipleSTStorageConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
@@ -248,7 +251,13 @@ class STStorageManager:
         raise NotImplementedError()
 
     def delete_additional_constraint(self, study: StudyInterface, area_id: str, constraint_ids: list[str]) -> None:
-        raise NotImplementedError()
+        command = RemoveMultipleSTStorageConstraints(
+            area_id=area_id,
+            ids=constraint_ids,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
 
     def duplicate_cluster(
         self, study: StudyInterface, area_id: str, source_id: str, new_cluster_name: str
