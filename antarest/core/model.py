@@ -27,7 +27,7 @@ JSON: TypeAlias = Dict[str, Any]
 ELEMENT: TypeAlias = Union[str, int, float, bool, bytes]
 SUB_JSON: TypeAlias = Union[ELEMENT, JSON, List[Any], None]
 LowerCaseStr: TypeAlias = Annotated[str, StringConstraints(to_lower=True)]
-LowerCaseId = Annotated[str, BeforeValidator(lambda x: transform_name_to_id(x, lower=True))]
+LowerCaseId: TypeAlias = Annotated[str, BeforeValidator(lambda x: transform_name_to_id(x, lower=True))]
 
 
 class PublicMode(enum.StrEnum):

@@ -24,10 +24,10 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_7, StudyVersionInt
 
-from .st_storage import STStorageConfigType
 from .validation import extract_filtering, study_version_context
 
 
@@ -84,7 +84,7 @@ class Area(AntaresBaseModel, extra="forbid"):
     filters_synthesis: List[str]
     filters_year: List[str]
     # since v8.6
-    st_storages: List[STStorageConfigType] = []
+    st_storages: List[STStorage] = []
 
 
 class DistrictSet(AntaresBaseModel):
