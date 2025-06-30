@@ -11,12 +11,11 @@
 # This file is part of the Antares project.
 
 
-from typing import List, Optional, Self, TypeAlias
+from typing import List, Optional, Self
 
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, create_st_storage_constraint
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_2
@@ -30,8 +29,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-MatrixType: TypeAlias = Optional[list[list[MatrixData]] | str]
 
 
 # noinspection SpellCheckingInspection
