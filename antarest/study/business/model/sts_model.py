@@ -298,6 +298,9 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
     enabled: Optional[bool] = None
 
 
+STStorageAdditionalConstraintUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageAdditionalConstraintUpdate]]
+
+
 def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:
     """
     Creates a short-term storage constraint from a creation request
