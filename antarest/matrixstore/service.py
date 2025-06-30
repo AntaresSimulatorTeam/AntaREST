@@ -40,7 +40,6 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
-from antarest.matrixstore.matrix_model import MatrixModel
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -48,6 +47,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
+    MatrixMetadataDTO,
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
@@ -95,7 +95,7 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_matrices(self) -> list[MatrixModel]:
+    def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -141,7 +141,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
-    def get_matrices(self) -> list[MatrixModel]:
+    def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
 
     @override
@@ -181,8 +181,8 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
                 )
 
 
-def convert_matrix_into_model(matrix: Matrix) -> MatrixModel:
-    matrix_model = MatrixModel(
+def _matrix_to_dto(matrix: Matrix) -> MatrixMetadataDTO:
+    matrix_model = MatrixMetadataDTO(
         id=matrix.id, width=matrix.width, height=matrix.height, created_at=matrix.created_at, version=matrix.version
     )
 
@@ -407,7 +407,7 @@ class MatrixService(ISimpleMatrixService):
         return self.matrix_content_repository.get(matrix_id, matrix.version)
 
     @override
-    def get_matrices(self) -> List[MatrixModel]:
+    def get_matrices(self) -> List[MatrixMetadataDTO]:
         """
         Get a list of matrix objects from the database
         Returns:#
@@ -415,13 +415,7 @@ class MatrixService(ISimpleMatrixService):
         """
 
         matrices = self.repo.get_matrices()
-        pydantic_friendly_matrices = []
-
-        for matrix in matrices:
-            matrix_model = convert_matrix_into_model(matrix)
-            pydantic_friendly_matrices.append(matrix_model)
-
-        return pydantic_friendly_matrices
+        return [_matrix_to_dto(m) for m in matrices]
 
     @override
     def exists(self, matrix_id: str) -> bool:
