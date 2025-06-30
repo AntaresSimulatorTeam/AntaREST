@@ -30,6 +30,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
@@ -49,10 +50,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfigType,
-    create_st_storage_config,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
@@ -450,7 +448,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
     return config_list
 
 
-def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
+def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
@@ -469,7 +467,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorageConfigType]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(create_st_storage_config(version, **values, id=section))
+            config_list.append(parse_st_storage(version, values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid short-term storage configuration: '{section}' in '{config_path}'", exc_info=exc)

@@ -27,12 +27,9 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.model import RawStudy, StudyAdditionalData
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageGroup,
-    STStorageProperties,
-)
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -190,7 +187,7 @@ class TestVariantStudyService:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
-            parameters=STStorageProperties(
+            parameters=STStorageCreation(
                 name="Storage1",
                 group=STStorageGroup.BATTERY,
                 injection_nominal_capacity=1500,
