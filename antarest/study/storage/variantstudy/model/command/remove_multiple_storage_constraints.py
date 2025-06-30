@@ -16,7 +16,6 @@ from pydantic import Field
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -26,9 +25,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-# minimum required version.
-REQUIRED_VERSION = STUDY_VERSION_9_2
 
 
 class RemoveMultipleSTStorageConstraints(ICommand):
@@ -62,7 +58,7 @@ class RemoveMultipleSTStorageConstraints(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"area_id": self.area_id, "storage_id": self.storage_id},
+            args={"area_id": self.area_id, "ids": self.ids},
             study_version=self.study_version,
         )
 
