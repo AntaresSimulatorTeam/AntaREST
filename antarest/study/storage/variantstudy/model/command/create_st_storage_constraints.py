@@ -69,6 +69,11 @@ class CreateSTStorageAdditionalConstraints(ICommand):
 
         # Save the new constraints
         study_data.save_st_storage_additional_constraints(self.area_id, constraints)
+        # Save the default matrices
+        null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
+        for constraint in constraints:
+            study_data.save_st_storage_constraint_matrix(self.area_id, constraint.id, null_matrix)
+
         return command_succeeded(
             f"Short-term storage additional constraints successfully added to area '{self.area_id}'."
         )
