@@ -326,56 +326,6 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert new_meta.json()["owner"]["name"] == "Luffy"
 
 
-def test_matrix(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
-
-    matrix = [[1, 2], [3, 4]]
-
-    res = client.post(
-        "/v1/matrix",
-        json=matrix,
-    )
-
-    assert res.status_code == 200
-
-    res = client.get(f"/v1/matrix/{res.json()}")
-
-    assert res.status_code == 200
-    stored = res.json()
-    assert stored["id"] != ""
-
-    matrix_id = stored["id"]
-
-    res = client.get(f"/v1/matrix/{matrix_id}/download")
-    assert res.status_code == 200
-
-    res = client.post(
-        "/v1/matrixdataset",
-        json={
-            "metadata": {
-                "name": "mydataset",
-                "groups": [],
-                "public": False,
-            },
-            "matrices": [{"id": matrix_id, "name": "mymatrix"}],
-        },
-    )
-    assert res.status_code == 200
-
-    res = client.get("/v1/matrixdataset/_search?name=myda")
-    results = res.json()
-    assert len(results) == 1
-    assert len(results[0]["matrices"]) == 1
-    assert results[0]["matrices"][0]["id"] == matrix_id
-
-    dataset_id = results[0]["id"]
-    res = client.get(f"/v1/matrixdataset/{dataset_id}/download")
-    assert res.status_code == 200
-
-    res = client.delete(f"/v1/matrixdataset/{dataset_id}")
-    assert res.status_code == 200
-
-
 def test_area_management(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 

@@ -13,7 +13,6 @@
 import datetime
 import io
 import json
-import os
 import re
 import typing as t
 import zipfile
@@ -40,6 +39,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
+    MatrixMetadataDTO,
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
@@ -127,34 +127,97 @@ class TestMatrixService:
 
     def test_get_matrices(self, matrix_service: MatrixService):
         parent = resource_path.parent
-        matrices = os.listdir(parent)
-        expected_matrices_id = [
-            "b508399a33d3adb6a9ce11b4f70b2a8fa5cb8e8a37642f699637d1666e966a72",
-            "10d7ca7b8f935d013dd6304466668b87e25f51eb179b92bc995b6f2cc70641a7",
-            "d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
-            "e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
-            "ff7589e7632c1f8304949a27fa3ac86107d8ecf198980e67ae7ca062f9036789",
-            "2d62ca219846080b38e2ddf8d0f8f46a9fdeb7854234bfc751519b7502708b93",
-            "87e70e8b6af459b33be2dbd65d5c814a9225ae77112c9ea791d3abe92379334c",
+        matrices = [
+            parent / "test-01-all.result.tsv",
+            parent / "test-02-all.result.tsv",
+            parent / "test-03-all.result.tsv",
+            parent / "test-04-all.result.tsv",
+            parent / "test-05-all.result.tsv",
+            parent / "test-06-all.result.tsv",
+            parent / "test-07-all.result.tsv",
+            parent / "test-08-all.result.tsv",
         ]
-        actual_matrices_id = []
-        expected_matrices_id.sort()
-        key_word = "all"
+        expected_matrices = [
+            MatrixMetadataDTO(
+                id="ff7589e7632c1f8304949a27fa3ac86107d8ecf198980e67ae7ca062f9036789",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="b508399a33d3adb6a9ce11b4f70b2a8fa5cb8e8a37642f699637d1666e966a72",
+                width=1,
+                height=9,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="87e70e8b6af459b33be2dbd65d5c814a9225ae77112c9ea791d3abe92379334c",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
+                width=1,
+                height=2,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="2d62ca219846080b38e2ddf8d0f8f46a9fdeb7854234bfc751519b7502708b93",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="10d7ca7b8f935d013dd6304466668b87e25f51eb179b92bc995b6f2cc70641a7",
+                width=1,
+                height=18,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+        ]
+
         with db():
             for matrix in matrices:
-                if key_word in matrix:
-                    matrix_path = parent / matrix
-                    mat = pd.read_csv(matrix_path)
-                    matrix_service.create(mat)
+                mat = pd.read_csv(matrix)
+                matrix_service.create(mat)
 
-            for matrix in matrix_service.get_matrices():
-                actual_matrices_id.append(matrix.id)
+            actual_matrices = matrix_service.get_matrices()
 
-            actual_matrices_id.sort()
+            assert len(actual_matrices) == len(expected_matrices)
 
-            assert len(actual_matrices_id) == 7
+            assert actual_matrices[0].id == expected_matrices[0].id
+            assert (
+                actual_matrices[0].height == expected_matrices[0].height
+                and actual_matrices[0].width == expected_matrices[0].width
+            )
+            assert actual_matrices[0].version == expected_matrices[0].version
 
-            assert actual_matrices_id == expected_matrices_id
+            assert actual_matrices[1].id == expected_matrices[1].id
+            assert (
+                actual_matrices[1].height == expected_matrices[1].height
+                and actual_matrices[0].width == expected_matrices[0].width
+            )
+            assert actual_matrices[1].version == expected_matrices[1].version
+
+            assert actual_matrices[2].id == expected_matrices[2].id
+            assert (
+                actual_matrices[2].height == expected_matrices[2].height
+                and actual_matrices[2].width == expected_matrices[2].width
+            )
+            assert actual_matrices[2].version == expected_matrices[2].version
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""

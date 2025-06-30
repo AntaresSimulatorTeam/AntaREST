@@ -23,8 +23,13 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.matrix_model import MatrixModel
-from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO
+from antarest.matrixstore.model import (
+    MatrixData,
+    MatrixDataSetDTO,
+    MatrixDataSetUpdateDTO,
+    MatrixInfoDTO,
+    MatrixMetadataDTO,
+)
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
@@ -69,8 +74,8 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         logger.info("Importing new matrix dataset")
         return service.create_by_importation(file, is_json=json)
 
-    @bp.get("/matrix", tags=[APITag.matrix], description="Return a list of matrices metadatas")
-    def get_matrices() -> list[MatrixModel]:
+    @bp.get("/matrix", tags=[APITag.matrix], description="Return a list of matrices metadata")
+    def get_matrices() -> list[MatrixMetadataDTO]:
         logger.info("Fetching matrices metadatas")
 
         return service.get_matrices()
