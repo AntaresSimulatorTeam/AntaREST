@@ -15,7 +15,7 @@ from typing import Dict
 import pandas as pd
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_model import MatrixModel
+from antarest.matrixstore.model import MatrixMetadataDTO
 from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -47,5 +47,5 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         del self._content[matrix_id]
 
     @override
-    def get_matrices(self) -> list[MatrixModel]:
+    def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
