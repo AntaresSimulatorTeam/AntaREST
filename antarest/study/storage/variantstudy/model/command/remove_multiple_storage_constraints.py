@@ -51,7 +51,7 @@ class RemoveMultipleSTStorageConstraints(ICommand):
             if constraint_id not in existing_ids:
                 return command_failed(f"Short-term storage constraint '{constraint_id}' not found.")
 
-        study_data.delete_storage_additional_constraints(self.area_id, self.ids)
+        study_data.delete_st_storage_additional_constraints(self.area_id, self.ids)
         return command_succeeded("Short-term storage constraints successfully removed.")
 
     @override

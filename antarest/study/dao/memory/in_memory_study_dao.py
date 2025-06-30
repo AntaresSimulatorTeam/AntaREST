@@ -442,7 +442,7 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
 
     @override
-    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
 
     @override
@@ -471,7 +471,7 @@ class InMemoryStudyDao(StudyDao):
         return self._st_storages_constraints_terms[additional_constraint_key(area_id, constraint_id)]
 
     @override
-    def delete_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+    def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
         constraints_to_remove = []
         for constraint in self._st_storages_constraints[area_id]:
             if constraint.id in constraints:
@@ -480,7 +480,7 @@ class InMemoryStudyDao(StudyDao):
             self._st_storages_constraints[area_id].remove(constraint)
 
     @override
-    def save_storage_additional_constraints(
+    def save_st_storage_additional_constraints(
         self, area_id: str, constraints: list[STStorageAdditionalConstraint]
     ) -> None:
         existing_constraints = self._st_storages_constraints.get(area_id, [])

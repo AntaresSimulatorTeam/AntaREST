@@ -61,6 +61,7 @@ class CommandName(Enum):
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
     UPDATE_RENEWABLES_CLUSTERS = "update_renewables_clusters"
     CREATE_ST_STORAGE = "create_st_storage"
+    CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS = "create_st_storage_additional_constraints"
     REMOVE_ST_STORAGE = "remove_st_storage"
     REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS = "remove_st_storage_additional_constraints"
     UPDATE_ST_STORAGES = "update_st_storages"

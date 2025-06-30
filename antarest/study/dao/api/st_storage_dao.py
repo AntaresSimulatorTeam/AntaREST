@@ -152,7 +152,7 @@ class STStorageDao(ReadOnlySTStorageDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         raise NotImplementedError()
 
     ##########################
@@ -160,11 +160,11 @@ class STStorageDao(ReadOnlySTStorageDao):
     ##########################
 
     @abstractmethod
-    def delete_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+    def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_storage_additional_constraints(
+    def save_st_storage_additional_constraints(
         self, area_id: str, constraints: list[STStorageAdditionalConstraint]
     ) -> None:
         raise NotImplementedError()
