@@ -28,7 +28,7 @@ All the configuration are here.
 To access the general configuration of a study :
 
 1. From the "Study" view, click on the "CONFIGURATION" tab.
-2. The firt next tab is for general configuration.
+2. The first next tab is for general configuration.
 
 ![01-configuration-general-tab.png](../../assets/media/user-guide/simulation-configuration/01-configuration-general-tab.png)
 
@@ -84,7 +84,27 @@ A new library [antares-timeseries-generation](https://github.com/AntaresSimulato
 > TODO
 
 ## Adequacy Patch
-> TODO
+The **Adequacy Patch** tab in the **Configurations** is available for studies that have a version >= 8.3.
+
+### For 8.3 and 8.4 
+Only two configurations are available:
+
+- enable adequacy patch.
+- exclude contribution of flows between areas. Its default value is set at true.
+![03-configuration-adequacy-patch-earlier.png](../../assets/media/user-guide/simulation-configuration/03-configuration-adequacy-patch-earlier.png)
+
+### For 8.5 and later versions
+All adequacy patch configurations are available:
+
+- enable adequacy patch.
+- exclude contribution of flows between areas. Its default value is set at true.
+- price taking order. Its default value is set at DENS.
+- inclusion of redispatching costs.
+- activation threshold. Its default value is set at 1.
+- threshold for counting local matching rule violations. Its default value is set at 0.
+- relaxation factor for csr constraints. Its default value is set at 7.
+![03-configuration-adequacy-patch-later.png](../../assets/media/user-guide/simulation-configuration/03-configuration-adequacy-patch-later.png)
+
 
 ## Advanced parameters
 > TODO

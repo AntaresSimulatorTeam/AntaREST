@@ -151,6 +151,7 @@ def build_study_service(
         command_context=Mock(),
         user_service=user_service,
         repository=repository,
+        job_result_repository=Mock(),
         event_bus=event_bus,
         task_service=task_service,
         file_transfer_manager=Mock(),
@@ -789,8 +790,11 @@ def test_download_output() -> None:
             "study-id", "output-id", input_data, use_task=False, filetype=ExportFormat.JSON
         ),
     )
-    print(res.body)
     assert MatrixAggregationResultDTO.model_validate_json(res.body) == res_matrix
+    # Ensures it was called with economy in lower case
+    file_study_tree.get_node.assert_called_with(
+        ["output", "output-id", "economy", "mc-ind", "00001", "areas", "east", "details-annual"]
+    )
 
     # AREA TYPE - ZIP & TASK
     export_file_download = FileDownload(

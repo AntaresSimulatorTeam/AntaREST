@@ -368,6 +368,7 @@ def export_study_flat(
     output_list_filter: Optional[List[str]] = None,
     denormalize: bool = True,
     output_src_path: Optional[Path] = None,
+    is_study_managed: bool = True,
 ) -> None:
     start_time = time.time()
 
@@ -403,7 +404,7 @@ def export_study_flat(
     duration = "{:.3f}".format(stop_time - start_time)
     with_outputs = "with outputs" if outputs else "without outputs"
     logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
-    study = study_factory.create_from_fs(dest, "", use_cache=False)
+    study = study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
     if denormalize:
         study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)

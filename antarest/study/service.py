@@ -59,6 +59,7 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifie
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, require_current_user
@@ -401,7 +402,6 @@ class RawStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
-        file_study = self.get_files()
 
         for command in commands:
             result = command.apply(FileStudyTreeDao(self.get_files()), listener)
@@ -409,25 +409,6 @@ class RawStudyInterface(StudyInterface):
                 raise CommandApplicationError(result.message)
         remove_from_cache(self._raw_study_service.cache, study.id)
         self._variant_study_service.on_parent_change(study.id)
-
-        if not is_managed(study):
-            # In a previous version, de-normalization was performed asynchronously.
-            # However, this cause problems with concurrent file access,
-            # especially when de-normalizing a matrix (which can take time).
-            #
-            # async_denormalize = threading.Thread(
-            #     name=f"async_denormalize-{study.id}",
-            #     target=file_study.tree.denormalize,
-            # )
-            # async_denormalize.start()
-            #
-            # To avoid this concurrency problem, it would be necessary to implement a
-            # locking system for the entire study using a file lock (since multiple processes,
-            # not only multiple threads, could access the same content simultaneously).
-            #
-            # Currently, we use a synchronous call to address the concurrency problem
-            # within the current process (not across multiple processes)...
-            file_study.tree.denormalize()
 
 
 class VariantStudyInterface(StudyInterface):
@@ -479,6 +460,7 @@ class StudyService:
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
+        job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -488,6 +470,7 @@ class StudyService:
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.repository = repository
+        self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -1140,7 +1123,17 @@ class StudyService:
             study = self.storage_service.get_storage(origin_study).copy(
                 origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
             )
+
             self._save_study(study, group_ids)
+
+            # Copying all jobs associated with the study
+            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
+
+            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
+
+            if new_jobs:
+                self.job_result_repository.save_all(new_jobs)
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_CREATED,

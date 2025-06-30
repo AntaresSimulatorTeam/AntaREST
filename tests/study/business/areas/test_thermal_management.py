@@ -17,7 +17,7 @@ import pytest
 
 import antarest.study.storage.rawstudy.model.filesystem.config.files
 from antarest.core.exceptions import CommandApplicationError
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.areas.thermal_management import (
     ThermalClusterCreation,
@@ -77,12 +77,16 @@ def study_path(tmp_path: Path) -> Path:
 
 def create_file_study(matrix_service: ISimpleMatrixService, study_id: str, path: Path) -> FileStudy:
     config = antarest.study.storage.rawstudy.model.filesystem.config.files.build(study_id=study_id, study_path=path)
-    tree = FileStudyTree(MatrixUriMapper(matrix_service), config)
+
+    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+
+    tree = FileStudyTree(matrix_mapper, config)
     return FileStudy(config, tree)
 
 
 @pytest.fixture
-def manager(matrix_service: ISimpleMatrixService, study_path) -> ThermalManager:
+def manager(matrix_service: ISimpleMatrixService) -> ThermalManager:
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     matrix_constants.init_constant_matrices()
     return ThermalManager(CommandContext(generator_matrix_constants=matrix_constants, matrix_service=matrix_service))
