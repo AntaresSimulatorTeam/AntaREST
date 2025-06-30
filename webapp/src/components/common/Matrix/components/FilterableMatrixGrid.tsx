@@ -13,10 +13,10 @@
  */
 
 import { Box } from "@mui/material";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, forwardRef, useImperativeHandle, useRef } from "react";
 import { MatrixProvider } from "../context/MatrixContext";
 import MatrixGrid, { type MatrixGridProps } from "./MatrixGrid";
-import MatrixFilter from "./MatrixFilter";
+import MatrixFilter, { type MatrixFilterHandle } from "./MatrixFilter";
 import type { FilterCriteria } from "./MatrixFilter/types";
 import type { TimeFrequencyType } from "../shared/types";
 
@@ -24,20 +24,29 @@ export interface FilterableMatrixGridProps extends MatrixGridProps {
   timeFrequency?: TimeFrequencyType;
 }
 
-function FilterableMatrixGrid({
-  data,
-  rows,
-  columns,
-  dateTime,
-  aggregates,
-  rowHeaders,
-  onCellEdit,
-  onMultipleCellsEdit,
-  readOnly = true,
-  showPercent,
-  showStats = true,
-  timeFrequency,
-}: FilterableMatrixGridProps) {
+export interface FilterableMatrixGridHandle {
+  toggleFilter: () => void;
+}
+
+function FilterableMatrixGrid(
+  {
+    data,
+    rows,
+    columns,
+    dateTime,
+    aggregates,
+    rowHeaders,
+    onCellEdit,
+    onMultipleCellsEdit,
+    readOnly = true,
+    showPercent,
+    showStats = true,
+    timeFrequency,
+  }: FilterableMatrixGridProps,
+  ref: React.ForwardedRef<FilterableMatrixGridHandle>,
+) {
+  const matrixFilterRef = useRef<MatrixFilterHandle>(null);
+
   // Initialize filter preview state
   const [filterPreview, setFilterPreview] = useState<{
     active: boolean;
@@ -63,6 +72,17 @@ function FilterableMatrixGrid({
     }
   }, [data, rows, filterPreview.active]);
 
+  // Expose filter toggle functionality via ref
+  useImperativeHandle(
+    ref,
+    () => ({
+      toggleFilter: () => {
+        matrixFilterRef.current?.toggle();
+      },
+    }),
+    [],
+  );
+
   // Create minimal context value for MatrixProvider
   // Only includes what's necessary for filtering functionality
   const contextValue = useMemo(
@@ -86,8 +106,12 @@ function FilterableMatrixGrid({
       canUndo: false,
       canRedo: false,
       isDirty: false,
+
+      // Filter preview state and setter
+      filterPreview,
+      setFilterPreview,
     }),
-    [data, aggregates],
+    [data, aggregates, filterPreview],
   );
 
   // Determine if this is a time series based on dateTime presence
@@ -101,29 +125,12 @@ function FilterableMatrixGrid({
           flexDirection: "column",
           width: 1,
           height: 1,
-          position: "relative",
         }}
       >
-        {/* TODO: The MatrixFilter button is absolutely positioned because this component
-            is used in the results view where the parent controls the layout, preventing
-            us from properly placing the filter button in the natural flow.
-
-            This is not ideal and we should find a better solution:
-            - Option 1: Accept an optional prop to render the filter in a designated slot/area
-            - Option 2: Use a render prop pattern to let the parent decide where to place the filter
-            - Option 3: Create a separate non-filterable MatrixGrid and compose them differently
-            - Option 4: Refactor the results view to provide better layout control
-
-            The current solution is fragile and breaks if the parent layout changes. */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: -50,
-            right: 150,
-            zIndex: 1,
-          }}
-        >
+        {/* Hidden MatrixFilter that can be triggered from outside via ref */}
+        <Box sx={{ display: "none" }}>
           <MatrixFilter
+            ref={matrixFilterRef}
             dateTime={dateTime}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
@@ -153,4 +160,4 @@ function FilterableMatrixGrid({
   );
 }
 
-export default FilterableMatrixGrid;
+export default forwardRef(FilterableMatrixGrid);
