@@ -371,14 +371,14 @@ class STStorageManager:
     ) -> STStorageAdditionalConstraint:
         raise NotImplementedError()
 
-    def delete_additional_constraint(self, study: StudyInterface, area_id: str, constraint_ids: list[str]) -> None:
+    def delete_additional_constraints(self, study: StudyInterface, area_id: str, constraint_ids: list[str]) -> None:
         """
-        Creates several additional-constraints for a given area.
+        Removes several additional-constraints for a given area.
 
         Args:
             study: The study object.
             area_id: The area ID of the short-term storage.
-            constraints: List of constraints to create.
+            constraint_ids: IDs list of constraints to remove.
         """
         command = RemoveMultipleSTStorageConstraints(
             area_id=area_id,
