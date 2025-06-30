@@ -63,7 +63,19 @@ describe("validateString", () => {
         allowSpecialChars: true,
         specialChars: "!@#",
       }),
-    ).toBe('form.field.specialChars: {"0":"!@#"}');
+    ).toBe('form.field.specialCharsAllowedList: {"chars":"!@#"}');
+    expect(
+      validateString("abc123!@#", {
+        allowSpecialChars: true,
+        specialChars: { chars: "?&", mode: "deny" },
+      }),
+    ).toBe(true);
+    expect(
+      validateString("abc123!@#", {
+        allowSpecialChars: true,
+        specialChars: { chars: "!@#", mode: "deny" },
+      }),
+    ).toBe('form.field.specialCharsNotAllowedList: {"chars":"!@#"}');
   });
 
   test("should handle duplicate checks", () => {

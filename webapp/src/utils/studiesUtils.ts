@@ -15,9 +15,10 @@
 import moment from "moment";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { StudyType, type StudyMetadata } from "../types/types";
 import type { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
+import { StudyType, type StudyMetadata } from "../types/types";
 import { isSearchMatching } from "./stringUtils";
+import { validateString } from "./validation/string";
 
 ////////////////////////////////////////////////////////////////
 // Sort
@@ -111,3 +112,16 @@ export function filterStudies(filters: StudyFilters, studies: StudyMetadata[]): 
   ] as RA.Pred[];
   return R.filter(R.allPass(predicates), studies);
 }
+
+////////////////////////////////////////////////////////////////
+// Validation
+////////////////////////////////////////////////////////////////
+
+export const validateStudyName = validateString({
+  specialChars: { chars: "=/", mode: "deny" },
+});
+
+export const validateStudyFolder = validateString({
+  specialChars: { chars: "=", mode: "deny" },
+  allowEmpty: true, // `default` folder is set if empty
+});
