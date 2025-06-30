@@ -317,6 +317,18 @@ class STStorageManager:
         """
         return study.get_study_dao().get_all_st_storage_additional_constraints()
 
+    def get_additional_constraints_for_area(
+        self, study: StudyInterface, area_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        """
+        Gets additional constraints for a given area.
+
+        Args:
+            study: The study object.
+            area_id: The area ID of the short-term storage.
+        """
+        return study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
+
     def get_additional_constraints(
         self, study: StudyInterface, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:

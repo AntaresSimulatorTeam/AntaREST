@@ -38,6 +38,7 @@ from antarest.core.exceptions import (
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
+    ObjectReferencedInsideSTStorageAdditionalConstraints,
     ReferencedObjectDeletionNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
@@ -1751,12 +1752,21 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         study_interface = self.get_study_interface(study)
         self.assert_study_unarchived(study)
+        # Checks the area is not referenced in any constraint
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
             study_interface, ConstraintFilters(area_name=area_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        referencing_st_storage_constraints = self.st_storage_manager.get_additional_constraints_for_area(
+            study_interface, area_id
+        )
+        if referencing_st_storage_constraints:
+            raise ObjectReferencedInsideSTStorageAdditionalConstraints(area_id, object_type="Area")
+
+        # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
         self.event_bus.push(
             Event(
