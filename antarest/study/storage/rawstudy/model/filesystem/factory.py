@@ -21,7 +21,11 @@ import filelock
 from antares.study.version import StudyVersion
 
 from antarest.core.interfaces.cache import ICache, study_config_cache_key
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import (
+    MatrixUriMapperFactory,
+    NormalizedMatrixUriMapper,
+    get_mapper_type,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build, parse_outputs
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -53,10 +57,10 @@ class StudyFactory:
 
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_mapper_factory: MatrixUriMapperFactory,
         cache: ICache,
     ) -> None:
-        self._matrix_mapper = matrix_mapper
+        self._matrix_mapper_factory = matrix_mapper_factory
         self._cache = cache
         # It is better to store lock files in the temporary directory,
         # because it is possible that there not deleted when the web application is stopped.
@@ -67,6 +71,7 @@ class StudyFactory:
     def create_from_fs(
         self,
         path: Path,
+        with_matrix_normalization: bool,
         study_id: str,
         output_path: Optional[Path] = None,
         use_cache: bool = True,
@@ -78,6 +83,7 @@ class StudyFactory:
 
         Args:
             path: full path of the study directory to parse.
+            with_matrix_normalization: boolean indicating if the study is managed or not.
             study_id: ID of the study (if known).
             output_path: full path of the "output" directory in the study directory.
             use_cache: Whether to use cache or not.
@@ -92,16 +98,19 @@ class StudyFactory:
         lock_file = os.path.join(self._lock_dir, self._lock_fmt.format(basename=lock_basename))
         with filelock.FileLock(lock_file):
             logger.info(f"🏗 Creating a study by reading the configuration from the directory '{path}'...")
-            return self._create_from_fs_unsafe(path, study_id, output_path, use_cache)
+            return self._create_from_fs_unsafe(path, with_matrix_normalization, study_id, output_path, use_cache)
 
     def _create_from_fs_unsafe(
         self,
         path: Path,
+        with_matrix_normalization: bool,
         study_id: str,
         output_path: Optional[Path] = None,
         use_cache: bool = True,
     ) -> FileStudy:
+        mapper_type = get_mapper_type(with_matrix_normalization)
         cache_id = study_config_cache_key(study_id)
+        matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
         if study_id and use_cache:
             from_cache = self._cache.get(cache_id)
             if from_cache is not None:
@@ -111,12 +120,12 @@ class StudyFactory:
                 if output_path:
                     config.output_path = output_path
                     config.outputs = parse_outputs(output_path)
-                return FileStudy(config, FileStudyTree(self._matrix_mapper, config))
+                return FileStudy(config, FileStudyTree(matrix_mapper, config))
         start_time = time.time()
         config = build(path, study_id, output_path)
         duration = "{:.3f}".format(time.time() - start_time)
         logger.info(f"Study {study_id} config built in {duration}s")
-        result = FileStudy(config, FileStudyTree(self._matrix_mapper, config))
+        result = FileStudy(config, FileStudyTree(matrix_mapper, config))
         if study_id and use_cache:
             logger.info(f"Cache new entry from StudyFactory (studyID: {study_id})")
             self._cache.put(
@@ -125,5 +134,6 @@ class StudyFactory:
             )
         return result
 
-    def create_from_config(self, config: FileStudyTreeConfig) -> FileStudyTree:
-        return FileStudyTree(self._matrix_mapper, config)
+    def create_from_config(self, config: FileStudyTreeConfig, mapper_type: NormalizedMatrixUriMapper) -> FileStudyTree:
+        matrix_mapper = self._matrix_mapper_factory.create(mapper_type)
+        return FileStudyTree(matrix_mapper, config)

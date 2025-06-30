@@ -878,6 +878,7 @@ class VariantStudyService(AbstractStorageService):
         study_path = self.get_study_path(metadata)
         return self.study_factory.create_from_fs(
             study_path,
+            is_managed(metadata),
             metadata.id,
             output_dir or Path(metadata.path) / "output",
             use_cache=use_cache,
@@ -955,6 +956,7 @@ class VariantStudyService(AbstractStorageService):
             output_list_filter,
             denormalize,
             output_src_path,
+            is_managed(metadata),
         )
 
     @override
@@ -968,7 +970,7 @@ class VariantStudyService(AbstractStorageService):
         """
         self._safe_generation(metadata)
         study_path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(study_path, metadata.id)
+        study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
@@ -977,6 +979,7 @@ class VariantStudyService(AbstractStorageService):
             if self.exists(variant_study):
                 study = self.study_factory.create_from_fs(
                     self.get_study_path(variant_study),
+                    is_managed(variant_study),
                     study_id=variant_study.id,
                     output_path=Path(variant_study.path) / OUTPUT_RELATIVE_PATH,
                 )
