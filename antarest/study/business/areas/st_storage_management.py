@@ -333,7 +333,7 @@ class STStorageManager:
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage.
+            area_id: The area ID.
         """
         return study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
 
@@ -358,7 +358,7 @@ class STStorageManager:
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage.
+            area_id: The area ID.
             constraints: List of constraints to create.
         """
         created_constraints = [create_st_storage_constraint(c) for c in constraints]
@@ -397,7 +397,7 @@ class STStorageManager:
 
         Args:
             study: The study object.
-            area_id: The area ID of the short-term storage.
+            area_id: The area ID.
             constraint_ids: IDs list of constraints to remove.
         """
         command = RemoveMultipleSTStorageConstraints(
