@@ -858,3 +858,9 @@ class STStorageReferencedInsideAdditionalConstraints(HTTPException):
             HTTPStatus.CONFLICT,
             f"The Short-term storage '{storage_id}' is not allowed to be deleted as it is referenced inside this additional-constraint {constraint_id}.",
         )
+
+
+class STStorageAdditionalConstraintNotFound(HTTPException):
+    def __init__(self, area_id: str, constraint_id: str) -> None:
+        msg = f"The constraint '{constraint_id}' inside area {area_id} was not found."
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
