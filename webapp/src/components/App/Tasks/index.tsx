@@ -45,7 +45,7 @@ import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { fetchStudies } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { getStudies } from "../../../redux/selectors";
+import { getStudies, getUsersById } from "../../../redux/selectors";
 import {
   convertFileDownloadDTO,
   getDownloadUrl,
@@ -83,6 +83,7 @@ function JobsListing() {
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState<string | undefined>();
   const [messageModalOpen, setMessageModalOpen] = useState<string | undefined>();
   const studies = useAppSelector(getStudies);
+  const usersByID = useAppSelector(getUsersById);
   const dispatch = useAppDispatch();
   const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
 
@@ -187,7 +188,6 @@ function JobsListing() {
       setOpenConfirmationDialog(undefined);
     })();
   };
-
   useEffect(() => {
     const listener = async (ev: WsEvent) => {
       if (ev.type === WsEventType.TaskCompleted || ev.type === WsEventType.TaskFailed) {
@@ -340,6 +340,7 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
+        userName: (job.ownerId && usersByID[job.ownerId]?.name) || "",
       })),
     [jobs, studyJobsProgress],
   );
@@ -456,6 +457,7 @@ function JobsListing() {
         date: task.completion_date_utc || task.creation_date_utc,
         type: task.type || "UNKNOWN",
         status: task.status === TaskStatus.Running ? "running" : "",
+        userName: (task.owner && usersByID[task.owner]?.name) || "",
       })),
     [tasks],
   );

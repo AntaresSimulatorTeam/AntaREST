@@ -291,6 +291,7 @@ export const mapLaunchJobDTO = (j: LaunchJobDTO): LaunchJob => ({
   msg: j.msg,
   outputId: j.output_id,
   exitCode: j.exit_code,
+  ownerId: j.owner.id,
 });
 
 export const getStudyJobs = (
