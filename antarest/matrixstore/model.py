@@ -98,6 +98,7 @@ class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True)
     def serialize_created_at(self, created_at: datetime.datetime) -> str:
         return created_at.strftime("%Y-%m-%d %H:%M:%S.%f")
 
+
 class MatrixDataSetRelation(Base):  # type: ignore
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset_matrices"
