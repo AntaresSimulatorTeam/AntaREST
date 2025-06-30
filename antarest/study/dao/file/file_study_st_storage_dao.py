@@ -324,6 +324,12 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             for path in paths:
                 study_data.tree.delete(path)
 
+    @override
+    def save_storage_additional_constraints(
+        self, area_id: str, constraints: list[STStorageAdditionalConstraint]
+    ) -> None:
+        raise NotImplementedError()
+
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
         path = _STORAGE_LIST_PATH.format(area_id=area_id, storage_id="")[:-1]

@@ -478,3 +478,17 @@ class InMemoryStudyDao(StudyDao):
                 constraints_to_remove.append(constraint)
         for constraint in constraints_to_remove:
             self._st_storages_constraints[area_id].remove(constraint)
+
+    @override
+    def save_storage_additional_constraints(
+        self, area_id: str, constraints: list[STStorageAdditionalConstraint]
+    ) -> None:
+        existing_constraints = self._st_storages_constraints.get(area_id, [])
+        existing_map = {}
+        for constraint in existing_constraints:
+            existing_map[constraint.id] = constraint
+
+        for constraint in constraints:
+            existing_map[constraint.id] = constraint
+
+        self._st_storages_constraints[area_id] = list(existing_map.values())
