@@ -829,3 +829,8 @@ class StudyImportFailed(HTTPException):
     def __init__(self, study_name: str, reason: str) -> None:
         message = f"Study '{study_name}' could not be imported: {reason}"
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class DuplicateSTStorageConstraintName(HTTPException):
+    def __init__(self, area_id: str, constraint_id: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, f"The constraint '{constraint_id}' already exists in area '{area_id}'")

@@ -318,6 +318,11 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         return node.parse_as_dataframe()
 
     @override
+    def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "constraints", area_id, f"rhs_{constraint_id}"])
+
+    @override
     def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
         study_data = self.get_file_study()
         for constraint in constraints:
@@ -338,6 +343,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             existing_map[constraint.id] = constraint
 
         for constraint in constraints:
+            if constraint.id not in existing_map:
+                print("ok")
+                # We should create the matrix
             existing_map[constraint.id] = constraint
 
         ini_content = {}

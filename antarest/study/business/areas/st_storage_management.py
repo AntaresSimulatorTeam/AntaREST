@@ -16,6 +16,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import (
     DuplicateSTStorage,
+    DuplicateSTStorageConstraintName,
 )
 from antarest.core.model import JSON
 from antarest.study.business.model.sts_model import (
@@ -27,12 +28,16 @@ from antarest.study.business.model.sts_model import (
     STStorageUpdate,
     STStorageUpdates,
     create_st_storage,
+    create_st_storage_constraint,
     update_st_storage,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
+    CreateSTStorageAdditionalConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_constraints import (
     RemoveMultipleSTStorageConstraints,
 )
@@ -237,9 +242,28 @@ class STStorageManager:
         return study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
 
     def create_additional_constraints(
-        self, study: StudyInterface, storage_id: str, constraints: list[STStorageAdditionalConstraintCreation]
+        self, study: StudyInterface, area_id: str, constraints: list[STStorageAdditionalConstraintCreation]
     ) -> list[STStorageAdditionalConstraint]:
-        raise NotImplementedError()
+        created_constraints = [create_st_storage_constraint(c) for c in constraints]
+
+        # Checks we're not duplicating existing constraints
+        existing_constraints = study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
+        existing_ids = {c.id for c in existing_constraints}
+        for constraint in created_constraints:
+            if constraint.id in existing_ids:
+                raise DuplicateSTStorageConstraintName(area_id, constraint.id)
+
+        # Apply the command
+        command = CreateSTStorageAdditionalConstraints(
+            area_id=area_id,
+            constraints=constraints,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
+
+        # Return the created constraints
+        return created_constraints
 
     def update_additional_constraint(
         self,
