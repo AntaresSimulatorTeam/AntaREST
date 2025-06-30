@@ -62,6 +62,7 @@ class CommandName(Enum):
     UPDATE_RENEWABLES_CLUSTERS = "update_renewables_clusters"
     CREATE_ST_STORAGE = "create_st_storage"
     REMOVE_ST_STORAGE = "remove_st_storage"
+    REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS = "remove_st_storage_additional_constraints"
     UPDATE_ST_STORAGES = "update_st_storages"
     UPDATE_HYDRO_PROPERTIES = "update_hydro_properties"
     UPDATE_INFLOW_STRUCTURE = "update_inflow_structure"

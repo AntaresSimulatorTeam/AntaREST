@@ -457,6 +457,10 @@ class InMemoryStudyDao(StudyDao):
         return self._st_storages_constraints
 
     @override
+    def get_st_storage_additional_constraints_for_area(self, area_id: str) -> list[STStorageAdditionalConstraint]:
+        return self._st_storages_constraints.get(area_id, [])
+
+    @override
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
@@ -465,3 +469,12 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_st_storage_constraint_matrix(self, area_id: str, constraint_id: str) -> pd.DataFrame:
         return self._st_storages_constraints_terms[additional_constraint_key(area_id, constraint_id)]
+
+    @override
+    def delete_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+        constraints_to_remove = []
+        for constraint in self._st_storages_constraints[area_id]:
+            if constraint.id in constraints:
+                constraints_to_remove.append(constraint)
+        for constraint in constraints_to_remove:
+            self._st_storages_constraints[area_id].remove(constraint)

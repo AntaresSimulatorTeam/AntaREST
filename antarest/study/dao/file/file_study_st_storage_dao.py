@@ -269,7 +269,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             all_constraints = {}
             areas = file_study.tree.get(path, depth=1)
             for area in areas:
-                constraints = self._get_st_storage_additional_constraints(area)
+                constraints = self.get_st_storage_additional_constraints_for_area(area)
                 all_constraints[area] = constraints
             return all_constraints
         except ChildNotFoundError:
@@ -289,10 +289,11 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
-        all_area_constraints = self._get_st_storage_additional_constraints(area_id)
+        all_area_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
         return [c for c in all_area_constraints if c.cluster == storage_id]
 
-    def _get_st_storage_additional_constraints(self, area_id: str) -> list[STStorageAdditionalConstraint]:
+    @override
+    def get_st_storage_additional_constraints_for_area(self, area_id: str) -> list[STStorageAdditionalConstraint]:
         file_study = self.get_file_study()
         path = ["input", "st-storage", "constraints", area_id, "additional-constraints"]
         try:
@@ -311,6 +312,17 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         node = study_data.tree.get_node(path)
         assert isinstance(node, InputSeriesMatrix)
         return node.parse_as_dataframe()
+
+    @override
+    def delete_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+        study_data = self.get_file_study()
+        for constraint in constraints:
+            paths = [
+                ["input", "st-storage", "constraints", area_id, f"rhs_{constraint}"],
+                ["input", "st-storage", "constraints", area_id, constraint],
+            ]
+            for path in paths:
+                study_data.tree.delete(path)
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
