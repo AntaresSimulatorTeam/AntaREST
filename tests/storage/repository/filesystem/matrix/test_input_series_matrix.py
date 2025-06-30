@@ -50,7 +50,10 @@ class TestInputSeriesMatrix:
         )
         file.write_text(content)
 
-        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config, nb_columns=8)
+        mapper = Mock(spec=MatrixUriMapper)
+        mapper.get_link_content.return_value = None
+
+        node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config, nb_columns=8)
 
         # checks formatted response
         actual = node.load(formatted=True)
@@ -101,7 +104,10 @@ class TestInputSeriesMatrix:
         assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:
-        node = InputSeriesMatrix(matrix_mapper=Mock(), config=my_study_config)
+        mapper = Mock(spec=MatrixUriMapper)
+        mapper.get_link_content.return_value = None
+
+        node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config, nb_columns=8)
         with pytest.raises(ChildNotFoundError) as ctx:
             node.load()
         err_msg = str(ctx.value)
@@ -123,9 +129,12 @@ class TestInputSeriesMatrix:
             assert uri == matrix_uri
             return pd.DataFrame(data=matrix_obj["data"])
 
-        node = InputSeriesMatrix(
-            matrix_mapper=Mock(spec=MatrixUriMapper, get_matrix=get_matrix), config=my_study_config
-        )
+        mapper = Mock(spec=MatrixUriMapper)
+        mapper.get_matrix = get_matrix
+        mapper.get_link_content.return_value = matrix_uri
+        mapper.has_link.return_value = True
+
+        node = InputSeriesMatrix(matrix_mapper=mapper, config=my_study_config)
         actual = node.load()
         assert actual == matrix_obj
 
@@ -158,13 +167,28 @@ class TestCopyAndRenameFile:
         self.link = self.file.parent / f"{self.file.name}.link"
         self.link.write_text("Link: Mock File Content")
 
+        main_mapper = Mock(spec=MatrixUriMapper)
+        main_mapper.get_link_path.return_value = self.link
+        main_mapper.has_link.return_value = True
+
+        def mock_remove_link(node):
+            if self.link.exists():
+                self.link.unlink()
+
+        main_mapper.remove_link = mock_remove_link
+
         config = FileStudyTreeConfig(study_path=self.file.parent, path=self.file, version=-1, study_id="")
-        self.node = InputSeriesMatrix(matrix_mapper=Mock(), config=config)
+        self.node = InputSeriesMatrix(matrix_mapper=main_mapper, config=config)
 
         self.modified_file = self.file.parent / "lazy_modified.txt"
         self.modified_link = self.file.parent / f"{self.modified_file.name}.link"
+
+        fake_mapper = Mock(spec=MatrixUriMapper)
+        fake_mapper.get_link_path.return_value = self.modified_link
+        fake_mapper.has_link.return_value = False
+
         config2 = FileStudyTreeConfig(study_path=self.file.parent, path=self.modified_file, version=-1, study_id="")
-        self.fake_node = InputSeriesMatrix(matrix_mapper=Mock(), config=config2)
+        self.fake_node = InputSeriesMatrix(matrix_mapper=fake_mapper, config=config2)
         self.target = self.modified_file.stem
 
     def _checks_behavior(self, rename: bool, target_is_link: bool):

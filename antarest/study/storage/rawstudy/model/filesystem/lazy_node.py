@@ -51,8 +51,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         if self.config.archive_path:
             path, tmp_dir = self._extract_file_to_tmp_dir(self.config.archive_path)
         else:
-            link_path = self.get_link_path()
-            path = link_path if link_path.exists() else self.config.path
+            path = self.config.path
         return path, tmp_dir
 
     def file_exists(self) -> bool:
@@ -84,8 +83,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             return self
 
         if expanded:
-            if self.get_link_path().exists():
-                return self.get_link_path().read_text()
             return self.get_lazy_content()
 
         return self.load(url, depth, expanded, formatted)
@@ -114,30 +111,14 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
         self._assert_url_end(url)
-        if self.get_link_path().exists():
-            self.get_link_path().unlink()
-        elif self.config.path.exists():
+        if self.config.path.exists():
             self.config.path.unlink()
 
-    def get_link_path(self) -> Path:
-        path = self.config.path.parent / (self.config.path.name + ".link")
-        return path
-
     @override
-    def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
+    def save(self, data: Any, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
-
-        if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
-            self.get_link_path().write_text(data)
-            if self.config.path.exists():
-                self.config.path.unlink()
-            return None
-
         self.dump(cast(S, data), url)
-        if self.get_link_path().exists():
-            self.get_link_path().unlink()
-        return None
 
     def get_lazy_content(
         self,

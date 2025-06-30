@@ -12,7 +12,7 @@
 
 from unittest.mock import Mock
 
-from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.interfaces.cache import study_config_cache_key
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
@@ -24,6 +24,8 @@ from tests.storage.rawstudies.samples import ASSETS_DIR
 def test_renewable_subtree() -> None:
     path = ASSETS_DIR / "v810/sample1"
     matrix_mapper: MatrixUriMapper = Mock()
+    matrix_mapper.get_link_content.return_value = None
+
     config = build(path, "")
     assert config.get_renewable_ids("area") == ["la_rochelle", "oleron"]
 
@@ -57,16 +59,20 @@ def test_factory_cache() -> None:
     path = ASSETS_DIR / "v810/sample1"
 
     cache = Mock()
-    factory = StudyFactory(matrix_mapper=Mock(), cache=cache)
+    matrix_mapper_factory = Mock()
+    matrix_mapper = Mock()
+    matrix_mapper_factory.create.return_value = matrix_mapper
+
+    factory = StudyFactory(matrix_mapper_factory=matrix_mapper_factory, cache=cache)
     study_id = "study-id"
-    cache_id = f"{CacheConstants.STUDY_FACTORY}/{study_id}"
+    cache_id = study_config_cache_key(study_id)
     config = build(path, study_id)
 
     cache.get.return_value = None
-    study = factory.create_from_fs(path, study_id)
+    study = factory.create_from_fs(path, True, study_id)
     assert study.config == config
     cache.put.assert_called_once_with(cache_id, FileStudyTreeConfigDTO.from_build_config(config).model_dump())
 
     cache.get.return_value = FileStudyTreeConfigDTO.from_build_config(config).model_dump()
-    study = factory.create_from_fs(path, study_id)
+    study = factory.create_from_fs(path, True, study_id)
     assert study.config == config
