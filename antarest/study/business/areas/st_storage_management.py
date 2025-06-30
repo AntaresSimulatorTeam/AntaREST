@@ -247,6 +247,9 @@ class STStorageManager:
     ) -> STStorageAdditionalConstraint:
         raise NotImplementedError()
 
+    def delete_additional_constraint(self, study: StudyInterface, area_id: str, constraint_ids: list[str]) -> None:
+        raise NotImplementedError()
+
     def duplicate_cluster(
         self, study: StudyInterface, area_id: str, source_id: str, new_cluster_name: str
     ) -> STStorage:
