@@ -263,7 +263,17 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def get_all_st_storage_additional_constraints(self) -> list[STStorageAdditionalConstraint]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        path = ["input", "st-storage", "constraints"]
+        try:
+            all_constraints = []
+            storages = file_study.tree.get(path, depth=1)
+            for storage in storages:
+                constraints = self.get_st_storage_additional_constraints(storage)
+                all_constraints.extend(constraints)
+            return all_constraints
+        except ChildNotFoundError:
+            return []
 
     @override
     def st_storage_additional_constraint_exists(self, storage_id: str, constraint_id: str) -> bool:
