@@ -237,7 +237,7 @@ class STStorageManager:
         raise NotImplementedError()
 
     def update_additional_constraint(
-        self, study: StudyInterface, storage_id: str, constraint_id: str, contraint: STStorageAdditionalConstraintUpdate
+        self, study: StudyInterface, storage_id: str, constraint_id: str, constraint: STStorageAdditionalConstraintUpdate
     ) -> STStorageAdditionalConstraint:
         raise NotImplementedError()
 
