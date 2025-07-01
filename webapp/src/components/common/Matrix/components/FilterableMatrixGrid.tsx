@@ -13,12 +13,12 @@
  */
 
 import { Box } from "@mui/material";
-import { useState, useEffect, useMemo, forwardRef, useImperativeHandle, useRef } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import { MatrixProvider } from "../context/MatrixContext";
-import MatrixGrid, { type MatrixGridProps } from "./MatrixGrid";
-import MatrixFilter, { type MatrixFilterHandle } from "./MatrixFilter";
-import type { FilterCriteria } from "./MatrixFilter/types";
 import type { TimeFrequencyType } from "../shared/types";
+import MatrixFilter, { type MatrixFilterHandle } from "./MatrixFilter";
+
+import MatrixGrid, { type MatrixGridProps } from "./MatrixGrid";
 
 export interface FilterableMatrixGridProps extends MatrixGridProps {
   timeFrequency?: TimeFrequencyType;
@@ -46,31 +46,6 @@ function FilterableMatrixGrid(
   ref: React.ForwardedRef<FilterableMatrixGridHandle>,
 ) {
   const matrixFilterRef = useRef<MatrixFilterHandle>(null);
-
-  // Initialize filter preview state
-  const [filterPreview, setFilterPreview] = useState<{
-    active: boolean;
-    criteria: FilterCriteria;
-  }>(() => ({
-    active: false,
-    criteria: {
-      columnsIndices: Array.from({ length: data[0]?.length || 0 }, (_, i) => i),
-      rowsIndices: Array.from({ length: rows }, (_, i) => i),
-    },
-  }));
-
-  // Update filter criteria when data dimensions change
-  useEffect(() => {
-    if (!filterPreview.active && data.length > 0) {
-      setFilterPreview((prev) => ({
-        ...prev,
-        criteria: {
-          columnsIndices: Array.from({ length: data[0]?.length || 0 }, (_, i) => i),
-          rowsIndices: Array.from({ length: rows }, (_, i) => i),
-        },
-      }));
-    }
-  }, [data, rows, filterPreview.active]);
 
   // Expose filter toggle functionality via ref
   useImperativeHandle(
@@ -106,12 +81,8 @@ function FilterableMatrixGrid(
       canUndo: false,
       canRedo: false,
       isDirty: false,
-
-      // Filter preview state and setter
-      filterPreview,
-      setFilterPreview,
     }),
-    [data, aggregates, filterPreview],
+    [data, aggregates],
   );
 
   // Determine if this is a time series based on dateTime presence
