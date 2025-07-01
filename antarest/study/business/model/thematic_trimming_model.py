@@ -134,6 +134,7 @@ class ThematicTrimming(FormFieldsBaseModel):
     other5_level: Optional[bool] = None
     # Since v8.8
     sts_cashflow_by_cluster: Optional[bool] = None
+    npcap_hours: Optional[bool] = None
     # Since v9.1
     sts_by_group: Optional[bool] = None
 
@@ -214,7 +215,7 @@ def _get_v_8_3_fields() -> list[str]:
 
 
 def _get_v_8_8_fields() -> list[str]:
-    return ["sts_cashflow_by_cluster"]
+    return ["sts_cashflow_by_cluster", "npcap_hours"]
 
 
 def _get_v_9_1_fields() -> list[str]:

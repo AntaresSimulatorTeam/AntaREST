@@ -44,6 +44,7 @@ const fieldLabelsByGroup: Record<
     rowBal: "ROW BAL.",
     spilEnrg: "SPIL. ENRG",
     unspEnrg: "UNSP. ENRG",
+    npcapHours: "NPCAP HOURS",
   },
   generationHydro: {
     hCost: "H. COST",
