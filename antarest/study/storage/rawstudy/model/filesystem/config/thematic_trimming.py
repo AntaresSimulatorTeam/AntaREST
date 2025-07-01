@@ -129,6 +129,7 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     other5_level: bool | None = Field(default=None, alias="Other5_level")
     # Since v8.8
     sts_cashflow_by_cluster: bool | None = Field(default=None, alias="STS Cashflow By Cluster")
+    npcap_hours: bool | None = Field(default=None, alias="NPCAP HOURS")
     # Since v9.1
     sts_by_group: bool | None = Field(default=None, alias="STS by group")
 
