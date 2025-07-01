@@ -57,6 +57,17 @@ def test_get_matrices(client: TestClient, admin_access_token: str) -> None:
     assert "created_at" in second_last_matrix and is_date_format_ok
 
 
+def test_get_matrices_fail(client: TestClient, user_access_token: str) -> None:
+    user_headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    res = client.get(
+        "/v1/matrix",
+        headers=user_headers,
+    )
+    assert res.status_code == 403
+    assert res.json()["exception"] == "UserHasNotPermissionError"
+
+
 def test_get_matrix(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
