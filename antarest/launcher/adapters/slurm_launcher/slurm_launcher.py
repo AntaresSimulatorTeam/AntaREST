@@ -586,7 +586,10 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args.apply_adequacy_patch(launcher_params)
 
             if "'" in launcher_args.other_options:
+                # The launcher will wrongly interpret single quotes, which will cause Simulation fails and
+                # could even lead to security breaches
                 raise ValueError("Other options cannot contain a single quote, you should use double quotes instead")
+
             return launcher_args
 
         return self.launcher_args
