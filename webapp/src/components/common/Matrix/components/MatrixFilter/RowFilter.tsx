@@ -29,6 +29,7 @@ import {
 } from "@mui/material";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { produce } from "immer";
 import TemporalFilterRenderer from "./components/TemporalFilterRenderer";
 import { FILTER_TYPES, TEMPORAL_OPTIONS, TIME_INDEXING } from "./constants";
 import { useFilterControls } from "./hooks/useFilterControls";
@@ -147,22 +148,20 @@ function RowFilter({
       if (isValidTimeIndexingType(newType)) {
         const newAvailableValues = valuesByIndexType[newType] || { min: 1, max: 100 };
 
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) =>
-            rf.id === state.rowFilter.id
-              ? {
-                  ...rf,
-                  indexingType: newType,
-                  range: {
-                    min: newAvailableValues.min,
-                    max: newAvailableValues.max,
-                  },
-                  list: [],
-                }
-              : rf,
-          ),
-        }));
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === state.rowFilter.id);
+
+            if (rowFilter) {
+              rowFilter.indexingType = newType;
+              rowFilter.range = {
+                min: newAvailableValues.min,
+                max: newAvailableValues.max,
+              };
+              rowFilter.list = [];
+            }
+          }),
+        );
       }
     },
     [valuesByIndexType, setFilter, state.rowFilter.id],
@@ -184,24 +183,21 @@ function RowFilter({
 
   const handleRangeChange = useCallback(
     (newValues: [number, number]) => {
-      setFilter((prevFilter) => {
-        const currentFilter = prevFilter.rowsFilters.find((rf) => rf.id === filterId);
+      setFilter(
+        produce((draft) => {
+          const currentFilter = draft.rowsFilters.find((rf) => rf.id === filterId);
 
-        // Skip update if values haven't changed
-        if (
-          currentFilter?.range?.min === newValues[0] &&
-          currentFilter?.range?.max === newValues[1]
-        ) {
-          return prevFilter;
-        }
+          // Skip if the filter is not found or the range is the same
+          if (
+            !currentFilter ||
+            (currentFilter.range?.min === newValues[0] && currentFilter.range?.max === newValues[1])
+          ) {
+            return;
+          }
 
-        return {
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) =>
-            rf.id === filterId ? { ...rf, range: { min: newValues[0], max: newValues[1] } } : rf,
-          ),
-        };
-      });
+          currentFilter.range = { min: newValues[0], max: newValues[1] };
+        }),
+      );
     },
     [filterId, setFilter],
   );

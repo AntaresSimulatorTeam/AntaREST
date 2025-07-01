@@ -26,6 +26,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { produce } from "immer";
 import ListFilterControl from "./components/ListFilterControl";
 import RangeFilterControl from "./components/RangeFilterControl";
 import { FILTER_TYPES } from "./constants";
@@ -61,16 +62,14 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
   };
 
   const handleRangeChange = (newValues: [number, number]) => {
-    setFilter({
-      ...filter,
-      columnsFilter: {
-        ...filter.columnsFilter,
-        range: {
+    setFilter(
+      produce((draft) => {
+        draft.columnsFilter.range = {
           min: newValues[0],
           max: newValues[1],
-        },
-      },
-    });
+        };
+      }),
+    );
   };
 
   ////////////////////////////////////////////////////////////////

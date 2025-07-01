@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import { produce } from "immer";
 import { useCallback, useState } from "react";
-import type { FilterOperatorType, FilterState, FilterType, RowFilter } from "../types";
+import type { FilterOperatorType, FilterState, FilterType } from "../types";
 
 interface UseFilterControlsProps {
   filter: FilterState;
@@ -57,40 +58,38 @@ export function useFilterControls({
 
       if (id) {
         // For row filters
-        setFilter((prevFilter) => {
-          const rowFilter = prevFilter.rowsFilters.find((rf) => rf.id === id);
-          if (!rowFilter || rowFilter.list?.includes(newValue)) {
-            return prevFilter;
-          }
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
 
-          return {
-            ...prevFilter,
-            rowsFilters: prevFilter.rowsFilters.map((rf) => {
-              if (rf.id !== id) {
-                return rf;
-              }
-              return {
-                ...rf,
-                list: [...(rf.list || []), newValue].sort((a, b) => a - b),
-              };
-            }),
-          };
-        });
+            if (!rowFilter || rowFilter.list?.includes(newValue)) {
+              return;
+            }
+
+            if (!rowFilter.list) {
+              rowFilter.list = [];
+            }
+
+            rowFilter.list.push(newValue);
+            rowFilter.list.sort((a, b) => a - b);
+          }),
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => {
-          if (prevFilter.columnsFilter.list?.includes(newValue)) {
-            return prevFilter;
-          }
+        setFilter(
+          produce((draft) => {
+            if (draft.columnsFilter.list?.includes(newValue)) {
+              return;
+            }
 
-          return {
-            ...prevFilter,
-            columnsFilter: {
-              ...prevFilter.columnsFilter,
-              list: [...(prevFilter.columnsFilter.list || []), newValue].sort((a, b) => a - b),
-            },
-          };
-        });
+            if (!draft.columnsFilter.list) {
+              draft.columnsFilter.list = [];
+            }
+
+            draft.columnsFilter.list.push(newValue);
+            draft.columnsFilter.list.sort((a, b) => a - b);
+          }),
+        );
       }
 
       setInputValue("");
@@ -107,50 +106,48 @@ export function useFilterControls({
 
       if (id) {
         // For row filters
-        setFilter((prevFilter) => {
-          const rowFilter = prevFilter.rowsFilters.find((rf) => rf.id === id);
-          if (!rowFilter) {
-            return prevFilter;
-          }
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
 
-          const currentList = rowFilter.list || [];
-          const newValues = values.filter((val) => !currentList.includes(val));
+            if (!rowFilter) {
+              return;
+            }
 
-          if (newValues.length === 0) {
-            return prevFilter;
-          }
+            const currentList = rowFilter.list || [];
+            const newValues = values.filter((val) => !currentList.includes(val));
 
-          return {
-            ...prevFilter,
-            rowsFilters: prevFilter.rowsFilters.map((rf) => {
-              if (rf.id !== id) {
-                return rf;
-              }
-              return {
-                ...rf,
-                list: [...currentList, ...newValues].sort((a, b) => a - b),
-              };
-            }),
-          };
-        });
+            if (newValues.length === 0) {
+              return;
+            }
+
+            if (!rowFilter.list) {
+              rowFilter.list = [];
+            }
+
+            rowFilter.list.push(...newValues);
+            rowFilter.list.sort((a, b) => a - b);
+          }),
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => {
-          const currentList = prevFilter.columnsFilter.list || [];
-          const newValues = values.filter((val) => !currentList.includes(val));
+        setFilter(
+          produce((draft) => {
+            const currentList = draft.columnsFilter.list || [];
+            const newValues = values.filter((val) => !currentList.includes(val));
 
-          if (newValues.length === 0) {
-            return prevFilter;
-          }
+            if (newValues.length === 0) {
+              return;
+            }
 
-          return {
-            ...prevFilter,
-            columnsFilter: {
-              ...prevFilter.columnsFilter,
-              list: [...currentList, ...newValues].sort((a, b) => a - b),
-            },
-          };
-        });
+            if (!draft.columnsFilter.list) {
+              draft.columnsFilter.list = [];
+            }
+
+            draft.columnsFilter.list.push(...newValues);
+            draft.columnsFilter.list.sort((a, b) => a - b);
+          }),
+        );
       }
     },
     [setFilter],
@@ -161,75 +158,76 @@ export function useFilterControls({
     (valueToRemove: number, id?: string) => {
       if (id) {
         // For row filters
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) => {
-            if (rf.id !== id) {
-              return rf;
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+
+            if (rowFilter?.list) {
+              rowFilter.list = rowFilter.list.filter((value) => value !== valueToRemove);
             }
-            return {
-              ...rf,
-              list: (rf.list || []).filter((value) => value !== valueToRemove),
-            };
           }),
-        }));
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          columnsFilter: {
-            ...prevFilter.columnsFilter,
-            list: (prevFilter.columnsFilter.list || []).filter((value) => value !== valueToRemove),
-          },
-        }));
+        setFilter(
+          produce((draft) => {
+            if (draft.columnsFilter.list) {
+              draft.columnsFilter.list = draft.columnsFilter.list.filter(
+                (value) => value !== valueToRemove,
+              );
+            }
+          }),
+        );
       }
     },
     [setFilter],
   );
 
   // Handle checkbox changes for list filters
-  // TODO: remove
   const handleCheckboxChange = useCallback(
     (value: number, id?: string) => {
       if (id) {
         // For row filters
-        setFilter((prevFilter) => {
-          const rowFilter = prevFilter.rowsFilters.find((rf) => rf.id === id);
-          if (!rowFilter) {
-            return prevFilter;
-          }
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
 
-          const currentList = rowFilter.list || [];
-          const newList = currentList.includes(value)
-            ? currentList.filter((item) => item !== value)
-            : [...currentList, value].sort((a, b) => a - b);
+            if (!rowFilter) {
+              return;
+            }
 
-          return {
-            ...prevFilter,
-            rowsFilters: prevFilter.rowsFilters.map((rf) => {
-              if (rf.id !== id) {
-                return rf;
-              }
-              return { ...rf, list: newList };
-            }),
-          };
-        });
+            if (!rowFilter.list) {
+              rowFilter.list = [];
+            }
+
+            const currentIndex = rowFilter.list.indexOf(value);
+
+            if (currentIndex >= 0) {
+              rowFilter.list.splice(currentIndex, 1);
+            } else {
+              rowFilter.list.push(value);
+              rowFilter.list.sort((a, b) => a - b);
+            }
+          }),
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => {
-          const currentList = prevFilter.columnsFilter.list || [];
-          const newList = currentList.includes(value)
-            ? currentList.filter((item) => item !== value)
-            : [...currentList, value].sort((a, b) => a - b);
+        setFilter(
+          produce((draft) => {
+            if (!draft.columnsFilter.list) {
+              draft.columnsFilter.list = [];
+            }
 
-          return {
-            ...prevFilter,
-            columnsFilter: {
-              ...prevFilter.columnsFilter,
-              list: newList,
-            },
-          };
-        });
+            const currentIndex = draft.columnsFilter.list.indexOf(value);
+
+            if (currentIndex >= 0) {
+              draft.columnsFilter.list.splice(currentIndex, 1);
+            } else {
+              draft.columnsFilter.list.push(value);
+              draft.columnsFilter.list.sort((a, b) => a - b);
+            }
+          }),
+        );
       }
     },
     [setFilter],
@@ -240,30 +238,22 @@ export function useFilterControls({
     (newValue: number[], id?: string) => {
       if (id) {
         // For row filters
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) => {
-            if (rf.id !== id) {
-              return rf;
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+
+            if (rowFilter) {
+              rowFilter.range = { min: newValue[0], max: newValue[1] };
             }
-            return {
-              ...rf,
-              range: { min: newValue[0], max: newValue[1] },
-            };
           }),
-        }));
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          columnsFilter: {
-            ...prevFilter.columnsFilter,
-            range: {
-              min: newValue[0],
-              max: newValue[1],
-            },
-          },
-        }));
+        setFilter(
+          produce((draft) => {
+            draft.columnsFilter.range = { min: newValue[0], max: newValue[1] };
+          }),
+        );
       }
     },
     [setFilter],
@@ -273,24 +263,22 @@ export function useFilterControls({
     (id?: string) => {
       if (id) {
         // For row filters
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) => {
-            if (rf.id !== id) {
-              return rf;
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+
+            if (rowFilter) {
+              rowFilter.list = [];
             }
-            return { ...rf, list: [] };
           }),
-        }));
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          columnsFilter: {
-            ...prevFilter.columnsFilter,
-            list: [],
-          },
-        }));
+        setFilter(
+          produce((draft) => {
+            draft.columnsFilter.list = [];
+          }),
+        );
       }
     },
     [setFilter],
@@ -301,24 +289,22 @@ export function useFilterControls({
     (newType: FilterType, id?: string) => {
       if (id) {
         // For row filters
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) => {
-            if (rf.id !== id) {
-              return rf;
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+
+            if (rowFilter) {
+              rowFilter.type = newType;
             }
-            return { ...rf, type: newType } as RowFilter;
           }),
-        }));
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          columnsFilter: {
-            ...prevFilter.columnsFilter,
-            type: newType,
-          },
-        }));
+        setFilter(
+          produce((draft) => {
+            draft.columnsFilter.type = newType;
+          }),
+        );
       }
     },
     [setFilter],
@@ -328,24 +314,22 @@ export function useFilterControls({
     (newOperator: FilterOperatorType, id?: string) => {
       if (id) {
         // For row filters
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          rowsFilters: prevFilter.rowsFilters.map((rf) => {
-            if (rf.id !== id) {
-              return rf;
+        setFilter(
+          produce((draft) => {
+            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+
+            if (rowFilter) {
+              rowFilter.operator = newOperator;
             }
-            return { ...rf, operator: newOperator } as RowFilter;
           }),
-        }));
+        );
       } else {
         // For column filter
-        setFilter((prevFilter) => ({
-          ...prevFilter,
-          columnsFilter: {
-            ...prevFilter.columnsFilter,
-            operator: newOperator,
-          },
-        }));
+        setFilter(
+          produce((draft) => {
+            draft.columnsFilter.operator = newOperator;
+          }),
+        );
       }
     },
     [setFilter],

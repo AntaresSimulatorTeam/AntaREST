@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { produce } from "immer";
 import { useCallback, useState } from "react";
 import { useMatrixContext } from "../../../context/MatrixContext";
 import { Operation } from "../../../shared/constants";
@@ -55,7 +56,11 @@ export function useMatrixFilter({
   );
 
   const toggleFilter = useCallback(() => {
-    setFilter((prev) => ({ ...prev, active: !prev.active }));
+    setFilter(
+      produce((draft) => {
+        draft.active = !draft.active;
+      }),
+    );
   }, []);
 
   const resetFilters = useCallback(() => {

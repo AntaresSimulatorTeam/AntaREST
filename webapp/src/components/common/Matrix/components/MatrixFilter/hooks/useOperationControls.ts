@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { produce } from "immer";
 import { useCallback, useMemo, useState } from "react";
 import type { FilterState } from "../types";
 
@@ -39,13 +40,11 @@ export function useOperationControls({
 
   const handleOperationTypeChange = useCallback(
     (operationType: string) => {
-      setFilter((prev) => ({
-        ...prev,
-        operation: {
-          ...prev.operation,
-          type: operationType,
-        },
-      }));
+      setFilter(
+        produce((draft) => {
+          draft.operation.type = operationType;
+        }),
+      );
     },
     [setFilter],
   );
@@ -53,13 +52,11 @@ export function useOperationControls({
   const handleValueChange = useCallback(
     (newValue: number) => {
       setValue(newValue);
-      setFilter((prev) => ({
-        ...prev,
-        operation: {
-          ...prev.operation,
-          value: newValue,
-        },
-      }));
+      setFilter(
+        produce((draft) => {
+          draft.operation.value = newValue;
+        }),
+      );
     },
     [setFilter],
   );

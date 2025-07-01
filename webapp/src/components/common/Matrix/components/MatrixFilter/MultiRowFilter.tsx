@@ -16,6 +16,7 @@ import AddIcon from "@mui/icons-material/Add";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { Box, Button, IconButton, Tooltip } from "@mui/material";
+import { produce } from "immer";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createDefaultRowFilter } from "./constants";
@@ -45,10 +46,11 @@ function MultiRowFilter({
       timeFrequency,
     );
 
-    setFilter((prevFilter) => ({
-      ...prevFilter,
-      rowsFilters: [...prevFilter.rowsFilters, newFilter],
-    }));
+    setFilter(
+      produce((draft) => {
+        draft.rowsFilters.push(newFilter);
+      }),
+    );
 
     setExpandedFilters((prev) => [...prev, newFilter.id]);
   }, [filter.rowsFilters, timeFrequency, setFilter]);
@@ -60,10 +62,11 @@ function MultiRowFilter({
         return;
       }
 
-      setFilter((prevFilter) => ({
-        ...prevFilter,
-        rowsFilters: prevFilter.rowsFilters.filter((rf) => rf.id !== id),
-      }));
+      setFilter(
+        produce((draft) => {
+          draft.rowsFilters = draft.rowsFilters.filter((rf) => rf.id !== id);
+        }),
+      );
 
       // Remove the ID from expanded filters
       setExpandedFilters((prev) => prev.filter((filterId) => filterId !== id));
