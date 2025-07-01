@@ -79,7 +79,7 @@ class LauncherArgs(argparse.Namespace):
         super().__init__()
 
         # known arguments
-        self.other_options: Optional[str] = None
+        self.other_options: str = ""
         self.xpansion_mode: Optional[str] = None
         self.time_limit: int = 0
         self.n_cpu: int = 0
@@ -91,12 +91,6 @@ class LauncherArgs(argparse.Namespace):
 
     def _append_other_option(self, option: str) -> None:
         self.other_options = f"{self.other_options} {option}" if self.other_options else option
-
-    def apply_other_options(self, launcher_params: LauncherParametersDTO) -> None:
-        other_options = launcher_params.other_options or ""
-        options = other_options.split() if other_options else []
-        options = [re.sub("[^a-zA-Z0-9_,-]", "", opt) for opt in options]
-        self.other_options = " ".join(options)
 
     def apply_xpansion_mode(self, launcher_params: LauncherParametersDTO) -> None:
         if launcher_params.xpansion:  # not None and not False
@@ -590,6 +584,9 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args.apply_post_processing(launcher_params)
             launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
             launcher_args.apply_adequacy_patch(launcher_params)
+
+            if "'" in launcher_args.other_options:
+                raise ValueError("Other options cannot contain a single quote, you should use double quotes instead")
             return launcher_args
 
         return self.launcher_args
