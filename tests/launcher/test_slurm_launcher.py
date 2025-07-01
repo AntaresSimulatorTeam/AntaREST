@@ -183,14 +183,10 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     assert not launcher_params.xpansion_mode
     assert not launcher_params.post_processing
 
-    launcher_params = apply_params(LauncherParametersDTO(other_options=""))
-    assert launcher_params.other_options == ""
-
-    launcher_params = apply_params(LauncherParametersDTO(other_options="foo\tbar  baz  "))
-    assert launcher_params.other_options == "foo bar baz"
-
-    launcher_params = apply_params(LauncherParametersDTO(other_options="/foo?bar"))
-    assert launcher_params.other_options == "foobar"
+    for other_opts in ["", "xpress param-optim1='THREADS 4 PRESOLVE 1'"]:
+        # Ensures `other_options` field is not modified
+        launcher_params = apply_params(LauncherParametersDTO(other_options=other_opts))
+        assert launcher_params.other_options == other_opts
 
     launcher_params = apply_params(LauncherParametersDTO(nb_cpu=12))
     assert launcher_params.n_cpu == 12
