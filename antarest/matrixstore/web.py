@@ -24,7 +24,7 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.login.utils import get_current_user
+from antarest.login.utils import require_current_user
 from antarest.matrixstore.model import (
     MatrixData,
     MatrixDataSetDTO,
@@ -79,7 +79,7 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     @bp.get("/matrix", tags=[APITag.matrix], description="Return a list of matrices metadata")
     def get_matrices() -> list[MatrixMetadataDTO]:
         logger.info("Fetching matrices metadatas")
-        user = get_current_user()
+        user = require_current_user()
 
         if not user.is_site_admin():
             raise UserHasNotPermissionError()
