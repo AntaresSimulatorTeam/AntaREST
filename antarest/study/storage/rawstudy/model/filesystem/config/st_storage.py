@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import ast
-import copy
 from typing import Any, Optional
 
 from antares.study.version import StudyVersion
@@ -91,17 +89,6 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
     hours: Hours
     enabled: bool = True
 
-    def to_ini(self) -> dict[str, Any]:
-        content = self.model_dump(mode="json", exclude={"hours"})
-        content["hours"] = str(self.hours)
-        return content
-
-    @staticmethod
-    def from_ini(data: dict[str, Any]) -> "STStorageAdditionalConstraintFileData":
-        args = copy.deepcopy(data)
-        args["hours"] = list(ast.literal_eval(args["hours"]))
-        return STStorageAdditionalConstraintFileData.model_validate(args)
-
     def to_model(self, constraint_id: str) -> STStorageAdditionalConstraint:
         return STStorageAdditionalConstraint.model_validate({"id": constraint_id, **self.model_dump(mode="json")})
 
@@ -113,8 +100,8 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
 
 
 def parse_st_storage_additional_constraint(constraint_id: str, data: Any) -> STStorageAdditionalConstraint:
-    return STStorageAdditionalConstraintFileData.from_ini(data).to_model(constraint_id)
+    return STStorageAdditionalConstraintFileData.model_validate(data).to_model(constraint_id)
 
 
 def serialize_st_storage_additional_constraint(additional_constraint: STStorageAdditionalConstraint) -> dict[str, Any]:
-    return STStorageAdditionalConstraintFileData.from_model(additional_constraint).to_ini()
+    return STStorageAdditionalConstraintFileData.from_model(additional_constraint).model_dump(mode="json")

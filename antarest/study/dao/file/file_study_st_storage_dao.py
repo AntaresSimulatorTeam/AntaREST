@@ -22,6 +22,7 @@ from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
+    parse_st_storage_additional_constraint,
     serialize_st_storage,
     serialize_st_storage_additional_constraint,
 )
@@ -289,12 +290,12 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     @override
     def get_st_storage_additional_constraints_for_area(self, area_id: str) -> list[STStorageAdditionalConstraint]:
         file_study = self.get_file_study()
-        path = ["input", "st-storage", "constraints", area_id, "additional-constraints"]
+        path = ["input", "st-storage", "constraints", area_id, "additional_constraints"]
         try:
             constraints = []
             ini_content = file_study.tree.get(path)
             for key, value in ini_content.items():
-                constraints.append(STStorageAdditionalConstraint.model_validate({"id": key, **value}))
+                constraints.append(parse_st_storage_additional_constraint(key, value))
             return constraints
         except ChildNotFoundError:
             return []
@@ -334,7 +335,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         for key, value in existing_map.items():
             ini_content[key] = serialize_st_storage_additional_constraint(value)
         study_data = self.get_file_study()
-        study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional-constraints"])
+        study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional_constraints"])
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:

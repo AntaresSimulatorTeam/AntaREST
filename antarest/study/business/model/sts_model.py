@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import ast
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
@@ -247,7 +248,23 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-Hours: TypeAlias = list[list[int]]
+HOURS_TYPE: TypeAlias = list[list[int]] | list[int]
+
+
+def _hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
+    if isinstance(value, str):
+        value = ast.literal_eval(value)
+    # Checks the values are integers
+    for item in value:
+        if isinstance(item, list):
+            for subitem in item:
+                assert isinstance(subitem, int)
+        else:
+            assert isinstance(item, int)
+    return value  # type: ignore
+
+
+Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(_hours_parser), PlainSerializer(str)]
 
 
 class STStorageAdditionalConstraint(AntaresBaseModel):
