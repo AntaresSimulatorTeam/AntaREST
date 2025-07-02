@@ -390,9 +390,9 @@ class STStorageManager:
 
     def update_additional_constraints(
         self, study: StudyInterface, update_constraints_by_areas: STStorageAdditionalConstraintUpdates
-    ) -> list[STStorageAdditionalConstraint]:
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
         # Checks the constraint exist and builds the response.
-        new_constraints = []
+        new_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
         existing_constraints = study.get_study_dao().get_all_st_storage_additional_constraints()
         for area_id, value in update_constraints_by_areas.items():
             if area_id not in existing_constraints:
@@ -405,7 +405,7 @@ class STStorageManager:
 
                 current_constraint = existing_constraints[area_id][existing_ids[constraint_id]]
                 new_constraint = update_st_storage_constraint(current_constraint, updated_properties)
-                new_constraints.append(new_constraint)
+                new_constraints.setdefault(area_id, []).append(new_constraint)
 
         # Apply the command
         command = UpdateSTStorageAdditionalConstraints(
