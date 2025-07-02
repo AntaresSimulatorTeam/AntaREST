@@ -838,5 +838,6 @@
   "tableMode.type.thermals": "Thermals",
   "tableMode.type.renewables": "Renewables",
   "tableMode.type.st-storages": "Short-Term Storages",
-  "tableMode.type.binding-constraints": "Binding Constraints"
+  "tableMode.type.binding-constraints": "Binding Constraints",
+  "tableMode.type.st-storages-additional-constraints": "Additional constraints on short-term storages"
 }
