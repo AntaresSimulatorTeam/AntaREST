@@ -121,6 +121,7 @@ export interface ScenarioConfig {
   renewable?: ClustersScenarioConfig;
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints?: GenericScenarioConfig;
+  hydroFinalLevels?: GenericScenarioConfig;
 }
 
 type NonNullableRulesetConfig = {
@@ -139,6 +140,7 @@ export interface HandlerReturnTypes {
   renewable: ClustersHandlerReturn;
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints: GenericScenarioConfig;
+  hydroFinalLevels: GenericScenarioConfig;
 }
 
 const handlers: {
@@ -156,6 +158,7 @@ const handlers: {
   renewable: handleClustersConfig,
   hydroInitialLevels: handleGenericConfig,
   bindingConstraints: handleGenericConfig,
+  hydroFinalLevels: handleGenericConfig,
 };
 
 /**
