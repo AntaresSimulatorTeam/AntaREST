@@ -252,15 +252,18 @@ HOURS_TYPE: TypeAlias = list[list[int]] | list[int]
 
 
 def _hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
+    def _checks_compliance(x: Any) -> None:
+        if not isinstance(x, int) or (x < 0 or x > 168):
+            raise ValueError(f"Hours must be integers between 0 and 168, got {x}")
+
     if isinstance(value, str):
         value = ast.literal_eval(value)
-    # Checks the values are integers
     for item in value:
         if isinstance(item, list):
             for subitem in item:
-                assert isinstance(subitem, int)
+                _checks_compliance(subitem)
         else:
-            assert isinstance(item, int)
+            _checks_compliance(item)
     return value  # type: ignore
 
 
