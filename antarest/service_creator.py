@@ -40,6 +40,7 @@ from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
@@ -225,12 +226,15 @@ def create_matrix_gc(
     app_ctxt: Optional[AppBuildContext],
     study_service: Optional[StudyService] = None,
     matrix_service: Optional[MatrixService] = None,
+    matrices_usage_providers: Optional[list[IMatrixUsageProvider]] = None,
 ) -> MatrixGarbageCollector:
-    if study_service and matrix_service:
+    # A mettre dans MatrixService
+    if study_service and matrix_service and matrices_usage_providers:
         return MatrixGarbageCollector(
             config=config,
             study_service=study_service,
             matrix_service=matrix_service,
+            matrices_usage_providers=matrices_usage_providers,
         )
     else:
         core_services = create_core_services(app_ctxt, config)
@@ -238,6 +242,7 @@ def create_matrix_gc(
             config=config,
             study_service=core_services.study_service,
             matrix_service=core_services.matrix_service,
+            matrices_usage_providers=matrices_usage_providers,
         )
 
 

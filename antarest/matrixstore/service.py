@@ -18,7 +18,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -27,6 +27,7 @@ from fastapi import UploadFile
 from pandas.api.types import infer_dtype
 from typing_extensions import override
 
+from antarest.core.application import AppBuildContext
 from antarest.core.config import Config, InternalMatrixFormat
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -40,6 +41,8 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
+from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -50,6 +53,8 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+from antarest.service_creator import create_core_services
+from antarest.study.service import StudyService
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -73,6 +78,30 @@ NEW_MATRIX_VERSION = 2
 Version 1 matrices were not saved with a header, unlike version 2 ones.
 Therefore, we rely on this version to know how to read the matrices
 """
+
+def create_matrix_gc(
+    config: Config,
+    app_ctxt: Optional[AppBuildContext],
+    study_service: Optional[StudyService] = None,
+    matrix_service: Optional["MatrixService"] = None,
+    matrices_usage_providers: Optional[list[IMatrixUsageProvider]] = None,
+) -> MatrixGarbageCollector:
+    # A mettre dans MatrixService
+    if study_service and matrix_service and matrices_usage_providers:
+        return MatrixGarbageCollector(
+            config=config,
+            study_service=study_service,
+            matrix_service=matrix_service,
+            matrices_usage_providers=matrices_usage_providers,
+        )
+    else:
+        core_services = create_core_services(app_ctxt, config)
+        return MatrixGarbageCollector(
+            config=config,
+            study_service=core_services.study_service,
+            matrix_service=core_services.matrix_service,
+            matrices_usage_providers=matrices_usage_providers,
+        )
 
 
 class ISimpleMatrixService(ABC):
@@ -99,6 +128,10 @@ class ISimpleMatrixService(ABC):
 
     @abstractmethod
     def delete(self, matrix_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
         raise NotImplementedError()
 
     def get_matrix_id(self, matrix: List[List[float]] | str) -> str:
@@ -142,6 +175,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def delete(self, matrix_id: str) -> None:
         self.matrix_content_repository.delete(matrix_id)
+
+    @override
+    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+        raise NotImplementedError()
 
 
 def check_dataframe_compliance(df: pd.DataFrame) -> None:
@@ -424,6 +461,10 @@ class MatrixService(ISimpleMatrixService):
             with contextlib.suppress(FileNotFoundError):
                 self.matrix_content_repository.delete(matrix_id)
 
+    @override
+    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+        raise NotImplementedError()
+
     @staticmethod
     def check_access_permission(dataset: MatrixDataSet, write: bool = False) -> bool:
         user = require_current_user()
@@ -510,3 +551,19 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
+
+    def _get_datasets_matrices(self) -> Set[str]:
+        # Matrix_service
+        logger.info("Getting all matrices used in datasets")
+        datasets = self.repo_dataset.get_all_datasets()
+        return {matrix.matrix_id for dataset in datasets for matrix in dataset.matrices}
+
+    # def get_used_matrices(self) -> Set[str]:
+    #     # MatrixService, boucler sur les UsageP, à faire en dernier
+    #     """Return all matrices used in raw studies, variant studies and datasets"""
+    #     datasets_matrices = self._get_datasets_matrices()
+    #     return (
+    #         raw_studies_matrices
+    #         | variant_studies_matrices
+    #         | datasets_matrices
+    #         | set(self.matrix_constants.hashes.values())

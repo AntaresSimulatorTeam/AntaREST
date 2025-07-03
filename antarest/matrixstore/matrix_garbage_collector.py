@@ -23,6 +23,7 @@ from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
@@ -41,6 +42,7 @@ class MatrixGarbageCollector(IService):
         config: Config,
         study_service: StudyService,
         matrix_service: MatrixService,
+        matrices_usage_providers: list[IMatrixUsageProvider],
     ):
         super(MatrixGarbageCollector, self).__init__()
         self.saved_matrices_path: Path = config.storage.matrixstore
@@ -48,6 +50,7 @@ class MatrixGarbageCollector(IService):
         self.study_service: StudyService = study_service
         self.variant_study_service: VariantStudyService = study_service.storage_service.variant_study_service
         self.matrix_service = matrix_service
+        self.matrices_usage_providers = matrices_usage_providers
         self.dataset_repository: MatrixDataSetRepository = matrix_service.repo_dataset
         self.sleeping_time = config.storage.matrix_gc_sleeping_time
         self.matrix_constants = self.variant_study_service.command_factory.command_context.generator_matrix_constants
@@ -58,6 +61,7 @@ class MatrixGarbageCollector(IService):
         return {f.split(".")[0] for f in listdir(self.saved_matrices_path)}
 
     def _get_raw_studies_matrices(self) -> Set[str]:
+        # A mettre dans RSM
         logger.info("Getting all matrices used in raw studies")
         return {
             matrix_id
@@ -84,11 +88,13 @@ class MatrixGarbageCollector(IService):
         return matrices
 
     def _get_datasets_matrices(self) -> Set[str]:
+        # Matrix_service
         logger.info("Getting all matrices used in datasets")
         datasets = self.dataset_repository.get_all_datasets()
         return {matrix.matrix_id for dataset in datasets for matrix in dataset.matrices}
 
     def _get_used_matrices(self) -> Set[str]:
+        # MatrixService, boucler sur les UsageP, à faire en dernier
         """Return all matrices used in raw studies, variant studies and datasets"""
         raw_studies_matrices = self._get_raw_studies_matrices()
         variant_studies_matrices = self._get_variant_studies_matrices()
