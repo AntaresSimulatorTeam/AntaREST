@@ -29,9 +29,8 @@ export const SCENARIOS = [
   "ntc",
   "renewable",
   "hydroInitialLevels",
-  // "hydroFinalLevels", since v9.2
-  // "hydroGenerationPower", since v9.1
   "bindingConstraints",
+  "hydroFinalLevels", // Since v9.2
 ] as const;
 
 export type ScenarioType = (typeof SCENARIOS)[number];
