@@ -192,7 +192,7 @@ export function createLocalizedTemporalLabels(
     return monthKeys.map((key, index) => ({
       value: index + 1,
       label: t(`date.${key}`),
-      shortLabel: t(`date.short${key.charAt(0).toUpperCase() + key.slice(1)}`),
+      shortLabel: t(`date.short.${key}`),
     }));
   }
 
@@ -210,7 +210,7 @@ export function createLocalizedTemporalLabels(
   return weekdayKeys.map((key, index) => ({
     value: index + 1,
     label: t(`date.${key}`),
-    shortLabel: t(`date.short${key.charAt(0).toUpperCase() + key.slice(1)}`),
+    shortLabel: t(`date.short.${key}`),
   }));
 }
 

@@ -200,7 +200,6 @@ function ListFilterControl({
 
           <Box sx={{ flex: 1 }}>
             <TextField
-              label={t("matrix.filter.listValues")}
               placeholder={placeholder || t("matrix.filter.enterValue")}
               size="small"
               value={inputValue}
