@@ -29,9 +29,8 @@ export const SCENARIOS = [
   "ntc",
   "renewable",
   "hydroInitialLevels",
-  // "hydroFinalLevels", since v9.2
-  // "hydroGenerationPower", since v9.1
   "bindingConstraints",
+  "hydroFinalLevels", // Since v9.2
 ] as const;
 
 export type ScenarioType = (typeof SCENARIOS)[number];
@@ -122,6 +121,7 @@ export interface ScenarioConfig {
   renewable?: ClustersScenarioConfig;
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints?: GenericScenarioConfig;
+  hydroFinalLevels?: GenericScenarioConfig;
 }
 
 type NonNullableRulesetConfig = {
@@ -140,6 +140,7 @@ export interface HandlerReturnTypes {
   renewable: ClustersHandlerReturn;
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints: GenericScenarioConfig;
+  hydroFinalLevels: GenericScenarioConfig;
 }
 
 const handlers: {
@@ -157,6 +158,7 @@ const handlers: {
   renewable: handleClustersConfig,
   hydroInitialLevels: handleGenericConfig,
   bindingConstraints: handleGenericConfig,
+  hydroFinalLevels: handleGenericConfig,
 };
 
 /**

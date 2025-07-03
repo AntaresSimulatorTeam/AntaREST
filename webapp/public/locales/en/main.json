@@ -375,6 +375,7 @@
   "study.configuration.general.mcScenarioBuilder.tab.renewable": "Renewables",
   "study.configuration.general.mcScenarioBuilder.tab.ntc": "Links",
   "study.configuration.general.mcScenarioBuilder.tab.hydroInitialLevels": "Hydro Initial Levels",
+  "study.configuration.general.mcScenarioBuilder.tab.hydroFinalLevels": "Hydro Final Levels",
   "study.configuration.general.mcScenarioBuilder.tab.bindingConstraints": "Binding Constraints",
   "study.configuration.general.mcScenarioBuilder.noConfig.error": "There is no valid configuration available.",
   "study.configuration.general.mcScenarioBuilder.update.error": "Failed to update scenario '{{type}}'.",
