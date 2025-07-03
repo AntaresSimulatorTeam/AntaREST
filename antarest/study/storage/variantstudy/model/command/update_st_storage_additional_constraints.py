@@ -69,7 +69,7 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
                     return command_failed(f"Short-term storage {storage_id} not found in area '{area_id}'.")
                 existing_ids = {c.id: index for index, c in enumerate(all_constraints[area_id][storage_id])}
                 for upd_constraint in updated_constraints:
-                    if upd_constraint.id in existing_ids:
+                    if upd_constraint.id not in existing_ids:
                         return command_failed(
                             f"Constraint {upd_constraint.id} not found for short-term storage {storage_id} in area '{area_id}'."
                         )

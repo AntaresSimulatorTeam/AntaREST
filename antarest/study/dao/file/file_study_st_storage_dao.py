@@ -331,9 +331,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                     existing_map.setdefault(storage_id, {})[constraint.id] = constraint
 
         ini_content = {}
-        for key, value in existing_map.items():
-            for storage_id, constraint in value.items():
-                ini_content[key] = serialize_st_storage_additional_constraint(storage_id, constraint)
+        for storage_id, value in existing_map.items():
+            for constraint_id, constraint_update in value.items():
+                ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
         study_data = self.get_file_study()
         study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional_constraints"])
 

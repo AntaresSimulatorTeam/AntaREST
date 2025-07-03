@@ -411,7 +411,7 @@ class STStorageManager:
                     raise STStorageNotFound(area_id, storage_id)
                 existing_ids = {c.id: index for index, c in enumerate(existing_constraints[area_id][storage_id])}
                 for upd_constraint in updated_constraints:
-                    if upd_constraint.id in existing_ids:
+                    if upd_constraint.id not in existing_ids:
                         raise STStorageAdditionalConstraintNotFound(area_id, upd_constraint.id)
 
                     current_constraint = existing_constraints[area_id][storage_id][existing_ids[upd_constraint.id]]
