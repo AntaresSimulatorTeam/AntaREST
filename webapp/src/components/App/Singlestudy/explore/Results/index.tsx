@@ -205,6 +205,16 @@ function Results() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  // Debug logging for variant output fetching issue
+  console.log("=== Results Component Debug ===");
+  console.log("Study ID:", study.id);
+  console.log("Study Jobs Loading:", studyJobsLoading);
+  console.log("Study Outputs Loading:", studyOutputsLoading);
+  console.log("Study Jobs:", studyJobs);
+  console.log("Study Outputs:", studyOutputs);
+  console.log("Combined Outputs:", outputs);
+  console.log("==============================");
+
   return (
     <ViewWrapper>
       <TableContainer component={Paper} elevation={2} sx={{ height: 1 }}>
