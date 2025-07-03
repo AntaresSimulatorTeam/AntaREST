@@ -75,7 +75,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         try:
             config = study_data.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageNotFound(path, storage_id) from None
+            raise STStorageNotFound(area_id, storage_id) from None
         return parse_st_storage(study_data.config.version, config)
 
     @override

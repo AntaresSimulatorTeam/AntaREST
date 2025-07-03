@@ -72,7 +72,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         try:
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise RenewableClusterNotFound(path, renewable_id)
+            raise RenewableClusterNotFound(area_id, renewable_id)
         return parse_renewable_cluster(cluster)
 
     @override
