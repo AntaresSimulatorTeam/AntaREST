@@ -28,7 +28,12 @@ import useStudySynthesis from "../../../../../../redux/hooks/useStudySynthesis";
 import { getAreas, getLinks, getStudyOutput } from "../../../../../../redux/selectors";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../../services/api/study";
-import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/types";
+import {
+  StudyType,
+  type Area,
+  type LinkElement,
+  type StudyMetadata,
+} from "../../../../../../types/types";
 import { toError } from "../../../../../../utils/fnUtils";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
@@ -63,7 +68,34 @@ function ResultDetails() {
     selector: (state, id) => getStudyOutput(state, id, outputId as string),
   });
 
-  const { data: output } = outputRes;
+  console.log("Output Response:", outputRes);
+
+  const { data: outputFromSynthesis } = outputRes;
+
+  // For variants, if output is not found in synthesis, create a minimal output object
+  const output = useMemo(() => {
+    if (outputFromSynthesis) {
+      return outputFromSynthesis;
+    }
+
+    if (outputId && study.type === StudyType.VARIANT) {
+      return {
+        id: outputId,
+        name: outputId,
+        mode: "economy" as const,
+        nbyears: MAX_YEAR,
+        synthesis: true,
+        date: new Date().toISOString(),
+        by_year: true,
+        error: false,
+      };
+    }
+
+    return undefined;
+  }, [outputFromSynthesis, outputId, study.type]);
+
+  console.log("Output Fixed:", output);
+
   const [dataType, setDataType] = useState(DataType.General);
   const [timestep, setTimestep] = useState(Timestep.Hourly);
   const [year, setYear] = useState(-1);
