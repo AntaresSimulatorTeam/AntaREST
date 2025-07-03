@@ -67,7 +67,14 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
-from antarest.study.business.model.sts_model import STStorage, STStorageCreation, STStorageUpdate
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintCreation,
+    STStorageAdditionalConstraintUpdate,
+    STStorageCreation,
+    STStorageUpdate,
+)
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
@@ -1814,6 +1821,52 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.st_storage_manager.delete_storages(study_interface, area_id, storage_ids)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Get all additional constraints relative to a short-term storage object",
+    )
+    def get_additional_constraints(uuid: str, area_id: str, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        logger.info(f"Getting additional constraints for short-term storage {storage_id} in {area_id} for study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_additional_constraints(study_interface, area_id, storage_id)
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Create additional constraint(s) for a short-term storage object",
+    )
+    def create_additional_constraints(
+        uuid: str, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraintCreation]
+    ) -> list[STStorageAdditionalConstraint]:
+        logger.info(
+            f"Creating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.create_additional_constraints(
+            study_interface, area_id, storage_id, constraints
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Update additional constraint(s) for a short-term storage object",
+    )
+    def update_additional_constraints(
+        uuid: str, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraintUpdate]
+    ) -> list[STStorageAdditionalConstraint]:
+        logger.info(
+            f"Updating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        all_constraints = study_service.st_storage_manager.update_additional_constraints(
+            study_interface, {area_id: {storage_id: constraints}}
+        )
+        return all_constraints[area_id][storage_id]
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/{cluster_type}/{source_cluster_id}",

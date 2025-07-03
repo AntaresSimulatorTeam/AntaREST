@@ -89,19 +89,22 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
     hours: Hours
     enabled: bool = True
 
-    def to_model(self, constraint_id: str) -> STStorageAdditionalConstraint:
-        return STStorageAdditionalConstraint.model_validate({"id": constraint_id, **self.model_dump(mode="json")})
+    def to_model(self, constraint_id: str) -> tuple[str, STStorageAdditionalConstraint]:
+        args = {"id": constraint_id, **self.model_dump(mode="json", exclude={"cluster"})}
+        return self.cluster, STStorageAdditionalConstraint.model_validate(args)
 
     @classmethod
     def from_model(
-        cls, additional_constraint: STStorageAdditionalConstraint
+        cls, storage_id: str, additional_constraint: STStorageAdditionalConstraint
     ) -> "STStorageAdditionalConstraintFileData":
-        return cls.model_validate(additional_constraint.model_dump(exclude={"id"}))
+        return cls.model_validate({"cluster": storage_id, **additional_constraint.model_dump(exclude={"id"})})
 
 
-def parse_st_storage_additional_constraint(constraint_id: str, data: Any) -> STStorageAdditionalConstraint:
+def parse_st_storage_additional_constraint(constraint_id: str, data: Any) -> tuple[str, STStorageAdditionalConstraint]:
     return STStorageAdditionalConstraintFileData.model_validate(data).to_model(constraint_id)
 
 
-def serialize_st_storage_additional_constraint(additional_constraint: STStorageAdditionalConstraint) -> dict[str, Any]:
-    return STStorageAdditionalConstraintFileData.from_model(additional_constraint).model_dump(mode="json")
+def serialize_st_storage_additional_constraint(
+    storage_id: str, additional_constraint: STStorageAdditionalConstraint
+) -> dict[str, Any]:
+    return STStorageAdditionalConstraintFileData.from_model(storage_id, additional_constraint).model_dump(mode="json")

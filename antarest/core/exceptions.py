@@ -106,51 +106,30 @@ class STStorageConfigNotFound(ConfigFileNotFound):
     object_name = SHORT_TERM_STORAGE
 
 
-class ConfigSectionNotFound(HTTPException):
-    """
-    Exception raised when a configuration section is not found (404 Not Found).
-
-    Notes:
-        The study ID is not provided because it is implicit.
-
-    Attributes:
-        path: Path of the missing file(s) relative to the study directory.
-        section_id: ID of the missing section.
-    """
-
+class ClusterNotFound(HTTPException):
     object_name = ""
-    """Name of the object that is not found: thermal, renewables, etc."""
 
-    def __init__(self, path: str, section_id: str):
-        assert _match_input_path(path), f"Invalid path: '{path}'"
-        self.path = path
-        self.section_id = section_id
-        object_name = self.object_name or "section"
-        detail = f"{object_name.title()} '{section_id}' not found in '{path}'"
-        super().__init__(HTTPStatus.NOT_FOUND, detail)
-
-    @override
-    def __str__(self) -> str:
-        """Return a string representation of the exception."""
-        return self.detail
+    def __init__(self, area_id: str, cluster_id: str):
+        msg = f"{self.object_name} '{cluster_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
-class ThermalClusterNotFound(ConfigSectionNotFound):
+class ThermalClusterNotFound(ClusterNotFound):
     """Thermal cluster is not found (404 Not Found)"""
 
-    object_name = THERMAL_CLUSTER
+    object_name = "Thermal cluster"
 
 
-class RenewableClusterNotFound(ConfigSectionNotFound):
+class RenewableClusterNotFound(ClusterNotFound):
     """Renewable cluster is not found (404 Not Found)"""
 
-    object_name = RENEWABLE_CLUSTER
+    object_name = "Renewable cluster"
 
 
-class STStorageNotFound(ConfigSectionNotFound):
+class STStorageNotFound(ClusterNotFound):
     """Short-term storage is not found (404 Not Found)"""
 
-    object_name = SHORT_TERM_STORAGE
+    object_name = "Short-term storage"
 
 
 class MatrixNotFound(HTTPException):
@@ -853,10 +832,11 @@ class STStorageReferencedInsideAdditionalConstraints(HTTPException):
     Exception raised when a sts is not allowed to be deleted because it is referenced inside some additional constraints.
     """
 
-    def __init__(self, storage_id: str, constraint_id: str) -> None:
+    def __init__(self, storage_id: str, constraint_ids: set[str]) -> None:
+        ids = " , ".join(constraint_ids)
         super().__init__(
             HTTPStatus.CONFLICT,
-            f"The Short-term storage '{storage_id}' is not allowed to be deleted as it is referenced inside this additional-constraint {constraint_id}.",
+            f"The Short-term storage '{storage_id}' is not allowed to be deleted as it is referenced inside this additional-constraint(s) {ids}.",
         )
 
 

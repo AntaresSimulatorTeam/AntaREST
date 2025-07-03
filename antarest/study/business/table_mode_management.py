@@ -137,8 +137,9 @@ class TableModeManager:
         elif table_type == TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS:
             all_additional_constraints = self._st_storage_manager.get_all_additional_constraints(study)
             data = {
-                f"{area_id} / {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
-                for area_id, constraints in all_additional_constraints.items()
+                f"{area_id} / {storage_id} {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
+                for area_id, value in all_additional_constraints.items()
+                for storage_id, constraints in value.items()
                 for constraint in constraints
             }
         elif table_type == TableModeType.BINDING_CONSTRAINT:
@@ -266,12 +267,14 @@ class TableModeManager:
         elif table_type == TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS:
             update_constraints_by_areas: STStorageAdditionalConstraintUpdates = collections.defaultdict(dict)
             for key, values in data.items():
-                area_id, constraint_id = key.split(" / ")
-                update_constraints_by_areas[area_id][constraint_id] = STStorageAdditionalConstraintUpdate(**values)
+                area_id, storage_id, constraint_id = key.split(" / ")
+                update_constraint = STStorageAdditionalConstraintUpdate.model_validate({"id": constraint_id, **values})
+                update_constraints_by_areas.setdefault(area_id, {}).setdefault(storage_id, []).append(update_constraint)
             constraints_map = self._st_storage_manager.update_additional_constraints(study, update_constraints_by_areas)
             data = {
-                f"{area_id} / {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
-                for area_id, constraints in constraints_map.items()
+                f"{area_id} / {storage_id} {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
+                for area_id, value in constraints_map.items()
+                for storage_id, constraints in value.items()
                 for constraint in constraints
             }
             return data

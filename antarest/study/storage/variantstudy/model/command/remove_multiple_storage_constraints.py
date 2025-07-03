@@ -46,7 +46,7 @@ class RemoveMultipleSTStorageConstraints(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         existing_constraints = study_data.get_st_storage_additional_constraints_for_area(self.area_id)
-        existing_ids = {c.id for c in existing_constraints}
+        existing_ids = {c.id for constraints in existing_constraints.values() for c in constraints}
         for constraint_id in self.ids:
             if constraint_id not in existing_ids:
                 return command_failed(f"Short-term storage constraint '{constraint_id}' not found.")

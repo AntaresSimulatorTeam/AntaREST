@@ -16,6 +16,7 @@ from typing import List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseId
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, create_st_storage_constraint
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_2
@@ -46,6 +47,7 @@ class CreateSTStorageAdditionalConstraints(ICommand):
     # ==================
 
     area_id: AreaId
+    storage_id: LowerCaseId
     constraints: list[STStorageAdditionalConstraintCreation]
 
     @model_validator(mode="after")
@@ -61,14 +63,14 @@ class CreateSTStorageAdditionalConstraints(ICommand):
         constraints = [create_st_storage_constraint(constraint) for constraint in self.constraints]
 
         # Checks if the constraint already exists in the study
-        existing_constraints = study_data.get_st_storage_additional_constraints_for_area(self.area_id)
+        existing_constraints = study_data.get_st_storage_additional_constraints(self.area_id, self.storage_id)
         existing_ids = {c.id for c in existing_constraints}
         for constraint in constraints:
             if constraint.id in existing_ids:
                 return command_failed(f"Short-term storage constraint '{constraint.id}' already exists.")
 
         # Save the new constraints
-        study_data.save_st_storage_additional_constraints(self.area_id, constraints)
+        study_data.save_st_storage_additional_constraints(self.area_id, {self.storage_id: constraints})
         # Save the default matrices
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
         for constraint in constraints:
@@ -81,7 +83,7 @@ class CreateSTStorageAdditionalConstraints(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         constraints = [c.model_dump(mode="json", by_alias=True, exclude_none=True) for c in self.constraints]
-        args = {"area_id": self.area_id, "constraints": constraints}
+        args = {"area_id": self.area_id, "storage_id": self.storage_id, "constraints": constraints}
         return CommandDTO(action=self.command_name.value, args=args, study_version=self.study_version)
 
     @override

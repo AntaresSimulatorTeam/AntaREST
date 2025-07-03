@@ -219,11 +219,13 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
         return self._adaptee.get_all_st_storage_additional_constraints()
 
     @override
-    def get_st_storage_additional_constraints_for_area(self, area_id: str) -> list[STStorageAdditionalConstraint]:
+    def get_st_storage_additional_constraints_for_area(
+        self, area_id: str
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
         return self._adaptee.get_st_storage_additional_constraints_for_area(area_id)
 
     @override

@@ -275,7 +275,6 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: LowerCaseId
-    cluster: LowerCaseId
     variable: AdditionalConstraintVariable
     operator: AdditionalConstraintOperator
     hours: Hours
@@ -292,7 +291,6 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: ItemName
-    cluster: LowerCaseId
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
     hours: Optional[Hours] = None
@@ -308,14 +306,14 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    cluster: Optional[LowerCaseId] = None
+    id: LowerCaseId
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
     hours: Optional[Hours] = None
     enabled: Optional[bool] = None
 
 
-STStorageAdditionalConstraintUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageAdditionalConstraintUpdate]]
+STStorageAdditionalConstraintUpdates = dict[LowerCaseId, dict[LowerCaseId, list[STStorageAdditionalConstraintUpdate]]]
 
 
 def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:

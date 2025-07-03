@@ -19,6 +19,7 @@ from antarest.core.exceptions import (
     DuplicateSTStorage,
     DuplicateSTStorageConstraintName,
     STStorageAdditionalConstraintNotFound,
+    STStorageNotFound,
     STStorageReferencedInsideAdditionalConstraints,
 )
 from antarest.core.model import JSON
@@ -231,10 +232,10 @@ class STStorageManager:
         """
         # Checks storages are not referenced in any constraint
         existing_constraints = study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
-        for constraint in existing_constraints:
-            for storage_id in storage_ids:
-                if constraint.cluster == storage_id:
-                    raise STStorageReferencedInsideAdditionalConstraints(storage_id, constraint.id)
+        for storage_id in storage_ids:
+            if storage_id in existing_constraints:
+                ids = {c.id for c in existing_constraints[storage_id]}
+                raise STStorageReferencedInsideAdditionalConstraints(storage_id, ids)
 
         commands = [
             RemoveSTStorage(
@@ -322,7 +323,9 @@ class STStorageManager:
     # Additional constraints part
     ##########################
 
-    def get_all_additional_constraints(self, study: StudyInterface) -> dict[str, list[STStorageAdditionalConstraint]]:
+    def get_all_additional_constraints(
+        self, study: StudyInterface
+    ) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
         """
         Gets all short-term storage additional constraints inside the study.
 
@@ -333,7 +336,7 @@ class STStorageManager:
 
     def get_additional_constraints_for_area(
         self, study: StudyInterface, area_id: str
-    ) -> list[STStorageAdditionalConstraint]:
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
         """
         Gets additional constraints for a given area.
 
@@ -357,7 +360,11 @@ class STStorageManager:
         return study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
 
     def create_additional_constraints(
-        self, study: StudyInterface, area_id: str, constraints: list[STStorageAdditionalConstraintCreation]
+        self,
+        study: StudyInterface,
+        area_id: str,
+        storage_id: str,
+        constraints: list[STStorageAdditionalConstraintCreation],
     ) -> list[STStorageAdditionalConstraint]:
         """
         Creates several additional-constraints for a given area.
@@ -370,7 +377,7 @@ class STStorageManager:
         created_constraints = [create_st_storage_constraint(c) for c in constraints]
 
         # Checks we're not duplicating existing constraints
-        existing_constraints = study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
+        existing_constraints = study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
         existing_ids = {c.id for c in existing_constraints}
         for constraint in created_constraints:
             if constraint.id in existing_ids:
@@ -379,6 +386,7 @@ class STStorageManager:
         # Apply the command
         command = CreateSTStorageAdditionalConstraints(
             area_id=area_id,
+            storage_id=storage_id,
             constraints=constraints,
             command_context=self._command_context,
             study_version=study.version,
@@ -390,22 +398,25 @@ class STStorageManager:
 
     def update_additional_constraints(
         self, study: StudyInterface, update_constraints_by_areas: STStorageAdditionalConstraintUpdates
-    ) -> dict[str, list[STStorageAdditionalConstraint]]:
+    ) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
         # Checks the constraint exist and builds the response.
-        new_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
+        new_constraints: dict[str, dict[str, list[STStorageAdditionalConstraint]]] = {}
         existing_constraints = study.get_study_dao().get_all_st_storage_additional_constraints()
         for area_id, value in update_constraints_by_areas.items():
             if area_id not in existing_constraints:
                 raise AreaNotFound(area_id)
 
-            existing_ids = {c.id: index for index, c in enumerate(existing_constraints[area_id])}
-            for constraint_id, updated_properties in value.items():
-                if constraint_id not in existing_ids:
-                    raise STStorageAdditionalConstraintNotFound(area_id, constraint_id)
+            for storage_id, updated_constraints in value.items():
+                if storage_id not in existing_constraints[area_id]:
+                    raise STStorageNotFound(area_id, storage_id)
+                existing_ids = {c.id: index for index, c in enumerate(existing_constraints[area_id][storage_id])}
+                for upd_constraint in updated_constraints:
+                    if upd_constraint.id in existing_ids:
+                        raise STStorageAdditionalConstraintNotFound(area_id, upd_constraint.id)
 
-                current_constraint = existing_constraints[area_id][existing_ids[constraint_id]]
-                new_constraint = update_st_storage_constraint(current_constraint, updated_properties)
-                new_constraints.setdefault(area_id, []).append(new_constraint)
+                    current_constraint = existing_constraints[area_id][storage_id][existing_ids[upd_constraint.id]]
+                    new_constraint = update_st_storage_constraint(current_constraint, upd_constraint)
+                    new_constraints.setdefault(area_id, {}).setdefault(storage_id, []).append(new_constraint)
 
         # Apply the command
         command = UpdateSTStorageAdditionalConstraints(

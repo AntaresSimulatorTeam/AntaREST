@@ -267,7 +267,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data.config.areas[area_id].st_storages.remove(storage)
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
         file_study = self.get_file_study()
         path = ["input", "st-storage", "constraints"]
         try:
@@ -284,21 +284,23 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
-        all_area_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
-        return [c for c in all_area_constraints if c.cluster == storage_id]
+        return self.get_st_storage_additional_constraints_for_area(area_id).get(storage_id, [])
 
     @override
-    def get_st_storage_additional_constraints_for_area(self, area_id: str) -> list[STStorageAdditionalConstraint]:
+    def get_st_storage_additional_constraints_for_area(
+        self, area_id: str
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
         file_study = self.get_file_study()
         path = ["input", "st-storage", "constraints", area_id, "additional_constraints"]
         try:
-            constraints = []
+            constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
             ini_content = file_study.tree.get(path)
             for key, value in ini_content.items():
-                constraints.append(parse_st_storage_additional_constraint(key, value))
+                storage_id, constraint = parse_st_storage_additional_constraint(key, value)
+                constraints.setdefault(storage_id, []).append(constraint)
             return constraints
         except ChildNotFoundError:
-            return []
+            return {}
 
     @override
     def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
@@ -318,22 +320,20 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
     ) -> None:
         existing_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
-        existing_map = {}
-        for constraint in existing_constraints:
-            existing_map[constraint.id] = constraint
 
-        for constraint in constraints:
-            if constraint.id not in existing_map:
-                print("ok")
-                # We should create the matrix
-            existing_map[constraint.id] = constraint
+        existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
+        for map in [existing_constraints, constraints]:
+            for storage_id, cs in map.items():
+                for constraint in cs:
+                    existing_map.setdefault(storage_id, {})[constraint.id] = constraint
 
         ini_content = {}
         for key, value in existing_map.items():
-            ini_content[key] = serialize_st_storage_additional_constraint(value)
+            for storage_id, constraint in value.items():
+                ini_content[key] = serialize_st_storage_additional_constraint(storage_id, constraint)
         study_data = self.get_file_study()
         study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional_constraints"])
 

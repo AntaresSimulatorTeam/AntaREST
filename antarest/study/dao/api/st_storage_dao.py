@@ -80,11 +80,13 @@ class ReadOnlySTStorageDao(ABC):
     ##########################
 
     @abstractmethod
-    def get_all_st_storage_additional_constraints(self) -> dict[str, list[STStorageAdditionalConstraint]]:
+    def get_all_st_storage_additional_constraints(self) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_st_storage_additional_constraints_for_area(self, area_id: str) -> list[STStorageAdditionalConstraint]:
+    def get_st_storage_additional_constraints_for_area(
+        self, area_id: str
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
         raise NotImplementedError()
 
     @abstractmethod
@@ -161,6 +163,6 @@ class STStorageDao(ReadOnlySTStorageDao):
 
     @abstractmethod
     def save_st_storage_additional_constraints(
-        self, area_id: str, constraints: list[STStorageAdditionalConstraint]
+        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
     ) -> None:
         raise NotImplementedError()
