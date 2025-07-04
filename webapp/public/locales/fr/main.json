@@ -400,6 +400,7 @@
   "study.configuration.general.thematicTrimming.group.generationStStorages": "Génération / Stockages court terme",
   "study.configuration.general.thematicTrimming.group.generationThermals": "Génération / Thermiques",
   "study.configuration.general.thematicTrimming.group.links": "Liens",
+  "study.configuration.general.thematicTrimming.group.bindingConstraints": "Contraintes couplantes",
   "study.configuration.general.filtering": "Filtering",
   "study.configuration.general.dialogWarning": "Le formulaire doit être sauvegardé avant de pouvoir accéder à ces paramètres.",
   "study.configuration.tsManagement.numberStochasticTs": "Nombre stochastique TS",

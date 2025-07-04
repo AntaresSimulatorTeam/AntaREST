@@ -80,6 +80,8 @@ export interface ThematicTrimmingConfig {
   // Since v8.3
   dens?: boolean;
   profitByPlant?: boolean;
+  // Since v8.4
+  bcMargCost?: boolean;
   // Since v8.6
   stsInjByPlant?: boolean;
   stsWithdrawalByPlant?: boolean;

@@ -400,6 +400,7 @@
   "study.configuration.general.thematicTrimming.group.generationStStorages": "Generation / Short-Term Storages",
   "study.configuration.general.thematicTrimming.group.generationThermals": "Generation / Thermals",
   "study.configuration.general.thematicTrimming.group.links": "Links",
+  "study.configuration.general.thematicTrimming.group.bindingConstraints": "Binding Constraints",
   "study.configuration.general.filtering": "Filtering",
   "study.configuration.general.dialogWarning": "The form must be saved before you can access these settings.",
   "study.configuration.tsManagement.numberStochasticTs": "Number Stochastic TS",
