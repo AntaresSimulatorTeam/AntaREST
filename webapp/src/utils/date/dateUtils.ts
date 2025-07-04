@@ -205,13 +205,3 @@ export function getWeekFromDayOfYear(dayOfYear: number): number {
 export function getHourOfYear(date: Date): number {
   return (getDayOfYear(date) - 1) * 24 + getHours(date) + 1;
 }
-
-/**
- * Get the current locale from language settings
- *
- * @returns SupportedLocale
- */
-export function getCurrentLocale(): SupportedLocale {
-  const lang = localStorage.getItem("i18nextLng") || "en";
-  return lang.startsWith("fr") ? "fr" : "en";
-}

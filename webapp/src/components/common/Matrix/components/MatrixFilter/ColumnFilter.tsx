@@ -127,11 +127,11 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
             operator={filter.columnsFilter.operator}
             onInputChange={handleListChange}
             onKeyPress={handleKeyPress}
-            onAddValue={() => addValueToList()}
-            onAddValues={(values) => addValuesToList(values)}
-            onRemoveValue={(value) => removeValueFromList(value)}
+            onAddValue={addValueToList}
+            onAddValues={addValuesToList}
+            onRemoveValue={removeValueFromList}
             onOperatorChange={handleOperatorChangeEvent}
-            onClearAll={() => clearAllValues()}
+            onClearAll={clearAllValues}
           />
         )}
       </AccordionDetails>

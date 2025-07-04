@@ -13,16 +13,14 @@
  */
 
 import type { TFunction } from "i18next";
-import {
-  getCurrentLocale,
-  parseFlexibleDate as parseFlexibleDateBase,
-} from "@/utils/date/dateUtils";
+import { parseFlexibleDate as parseFlexibleDateBase } from "@/utils/date/dateUtils";
 import {
   createLocalizedTemporalLabels,
   extractTemporalValue,
   getTemporalRange,
   type TimeIndexingType,
 } from "@/utils/date/matrixDateUtils";
+import { getCurrentLanguage } from "@/utils/i18nUtils";
 import type { LocalizedTimeLabel, TemporalRange } from "../types";
 
 /**
@@ -32,7 +30,7 @@ import type { LocalizedTimeLabel, TemporalRange } from "../types";
  * @returns A valid Date object or null if parsing failed
  */
 export function parseFlexibleDate(dateStr: string): Date | null {
-  const locale = getCurrentLocale();
+  const locale = getCurrentLanguage();
   return parseFlexibleDateBase(dateStr, locale);
 }
 
@@ -45,7 +43,7 @@ export function parseFlexibleDate(dateStr: string): Date | null {
  * @throws Error if the date string cannot be parsed
  */
 export function extractValueFromDate(dateStr: string, indexingType: TimeIndexingType): number {
-  const locale = getCurrentLocale();
+  const locale = getCurrentLanguage();
   const date = parseFlexibleDate(dateStr);
 
   if (!date) {

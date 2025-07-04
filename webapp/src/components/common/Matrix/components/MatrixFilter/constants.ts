@@ -85,7 +85,7 @@ export const getDefaultIndexingType = (timeFrequency?: TimeFrequencyType): TimeI
  * Temporal filtering options with localization keys and descriptions.
  * Each option defines a specific way to filter time-based data.
  */
-export const TEMPORAL_OPTIONS: readonly TemporalOption[] = [
+export const TEMPORAL_OPTIONS: ReadonlyArray<Readonly<TemporalOption>> = [
   {
     value: TIME_INDEXING.DAY_OF_MONTH,
     label: "matrix.filter.indexing.dayOfMonth",
@@ -114,7 +114,7 @@ export const TEMPORAL_OPTIONS: readonly TemporalOption[] = [
     value: TIME_INDEXING.HOUR_YEAR,
     label: "matrix.filter.indexing.hourYear",
   },
-] as const;
+];
 
 /**
  * Creates a default row filter configuration.
