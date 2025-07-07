@@ -18,6 +18,7 @@ export interface StudyTreeNode {
   children: StudyTreeNode[];
   hasChildren?: boolean;
   isStudyFolder?: boolean;
+  isScannedStudy?: boolean;
 }
 
 export interface FolderDTO {

@@ -47,7 +47,8 @@ export default function StudyTreeNode({
   const { t } = useTranslation();
 
   const sortedChildren = useMemo(() => {
-    const sortedByName = nameSort(children);
+    const nonStudyChildren = children.filter((s) => !s.isScannedStudy);
+    const sortedByName = nameSort(nonStudyChildren);
     if (node.name === ROOT_NODE_NAME) {
       return defaultFirstSort(sortedByName);
     }

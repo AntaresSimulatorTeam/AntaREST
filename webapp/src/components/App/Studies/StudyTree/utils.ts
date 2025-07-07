@@ -16,6 +16,8 @@ import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/util
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
 import type { FolderDTO, StudyTreeNode } from "./types";
+import type { StudyEventPayload } from "@/services/webSocket/types";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 
 /**
  * Builds a tree structure from a list of study metadata.
@@ -49,8 +51,18 @@ export function buildStudyTree(studies: StudyMetadata[]) {
     let current = tree;
 
     for (let i = 0; i < path.length; i++) {
-      // Skip the last folder, as it represents the study itself
+      // add the study folder with the isScannedStudy set to true
+      // this flag will be used to not display the study folder in the study tree
+      // even if the folder isn't displayed we still need it in the study tree
+      // as it makes it easier to distinguish scanned studies from unscanend studies
       if (i === path.length - 1) {
+        const studyFolderName = path[i];
+        current.children.push({
+          name: studyFolderName,
+          children: [],
+          path: current.path ? `${current.path}/${studyFolderName}` : `/${studyFolderName}`,
+          isScannedStudy: true,
+        });
         break;
       }
 
@@ -231,4 +243,12 @@ export function insertIfNotExist(
   const treeWithWorkspaces = insertWorkspacesIfNotExist(studyTree, workspaces);
   const treeWithFolders = insertFoldersIfNotExist(treeWithWorkspaces, folders);
   return treeWithFolders;
+}
+
+export function deleteStudyFromLocalStorage(event: StudyEventPayload) {
+  const folders = storage.getItem(StorageKey.StudyTreeFolders) || [];
+  const filteredFolders = folders.filter(
+    (f) => !(f.workspace === event.workspace && f.path === event.folder),
+  );
+  storage.setItem(StorageKey.StudyTreeFolders, filteredFolders);
 }

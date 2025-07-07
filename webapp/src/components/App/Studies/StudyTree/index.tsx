@@ -45,7 +45,17 @@ function StudyTree() {
 
   useEffect(() => {
     getWorkspaces().then((nextWorkspaces) => {
-      const nextStudyTree = insertIfNotExist(initialStudiesTree, nextWorkspaces, subFolders);
+      const filteredStudyFolders = subFolders.filter(
+        (folder) =>
+          !studies.some(
+            (study) => folder.path === study.folder && study.workspace === folder.workspace,
+          ),
+      );
+      const nextStudyTree = insertIfNotExist(
+        initialStudiesTree,
+        nextWorkspaces,
+        filteredStudyFolders,
+      );
       setStudiesTree(nextStudyTree);
       setWorkspaces(nextWorkspaces);
     });
@@ -88,27 +98,27 @@ function StudyTree() {
     // Fetch subfolders and insert them to the tree
     try {
       const newSubFolders = await api.getFolders(workspace, subPath.join("/"));
-      if (newSubFolders.length > 0) {
-        // use union to prioritize new subfolders
-        const thisParent = ["", workspace, ...subPath].join("/");
-        const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
-        // Keep non-study folders and study folders that haven't been scanned yet
-        const filteredStudyFolders = newSubFolders.filter(
-          (folder) =>
-            !folder.isStudyFolder ||
-            !studies.some(
-              (study) => folder.path === study.folder && study.workspace === folder.workspace,
-            ),
-        );
-        const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
-        setSubFolders(nextSubfolders);
+      // if (newSubFolders.length > 0) {
+      // use union to prioritize new subfolders
+      const thisParent = ["", workspace, ...subPath].join("/");
+      const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
+      // Keep non-study folders and study folders that haven't been scanned yet
+      const filteredStudyFolders = newSubFolders.filter(
+        (folder) =>
+          // !folder.isStudyFolder ||
+          !studies.some(
+            (study) => folder.path === study.folder && study.workspace === folder.workspace,
+          ),
+      );
+      const nextSubfolders = [...filteredStudyFolders, ...otherSubfolders];
+      setSubFolders(nextSubfolders);
 
-        const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
-        setStudiesTree(nextStudyTree);
-        storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
+      const nextStudyTree = insertIfNotExist(initialStudiesTree, workspaces, nextSubfolders);
+      setStudiesTree(nextStudyTree);
+      storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
 
-        setExploredFolders((prev) => [...prev.filter((e) => e !== itemId), itemId]);
-      }
+      setExploredFolders((prev) => [...prev.filter((e) => e !== itemId), itemId]);
+      // }
     } catch (err) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {

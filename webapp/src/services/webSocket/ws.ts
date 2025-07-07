@@ -35,6 +35,7 @@ import { getConfig } from "../config";
 import { isStringEmpty, isUserExpired } from "../utils";
 import { WsChannel, WsEventType } from "./constants";
 import type { WsEvent, WsEventListener } from "./types";
+import { deleteStudyFromLocalStorage } from "@/components/App/Studies/StudyTree/utils";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -73,6 +74,7 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
   webSocket.onmessage = (event: MessageEvent): void => {
     const message = JSON.parse(event.data) as WsEvent;
     logInfo("WebSocket message received", message);
+    console.log("WebSocket message received", message);
     eventListeners.forEach((listener) => listener(message));
   };
 
@@ -209,6 +211,7 @@ function makeStudyListener(dispatch: AppDispatch): WsEventListener {
         break;
       case WsEventType.StudyDeleted:
         dispatch(deleteStudy(e.payload));
+        deleteStudyFromLocalStorage(e.payload);
         break;
     }
   };

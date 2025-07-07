@@ -315,7 +315,7 @@ class Study(Base):  # type: ignore
         )
 
     def to_json_summary(self) -> Any:
-        return {"id": self.id, "name": self.name}
+        return {"id": self.id, "name": self.name, "folder": self.folder, "workspace": self.workspace}
 
     @validates("folder")  # type: ignore
     def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
@@ -436,6 +436,7 @@ class WorkspaceMetadata(AntaresBaseModel):
     """
 
     name: str
+    disk_name: str
 
 
 class PatchStudy(AntaresBaseModel):
