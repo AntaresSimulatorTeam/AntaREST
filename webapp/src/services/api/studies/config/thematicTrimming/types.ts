@@ -113,6 +113,7 @@ export interface ThematicTrimmingConfig {
   other5Level?: boolean;
   // Since v8.8
   stsCashflowByCluster?: boolean;
+  npcapHours?: "NPCAP HOURS",
   // Since v9.1
   stsByGroup?: boolean;
 }
