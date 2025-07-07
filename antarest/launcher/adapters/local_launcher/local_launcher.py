@@ -12,6 +12,7 @@
 
 import logging
 import os
+import shlex
 import shutil
 import signal
 import subprocess
@@ -31,6 +32,7 @@ from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, Launch
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
+from antarest.study.model import STUDY_VERSION_9_2
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +85,7 @@ class LocalLauncher(AbstractLauncher):
 
         job = threading.Thread(
             target=LocalLauncher._compute,
-            args=(self, antares_solver_path, study_uuid, job_id, launcher_parameters, require_current_user()),
+            args=(self, antares_solver_path, study_uuid, job_id, launcher_parameters, version, require_current_user()),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         job.start()
@@ -94,6 +96,7 @@ class LocalLauncher(AbstractLauncher):
         study_uuid: str,
         job_id: str,
         launcher_parameters: LauncherParametersDTO,
+        version: SolverVersion,
         current_user: JWTUser,
     ) -> None:
         with current_user_context(current_user):
@@ -103,7 +106,7 @@ class LocalLauncher(AbstractLauncher):
             try:
                 self.callbacks.export_study(job_id, study_uuid, export_path, launcher_parameters)
 
-                simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters)
+                simulator_args, environment_variables = self._parse_launcher_options(launcher_parameters, version)
                 new_args = [str(antares_solver_path)] + simulator_args + [str(export_path)]
 
                 std_err_file = logs_path / f"{job_id}-err.log"
@@ -168,22 +171,61 @@ class LocalLauncher(AbstractLauncher):
             "antares-err.log": [logs_path / f"{job_id}-err.log"],
         }
 
-    def _parse_launcher_options(self, launcher_parameters: LauncherParametersDTO) -> Tuple[List[str], Dict[str, Any]]:
-        simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"]
+    def _parse_launcher_options(
+        self, launcher_parameters: LauncherParametersDTO, version: SolverVersion
+    ) -> Tuple[List[str], Dict[str, Any]]:
+        simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"] if launcher_parameters.nb_cpu else []
         environment_variables = os.environ.copy()
-        if launcher_parameters.other_options:
-            solver = []
-            if "xpress" in launcher_parameters.other_options:
-                solver = ["--use-ortools", "--ortools-solver=xpress"]
-                if xpress_dir_path := self.local_config.xpress_dir:
-                    environment_variables["XPRESSDIR"] = xpress_dir_path
-                    environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
-            elif "coin" in launcher_parameters.other_options:
-                solver = ["--use-ortools", "--ortools-solver=coin"]
-            if solver:
-                simulator_args += solver
-            if "presolve" in launcher_parameters.other_options:
-                simulator_args += ["--solver-parameters", "PRESOLVE 1"]
+        if not launcher_parameters.other_options:
+            return simulator_args, environment_variables
+
+        # Split other options
+        options = shlex.split(launcher_parameters.other_options)
+
+        # Use solver logs
+        if "solver-logs" in options:
+            simulator_args += ["--solver-logs"]
+
+        # Call the right solver
+        solver = ""
+        if "xpress" in options:
+            solver = "xpress"
+        elif "coin" in options:
+            solver = "coin"
+        if solver:
+            if version >= STUDY_VERSION_9_2:
+                simulator_args += [f"--solver={solver}"]
+            else:
+                simulator_args.extend(["--use-ortools", f"--ortools-solver={solver}"])
+
+        # 'xpress' specific part
+        if "xpress" in options:
+            # Load environment variables
+            if xpress_dir_path := self.local_config.xpress_dir:
+                environment_variables["XPRESSDIR"] = xpress_dir_path
+                environment_variables["XPRESS"] = environment_variables["XPRESSDIR"] + os.sep + "bin"
+
+            # Parse specific options
+            if "nobasis1" in options:
+                simulator_args += ["--use-optim-1-basis-next-week=false"]
+            if "nobasis2" in options:
+                simulator_args += ["--use-optim-1-basis-optim-2=false"]
+
+            solver_parameters_optim1 = []
+            solver_parameters_optim2 = []
+            if "presolve" in options:
+                solver_parameters_optim1 += ["PRESOLVE 1"]
+                solver_parameters_optim2 += ["PRESOLVE 1"]
+            for opt in options:
+                if opt.startswith("param-optim1="):
+                    solver_parameters_optim1 += [opt.removeprefix("param-optim1=")]
+                if opt.startswith("param-optim2="):
+                    solver_parameters_optim2 += [opt.removeprefix("param-optim2=")]
+            if solver_parameters_optim1:
+                simulator_args += [f'--lp-solver-param-optim-1="{" ".join(solver_parameters_optim1)}"']
+            if solver_parameters_optim2:
+                simulator_args += [f'--lp-solver-param-optim-2="{" ".join(solver_parameters_optim2)}"']
+
         return simulator_args, environment_variables
 
     @override

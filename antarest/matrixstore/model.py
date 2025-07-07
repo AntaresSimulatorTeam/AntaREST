@@ -14,6 +14,7 @@ import datetime
 import uuid
 from typing import Any, List, TypeAlias
 
+from pydantic import field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
 from sqlalchemy.orm import relationship  # type: ignore
 from typing_extensions import override
@@ -84,6 +85,18 @@ groups_dataset_relation = Table(
     Column("dataset_id", String(64), ForeignKey("dataset.id"), primary_key=True),
     Column("group_id", String(36), ForeignKey("groups.id"), primary_key=True),
 )
+
+
+class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    id: str
+    width: int
+    height: int
+    created_at: datetime.datetime
+    version: int
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, created_at: datetime.datetime) -> str:
+        return created_at.strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
 class MatrixDataSetRelation(Base):  # type: ignore
