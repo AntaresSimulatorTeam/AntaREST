@@ -54,7 +54,7 @@ class OutputSimulation(FolderNode):
         }
 
         if not self.simulation.error:
-            for file in self.config.path.rglob("*.txt"):
+            for file in self.config.path.glob("*.txt"):
                 file_name = file.name
                 if (self.config.path / file_name).exists():
                     children[file.stem] = RawFileNode(self.matrix_mapper, self.config.next_file(file_name))

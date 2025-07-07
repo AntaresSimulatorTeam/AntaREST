@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
 import SearchFE from "@/components/common/fieldEditors/SearchFE";
 import { useDebouncedField } from "@/hooks/useDebouncedField";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
-import { Box, IconButton } from "@mui/material";
+import { Box, IconButton, Tooltip } from "@mui/material";
 import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -27,6 +27,7 @@ import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import { DataType, matchesSearchTerm, Timestep } from "./utils";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface ColumnHeader {
   variable: string;
@@ -65,6 +66,7 @@ interface Props {
   path: string;
   colHeaders: string[][];
   onColHeadersChange: (colHeaders: string[][], indices: number[]) => void;
+  onToggleFilter: () => void;
 }
 
 function ResultFilters({
@@ -79,6 +81,7 @@ function ResultFilters({
   path,
   colHeaders,
   onColHeadersChange,
+  onToggleFilter,
 }: Props) {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
@@ -315,7 +318,6 @@ function ResultFilters({
             alignItems: "center",
           }}
         >
-          {/* Column Filters Group */}
           <Box
             sx={{
               display: "flex",
@@ -327,23 +329,18 @@ function ResultFilters({
             {COLUMN_FILTERS.map(({ id, field }) => (
               <Fragment key={id}>{field}</Fragment>
             ))}
+            {RESULT_FILTERS.map(({ id, field }) => (
+              <Fragment key={id}>{field}</Fragment>
+            ))}
           </Box>
-          <DownloadMatrixButton studyId={studyId} path={path} />
-        </Box>
-      </CustomScrollbar>
-
-      {/* Result Filters Group */}
-      <CustomScrollbar>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 2,
-          }}
-        >
-          {RESULT_FILTERS.map(({ id, field }) => (
-            <Fragment key={id}>{field}</Fragment>
-          ))}
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Tooltip title={t("matrix.filter.filterData")}>
+              <IconButton onClick={onToggleFilter}>
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+            <DownloadMatrixButton studyId={studyId} path={path} />
+          </Box>
         </Box>
       </CustomScrollbar>
     </Box>

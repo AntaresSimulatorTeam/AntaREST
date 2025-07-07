@@ -96,6 +96,8 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     # since v8.3
     dens: bool | None = Field(default=None, alias="DENS")
     profit_by_plant: bool | None = Field(default=None, alias="Profit by plant")
+    # since v8.4
+    bc_marg_cost: bool | None = Field(default=None, alias="BC. MARG. COST")
     # since v8.6
     sts_inj_by_plant: bool | None = Field(default=None, alias="STS inj by plant")
     sts_withdrawal_by_plant: bool | None = Field(default=None, alias="STS withdrawal by plant")
@@ -129,6 +131,7 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     other5_level: bool | None = Field(default=None, alias="Other5_level")
     # Since v8.8
     sts_cashflow_by_cluster: bool | None = Field(default=None, alias="STS Cashflow By Cluster")
+    npcap_hours: bool | None = Field(default=None, alias="NPCAP HOURS")
     # Since v9.1
     sts_by_group: bool | None = Field(default=None, alias="STS by group")
 

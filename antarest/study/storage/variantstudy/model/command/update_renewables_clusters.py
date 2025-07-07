@@ -43,6 +43,12 @@ class UpdateRenewablesClusters(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping = {}
+
         all_renewables = study_data.get_all_renewables()
 
         for area_id, value in self.cluster_properties.items():
@@ -51,14 +57,16 @@ class UpdateRenewablesClusters(ICommand):
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
-                lowered_id = cluster_id
-                if lowered_id not in all_renewables[area_id]:
+                if cluster_id not in all_renewables[area_id]:
                     return command_failed(f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.")
 
-                current_cluster = all_renewables[area_id][lowered_id]
+                current_cluster = all_renewables[area_id][cluster_id]
                 new_cluster = update_renewable_cluster(current_cluster, new_properties)
                 new_clusters.append(new_cluster)
 
+            memory_mapping[area_id] = new_clusters
+
+        for area_id, new_clusters in memory_mapping.items():
             study_data.save_renewables(area_id, new_clusters)
 
         return command_succeeded("The renewable clusters were successfully updated.")

@@ -57,7 +57,10 @@ function MatrixResize() {
       setMatrixData({
         ...currentState,
         data: updatedMatrix,
-        aggregates: calculateMatrixAggregates({ matrix: updatedMatrix, types: aggregateTypes }),
+        aggregates: calculateMatrixAggregates({
+          matrix: updatedMatrix,
+          types: aggregateTypes,
+        }),
       });
     } catch (error) {
       errorSnackBar(t("matrix.error.matrixUpdate"), toError(error));

@@ -402,7 +402,6 @@ class RawStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
-        file_study = self.get_files()
 
         for command in commands:
             result = command.apply(FileStudyTreeDao(self.get_files()), listener)
@@ -410,25 +409,6 @@ class RawStudyInterface(StudyInterface):
                 raise CommandApplicationError(result.message)
         remove_from_cache(self._raw_study_service.cache, study.id)
         self._variant_study_service.on_parent_change(study.id)
-
-        if not is_managed(study):
-            # In a previous version, de-normalization was performed asynchronously.
-            # However, this cause problems with concurrent file access,
-            # especially when de-normalizing a matrix (which can take time).
-            #
-            # async_denormalize = threading.Thread(
-            #     name=f"async_denormalize-{study.id}",
-            #     target=file_study.tree.denormalize,
-            # )
-            # async_denormalize.start()
-            #
-            # To avoid this concurrency problem, it would be necessary to implement a
-            # locking system for the entire study using a file lock (since multiple processes,
-            # not only multiple threads, could access the same content simultaneously).
-            #
-            # Currently, we use a synchronous call to address the concurrency problem
-            # within the current process (not across multiple processes)...
-            file_study.tree.denormalize()
 
 
 class VariantStudyInterface(StudyInterface):

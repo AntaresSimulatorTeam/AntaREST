@@ -18,7 +18,7 @@ from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     STUDY_VERSION_7_2,
@@ -87,10 +87,13 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         sets={},
     )
     # sourcery skip: inline-immediately-returned-variable
+    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+
     file_study = FileStudy(
         config=config,
         tree=FileStudyTree(
-            matrix_mapper=MatrixUriMapper(matrix_service=matrix_service),
+            matrix_mapper=matrix_mapper,
             config=config,
         ),
     )

@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from checksumdir import dirhash
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -125,12 +126,17 @@ class TestUpdateRenewableCluster:
         assert output.status is False
         assert output.message == "The area 'fake_area' is not found."
 
-        # Fake cluster
+        # Ensures updating an unexisting renewable cluster raises an Exception.
+        # Also ensures the study wasn't partially modified.
+        hash_before_update = dirhash(study.config.study_path / "input" / "renewables", "md5")
+        mapping = {"de": {"cluster_3": {"unit_count": 4}}, "FR": {"fake_cluster": {"enabled": False}}}
         cmd = UpdateRenewablesClusters(
-            cluster_properties={"FR": {"fake_cluster": {"enabled": False}}},
+            cluster_properties=mapping,
             command_context=command_context,
             study_version=study_version,
         )
         output = cmd.apply(study)
         assert output.status is False
         assert output.message == "The renewable cluster 'fake_cluster' in the area 'fr' is not found."
+        hash_after_update = dirhash(study.config.study_path / "input" / "renewables", "md5")
+        assert hash_before_update == hash_after_update
