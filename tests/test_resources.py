@@ -85,7 +85,7 @@ FILES_SINCE_V86 = sorted(["input/st-storage", "input/st-storage/clusters", "inpu
 )
 def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion):
     study_path = tmp_path / "test"
-    app = CreateApp(study_dir=study_path, caption="Test", version=version, author="Unknown", editor="Unknown")
+    app = CreateApp(study_dir=study_path, caption="Test", version=version, author="Unknown")
     app()
 
     existing_paths = sorted(study_path.rglob("*"))

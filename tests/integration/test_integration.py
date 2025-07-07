@@ -1245,9 +1245,7 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
 
     # Creates a v9.2 study
     study_path = tmp_path / "test"
-    app = CreateApp(
-        study_dir=study_path, caption="A", version=StudyVersion.parse("9.2"), author="Unknown", editor="Unknown"
-    )
+    app = CreateApp(study_dir=study_path, caption="A", version=StudyVersion.parse("9.2"), author="Unknown")
     app()
 
     def zip_study(src_path: Path, dest_path: Path) -> None:
