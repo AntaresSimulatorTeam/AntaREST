@@ -1323,13 +1323,15 @@ class StudyService:
         """
         sid = str(uuid4())
         path = str(self.config.get_workspace_path() / sid)
+        editor = get_user_id()
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            additional_data=StudyAdditionalData(),
+            additional_data=StudyAdditionalData(editor=editor),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
+            editor=editor,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
 
