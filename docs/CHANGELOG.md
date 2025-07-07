@@ -1,6 +1,25 @@
 Antares Web Changelog
 =====================
 
+v2.22.1 (2025-07-07)
+--------------------
+
+## What's Changed
+
+### Features
+
+* **thematic-trimming**: add variable `NPCAP HOURS` [`2568`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2568)
+
+### Bug fixes
+
+* **watcher**: watcher should not be started when not asked for [`2565`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2565)
+* **output**: dont scan whole output dir recursively [`2563`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2563)
+* **ui**: remove the column name from the copy on DataGrid [`2566`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2566)
+
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.22.0...v2.22.1
+
+
 v2.22.0 (2025-06-25)
 --------------------
 

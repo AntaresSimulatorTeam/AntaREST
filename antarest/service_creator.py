@@ -252,7 +252,7 @@ def create_archive_worker(
     return ArchiveWorker(event_bus, workspace, local_root, config)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Services:
     watcher: Watcher
     explorer: Explorer
