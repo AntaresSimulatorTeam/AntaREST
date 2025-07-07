@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import pytest
+from checksumdir import dirhash
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
@@ -183,15 +184,20 @@ class TestUpdateShortTermSorage:
         assert output.status is False
         assert output.message == "The area 'fake_area' is not found."
 
-        # Fake storage
+        # Ensures updating an unexisting short-term storage raises an Exception.
+        # Also ensures the study wasn't partially modified.
+        hash_before_update = dirhash(study.config.study_path / "input" / "st-storage", "md5")
+        mapping = {"de": {"storage_3": {"enabled": False}}, "FR": {"fake_storage": {"initial_level": 0.1}}}
         cmd = UpdateSTStorages(
-            storage_properties={"FR": {"fake_storage": {"initial_level": 0.1}}},
+            storage_properties=mapping,
             command_context=command_context,
             study_version=study_version,
         )
         output = cmd.apply(study)
         assert output.status is False
         assert output.message == "The short-term storage 'fake_storage' in the area 'fr' is not found."
+        hash_after_update = dirhash(study.config.study_path / "input" / "st-storage", "md5")
+        assert hash_before_update == hash_after_update
 
         # Try to give a parameter that only exist since v9.2
         with pytest.raises(

@@ -55,6 +55,12 @@ class UpdateSTStorages(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping = {}
+
         all_storages = study_data.get_all_st_storages()
 
         for area_id, value in self.storage_properties.items():
@@ -72,6 +78,9 @@ class UpdateSTStorages(ICommand):
                 new_storage = update_st_storage(current_storage, new_properties)
                 new_storages.append(new_storage)
 
+            memory_mapping[area_id] = new_storages
+
+        for area_id, new_storages in memory_mapping.items():
             study_data.save_st_storages(area_id, new_storages)
 
         return command_succeeded("The short-term storages were successfully updated.")

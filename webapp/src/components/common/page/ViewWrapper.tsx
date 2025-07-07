@@ -12,43 +12,51 @@
  * This file is part of the Antares project.
  */
 
-import { Paper } from "@mui/material";
+import { Paper, type SxProps, type Theme } from "@mui/material";
+
+interface FlexConfig {
+  direction?: "row" | "column";
+  gap?: number;
+}
 
 export interface ViewWrapperProps {
   children: React.ReactNode;
-  flex?:
-    | boolean
-    | {
-        direction?: "row" | "column";
-        gap?: number;
-      };
+  flex?: boolean | FlexConfig;
   disablePadding?: boolean;
 }
 
 function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWrapperProps) {
-  const flexObj = typeof flex === "boolean" ? {} : flex;
-  const flexValues = { flexDirection: flexObj.direction || "column", gap: flexObj.gap };
+  const getFlexStyles = (): SxProps<Theme> | null => {
+    if (!flex) {
+      return null;
+    }
+
+    const config: FlexConfig = typeof flex === "boolean" ? {} : flex;
+
+    return {
+      display: "flex",
+      flexDirection: config.direction || "column",
+      gap: config.gap,
+    };
+  };
+
+  const baseStyles: SxProps<Theme> = {
+    width: 1,
+    height: 1,
+    p: disablePadding ? 0 : 2,
+    overflow: flex ? "hidden" : "auto",
+    position: "relative",
+    borderRadius: 0,
+    // Remove padding for components that manage their own padding
+    ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+      p: 0,
+    },
+  };
+
+  const flexStyles = getFlexStyles();
 
   return (
-    <Paper
-      className="ViewWrapper"
-      sx={[
-        {
-          width: 1,
-          height: 1,
-          p: 2,
-          // <TabsView> and <TabWrapper> have their own padding
-          ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
-            p: 0,
-          },
-          overflow: "auto",
-          position: "relative",
-          borderRadius: 0,
-        },
-        flex && { display: "flex", ...flexValues },
-        disablePadding && { p: 0 },
-      ]}
-    >
+    <Paper className="ViewWrapper" sx={flexStyles ? { ...baseStyles, ...flexStyles } : baseStyles}>
       {children}
     </Paper>
   );
