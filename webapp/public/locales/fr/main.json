@@ -189,6 +189,8 @@
   "button.save": "Sauvegarder",
   "button.explore": "Explorer",
   "button.newCommand": "Nouvelle commande",
+  "button.selectAll": "Sélectionner tout",
+  "button.deselectAll": "Désélectionner tout",
   "common.noContent": "Pas de contenu",
   "common.underConstruction": "Page en construction",
   "common.dialog.import.dropzoneText": "Glisser un fichier ici, ou cliquer pour en sélectionner un",
