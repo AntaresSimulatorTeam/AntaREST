@@ -55,6 +55,12 @@ class UpdateThermalClusters(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping = {}
+
         all_thermals = study_data.get_all_thermals()
 
         for area_id, value in self.cluster_properties.items():
@@ -71,6 +77,9 @@ class UpdateThermalClusters(ICommand):
                 new_cluster = update_thermal_cluster(current_cluster, new_properties)
                 new_clusters.append(new_cluster)
 
+            memory_mapping[area_id] = new_clusters
+
+        for area_id, new_clusters in memory_mapping.items():
             study_data.save_thermals(area_id, new_clusters)
 
         return command_succeeded("All thermal clusters updated")
