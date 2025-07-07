@@ -10,7 +10,10 @@
 #
 # This file is part of the Antares project.
 
+import ctypes
 import logging
+import os
+import sys
 from pathlib import PurePosixPath
 from typing import List
 
@@ -78,14 +81,49 @@ class Explorer:
 
         return folders
 
-    def list_workspaces(
-        self,
-    ) -> List[WorkspaceMetadata]:
+    def list_workspaces(self) -> List[WorkspaceMetadata]:
         """
-        Return the list of all configured workspace name, except the default one.
+        Return the list of all configured workspace names, except the default one.
+        On Windows, includes the disk name (volume label) in WorkspaceMetadata.
         """
-        return [
-            WorkspaceMetadata(name=workspace_name)
-            for workspace_name in self.config.storage.workspaces.keys()
-            if workspace_name != DEFAULT_WORKSPACE_NAME
-        ]
+        result = []
+        for workspace_name in self.config.storage.workspaces.keys():
+            if workspace_name == DEFAULT_WORKSPACE_NAME:
+                continue
+
+            disk_name = None
+            if sys.platform == "win32":
+                drive_letter = os.path.splitdrive(workspace_name)[0] + "\\"
+                disk_name = get_volume_label(drive_letter)
+
+            result.append(WorkspaceMetadata(name=workspace_name, disk_name=disk_name))
+
+        return result
+
+
+def get_volume_label(drive_letter: str) -> str:
+    """
+    Returns the volume label for a given drive letter like 'C:\\'.
+    """
+    if not drive_letter.endswith("\\"):
+        drive_letter += "\\"
+    volume_name_buffer = ctypes.create_unicode_buffer(1024)
+    file_system_name_buffer = ctypes.create_unicode_buffer(1024)
+    serial_number = ctypes.c_ulong()
+    max_component_length = ctypes.c_ulong()
+    file_system_flags = ctypes.c_ulong()
+
+    result = ctypes.windll.kernel32.GetVolumeInformationW(  # type: ignore[attr-defined]
+        ctypes.c_wchar_p(drive_letter),
+        volume_name_buffer,
+        ctypes.sizeof(volume_name_buffer),
+        ctypes.byref(serial_number),
+        ctypes.byref(max_component_length),
+        ctypes.byref(file_system_flags),
+        file_system_name_buffer,
+        ctypes.sizeof(file_system_name_buffer),
+    )
+
+    if result:
+        return volume_name_buffer.value
+    return drive_letter  # fallback
