@@ -131,6 +131,8 @@ class Watcher(IService):
         max_depth: Optional[int] = None,
     ) -> List[StudyFolder]:
         try:
+            logger.info(f"Entering folder {path} in workspace {workspace} for study scan.")
+
             if should_ignore_folder_for_scan(path, filter_in, filter_out):
                 return []
 
