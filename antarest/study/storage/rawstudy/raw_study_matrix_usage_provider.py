@@ -18,11 +18,13 @@ from antarest.main import logger
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
+from antarest.matrixstore.service import MatrixService
 
 
 class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, matrix_service: MatrixService):
         self.managed_studies_path: Path = config.storage.workspaces[DEFAULT_WORKSPACE_NAME].path
+        matrix_service.register_usage_provider(self)
 
     @override
     def get_matrix_usage(self) -> list[MatrixReference]:

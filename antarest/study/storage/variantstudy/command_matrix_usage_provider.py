@@ -15,6 +15,7 @@ from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
+from antarest.matrixstore.service import MatrixService
 from antarest.study.service import StudyService, logger
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
@@ -22,9 +23,10 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CommandMatrixUsageProvider(IMatrixUsageProvider):
-    def __init__(self, study_service: StudyService):
+    def __init__(self, study_service: StudyService, matrix_service: MatrixService):
         self.study_service = study_service
         self.variant_study_service = self.study_service.storage_service.variant_study_service
+        matrix_service.register_usage_provider(self)
 
     @override
     def get_matrix_usage(self) -> list[MatrixReference]:
@@ -42,10 +44,17 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
                 )
             return []
 
+        # Deux for différents
+        variant_study_commands = []
+
         variant_study_commands = [cmd for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)]
-        for command in variant_study_commands:
-            for matrix in command:
-                mat_reference = MatrixReference(matrix_id=matrix, use_description=f"Used by {command.command_id} from study {self.study_service}")
-                matrices_references.append(mat_reference)
+        for block in command_blocks:
+            study_id = block.study_id
+            for command in variant_study_commands:
+                for matrix in command:
+                    mat_reference = MatrixReference(
+                        matrix_id=matrix, use_description=f"Used by {command.command_id} from study {study_id}"
+                    )
+                    matrices_references.append(mat_reference)
 
         return matrices_references
