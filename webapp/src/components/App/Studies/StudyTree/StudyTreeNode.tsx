@@ -55,13 +55,14 @@ export default function StudyTreeNode({
     return sortedByName;
   }, [children, node.name]);
 
+  const label = alias ? `${alias} (${name})` : name;
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
   return (
     <TreeItemEnhanced
       itemId={path}
-      label={alias || name}
+      label={label}
       slots={
         isStudyFolder
           ? {
