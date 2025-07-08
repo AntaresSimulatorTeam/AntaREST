@@ -14,9 +14,9 @@ import contextlib
 import typing as t
 
 import pytest
-from sqlalchemy import create_engine, text  # type: ignore
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
+from sqlalchemy import create_engine, text
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.dbmodel import Base

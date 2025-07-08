@@ -21,7 +21,7 @@ import pandas as pd
 import pytest
 from numpy import typing as npt
 from pandas._testing import assert_frame_equal
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User

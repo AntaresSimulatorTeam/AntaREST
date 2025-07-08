@@ -16,9 +16,9 @@ Test the database model.
 
 import uuid
 
-from sqlalchemy import inspect  # type: ignore
-from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.orm import Session, joinedload  # type: ignore
+from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, joinedload
 
 from antarest.study.model import Study, StudyTag, Tag
 
