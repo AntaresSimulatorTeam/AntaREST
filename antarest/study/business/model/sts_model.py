@@ -50,7 +50,7 @@ class STStorageGroup(EnumIgnoreCase):
 
 # Validation helpers
 Capacity: TypeAlias = Annotated[float, Field(ge=0)]
-Efficiency: TypeAlias = Annotated[float, Field(ge=0, le=1)]
+Efficiency: TypeAlias = Annotated[float, Field(ge=0)]
 InitialLevel: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 Group: TypeAlias = Optional[LowerCaseStr]
 
