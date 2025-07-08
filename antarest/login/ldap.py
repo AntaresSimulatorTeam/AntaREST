@@ -12,7 +12,7 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, cast
 
 import httpx
 
@@ -137,7 +137,7 @@ class LdapService:
                 )
             )
 
-        existing_roles = self.roles.get_all_by_user(existing_user.id)
+        existing_roles = self.roles.get_all_by_user(cast(int, existing_user.id))
 
         mapped_groups = [
             Group(
@@ -148,7 +148,7 @@ class LdapService:
             if self.add_ext_groups or group_id in self.group_mapping.keys()
         ]
         grouprole_to_add = [
-            (group.id, (self.groups.get(group.id) or group).name)
+            (group.id, (self.groups.get(cast(str, group.id)) or group).name)
             for group in mapped_groups
             if group.id not in [role.group_id for role in existing_roles]
         ]

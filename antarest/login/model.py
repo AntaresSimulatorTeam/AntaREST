@@ -12,7 +12,7 @@
 
 import contextlib
 import uuid
-from typing import TYPE_CHECKING, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 import bcrypt
 from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String
@@ -20,6 +20,7 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped, relationship, sessionmaker
+from sqlalchemy.orm._orm_constructors import mapped_column
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -252,8 +253,8 @@ class Bot(Identity):
         primary_key=True,
     )
     # noinspection SpellCheckingInspection
-    owner = Column(Integer, ForeignKey("identities.id", name="bots_owner_fkey"))
-    is_author = Column(Boolean(), default=True)
+    owner: Mapped[int] = mapped_column(Integer, ForeignKey("identities.id", name="bots_owner_fkey"))
+    is_author: Mapped[bool] = mapped_column(Boolean(), default=True)
 
     @override
     def get_impersonator(self) -> int:
@@ -310,11 +311,11 @@ class Role(Base):  # type: ignore
 
     __tablename__ = "roles"
 
-    type = Column(Enum(RoleType))
-    identity_id = Column(Integer, ForeignKey("identities.id"), primary_key=True)
-    group_id = Column(String(36), ForeignKey("groups.id"), primary_key=True)
-    identity = relationship("Identity")
-    group = relationship("Group")
+    type: Column[RoleType] = Column(Enum(RoleType))
+    identity_id: Mapped[int] = mapped_column(Integer, ForeignKey("identities.id"), primary_key=True)
+    group_id: Mapped[str] = mapped_column(String(36), ForeignKey("groups.id"), primary_key=True)
+    identity: Mapped["Identity"] = relationship("Identity")
+    group: Mapped["Group"] = relationship("Group")
 
     def to_dto(self) -> RoleDetailDTO:
         return RoleDetailDTO(
@@ -330,7 +331,7 @@ class CredentialsDTO(AntaresBaseModel):
     refresh_token: str
 
 
-def init_admin_user(engine: Engine, session_args: Mapping[str, bool], admin_password: str) -> None:
+def init_admin_user(engine: Engine, session_args: Mapping[str, Any], admin_password: str) -> None:
     """
     Create the default admin user, group and role if they do not already exist in the database.
 

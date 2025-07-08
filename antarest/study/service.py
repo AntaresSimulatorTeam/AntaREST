@@ -980,13 +980,15 @@ class StudyService:
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                if study.missing < clean_up_missing_studies_threshold:
-                    logger.info(
-                        "Study %s at %s is not present in disk and will be deleted",
-                        study.id,
-                        study.path,
-                    )
-                    self.repository.delete(study.id)
+
+                if study.missing and isinstance(study.missing, datetime):
+                    if study.missing < clean_up_missing_studies_threshold:
+                        logger.info(
+                            "Study %s at %s is not present in disk and will be deleted",
+                            study.id,
+                            study.path,
+                        )
+                        self.repository.delete(study.id)
 
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
@@ -1216,10 +1218,10 @@ class StudyService:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
-                self.file_transfer_manager.set_ready(export_id)
+                self.file_transfer_manager.set_ready(str(export_id))
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
-                self.file_transfer_manager.fail(export_id, str(e))
+                self.file_transfer_manager.fail(str(export_id), str(e))
                 raise e
 
         task_id = self.task_service.add_task(
@@ -1539,7 +1541,7 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else new_owner.name
+        owner_name = None if new_owner is None else str(new_owner.name)
         self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
 
         logger.info(

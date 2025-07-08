@@ -180,7 +180,7 @@ class Tag(Base):  # type:ignore
 
     @override
     def __str__(self) -> str:  # pragma: no cover
-        return cast(str, self.label)
+        return self.label
 
     @override
     def __repr__(self) -> str:  # pragma: no cover

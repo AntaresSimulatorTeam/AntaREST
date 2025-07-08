@@ -54,7 +54,7 @@ class GroupRepository:
     def get(self, id: str) -> Optional[Group]:
         return self.session.get(Group, id)
 
-    def get_by_name(self, name: str) -> Group:
+    def get_by_name(self, name: str) -> Optional[Group]:
         return self.session.execute(select(Group).where(Group.name == name)).scalar_one_or_none()
 
     def get_all(self) -> List[Group]:

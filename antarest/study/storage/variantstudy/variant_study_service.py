@@ -127,7 +127,7 @@ class VariantStudyService(AbstractStorageService):
         user_obj: Identity | None = db.session.get(Identity, user_id)
         if user_obj is None:
             raise ValueError(f"User with id {user_id} not found")
-        return user_obj.name
+        return str(user_obj.name)
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
         """

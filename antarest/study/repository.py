@@ -12,7 +12,7 @@
 
 import datetime
 import enum
-from typing import List, Optional, Sequence, Tuple, cast
+from typing import Any, List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
 from sqlalchemy import and_, func, not_, or_, select, sql
@@ -298,7 +298,7 @@ class StudyMetadataRepository:
     def _search_studies(
         self,
         study_filter: StudyFilter,
-    ) -> Query:
+    ) -> Query[Any]:
         """
         Build a `SQL Query` based on specified filters.
 

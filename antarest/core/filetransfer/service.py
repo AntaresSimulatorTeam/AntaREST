@@ -191,7 +191,7 @@ class FileTransferManager:
                     f"Failed to remove file download {file_download.path}",
                     exc_info=e,
                 )
-            self.repository.delete(file_download.id)
+            self.repository.delete(str(file_download.id))
             self.event_bus.push(
                 Event(
                     type=EventType.DOWNLOAD_EXPIRED,

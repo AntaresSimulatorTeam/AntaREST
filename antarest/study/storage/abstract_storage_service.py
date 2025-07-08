@@ -70,7 +70,8 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         additional_data = study.additional_data or StudyAdditionalData()
 
         try:
-            patch = Patch.model_validate(from_json(additional_data.patch or "{}"))
+            patch_str = str(additional_data.patch or "{}")
+            patch = Patch.model_validate(from_json(patch_str))
         except ValueError as e:
             # The conversion to JSON and the parsing can fail if the patch is not valid
             logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)

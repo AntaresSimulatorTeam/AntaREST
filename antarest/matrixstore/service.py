@@ -513,13 +513,13 @@ class MatrixService(ISimpleMatrixService):
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 self.create_matrix_files(matrix_ids=matrix_list, export_path=export_path)
-                self.file_transfer_manager.set_ready(export_id)
+                self.file_transfer_manager.set_ready(str(export_id))
                 return TaskResult(
                     success=True,
                     message=f"Matrix dataset {dataset_name} successfully exported",
                 )
             except Exception as e:
-                self.file_transfer_manager.fail(export_id, str(e))
+                self.file_transfer_manager.fail(str(export_id), str(e))
                 raise e
 
         task_id = self.task_service.add_task(

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, Sequence, cast
+from typing import List, Optional, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
@@ -66,7 +66,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
         q = q.order_by(Study.created_at.desc())
-        studies = cast(List[VariantStudy], q.all())
+        studies = q.all()
         return studies
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
@@ -85,12 +85,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         top_query = select(Study.id, Study.parent_id).where(Study.id == variant_id)
         top_q = top_query.cte("study_cte", recursive=True)
 
-        bot_q = self.session.query(Study.id, Study.parent_id)
-        bot_q = bot_q.join(top_q, Study.id == top_q.c.parent_id)
+        bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
 
         recursive_q = top_q.union_all(bot_q)
-        q = self.session.query(recursive_q)
-        return [r[0] for r in q]
+        result = self.session.execute(select(recursive_q.c.id))
+        return [r[0] for r in result]
 
     def get_all_command_blocks(self) -> List[CommandBlock]:
         """

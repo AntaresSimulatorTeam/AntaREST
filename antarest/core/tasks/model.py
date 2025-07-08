@@ -236,7 +236,7 @@ class TaskJob(Base):  # type: ignore
         )
 
 
-def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
+def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None:
     """
     Cancel all tasks that are currently running or pending.
 

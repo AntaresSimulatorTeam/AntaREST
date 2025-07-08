@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 
 from fastapi import HTTPException
 
@@ -88,7 +88,7 @@ class LoginService:
         Returns: group
 
         """
-        if self.groups.get_by_name(group.name):
+        if self.groups.get_by_name(cast(str, group.name)):
             raise HTTPException(status_code=400, detail="Group name already exists")
 
         user = get_current_user()
@@ -278,7 +278,7 @@ class LoginService:
         group = self.get_group(id)
         if group:
             user_list = []
-            roles = self.get_all_roles_in_group(group.id)
+            roles = self.get_all_roles_in_group(cast(str, group.id))
             for role in roles:
                 user = self.get_identity(role.identity_id)
                 if user:
@@ -304,7 +304,7 @@ class LoginService:
             logger.error("user %d not found by user %s", id, get_user_id())
             raise UserNotFoundError()
 
-        groups = [r.group for r in self.roles.get_all_by_user(user.id)]
+        groups = [r.group for r in self.roles.get_all_by_user(cast(int, user.id))]
 
         current_user = get_current_user()
         if current_user and any(
@@ -363,7 +363,7 @@ class LoginService:
                         identity_id=id,
                         type=role.type.value,
                     )
-                    for role in self.roles.get_all_by_user(user.id)
+                    for role in self.roles.get_all_by_user(cast(int, user.id))
                 ],
             )
         return None
@@ -418,7 +418,7 @@ class LoginService:
                     identity_id=id,
                     type=role.type.value,
                 )
-                for role in self.roles.get_all_by_user(bot.id)
+                for role in self.roles.get_all_by_user(cast(int, bot.id))
             ],
         )
 
@@ -474,12 +474,12 @@ class LoginService:
         intern: Optional[User] = self.users.get_by_name(name)
         if intern and intern.password.check(pwd):
             logger.info("successful login from intern user %s", name)
-            return self.get_jwt(intern.id)
+            return self.get_jwt(cast(int, intern.id))
 
         extern = self.ldap.login(name, pwd)
         if extern:
             logger.info("successful login from ldap user %s", name)
-            return self.get_jwt(extern.id)
+            return self.get_jwt(cast(int, extern.id))
 
         logger.error("wrong authentication from user %s", name)
         return None
@@ -617,7 +617,7 @@ class LoginService:
         # For the admin, loop through every user and build the return containing role information
         if user.is_site_admin():
             return [
-                IdentityDTO(id=identity.id, name=identity.name, roles=roles_per_user.get(identity.id, []))
+                IdentityDTO(id=identity.id, name=identity.name, roles=roles_per_user.get(cast(int, identity.id), []))
                 for identity in all_users
             ]
 
@@ -625,9 +625,14 @@ class LoginService:
         user_mapping_id_to_name = {user.id: user.name for user in all_users}
         if details:
             return [
-                IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user[id]) for id in roles_per_user
+                IdentityDTO(
+                    id=id,
+                    name=user_mapping_id_to_name[id],  # type: ignore[index]
+                    roles=roles_per_user[id],
+                )
+                for id in roles_per_user
             ]
-        return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]
+        return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]  # type: ignore[index]
 
     def get_all_bots(self) -> List[Bot]:
         """
@@ -714,7 +719,7 @@ class LoginService:
         user = get_current_user()
         if user and any((user.is_site_admin(), user.is_himself(User(id=id)))):
             for b in self.bots.get_all_by_owner(id):
-                self.delete_bot(b.id)
+                self.delete_bot(cast(int, b.id))
 
             self.delete_all_roles_from_user(id)
 
