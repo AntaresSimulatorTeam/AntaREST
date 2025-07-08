@@ -261,14 +261,14 @@ class Study(Base):  # type: ignore
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name: Mapped[str] = mapped_column(String(255), index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
-    version: Mapped[str] = mapped_column(String(255), index=True)
+    version: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
     author: Mapped[str] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String())
+    path: Mapped[str] = mapped_column(String(), nullable=True)
     folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     parent_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True

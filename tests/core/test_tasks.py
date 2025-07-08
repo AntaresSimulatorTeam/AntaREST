@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from fastapi import HTTPException
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine, text  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import sessionmaker  # type: ignore
 
@@ -63,20 +63,15 @@ from tests.storage.test_service import build_study_service
 def db_engine_fixture(tmp_path: Path) -> t.Generator[Engine, None, None]:
     """
     Fixture that creates an SQLite database in a temporary directory.
-
-    When a function runs in a different thread than the main one and needs to use
-    the database, it uses the global `db` object. This object helps create a new
-    local session in the thread to connect to the SQLite database.
-    However, we can't use an in-memory SQLite database ("sqlite:///:memory:") because
-    it creates a new empty database each time. That's why we use a SQLite database stored on disk.
-
-    Yields:
-        An instance of the created SQLite database engine.
     """
     db_path = tmp_path / "db.sqlite"
     db_url = f"sqlite:///{db_path}"
     engine = create_engine(db_url, echo=False)
-    engine.execute("PRAGMA foreign_keys = ON")
+
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA foreign_keys = ON"))
+        conn.commit()
+
     Base.metadata.create_all(engine)
     yield engine
     engine.dispose()

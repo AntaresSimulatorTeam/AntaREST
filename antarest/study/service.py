@@ -981,14 +981,13 @@ class StudyService:
                         )
                     )
 
-                if study.missing and isinstance(study.missing, datetime):
-                    if study.missing < clean_up_missing_studies_threshold:
-                        logger.info(
-                            "Study %s at %s is not present in disk and will be deleted",
-                            study.id,
-                            study.path,
-                        )
-                        self.repository.delete(study.id)
+                if study.missing and cast(datetime, study.missing) < clean_up_missing_studies_threshold:
+                    logger.info(
+                        "Study %s at %s is not present in disk and will be deleted",
+                        study.id,
+                        study.path,
+                    )
+                    self.repository.delete(study.id)
 
         # Add new studies
         study_paths = [(study.workspace, study.path) for study in all_studies if study.missing is None]
