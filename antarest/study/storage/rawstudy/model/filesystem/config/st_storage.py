@@ -17,10 +17,10 @@ from pydantic import ConfigDict, Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
     STStorage,
+    check_attributes_coherence,
     initialize_st_storage,
     validate_st_storage_against_version,
 )
-from antarest.study.model import STUDY_VERSION_9_2
 
 
 class STStorageFileData(AntaresBaseModel):
@@ -53,18 +53,6 @@ class STStorageFileData(AntaresBaseModel):
     @classmethod
     def from_model(cls, storage: STStorage) -> "STStorageFileData":
         return cls.model_validate(storage.model_dump(exclude={"id"}))
-
-
-def check_attributes_coherence(storage: STStorage, version: StudyVersion) -> None:
-    if version < STUDY_VERSION_9_2:
-        if storage.efficiency > 1:
-            raise ValueError(f"Prior to v9.2, efficiency must be lower than 1 and was {storage.efficiency}")
-    else:
-        efficiency_withdrawal = storage.efficiency_withdrawal or 1
-        if storage.efficiency > efficiency_withdrawal:
-            raise ValueError(
-                f"efficiency must be lower than efficiency_withdrawal. Currently: {storage.efficiency} > {efficiency_withdrawal}"
-            )
 
 
 def parse_st_storage(study_version: StudyVersion, data: Any) -> STStorage:
