@@ -1984,7 +1984,7 @@ def test_upgrade_study__raw_study__nominal(
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
         type=EventType.STUDY_EDITED,
-        payload={"id": study_id, "name": study_name},
+        payload={"id": study_id, "name": study_name, "folder": None, "workspace": workspace},
         permissions=PermissionInfo(
             owner=None,
             groups=[],

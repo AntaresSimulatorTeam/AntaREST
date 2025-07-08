@@ -105,7 +105,6 @@ function StudyTree() {
       // Keep non-study folders and study folders that haven't been scanned yet
       const filteredStudyFolders = newSubFolders.filter(
         (folder) =>
-          // !folder.isStudyFolder ||
           !studies.some(
             (study) => folder.path === study.folder && study.workspace === folder.workspace,
           ),

@@ -315,7 +315,7 @@ class Study(Base):  # type: ignore
         )
 
     def to_json_summary(self) -> Any:
-        return {"id": self.id, "name": self.name, "folder": self.folder, "workspace": self.workspace}
+        return {"id": self.id, "name": self.name}
 
     @validates("folder")  # type: ignore
     def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
@@ -381,6 +381,14 @@ class RawStudy(Study):
         return (
             f'RawStudy(id="{self.id}", workspace="{self.workspace}", folder="{self.folder}", missing="{self.missing}")'
         )
+
+    @override
+    def to_json_summary(self) -> Any:
+        return {
+            **super().to_json_summary(),
+            "folder": self.folder,
+            "workspace": self.workspace,
+        }
 
 
 @dataclasses.dataclass

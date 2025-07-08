@@ -186,7 +186,6 @@ function insertWorkspaceIfNotExist(
     hasChildren: true,
     alias: workspace.disk_name,
   };
-  console.log("insertWorkspaceIfNotExist", workspace, emptyNode);
   if (studyTree.children.some((child) => isNodeMatchWorkspace(child, workspace))) {
     return {
       ...studyTree,
@@ -241,6 +240,7 @@ export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promis
   const workspaces = await api.getWorkspaces();
   return insertWorkspacesIfNotExist(studyTree, workspaces);
 }
+
 /**
  * Insert workspaces and folders into the study tree if they don't exist already.
  *
