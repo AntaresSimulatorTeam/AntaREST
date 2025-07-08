@@ -382,8 +382,7 @@ class RawStudy(Study):
             f'RawStudy(id="{self.id}", workspace="{self.workspace}", folder="{self.folder}", missing="{self.missing}")'
         )
 
-    @override
-    def to_json_summary(self) -> Any:
+    def to_enhanced_json_summary(self) -> Any:
         return {
             **super().to_json_summary(),
             "folder": self.folder,

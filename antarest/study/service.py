@@ -976,7 +976,7 @@ class StudyService:
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_DELETED,
-                            payload=study.to_json_summary(),
+                            payload=study.to_enhanced_json_summary(),
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
@@ -1071,7 +1071,7 @@ class StudyService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_DELETED,
-                        payload=study.to_json_summary(),
+                        payload=study.to_enhanced_json_summary(),
                         permissions=PermissionInfo.from_study(study),
                     )
                 )
@@ -1265,6 +1265,7 @@ class StudyService:
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
+            study_info = study.to_enhanced_json_summary()
 
         if self.storage_service.variant_study_service.has_children(study):
             if children:
@@ -1878,8 +1879,8 @@ class StudyService:
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
+                    payload=study_to_archive.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study_to_archive),
                 )
             )
             remove_from_cache(cache=self.cache_service, root_id=uuid)
