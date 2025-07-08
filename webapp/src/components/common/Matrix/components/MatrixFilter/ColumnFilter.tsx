@@ -40,10 +40,10 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
   const {
     inputValue,
     handleListChange,
-    addValueToList,
-    addValuesToList,
-    removeValueFromList,
-    clearAllValues,
+    addValueToColumnFilter,
+    addValuesToColumnFilter,
+    removeValueFromColumnFilter,
+    clearColumnFilterValues,
     handleKeyPress,
     handleTypeChange,
     handleOperatorChange,
@@ -127,11 +127,11 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
             operator={filter.columnsFilter.operator}
             onInputChange={handleListChange}
             onKeyPress={handleKeyPress}
-            onAddValue={addValueToList}
-            onAddValues={addValuesToList}
-            onRemoveValue={removeValueFromList}
+            onAddValue={addValueToColumnFilter}
+            onAddValues={addValuesToColumnFilter}
+            onRemoveValue={removeValueFromColumnFilter}
             onOperatorChange={handleOperatorChangeEvent}
-            onClearAll={clearAllValues}
+            onClearAll={clearColumnFilterValues}
           />
         )}
       </AccordionDetails>

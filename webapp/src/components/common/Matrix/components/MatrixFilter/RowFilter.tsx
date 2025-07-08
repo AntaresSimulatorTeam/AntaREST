@@ -280,14 +280,16 @@ function RowFilter({
           rangeValue={state.rangeValue}
           onRangeChange={handleRangeChange}
           selectedValues={state.rowFilter.list || []}
-          onAddValue={() => filterControls.addValueToList(filterId)}
-          onAddValues={(values) => filterControls.addValuesToList(values, filterId)}
-          onRemoveValue={(value) => filterControls.removeValueFromList(value, filterId)}
+          onAddValue={() => filterControls.addValueToRowFilter(state.rowFilter.id)}
+          onAddValues={(values) => filterControls.addValuesToRowFilter(values, state.rowFilter.id)}
+          onRemoveValue={(value) =>
+            filterControls.removeValueFromRowFilter(value, state.rowFilter.id)
+          }
           onCheckboxChange={(value) => filterControls.handleCheckboxChange(value, filterId)}
           inputValue={filterControls.inputValue}
           onInputChange={filterControls.handleListChange}
           onKeyPress={filterControls.handleKeyPress}
-          onClearAll={() => filterControls.clearAllValues(filterId)}
+          onClearAll={() => filterControls.clearRowFilterValues(state.rowFilter.id)}
           sliderMarks={state.sliderMarks}
           operator={state.rowFilter.operator}
           onOperatorChange={handleOperatorChange}
