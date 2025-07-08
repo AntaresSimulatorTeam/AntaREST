@@ -1265,6 +1265,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         last_access=datetime.utcnow(),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    study_mock.to_enhanced_json_summary.return_value = {
+        "id": "my_study",
+        "name": "foo",
+        "folder": None,
+        "workspace": DEFAULT_WORKSPACE_NAME,
+    }
 
     # it freezes the mock and raise Attribute error if anything else than defined is used
     seal(study_mock)
@@ -1984,7 +1990,7 @@ def test_upgrade_study__raw_study__nominal(
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
         type=EventType.STUDY_EDITED,
-        payload={"id": study_id, "name": study_name, "folder": None, "workspace": workspace},
+        payload={"id": study_id, "name": study_name},
         permissions=PermissionInfo(
             owner=None,
             groups=[],
