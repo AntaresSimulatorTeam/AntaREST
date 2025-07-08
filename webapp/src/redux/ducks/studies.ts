@@ -93,7 +93,7 @@ const initialState = studiesAdapter.getInitialState({
     users: [],
     groups: [],
     tags: [],
-    ...storage.getItem(StorageKey.StudiesFilters),
+    ...(storage.getItem(StorageKey.StudiesFilters) || {}),
   },
   sort: {
     property: "name",
