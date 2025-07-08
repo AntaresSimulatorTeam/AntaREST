@@ -261,6 +261,11 @@ export function insertIfNotExist(
   return treeWithFolders;
 }
 
+/**
+ * When a study is deleted, we remove the folder for this study that was in local storage.
+ *
+ * @param event - web socket delete event
+ */
 export function deleteStudyFromLocalStorage(event: StudyEventPayload) {
   const folders = storage.getItem(StorageKey.StudyTreeFolders) || [];
   const filteredFolders = folders.filter(

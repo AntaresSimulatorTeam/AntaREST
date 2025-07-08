@@ -383,6 +383,10 @@ class RawStudy(Study):
         )
 
     def to_enhanced_json_summary(self) -> Any:
+        """
+        Extend the JSON summary with folder and workspace details.
+        Useful for delete events to help the frontend stay synchronized.
+        """
         return {
             **super().to_json_summary(),
             "folder": self.folder,
