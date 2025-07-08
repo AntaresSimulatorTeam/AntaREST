@@ -124,8 +124,10 @@ class VariantStudyService(AbstractStorageService):
             user_id: user id (user must exist)
         Returns: String representing the user's name
         """
-        user_obj: Identity = db.session.query(Identity).get(user_id)
-        return user_obj.name  # type: ignore  # `name` attribute is always a string
+        user_obj: Identity | None = db.session.get(Identity, user_id)
+        if user_obj is None:
+            raise ValueError(f"User with id {user_id} not found")
+        return user_obj.name
 
     def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
         """
@@ -810,8 +812,8 @@ class VariantStudyService(AbstractStorageService):
 
         src_path = cast(Path, file_study.config.output_path)
         if src_path.exists():
-            dest_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
-            copy_output_folders(src_path, dest_path, with_outputs, output_ids)
+            dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
+            copy_output_folders(src_path, dest_output_path, with_outputs, output_ids)
 
         update_antares_info(dest_study, file_study.tree, update_author=True)
         return dest_study

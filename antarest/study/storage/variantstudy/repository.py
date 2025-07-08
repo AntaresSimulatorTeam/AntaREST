@@ -12,7 +12,9 @@
 
 from typing import List, Optional, Sequence, cast
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
@@ -81,9 +83,8 @@ class VariantStudyRepository(StudyMetadataRepository):
             Ordered list of study identifiers.
         """
         # see: [Recursive Queries](https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE)
-        top_q = self.session.query(Study.id, Study.parent_id)
-        top_q = top_q.filter(Study.id == variant_id)
-        top_q = top_q.cte("study_cte", recursive=True)
+        top_query = select(Study.id, Study.parent_id).where(Study.id == variant_id)
+        top_q = top_query.cte("study_cte", recursive=True)
 
         bot_q = self.session.query(Study.id, Study.parent_id)
         bot_q = bot_q.join(top_q, Study.id == top_q.c.parent_id)

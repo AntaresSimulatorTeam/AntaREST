@@ -95,15 +95,15 @@ def init_db_engine(
         extra["poolclass"] = NullPool
     elif not config.db.db_url.startswith("sqlite"):
         if config.db.pool_pre_ping:
-            extra["pool_pre_ping"] = True
+            extra["pool_pre_ping"] = True # type: ignore[assignment]
         if config.db.pool_recycle:
-            extra["pool_recycle"] = config.db.pool_recycle
+            extra["pool_recycle"] = config.db.pool_recycle # type: ignore[assignment]
         if config.db.pool_max_overflow:
-            extra["max_overflow"] = config.db.pool_max_overflow
+            extra["max_overflow"] = config.db.pool_max_overflow # type: ignore[assignment]
         if config.db.pool_size:
-            extra["pool_size"] = config.db.pool_size
+            extra["pool_size"] = config.db.pool_size # type: ignore[assignment]
         if config.db.pool_use_lifo:
-            extra["pool_use_lifo"] = config.db.pool_use_lifo
+            extra["pool_use_lifo"] = config.db.pool_use_lifo # type: ignore[assignment]
 
     engine = create_engine(config.db.db_url, echo=config.debug, connect_args=connect_args, **extra)
 

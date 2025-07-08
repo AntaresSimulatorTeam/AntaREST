@@ -15,7 +15,7 @@ import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, func, not_, or_, sql
+from sqlalchemy import and_, func, not_, or_, sql, select
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
 from antarest.core.interfaces.cache import ICache
@@ -196,19 +196,15 @@ class StudyMetadataRepository:
 
     def get(self, study_id: str) -> Optional[Study]:
         """Get the study by ID or return `None` if not found in database."""
-        # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
-        #  to make sure RawStudy and VariantStudy fields are also fetched.
-        #  see: antarest.study.service.StudyService.delete_study
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
-        study: Study = (
-            self.session.query(Study)
+        return self.session.execute(
+            select(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .options(joinedload(Study.tags))
-            .get(study_id)
-        )
-        return study
+            .where(Study.id == study_id)
+        ).scalar_one_or_none()
 
     def one(self, study_id: str) -> Study:
         """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""
@@ -228,8 +224,7 @@ class StudyMetadataRepository:
         return study
 
     def get_additional_data(self, study_id: str) -> Optional[StudyAdditionalData]:
-        study: StudyAdditionalData = self.session.query(StudyAdditionalData).get(study_id)
-        return study
+        return self.session.get(StudyAdditionalData, study_id)
 
     def get_all(
         self,

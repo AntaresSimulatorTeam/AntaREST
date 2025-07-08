@@ -971,7 +971,7 @@ class StudyService:
                         study.path,
                         MAX_MISSING_STUDY_TIMEOUT,
                     )
-                    study.missing = now
+                    study.missing = now # type: ignore[assignment]
                     self.repository.save(study)
                     self.event_bus.push(
                         Event(
@@ -1016,7 +1016,7 @@ class StudyService:
                         )
                     else:
                         study = missing_studies[(workspace, study_path)]
-                        study.missing = None
+                        study.missing = None # type: ignore[assignment]
                         logger.info(
                             "Study at %s re appears on disk and will be added as %s",
                             study.path,
