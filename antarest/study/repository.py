@@ -198,13 +198,17 @@ class StudyMetadataRepository:
         """Get the study by ID or return `None` if not found in database."""
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
-        return self.session.execute(
-            select(Study)
-            .options(joinedload(Study.owner))
-            .options(joinedload(Study.groups))
-            .options(joinedload(Study.tags))
-            .where(Study.id == study_id)
-        ).scalar_one_or_none()
+        return (
+            self.session.execute(
+                select(Study)
+                .options(joinedload(Study.owner))
+                .options(joinedload(Study.groups))
+                .options(joinedload(Study.tags))
+                .where(Study.id == study_id)
+            )
+            .unique()
+            .scalar_one_or_none()
+        )
 
     def one(self, study_id: str) -> Study:
         """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""

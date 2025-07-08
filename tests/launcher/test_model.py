@@ -83,7 +83,7 @@ class TestJobResult:
             db.commit()
             owner_id = identity.id
 
-            job_result = JobResult(id=str(uuid.uuid4()), owner_id=owner_id)
+            job_result = JobResult(id=str(uuid.uuid4()), owner_id=owner_id, study_id="id")
             db.add(job_result)
             db.commit()
             job_result_id = job_result.id
@@ -105,7 +105,7 @@ class TestJobResult:
         """
         with db_session as db:
             # Create a job result without owner
-            job_result = JobResult(id=str(uuid.uuid4()))
+            job_result = JobResult(id=str(uuid.uuid4()), study_id="id")
             db.add(job_result)
             db.commit()
             job_result_id = job_result.id
@@ -135,7 +135,7 @@ class TestJobResult:
         """
         with db_session as db:
             owner = Identity()
-            job_result = JobResult(id=str(uuid.uuid4()), owner=owner)
+            job_result = JobResult(id=str(uuid.uuid4()), owner=owner, study_id="id")
             db.add(job_result)
             db.commit()
             owner_id = owner.id

@@ -14,7 +14,7 @@ import contextlib
 import typing as t
 
 import pytest
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine, text  # type: ignore
 from sqlalchemy.engine.base import Engine  # type: ignore
 from sqlalchemy.orm import Session, sessionmaker  # type: ignore
 
@@ -31,7 +31,10 @@ def db_engine_fixture() -> t.Generator[Engine, None, None]:
         An instance of the created SQLite database engine.
     """
     engine = create_engine("sqlite:///:memory:")
-    engine.execute("PRAGMA foreign_keys = ON")
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA foreign_keys = ON"))
+        conn.commit()
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
     yield engine
     engine.dispose()

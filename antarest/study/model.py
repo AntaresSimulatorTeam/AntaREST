@@ -264,13 +264,15 @@ class Study(Base):  # type: ignore
     name: Mapped[str] = mapped_column(String(255), index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
     version: Mapped[str] = mapped_column(String(255), index=True)
-    author: Mapped[str] = mapped_column(String(255))
+    author: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, index=True)
-    last_access: Mapped[datetime] = mapped_column(DateTime)
+    last_access: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     path: Mapped[str] = mapped_column(String())
     folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
-    parent_id: Mapped[str] = mapped_column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
+    parent_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
+    )
     public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived: Mapped[bool] = mapped_column(Boolean(), default=False, index=True)
@@ -366,7 +368,7 @@ class RawStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status: Mapped[StudyContentStatus] = mapped_column(Enum(StudyContentStatus))
+    content_status: Mapped[StudyContentStatus] = mapped_column(Enum(StudyContentStatus), nullable=True)
     workspace: Mapped[str] = mapped_column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
     missing: Mapped[DateTime] = mapped_column(DateTime, nullable=True, index=True)
 
