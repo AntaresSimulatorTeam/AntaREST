@@ -19,7 +19,7 @@ from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, Str
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import relationship, sessionmaker, Mapped
+from sqlalchemy.orm import Mapped, relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -159,7 +159,9 @@ class Identity(Base):  # type: ignore
 
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
-    job_results: Mapped[List["JobResult"]] = relationship("JobResult", back_populates="owner", cascade="save-update, merge")
+    job_results: Mapped[List["JobResult"]] = relationship(
+        "JobResult", back_populates="owner", cascade="save-update, merge"
+    )
 
     # Define a one-to-many relationship with `TaskJob`.
     # If an identity is deleted, all the associated task jobs are detached from the identity.

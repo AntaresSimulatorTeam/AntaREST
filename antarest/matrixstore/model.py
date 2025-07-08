@@ -16,13 +16,13 @@ from typing import Any, List, TypeAlias
 
 from pydantic import field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm._orm_constructors import mapped_column
 from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.login.model import GroupDTO, Identity, UserInfo, Group
+from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 
 
 class Matrix(Base):  # type: ignore
@@ -117,7 +117,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         primary_key=True,
     )
     name: Mapped[str] = mapped_column(String, primary_key=True)
-    matrix: Mappedt[Matrix] = relationship(Matrix)
+    matrix: Mapped[Matrix] = relationship(Matrix)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -174,11 +174,12 @@ class MatrixDataSet(Base):  # type: ignore
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime)
 
     owner: Mapped[Identity] = relationship(Identity)
-    groups: Mapped[List[Group]] = relationship( # todo check if ok
+    groups: Mapped[List[Group]] = relationship(  # todo check if ok
         "Group",
         secondary=lambda: groups_dataset_relation,
     )
     matrices = relationship(MatrixDataSetRelation, cascade="all, delete, delete-orphan")
+
     def to_dto(self) -> MatrixDataSetDTO:
         return MatrixDataSetDTO(
             id=self.id,

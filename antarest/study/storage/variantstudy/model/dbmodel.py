@@ -15,8 +15,8 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
-from sqlalchemy.orm import relationship, Mapped
+from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.orm._orm_constructors import mapped_column
 from typing_extensions import override
 
@@ -92,8 +92,9 @@ class CommandBlock(Base):  # type: ignore
     version: Mapped[int] = mapped_column(Integer)
     args: Mapped[str] = mapped_column(String())
     study_version: Mapped[str] = mapped_column(String(36))
-    user_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("identities.id", ondelete="SET NULL"),
-                                                   nullable=True)
+    user_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True
+    )
     updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:

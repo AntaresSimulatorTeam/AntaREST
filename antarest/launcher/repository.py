@@ -72,7 +72,7 @@ class JobResultRepository:
         job_results: List[JobResult] = (
             db.session.query(JobResult)
             .filter(JobResult.study_id == study_id)
-            .filter(JobResult.output_id.in_(output_ids))  # type: ignore
+            .filter(JobResult.output_id.in_(output_ids))
             .all()
         )
         return job_results

@@ -80,7 +80,7 @@ class MatrixDataSetRepository:
         """
         query = self.session.query(MatrixDataSet)
         if name is not None:
-            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))  # type: ignore
+            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))
         if owner is not None:
             query = query.filter(MatrixDataSet.owner_id == owner)
         datasets: List[MatrixDataSet] = query.distinct().all()

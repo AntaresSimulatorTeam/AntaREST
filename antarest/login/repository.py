@@ -55,9 +55,7 @@ class GroupRepository:
         return self.session.get(Group, id)
 
     def get_by_name(self, name: str) -> Group:
-        return self.session.execute(
-            select(Group).where(Group.name == name)
-        ).scalar_one_or_none()
+        return self.session.execute(select(Group).where(Group.name == name)).scalar_one_or_none()
 
     def get_all(self) -> List[Group]:
         groups: List[Group] = self.session.query(Group).all()
@@ -240,8 +238,7 @@ class BotRepository:
         return bots
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
-        return self.session.execute(
-            select(Bot).where(Bot.owner == owner, Bot.name == name)).scalar_one_or_none()
+        return self.session.execute(select(Bot).where(Bot.owner == owner, Bot.name == name)).scalar_one_or_none()
 
     def exists(self, id_number: int) -> bool:
         res: bool = self.session.query(exists().where(Bot.id == id_number)).scalar()

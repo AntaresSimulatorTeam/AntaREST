@@ -15,7 +15,7 @@ import enum
 from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, func, not_, or_, sql, select
+from sqlalchemy import and_, func, not_, or_, select, sql
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
 from antarest.core.interfaces.cache import ICache
@@ -417,7 +417,7 @@ class StudyMetadataRepository:
         session.commit()
         # Delete any tag that is not associated with any study.
         # Note: If tags are to be associated with objects other than Study, this code must be updated.
-        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)  # type: ignore
+        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)
         session.commit()
 
     def list_duplicates(self) -> List[Tuple[str, str]]:

@@ -14,7 +14,6 @@ from typing import List, Optional, Sequence, cast
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
@@ -123,7 +122,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             .options(joinedload(VariantStudy.additional_data))
             .options(joinedload(VariantStudy.owner))
             .options(joinedload(VariantStudy.groups))
-            .filter(VariantStudy.id.in_(variant_ids))  # type: ignore
+            .filter(VariantStudy.id.in_(variant_ids))
         )
         index = {id_: i for i, id_ in enumerate(variant_ids)}
         return sorted(q, key=lambda v: index[v.id])

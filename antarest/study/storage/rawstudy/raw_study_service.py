@@ -118,7 +118,7 @@ class RawStudyService(AbstractStorageService):
             )
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
-                metadata.version = metadata.version or 0 # type: ignore[assignment]
+                metadata.version = metadata.version or 0  # type: ignore[assignment]
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
