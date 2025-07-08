@@ -15,9 +15,9 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base

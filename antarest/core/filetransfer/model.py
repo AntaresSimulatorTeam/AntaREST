@@ -15,7 +15,7 @@ from http import HTTPStatus
 from http.client import HTTPException
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, Integer, String
 from typing_extensions import override
 
 from antarest.core.persistence import Base

@@ -13,7 +13,7 @@
 from enum import StrEnum
 from typing import Any, Optional
 
-from sqlalchemy import Column, Integer, String  # type: ignore
+from sqlalchemy import Column, Integer, String
 from typing_extensions import override
 
 from antarest.core.persistence import Base

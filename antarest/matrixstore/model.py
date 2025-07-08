@@ -15,8 +15,8 @@ import uuid
 from typing import Any, List, TypeAlias
 
 from pydantic import field_serializer
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base

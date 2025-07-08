@@ -15,11 +15,11 @@ import uuid
 from typing import TYPE_CHECKING, List, Mapping, Optional
 
 import bcrypt
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.exc import IntegrityError  # type: ignore
-from sqlalchemy.ext.hybrid import hybrid_property  # type: ignore
-from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
+from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base

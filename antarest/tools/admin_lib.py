@@ -44,7 +44,7 @@ def clean_locks(config: Path) -> None:
 
 
 def reindex_table(config: Path) -> None:
-    import sqlalchemy  # type: ignore
+    import sqlalchemy
     from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
     config_obj = get_config(config)

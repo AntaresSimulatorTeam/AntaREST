@@ -18,8 +18,8 @@ from uuid import uuid4
 
 from pydantic import Field
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy.orm import relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base

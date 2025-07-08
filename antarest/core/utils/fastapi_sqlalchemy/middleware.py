@@ -1,11 +1,11 @@
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type, Union
 
-from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.engine.url import URL  # type: ignore
-from sqlalchemy.event import listen  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine.url import URL
+from sqlalchemy.event import listen
+from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response

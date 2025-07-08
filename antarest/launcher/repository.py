@@ -13,7 +13,7 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import exists  # type: ignore
+from sqlalchemy import exists
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobResult

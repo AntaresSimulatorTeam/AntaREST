@@ -30,7 +30,7 @@ from pydantic import (
     computed_field,
     field_validator,
 )
-from sqlalchemy import (  # type: ignore
+from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
@@ -40,7 +40,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship, validates  # type: ignore
+from sqlalchemy.orm import relationship, validates
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -317,7 +317,7 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
-    @validates("folder")  # type: ignore
+    @validates("folder")
     def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
         """
         We want to store the path in posix format in the database, even on windows.

@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 from filelock import FileLock
 from pandas import util
-from sqlalchemy import exists  # type: ignore
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy import exists
+from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db

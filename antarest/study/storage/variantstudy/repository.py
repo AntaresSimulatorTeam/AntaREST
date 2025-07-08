@@ -12,7 +12,7 @@
 
 from typing import List, Optional, Sequence, cast
 
-from sqlalchemy.orm import Session, joinedload  # type: ignore
+from sqlalchemy.orm import Session, joinedload
 from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
