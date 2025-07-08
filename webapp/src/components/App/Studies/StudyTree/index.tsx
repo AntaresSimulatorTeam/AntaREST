@@ -28,12 +28,13 @@ import { getParentPaths } from "../../../../utils/pathUtils";
 import StudyTreeNodeComponent from "./StudyTreeNode";
 import { insertIfNotExist } from "./utils";
 import storage, { StorageKey } from "@/services/utils/localStorage";
+import type { WorkspaceDTO } from "./types";
 
 function StudyTree() {
   const studies = useAppSelector(getStudies);
   const initialStudiesTree = useAppSelector(getStudiesTree);
   const [studiesTree, setStudiesTree] = useState(initialStudiesTree);
-  const [workspaces, setWorkspaces] = useState<string[]>([]);
+  const [workspaces, setWorkspaces] = useState<WorkspaceDTO[]>([]);
   const [subFolders, setSubFolders] = useState(storage.getItem(StorageKey.StudyTreeFolders) || []);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
   const folder = useAppSelector((state) => getStudyFilters(state).folder, R.T);
@@ -98,7 +99,6 @@ function StudyTree() {
     // Fetch subfolders and insert them to the tree
     try {
       const newSubFolders = await api.getFolders(workspace, subPath.join("/"));
-      // if (newSubFolders.length > 0) {
       // use union to prioritize new subfolders
       const thisParent = ["", workspace, ...subPath].join("/");
       const otherSubfolders = subFolders.filter((f) => f.parentPath !== thisParent);
@@ -118,7 +118,6 @@ function StudyTree() {
       storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
 
       setExploredFolders((prev) => [...prev.filter((e) => e !== itemId), itemId]);
-      // }
     } catch (err) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {

@@ -430,13 +430,13 @@ class FolderDTO(AntaresBaseModel):
         return PurePosixPath(path)
 
 
-class WorkspaceMetadata(AntaresBaseModel):
+class WorkspaceDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list all workspaces
     """
 
     name: str
-    disk_name: str
+    disk_name: Optional[str] = None
 
 
 class PatchStudy(AntaresBaseModel):

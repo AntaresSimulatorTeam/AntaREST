@@ -15,7 +15,7 @@
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
-import type { FolderDTO, StudyTreeNode } from "./types";
+import type { FolderDTO, StudyTreeNode, WorkspaceDTO } from "./types";
 import type { StudyEventPayload } from "@/services/webSocket/types";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 
@@ -172,25 +172,41 @@ export function insertFoldersIfNotExist(
  * This function doesn't mutate the tree, it returns a new tree with the workspace inserted.
  *
  * @param workspace - key of the workspace
- * @param stydyTree - study tree to insert the workspace into
+ * @param studyTree - study tree to insert the workspace into
  * @returns study tree with the empty workspace inserted if it wasn't already there.
  */
-function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string): StudyTreeNode {
+function insertWorkspaceIfNotExist(
+  studyTree: StudyTreeNode,
+  workspace: WorkspaceDTO,
+): StudyTreeNode {
   const emptyNode = {
-    name: workspace,
-    path: `/${workspace}`,
+    name: workspace.name,
+    path: `/${workspace.name}`,
     children: [],
     hasChildren: true,
+    alias: workspace.disk_name,
   };
-  if (stydyTree.children.some((child) => child.name === workspace)) {
-    return stydyTree;
+  console.log("insertWorkspaceIfNotExist", workspace, emptyNode);
+  if (studyTree.children.some((child) => isNodeMatchWorkspace(child, workspace))) {
+    return {
+      ...studyTree,
+      children: studyTree.children.map((child) => {
+        if (isNodeMatchWorkspace(child, workspace)) {
+          return { ...child, alias: workspace.disk_name };
+        }
+        return child;
+      }),
+    };
   }
   return {
-    ...stydyTree,
-    children: [...stydyTree.children, emptyNode],
+    ...studyTree,
+    children: [...studyTree.children, emptyNode],
   };
 }
 
+function isNodeMatchWorkspace(a: StudyTreeNode, b: WorkspaceDTO): boolean {
+  return a.name === b.name;
+}
 /**
  * Insert several workspaces into the study tree if they don't exist already in the tree.
  *
@@ -204,7 +220,7 @@ function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string):
  */
 export function insertWorkspacesIfNotExist(
   studyTree: StudyTreeNode,
-  workspaces: string[],
+  workspaces: WorkspaceDTO[],
 ): StudyTreeNode {
   return workspaces.reduce((acc, workspace) => insertWorkspaceIfNotExist(acc, workspace), {
     ...studyTree,
@@ -237,7 +253,7 @@ export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promis
  */
 export function insertIfNotExist(
   studyTree: StudyTreeNode,
-  workspaces: string[],
+  workspaces: WorkspaceDTO[],
   folders: FolderDTO[],
 ) {
   const treeWithWorkspaces = insertWorkspacesIfNotExist(studyTree, workspaces);

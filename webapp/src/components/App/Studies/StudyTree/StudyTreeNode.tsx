@@ -40,7 +40,7 @@ export default function StudyTreeNode({
   onNodeClick,
   exploredFolders,
 }: StudyTreeNodeProps) {
-  const { hasChildren, children, path, name, isStudyFolder } = node;
+  const { hasChildren, children, path, name, isStudyFolder, alias } = node;
   const isLoading = itemsLoading.includes(node.path);
   const hasUnloadedChildren =
     hasChildren && children.length === 0 && !exploredFolders.includes(node.path);
@@ -61,7 +61,7 @@ export default function StudyTreeNode({
   return (
     <TreeItemEnhanced
       itemId={path}
-      label={name}
+      label={alias || name}
       slots={
         isStudyFolder
           ? {

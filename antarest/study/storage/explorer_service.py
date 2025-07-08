@@ -21,7 +21,7 @@ from antarest.core.config import Config
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     FolderDTO,
-    WorkspaceMetadata,
+    WorkspaceDTO,
 )
 from antarest.study.storage.utils import (
     get_folder_from_workspace,
@@ -81,7 +81,7 @@ class Explorer:
 
         return folders
 
-    def list_workspaces(self) -> List[WorkspaceMetadata]:
+    def list_workspaces(self) -> List[WorkspaceDTO]:
         """
         Return the list of all configured workspace names, except the default one.
         On Windows, includes the disk name (volume label) in WorkspaceMetadata.
@@ -91,12 +91,12 @@ class Explorer:
             if workspace_name == DEFAULT_WORKSPACE_NAME:
                 continue
 
-            disk_name = None
             if sys.platform == "win32":
                 drive_letter = os.path.splitdrive(workspace_name)[0] + "\\"
                 disk_name = get_volume_label(drive_letter)
-
-            result.append(WorkspaceMetadata(name=workspace_name, disk_name=disk_name))
+                result.append(WorkspaceDTO(name=workspace_name, disk_name=disk_name))
+            else:
+                result.append(WorkspaceDTO(name=workspace_name))
 
         return result
 
