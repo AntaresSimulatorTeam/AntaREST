@@ -26,10 +26,14 @@ interface UseFilterControlsReturn {
   inputValue: string;
   setInputValue: React.Dispatch<React.SetStateAction<string>>;
   handleListChange: (value: string) => void;
-  addValueToList: (filterId?: string) => void;
-  addValuesToList: (values: number[], filterId?: string) => void;
-  removeValueFromList: (valueToRemove: number, filterId?: string) => void;
-  clearAllValues: (filterId?: string) => void;
+  addValueToRowFilter: (filterId: string) => void;
+  addValueToColumnFilter: () => void;
+  addValuesToRowFilter: (values: number[], filterId: string) => void;
+  addValuesToColumnFilter: (values: number[]) => void;
+  removeValueFromRowFilter: (valueToRemove: number, filterId: string) => void;
+  removeValueFromColumnFilter: (valueToRemove: number) => void;
+  clearRowFilterValues: (filterId: string) => void;
+  clearColumnFilterValues: () => void;
   handleKeyPress: (event: React.KeyboardEvent) => void;
   handleCheckboxChange: (value: number, filterId?: string) => void;
   handleRangeChange: (newValue: number[], filterId?: string) => void;
@@ -47,138 +51,149 @@ export function useFilterControls({
     setInputValue(value);
   }, []);
 
-  // Handle adding a single value to the list filter
-  const addValueToList = useCallback(
-    (id?: string) => {
+  const addValueToRowFilter = useCallback(
+    (filterId: string) => {
       const newValue = Number.parseInt(inputValue.trim(), 10);
 
       if (Number.isNaN(newValue)) {
         return;
       }
 
-      if (id) {
-        // For row filters
-        setFilter(
-          produce((draft) => {
-            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+      setFilter(
+        produce((draft) => {
+          const rowFilter = draft.rowsFilters.find((rf) => rf.id === filterId);
 
-            if (!rowFilter || rowFilter.list?.includes(newValue)) {
-              return;
-            }
+          if (!rowFilter || rowFilter.list?.includes(newValue)) {
+            return;
+          }
 
-            if (!rowFilter.list) {
-              rowFilter.list = [];
-            }
+          if (!rowFilter.list) {
+            rowFilter.list = [];
+          }
 
-            rowFilter.list.push(newValue);
-            rowFilter.list.sort((a, b) => a - b);
-          }),
-        );
-      } else {
-        // For column filter
-        setFilter(
-          produce((draft) => {
-            if (draft.columnsFilter.list?.includes(newValue)) {
-              return;
-            }
-
-            if (!draft.columnsFilter.list) {
-              draft.columnsFilter.list = [];
-            }
-
-            draft.columnsFilter.list.push(newValue);
-            draft.columnsFilter.list.sort((a, b) => a - b);
-          }),
-        );
-      }
+          rowFilter.list.push(newValue);
+          rowFilter.list.sort((a, b) => a - b);
+        }),
+      );
 
       setInputValue("");
     },
     [inputValue, setFilter],
   );
 
-  // Handle adding multiple values to the list filter (range)
-  const addValuesToList = useCallback(
-    (values: number[], id?: string) => {
+  const addValueToColumnFilter = useCallback(() => {
+    const newValue = Number.parseInt(inputValue.trim(), 10);
+
+    if (Number.isNaN(newValue)) {
+      return;
+    }
+
+    setFilter(
+      produce((draft) => {
+        if (draft.columnsFilter.list?.includes(newValue)) {
+          return;
+        }
+
+        if (!draft.columnsFilter.list) {
+          draft.columnsFilter.list = [];
+        }
+
+        draft.columnsFilter.list.push(newValue);
+        draft.columnsFilter.list.sort((a, b) => a - b);
+      }),
+    );
+
+    setInputValue("");
+  }, [inputValue, setFilter]);
+
+  // Handle adding multiple values to the row filter (range)
+  const addValuesToRowFilter = useCallback(
+    (values: number[], filterId: string) => {
       if (values.length === 0) {
         return;
       }
 
-      if (id) {
-        // For row filters
-        setFilter(
-          produce((draft) => {
-            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+      setFilter(
+        produce((draft) => {
+          const rowFilter = draft.rowsFilters.find((rf) => rf.id === filterId);
 
-            if (!rowFilter) {
-              return;
-            }
+          if (!rowFilter) {
+            return;
+          }
 
-            const currentList = rowFilter.list || [];
-            const newValues = values.filter((val) => !currentList.includes(val));
+          const currentList = rowFilter.list || [];
+          const newValues = values.filter((val) => !currentList.includes(val));
 
-            if (newValues.length === 0) {
-              return;
-            }
+          if (newValues.length === 0) {
+            return;
+          }
 
-            if (!rowFilter.list) {
-              rowFilter.list = [];
-            }
+          if (!rowFilter.list) {
+            rowFilter.list = [];
+          }
 
-            rowFilter.list.push(...newValues);
-            rowFilter.list.sort((a, b) => a - b);
-          }),
-        );
-      } else {
-        // For column filter
-        setFilter(
-          produce((draft) => {
-            const currentList = draft.columnsFilter.list || [];
-            const newValues = values.filter((val) => !currentList.includes(val));
-
-            if (newValues.length === 0) {
-              return;
-            }
-
-            if (!draft.columnsFilter.list) {
-              draft.columnsFilter.list = [];
-            }
-
-            draft.columnsFilter.list.push(...newValues);
-            draft.columnsFilter.list.sort((a, b) => a - b);
-          }),
-        );
-      }
+          rowFilter.list.push(...newValues);
+          rowFilter.list.sort((a, b) => a - b);
+        }),
+      );
     },
     [setFilter],
   );
 
-  // Handle removing a value from the list filter
-  const removeValueFromList = useCallback(
-    (valueToRemove: number, id?: string) => {
-      if (id) {
-        // For row filters
-        setFilter(
-          produce((draft) => {
-            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
-
-            if (rowFilter?.list) {
-              rowFilter.list = rowFilter.list.filter((value) => value !== valueToRemove);
-            }
-          }),
-        );
-      } else {
-        // For column filter
-        setFilter(
-          produce((draft) => {
-            if (draft.columnsFilter.list) {
-              draft.columnsFilter.list = draft.columnsFilter.list.filter(
-                (value) => value !== valueToRemove,
-              );
-            }
-          }),
-        );
+  // Handle adding multiple values to the column filter (range)
+  const addValuesToColumnFilter = useCallback(
+    (values: number[]) => {
+      if (values.length === 0) {
+        return;
       }
+
+      setFilter(
+        produce((draft) => {
+          const currentList = draft.columnsFilter.list || [];
+          const newValues = values.filter((val) => !currentList.includes(val));
+
+          if (newValues.length === 0) {
+            return;
+          }
+
+          if (!draft.columnsFilter.list) {
+            draft.columnsFilter.list = [];
+          }
+
+          draft.columnsFilter.list.push(...newValues);
+          draft.columnsFilter.list.sort((a, b) => a - b);
+        }),
+      );
+    },
+    [setFilter],
+  );
+
+  const removeValueFromRowFilter = useCallback(
+    (valueToRemove: number, filterId: string) => {
+      setFilter(
+        produce((draft) => {
+          const rowFilter = draft.rowsFilters.find((rf) => rf.id === filterId);
+
+          if (rowFilter?.list) {
+            rowFilter.list = rowFilter.list.filter((value) => value !== valueToRemove);
+          }
+        }),
+      );
+    },
+    [setFilter],
+  );
+
+  const removeValueFromColumnFilter = useCallback(
+    (valueToRemove: number) => {
+      setFilter(
+        produce((draft) => {
+          if (draft.columnsFilter.list) {
+            draft.columnsFilter.list = draft.columnsFilter.list.filter(
+              (value) => value !== valueToRemove,
+            );
+          }
+        }),
+      );
     },
     [setFilter],
   );
@@ -259,30 +274,28 @@ export function useFilterControls({
     [setFilter],
   );
 
-  const clearAllValues = useCallback(
-    (id?: string) => {
-      if (id) {
-        // For row filters
-        setFilter(
-          produce((draft) => {
-            const rowFilter = draft.rowsFilters.find((rf) => rf.id === id);
+  const clearRowFilterValues = useCallback(
+    (filterId: string) => {
+      setFilter(
+        produce((draft) => {
+          const rowFilter = draft.rowsFilters.find((rf) => rf.id === filterId);
 
-            if (rowFilter) {
-              rowFilter.list = [];
-            }
-          }),
-        );
-      } else {
-        // For column filter
-        setFilter(
-          produce((draft) => {
-            draft.columnsFilter.list = [];
-          }),
-        );
-      }
+          if (rowFilter) {
+            rowFilter.list = [];
+          }
+        }),
+      );
     },
     [setFilter],
   );
+
+  const clearColumnFilterValues = useCallback(() => {
+    setFilter(
+      produce((draft) => {
+        draft.columnsFilter.list = [];
+      }),
+    );
+  }, [setFilter]);
 
   // Handle filter type changes
   const handleTypeChange = useCallback(
@@ -340,20 +353,28 @@ export function useFilterControls({
     (event: React.KeyboardEvent) => {
       if (event.key === "Enter" || event.key === ",") {
         event.preventDefault();
-        addValueToList(filterId);
+        if (filterId) {
+          addValueToRowFilter(filterId);
+        } else {
+          addValueToColumnFilter();
+        }
       }
     },
-    [addValueToList, filterId],
+    [addValueToRowFilter, addValueToColumnFilter, filterId],
   );
 
   return {
     inputValue,
     setInputValue,
     handleListChange,
-    addValueToList,
-    addValuesToList,
-    removeValueFromList,
-    clearAllValues,
+    addValueToRowFilter,
+    addValueToColumnFilter,
+    addValuesToRowFilter,
+    addValuesToColumnFilter,
+    removeValueFromRowFilter,
+    removeValueFromColumnFilter,
+    clearRowFilterValues,
+    clearColumnFilterValues,
     handleKeyPress,
     handleCheckboxChange,
     handleRangeChange,
