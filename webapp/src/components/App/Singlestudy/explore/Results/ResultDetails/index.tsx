@@ -19,7 +19,7 @@ import ViewWrapper from "@/components/common/page/ViewWrapper";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Skeleton, Tab, Tabs } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import usePromise from "../../../../../../hooks/usePromise";
@@ -28,7 +28,7 @@ import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../redux/selectors";
 import { getStudyMatrixIndex } from "../../../../../../services/api/matrix";
 import { getStudyData } from "../../../../../../services/api/study";
-import { type Area, type LinkElement, type StudyMetadata } from "../../../../../../types/types";
+import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/types";
 import { toError } from "../../../../../../utils/fnUtils";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
@@ -51,6 +51,65 @@ import { createPath, DataType, MAX_YEAR, OutputItemType, SYNTHESIS_ITEMS, Timest
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
+interface LeftPanelProps {
+  itemType: OutputItemType;
+  onItemTypeChange: (_event: React.SyntheticEvent, newValue: OutputItemType) => void;
+  output: { synthesis?: boolean } | undefined;
+  filteredItems: Array<{ id: string; name: string; label?: string }>;
+  selectedItemId: string;
+  onSetSelectedItemId: (item: { id: string }) => void;
+  onSearchChange: (value: string) => void;
+  onNavigateBack: () => void;
+}
+
+const LeftPanel = React.memo(function LeftPanel({
+  itemType,
+  onItemTypeChange,
+  output,
+  filteredItems,
+  selectedItemId,
+  onSetSelectedItemId,
+  onSearchChange,
+  onNavigateBack,
+}: LeftPanelProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Box>
+      <PropertiesView
+        topContent={
+          <Box sx={{ width: 1, px: 1 }}>
+            <ButtonBack onClick={onNavigateBack} />
+          </Box>
+        }
+        mainContent={
+          <>
+            <Tabs
+              value={itemType}
+              onChange={onItemTypeChange}
+              size="extra-small"
+              variant="fullWidth"
+            >
+              <Tab label={t("study.areas")} value={OutputItemType.Areas} />
+              <Tab label={t("study.links")} value={OutputItemType.Links} />
+              {output?.synthesis && (
+                <Tab label={t("study.synthesis")} value={OutputItemType.Synthesis} />
+              )}
+            </Tabs>
+            <ListElement
+              list={filteredItems}
+              currentElement={selectedItemId}
+              currentElementKeyToTest="id"
+              setSelectedItem={onSetSelectedItemId}
+            />
+          </>
+        }
+        onSearchFilterChange={onSearchChange}
+      />
+    </Box>
+  );
+});
+
 function ResultDetails() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const { isDarkMode } = useThemeColorScheme();
@@ -69,24 +128,33 @@ function ResultDetails() {
 
   // Ref for the FilterableMatrixGrid to control the filter
   const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
-
   const isSynthesis = itemType === OutputItemType.Synthesis;
+  const areas = useAppSelector((state) => getAreas(state, study.id));
+  const links = useAppSelector((state) => getLinks(state, study.id));
 
-  const { data: output } = useStudyOutput({
+  const { data: output, isLoading: outputLoading } = useStudyOutput({
     studyId: study.id,
     outputId: outputId,
   });
 
-  const maxYear = output?.nbyears || MAX_YEAR;
+  const items = useMemo(() => {
+    const currentItems = (itemType === OutputItemType.Areas ? areas : links) as Array<{
+      id: string;
+      name: string;
+      label?: string;
+    }>;
 
-  // Get areas and links from Redux store
-  const items = useAppSelector((state) =>
-    itemType === OutputItemType.Areas ? getAreas(state, study.id) : getLinks(state, study.id),
-  ) as Array<{ id: string; name: string; label?: string }>;
+    // Only return if items actually exist and are valid
+    return Array.isArray(currentItems) ? currentItems : [];
+  }, [itemType, areas, links]);
 
   const filteredItems = useMemo(() => {
     if (isSynthesis) {
       return SYNTHESIS_ITEMS;
+    }
+
+    if (!searchValue.trim()) {
+      return items;
     }
 
     return items.filter((item) => isSearchMatching(searchValue, item.label || item.name));
@@ -102,13 +170,18 @@ function ResultDetails() {
     if (!selectedItem && filteredItems.length > 0) {
       setSelectedItemId(filteredItems[0].id);
     }
-  }, [filteredItems, selectedItem]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filteredItems.length, selectedItemId, outputLoading]); // Using length to avoid reference issues
 
-  // Build fetch path for matrix data
   const path = useMemo(() => {
     if (output && selectedItem && !isSynthesis) {
       return createPath({
-        output,
+        output: {
+          id: output.id,
+          name: output.name,
+          mode: output.mode,
+          nbyears: output.nbyears,
+        },
         item: selectedItem,
         dataType,
         timestep,
@@ -120,8 +193,11 @@ function ResultDetails() {
 
   const matrixRes = usePromise<ResultMatrixDTO | undefined>(
     async () => {
-      if (!path) {
-        return undefined;
+      if (!output || !selectedItem || isSynthesis || !path) {
+        return new Promise(() => {
+          // Intentionally never resolves to keep promise in pending state
+          // Prevents invalid "No data" while loading
+        });
       }
 
       const res = await getStudyData(study.id, path);
@@ -146,7 +222,7 @@ function ResultDetails() {
     {
       resetDataOnReload: true,
       resetErrorOnReload: true,
-      deps: [study.id, path],
+      deps: [study.id, path, !!output, !!selectedItem, isSynthesis],
     },
   );
 
@@ -158,9 +234,7 @@ function ResultDetails() {
       return [];
     }
 
-    return matrixRes.data.data.map((row) => {
-      return headerIndices.map((index) => row[index]);
-    });
+    return matrixRes.data.data.map((row) => headerIndices.map((index) => row[index]));
   }, [matrixRes.data, headerIndices]);
 
   const synthesisRes = usePromise(
@@ -231,47 +305,36 @@ function ResultDetails() {
     matrixGridRef.current?.toggleFilter();
   }, []);
 
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      if (value !== searchValue) {
+        setSearchValue(value);
+      }
+    },
+    [searchValue],
+  );
+
+  const handleNavigateBack = useCallback(() => {
+    navigate("..");
+  }, [navigate]);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
   return (
     <SplitView id="results" sizes={[15, 85]} minSize={[200, 300]}>
-      {/* Left Panel - areas list */}
-      <Box>
-        <PropertiesView
-          topContent={
-            <Box sx={{ width: 1, px: 1 }}>
-              <ButtonBack onClick={() => navigate("..")} />
-            </Box>
-          }
-          mainContent={
-            <>
-              <Tabs
-                value={itemType}
-                onChange={handleItemTypeChange}
-                size="extra-small"
-                variant="fullWidth"
-              >
-                <Tab label={t("study.areas")} value={OutputItemType.Areas} />
-                <Tab label={t("study.links")} value={OutputItemType.Links} />
-                {output?.synthesis && (
-                  <Tab label={t("study.synthesis")} value={OutputItemType.Synthesis} />
-                )}
-              </Tabs>
-              <ListElement
-                list={filteredItems}
-                currentElement={selectedItemId}
-                currentElementKeyToTest="id"
-                setSelectedItem={handleSetSelectedItemId}
-              />
-            </>
-          }
-          onSearchFilterChange={setSearchValue}
-        />
-      </Box>
+      <LeftPanel
+        itemType={itemType}
+        onItemTypeChange={handleItemTypeChange}
+        output={output}
+        filteredItems={filteredItems}
+        selectedItemId={selectedItemId}
+        onSetSelectedItemId={handleSetSelectedItemId}
+        onSearchChange={handleSearchChange}
+        onNavigateBack={handleNavigateBack}
+      />
 
-      {/* Right Panel - results grid */}
       <ViewWrapper flex>
         {isSynthesis ? (
           <UsePromiseCond
@@ -302,10 +365,10 @@ function ResultDetails() {
                 setDataType={setDataType}
                 timestep={timestep}
                 setTimestep={setTimestep}
-                maxYear={maxYear}
+                maxYear={output?.nbyears || MAX_YEAR}
                 studyId={study.id}
                 path={path}
-                colHeaders={matrixRes.data?.columns || []}
+                colHeaders={matrixRes.data?.columns ?? resultColHeaders}
                 onColHeadersChange={handleColHeadersChange}
                 onToggleFilter={handleToggleFilter}
               />
@@ -314,28 +377,36 @@ function ResultDetails() {
               <UsePromiseCond
                 response={matrixRes}
                 ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-                ifFulfilled={(matrix) =>
-                  matrix &&
-                  (resultColHeaders.length === 0 ? (
-                    <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
-                  ) : (
-                    isNonEmptyMatrix(filteredData) && (
-                      <FilterableMatrixGrid
-                        ref={matrixGridRef}
-                        key={`grid-${resultColHeaders.length}`}
-                        data={filteredData}
-                        rows={filteredData.length}
-                        columns={resultColumns}
-                        dateTime={dateTime}
-                        timeFrequency={dateTimeMetadata?.level}
-                        readOnly
-                      />
-                    )
-                  ))
-                }
+                ifFulfilled={() => {
+                  // If headers haven't been processed yet, show loading
+                  if (resultColHeaders.length === 0) {
+                    return <Skeleton sx={{ height: 1, transform: "none" }} />;
+                  }
+
+                  // If we have processed headers but no valid data, show "No data"
+                  if (!isNonEmptyMatrix(filteredData)) {
+                    return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
+                  }
+
+                  return (
+                    <FilterableMatrixGrid
+                      ref={matrixGridRef}
+                      key={`grid-${resultColHeaders.length}`}
+                      data={filteredData}
+                      rows={filteredData.length}
+                      columns={resultColumns}
+                      dateTime={dateTime}
+                      timeFrequency={dateTimeMetadata?.level}
+                      readOnly
+                    />
+                  );
+                }}
                 ifRejected={(err) => (
                   <EmptyView
                     title={
+                      // 404 error is expected when their is no data
+                      // for the selected area or link result
+                      // TODO: Instead this should be an empty response from the server
                       toError(err).message.includes("404")
                         ? t("study.results.noData")
                         : t("data.error.matrix")

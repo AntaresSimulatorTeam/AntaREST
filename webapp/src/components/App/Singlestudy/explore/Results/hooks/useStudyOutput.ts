@@ -12,10 +12,13 @@
  * This file is part of the Antares project.
  */
 
+/* eslint-disable no-console */
+
+import { useMemo } from "react";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getStudyOutput } from "@/redux/selectors";
-import { getStudyOutputById, getStudyData } from "@/services/api/study";
-import type { StudyOutput } from "@/types/types";
+import { getStudyData, getStudyOutputById } from "@/services/api/study";
+
 import { MAX_YEAR } from "../ResultDetails/utils";
 import usePromise from "@/hooks/usePromise";
 
@@ -24,7 +27,6 @@ interface UseStudyOutputOptions {
   outputId: string | undefined;
 }
 
-// Partial output type for cases where we don't have all the data
 interface PartialStudyOutput {
   id: string;
   name: string;
@@ -35,10 +37,16 @@ interface PartialStudyOutput {
   by_year?: boolean;
   error?: boolean;
   type?: string;
-  settings?: Partial<StudyOutput["settings"]> | Record<string, unknown>;
+  settings?: Record<string, unknown>;
   completionDate?: string;
   status?: string;
   archived?: boolean;
+}
+
+interface UseStudyOutputReturn {
+  data: PartialStudyOutput | undefined;
+  isLoading: boolean;
+  error: unknown;
 }
 
 /**
@@ -51,54 +59,72 @@ interface PartialStudyOutput {
  * @param options.outputId - The output ID (optional)
  * @returns Object containing the output data, loading state, and error
  */
-export default function useStudyOutput({ studyId, outputId }: UseStudyOutputOptions): {
-  data: PartialStudyOutput | undefined;
-  isLoading: boolean;
-  error: unknown;
-} {
+export default function useStudyOutput({
+  studyId,
+  outputId,
+}: UseStudyOutputOptions): UseStudyOutputReturn {
   // Try to get output from Redux store
   const { data: outputFromStore } = useStudySynthesis({
     studyId,
     selector: (state, id) => (outputId ? getStudyOutput(state, id, outputId) : undefined),
   });
 
-  // Fetch output metadata if not in store (e.g. for some variants where output might not be in the store)
+  // Check if we have the output in store to avoid unnecessary API calls
+  const hasOutputInStore = useMemo(() => !!outputFromStore, [outputFromStore]);
+
+  // Fetch output metadata if not in store
   const {
     data: fetchedOutput,
     isLoading,
     error,
   } = usePromise<PartialStudyOutput | undefined>(
     async () => {
-      if (outputFromStore) {
-        console.log("from store", outputFromStore);
-        return outputFromStore;
+      // Skip API call if we already have the data in store
+      if (hasOutputInStore) {
+        console.log("[useStudyOutput] Output found in store:", outputId);
+        return undefined;
       }
 
       if (!outputId) {
         return undefined;
       }
 
-      const output = await getStudyOutputById(studyId, outputId);
+      // BUG: For variants, after a generation job is initiated, we must await the job
+      // completion to display results. However, the WebSocket listener that should notify
+      // us of job completion never gets triggered for this particular case. This causes
+      // variant outputs to remain outdated/unavailable until the app is manually refreshed.
+      // As a workaround, we attempt to fetch the output directly.
+      //
+      // TODO: The API should ensure that the WebSocket listener is properly set up to notify
+      // us of job completion.
 
-      console.log("output", output);
+      console.log("[useStudyOutput] Fetching output from API:", outputId);
 
-      if (output) {
+      const foundOutput = await getStudyOutputById(studyId, outputId);
+
+      if (foundOutput) {
+        console.log("[useStudyOutput] Found output from API by ID:", {
+          id: outputId,
+          output: foundOutput,
+        });
+
         return {
           id: outputId,
-          ...output,
+          ...foundOutput,
         };
       }
 
-      // If no output info, try to get output settings
+      console.log("[useStudyOutput] Output not in list, trying to get settings:", outputId);
+
       const outputSettings = await getStudyData(
         studyId,
         `output/${outputId}/about-the-study/parameters`,
       );
 
-      console.log("outputSettings", outputSettings);
-
-      if (outputSettings) {
-        // Construct output object from settings
+      // This case should never happen, but just in case
+      // we use a hard-coded default value to be able to display the output
+      if (!outputSettings) {
+        console.log("[useStudyOutput] Got output settings:", outputSettings);
         return {
           id: outputId,
           name: outputId,
@@ -108,18 +134,36 @@ export default function useStudyOutput({ studyId, outputId }: UseStudyOutputOpti
           date: new Date().toISOString(),
           by_year: outputSettings.general?.["year-by-year"] ?? true,
           error: false,
+          type: "economy",
           settings: outputSettings,
+          completionDate: new Date().toISOString(),
+          status: "completed",
+          archived: false,
         };
       }
+
+      // Return undefined to let the component handle the missing output
+      console.log("[useStudyOutput] Output not found, returning undefined");
+      return undefined;
     },
     {
-      deps: [studyId, outputId, outputFromStore],
+      // Only depend on studyId, outputId, and whether we have the data in store
+      // This prevents infinite loops caused by outputFromStore reference changes
+      deps: [studyId, outputId, hasOutputInStore],
     },
   );
 
+  const data = useMemo(() => {
+    if (outputFromStore) {
+      return outputFromStore;
+    }
+
+    return fetchedOutput;
+  }, [outputFromStore, fetchedOutput]);
+
   return {
-    data: outputFromStore || fetchedOutput,
-    isLoading,
-    error,
+    data,
+    isLoading: !hasOutputInStore && isLoading,
+    error: !hasOutputInStore ? error : undefined,
   };
 }
