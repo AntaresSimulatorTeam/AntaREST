@@ -103,6 +103,27 @@ export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
   return res.data;
 };
 
+/**
+ * Utility function to get a study output by its ID.
+ * Since the API endpoint for getting a single output is not available, we fetch all outputs and filter by ID.
+ *
+ * @param sid - The ID of the study.
+ * @param outputId - The ID of the output to retrieve.
+ * @returns The study output if found, or null if not found.
+ */
+export const getStudyOutputById = async (
+  sid: string,
+  outputId: string,
+): Promise<StudyOutput | null> => {
+  try {
+    const outputs = await getStudyOutputs(sid);
+
+    return outputs.find((output) => output.name === outputId) || null;
+  } catch {
+    return null;
+  }
+};
+
 export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {
   const res = await client.get(`/v1/studies/${sid}/synthesis`);
   return res.data;
