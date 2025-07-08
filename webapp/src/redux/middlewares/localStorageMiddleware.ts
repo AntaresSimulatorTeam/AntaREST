@@ -21,6 +21,7 @@ import {
   setFavoriteStudies,
   updateStudiesFromLocalStorage,
   updateStudiesSortConf,
+  updateStudyFilters,
 } from "../ducks/studies";
 import { setMenuOpen } from "../ducks/ui";
 
@@ -75,6 +76,17 @@ localStorageMiddleware.startListening({
       ...prev,
       ...action.payload,
     }));
+  },
+});
+
+localStorageMiddleware.startListening({
+  actionCreator: updateStudyFilters,
+  effect: (action) => {
+    if (action.payload.folder !== undefined) {
+      storage.setItem(StorageKey.StudiesFilters, () => ({
+        folder: action.payload.folder,
+      }));
+    }
   },
 });
 
