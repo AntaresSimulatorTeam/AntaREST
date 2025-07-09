@@ -53,7 +53,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
 )
-from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -608,11 +608,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set General config with values from form",
     )
-    def set_general_form_values(uuid: str, field_values: GeneralConfig) -> None:
+    def set_general_form_values(uuid: str, config: GeneralConfigUpdate) -> None:
         logger.info(f"Updating General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.general_manager.update_general_config(study_interface, field_values)
+        study_service.general_manager.update_general_config(study_interface, config)
 
     @bp.get(
         path="/studies/{uuid}/config/optimization/form",

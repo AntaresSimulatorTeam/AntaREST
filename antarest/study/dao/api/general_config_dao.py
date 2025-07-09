@@ -22,5 +22,5 @@ class ReadOnlyGeneralConfigDao(ABC):
 
 class GeneralConfigDao(ReadOnlyGeneralConfigDao):
     @abstractmethod
-    def update_general_config(self, config: GeneralConfig) -> None:
+    def save_general_config(self, config: GeneralConfig) -> None:
         raise NotImplementedError()

@@ -436,7 +436,7 @@ class InMemoryStudyDao(StudyDao):
         del self._st_storages[cluster_key(area_id, storage.id)]
 
     @override
-    def update_general_config(self, config: GeneralConfig) -> None:
+    def save_general_config(self, config: GeneralConfig) -> None:
         self._general_config = config
 
     @override

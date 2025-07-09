@@ -10,21 +10,20 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict, cast
+from typing import Any, Dict
 
 from typing_extensions import override
 
 from antarest.study.business.model.config.general_model import (
-    BUILDING_MODE,
-    FIELDS_INFO,
     GENERAL,
-    GENERAL_PATH,
     OUTPUT,
     BuildingMode,
     GeneralConfig,
 )
-from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo
+from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao
+from antarest.study.model import STUDY_VERSION_7_1
+from antarest.study.storage.rawstudy.model.filesystem.config.general import get_general_config, get_output_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -35,39 +34,56 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
 
     @override
     def get_general_config(self) -> GeneralConfig:
-        def __get_building_mode_value(general_config: Dict[str, Any]) -> str:
+        def __get_building_mode_value(general_config: Dict[str, Any]) -> BuildingMode:
             if general_config.get("derated", False):
-                return BuildingMode.DERATED.value
-
+                return BuildingMode.DERATED
             # 'custom-scenario' replaces 'custom-ts-numbers' in study versions >= 800
             if general_config.get("custom-scenario", False) or general_config.get("custom-ts-numbers", False):
-                return BuildingMode.CUSTOM.value
+                return BuildingMode.CUSTOM
+            return BuildingMode.AUTOMATIC
 
-            return str(FIELDS_INFO[BUILDING_MODE]["default_value"])
-
-        """
-        Get General field values for the webapp form
-        """
         file_study = self.get_file_study()
         general_data = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
         general = general_data.get(GENERAL, {})
         output = general_data.get(OUTPUT, {})
+        study_ver = file_study.config.version
 
-        def get_value(field_name: str, field_info: FieldInfo) -> Any:
-            if field_name == BUILDING_MODE:
-                return __get_building_mode_value(general)
-            path = field_info["path"]
-            study_ver = file_study.config.version
-            start_ver = cast(int, field_info.get("start_version", 0))
-            end_ver = cast(int, field_info.get("end_version", study_ver))
-            target_name = path.split("/")[-1]
-            is_in_version = start_ver <= study_ver <= end_ver
-            parent = general if GENERAL_PATH in path else output
+        config_values: Dict[str, Any] = {
+            "mode": general.get("mode"),
+            "first_day": general.get("simulation.start"),
+            "last_day": general.get("simulation.end"),
+            "horizon": general.get("horizon"),
+            "first_month": general.get("first-month-in-year"),
+            "first_week_day": general.get("first.weekday"),
+            "first_january": general.get("january.1st"),
+            "leap_year": general.get("leapyear"),
+            "nb_years": general.get("nbyears"),
+            "building_mode": __get_building_mode_value(general),
+            "selection_mode": general.get("user-playlist"),
+            "year_by_year": general.get("year-by-year"),
+            "simulation_synthesis": output.get("synthesis"),
+            "mc_scenario": output.get("storenewset"),
+        }
 
-            return parent.get(target_name, field_info["default_value"]) if is_in_version else None
+        if study_ver <= STUDY_VERSION_7_1:
+            config_values["filtering"] = general.get("filtering")
 
-        return GeneralConfig.model_construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
+        if study_ver >= STUDY_VERSION_7_1:
+            config_values["geographic_trimming"] = general.get("geographic-trimming")
+            config_values["thematic_trimming"] = general.get("thematic-trimming")
+
+        return GeneralConfig.model_validate({k: v for k, v in config_values.items() if v is not None})
 
     @override
-    def update_general_config(self, config: GeneralConfig) -> None:
-        pass
+    def save_general_config(self, config: GeneralConfig) -> None:
+        study_data = self.get_file_study()
+
+        current_general_config = study_data.tree.get(["settings", "generaldata", "general"])
+        general_config = get_general_config(config)
+        general_config.update({k: v for k, v in current_general_config.items() if k not in general_config})
+        study_data.tree.save(general_config, ["settings", "generaldata", "general"])
+
+        current_output_config = study_data.tree.get(["settings", "generaldata", "output"])
+        general_output = get_output_config(config)
+        general_output.update({k: v for k, v in current_output_config.items() if k not in general_output})
+        study_data.tree.save(general_output, ["settings", "generaldata", "output"])

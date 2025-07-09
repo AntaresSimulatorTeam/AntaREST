@@ -98,6 +98,9 @@ class GeneralConfig(AntaresBaseModel):
         if any(v is None for v in day_fields):
             raise ValueError("First day, last day and leap year fields must be defined together")
 
+        if new_values.get("filtering") is None:
+            new_values["filtering"] = False
+
         first_day = cast(int, first_day)
         last_day = cast(int, last_day)
         leap_year = cast(bool, leap_year)
@@ -131,6 +134,16 @@ class GeneralConfigUpdate(AntaresBaseModel):
     filtering: Optional[StrictBool] = None
     geographic_trimming: Optional[StrictBool] = None
     thematic_trimming: Optional[StrictBool] = None
+
+
+def update_general_config(config: GeneralConfig, new_config: GeneralConfigUpdate) -> GeneralConfig:
+    """
+    Updates a link according to the provided update data.
+    """
+    current_properties = config.model_dump(mode="json")
+    new_properties = new_config.model_dump(mode="json", exclude_none=True)
+    current_properties.update(new_properties)
+    return GeneralConfig.model_validate(current_properties)
 
 
 FIELDS_INFO: Dict[str, FieldInfo] = {

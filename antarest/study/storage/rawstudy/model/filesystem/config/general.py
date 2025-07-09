@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import ConfigDict, Field, PositiveInt, StrictBool
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.config.general_model import (
+    BuildingMode,
     DayNumberType,
     GeneralConfig,
     Month,
@@ -35,7 +36,7 @@ class GeneralFileData(AntaresBaseModel):
     first_january: Optional[WeekDay] = Field(default=None, alias="january.1st")
     leap_year: Optional[StrictBool] = Field(default=None, alias="leapyear")
     nb_years: Optional[PositiveInt] = Field(default=None, alias="nbyears")
-    # building_mode: Optional[BuildingMode] = Field(default=None, alias="")
+    building_mode: Optional[BuildingMode] = Field(default=None)
     selection_mode: Optional[StrictBool] = Field(default=None, alias="user-playlist")
     year_by_year: Optional[StrictBool] = Field(default=None, alias="year-by-year")
     simulation_synthesis: Optional[StrictBool] = Field(default=None, alias="synthesis")
@@ -50,3 +51,13 @@ class GeneralFileData(AntaresBaseModel):
     @classmethod
     def from_model(cls, storage: GeneralConfig) -> "GeneralFileData":
         return cls.model_validate(storage.model_dump(exclude={"id"}))
+
+
+def get_general_config(config: GeneralConfig) -> Dict[str, Any]:
+    file_data = GeneralFileData.from_model(config)
+    return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
+
+
+def get_output_config(config: GeneralConfig) -> Dict[str, Any]:
+    file_data = GeneralFileData.from_model(config)
+    return file_data.model_dump(by_alias=True, exclude_none=True, include={"simulation_synthesis", "mc_scenario"})
