@@ -119,7 +119,7 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     if sys.platform == "win32":
-        expected = [WorkspaceDTO(name="ext", disk_name="Temporary storage")]
+        expected = [WorkspaceDTO(name="ext", disk_name="Temporary Storage")]
     else:
         expected = [
             WorkspaceDTO(

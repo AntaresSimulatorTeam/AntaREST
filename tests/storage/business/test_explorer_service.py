@@ -169,8 +169,8 @@ def test_list_workspaces(tmp_path: Path):
     result = explorer.list_workspaces()
     if sys.platform == "win32":
         expected = [
-            WorkspaceDTO(name="diese", disk_name="Temporary storage"),
-            WorkspaceDTO(name="test", disk_name="Temporary storage"),
+            WorkspaceDTO(name="diese", disk_name="Temporary Storage"),
+            WorkspaceDTO(name="test", disk_name="Temporary Storage"),
         ]
     else:
         expected = [
