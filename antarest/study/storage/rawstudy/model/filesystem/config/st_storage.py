@@ -17,6 +17,7 @@ from pydantic import ConfigDict, Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
     STStorage,
+    check_attributes_coherence,
     initialize_st_storage,
     validate_st_storage_against_version,
 )
@@ -58,9 +59,11 @@ def parse_st_storage(study_version: StudyVersion, data: Any) -> STStorage:
     storage = STStorageFileData.model_validate(data).to_model()
     validate_st_storage_against_version(study_version, storage)
     initialize_st_storage(storage, study_version)
+    check_attributes_coherence(storage, study_version)
     return storage
 
 
 def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dict[str, Any]:
     validate_st_storage_against_version(study_version, storage)
+    check_attributes_coherence(storage, study_version)
     return STStorageFileData.from_model(storage).model_dump(mode="json", by_alias=True, exclude_none=True)
