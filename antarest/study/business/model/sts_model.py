@@ -214,13 +214,17 @@ def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
 
 
 def check_attributes_coherence(storage: STStorage, version: StudyVersion) -> None:
+    """
+    The Simulator performs this business logic before running the simulation.
+    It prevents the user from creating a storage that creates energy out of thin air.
+    """
     if version < STUDY_VERSION_9_2:
         if storage.efficiency > 1:
             raise ShortTermStorageValuesCoherenceError(
                 storage.id, f"Prior to v9.2, efficiency must be lower than 1 and was {storage.efficiency}"
             )
     else:
-        efficiency_withdrawal = storage.efficiency_withdrawal or 1
+        efficiency_withdrawal = 1 if storage.efficiency_withdrawal is None else storage.efficiency_withdrawal
         if storage.efficiency > efficiency_withdrawal:
             raise ShortTermStorageValuesCoherenceError(
                 storage.id,
