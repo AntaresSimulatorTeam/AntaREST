@@ -16,8 +16,7 @@ from typing import Any, List, TypeAlias
 
 from pydantic import field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
-from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy.orm._orm_constructors import mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base

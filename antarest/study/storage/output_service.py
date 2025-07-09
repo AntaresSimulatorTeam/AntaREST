@@ -501,7 +501,7 @@ class OutputService:
             f"{study.name}-{uuid}-{output_id}{export_format.suffix}", download_name, expiration_time_in_minutes=10
         )
         file_download_path = Path(file_download.path)
-        download_id: str = file_download.id  # type: ignore[assignment]
+        download_id: str = file_download.id
 
         aggregator_manager = AggregatorManager(
             output_path,

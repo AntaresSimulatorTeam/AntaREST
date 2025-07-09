@@ -32,7 +32,6 @@ from pydantic import (
 )
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     Enum,
     ForeignKey,
@@ -40,8 +39,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import Mapped, relationship, validates
-from sqlalchemy.orm._orm_constructors import mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -207,14 +205,14 @@ class StudyAdditionalData(Base):  # type:ignore
 
     __tablename__ = "study_additional_data"
 
-    study_id = Column(
+    study_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    author = Column(String(255), default="Unknown")
-    horizon = Column(String)
-    patch = Column(String(), index=True, nullable=True)
+    author: Mapped[str] = mapped_column(String(255), default="Unknown")
+    horizon: Mapped[Optional[str]] = mapped_column(String)
+    patch: Mapped[Optional[str]] = mapped_column(String(), index=True, nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:

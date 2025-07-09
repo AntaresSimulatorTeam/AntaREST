@@ -15,12 +15,11 @@ import uuid
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 import bcrypt
-from sqlalchemy import Boolean, Column, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import Mapped, relationship, sessionmaker
-from sqlalchemy.orm._orm_constructors import mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -154,9 +153,9 @@ class Identity(Base):  # type: ignore
 
     __tablename__ = "identities"
 
-    id = Column(Integer, Sequence("identity_id_seq"), primary_key=True)
-    name = Column(String(255))
-    type = Column(String(50))
+    id: Mapped[int] = mapped_column(Integer, Sequence("identity_id_seq"), primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String(255))
+    type: Mapped[Optional[str]] = mapped_column(String(50))
 
     # Define a one-to-many relationship with `JobResult`.
     # If an identity is deleted, all the associated job results are detached from the identity.
@@ -187,13 +186,13 @@ class User(Identity):
 
     __tablename__ = "users"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         Sequence("identity_id_seq"),
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    _pwd = Column(String(255))
+    _pwd: Mapped[Optional[str]] = mapped_column(String(255))
 
     __mapper_args__ = {
         "polymorphic_identity": "users",
@@ -222,15 +221,15 @@ class UserLdap(Identity):
 
     __tablename__ = "users_ldap"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         Sequence("identity_id_seq"),
         ForeignKey("identities.id"),
         primary_key=True,
     )
-    external_id = Column(String)
-    firstname = Column(String)
-    lastname = Column(String)
+    external_id: Mapped[Optional[str]] = mapped_column(String)
+    firstname: Mapped[Optional[str]] = mapped_column(String)
+    lastname: Mapped[Optional[str]] = mapped_column(String)
     __mapper_args__ = {
         "polymorphic_identity": "users_ldap",
     }
@@ -246,7 +245,7 @@ class Bot(Identity):
 
     __tablename__ = "bots"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         Sequence("identity_id_seq"),
         ForeignKey("identities.id"),
@@ -285,13 +284,13 @@ class Group(Base):  # type: ignore
 
     __tablename__ = "groups"
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = Column(String(255))
+    name: Mapped[Optional[str]] = mapped_column(String(255))
 
     def to_dto(self) -> GroupDTO:
         return GroupDTO(id=self.id, name=self.name)
@@ -311,7 +310,7 @@ class Role(Base):  # type: ignore
 
     __tablename__ = "roles"
 
-    type: Column[RoleType] = Column(Enum(RoleType))
+    type: Mapped[RoleType] = mapped_column(Enum(RoleType))
     identity_id: Mapped[int] = mapped_column(Integer, ForeignKey("identities.id"), primary_key=True)
     group_id: Mapped[str] = mapped_column(String(36), ForeignKey("groups.id"), primary_key=True)
     identity: Mapped["Identity"] = relationship("Identity")

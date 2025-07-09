@@ -103,7 +103,7 @@ class FileTransferManager:
         if not download:
             raise FileDownloadNotFound()
 
-        download.ready = True  # type: ignore[assignment]
+        download.ready = True
         self.repository.save(download)
         if use_notification:
             self.event_bus.push(
@@ -123,8 +123,8 @@ class FileTransferManager:
         if not download:
             raise FileDownloadNotFound()
 
-        download.failed = True  # type: ignore[assignment]
-        download.error_message = reason  # type: ignore[assignment]
+        download.failed = True
+        download.error_message = reason
         self.repository.save(download)
         self.event_bus.push(
             Event(

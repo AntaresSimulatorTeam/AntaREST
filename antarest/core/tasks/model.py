@@ -15,10 +15,9 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.orm import Mapped, relationship, sessionmaker
-from sqlalchemy.orm._orm_constructors import mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -113,9 +112,9 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
 class TaskJobLog(Base):  # type: ignore
     __tablename__ = "taskjoblog"
 
-    id = Column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
-    message = Column(String, nullable=False)
-    task_id = Column(
+    id: Mapped[int] = mapped_column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    task_id: Mapped[str] = mapped_column(
         String(),
         ForeignKey("taskjob.id", name="fk_log_taskjob_id", ondelete="CASCADE"),
         nullable=False,
