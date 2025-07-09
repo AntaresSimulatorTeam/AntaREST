@@ -45,6 +45,7 @@ class TestConfigGeneralForm:
             "firstJanuary": "Monday",
             "firstMonth": "january",
             "firstWeekDay": "Monday",
+            "geographicTrimming": False,
             "horizon": 2030,
             "lastDay": 7,
             "leapYear": False,
@@ -53,6 +54,7 @@ class TestConfigGeneralForm:
             "nbYears": 1,
             "selectionMode": True,
             "simulationSynthesis": True,
+            "thematicTrimming": False,
             "yearByYear": False,
         }
         assert actual == expected

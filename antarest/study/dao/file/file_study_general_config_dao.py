@@ -22,7 +22,7 @@ from antarest.study.business.model.config.general_model import (
 )
 from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao
-from antarest.study.model import STUDY_VERSION_7_1
+from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.general import get_general_config, get_output_config
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -80,6 +80,7 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
 
         current_general_config = study_data.tree.get(["settings", "generaldata", "general"])
         general_config = get_general_config(config)
+        general_config = self.update_building_mode(general_config)
         general_config.update({k: v for k, v in current_general_config.items() if k not in general_config})
         study_data.tree.save(general_config, ["settings", "generaldata", "general"])
 
@@ -87,3 +88,14 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
         general_output = get_output_config(config)
         general_output.update({k: v for k, v in current_output_config.items() if k not in general_output})
         study_data.tree.save(general_output, ["settings", "generaldata", "output"])
+
+    def update_building_mode(self, config: Dict[str, Any]) -> Dict[str, Any]:
+        if config.get("building_mode", "") == BuildingMode.DERATED:
+            config.update({"derated": True})
+        else:
+            config.update({"derated": False})
+            if self.get_file_study().config.version >= STUDY_VERSION_8:
+                config.update({"custom-scenario": BuildingMode.CUSTOM == config.get("building_mode", "")})
+            else:
+                config.update({"custom-ts-numbers": BuildingMode.CUSTOM == config.get("building_mode", "")})
+        return config
