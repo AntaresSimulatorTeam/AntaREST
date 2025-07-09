@@ -206,7 +206,7 @@ class STStorageManager:
             Updated form of short-term storage.
         """
         storage = self.get_storage(study, area_id, storage_id)
-        updated_storage = update_st_storage(storage, cluster_data)
+        updated_storage = update_st_storage(storage, cluster_data, study.version)
 
         command = UpdateSTStorages(
             storage_properties={area_id: {storage_id: cluster_data}},

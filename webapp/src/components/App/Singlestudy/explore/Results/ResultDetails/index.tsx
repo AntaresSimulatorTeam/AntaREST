@@ -19,7 +19,7 @@ import ViewWrapper from "@/components/common/page/ViewWrapper";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Skeleton, Tab, Tabs } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router";
 import usePromise from "../../../../../../hooks/usePromise";
@@ -32,7 +32,9 @@ import type { Area, LinkElement, StudyMetadata } from "../../../../../../types/t
 import { toError } from "../../../../../../utils/fnUtils";
 import { isSearchMatching } from "../../../../../../utils/stringUtils";
 import ButtonBack from "../../../../../common/ButtonBack";
-import MatrixGrid from "../../../../../common/Matrix/components/MatrixGrid/index";
+import FilterableMatrixGrid, {
+  type FilterableMatrixGridHandle,
+} from "../../../../../common/Matrix/components/FilterableMatrixGrid";
 import {
   generateCustomColumns,
   generateDateTime,
@@ -73,6 +75,9 @@ function ResultDetails() {
   // when some columns are filtered out
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
+
+  // Ref for the FilterableMatrixGrid to control the filter
+  const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
 
   const isSynthesis = itemType === OutputItemType.Synthesis;
   const maxYear = output?.nbyears ?? MAX_YEAR;
@@ -219,6 +224,10 @@ function ResultDetails() {
     setSelectedItemId(item.id);
   }, []);
 
+  const handleToggleFilter = useCallback(() => {
+    matrixGridRef.current?.toggleFilter();
+  }, []);
+
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -276,52 +285,59 @@ function ResultDetails() {
             }
           />
         ) : (
-          <>
-            <ResultFilters
-              year={year}
-              setYear={setYear}
-              dataType={dataType}
-              setDataType={setDataType}
-              timestep={timestep}
-              setTimestep={setTimestep}
-              maxYear={maxYear}
-              studyId={study.id}
-              path={path}
-              colHeaders={matrixRes.data?.columns || []}
-              onColHeadersChange={handleColHeadersChange}
-            />
-            <UsePromiseCond
-              response={mergeResponses(outputRes, matrixRes)}
-              ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
-              ifFulfilled={([, matrix]) =>
-                matrix &&
-                (resultColHeaders.length === 0 ? (
-                  <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
-                ) : (
-                  isNonEmptyMatrix(filteredData) && (
-                    <MatrixGrid
-                      key={`grid-${resultColHeaders.length}`}
-                      data={filteredData}
-                      rows={filteredData.length}
-                      columns={resultColumns}
-                      dateTime={dateTime}
-                      readOnly
-                    />
-                  )
-                ))
-              }
-              ifRejected={(err) => (
-                <EmptyView
-                  title={
-                    toError(err).message.includes("404")
-                      ? t("study.results.noData")
-                      : t("data.error.matrix")
-                  }
-                  icon={GridOffIcon}
-                />
-              )}
-            />
-          </>
+          <Box sx={{ display: "flex", flexDirection: "column", height: 1, width: 1 }}>
+            <Box sx={{ flexShrink: 0 }}>
+              <ResultFilters
+                year={year}
+                setYear={setYear}
+                dataType={dataType}
+                setDataType={setDataType}
+                timestep={timestep}
+                setTimestep={setTimestep}
+                maxYear={maxYear}
+                studyId={study.id}
+                path={path}
+                colHeaders={matrixRes.data?.columns || []}
+                onColHeadersChange={handleColHeadersChange}
+                onToggleFilter={handleToggleFilter}
+              />
+            </Box>
+            <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+              <UsePromiseCond
+                response={mergeResponses(outputRes, matrixRes)}
+                ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
+                ifFulfilled={([, matrix]) =>
+                  matrix &&
+                  (resultColHeaders.length === 0 ? (
+                    <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />
+                  ) : (
+                    isNonEmptyMatrix(filteredData) && (
+                      <FilterableMatrixGrid
+                        ref={matrixGridRef}
+                        key={`grid-${resultColHeaders.length}`}
+                        data={filteredData}
+                        rows={filteredData.length}
+                        columns={resultColumns}
+                        dateTime={dateTime}
+                        timeFrequency={dateTimeMetadata?.level}
+                        readOnly
+                      />
+                    )
+                  ))
+                }
+                ifRejected={(err) => (
+                  <EmptyView
+                    title={
+                      toError(err).message.includes("404")
+                        ? t("study.results.noData")
+                        : t("data.error.matrix")
+                    }
+                    icon={GridOffIcon}
+                  />
+                )}
+              />
+            </Box>
+          </Box>
         )}
       </ViewWrapper>
     </SplitView>

@@ -16,7 +16,7 @@ from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 from pydantic.alias_generators import to_camel
 
-from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStorageValuesCoherenceError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -51,7 +51,7 @@ class STStorageGroup(EnumIgnoreCase):
 
 # Validation helpers
 Capacity: TypeAlias = Annotated[float, Field(ge=0)]
-Efficiency: TypeAlias = Annotated[float, Field(ge=0, le=1)]
+Efficiency: TypeAlias = Annotated[float, Field(ge=0)]
 InitialLevel: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 Group: TypeAlias = Optional[LowerCaseStr]
 
@@ -214,6 +214,25 @@ def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
         _initialize_field_default(storage, "penalize_variation_withdrawal", False)
 
 
+def check_attributes_coherence(storage: STStorage, version: StudyVersion) -> None:
+    """
+    The Simulator performs this business logic before running the simulation.
+    It prevents the user from creating a storage that creates energy out of thin air.
+    """
+    if version < STUDY_VERSION_9_2:
+        if storage.efficiency > 1:
+            raise ShortTermStorageValuesCoherenceError(
+                storage.id, f"Prior to v9.2, efficiency must be lower than 1 and was {storage.efficiency}"
+            )
+    else:
+        efficiency_withdrawal = 1 if storage.efficiency_withdrawal is None else storage.efficiency_withdrawal
+        if storage.efficiency > efficiency_withdrawal:
+            raise ShortTermStorageValuesCoherenceError(
+                storage.id,
+                f"efficiency must be lower than efficiency_withdrawal. Currently: {storage.efficiency} > {efficiency_withdrawal}",
+            )
+
+
 def create_st_storage(cluster_data: STStorageCreation, version: StudyVersion) -> STStorage:
     """
     Creates a short-term storage from a creation request, checking and initializing it against the specified study version.
@@ -221,14 +240,17 @@ def create_st_storage(cluster_data: STStorageCreation, version: StudyVersion) ->
     storage = STStorage.model_validate(cluster_data.model_dump(exclude_none=True))
     validate_st_storage_against_version(version, cluster_data)
     initialize_st_storage(storage, version)
+    check_attributes_coherence(storage, version)
     return storage
 
 
-def update_st_storage(storage: STStorage, data: STStorageUpdate) -> STStorage:
+def update_st_storage(storage: STStorage, data: STStorageUpdate, version: StudyVersion) -> STStorage:
     """
     Updates a short-term storage according to the provided update data.
     """
-    return storage.model_copy(update=data.model_dump(exclude_none=True))
+    storage = storage.model_copy(update=data.model_dump(exclude_none=True))
+    check_attributes_coherence(storage, version)
+    return storage
 
 
 ##########################

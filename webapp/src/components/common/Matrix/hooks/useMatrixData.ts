@@ -135,6 +135,7 @@ export function useMatrixData({
     // Metadata
     dateTime,
     rowCount: rowCountSource === "matrixIndex" ? index?.steps : currentState.data.length,
+    matrixTimeFrequency: index?.level,
 
     // Status
     isDirty: updateCount !== 0,

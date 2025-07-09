@@ -304,7 +304,6 @@ function DataGrid({
       gridSelection={gridSelection}
       onGridSelectionChange={handleGridSelectionChange}
       freezeColumns={adjustedFreezeColumns}
-      copyHeaders
       {...rest}
     />
   );

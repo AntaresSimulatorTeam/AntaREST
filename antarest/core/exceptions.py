@@ -794,11 +794,6 @@ class CandidateNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class FileAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
-
-
 class IncorrectArgumentsForCopy(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
@@ -808,6 +803,12 @@ class StudyImportFailed(HTTPException):
     def __init__(self, study_name: str, reason: str) -> None:
         message = f"Study '{study_name}' could not be imported: {reason}"
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class ShortTermStorageValuesCoherenceError(HTTPException):
+    def __init__(self, storage_id: str, msg: str) -> None:
+        message = f"Short term storage '{storage_id}' has incoherent values: {msg}"
+        HTTPException.__init__(self, HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
 class DuplicateSTStorageConstraintName(HTTPException):
