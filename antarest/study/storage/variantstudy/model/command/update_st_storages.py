@@ -75,7 +75,7 @@ class UpdateSTStorages(ICommand):
                     )
 
                 current_storage = all_storages[area_id][storage_id]
-                new_storage = update_st_storage(current_storage, new_properties)
+                new_storage = update_st_storage(current_storage, new_properties, self.study_version)
                 new_storages.append(new_storage)
 
             memory_mapping[area_id] = new_storages

@@ -720,7 +720,7 @@ class TestTableMode:
             if study_version >= 880:
                 _it_storage3_values["enabled"] = False
             if study_version >= 920:
-                _fr_tesla_values["efficiencyWithdrawal"] = 0.4
+                _fr_tesla_values["efficiencyWithdrawal"] = 0.8
                 _fr_tesla_values["penalizeVariationInjection"] = False
                 _fr_tesla_values["penalizeVariationWithdrawal"] = True
 
@@ -782,7 +782,7 @@ class TestTableMode:
                     expected[key]["efficiencyWithdrawal"] = 1
                     expected[key]["penalizeVariationInjection"] = False
                     expected[key]["penalizeVariationWithdrawal"] = False
-                expected["fr / tesla"]["efficiencyWithdrawal"] = 0.4
+                expected["fr / tesla"]["efficiencyWithdrawal"] = 0.8
                 expected["fr / tesla"]["penalizeVariationWithdrawal"] = True
 
             assert actual == expected
