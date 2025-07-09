@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
@@ -91,6 +92,8 @@ class InMemoryStudyDao(StudyDao):
         self._constraints_less_term_matrix: dict[str, str] = {}
         self._constraints_greater_term_matrix: dict[str, str] = {}
         self._constraints_equal_term_matrix: dict[str, str] = {}
+        # General config
+        self._general_config: GeneralConfig = GeneralConfig()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -431,3 +434,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
+
+    @override
+    def update_general_config(self, config: GeneralConfig) -> None:
+        self._general_config = config
+
+    @override
+    def get_general_config(self) -> GeneralConfig:
+        return self._general_config

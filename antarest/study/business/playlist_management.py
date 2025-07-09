@@ -14,7 +14,7 @@ from typing import Dict, List, Union
 
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
-from antarest.study.business.general_management import FIELDS_INFO
+from antarest.study.business.model.config.general_model import FIELDS_INFO
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
