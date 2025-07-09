@@ -17,8 +17,7 @@ from pydantic_core.core_schema import ValidationInfo
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo
-from antarest.study.model import STUDY_VERSION_7_1
+from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
