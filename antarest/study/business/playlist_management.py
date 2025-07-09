@@ -14,7 +14,7 @@ from typing import Dict, List, Union
 
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
-from antarest.study.business.model.config.general_model import FIELDS_INFO
+from antarest.study.business.model.config.general_model import GENERAL_PATH
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
@@ -39,7 +39,7 @@ class PlaylistManager:
     ) -> Dict[int, PlaylistColumns]:
         file_study = study.get_files()
         playlist = FileStudyHelpers.get_playlist(file_study) or {}
-        nb_years = file_study.tree.get(FIELDS_INFO["nb_years"]["path"].split("/")) or len(playlist)
+        nb_years = file_study.tree.get(f"{GENERAL_PATH}/nbyears".split("/")) or len(playlist)
 
         return {
             year: PlaylistColumns.model_construct(

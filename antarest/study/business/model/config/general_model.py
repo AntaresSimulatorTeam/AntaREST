@@ -78,7 +78,7 @@ class GeneralConfig(AntaresBaseModel):
     year_by_year: StrictBool = False
     simulation_synthesis: StrictBool = True
     mc_scenario: StrictBool = False
-    filtering: StrictBool = False
+    filtering: Optional[bool] = None
     geographic_trimming: StrictBool = False
     thematic_trimming: StrictBool = False
 
@@ -97,9 +97,6 @@ class GeneralConfig(AntaresBaseModel):
 
         if any(v is None for v in day_fields):
             raise ValueError("First day, last day and leap year fields must be defined together")
-
-        if new_values.get("filtering") is None:
-            new_values["filtering"] = False
 
         first_day = cast(int, first_day)
         last_day = cast(int, last_day)
@@ -144,78 +141,3 @@ def update_general_config(config: GeneralConfig, new_config: GeneralConfigUpdate
     new_properties = new_config.model_dump(mode="json", exclude_none=True)
     current_properties.update(new_properties)
     return GeneralConfig.model_validate(current_properties)
-
-
-FIELDS_INFO: Dict[str, FieldInfo] = {
-    "mode": {
-        "path": f"{GENERAL_PATH}/mode",
-        "default_value": Mode.ECONOMY.value,
-    },
-    "first_day": {
-        "path": f"{GENERAL_PATH}/simulation.start",
-        "default_value": 1,
-    },
-    "last_day": {
-        "path": f"{GENERAL_PATH}/simulation.end",
-        "default_value": 365,
-    },
-    "horizon": {
-        "path": f"{GENERAL_PATH}/horizon",
-        "default_value": "",
-    },
-    "first_month": {
-        "path": f"{GENERAL_PATH}/first-month-in-year",
-        "default_value": Month.JANUARY.value,
-    },
-    "first_week_day": {
-        "path": f"{GENERAL_PATH}/first.weekday",
-        "default_value": WeekDay.MONDAY.value,
-    },
-    "first_january": {
-        "path": f"{GENERAL_PATH}/january.1st",
-        "default_value": WeekDay.MONDAY.value,
-    },
-    "leap_year": {
-        "path": f"{GENERAL_PATH}/leapyear",
-        "default_value": False,
-    },
-    "nb_years": {
-        "path": f"{GENERAL_PATH}/nbyears",
-        "default_value": 1,
-    },
-    BUILDING_MODE: {
-        "path": "",
-        "default_value": BuildingMode.AUTOMATIC.value,
-    },
-    "selection_mode": {
-        "path": f"{GENERAL_PATH}/user-playlist",
-        "default_value": False,
-    },
-    "year_by_year": {
-        "path": f"{GENERAL_PATH}/year-by-year",
-        "default_value": False,
-    },
-    "filtering": {
-        "path": f"{GENERAL_PATH}/filtering",
-        "default_value": False,
-        "end_version": STUDY_VERSION_7_1,
-    },
-    "geographic_trimming": {
-        "path": f"{GENERAL_PATH}/geographic-trimming",
-        "default_value": False,
-        "start_version": STUDY_VERSION_7_1,
-    },
-    "thematic_trimming": {
-        "path": f"{GENERAL_PATH}/thematic-trimming",
-        "default_value": False,
-        "start_version": STUDY_VERSION_7_1,
-    },
-    "simulation_synthesis": {
-        "path": f"{OUTPUT_PATH}/synthesis",
-        "default_value": True,
-    },
-    "mc_scenario": {
-        "path": f"{OUTPUT_PATH}/storenewset",
-        "default_value": False,
-    },
-}

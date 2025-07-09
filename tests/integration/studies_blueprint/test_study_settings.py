@@ -123,7 +123,6 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": "Economy",
-        "filtering": False,
         "firstDay": 1,
         "lastDay": 365,
         "horizon": "",
@@ -154,7 +153,6 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     res_general_config_json = res_general_config.json()
     assert res_general_config_json == {
         "mode": Mode.ADEQUACY.value,
-        "filtering": False,
         "firstDay": 2,
         "lastDay": 299,
         "horizon": "",
