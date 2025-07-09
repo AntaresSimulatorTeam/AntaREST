@@ -46,7 +46,7 @@ class UpdateGeneralConfig(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args=self.parameters.model_dump(exclude_none=True),
+            args={"parameters": self.parameters.model_dump(exclude_none=True)},
             study_version=self.study_version,
         )
 
