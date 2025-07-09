@@ -42,7 +42,6 @@ from antarest.study.business.correlation_management import (
     CorrelationMatrix,
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
-from antarest.study.business.general_management import GeneralFormFields
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
@@ -54,6 +53,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
 )
+from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -594,10 +594,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/general/form",
         tags=[APITag.study_data],
         summary="Get General config values for form",
-        response_model=GeneralFormFields,
+        response_model=GeneralConfig,
         response_model_exclude_none=True,
     )
-    def get_general_form_values(uuid: str) -> GeneralFormFields:
+    def get_general_form_values(uuid: str) -> GeneralConfig:
         logger.info(msg=f"Getting General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -608,7 +608,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set General config with values from form",
     )
-    def set_general_form_values(uuid: str, field_values: GeneralFormFields) -> None:
+    def set_general_form_values(uuid: str, field_values: GeneralConfig) -> None:
         logger.info(f"Updating General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

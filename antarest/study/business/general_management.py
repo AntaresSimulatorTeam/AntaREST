@@ -10,131 +10,15 @@
 #
 # This file is part of the Antares project.
 
-from typing import Annotated, Any, Dict, List, TypeAlias, Union, cast
+from typing import Any, Dict, List, cast
 
-from pydantic import Field, PositiveInt, StrictBool, ValidationInfo, model_validator
-
-from antarest.study.business.all_optional_meta import all_optional_model
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig, Month, WeekDay
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo, FormFieldsBaseModel
+from antarest.study.business.utils import GENERAL_DATA_PATH, FieldInfo
 from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-class Month(EnumIgnoreCase):
-    JANUARY = "january"
-    FEBRUARY = "february"
-    MARCH = "march"
-    APRIL = "april"
-    MAY = "may"
-    JUNE = "june"
-    JULY = "july"
-    AUGUST = "august"
-    SEPTEMBER = "september"
-    OCTOBER = "october"
-    NOVEMBER = "november"
-    DECEMBER = "december"
-
-
-class WeekDay(EnumIgnoreCase):
-    MONDAY = "Monday"
-    TUESDAY = "Tuesday"
-    WEDNESDAY = "Wednesday"
-    THURSDAY = "Thursday"
-    FRIDAY = "Friday"
-    SATURDAY = "Saturday"
-    SUNDAY = "Sunday"
-
-
-class BuildingMode(EnumIgnoreCase):
-    AUTOMATIC = "Automatic"
-    CUSTOM = "Custom"
-    DERATED = "Derated"
-
-
-DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
-
-
-@all_optional_model
-class GeneralFormFields(FormFieldsBaseModel):
-    mode: Mode
-    first_day: DayNumberType
-    last_day: DayNumberType
-    horizon: Union[str, int]
-    first_month: Month
-    first_week_day: WeekDay
-    first_january: WeekDay
-    leap_year: StrictBool
-    nb_years: PositiveInt
-    building_mode: BuildingMode
-    selection_mode: StrictBool
-    year_by_year: StrictBool
-    simulation_synthesis: StrictBool
-    mc_scenario: StrictBool
-    # Geographic trimming + Thematic trimming.
-    # For study versions < 710
-    filtering: StrictBool
-    # For study versions >= 710
-    geographic_trimming: StrictBool
-    thematic_trimming: StrictBool
-
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "mode": "Economy",
-                    "first_day": 1,
-                    "last_day": 365,
-                    "horizon": "2020",
-                    "first_month": "january",
-                    "first_week_day": "Monday",
-                    "first_january": "Monday",
-                    "leap_year": True,
-                    "nb_years": 5,
-                    "building_mode": "Automatic",
-                    "selection_mode": True,
-                    "year_by_year": True,
-                    "simulation_synthesis": True,
-                    "mc_scenario": True,
-                    "filtering": True,
-                    "geographic_trimming": True,
-                    "thematic_trimming": True,
-                }
-            ]
-        }
-    }
-
-    @model_validator(mode="before")
-    def day_fields_validation(cls, values: Union[Dict[str, Any], ValidationInfo]) -> Dict[str, Any]:
-        new_values = values if isinstance(values, dict) else values.data
-        first_day = new_values.get("first_day")
-        last_day = new_values.get("last_day")
-        leap_year = new_values.get("leap_year")
-        day_fields = [first_day, last_day, leap_year]
-
-        if all(v is None for v in day_fields):
-            # The user wishes to update another field than these three.
-            # no need to validate anything:
-            return new_values
-
-        if any(v is None for v in day_fields):
-            raise ValueError("First day, last day and leap year fields must be defined together")
-
-        first_day = cast(int, first_day)
-        last_day = cast(int, last_day)
-        leap_year = cast(bool, leap_year)
-        num_days_in_year = 366 if leap_year else 365
-
-        if first_day > last_day:
-            raise ValueError("Last day must be greater than or equal to the first day")
-        if last_day > num_days_in_year:
-            raise ValueError(f"Last day cannot be greater than {num_days_in_year}")
-
-        return new_values
-
 
 GENERAL = "general"
 OUTPUT = "output"
@@ -221,7 +105,7 @@ class GeneralManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_field_values(self, study: StudyInterface) -> GeneralFormFields:
+    def get_field_values(self, study: StudyInterface) -> GeneralConfig:
         """
         Get General field values for the webapp form
         """
@@ -244,9 +128,9 @@ class GeneralManager:
 
             return parent.get(target_name, field_info["default_value"]) if is_in_version else None
 
-        return GeneralFormFields.model_construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
+        return GeneralConfig.model_construct(**{name: get_value(name, info) for name, info in FIELDS_INFO.items()})
 
-    def set_field_values(self, study: StudyInterface, field_values: GeneralFormFields) -> None:
+    def set_field_values(self, study: StudyInterface, field_values: GeneralConfig) -> None:
         """
         Set Optimization config from the webapp form
         """
