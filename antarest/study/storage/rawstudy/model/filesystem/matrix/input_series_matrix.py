@@ -138,7 +138,7 @@ class InputSeriesMatrix(MatrixNode):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()
-            dump_dataframe(df, buffer, None)
+            dump_dataframe(df, buffer)
             content = buffer.getvalue()
             suffix = target_path.suffix
             filename = target_path.name
