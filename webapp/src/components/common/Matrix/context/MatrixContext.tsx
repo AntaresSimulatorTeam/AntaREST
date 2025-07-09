@@ -91,7 +91,7 @@ export function MatrixProvider({
     const totalRows = currentState.data.length;
 
     return {
-      active: true,
+      active: false,
       criteria: {
         columnsIndices: Array.from({ length: totalColumns }, (_, i) => i),
         rowsIndices: Array.from({ length: totalRows }, (_, i) => i),

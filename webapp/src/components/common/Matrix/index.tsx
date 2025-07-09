@@ -62,7 +62,7 @@ function Matrix({
   customColumns,
   colWidth,
   fetchMatrixData,
-  canImport = false,
+  canImport = true,
   rowCountSource,
 }: MatrixProps) {
   const { t } = useTranslation();
