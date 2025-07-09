@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
@@ -166,4 +167,19 @@ def test_list_workspaces(tmp_path: Path):
     explorer = Explorer(config)
 
     result = explorer.list_workspaces()
-    assert result == [WorkspaceDTO(name="diese"), WorkspaceDTO(name="test")]
+    if sys.platform == "win32":
+        expected = [
+            WorkspaceDTO(name="diese", disk_name="Temporary storage"),
+            WorkspaceDTO(name="test", disk_name="Temporary storage"),
+        ]
+    else:
+        expected = [
+            WorkspaceDTO(
+                name="diese",
+            ),
+            WorkspaceDTO(
+                name="test",
+            ),
+        ]
+
+    assert result == expected
