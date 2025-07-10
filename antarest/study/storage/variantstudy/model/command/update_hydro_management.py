@@ -20,7 +20,7 @@ from antarest.study.business.model.hydro_model import (
     HydroManagementFileData,
     HydroManagementUpdate,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -49,18 +49,18 @@ class UpdateHydroManagement(ICommand):
         return self
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_hydro = HydroManagementFileData(**study_data.tree.get(HYDRO_PATH))
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        hydro_manager = HydroManagementFileData(**study_data.get_file_study().tree.get(HYDRO_PATH))
 
-        new_hydro = current_hydro.get_hydro_management(self.area_id, self.study_version).model_copy(
+        new_hydro = hydro_manager.get_hydro_management(self.area_id, study_data.get_version()).model_copy(
             update=self.properties.model_dump(exclude_none=True)
         )
 
-        current_hydro.set_hydro_management(self.area_id, new_hydro)
+        hydro_manager.set_hydro_management(self.area_id, new_hydro)
 
-        study_data.tree.save(current_hydro.model_dump(by_alias=True, exclude_none=True), HYDRO_PATH)
+        study_data.save_hydro_management(hydro_manager.model_dump(by_alias=True, exclude_none=True))
 
-        return command_succeeded(message=f"Hydro properties in '{self.area_id}' updated.")
+        return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 
     @override
     def to_dto(self) -> CommandDTO:
