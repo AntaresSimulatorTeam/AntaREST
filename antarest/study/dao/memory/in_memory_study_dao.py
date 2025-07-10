@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Dict, Sequence
+from typing import Any, Dict, List, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
@@ -70,6 +71,9 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_series: Dict[ClusterKey, str] = {}
         self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
+        # Hydro
+        self._hydro_properties: Dict[str, HydroProperties] = {}
+        self._inflow_structures: Dict[str, InflowStructure] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -214,6 +218,26 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         del self._thermals[cluster_key(area_id, thermal.id)]
+
+    @override
+    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+        pass
+
+    @override
+    def get_hydro_by_area(self, area_id: str) -> HydroManagement:
+        pass
+
+    @override
+    def get_inflow_structure(self, area_id: str) -> InflowStructure:
+        pass
+
+    @override
+    def save_hydro_management(self, hydro_data: Dict[str, Any]) -> None:
+        pass
+
+    @override
+    def save_inflow_structure(self, inflow_data: Dict[str, str], path: List[str]) -> None:
+        pass
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
