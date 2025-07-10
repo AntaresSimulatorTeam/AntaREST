@@ -17,7 +17,7 @@ from fastapi import APIRouter
 from antarest.core.config import Config
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
-from antarest.core.version_info import VersionInfoDTO, get_commit_id, get_dependencies
+from antarest.core.version_info import VersionInfoDTO, get_commit_id
 
 
 class StatusDTO(AntaresBaseModel):
@@ -62,7 +62,6 @@ def create_utils_routes(config: Config) -> APIRouter:
         return VersionInfoDTO(
             version=antarest_version,
             gitcommit=get_commit_id(config.resources_path),
-            dependencies=get_dependencies(),
         )
 
     @bp.get(

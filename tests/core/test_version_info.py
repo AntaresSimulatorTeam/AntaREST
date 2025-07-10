@@ -15,24 +15,10 @@ from unittest.mock import patch
 
 import pytest
 
-from antarest.core.version_info import get_commit_id, get_dependencies
+from antarest.core.version_info import get_commit_id
 
 
 class TestVersionInfo:
-    @pytest.mark.unit_test
-    def test_get_dependencies(self) -> None:
-        dependencies = get_dependencies()
-        assert isinstance(dependencies, dict)
-        # AntaREST is not a dependency of AntaREST
-        assert "AntaREST" not in dependencies
-        # lazy checking: we only check that FastAPI exist ;-)
-        assert "fastapi" in dependencies
-        assert all(
-            # match at least one number. eg: "pywin32 == 306"
-            re.fullmatch(r"\d+(?:\.\d+)*(?:\.post\d+)?", ver)
-            for ver in dependencies.values()
-        )
-
     @pytest.mark.unit_test
     def test_get_commit_id__commit_id__exist(self, tmp_path) -> None:
         path_commit_id = tmp_path.joinpath("commit_id")

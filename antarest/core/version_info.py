@@ -15,10 +15,7 @@ Python module that is dedicated to printing application version and dependencies
 """
 
 import subprocess
-import sys
-from importlib.metadata import distributions
 from pathlib import Path
-from typing import Dict
 
 from antarest.core.serde import AntaresBaseModel
 
@@ -27,7 +24,6 @@ class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str
-    dependencies: Dict[str, str]
 
     class Config:
         json_schema_extra = {
@@ -35,13 +31,6 @@ class VersionInfoDTO(AntaresBaseModel):
                 "name": "AntaREST",
                 "version": "2.13.2",
                 "gitcommit": "879d9d641fc2e7e30e626084b431ce014de63532",
-                "dependencies": {
-                    "click": "8.0.4",
-                    "Deprecated": "1.2.13",
-                    "fastapi": "0.73.0",
-                    "Flask": "2.1.3",
-                    "gunicorn": "20.1.0",
-                },
             }
         }
 
@@ -77,29 +66,3 @@ def get_last_commit_from_git() -> str:
         return subprocess.check_output(command, encoding="utf-8").strip()
     except (subprocess.CalledProcessError, FileNotFoundError):
         return ""
-
-
-def get_dependencies() -> Dict[str, str]:
-    """
-    Retrieve the list of installed dependencies and their versions.
-    """
-    try:
-        packages = {dist.metadata["name"]: dist.version for dist in distributions()}
-        return {k: v for k, v in packages.items() if k.lower() != "antarest"}
-    except Exception:
-        return _get_dependencies_with_pip()
-
-
-def _get_dependencies_with_pip() -> Dict[str, str]:
-    """
-    Fallback using `pip freeze` to retrieve dependencies.
-    """
-    python_name = Path(sys.executable).with_suffix("").name.lower()
-    if not any(python_name.startswith(p) for p in {"python", "jython", "ipy", "pypy"}):
-        return {}
-
-    args = [sys.executable, "-m", "pip", "freeze"]
-    output = subprocess.check_output(args, encoding="utf-8")
-    lines = (line for line in output.splitlines() if "==" in line)
-    packages = dict(line.split("==", 1) for line in lines)
-    return {k: v for k, v in packages.items() if k.lower() != "antarest"}
