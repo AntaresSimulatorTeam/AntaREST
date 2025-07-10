@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
-import numpy
 import numpy as np
+import numpy.typing as npt
 from annotated_types import Len
-from pydantic import ValidationInfo, field_validator, model_validator
-from typing_extensions import Annotated
+from pydantic import ConfigDict, ValidationInfo, field_serializer, field_validator, model_validator
+from typing_extensions import Annotated, override
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.study.business.model.area_model import AreaInfoDTO
@@ -49,7 +49,7 @@ class AllocationFormFields(FormFieldsBaseModel):
             raise ValueError("allocation must not contain duplicate area IDs")
 
         for a in allocation:
-            if numpy.isnan(a.coefficient):
+            if np.isnan(a.coefficient):
                 raise ValueError("allocation must not contain NaN coefficients")
 
         if all(a.coefficient == 0 for a in allocation):
@@ -69,15 +69,17 @@ class AllocationMatrix(FormFieldsBaseModel):
     data: 2D-array matrix of consumption coefficients
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     index: Annotated[List[str], Len(min_length=1)]
     columns: Annotated[List[str], Len(min_length=1)]
-    data: List[List[float]]  # NonNegativeFloat not necessary
+    data: npt.NDArray[np.float64]
 
     # noinspection PyMethodParameters
     @field_validator("data", mode="before")
     def validate_hydro_allocation_matrix(
-        cls, data: List[List[float]], values: Union[Dict[str, List[str]], ValidationInfo]
-    ) -> List[List[float]]:
+        cls, data: npt.NDArray[np.float64], values: Union[Dict[str, List[str]], ValidationInfo]
+    ) -> npt.NDArray[np.float64]:
         """
         Validate the hydraulic allocation matrix.
         Args:
@@ -105,6 +107,17 @@ class AllocationMatrix(FormFieldsBaseModel):
             raise ValueError("allocation matrix must not contain only null values")
 
         return data
+
+    @field_serializer("data")
+    def serialize_data(self, data: npt.NDArray[np.float64]) -> List[List[float]]:
+        result: List[List[float]] = data.tolist()
+        return result
+
+    @override
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, AllocationMatrix):
+            return NotImplemented
+        return self.index == other.index and self.columns == other.columns and np.array_equal(self.data, other.data)
 
 
 class AllocationManager:
@@ -249,4 +262,4 @@ class AllocationManager:
                 col_idx = columns.index(prod_area)
                 array[row_idx][col_idx] = coefficient
 
-        return AllocationMatrix.model_construct(index=rows, columns=columns, data=array.tolist())
+        return AllocationMatrix.model_construct(index=rows, columns=columns, data=array)
