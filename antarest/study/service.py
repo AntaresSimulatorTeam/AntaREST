@@ -1331,7 +1331,6 @@ class StudyService:
             additional_data=StudyAdditionalData(editor=editor),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
-            editor=editor,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
 

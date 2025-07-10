@@ -17,10 +17,6 @@ depends_on = None
 
 
 def upgrade():
-    # Add editor column to the study table
-    with op.batch_alter_table('study', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('editor', sa.String(255), nullable=True))
-
     # Add editor column to the study_additional_data table
     with op.batch_alter_table('study_additional_data', schema=None) as batch_op:
         batch_op.add_column(sa.Column('editor', sa.String(255), nullable=True, server_default="Unknown"))
@@ -29,8 +25,4 @@ def upgrade():
 def downgrade():
     # Remove editor column from the study_additional_data table
     with op.batch_alter_table('study_additional_data', schema=None) as batch_op:
-        batch_op.drop_column('editor')
-
-    # Remove editor column from the study table
-    with op.batch_alter_table('study', schema=None) as batch_op:
         batch_op.drop_column('editor')

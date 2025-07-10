@@ -257,7 +257,6 @@ class Study(Base):  # type: ignore
     type = Column(String(50), index=True)
     version = Column(String(255), index=True)
     author = Column(String(255))
-    editor = Column(String(255))
     created_at = Column(DateTime, index=True)
     updated_at = Column(DateTime, index=True)
     last_access = Column(DateTime)
