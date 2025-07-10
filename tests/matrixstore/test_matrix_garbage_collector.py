@@ -57,7 +57,7 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
-        config=mock_config, study_service=study_service, matrix_service=Mock()
+        config=mock_config, study_service=study_service, matrix_service=Mock(), matrices_usage_providers=[Mock()]
     )
 
     return matrix_garbage_collector
@@ -85,6 +85,7 @@ def test_get_saved_matrices(
 def test_get_matrices_used_in_raw_studies(
     matrix_garbage_collector: MatrixGarbageCollector,
 ):
+    # test_service
     """
     Test that the get_matrices_used_in_raw_studies function returns a list of
     all matrices used in raw studies.
@@ -115,6 +116,7 @@ def test_get_matrices_used_in_variant_studies(
     matrix_garbage_collector: MatrixGarbageCollector,
     variant_study_repository: VariantStudyRepository,
 ):
+    # test_service
     with db():
         study_id = "study_id"
 
@@ -141,7 +143,7 @@ def test_get_matrices_used_in_variant_studies(
         db.session.add(command_block1)
         db.session.add(command_block2)
         db.session.commit()
-        matrices = matrix_garbage_collector._get_variant_studies_matrices()
+        matrices = matrix_garbage_collector.get_studies_matrices()
         assert not matrices
         command_block1 = CommandBlock(
             study_id=study_id,
@@ -162,7 +164,7 @@ def test_get_matrices_used_in_variant_studies(
         db.session.add(command_block1)
         db.session.add(command_block2)
         db.session.commit()
-        matrices = matrix_garbage_collector._get_variant_studies_matrices()
+        matrices = matrix_garbage_collector.get_studies_matrices()
         assert len(matrices) == 2
         assert "[[1,2,3]]" in matrices
         assert "[[1,2,4]]" in matrices
@@ -189,6 +191,7 @@ def test_get_matrices_used_in_dataset(matrix_garbage_collector: MatrixGarbageCol
 
 @pytest.mark.unit_test
 def test_get_used_matrices(matrix_garbage_collector: MatrixGarbageCollector):
+    # test_service
     matrix_garbage_collector._get_raw_studies_matrices = Mock(return_value={"matrix1", "matrix2"})
     matrix_garbage_collector._get_variant_studies_matrices = Mock(return_value={"matrix3", "matrix4"})
     matrix_garbage_collector._get_datasets_matrices = Mock(return_value={"matrix4", "matrix6"})

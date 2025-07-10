@@ -15,7 +15,8 @@ from typing import Dict
 import pandas as pd
 from typing_extensions import override
 
-from antarest.matrixstore.repository import compute_hash
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
+from antarest.matrixstore.repository import MatrixContentRepository, compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -24,7 +25,8 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     In memory implementation of matrix service, for unit testing purposes.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
+        super().__init__(matrix_content_repository)
         self._content: Dict[str, pd.DataFrame] = {}
 
     @override
@@ -44,3 +46,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     @override
     def delete(self, matrix_id: str) -> None:
         del self._content[matrix_id]
+
+    @override
+    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+        raise NotImplementedError()

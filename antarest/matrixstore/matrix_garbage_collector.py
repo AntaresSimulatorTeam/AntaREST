@@ -14,9 +14,8 @@ import logging
 import time
 from os import listdir
 from pathlib import Path
-from typing import Set, List
+from typing import TYPE_CHECKING, Set
 
-from pandas.core.interchange.dataframe_protocol import DataFrame
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -25,9 +24,11 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.repository import MatrixDataSetRepository
-from antarest.matrixstore.service import MatrixService
-from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.service import MatrixService
+    from antarest.study.service import StudyService
+    from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +37,8 @@ class MatrixGarbageCollector(IService):
     def __init__(
         self,
         config: Config,
-        study_service: StudyService,
-        matrix_service: MatrixService,
+        study_service: "StudyService",
+        matrix_service: "MatrixService",
         matrices_usage_providers: list[IMatrixUsageProvider],
     ):
         super(MatrixGarbageCollector, self).__init__()
@@ -54,27 +55,6 @@ class MatrixGarbageCollector(IService):
         logger.info("Getting all saved matrices")
         return {f.split(".")[0] for f in listdir(self.saved_matrices_path)}
 
-    def _get_studies_matrices(self) -> List[DataFrame]:
-        # A mettre dans RSM
-        logger.info("Getting all matrices used in raw studies")
-
-        return [
-            self.matrix_service.get(matrix_reference.matrix_id)
-            for provider in self.matrices_usage_providers
-            for matrix_reference in provider.get_matrix_usage()
-        ]
-
-    def _get_datasets_matrices(self) -> Set[str]:
-        logger.info("Getting all matrices used in datasets")
-        datasets = self.dataset_repository.get_all_datasets()
-        return {matrix.matrix_id for dataset in datasets for matrix in dataset.matrices}
-
-    def _get_used_matrices(self) -> Set[str]:
-        """Return all matrices used in raw studies, variant studies and datasets"""
-        studies_matrices = self._get_studies_matrices()
-        datasets_matrices = self._get_datasets_matrices()
-        return studies_matrices | datasets_matrices | set(self.matrix_constants.hashes.values())
-
     def _delete_unused_saved_matrices(self, unused_matrices: Set[str]) -> None:
         """Delete all files with the name in unused_matrices"""
         logger.info("Deleting unused saved matrices:")
@@ -89,7 +69,7 @@ class MatrixGarbageCollector(IService):
         stopwatch = StopWatch()
         logger.info("Beginning of the cleaning process")
         saved_matrices = self._get_saved_matrices()
-        used_matrices = self._get_used_matrices()
+        used_matrices = self.matrix_service.get_used_matrices()
         unused_matrices = saved_matrices - used_matrices
         self._delete_unused_saved_matrices(unused_matrices=unused_matrices)
         stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning matrices in {x}s"))

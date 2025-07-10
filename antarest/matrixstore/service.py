@@ -18,7 +18,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence, Set
+from typing import TYPE_CHECKING, List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -40,8 +40,6 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
-from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -52,8 +50,11 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+    from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
+    from antarest.study.service import StudyService
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -106,7 +107,7 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         raise NotImplementedError()
 
     def get_matrix_id(self, matrix: List[List[float]] | str) -> str:
@@ -153,7 +154,7 @@ class SimpleMatrixService(ISimpleMatrixService):
         self.matrix_content_repository.delete(matrix_id)
 
     @override
-    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         self.usage_providers.append(usage_provider)
 
 
@@ -439,7 +440,7 @@ class MatrixService(ISimpleMatrixService):
                 self.matrix_content_repository.delete(matrix_id)
 
     @override
-    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         self.usage_providers.append(usage_provider)
 
     @staticmethod
@@ -529,7 +530,7 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
-    def _get_datasets_matrices(self) -> Set[str]:
+    def get_datasets_matrices(self) -> Set[str]:
         # Matrix_service
         logger.info("Getting all matrices used in datasets")
         datasets = self.repo_dataset.get_all_datasets()
@@ -538,10 +539,8 @@ class MatrixService(ISimpleMatrixService):
     def create_matrix_gc(
         self,
         config: Config,
-        study_service: StudyService,
-    ) -> MatrixGarbageCollector:
-        # A mettre dans MatrixService
-
+        study_service: "StudyService",
+    ) -> "MatrixGarbageCollector":
         return MatrixGarbageCollector(
             config=config,
             study_service=study_service,
@@ -549,9 +548,17 @@ class MatrixService(ISimpleMatrixService):
             matrices_usage_providers=self.usage_providers,
         )
 
+    def get_studies_matrices(self) -> Set[str]:
+        logger.info("Getting all matrices used in raw studies")
+
+        return {
+            matrix_reference.matrix_id
+            for provider in self.usage_providers
+            for matrix_reference in provider.get_matrix_usage()
+        }
+
     def get_used_matrices(self) -> Set[str]:
         """Return all matrices used in raw studies, variant studies and datasets"""
-        datasets_matrices = self._get_datasets_matrices()
-        studies_matrices = self.get_used_matrices()
-        matrix_constants = GeneratorMatrixConstants(self)
-        return studies_matrices | datasets_matrices | set(matrix_constants.hashes.values())
+        datasets_matrices = self.get_datasets_matrices()
+        studies_matrices = self.get_studies_matrices()
+        return studies_matrices | datasets_matrices

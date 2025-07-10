@@ -44,9 +44,6 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
                 )
             return []
 
-        # Deux for différents
-        variant_study_commands = []
-
         variant_study_commands = [cmd for c in command_blocks for cmd in transform_to_command(c.to_dto(), c.study_id)]
         for block in command_blocks:
             study_id = block.study_id
