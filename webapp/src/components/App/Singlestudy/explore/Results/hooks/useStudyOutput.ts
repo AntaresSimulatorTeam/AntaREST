@@ -27,7 +27,7 @@ interface UseStudyOutputOptions {
   outputId: string | undefined;
 }
 
-interface PartialStudyOutput {
+export interface PartialStudyOutput {
   id: string;
   name: string;
   mode?: string;

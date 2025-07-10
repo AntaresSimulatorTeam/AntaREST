@@ -22,11 +22,11 @@ import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import { DataType, matchesSearchTerm, Timestep } from "./utils";
+import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
+import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
+import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
+import { DataType, matchesSearchTerm, Timestep } from "../utils";
 import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface ColumnHeader {
