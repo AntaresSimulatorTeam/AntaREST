@@ -53,7 +53,7 @@ class TestStudyVersions:
         #  LIFECYCLE
         # =============================
 
-        for f in [zip_path, final_path]:  # zip path is the study in version 7.0 and final path the one in version 9.2
+        for f in [zip_path, final_path]:  # zip_path is the study in version 7.0 and final_path the one in version 9.2
             # Imports a study
             res = client.post("/v1/studies/_import", files={"study": io.BytesIO(f.read_bytes())})
             res.raise_for_status()
