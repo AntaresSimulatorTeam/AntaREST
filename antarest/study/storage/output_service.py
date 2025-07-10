@@ -247,13 +247,13 @@ class OutputService:
                     output_id=output_uuid,
                     target=export_path,
                 )
-                self._file_transfer_manager.set_ready(str(export_id))
+                self._file_transfer_manager.set_ready(export_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_uuid}/{output_uuid} successfully exported",
                 )
             except Exception as e:
-                self._file_transfer_manager.fail(str(export_id), str(e))
+                self._file_transfer_manager.fail(export_id, str(e))
                 raise e
 
         task_id = self._task_service.add_task(
@@ -320,13 +320,13 @@ class OutputService:
                     _stopwatch.log_elapsed(
                         lambda x: logger.info(f"Study {study_id} filtered output {output_id} exported in {x}s")
                     )
-                    self._file_transfer_manager.set_ready(str(export_id))
+                    self._file_transfer_manager.set_ready(export_id)
                     return TaskResult(
                         success=True,
                         message=f"Study filtered output {study_id}/{output_id} successfully exported",
                     )
                 except Exception as e:
-                    self._file_transfer_manager.fail(str(export_id), str(e))
+                    self._file_transfer_manager.fail(export_id, str(e))
                     raise
 
             task_id = self._task_service.add_task(

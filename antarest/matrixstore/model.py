@@ -173,7 +173,7 @@ class MatrixDataSet(Base):  # type: ignore
     updated_at: Mapped[datetime.datetime] = mapped_column(DateTime)
 
     owner: Mapped[Identity] = relationship(Identity)
-    groups: Mapped[List[Group]] = relationship(  # todo check if ok
+    groups: Mapped[List[Group]] = relationship(
         "Group",
         secondary=lambda: groups_dataset_relation,
     )

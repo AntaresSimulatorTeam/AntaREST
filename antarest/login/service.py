@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional, Union, cast
+from typing import List, Optional, Union
 
 from fastapi import HTTPException
 
@@ -88,7 +88,7 @@ class LoginService:
         Returns: group
 
         """
-        if self.groups.get_by_name(cast(str, group.name)):
+        if group.name and self.groups.get_by_name(group.name):
             raise HTTPException(status_code=400, detail="Group name already exists")
 
         user = get_current_user()

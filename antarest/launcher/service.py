@@ -584,10 +584,10 @@ class LauncherService:
                 try:
                     #
                     archive_dir(output_path, export_path, archive_format=ArchiveFormat.ZIP)
-                    self.file_transfer_manager.set_ready(str(export_id))
+                    self.file_transfer_manager.set_ready(export_id)
                     return TaskResult(success=True, message="")
                 except Exception as e:
-                    self.file_transfer_manager.fail(str(export_id), str(e))
+                    self.file_transfer_manager.fail(export_id, str(e))
                     raise e
 
             task_id = self.task_service.add_task(

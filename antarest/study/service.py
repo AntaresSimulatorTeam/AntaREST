@@ -1217,10 +1217,10 @@ class StudyService:
             try:
                 target_study = self.get_study(uuid)
                 self.storage_service.get_storage(target_study).export_study(target_study, export_path, outputs)
-                self.file_transfer_manager.set_ready(str(export_id))
+                self.file_transfer_manager.set_ready(export_id)
                 return TaskResult(success=True, message=f"Study {uuid} successfully exported")
             except Exception as e:
-                self.file_transfer_manager.fail(str(export_id), str(e))
+                self.file_transfer_manager.fail(export_id, str(e))
                 raise e
 
         task_id = self.task_service.add_task(

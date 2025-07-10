@@ -91,15 +91,15 @@ def _export_file(
 
     try:
         writer(export_path)
-        file_transfer_manager.set_ready(str(export_id), use_notification=False)
+        file_transfer_manager.set_ready(export_id, use_notification=False)
     except ValueError as e:
-        file_transfer_manager.fail(str(export_id), str(e))
+        file_transfer_manager.fail(export_id, str(e))
         raise HTTPException(
             status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
             detail=f"Cannot replace '{export_path}' due to Excel policy: {e}",
         ) from e
     except FileDownloadNotFound as e:
-        file_transfer_manager.fail(str(export_id), str(e))
+        file_transfer_manager.fail(export_id, str(e))
         raise HTTPException(
             status_code=http.HTTPStatus.UNPROCESSABLE_ENTITY,
             detail=f"The file download does not exist in database :{str(e)}",
