@@ -315,14 +315,6 @@ class VariantStudyParentNotValid(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class StudyTypeUnsupported(HTTPException):
-    def __init__(self, uuid: str, type_: str) -> None:
-        super().__init__(
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-            f"Study {uuid} with type {type_} not recognized",
-        )
-
-
 class NotAManagedStudyException(HTTPException):
     def __init__(self, uuid: str) -> None:
         super().__init__(
@@ -830,3 +822,9 @@ class ShortTermStorageValuesCoherenceError(HTTPException):
     def __init__(self, storage_id: str, msg: str) -> None:
         message = f"Short term storage '{storage_id}' has incoherent values: {msg}"
         HTTPException.__init__(self, HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class UnsupportedOperationOnThisStudyType(HTTPException):
+    def __init__(self, uuid: str, operation: str, supported_type: str) -> None:
+        msg = f"You cannot {operation} the study '{uuid}'. This is only available for {supported_type} studies."
+        super().__init__(HTTPStatus.BAD_REQUEST, msg)

@@ -557,4 +557,19 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         logger.info("Retrieving study disk usage")
         return study_service.get_disk_usage(uuid=uuid)
 
+    @bp.put(
+        "/studies/{study_id}/normalize",
+        summary="Move study matrices into the matrix-store and replace them with symbolic links.",
+        tags=[APITag.study_management],
+    )
+    def normalize_study(study_id: str) -> None:
+        """
+        This endpoint iterates over every matrix inside a study.
+        For each, it saves them inside the application's matrix-store.
+        Then, it replaces the matrix inside the study with a symbolic link to the matrix inside the matrix-store.
+        """
+        logger.info(f"Normalizing study {study_id}")
+        study_id = sanitize_uuid(study_id)
+        return study_service.normalize_study_by_id(study_id)
+
     return bp
