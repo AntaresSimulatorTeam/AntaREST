@@ -40,27 +40,29 @@ export default function StudyTreeNode({
   onNodeClick,
   exploredFolders,
 }: StudyTreeNodeProps) {
-  const { hasChildren, children, path, name, isStudyFolder } = node;
+  const { hasChildren, children, path, name, isStudyFolder, alias } = node;
   const isLoading = itemsLoading.includes(node.path);
   const hasUnloadedChildren =
     hasChildren && children.length === 0 && !exploredFolders.includes(node.path);
   const { t } = useTranslation();
 
   const sortedChildren = useMemo(() => {
-    const sortedByName = nameSort(children);
+    const nonStudyChildren = children.filter((s) => !s.isScannedStudy);
+    const sortedByName = nameSort(nonStudyChildren);
     if (node.name === ROOT_NODE_NAME) {
       return defaultFirstSort(sortedByName);
     }
     return sortedByName;
   }, [children, node.name]);
 
+  const label = alias ? `${alias} (${name})` : name;
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
   return (
     <TreeItemEnhanced
       itemId={path}
-      label={name}
+      label={label}
       slots={
         isStudyFolder
           ? {

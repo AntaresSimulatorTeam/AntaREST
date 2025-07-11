@@ -48,6 +48,7 @@ export interface StudyEventPayload {
   id: string;
   name: string;
   workspace: string;
+  folder: string;
 }
 
 export interface StudyJobLogUpdateEventPayload {

@@ -10,13 +10,14 @@
 #
 # This file is part of the Antares project.
 
+import sys
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, FolderDTO, WorkspaceMetadata
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, FolderDTO, WorkspaceDTO
 from antarest.study.storage.explorer_service import Explorer
 
 
@@ -166,4 +167,19 @@ def test_list_workspaces(tmp_path: Path):
     explorer = Explorer(config)
 
     result = explorer.list_workspaces()
-    assert result == [WorkspaceMetadata(name="diese"), WorkspaceMetadata(name="test")]
+    if sys.platform == "win32":
+        expected = [
+            WorkspaceDTO(name="diese", disk_name="Temporary Storage"),
+            WorkspaceDTO(name="test", disk_name="Temporary Storage"),
+        ]
+    else:
+        expected = [
+            WorkspaceDTO(
+                name="diese",
+            ),
+            WorkspaceDTO(
+                name="test",
+            ),
+        ]
+
+    assert result == expected

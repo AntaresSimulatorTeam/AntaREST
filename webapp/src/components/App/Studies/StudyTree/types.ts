@@ -18,6 +18,8 @@ export interface StudyTreeNode {
   children: StudyTreeNode[];
   hasChildren?: boolean;
   isStudyFolder?: boolean;
+  isScannedStudy?: boolean;
+  alias?: string;
 }
 
 export interface FolderDTO {
@@ -27,6 +29,11 @@ export interface FolderDTO {
   parentPath: string;
   hasChildren?: boolean;
   isStudyFolder?: boolean;
+}
+
+export interface WorkspaceDTO {
+  name: string;
+  disk_name: string;
 }
 
 export interface StudyTreeNodeProps {

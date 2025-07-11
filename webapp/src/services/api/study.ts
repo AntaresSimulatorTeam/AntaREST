@@ -33,11 +33,7 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
-
-interface Workspace {
-  name: string;
-}
+import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -53,8 +49,8 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
 };
 
 export const getWorkspaces = async () => {
-  const res = await client.get<Workspace[]>(`/v1/private/explorer/_list_workspaces`);
-  return res.data.map((folder) => folder.name);
+  const res = await client.get<WorkspaceDTO[]>(`/v1/private/explorer/_list_workspaces`);
+  return res.data;
 };
 
 /**

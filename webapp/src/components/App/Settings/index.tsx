@@ -30,6 +30,7 @@ function Settings() {
   const { t } = useTranslation();
   const isUserAdmin = useAppSelector(isAuthUserAdmin);
   const isUserInGroupAdmin = useAppSelector(isAuthUserInGroupAdmin);
+  const isDesktopMode = import.meta.env.MODE === "desktop";
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -52,7 +53,7 @@ function Settings() {
               label: t("global.group"),
               content: Groups,
             },
-            {
+            !isDesktopMode && {
               label: t("global.tokens"),
               content: Tokens,
             },
