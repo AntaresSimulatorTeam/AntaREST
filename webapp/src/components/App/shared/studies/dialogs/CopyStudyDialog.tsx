@@ -23,7 +23,7 @@ import usePromise from "@/hooks/usePromise";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, StudyOutput } from "@/types/types";
-import { validateStudyFolder, validateStudyName } from "@/utils/studiesUtils";
+import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
 import { Box, Chip } from "@mui/material";
@@ -99,11 +99,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyPathFE
-            name="destinationFolder"
-            control={control}
-            rules={{ validate: validateStudyFolder }}
-          />
+          <StudyPathFE name="destinationFolder" control={control} />
           <UsePromiseCond
             response={outputsRes}
             ifPending={() => (
