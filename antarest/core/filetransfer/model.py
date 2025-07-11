@@ -71,7 +71,7 @@ class FileDownload(Base):  # type: ignore
     ready: Mapped[bool] = mapped_column(Boolean, default=False)
     expiration_date: Mapped[datetime] = mapped_column(DateTime)
     failed: Mapped[bool] = mapped_column(Boolean, default=False)
-    error_message: Mapped[str] = mapped_column(String, nullable=True)
+    error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     def to_dto(self) -> FileDownloadDTO:
         return FileDownloadDTO(

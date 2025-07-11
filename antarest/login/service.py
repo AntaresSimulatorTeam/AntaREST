@@ -625,12 +625,7 @@ class LoginService:
         user_mapping_id_to_name = {user.id: user.name for user in all_users}
         if details:
             return [
-                IdentityDTO(
-                    id=id,
-                    name=user_mapping_id_to_name[id],
-                    roles=roles_per_user[id],
-                )
-                for id in roles_per_user
+                IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user[id]) for id in roles_per_user
             ]
         return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]
 

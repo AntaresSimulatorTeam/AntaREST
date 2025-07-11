@@ -366,9 +366,9 @@ class RawStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status: Mapped[StudyContentStatus] = mapped_column(Enum(StudyContentStatus), nullable=True)
+    content_status: Mapped[Optional[StudyContentStatus]] = mapped_column(Enum(StudyContentStatus), nullable=True)
     workspace: Mapped[str] = mapped_column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
-    missing: Mapped[DateTime] = mapped_column(DateTime, nullable=True, index=True)
+    missing: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",

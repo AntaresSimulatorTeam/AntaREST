@@ -1017,7 +1017,7 @@ class StudyService:
                         )
                     else:
                         study = missing_studies[(workspace, study_path)]
-                        study.missing = None  # type: ignore[assignment]
+                        study.missing = None
                         logger.info(
                             "Study at %s re appears on disk and will be added as %s",
                             study.path,
