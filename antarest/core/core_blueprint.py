@@ -45,9 +45,8 @@ def create_utils_routes(config: Config) -> APIRouter:
         "/version",
         tags=[APITag.misc],
         summary="Get application version",
-        response_model=VersionInfoDTO,
     )
-    def version_info(with_deps: bool = False) -> Any:
+    def version_info(with_deps: bool = False) -> VersionInfoDTO:
         """
         Returns the current version of the application, along with relevant dependency information.
 

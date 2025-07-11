@@ -27,7 +27,7 @@ class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str
-    dependencies: Dict[str, str] | None = None
+    dependencies: Dict[str, str] = None
 
     class Config:
         json_schema_extra = {
@@ -84,8 +84,7 @@ def get_dependencies() -> Dict[str, str]:
     Retrieve the list of installed dependencies and their versions.
     """
     try:
-        packages = {dist.metadata["name"]: dist.version for dist in distributions()}
-        return {k: v for k, v in packages.items() if k.lower() != "antarest"}
+        return {dist.name: dist.version for dist in distributions() if dist.name.lower() != "antarest"}
     except Exception:
         return _get_dependencies_with_pip()
 
