@@ -1,6 +1,17 @@
 Antares Web Changelog
 =====================
 
+v2.22.2 (2025-07-11)
+--------------------
+
+## What's Changed
+
+### Bug fixes
+
+* **launcher:** upgrade antares-launcher to v1.4.5 [#2587](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2587)
+  - **slurm**: add retry mechanism for job state retrieval [#89](https://github.com/AntaresSimulatorTeam/antares-launcher/pull/89)
+
+
 v2.22.1 (2025-07-07)
 --------------------
 
