@@ -32,7 +32,7 @@ def upgrade():
 
     # path data migration
     connexion: Connection = op.get_bind()
-    rawstudies = connexion.execute("SELECT id,path FROM rawstudy")
+    rawstudies = connexion.execute(text("SELECT id,path FROM rawstudy"))
     for rawstudy in rawstudies:
         connexion.execute(text(f"UPDATE study SET path= :path WHERE id='{rawstudy[0]}'"), path=rawstudy[1])
     # end of path data migration
@@ -52,7 +52,7 @@ def downgrade():
 
     # path data migration
     connexion: Connection = op.get_bind()
-    studies = connexion.execute("SELECT id,path FROM study")
+    studies = connexion.execute(text("SELECT id,path FROM study"))
     for study in studies:
         connexion.execute(text(f"UPDATE rawstudy SET path=:path WHERE id='{study[0]}'"), path=study[1])
     # end of path data migration

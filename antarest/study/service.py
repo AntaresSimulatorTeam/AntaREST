@@ -971,7 +971,7 @@ class StudyService:
                         study.path,
                         MAX_MISSING_STUDY_TIMEOUT,
                     )
-                    study.missing = now
+                    study.missing = now  # type: ignore[assignment]
                     self.repository.save(study)
                     self.event_bus.push(
                         Event(
@@ -980,7 +980,8 @@ class StudyService:
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                if study.missing < clean_up_missing_studies_threshold:
+
+                if study.missing and cast(datetime, study.missing) < clean_up_missing_studies_threshold:
                     logger.info(
                         "Study %s at %s is not present in disk and will be deleted",
                         study.id,
@@ -1541,7 +1542,7 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else new_owner.name
+        owner_name = None if new_owner is None else str(new_owner.name)
         self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
 
         logger.info(

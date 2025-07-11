@@ -48,10 +48,10 @@ def _migrate(upgrade: bool):
                     sa.PrimaryKeyConstraint('study_id')
                     )
     bind = op.get_bind()
-    content = bind.execute("SELECT * FROM study_additional_data")
+    content = bind.execute(sa.text("SELECT * FROM study_additional_data"))
     for row in content:
         bind.execute(
-            "INSERT INTO study_additional_data_copy (study_id, author, horizon, patch) VALUES (?,?,?,?)",
+            sa.text("INSERT INTO study_additional_data_copy (study_id, author, horizon, patch) VALUES (?,?,?,?)"),
             (row[0], row[1], row[2], row[3])
         )
     op.drop_table("study_additional_data")
@@ -79,10 +79,10 @@ def _migrate(upgrade: bool):
             batch_op.drop_index(batch_op.f("ix_rawstudycopy_workspace"))
 
     bind = op.get_bind()
-    content = bind.execute("SELECT * FROM rawstudy")
+    content = bind.execute(sa.text("SELECT * FROM rawstudy"))
     for row in content:
         bind.execute(
-            "INSERT INTO rawstudycopy (id, content_status, workspace, missing) VALUES (?,?,?,?)",
+            sa.text("INSERT INTO rawstudycopy (id, content_status, workspace, missing) VALUES (?,?,?,?)"),
             (row[0], row[1], row[2], row[3])
         )
     op.drop_table("rawstudy")
@@ -109,10 +109,10 @@ def _migrate(upgrade: bool):
         sa.UniqueConstraint("id"),
     )
     bind = op.get_bind()
-    content = bind.execute("SELECT * FROM commandblock")
+    content = bind.execute(sa.text("SELECT * FROM commandblock"))
     for row in content:
         bind.execute(
-            "INSERT INTO commandblock_copy (id, study_id, block_index, command, version, args) VALUES (?,?,?,?,?,?)",
+            sa.text("INSERT INTO commandblock_copy (id, study_id, block_index, command, version, args) VALUES (?,?,?,?,?,?)"),
             (row[0], row[1], row[2], row[3], row[4], row[5])
         )
     op.alter_column(table_name="commandblock_copy", column_name="block_index", new_column_name="index")
@@ -136,10 +136,10 @@ def _migrate(upgrade: bool):
         sa.PrimaryKeyConstraint("id"),
     )
     bind = op.get_bind()
-    content = bind.execute("SELECT * FROM variant_study_snapshot")
+    content = bind.execute(sa.text("SELECT * FROM variant_study_snapshot"))
     for row in content:
         bind.execute(
-            "INSERT INTO variant_study_snapshot_copy (id, created_at, last_executed_command) VALUES (?,?,?)",
+            sa.text("INSERT INTO variant_study_snapshot_copy (id, created_at, last_executed_command) VALUES (?,?,?)"),
             (row[0], row[1], row[2])
         )
     op.drop_table("variant_study_snapshot")
@@ -161,10 +161,10 @@ def _migrate(upgrade: bool):
         sa.PrimaryKeyConstraint("id"),
     )
     bind = op.get_bind()
-    content = bind.execute("SELECT * FROM variantstudy")
+    content = bind.execute(sa.text("SELECT * FROM variantstudy"))
     for row in content:
         bind.execute(
-            "INSERT INTO variantstudy_copy (id, generation_task) VALUES (?,?)",
+            sa.text("INSERT INTO variantstudy_copy (id, generation_task) VALUES (?,?)"),
             (row[0], row[1])
         )
     op.drop_table("variantstudy")
@@ -188,10 +188,10 @@ def _migrate(upgrade: bool):
             batch_op.drop_index(batch_op.f("ix_groupmetadatacopy_group_id"))
             batch_op.drop_index(batch_op.f("ix_groupmetadatacopy_study_id"))
     bind = op.get_bind()
-    content = bind.execute("SELECT * FROM group_metadata")
+    content = bind.execute(sa.text("SELECT * FROM group_metadata"))
     for row in content:
         bind.execute(
-            "INSERT INTO groupmetadatacopy (group_id, study_id) VALUES (?,?)",
+            sa.text("INSERT INTO groupmetadatacopy (group_id, study_id) VALUES (?,?)"),
             (row[0], row[1])
         )
     op.drop_table("group_metadata")

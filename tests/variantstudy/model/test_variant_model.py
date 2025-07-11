@@ -307,7 +307,7 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             variant_study_service.append_commands(variant_study.id, commands)
 
-        nb_queries_before = nb_queries  # store initial state
+        nb_queries = 0  # Reset query counter for the assertion
         with current_user_context(jwt_user):
             variant_study_service.get_commands(variant_study.id)  # execute database query
-        assert nb_queries_before + 1 == nb_queries  # compare with initial state to make sure database was queried once
+        assert nb_queries == 2  # Ensure only two queries were made (one for study, one for user)

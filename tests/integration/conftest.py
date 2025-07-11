@@ -18,7 +18,7 @@ from pathlib import Path
 import jinja2
 import pytest
 from fastapi import FastAPI
-from sqlalchemy import create_engine  # type: ignore
+from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.dbmodel import Base

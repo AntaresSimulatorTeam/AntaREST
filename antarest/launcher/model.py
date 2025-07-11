@@ -18,8 +18,8 @@ from uuid import uuid4
 
 from pydantic import Field
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -150,13 +150,13 @@ class JobResultDTO(AntaresBaseModel):
 class JobLog(Base):  # type: ignore
     __tablename__ = "launcherjoblog"
 
-    id: int = Column(Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True)
-    message: str = Column(String, nullable=False)
-    job_id: str = Column(
+    id: Mapped[int] = mapped_column(Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    job_id: Mapped[str] = mapped_column(
         String(),
         ForeignKey("job_result.id", name="fk_log_job_result_id"),
     )
-    log_type: str = Column(String, nullable=False)
+    log_type: Mapped[str] = mapped_column(String, nullable=False)
 
     # SQLAlchemy provides its own way to handle object comparison, which ensures
     # that the comparison is based on the database identity of the objects.
@@ -174,23 +174,25 @@ class JobLog(Base):  # type: ignore
 class JobResult(Base):  # type: ignore
     __tablename__ = "job_result"
 
-    id: str = Column(String(36), primary_key=True)
-    study_id: str = Column(String(36))
-    launcher: Optional[str] = Column(String)
-    launcher_params: Optional[str] = Column(String, nullable=True)
-    job_status: JobStatus = Column(Enum(JobStatus))
-    creation_date = Column(DateTime, default=datetime.utcnow)
-    completion_date = Column(DateTime)
-    msg: Optional[str] = Column(String())
-    output_id: Optional[str] = Column(String())
-    exit_code: Optional[int] = Column(Integer)
-    solver_stats: Optional[str] = Column(String(), nullable=True)
-    owner_id: Optional[int] = Column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    study_id: Mapped[str] = mapped_column(String(36))
+    launcher: Mapped[Optional[str]] = mapped_column(String)
+    launcher_params: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    job_status: Mapped[Optional[JobStatus]] = mapped_column(Enum(JobStatus), nullable=True)
+    creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    msg: Mapped[Optional[str]] = mapped_column(String())
+    output_id: Mapped[Optional[str]] = mapped_column(String())
+    exit_code: Mapped[Optional[int]] = mapped_column(Integer)
+    solver_stats: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
+    owner_id: Mapped[Optional[int]] = mapped_column(
+        Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True
+    )
 
     # Define a many-to-one relationship between `JobResult` and `Identity`.
     # This relationship is required to display the owner of a job result in the UI.
     # If the owner is deleted, the job result is detached from the owner (but not deleted).
-    owner: Optional[Identity] = relationship(Identity, back_populates="job_results", uselist=False)
+    owner: Mapped[Optional[Identity]] = relationship(Identity, back_populates="job_results", uselist=False)
 
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 

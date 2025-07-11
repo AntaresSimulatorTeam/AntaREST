@@ -77,7 +77,7 @@ class TestTaskJob:
         # Insert a Study object and attach several TaskJob objects to it
         with db_session:
             study_id = str(uuid.uuid4())
-            db_session.add(RawStudy(id=study_id, name="Study 1"))
+            db_session.add(RawStudy(id=study_id, name="Study 1", version="8.8"))
             db_session.commit()
 
         with db_session:

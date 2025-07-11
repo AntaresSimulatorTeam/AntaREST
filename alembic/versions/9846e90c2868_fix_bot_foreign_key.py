@@ -30,7 +30,7 @@ def upgrade():
             batch_op.create_foreign_key("bots_owner_fkey", 'identities', ['owner'], ['id'])
     else:
         connexion: Connection = op.get_bind()
-        bots_result = connexion.execute("SELECT * FROM bots")
+        bots_result = connexion.execute(text("SELECT * FROM bots"))
         bots = [b for b in bots_result]
         op.drop_table('bots')
         op.create_table('bots',
