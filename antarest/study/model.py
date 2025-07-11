@@ -204,6 +204,7 @@ class StudyAdditionalData(Base):  # type:ignore
         primary_key=True,
     )
     author = Column(String(255), default="Unknown")
+    editor = Column(String(255), default="Unknown")
     horizon = Column(String)
     patch = Column(String(), index=True, nullable=True)
 

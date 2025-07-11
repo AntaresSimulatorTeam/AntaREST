@@ -856,7 +856,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author),
+            additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -1324,11 +1324,12 @@ class StudyService:
         """
         sid = str(uuid4())
         path = str(self.config.get_workspace_path() / sid)
+        editor = get_user_id()
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            additional_data=StudyAdditionalData(),
+            additional_data=StudyAdditionalData(editor=editor),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
         )
