@@ -27,7 +27,7 @@ class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str
-    dependencies: Dict[str, str] = None
+    dependencies: Dict[str, str] = {}
 
     class Config:
         json_schema_extra = {
