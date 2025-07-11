@@ -1125,6 +1125,7 @@ class StudyService:
             )
 
             self._save_study(study, group_ids)
+            self.normalize_study(study)
 
             # Copying all jobs associated with the study
             jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
@@ -1337,6 +1338,7 @@ class StudyService:
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)
+        self.normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -2383,3 +2385,10 @@ class StudyService:
         cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
+
+    def normalize_study(self, study: Study) -> None:
+        """
+        Method used to normalize the study.
+        It will put every matrix in the study in the matrix-store.
+        """
+        self.storage_service.get_storage(study).get_raw(study).tree.normalize()
