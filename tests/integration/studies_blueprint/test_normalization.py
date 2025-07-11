@@ -9,13 +9,22 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import io
+from pathlib import Path
 
 from starlette.testclient import TestClient
 
+from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
+
 
 class TestNormalization:
-    def test_endpoint(self, client: TestClient, internal_study_id: str, user_access_token: str) -> None:
+    def test_endpoint(self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # imports a study
+        sta_mini_zip_path = INTEGRATION_ASSETS_DIR.joinpath("STA-mini.zip")
+        res = client.post("/v1/studies/_import", files={"study": io.BytesIO(sta_mini_zip_path.read_bytes())})
+        study_id = res.json()
 
         ##########################
         # Nominal cases
@@ -33,3 +42,13 @@ class TestNormalization:
         assert result["description"] == f"Study {internal_study_id} is not managed"
 
         # Ensures we can't normalize a variant study
+        res = client.post(f"/v1/studies/{study_id}/variants?name=variant")
+        variant_id = res.json()
+        res = client.put(f"/v1/studies/{variant_id}/normalize")
+        assert res.status_code == 400
+        result = res.json()
+        assert result["exception"] == "UnsupportedOperationOnThisStudyType"
+        assert (
+            result["description"]
+            == f"You cannot normalize the study '{variant_id}'. This is only available for raw studies."
+        )
