@@ -20,13 +20,13 @@ import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
 import startCase from "lodash/startCase";
 import * as R from "ramda";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import DownloadMatrixButton from "../../../../../common/buttons/DownloadMatrixButton";
-import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
-import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
-import { DataType, matchesSearchTerm, Timestep } from "./utils";
+import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
+import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
+import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
+import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
+import { DataType, matchesSearchTerm, Timestep } from "../utils";
 import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface ColumnHeader {
@@ -152,13 +152,23 @@ function ResultFilters({
       });
   }, [filters, parsedHeaders]);
 
+  // Track previous header indices to prevent unnecessary updates
+  const prevIndicesKeyRef = useRef("");
+
   // Notify parent of both filtered headers and their original indices
   // This allows the parent to correctly map the filtered view back to the original data
   useEffect(() => {
-    onColHeadersChange(
-      filteredHeaders.map((h) => h.original),
-      filteredHeaders.map((h) => h.index),
-    );
+    // Create a stable key from indices to detect actual changes
+    const indicesKey = filteredHeaders.map((h) => h.index).join(",");
+
+    if (indicesKey !== prevIndicesKeyRef.current) {
+      prevIndicesKeyRef.current = indicesKey;
+
+      onColHeadersChange(
+        filteredHeaders.map((h) => h.original),
+        filteredHeaders.map((h) => h.index),
+      );
+    }
   }, [filteredHeaders, onColHeadersChange]);
 
   ////////////////////////////////////////////////////////////////
