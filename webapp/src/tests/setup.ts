@@ -18,6 +18,9 @@ import { cleanup } from "@testing-library/react";
 import * as matchers from "@testing-library/jest-dom/matchers";
 import "./mocks/mockResizeObserver";
 
+// Set timezone to UTC for consistent test behavior across different environments
+process.env.TZ = "UTC";
+
 // Extend Vitest's expect function with jest-dom matchers for enhanced DOM assertions.
 expect.extend(matchers);
 

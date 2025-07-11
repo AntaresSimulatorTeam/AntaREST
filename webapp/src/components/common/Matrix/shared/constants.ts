@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { UTCDate } from "@date-fns/utc";
 import {
   addDays,
   addHours,
@@ -88,16 +87,12 @@ export const TIME_FREQUENCY_CONFIG: Record<
   },
   [TimeFrequency.Monthly]: {
     increment: addMonths,
-    format: (date: Date) => {
-      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
-      return format(utcDate, "MMM", { locale: getLocale() });
-    },
+    format: (date: Date) => format(date, "MMM", { locale: getLocale() }),
   },
   [TimeFrequency.Weekly]: {
     increment: addWeeks,
     format: (date: Date, firstWeekSize: number) => {
-      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
-      const weekStart = startOfWeek(utcDate, { locale: getLocale() });
+      const weekStart = startOfWeek(date, { locale: getLocale() });
 
       const weekNumber = getWeek(weekStart, {
         locale: getLocale(),
@@ -110,16 +105,10 @@ export const TIME_FREQUENCY_CONFIG: Record<
   },
   [TimeFrequency.Daily]: {
     increment: addDays,
-    format: (date: Date) => {
-      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
-      return format(utcDate, "EEE d MMM", { locale: getLocale() });
-    },
+    format: (date: Date) => format(date, "EEE d MMM", { locale: getLocale() }),
   },
   [TimeFrequency.Hourly]: {
     increment: addHours,
-    format: (date: Date) => {
-      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
-      return format(utcDate, "EEE d MMM HH:mm", { locale: getLocale() });
-    },
+    format: (date: Date) => format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
   },
 };

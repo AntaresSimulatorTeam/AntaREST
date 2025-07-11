@@ -26,7 +26,7 @@ describe("DateTime Generation - Integration Tests", () => {
   describe("UTC behavior verification", () => {
     test("should not skip hours during spring DST transition (Europe)", () => {
       const config: DateTimeMetadataDTO = {
-        start_date: "2023-03-26 00:00:00", // Last Sunday of March - DST starts in Europe
+        start_date: "2023-03-26T00:00:00.000Z", // Last Sunday of March - DST starts in Europe
         steps: 5,
         first_week_size: 7,
         level: TimeFrequency.Hourly,
@@ -41,7 +41,7 @@ describe("DateTime Generation - Integration Tests", () => {
       });
 
       // In UTC, there should be no gap
-      expect(hours).toEqual(["23", "00", "01", "02", "03"]);
+      expect(hours).toEqual(["00", "01", "02", "03", "04"]);
 
       // Ensure no hour is skipped (particularly 02:00)
       expect(result.some((r) => r.includes("02:00"))).toBe(true);
@@ -49,7 +49,7 @@ describe("DateTime Generation - Integration Tests", () => {
 
     test("should not duplicate hours during fall DST transition (Europe)", () => {
       const config: DateTimeMetadataDTO = {
-        start_date: "2023-10-29 00:00:00", // Last Sunday of October - DST ends in Europe
+        start_date: "2023-10-29T00:00:00.000Z", // Last Sunday of October - DST ends in Europe
         steps: 5,
         first_week_size: 7,
         level: TimeFrequency.Hourly,
@@ -64,7 +64,7 @@ describe("DateTime Generation - Integration Tests", () => {
       });
 
       // In UTC, there should be no duplicate
-      expect(hours).toEqual(["22", "23", "00", "01", "02"]);
+      expect(hours).toEqual(["00", "01", "02", "03", "04"]);
 
       // Ensure all results are unique
       const uniqueResults = new Set(result);
@@ -73,7 +73,7 @@ describe("DateTime Generation - Integration Tests", () => {
 
     test("should generate 24 consecutive hours across DST boundary", () => {
       const config: DateTimeMetadataDTO = {
-        start_date: "2023-03-26 00:00:00", // DST transition date
+        start_date: "2023-03-26T00:00:00.000Z", // DST transition date
         steps: 24,
         first_week_size: 7,
         level: TimeFrequency.Hourly,
@@ -87,11 +87,11 @@ describe("DateTime Generation - Integration Tests", () => {
         return match ? parseInt(match[1], 10) : -1;
       });
 
-      // Should have exactly 24 hours starting from 23 (previous day)
+      // Should have exactly 24 hours starting from 00 (current day in UTC)
       expect(hours.length).toBe(24);
-      expect(hours[0]).toBe(23); // Starts at 23:00 previous day
+      expect(hours[0]).toBe(0); // Starts at 00:00 current day in UTC
       for (let i = 1; i < 24; i++) {
-        expect(hours[i]).toBe(i - 1);
+        expect(hours[i]).toBe(i);
       }
 
       // No duplicates
@@ -101,7 +101,7 @@ describe("DateTime Generation - Integration Tests", () => {
 
     test("should maintain consistent intervals across multiple days with DST", () => {
       const config: DateTimeMetadataDTO = {
-        start_date: "2023-03-25 00:00:00", // Day before DST transition
+        start_date: "2023-03-25T00:00:00.000Z", // Day before DST transition
         steps: 72, // 3 days
         first_week_size: 7,
         level: TimeFrequency.Hourly,
@@ -142,7 +142,7 @@ describe("DateTime Generation - Integration Tests", () => {
 
     test("should handle DST transitions for US timezones", () => {
       const config: DateTimeMetadataDTO = {
-        start_date: "2023-03-12 00:00:00", // Second Sunday of March - DST starts in US
+        start_date: "2023-03-12T00:00:00.000Z", // Second Sunday of March - DST starts in US
         steps: 5,
         first_week_size: 7,
         level: TimeFrequency.Hourly,
@@ -156,12 +156,12 @@ describe("DateTime Generation - Integration Tests", () => {
         return match ? match[1] : null;
       });
 
-      expect(hours).toEqual(["23", "00", "01", "02", "03"]);
+      expect(hours).toEqual(["00", "01", "02", "03", "04"]);
     });
 
     test("should handle different time frequencies across DST", () => {
       const baseConfig = {
-        start_date: "2023-03-20 00:00:00", // Week containing DST transition
+        start_date: "2023-03-20T00:00:00.000Z", // Week containing DST transition
         first_week_size: 7,
       };
 

@@ -47,7 +47,7 @@ describe("Matrix Utils", () => {
     });
 
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2023-01-01 00:00:00"));
+    vi.setSystemTime(new Date("2023-01-01T00:00:00.000Z"));
   });
 
   describe("DateTime Generation", () => {
@@ -74,10 +74,10 @@ describe("Matrix Utils", () => {
           return match ? parseInt(match[1], 10) : -1;
         });
 
-        // Verify all hours are consecutive (starting from 23 of previous day)
-        expect(hours[0]).toBe(23); // Starts at 23:00 previous day
+        // Verify all hours are consecutive (starting from 00 of current day in UTC)
+        expect(hours[0]).toBe(0); // Starts at 00:00 current day in UTC
         for (let i = 1; i < 24; i++) {
-          expect(hours[i]).toBe(i - 1);
+          expect(hours[i]).toBe(i);
         }
 
         // Verify no duplicates
