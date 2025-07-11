@@ -41,7 +41,6 @@ class FileStudyHydroDao(HydroDao):
         all_hydro_properties = {}
 
         study_data = self.get_file_study()
-        # TODO: check the path?
         hydro_management_file_data = HydroManagementFileData(**study_data.tree.get(_ALL_HYDRO_PATH.split("/")))
 
         for area_id in study_data.config.areas:
@@ -56,14 +55,12 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_by_area(self, area_id: str) -> HydroManagement:
         file_study = self.get_file_study()
-        # TODO: check the path?
         hydro_manager = HydroManagementFileData(**self.get_file_study().tree.get(_HYDRO_PATH.split("/")))
         return hydro_manager.get_hydro_management(area_id, file_study.config.version)
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         file_study = self.get_file_study()
-        # TODO: check the path?
         inter_monthly_correlation = file_study.tree.get(_INFLOW_PATH.format(area_id=area_id).split("/")).get(
             "intermonthly-correlation", 0.5
         )
