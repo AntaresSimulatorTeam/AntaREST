@@ -19,7 +19,6 @@ from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
 import numpy as np
-import numpy.typing as npt
 from antares.study.version import StudyVersion
 from pydantic import (
     BeforeValidator,
@@ -47,6 +46,7 @@ from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.np_array import NpArray
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -608,17 +608,6 @@ class MatrixIndex(AntaresBaseModel):
     steps: int = 8760
     first_week_size: int = 7
     level: StudyDownloadLevelDTO = StudyDownloadLevelDTO.HOURLY
-
-
-def _list_to_np(array: list[float]) -> npt.NDArray[np.float64]:
-    return np.array(array, dtype=np.float64)
-
-
-def _np_to_list(array: npt.NDArray[np.float64]) -> list[float]:
-    return cast(list[float], array.tolist())
-
-
-NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
 
 
 class TimeSerie(AntaresBaseModel):

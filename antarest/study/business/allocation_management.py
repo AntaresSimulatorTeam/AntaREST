@@ -13,12 +13,12 @@
 from typing import Any, Dict, List, Union
 
 import numpy as np
-import numpy.typing as npt
 from annotated_types import Len
-from pydantic import ConfigDict, ValidationInfo, field_serializer, field_validator, model_validator
+from pydantic import ConfigDict, ValidationInfo, field_validator, model_validator
 from typing_extensions import Annotated, override
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
+from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
@@ -73,13 +73,13 @@ class AllocationMatrix(FormFieldsBaseModel):
 
     index: Annotated[List[str], Len(min_length=1)]
     columns: Annotated[List[str], Len(min_length=1)]
-    data: npt.NDArray[np.float64]
+    data: NpArray
 
     # noinspection PyMethodParameters
     @field_validator("data", mode="before")
     def validate_hydro_allocation_matrix(
-        cls, data: npt.NDArray[np.float64], values: Union[Dict[str, List[str]], ValidationInfo]
-    ) -> npt.NDArray[np.float64]:
+        cls, data: NpArray, values: Union[Dict[str, List[str]], ValidationInfo]
+    ) -> NpArray:
         """
         Validate the hydraulic allocation matrix.
         Args:
@@ -107,11 +107,6 @@ class AllocationMatrix(FormFieldsBaseModel):
             raise ValueError("allocation matrix must not contain only null values")
 
         return data
-
-    @field_serializer("data")
-    def serialize_data(self, data: npt.NDArray[np.float64]) -> List[List[float]]:
-        result: List[List[float]] = data.tolist()
-        return result
 
     @override
     def __eq__(self, other: Any) -> bool:
