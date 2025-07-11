@@ -73,7 +73,6 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
         # Hydro
         self._hydro_properties: Dict[str, HydroProperties] = {}
-        self._inflow_structures: Dict[str, InflowStructure] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -221,23 +220,23 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
-        pass
+        return self._hydro_properties
 
     @override
     def get_hydro_by_area(self, area_id: str) -> HydroManagement:
-        pass
+        return self._hydro_properties[area_id].management_options
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
-        pass
+        return self._hydro_properties[area_id].inflow_structure
 
     @override
     def save_hydro_management(self, hydro_data: Dict[str, Any]) -> None:
-        pass
+        self.save_hydro_management(hydro_data)
 
     @override
     def save_inflow_structure(self, inflow_data: Dict[str, str], path: List[str]) -> None:
-        pass
+        self.save_inflow_structure(inflow_data, path)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
