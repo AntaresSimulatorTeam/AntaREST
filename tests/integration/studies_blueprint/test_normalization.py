@@ -16,6 +16,7 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 
 
@@ -81,3 +82,18 @@ class TestNormalization:
             result["description"]
             == f"You cannot normalize the study '{variant_id}'. This is only available for raw studies."
         )
+
+        # Archive the parent study
+        res = client.put(f"/v1/studies/{study_id}/archive")
+        assert res.status_code == 200
+        task_id = res.json()
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
+        task = res.json()
+        assert task["status"] == TaskStatus.COMPLETED.value
+        assert task["result"]["success"]
+        # Ensures we can't normalize an archived study
+        res = client.put(f"/v1/studies/{study_id}/normalize")
+        assert res.status_code == 400
+        result = res.json()
+        assert result["exception"] == "UnsupportedOperationOnArchivedStudy"
+        assert result["description"] == f"Study {study_id} is archived"

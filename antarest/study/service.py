@@ -2391,10 +2391,13 @@ class StudyService:
         """
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)  # We're not really modifying the study
+
         if not is_managed(study):
             raise NotAManagedStudyException(study_id)
         if isinstance(study, VariantStudy):
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
+        self.assert_study_unarchived(study)
+
         self.normalize_study(study)
 
     def normalize_study(self, study: Study) -> None:
