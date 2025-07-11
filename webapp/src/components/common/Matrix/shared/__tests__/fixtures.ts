@@ -37,7 +37,7 @@ export const DATE_TIME_TEST_CASES = [
   {
     name: "monthly format",
     config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Monthly },
-    expected: ["Dec", "Jan", "Feb"],
+    expected: ["Jan", "Feb", "Mar"],
   },
   {
     name: "weekly format",
@@ -46,12 +46,12 @@ export const DATE_TIME_TEST_CASES = [
       level: TimeFrequency.Weekly,
       first_week_size: 1,
     },
-    expected: ["global.time.weekShort 53", "global.time.weekShort 01", "global.time.weekShort 02"],
+    expected: ["global.time.weekShort 01", "global.time.weekShort 02", "global.time.weekShort 03"],
   },
   {
     name: "daily format",
     config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Daily },
-    expected: ["Sat 31 Dec", "Sun 1 Jan", "Mon 2 Jan"],
+    expected: ["Sun 1 Jan", "Mon 2 Jan", "Tue 3 Jan"],
   },
   {
     name: "hourly format",
@@ -61,7 +61,7 @@ export const DATE_TIME_TEST_CASES = [
       first_week_size: 7,
       level: TimeFrequency.Hourly,
     },
-    expected: ["Thu 30 Jun 22:00", "Thu 30 Jun 23:00", "Fri 1 Jul 00:00"],
+    expected: ["Fri 1 Jul 00:00", "Fri 1 Jul 01:00", "Fri 1 Jul 02:00"],
   },
 ];
 
