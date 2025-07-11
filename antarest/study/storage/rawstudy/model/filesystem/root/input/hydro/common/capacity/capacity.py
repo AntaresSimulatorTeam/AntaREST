@@ -13,10 +13,10 @@
 from typing import List, TypedDict
 
 import numpy as np
-import numpy.typing as npt
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.serde.np_array import NpArray
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
@@ -29,7 +29,7 @@ class MatrixInfo(TypedDict, total=False):
     name: str
     freq: MatrixFrequency
     start_version: StudyVersion
-    default_empty: npt.NDArray[np.float64]
+    default_empty: NpArray
 
 
 default_maxpower = np.zeros((365, 4), dtype=np.float64)
