@@ -17,12 +17,12 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-from numpy import typing as npt
 from pandas.errors import EmptyDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
@@ -44,7 +44,7 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
-        default_empty: Optional[npt.NDArray[np.float64]] = None,  # optional only for the capacity matrix in Xpansion
+        default_empty: Optional[NpArray] = None,  # optional only for the capacity matrix in Xpansion
     ):
         super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
         self.nb_columns = nb_columns

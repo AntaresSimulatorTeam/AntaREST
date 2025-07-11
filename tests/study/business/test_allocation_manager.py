@@ -13,6 +13,7 @@
 import re
 from unittest.mock import Mock, patch
 
+import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
@@ -142,11 +143,11 @@ class TestAllocationMatrix:
         field = AllocationMatrix(
             index=["NORTH", "SOUTH"],
             columns=["NORTH", "SOUTH"],
-            data=[[0.75, 0.25], [0.25, 0.75]],
+            data=np.array([[0.75, 0.25], [0.25, 0.75]]),
         )
         assert field.index == ["NORTH", "SOUTH"]
         assert field.columns == ["NORTH", "SOUTH"]
-        assert field.data == [[0.75, 0.25], [0.25, 0.75]]
+        assert np.array_equal(field.data, np.array([[0.75, 0.25], [0.25, 0.75]]))
 
     def test_validation_coefficients_not_empty(self):
         """Check that the coefficients matrix is not empty"""
@@ -154,7 +155,7 @@ class TestAllocationMatrix:
             AllocationMatrix(
                 index=[],
                 columns=[],
-                data=[],
+                data=np.array([]),
             )
 
     def test_validation_matrix_shape(self):
@@ -163,7 +164,7 @@ class TestAllocationMatrix:
             AllocationMatrix(
                 index=["NORTH", "SOUTH"],
                 columns=["NORTH"],
-                data=[[0.75, 0.25], [0.25, 0.75]],
+                data=np.array([[0.75, 0.25], [0.25, 0.75]]),
             )
 
     def test_validation_matrix_no_nan(self):
@@ -172,7 +173,7 @@ class TestAllocationMatrix:
             AllocationMatrix(
                 index=["NORTH", "SOUTH"],
                 columns=["NORTH", "SOUTH"],
-                data=[[0.75, 0.25], [0.25, float("nan")]],
+                data=np.array([[0.75, 0.25], [0.25, float("nan")]]),
             )
 
     def test_validation_matrix_no_non_null_values(self):
@@ -181,7 +182,7 @@ class TestAllocationMatrix:
             AllocationMatrix(
                 index=["NORTH", "SOUTH"],
                 columns=["NORTH", "SOUTH"],
-                data=[[0, 0], [0, 0]],
+                data=np.array([[0, 0], [0, 0]]),
             )
 
 
@@ -217,12 +218,14 @@ class TestAllocationManager:
         assert matrix == AllocationMatrix(
             index=["n", "e", "s", "w"],
             columns=["n", "e", "s", "w"],
-            data=[
-                [1.0, 0.0, 0.2, 0.0],
-                [0.0, 3.0, 0.0, 0.0],
-                [0.0, 1.0, 0.1, 0.0],
-                [0.0, 0.0, 0.6, 1.0],
-            ],
+            data=np.array(
+                [
+                    [1.0, 0.0, 0.2, 0.0],
+                    [0.0, 3.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.1, 0.0],
+                    [0.0, 0.0, 0.6, 1.0],
+                ]
+            ),
         )
 
     def test_get_allocation_matrix__no_allocation(self, manager):
