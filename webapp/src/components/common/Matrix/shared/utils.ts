@@ -12,26 +12,42 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  DataColumnsConfig,
-  ResultColumn,
-  EnhancedGridColumn,
-  TimeSeriesColumnOptions,
-  CustomColumnOptions,
-  MatrixAggregates,
-  AggregateType,
-  AggregateConfig,
-  DateTimeMetadataDTO,
-  FormatGridNumberOptions,
-  ResultColumnsOptions,
-  ResizeMatrixParams,
-  CalculateAggregatesParams,
-} from "./types";
-import { parseISO, type Locale } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
+/* eslint-disable camelcase */
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { UTCDate } from "@date-fns/utc";
+import type { Locale } from "date-fns";
+import { enUS, fr } from "date-fns/locale";
 import { getCurrentLanguage } from "@/utils/i18nUtils";
-import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
 import { groupHeaderTheme } from "../styles";
+import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
+import type {
+  AggregateConfig,
+  AggregateType,
+  CalculateAggregatesParams,
+  CustomColumnOptions,
+  DataColumnsConfig,
+  DateTimeMetadataDTO,
+  EnhancedGridColumn,
+  FormatGridNumberOptions,
+  MatrixAggregates,
+  ResizeMatrixParams,
+  ResultColumn,
+  ResultColumnsOptions,
+  TimeSeriesColumnOptions,
+} from "./types";
 
 /**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
@@ -115,10 +131,15 @@ export function getLocale(): Locale {
  * @returns An array of formatted date/time strings
  */
 export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
-  // eslint-disable-next-line camelcase
   const { start_date, steps, first_week_size, level } = config;
   const { increment, format } = TIME_FREQUENCY_CONFIG[level];
-  const initialDate = parseISO(start_date);
+
+  const dateStr =
+    start_date.includes("Z") || start_date.includes("+") || start_date.includes("-")
+      ? start_date
+      : `${start_date}Z`; // Append 'Z' to indicate UTC if no timezone is specified
+
+  const initialDate = new UTCDate(dateStr);
 
   return Array.from({ length: steps }, (_, index) => {
     const date = increment(initialDate, index);

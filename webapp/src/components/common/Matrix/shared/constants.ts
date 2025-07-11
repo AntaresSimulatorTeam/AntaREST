@@ -12,18 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import type { DateIncrementFunction, FormatFunction, TimeFrequencyType } from "./types";
+import { UTCDate } from "@date-fns/utc";
 import {
-  addYears,
-  addMonths,
-  addWeeks,
-  startOfWeek,
   addDays,
   addHours,
-  format,
+  addMonths,
+  addWeeks,
+  addYears,
   type FirstWeekContainsDate,
+  format,
+  getWeek,
+  startOfWeek,
 } from "date-fns";
 import { t } from "i18next";
+import type { DateIncrementFunction, FormatFunction, TimeFrequencyType } from "./types";
 import { getLocale } from "./utils";
 
 ////////////////////////////////////////////////////////////////
@@ -86,26 +88,38 @@ export const TIME_FREQUENCY_CONFIG: Record<
   },
   [TimeFrequency.Monthly]: {
     increment: addMonths,
-    format: (date: Date) => format(date, "MMM", { locale: getLocale() }),
+    format: (date: Date) => {
+      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
+      return format(utcDate, "MMM", { locale: getLocale() });
+    },
   },
   [TimeFrequency.Weekly]: {
     increment: addWeeks,
     format: (date: Date, firstWeekSize: number) => {
-      const weekStart = startOfWeek(date, { locale: getLocale() });
+      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
+      const weekStart = startOfWeek(utcDate, { locale: getLocale() });
 
-      return format(weekStart, `'${t("global.time.weekShort")}' ww`, {
+      const weekNumber = getWeek(weekStart, {
         locale: getLocale(),
         weekStartsOn: firstWeekSize === 1 ? 0 : 1,
         firstWeekContainsDate: firstWeekSize as FirstWeekContainsDate,
       });
+
+      return `${t("global.time.weekShort")} ${weekNumber.toString().padStart(2, "0")}`;
     },
   },
   [TimeFrequency.Daily]: {
     increment: addDays,
-    format: (date: Date) => format(date, "EEE d MMM", { locale: getLocale() }),
+    format: (date: Date) => {
+      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
+      return format(utcDate, "EEE d MMM", { locale: getLocale() });
+    },
   },
   [TimeFrequency.Hourly]: {
     increment: addHours,
-    format: (date: Date) => format(date, "EEE d MMM HH:mm", { locale: getLocale() }),
+    format: (date: Date) => {
+      const utcDate = date instanceof UTCDate ? date : new UTCDate(date.toISOString());
+      return format(utcDate, "EEE d MMM HH:mm", { locale: getLocale() });
+    },
   },
 };
