@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Column } from "../constants";
+import { Column, TimeFrequency } from "../constants";
 import {
   calculateMatrixAggregates,
   formatGridNumber,
@@ -22,17 +22,18 @@ import {
   getAggregateTypes,
 } from "../utils";
 import {
-  DATE_TIME_TEST_CASES,
-  COLUMN_TEST_CASES,
-  AGGREGATE_TEST_CASES,
-  FORMAT_TEST_CASES,
   AGGREGATE_CONFIG_CASES,
+  AGGREGATE_TEST_CASES,
+  COLUMN_TEST_CASES,
+  DATE_TIME_TEST_CASES,
+  FORMAT_TEST_CASES,
 } from "./fixtures";
 
 describe("Matrix Utils", () => {
   beforeAll(() => {
     vi.mock("date-fns", async () => {
       const actual = (await vi.importActual("date-fns")) as typeof import("date-fns");
+
       return {
         ...actual,
         format: vi.fn((date: Date, formatString: string) => {
@@ -44,6 +45,7 @@ describe("Matrix Utils", () => {
         }),
       };
     });
+
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2023-01-01 00:00:00"));
   });
@@ -52,6 +54,36 @@ describe("Matrix Utils", () => {
     test.each(DATE_TIME_TEST_CASES)("generates correct $name", ({ config, expected }) => {
       const result = generateDateTime(config);
       expect(result).toEqual(expected);
+    });
+
+    describe("Daylight Saving Time handling", () => {
+      test("should generate consecutive hours without DST gaps or duplicates", () => {
+        // Test with a date range that crosses DST transition in Europe
+        const config = {
+          start_date: "2023-03-26 00:00:00", // DST transition date in Europe
+          steps: 24, // Full day
+          first_week_size: 7,
+          level: TimeFrequency.Hourly,
+        };
+
+        const result = generateDateTime(config);
+
+        // Extract hours from the generated strings
+        const hours = result.map((dateStr) => {
+          const match = dateStr.match(/(\d{2}):00$/);
+          return match ? parseInt(match[1], 10) : -1;
+        });
+
+        // Verify all hours are consecutive (starting from 23 of previous day)
+        expect(hours[0]).toBe(23); // Starts at 23:00 previous day
+        for (let i = 1; i < 24; i++) {
+          expect(hours[i]).toBe(i - 1);
+        }
+
+        // Verify no duplicates
+        const uniqueResults = new Set(result);
+        expect(uniqueResults.size).toBe(24);
+      });
     });
   });
 

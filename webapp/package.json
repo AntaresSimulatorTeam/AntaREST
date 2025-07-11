@@ -14,6 +14,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@date-fns/utc": "2.1.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@fontsource/roboto": "5.1.1",
