@@ -25,6 +25,7 @@ import {
   type FieldPathValue,
   type FieldValues,
   type Validate,
+  type ValidateResult,
 } from "react-hook-form";
 import FormContext from "../components/common/Form/FormContext";
 import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
@@ -34,7 +35,7 @@ import { getComponentDisplayName } from "../utils/reactUtils";
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any, formValues: any) => boolean | string | undefined;
+  preValidate?: (value: any, formValues: any) => ValidateResult;
 }
 
 // `...args: any` allows to be compatible with all field editors
