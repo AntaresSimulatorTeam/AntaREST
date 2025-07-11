@@ -570,6 +570,6 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         """
         logger.info(f"Normalizing study {study_id}")
         study_id = sanitize_uuid(study_id)
-        return study_service.normalize_study(study_id)
+        return study_service.normalize_study_by_id(study_id)
 
     return bp
