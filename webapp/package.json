@@ -10,7 +10,7 @@
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --report-unused-disable-directives",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "TZ=UTC vitest",
     "test:ui": "vitest --ui"
   },
   "dependencies": {

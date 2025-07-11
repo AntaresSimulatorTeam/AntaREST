@@ -134,10 +134,33 @@ export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
   const { start_date, steps, first_week_size, level } = config;
   const { increment, format } = TIME_FREQUENCY_CONFIG[level];
 
-  const dateStr =
-    start_date.includes("Z") || start_date.includes("+") || start_date.includes("-")
-      ? start_date
-      : `${start_date}Z`; // Append 'Z' to indicate UTC if no timezone is specified
+  /**
+   * TIMEZONE DETECTION BUG FIX:
+   *
+   * Previously, we used a naive approach to detect timezone information:
+   *   start_date.includes("Z") || start_date.includes("+") || start_date.includes("-")
+   *
+   * This caused a critical bug where date strings like "2018-01-01 00:00:00"
+   * were incorrectly identified as having timezone info because they contain
+   * "-" characters in the date part (2018-01-01).
+   *
+   * Result: The "Z" suffix wasn't appended, causing dates to be interpreted
+   * in local timezone instead of UTC, leading to:
+   * - "2018-01-01 00:00:00" → "2017-12-31T23:00:00.000Z" in UTC+1
+   * - Display showed "Sun 31 Dec 23:00" instead of "Mon 1 Jan 00:00"
+   *
+   * SOLUTION:
+   * Use a regex that only matches timezone indicators at the END of the string:
+   * - /[Z]$/ matches "Z" at the end
+   * - /[+-]\d{2}:?\d{2}$/ matches "+HH:MM", "+HHMM", "-HH:MM", "-HHMM" at the end
+   *
+   * This ensures date separators like "2018-01-01" are not mistaken for timezone info.
+   */
+  const timezoneRegex = /[Z]$|[+-]\d{2}:?\d{2}$/;
+  const hasTimezone = timezoneRegex.test(start_date);
+
+  // Append 'Z' to indicate UTC if no timezone is specified
+  const dateStr = hasTimezone ? start_date : `${start_date}Z`;
 
   const initialDate = new UTCDate(dateStr);
 

@@ -114,7 +114,7 @@ jobs:
           key: ${{ runner.os }}-webapp-node-modules-${{ hashFiles('webapp/package-lock.json') }}
           save-always: true
       - name: Test
-        run: TZ=UTC npm run test
+        run: npm run test
         working-directory: webapp
 
   npm-build:
