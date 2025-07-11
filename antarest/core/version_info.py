@@ -16,6 +16,7 @@ Python module that is dedicated to printing application version and dependencies
 
 import subprocess
 import sys
+from importlib.metadata import distributions
 from pathlib import Path
 from typing import Dict
 
@@ -26,7 +27,7 @@ class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str
-    dependencies: Dict[str, str]
+    dependencies: Dict[str, str] = {}
 
     class Config:
         json_schema_extra = {
@@ -81,31 +82,23 @@ def get_last_commit_from_git() -> str:
 def get_dependencies() -> Dict[str, str]:
     """
     Retrieve the list of installed dependencies and their versions.
-
-    Returns:
-        A dictionary containing the package names and their corresponding versions installed in the
-        current Python environment. The dictionary keys are the package names (as strings), and the
-        values are the corresponding version numbers (also as strings).
-
-    Raises:
-        subprocess.CalledProcessError:
-            If the `pip freeze` command fails for some reason.
     """
-    # Standard Python executable names on various platforms:
-    # - On Windows, it's typically "python.exe" (sometimes "python3.exe"),
-    # - On Linux and macOS, it's usually "python" or "python3".
-    # Other implementations include Jython ("jython"), IronPython ("ipy"), and PyPy ("pypy").
+    try:
+        return {dist.name: dist.version for dist in distributions() if dist.name.lower() != "antarest"}
+    except Exception:
+        return _get_dependencies_with_pip()
+
+
+def _get_dependencies_with_pip() -> Dict[str, str]:
+    """
+    Fallback using `pip freeze` to retrieve dependencies.
+    """
     python_name = Path(sys.executable).with_suffix("").name.lower()
     if not any(python_name.startswith(p) for p in {"python", "jython", "ipy", "pypy"}):
-        # Due to PyInstaller renaming the executable to "AntaresWebServer",
-        # accessing the "python" executable becomes impossible, resulting in complications
-        # when trying to obtain the list of installed packages using `pip freeze`.
         return {}
 
     args = [sys.executable, "-m", "pip", "freeze"]
     output = subprocess.check_output(args, encoding="utf-8")
-    lines = (line for line in output.splitlines(keepends=False) if "==" in line)
-    # noinspection PyTypeChecker
+    lines = (line for line in output.splitlines() if "==" in line)
     packages = dict(line.split("==", 1) for line in lines)
-    # AntaREST is not a dependency of AntaREST
     return {k: v for k, v in packages.items() if k.lower() != "antarest"}
