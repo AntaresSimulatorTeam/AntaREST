@@ -25,13 +25,13 @@ class TestConfigGeneralForm:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    def test_get_general_form_values(
+    def test_get_general_config(
         self,
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
     ):
-        """Check `set_general_form_values` end point"""
+        """Check `get_general_config` end point"""
         res = client.get(
             f"/v1/studies/{internal_study_id}/config/general/form",
             headers={"Authorization": f"Bearer {user_access_token}"},
@@ -45,6 +45,7 @@ class TestConfigGeneralForm:
             "firstJanuary": "Monday",
             "firstMonth": "january",
             "firstWeekDay": "Monday",
+            "geographicTrimming": False,
             "horizon": 2030,
             "lastDay": 7,
             "leapYear": False,
@@ -53,6 +54,7 @@ class TestConfigGeneralForm:
             "nbYears": 1,
             "selectionMode": True,
             "simulationSynthesis": True,
+            "thematicTrimming": False,
             "yearByYear": False,
         }
         assert actual == expected
