@@ -26,6 +26,10 @@ class TestNormalization:
         res = client.post("/v1/studies/_import", files={"study": io.BytesIO(sta_mini_zip_path.read_bytes())})
         study_id = res.json()
 
+        # Unzip the STA-mini study inside the tmp_path
+        # Copy the files inside the managed study
+        # This way we mimick the case of a raw study managed but not normalized
+
         ##########################
         # Nominal cases
         ##########################
