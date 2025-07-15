@@ -16,17 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    TypeAlias,
-    cast,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -117,18 +107,8 @@ class StudyGroup(Base):  # type:ignore
     __tablename__ = "group_metadata"
     __table_args__ = (PrimaryKeyConstraint("study_id", "group_id"),)
 
-    group_id: str = Column(
-        String(36),
-        ForeignKey("groups.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-    )
-    study_id: str = Column(
-        String(36),
-        ForeignKey("study.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-    )
+    group_id: str = Column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
+    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -155,18 +135,8 @@ class StudyTag(Base):  # type:ignore
     __tablename__ = "study_tag"
     __table_args__ = (PrimaryKeyConstraint("study_id", "tag_label"),)
 
-    study_id: str = Column(
-        String(36),
-        ForeignKey("study.id", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-    )
-    tag_label: str = Column(
-        String(40),
-        ForeignKey("tag.label", ondelete="CASCADE"),
-        index=True,
-        nullable=False,
-    )
+    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
 
     @override
     def __str__(self) -> str:  # pragma: no cover
