@@ -13,8 +13,9 @@
 import ctypes
 import logging
 import os
+import sys
 from pathlib import PurePosixPath
-from typing import List
+from typing import List, Optional
 
 from antarest.core.config import Config
 from antarest.study.model import (
@@ -93,8 +94,7 @@ class Explorer:
             if os.name == "nt":
                 # On Windows, we use Windows-specific APIs (via `get_volume_label`) to retrieve the disk name
                 # for each workspace.
-                drive_letter = os.path.splitdrive(workspace_name)[0] + "\\"
-                disk_name = get_volume_label(drive_letter)
+                disk_name = get_volume_label(workspace_name)
                 result.append(WorkspaceDTO(name=workspace_name, disk_name=disk_name))
             else:
                 # On Linux systems, disks are mounted as directories under a common filesystem hierarchy
@@ -104,29 +104,33 @@ class Explorer:
         return result
 
 
-def get_volume_label(drive_letter: str) -> str:
+def get_volume_label(drive_letter: str) -> Optional[str]:
     """
-    Returns the volume label for a given drive letter like 'C:\\'.
+    Returns the volume label like 'OS' for a given drive letter like 'C:\\'.
     """
-    if not drive_letter.endswith("\\"):
-        drive_letter += "\\"
-    volume_name_buffer = ctypes.create_unicode_buffer(1024)
-    file_system_name_buffer = ctypes.create_unicode_buffer(1024)
-    serial_number = ctypes.c_ulong()
-    max_component_length = ctypes.c_ulong()
-    file_system_flags = ctypes.c_ulong()
+    if os.name != "nt":
+        raise ValueError("function available only on windows")
 
-    result = ctypes.windll.kernel32.GetVolumeInformationW(  # type: ignore[attr-defined]
-        ctypes.c_wchar_p(drive_letter),
-        volume_name_buffer,
-        ctypes.sizeof(volume_name_buffer),
-        ctypes.byref(serial_number),
-        ctypes.byref(max_component_length),
-        ctypes.byref(file_system_flags),
-        file_system_name_buffer,
-        ctypes.sizeof(file_system_name_buffer),
-    )
+    if sys.platform == "win32":
+        volume_name_buffer = ctypes.create_unicode_buffer(1024)
+        file_system_name_buffer = ctypes.create_unicode_buffer(1024)
+        serial_number = ctypes.c_ulong()
+        max_component_length = ctypes.c_ulong()
+        file_system_flags = ctypes.c_ulong()
 
-    if result:
-        return volume_name_buffer.value
-    return drive_letter  # fallback
+        result = ctypes.windll.kernel32.GetVolumeInformationW(  # type: ignore[attr-defined]
+            ctypes.c_wchar_p(drive_letter),
+            volume_name_buffer,
+            ctypes.sizeof(volume_name_buffer),
+            ctypes.byref(serial_number),
+            ctypes.byref(max_component_length),
+            ctypes.byref(file_system_flags),
+            file_system_name_buffer,
+            ctypes.sizeof(file_system_name_buffer),
+        )
+
+        if result:
+            return volume_name_buffer.value
+
+        # in case the volume has no label we just return None
+        return None
