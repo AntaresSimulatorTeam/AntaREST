@@ -72,7 +72,6 @@ function NewSelectFE<OptionValue extends Value = Value>({
   emptyValue = false,
   startCaseLabel = false,
   multiple = false,
-  renderValueAs = "text",
   helperText,
   slotProps,
   onSelectAllOptions,
@@ -118,56 +117,54 @@ function NewSelectFE<OptionValue extends Value = Value>({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <TextField
-        {...rest}
-        select
-        slotProps={{
-          ...slotProps,
-          select: {
-            renderValue: renderValueAs === "chip" ? renderSelectedValueAsChip : undefined,
-            multiple,
-          },
-        }}
-        helperText={
-          <>
-            <Box>{helperText}</Box>
-            {hasOptionActions && (
-              <ButtonGroup variant="text" size="extra-small">
-                {onSelectAllOptions && (
-                  <Button
-                    onClick={() => onSelectAllOptions(optionsFormatted.map(({ value }) => value))}
-                  >
-                    {t("button.selectAll")}
-                  </Button>
-                )}
-                {onDeselectAllOptions && (
-                  <Button onClick={onDeselectAllOptions}>{t("button.deselectAll")}</Button>
-                )}
-              </ButtonGroup>
-            )}
-          </>
-        }
-      >
-        {emptyValue && !multiple && (
-          <MenuItem value="">
-            <em>{t("global.none")}</em>
-          </MenuItem>
-        )}
-        {optionsFormatted.map(({ value, label, icon: Icon, tooltip }) => (
-          <MenuItem key={value + label} value={value}>
-            {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
-            {tooltip ? (
-              <Tooltip title={t(tooltip)} placement="right">
-                <span>{label}</span>
-              </Tooltip>
-            ) : (
-              label
-            )}
-          </MenuItem>
-        ))}
-      </TextField>
-    </>
+    <TextField
+      {...rest}
+      select
+      slotProps={{
+        ...slotProps,
+        select: {
+          renderValue: multiple ? renderSelectedValueAsChip : undefined,
+          multiple,
+        },
+      }}
+      helperText={
+        <>
+          <Box>{helperText}</Box>
+          {hasOptionActions && (
+            <ButtonGroup variant="text" size="extra-small">
+              {onSelectAllOptions && (
+                <Button
+                  onClick={() => onSelectAllOptions(optionsFormatted.map(({ value }) => value))}
+                >
+                  {t("button.selectAll")}
+                </Button>
+              )}
+              {onDeselectAllOptions && (
+                <Button onClick={onDeselectAllOptions}>{t("button.deselectAll")}</Button>
+              )}
+            </ButtonGroup>
+          )}
+        </>
+      }
+    >
+      {emptyValue && !multiple && (
+        <MenuItem value="">
+          <em>{t("global.none")}</em>
+        </MenuItem>
+      )}
+      {optionsFormatted.map(({ value, label, icon: Icon, tooltip }) => (
+        <MenuItem key={value + label} value={value}>
+          {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
+          {tooltip ? (
+            <Tooltip title={t(tooltip)} placement="right">
+              <span>{label}</span>
+            </Tooltip>
+          ) : (
+            label
+          )}
+        </MenuItem>
+      ))}
+    </TextField>
   );
 }
 
