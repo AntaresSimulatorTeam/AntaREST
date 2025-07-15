@@ -46,17 +46,11 @@ class MatrixFrequency(StrEnum):
     HOURLY = "hourly"
 
 
-def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_format: Optional[str] = "%.6f") -> None:
+def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.empty and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        df.to_csv(
-            path_or_buf,
-            sep="\t",
-            header=False,
-            index=False,
-            float_format=float_format,
-        )
+        df.to_csv(path_or_buf, sep="\t", header=False, index=False)
 
 
 def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
@@ -184,7 +178,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         if df.empty:
             return b""
         buffer = io.StringIO()
-        df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        df.to_csv(buffer, sep="\t", header=False, index=False)
         return buffer.getvalue()  # type: ignore
 
     @override

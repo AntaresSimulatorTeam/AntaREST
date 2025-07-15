@@ -80,7 +80,7 @@ class InputSeriesMatrix(MatrixNode):
                     study_id = self.config.study_id
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
+            stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
             final_matrix = matrix.dropna(how="any", axis=1)
             if final_matrix.empty:
                 raise EmptyDataError
@@ -138,7 +138,7 @@ class InputSeriesMatrix(MatrixNode):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()
-            dump_dataframe(df, buffer, None)
+            dump_dataframe(df, buffer)
             content = buffer.getvalue()
             suffix = target_path.suffix
             filename = target_path.name
