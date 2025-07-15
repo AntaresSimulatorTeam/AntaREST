@@ -17,10 +17,10 @@ import { TextField, type TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
-export type NumberFEProps = {
+export interface NumberFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
   value?: number;
   defaultValue?: number;
-} & Omit<TextFieldProps, "type" | "value" | "defaultValue">;
+}
 
 function NumberFE(props: NumberFEProps) {
   return <TextField {...props} type="number" />;
