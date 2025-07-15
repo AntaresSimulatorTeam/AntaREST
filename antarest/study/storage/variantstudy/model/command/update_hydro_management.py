@@ -50,7 +50,7 @@ class UpdateHydroManagement(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        hydro_manager = HydroManagementFileData(**study_data.get_file_study().tree.get(HYDRO_PATH))
+        hydro_manager = HydroManagementFileData(**study_data.get_file_study().tree.get(HYDRO_PATH.split("/")))
 
         new_hydro = hydro_manager.get_hydro_management(self.area_id, study_data.get_version()).model_copy(
             update=self.properties.model_dump(exclude_none=True)
@@ -58,7 +58,7 @@ class UpdateHydroManagement(ICommand):
 
         hydro_manager.set_hydro_management(self.area_id, new_hydro)
 
-        study_data.save_hydro_management(hydro_manager.model_dump(by_alias=True, exclude_none=True))
+        study_data.save_hydro_management(self.area_id, hydro_manager.model_dump(by_alias=True, exclude_none=True))
 
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 

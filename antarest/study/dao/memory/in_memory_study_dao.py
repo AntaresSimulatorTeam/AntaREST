@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -231,14 +231,12 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties[area_id].inflow_structure
 
     @override
-    def save_hydro_management(self, hydro_data: Dict[str, Any]) -> None:
-        for hydro_property in self._hydro_properties.values():
-            hydro_property.management_options.model_copy(update=hydro_data)
+    def save_hydro_management(self, area_id: str, hydro_data: Dict[str, Any]) -> None:
+        self._hydro_properties[area_id].management_options.model_copy(update=hydro_data)
 
     @override
-    def save_inflow_structure(self, inflow_data: Dict[str, str], path: List[str]) -> None:
-        for hydro_property in self._hydro_properties.values():
-            hydro_property.inflow_structure.model_copy(update=inflow_data)
+    def save_inflow_structure(self, area_id: str, inflow_data: Dict[str, float]) -> None:
+        self._hydro_properties[area_id].inflow_structure.model_copy(update=inflow_data)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

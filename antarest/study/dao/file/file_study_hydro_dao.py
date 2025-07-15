@@ -10,11 +10,13 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
+    HYDRO_PATH,
+    INFLOW_PATH,
     HydroManagement,
     HydroManagementFileData,
     HydroProperties,
@@ -22,9 +24,6 @@ from antarest.study.business.model.hydro_model import (
 )
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-
-_INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
-_HYDRO_PATH = "input/hydro/hydro"
 
 
 class FileStudyHydroDao(HydroDao):
@@ -40,7 +39,7 @@ class FileStudyHydroDao(HydroDao):
         all_hydro_properties = {}
 
         study_data = self.get_file_study()
-        hydro_management_file_data = HydroManagementFileData(**study_data.tree.get(_HYDRO_PATH.split("/")))
+        hydro_management_file_data = HydroManagementFileData(**study_data.tree.get(HYDRO_PATH.split("/")))
 
         for area_id in study_data.config.areas:
             hydro_management = hydro_management_file_data.get_hydro_management(area_id, study_data.config.version)
@@ -54,23 +53,23 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_for_area(self, area_id: str) -> HydroManagement:
         file_study = self.get_file_study()
-        hydro_manager = HydroManagementFileData(**self.get_file_study().tree.get(_HYDRO_PATH.split("/")))
+        hydro_manager = HydroManagementFileData(**self.get_file_study().tree.get(HYDRO_PATH.split("/")))
         return hydro_manager.get_hydro_management(area_id, file_study.config.version)
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         file_study = self.get_file_study()
-        inter_monthly_correlation = file_study.tree.get(_INFLOW_PATH.format(area_id=area_id).split("/")).get(
+        inter_monthly_correlation = file_study.tree.get(INFLOW_PATH.format(area_id=area_id).split("/")).get(
             "intermonthly-correlation", 0.5
         )
         return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
 
     @override
-    def save_hydro_management(self, hydro_data: Dict[str, Any]) -> None:
+    def save_hydro_management(self, area_id: str, hydro_data: Dict[str, Any]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(hydro_data, _HYDRO_PATH.split("/"))
+        study_data.tree.save(hydro_data, HYDRO_PATH.split("/"))
 
     @override
-    def save_inflow_structure(self, inflow_structure: Dict[str, str], path: List[str]) -> None:
+    def save_inflow_structure(self, area_id: str, inflow_data: Dict[str, float]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(inflow_structure, path)
+        study_data.tree.save(inflow_data, INFLOW_PATH.format(area_id=area_id).split("/"))
