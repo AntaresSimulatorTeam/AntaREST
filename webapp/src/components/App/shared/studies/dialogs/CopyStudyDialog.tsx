@@ -118,7 +118,6 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
                 options={outputs}
                 startCaseLabel={false}
                 multiple
-                renderValueAs="chip"
                 onSelectAllOptions={(values) => setValue("outputIds", values)}
                 onDeselectAllOptions={() => setValue("outputIds", [])}
               />
