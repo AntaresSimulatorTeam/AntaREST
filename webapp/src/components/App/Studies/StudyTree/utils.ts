@@ -16,8 +16,6 @@ import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/util
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
 import type { FolderDTO, StudyTreeNodeMetadata, WorkspaceDTO } from "./types";
-import type { StudyEventPayload } from "@/services/webSocket/types";
-import storage, { StorageKey } from "@/services/utils/localStorage";
 
 /**
  * Builds a tree structure from a list of study metadata.
