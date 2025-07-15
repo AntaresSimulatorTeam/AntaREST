@@ -103,13 +103,16 @@ class RawStudyService(AbstractStorageService):
         study = self.study_factory.create_from_fs(path, is_managed(metadata), study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
+            if metadata.additional_data and metadata.additional_data.editor:
+                raw_meta["editor"] = metadata.additional_data.editor
+                study.tree.save(raw_meta, ["study", "antares"])
+
             metadata.name = raw_meta["caption"]
             metadata.version = str(raw_meta["version"])
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
             metadata.additional_data = self._read_additional_data_from_files(study)
-
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
