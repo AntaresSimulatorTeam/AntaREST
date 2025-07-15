@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 _INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 _HYDRO_PATH = "input/hydro/hydro"
-_ALL_HYDRO_PATH = "input/hydro/allocation"
 
 
 class FileStudyHydroDao(HydroDao):
@@ -41,7 +40,7 @@ class FileStudyHydroDao(HydroDao):
         all_hydro_properties = {}
 
         study_data = self.get_file_study()
-        hydro_management_file_data = HydroManagementFileData(**study_data.tree.get(_ALL_HYDRO_PATH.split("/")))
+        hydro_management_file_data = HydroManagementFileData(**study_data.tree.get(_HYDRO_PATH.split("/")))
 
         for area_id in study_data.config.areas:
             hydro_management = hydro_management_file_data.get_hydro_management(area_id, study_data.config.version)
