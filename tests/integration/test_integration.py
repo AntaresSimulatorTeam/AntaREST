@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import configparser
 import io
 import os
 import zipfile
