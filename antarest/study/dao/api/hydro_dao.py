@@ -21,7 +21,7 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_by_area(self, area_id: str) -> HydroManagement:
+    def get_hydro_for_area(self, area_id: str) -> HydroManagement:
         raise NotImplementedError()
 
     @abstractmethod

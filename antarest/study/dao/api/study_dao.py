@@ -230,8 +230,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_hydro_properties()
 
     @override
-    def get_hydro_by_area(self, area_id: str) -> HydroManagement:
-        return self._adaptee.get_hydro_by_area(area_id)
+    def get_hydro_for_area(self, area_id: str) -> HydroManagement:
+        return self._adaptee.get_hydro_for_area(area_id)
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:

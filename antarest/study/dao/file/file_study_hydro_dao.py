@@ -52,7 +52,7 @@ class FileStudyHydroDao(HydroDao):
         return all_hydro_properties
 
     @override
-    def get_hydro_by_area(self, area_id: str) -> HydroManagement:
+    def get_hydro_for_area(self, area_id: str) -> HydroManagement:
         file_study = self.get_file_study()
         hydro_manager = HydroManagementFileData(**self.get_file_study().tree.get(_HYDRO_PATH.split("/")))
         return hydro_manager.get_hydro_management(area_id, file_study.config.version)

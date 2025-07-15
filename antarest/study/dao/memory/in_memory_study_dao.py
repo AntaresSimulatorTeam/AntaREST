@@ -223,7 +223,7 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties
 
     @override
-    def get_hydro_by_area(self, area_id: str) -> HydroManagement:
+    def get_hydro_for_area(self, area_id: str) -> HydroManagement:
         return self._hydro_properties[area_id].management_options
 
     @override
@@ -232,11 +232,13 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_hydro_management(self, hydro_data: Dict[str, Any]) -> None:
-        self.save_hydro_management(hydro_data)
+        for hydro_property in self._hydro_properties.values():
+            hydro_property.management_options.model_copy(update=hydro_data)
 
     @override
     def save_inflow_structure(self, inflow_data: Dict[str, str], path: List[str]) -> None:
-        self.save_inflow_structure(inflow_data, path)
+        for hydro_property in self._hydro_properties.values():
+            hydro_property.inflow_structure.model_copy(update=inflow_data)
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
