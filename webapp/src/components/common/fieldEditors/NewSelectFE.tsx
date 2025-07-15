@@ -49,7 +49,7 @@ interface SingleSelect {
   onDeselectAllOptions?: never;
 }
 
-interface MultipleSelect<OptionValue extends Value = Value> {
+interface MultipleSelect<OptionValue extends Value> {
   multiple: true;
   // `value` or `defaultValue` may differ from `options` at initialization.
   // Reason why `Value` is used instead of `OptionValue`.
@@ -63,7 +63,6 @@ type NewSelectFEProps<OptionValue extends Value = Value> = {
   options?: Options<OptionValue>;
   emptyValue?: boolean;
   startCaseLabel?: boolean;
-  renderValueAs?: "text" | "chip";
 } & (SingleSelect | MultipleSelect<OptionValue>) &
   Omit<TextFieldProps, "select" | "type" | "value" | "defaultValue">;
 
