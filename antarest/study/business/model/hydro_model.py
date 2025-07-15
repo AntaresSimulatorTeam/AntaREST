@@ -19,12 +19,8 @@ from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import STUDY_VERSION_9_2
 
-
-def get_inflow_path(area_id: str) -> list[str]:
-    return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
-
-
-HYDRO_PATH = ["input", "hydro", "hydro"]
+HYDRO_PATH = "input/hydro/hydro"
+INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
 
 
 class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):

@@ -15,9 +15,9 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
+    INFLOW_PATH,
     InflowStructureFileData,
     InflowStructureUpdate,
-    get_inflow_path,
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
@@ -45,13 +45,13 @@ class UpdateInflowStructure(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         file_study = study_data.get_file_study()
-        path = get_inflow_path(self.area_id)
+        path = INFLOW_PATH.format(area_id=self.area_id).split("/")
 
         current_inflow = InflowStructureFileData(**file_study.tree.get(path))
 
         updated_inflow = current_inflow.model_copy(update=self.properties.model_dump()).model_dump(by_alias=True)
 
-        study_data.save_inflow_structure(updated_inflow, path)
+        study_data.save_inflow_structure(self.area_id, updated_inflow)
 
         return command_succeeded(f"Inflow properties in '{self.area_id}' updated.")
 
