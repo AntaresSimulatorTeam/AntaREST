@@ -16,12 +16,12 @@ import TreeItemEnhanced from "@/components/common/TreeItemEnhanced";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { StudyTreeNodeProps, StudyTreeNode } from "./types";
+import type { StudyTreeNodeProps, StudyTreeNodeMetadata } from "./types";
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 import RadarIcon from "@mui/icons-material/Radar";
 import { Tooltip } from "@mui/material";
 
-function prioritizeDefault(folderA: StudyTreeNode, folderB: StudyTreeNode): number {
+function prioritizeDefault(folderA: StudyTreeNodeMetadata, folderB: StudyTreeNodeMetadata): number {
   if (folderA.name === DEFAULT_WORKSPACE_NAME) {
     return -1;
   } else if (folderB.name === DEFAULT_WORKSPACE_NAME) {
@@ -47,8 +47,8 @@ export default function StudyTreeNode({
   const { t } = useTranslation();
 
   const sortedChildren = useMemo(() => {
-    const nonStudyChildren = children.filter((s) => !s.isScannedStudy);
-    const sortedByName = nameSort(nonStudyChildren);
+    const nodesToDisplay = children.filter((s) => !s.isScannedStudy);
+    const sortedByName = nameSort(nodesToDisplay);
     if (node.name === ROOT_NODE_NAME) {
       return defaultFirstSort(sortedByName);
     }

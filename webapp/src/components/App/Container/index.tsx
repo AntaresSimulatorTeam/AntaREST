@@ -39,6 +39,7 @@ import MenuItem from "./MenuItem";
 import TaskIcon from "./TaskIcon";
 import Logo from "@/components/common/Logo";
 import { getConfig } from "@/services/config";
+import { useAppMode } from "@/hooks/useAppMode";
 
 const topMenuItems = [
   {
@@ -79,7 +80,7 @@ function Container({ children }: Props) {
   const currentStudyId = useAppSelector(getCurrentStudyId);
   const isWsConnected = useAppSelector(isWebSocketConnected);
   const dispatch = useAppDispatch();
-  const isDesktopMode = import.meta.env.MODE === "desktop";
+  const { isWebMode } = useAppMode();
 
   const { version } = getConfig().versionInfo;
 
@@ -165,7 +166,7 @@ function Container({ children }: Props) {
                 link={link}
               />
             ))}
-            {!isDesktopMode && (
+            {isWebMode && (
               <MenuItem
                 title={t("global.signOut")}
                 icon={<LogoutIcon />}

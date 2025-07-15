@@ -14,7 +14,7 @@
 
 import { FIXTURES } from "./fixtures";
 import { insertFoldersIfNotExist } from "../utils";
-import type { FolderDTO, StudyTreeNode } from "../types";
+import type { FolderDTO, StudyTreeNodeMetadata } from "../types";
 
 describe("StudyTree Utils", () => {
   describe("mergeStudyTreeAndFolders", () => {
@@ -24,7 +24,7 @@ describe("StudyTree Utils", () => {
     });
 
     test("should handle empty study tree", () => {
-      const emptyTree: StudyTreeNode = {
+      const emptyTree: StudyTreeNodeMetadata = {
         name: "Root",
         path: "/",
         children: [],
@@ -34,7 +34,7 @@ describe("StudyTree Utils", () => {
     });
 
     test("should handle empty folders array", () => {
-      const tree: StudyTreeNode = {
+      const tree: StudyTreeNodeMetadata = {
         name: "Root",
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],
@@ -44,7 +44,7 @@ describe("StudyTree Utils", () => {
     });
 
     test("should handle invalid parent paths", () => {
-      const tree: StudyTreeNode = {
+      const tree: StudyTreeNodeMetadata = {
         name: "Root",
         path: "/",
         children: [{ name: "a", path: "/a", children: [] }],

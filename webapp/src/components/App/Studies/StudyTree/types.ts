@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-export interface StudyTreeNode {
+export interface StudyTreeNodeMetadata {
   name: string;
   path: string;
-  children: StudyTreeNode[];
+  children: StudyTreeNodeMetadata[];
   hasChildren?: boolean;
   isStudyFolder?: boolean;
   isScannedStudy?: boolean;
@@ -33,11 +33,11 @@ export interface FolderDTO {
 
 export interface WorkspaceDTO {
   name: string;
-  disk_name: string;
+  diskName: string;
 }
 
 export interface StudyTreeNodeProps {
-  node: StudyTreeNode;
+  node: StudyTreeNodeMetadata;
   itemsLoading: string[];
   onNodeClick: (id: string) => void;
   exploredFolders: string[];

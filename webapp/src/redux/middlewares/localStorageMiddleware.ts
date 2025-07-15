@@ -22,6 +22,7 @@ import {
   updateStudiesFromLocalStorage,
   updateStudiesSortConf,
   updateStudyFilters,
+  deleteStudy,
 } from "../ducks/studies";
 import { setMenuOpen } from "../ducks/ui";
 
@@ -86,6 +87,22 @@ localStorageMiddleware.startListening({
       storage.setItem(StorageKey.StudiesFilters, () => ({
         folder: action.payload.folder,
       }));
+    }
+  },
+});
+
+localStorageMiddleware.startListening({
+  actionCreator: deleteStudy.fulfilled,
+  effect: (e) => {
+    if ("name" in e.meta.arg) {
+      const { workspace, folder } = e.meta.arg;
+      const folders = storage.getItem(StorageKey.StudyTreeFolders) || [];
+      const filteredFolders = folders.filter(
+        (f) => !(f.workspace === workspace && f.path === folder),
+      );
+      // remove folder of deleted study from localStorage, otherwise we'll
+      // see ghost folders in the study tree
+      storage.setItem(StorageKey.StudyTreeFolders, filteredFolders);
     }
   },
 });
