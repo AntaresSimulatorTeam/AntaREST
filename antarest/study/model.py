@@ -84,12 +84,8 @@ STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = NEW_DEFAULT_STUDY_VERSION
 
-StudyVersionStr: TypeAlias = Annotated[
-    StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)
-]
-StudyVersionInt: TypeAlias = Annotated[
-    StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)
-]
+StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
+StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
 
 STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
@@ -199,13 +195,9 @@ class Tag(Base):  # type:ignore
     __tablename__ = "tag"
 
     label = Column(String(40), primary_key=True, index=True)
-    color: str = Column(
-        String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES)
-    )
+    color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
 
-    studies: List["Study"] = relationship(
-        "Study", secondary=StudyTag.__table__, back_populates="tags"
-    )
+    studies: List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -251,11 +243,7 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         if not isinstance(other, StudyAdditionalData):
             return False
-        return bool(
-            other.author == self.author
-            and other.horizon == self.horizon
-            and other.patch == self.patch
-        )
+        return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
 
 
 class Study(Base):  # type: ignore
@@ -303,16 +291,12 @@ class Study(Base):  # type: ignore
     last_access = Column(DateTime)
     path = Column(String())
     folder = Column(String, nullable=True, index=True)
-    parent_id = Column(
-        String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True
-    )
+    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
     public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
     owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived = Column(Boolean(), default=False, index=True)
 
-    tags: List[Tag] = relationship(
-        Tag, secondary=StudyTag.__table__, back_populates="studies"
-    )
+    tags: List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     additional_data = relationship(
@@ -323,9 +307,7 @@ class Study(Base):  # type: ignore
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    jobs: List["TaskJob"] = relationship(
-        "TaskJob", back_populates="study", cascade="all, delete, delete-orphan"
-    )
+    jobs: List["TaskJob"] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
@@ -404,9 +386,7 @@ class RawStudy(Study):
         primary_key=True,
     )
     content_status: StudyContentStatus = Column(Enum(StudyContentStatus))
-    workspace: str = Column(
-        String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True
-    )
+    workspace: str = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
     missing = Column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
@@ -428,7 +408,9 @@ class RawStudy(Study):
 
     @override
     def __repr__(self) -> str:
-        return f'RawStudy(id="{self.id}", workspace="{self.workspace}", folder="{self.folder}", missing="{self.missing}")'
+        return (
+            f'RawStudy(id="{self.id}", workspace="{self.workspace}", folder="{self.folder}", missing="{self.missing}")'
+        )
 
     def to_enhanced_json_summary(self) -> Any:
         """
@@ -466,9 +448,7 @@ class FolderDTO(AntaresBaseModel):
     is_study_folder: bool = Field(
         default=False,
     )  # true when this folder is a study folder, used to display the icon in the front
-    model_config = ConfigDict(
-        populate_by_name=True, alias_generator=alias_generators.to_camel
-    )
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
     @computed_field(alias="parentPath")
     def parent_path(self) -> PurePosixPath:
@@ -498,9 +478,7 @@ class WorkspaceDTO(AntaresBaseModel):
 
     name: str
     disk_name: Optional[str] = None
-    model_config = ConfigDict(
-        populate_by_name=True, alias_generator=alias_generators.to_camel
-    )
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
 
 class PatchStudy(AntaresBaseModel):
@@ -683,15 +661,11 @@ def _np_to_list(array: npt.NDArray[np.float64]) -> list[float]:
     return cast(list[float], array.tolist())
 
 
-NpArray: TypeAlias = Annotated[
-    npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)
-]
+NpArray: TypeAlias = Annotated[npt.NDArray[np.float64], PlainSerializer(_np_to_list), BeforeValidator(_list_to_np)]
 
 
 class TimeSerie(AntaresBaseModel):
-    model_config = ConfigDict(
-        arbitrary_types_allowed=True, ser_json_inf_nan="constants"
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
 
     name: str
     unit: str

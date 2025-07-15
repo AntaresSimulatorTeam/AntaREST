@@ -46,9 +46,7 @@ class Explorer:
         """
         return a list of all directories under workspace_directory_path.
         """
-        workspace = get_workspace_from_config(
-            self.config, workspace_name, default_allowed=False
-        )
+        workspace = get_workspace_from_config(self.config, workspace_name, default_allowed=False)
         directory_path = get_folder_from_workspace(workspace, workspace_directory_path)
         folders = []
         try:
@@ -58,19 +56,13 @@ class Explorer:
                 # if we can't access one child we skip it
                 try:
                     show = show_hidden_file or not child.name.startswith(".")
-                    if show and not should_ignore_folder_for_scan(
-                        child, workspace.filter_in, workspace.filter_out
-                    ):
-                        child_rel_path = PurePosixPath(
-                            child.relative_to(workspace.path)
-                        )
+                    if show and not should_ignore_folder_for_scan(child, workspace.filter_in, workspace.filter_out):
+                        child_rel_path = PurePosixPath(child.relative_to(workspace.path))
                         if is_study_folder(child):
                             has_children_flag = False
                             is_study_folder_flag = True
                         else:
-                            has_children_flag = has_children(
-                                child, workspace.filter_in, workspace.filter_out
-                            )
+                            has_children_flag = has_children(child, workspace.filter_in, workspace.filter_out)
                             is_study_folder_flag = False
                         folders.append(
                             FolderDTO(
@@ -82,9 +74,7 @@ class Explorer:
                             )
                         )
                 except (PermissionError, OSError) as e:
-                    logger.warning(
-                        f"Error while accessing {child} or one of its children: {e}"
-                    )
+                    logger.warning(f"Error while accessing {child} or one of its children: {e}")
         except (PermissionError, OSError) as e:
             logger.warning(f"Error while listing {directory_path}: {e}")
 
