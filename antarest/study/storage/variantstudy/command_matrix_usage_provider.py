@@ -48,9 +48,10 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         for block in command_blocks:
             study_id = block.study_id
             for command in variant_study_commands:
-                for matrix in command:
+                for matrix in command.get_inner_matrices():
+                    command_id = str(matrix)
                     mat_reference = MatrixReference(
-                        matrix_id=matrix, use_description=f"Used by {command.command_id} from study {study_id}"
+                        matrix_id=command_id, use_description=f"Used by {command_id} from study {study_id}"
                     )
                     matrices_references.append(mat_reference)
 
