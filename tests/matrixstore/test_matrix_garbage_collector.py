@@ -12,21 +12,13 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-import numpy as np
-import pandas as pd
 import pytest
 
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO
-from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from tests.helpers import with_admin_user, with_db_context
 
 
 @pytest.fixture
@@ -79,6 +71,7 @@ def test_get_saved_matrices(
     # Get all saved matrices
     saved_matrices = matrix_garbage_collector._get_saved_matrices()
     assert saved_matrices == {matrix_name1, matrix_name2}
+
 
 @pytest.mark.unit_test
 def test_delete_unused_saved_matrices(
