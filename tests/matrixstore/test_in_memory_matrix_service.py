@@ -9,13 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from unittest.mock import Mock
+
 import pandas as pd
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.repository import MatrixContentRepository
 
 
 def test_matrix_service():
-    service = InMemorySimpleMatrixService()
+    service = InMemorySimpleMatrixService(Mock(spec=MatrixContentRepository))
     df = pd.DataFrame([[1, 2, 3], [4, 5, 6]])
     matrix_id = service.create(df)
     assert service.exists(matrix_id)
