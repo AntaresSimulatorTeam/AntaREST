@@ -108,29 +108,28 @@ def get_volume_label(drive_letter: str) -> Optional[str]:
     """
     Returns the volume label like 'OS' for a given drive letter like 'C:\\'.
     """
-    if os.name != "nt":
-        raise ValueError("function available only on windows")
+    # assert we're on windows so mypy doesn't check windll on linux
+    assert sys.platform == "win32"
 
-    if sys.platform == "win32":
-        volume_name_buffer = ctypes.create_unicode_buffer(1024)
-        file_system_name_buffer = ctypes.create_unicode_buffer(1024)
-        serial_number = ctypes.c_ulong()
-        max_component_length = ctypes.c_ulong()
-        file_system_flags = ctypes.c_ulong()
+    volume_name_buffer = ctypes.create_unicode_buffer(1024)
+    file_system_name_buffer = ctypes.create_unicode_buffer(1024)
+    serial_number = ctypes.c_ulong()
+    max_component_length = ctypes.c_ulong()
+    file_system_flags = ctypes.c_ulong()
 
-        result = ctypes.windll.kernel32.GetVolumeInformationW(  # type: ignore[attr-defined]
-            ctypes.c_wchar_p(drive_letter),
-            volume_name_buffer,
-            ctypes.sizeof(volume_name_buffer),
-            ctypes.byref(serial_number),
-            ctypes.byref(max_component_length),
-            ctypes.byref(file_system_flags),
-            file_system_name_buffer,
-            ctypes.sizeof(file_system_name_buffer),
-        )
+    result = ctypes.windll.kernel32.GetVolumeInformationW(
+        ctypes.c_wchar_p(drive_letter),
+        volume_name_buffer,
+        ctypes.sizeof(volume_name_buffer),
+        ctypes.byref(serial_number),
+        ctypes.byref(max_component_length),
+        ctypes.byref(file_system_flags),
+        file_system_name_buffer,
+        ctypes.sizeof(file_system_name_buffer),
+    )
 
-        if result:
-            return volume_name_buffer.value
+    if result:
+        return volume_name_buffer.value
 
-        # in case the volume has no label we just return None
-        return None
+    # in case the volume has no label we just return None
+    return None
