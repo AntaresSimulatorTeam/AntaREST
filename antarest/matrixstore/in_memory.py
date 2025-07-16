@@ -16,9 +16,8 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-from antarest.matrixstore.repository import MatrixContentRepository, compute_hash
 from antarest.matrixstore.model import MatrixMetadataDTO
-from antarest.matrixstore.repository import compute_hash
+from antarest.matrixstore.repository import MatrixContentRepository, compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -53,6 +52,6 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
         raise NotImplementedError()
 
-    @override    
+    @override
     def get_matrices(self) -> list[MatrixMetadataDTO]:
         raise NotImplementedError()
