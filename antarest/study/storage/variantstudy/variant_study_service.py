@@ -33,8 +33,8 @@ from antarest.core.exceptions import (
     CommandUpdateAuthorizationError,
     NoParentStudyError,
     StudyNotFoundError,
-    StudyTypeUnsupported,
     StudyValidationError,
+    UnsupportedOperationOnThisStudyType,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -389,7 +389,7 @@ class VariantStudyService(AbstractStorageService):
             raise StudyNotFoundError(study_id)
 
         if not isinstance(study, VariantStudy) and not raw_study_accepted:
-            raise StudyTypeUnsupported(study_id, study.type)
+            raise UnsupportedOperationOnThisStudyType(study.id, "get", "variant")
 
         assert_permission(study, StudyPermissionType.READ)
         return study
