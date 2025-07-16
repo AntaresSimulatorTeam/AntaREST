@@ -12,25 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import React from "react";
-import ResultFilters from "./ResultFilters";
-import { useTranslation } from "react-i18next";
-import { Box, Skeleton } from "@mui/material";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import ViewWrapper from "../../../../../../common/page/ViewWrapper";
-import EmptyView from "../../../../../../common/page/EmptyView";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
+import { Box, Skeleton } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import type { EnhancedGridColumn, ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import type { UsePromiseResponse } from "@/hooks/usePromise";
+import type { MatrixIndex } from "@/types/types";
+import { toError } from "../../../../../../../utils/fnUtils";
 import FilterableMatrixGrid, {
   type FilterableMatrixGridHandle,
 } from "../../../../../../common/Matrix/components/FilterableMatrixGrid";
 import { isNonEmptyMatrix } from "../../../../../../common/Matrix/shared/types";
-import { toError } from "../../../../../../../utils/fnUtils";
-import { DataType, MAX_YEAR, Timestep } from "../utils";
-
-import type { EnhancedGridColumn, ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
-import type { UsePromiseResponse } from "@/hooks/usePromise";
-import type { MatrixIndex } from "@/types/types";
+import EmptyView from "../../../../../../common/page/EmptyView";
+import ViewWrapper from "../../../../../../common/page/ViewWrapper";
+import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 import type { PartialStudyOutput } from "../../hooks/useStudyOutput";
+import { type DataType, MAX_YEAR, type Timestep } from "../utils";
+import ResultFilters from "./ResultFilters";
 
 interface ResultMatrixViewerProps {
   matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
@@ -99,12 +97,10 @@ function ResultMatrixViewer({
             response={matrixRes}
             ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
             ifFulfilled={() => {
-              // If headers haven't been processed yet, show loading
               if (resultColHeaders.length === 0) {
                 return <Skeleton sx={{ height: 1, transform: "none" }} />;
               }
 
-              // If we have processed headers but no valid data, show "No data"
               if (!isNonEmptyMatrix(filteredData)) {
                 return <EmptyView title={t("study.results.noData")} icon={GridOffIcon} />;
               }

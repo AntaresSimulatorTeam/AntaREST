@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { Skeleton } from "@mui/material";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import DataGridViewer from "../../../../../../common/DataGridViewer";
-import ViewWrapper from "../../../../../../common/page/ViewWrapper";
-import EmptyView from "../../../../../../common/page/EmptyView";
-import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
-import { generateCustomColumns } from "../../../../../../common/Matrix/shared/utils";
+import { Skeleton } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
+import DataGridViewer from "../../../../../../common/DataGridViewer";
+import { generateCustomColumns } from "../../../../../../common/Matrix/shared/utils";
+import EmptyView from "../../../../../../common/page/EmptyView";
+import ViewWrapper from "../../../../../../common/page/ViewWrapper";
+import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 export interface SynthesisData {
   columns: string[];

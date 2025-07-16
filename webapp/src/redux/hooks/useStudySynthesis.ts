@@ -37,24 +37,21 @@ export default function useStudySynthesis<T>(props: UseStudySynthesisProps<T>): 
   const dispatch = useAppDispatch();
   const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Response["error"]>();
-  const [hasAttempted, setHasAttempted] = useState(false);
 
   useAsync(async () => {
-    if (!isSynthesisExist && !hasAttempted) {
+    if (!isSynthesisExist) {
       setStatus(PromiseStatus.Pending);
-      setHasAttempted(true);
 
       try {
         await dispatch(createStudySynthesis(studyId)).unwrap();
-        setStatus(PromiseStatus.Fulfilled);
       } catch (e) {
         setError(e as Error);
         setStatus(PromiseStatus.Rejected);
       }
-    } else if (isSynthesisExist && status !== PromiseStatus.Fulfilled) {
+    } else {
       setStatus(PromiseStatus.Fulfilled);
     }
-  }, [dispatch, isSynthesisExist, studyId, hasAttempted, status]);
+  }, [dispatch, isSynthesisExist, studyId]);
 
   return { data, status, error };
 }

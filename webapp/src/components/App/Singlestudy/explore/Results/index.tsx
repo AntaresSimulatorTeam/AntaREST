@@ -67,17 +67,17 @@ interface OutputDetail {
   isRunning: boolean;
 }
 
-interface ConfirmDeleteDialog {
+interface ShowConfirmDeleteDialog {
   type: "confirmDelete";
   data: string;
 }
 
-interface DigestDialog {
+interface ShowDigestDialog {
   type: "digest";
   data: LaunchJob;
 }
 
-type DialogState = ConfirmDeleteDialog | DigestDialog | EmptyObject;
+type DialogState = ShowConfirmDeleteDialog | ShowDigestDialog | EmptyObject;
 
 const iconStyle = {
   fontSize: 22,
