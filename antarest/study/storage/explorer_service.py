@@ -13,6 +13,7 @@
 import ctypes
 import logging
 import os
+import re
 import sys
 from pathlib import PurePosixPath
 from typing import List, Optional
@@ -108,6 +109,11 @@ def get_volume_label(drive_letter: str) -> Optional[str]:
     """
     Returns the volume label like 'OS' for a given drive letter like 'C:\\'.
     """
+    # Validate drive letter format, e.g., 'C:\\' or 'D:'
+    if not re.match(r"^[A-Za-z]:\\?$", drive_letter):
+        logger.warning(f"Invalid drive letter format: {drive_letter!r}")
+        return None
+
     # assert we're on windows so mypy doesn't check windll on linux
     if sys.platform == "win32":
         volume_name_buffer = ctypes.create_unicode_buffer(1024)
