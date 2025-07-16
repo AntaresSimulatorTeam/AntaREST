@@ -42,10 +42,10 @@ from antarest.core.exceptions import (
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
-    StudyTypeUnsupported,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
+    UnsupportedOperationOnThisStudyType,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -1348,7 +1348,7 @@ class StudyService:
         )
 
         logger.info("study %s imported by user %s", study.id, get_user_id())
-        return str(study.id)
+        return study.id
 
     def _create_edit_study_command(
         self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
@@ -1815,7 +1815,7 @@ class StudyService:
         self.assert_study_unarchived(study)
 
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study.id, study.type)
+            raise UnsupportedOperationOnThisStudyType(study.id, "archive", "raw")
 
         if not is_managed(study):
             raise NotAManagedStudyException(study.id)
@@ -1869,7 +1869,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
 
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study.id, study.type)
+            raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
@@ -1974,7 +1974,7 @@ class StudyService:
         """
         try:
             if not isinstance(metadata, RawStudy):
-                raise StudyTypeUnsupported(metadata.id, metadata.type)
+                raise UnsupportedOperationOnThisStudyType(metadata.id, "synchronization", "raw")
 
             if self.storage_service.raw_study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING
@@ -2386,9 +2386,24 @@ class StudyService:
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
 
+    def normalize_study_by_id(self, study_id: str) -> None:
+        """
+        Performs several verifications before normalizing a study.
+        """
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)  # We're not really modifying the study
+
+        if not is_managed(study):
+            raise NotAManagedStudyException(study_id)
+        if isinstance(study, VariantStudy):
+            raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
+        self.assert_study_unarchived(study)
+
+        self.normalize_study(study)
+
     def normalize_study(self, study: Study) -> None:
         """
-        Method used to normalize the study.
+        Method used to normalize a study.
         It will put every matrix in the study in the matrix-store.
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
