@@ -72,20 +72,14 @@ TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 # noinspection SpellCheckingInspection
 def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_author: bool) -> None:
-    """
-    Update the "antares" information directly in the study tree.
-
-    Args:
-        metadata: The study object extracted from the database.
-        study_tree: The study tree object.
-        update_author: Specifies whether the author should be modified or not.
-            The author's name should be updated when the study is created,
-            but it is not changed if the study is copied.
-    """
     study_data_info = study_tree.get(["study"])
     study_data_info["antares"]["caption"] = metadata.name
-    study_data_info["antares"]["created"] = metadata.created_at.timestamp()
-    study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
+    study_data_info["antares"]["created"] = (
+        metadata.created_at.timestamp() if metadata.created_at else datetime.now().timestamp()
+    )
+    study_data_info["antares"]["lastsave"] = (
+        metadata.updated_at.timestamp() if metadata.updated_at else datetime.now().timestamp()
+    )
     version = StudyVersion.parse(metadata.version)
     study_data_info["antares"]["version"] = f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
     if update_author and metadata.additional_data:

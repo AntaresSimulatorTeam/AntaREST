@@ -366,7 +366,8 @@ class RawStudyService(AbstractStorageService):
         try:
             self.checks_antares_web_compatibility(metadata)
         except NotImplementedError as e:
-            raise StudyImportFailed(metadata.name, e.args[0]) from e
+            study_name = metadata.name or "Unknown Study"
+            raise StudyImportFailed(study_name, e.args[0])
 
         metadata.path = str(study_path)
         return metadata

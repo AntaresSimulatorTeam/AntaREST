@@ -172,6 +172,8 @@ class VariantStudy(Study):
     @property
     def snapshot_dir(self) -> Path:
         """Get the path of the snapshot directory."""
+        if self.path is None:
+            raise ValueError("Study path is not set")
         return Path(self.path) / "snapshot"
 
     def is_snapshot_up_to_date(self) -> bool:

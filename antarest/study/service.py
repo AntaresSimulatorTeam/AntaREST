@@ -1542,7 +1542,7 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else str(new_owner.name)
+        owner_name = None if new_owner is None else new_owner.name
         self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
 
         logger.info(

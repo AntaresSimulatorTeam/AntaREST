@@ -259,16 +259,16 @@ class Study(Base):  # type: ignore
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
-    version: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
-    author: Mapped[str] = mapped_column(String(255), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, index=True)
-    last_access: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String(), nullable=True)
+    version: Mapped[str] = mapped_column(String(255), index=True, default="9.2")
+    author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    path: Mapped[str] = mapped_column(String(), default=DEFAULT_WORKSPACE_NAME)
     folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
-    parent_id: Mapped[str] = mapped_column(
+    parent_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
     )
     public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
