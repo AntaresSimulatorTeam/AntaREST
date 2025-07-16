@@ -25,11 +25,13 @@ import TabsView from "@/components/common/TabsView";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
 import About from "@/components/App/Settings/About";
+import { useAppMode } from "@/hooks/useAppMode";
 
 function Settings() {
   const { t } = useTranslation();
   const isUserAdmin = useAppSelector(isAuthUserAdmin);
   const isUserInGroupAdmin = useAppSelector(isAuthUserInGroupAdmin);
+  const { isWebMode } = useAppMode();
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -52,7 +54,7 @@ function Settings() {
               label: t("global.group"),
               content: Groups,
             },
-            {
+            isWebMode && {
               label: t("global.tokens"),
               content: Tokens,
             },

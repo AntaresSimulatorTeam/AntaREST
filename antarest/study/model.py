@@ -382,6 +382,17 @@ class RawStudy(Study):
             f'RawStudy(id="{self.id}", workspace="{self.workspace}", folder="{self.folder}", missing="{self.missing}")'
         )
 
+    def to_enhanced_json_summary(self) -> Any:
+        """
+        Extend the JSON summary with folder and workspace details.
+        Useful for delete events to help the frontend stay synchronized.
+        """
+        return {
+            **super().to_json_summary(),
+            "folder": self.folder,
+            "workspace": self.workspace,
+        }
+
 
 @dataclasses.dataclass
 class StudyFolder:
@@ -430,12 +441,14 @@ class FolderDTO(AntaresBaseModel):
         return PurePosixPath(path)
 
 
-class WorkspaceMetadata(AntaresBaseModel):
+class WorkspaceDTO(AntaresBaseModel):
     """
     DTO used by the explorer to list all workspaces
     """
 
     name: str
+    disk_name: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
 
 class PatchStudy(AntaresBaseModel):

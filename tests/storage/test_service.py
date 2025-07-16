@@ -1265,6 +1265,12 @@ def test_delete_with_prefetch(tmp_path: Path) -> None:
         last_access=datetime.utcnow(),
     )
     study_mock.to_json_summary.return_value = {"id": "my_study", "name": "foo"}
+    study_mock.to_enhanced_json_summary.return_value = {
+        "id": "my_study",
+        "name": "foo",
+        "folder": None,
+        "workspace": DEFAULT_WORKSPACE_NAME,
+    }
 
     # it freezes the mock and raise Attribute error if anything else than defined is used
     seal(study_mock)
