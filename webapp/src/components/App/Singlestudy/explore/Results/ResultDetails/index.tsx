@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useOutletContext, useParams } from "react-router";
+import type { FilterableMatrixGridHandle } from "@/components/common/Matrix/components/FilterableMatrixGrid";
 import { Column } from "@/components/common/Matrix/shared/constants";
-import { type ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import type { ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { Area, LinkElement, StudyMetadata } from "@/types/types";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useOutletContext, useParams } from "react-router";
 import usePromise from "../../../../../../hooks/usePromise";
 import useAppSelector from "../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getLinks } from "../../../../../../redux/selectors";
@@ -31,11 +32,10 @@ import {
 } from "../../../../../common/Matrix/shared/utils";
 import SplitView from "../../../../../common/SplitView/index";
 import useStudyOutput from "../hooks/useStudyOutput";
-import { DataType, OutputItemType, SYNTHESIS_ITEMS, Timestep, createPath } from "./utils";
 import ResultItemSelector from "./components/ResultItemSelector";
 import ResultMatrixViewer from "./components/ResultMatrixViewer";
 import SynthesisViewer, { type SynthesisData } from "./components/SynthesisViewer";
-import type { FilterableMatrixGridHandle } from "@/components/common/Matrix/components/FilterableMatrixGrid";
+import { createPath, DataType, OutputItemType, SYNTHESIS_ITEMS, Timestep } from "./utils";
 
 type SetResultColHeaders = (headers: string[][], indices: number[]) => void;
 
@@ -63,7 +63,7 @@ function ResultDetails() {
   const areas = useAppSelector((state) => getAreas(state, study.id));
   const links = useAppSelector((state) => getLinks(state, study.id));
 
-  const { data: output, isLoading: outputLoading } = useStudyOutput({
+  const { data: output } = useStudyOutput({
     studyId: study.id,
     outputId: outputId,
   });
@@ -101,17 +101,12 @@ function ResultDetails() {
       setSelectedItemId(filteredItems[0].id);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filteredItems.length, selectedItemId, outputLoading]); // Using length to avoid reference issues
+  }, [filteredItems.length, selectedItem]); // Using length to avoid reference issues
 
   const path = useMemo(() => {
     if (output && selectedItem && !isSynthesis) {
       return createPath({
-        output: {
-          id: output.id,
-          name: output.name,
-          mode: output.mode,
-          nbyears: output.nbyears,
-        },
+        output,
         item: selectedItem,
         dataType,
         timestep,
@@ -244,10 +239,6 @@ function ResultDetails() {
     [searchValue],
   );
 
-  const handleNavigateBack = useCallback(() => {
-    navigate("..");
-  }, [navigate]);
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -262,7 +253,7 @@ function ResultDetails() {
         selectedItemId={selectedItemId}
         onSetSelectedItemId={handleSetSelectedItemId}
         onSearchChange={handleSearchChange}
-        onNavigateBack={handleNavigateBack}
+        onNavigateBack={() => navigate("..")}
       />
 
       {isSynthesis ? (

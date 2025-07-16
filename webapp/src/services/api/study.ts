@@ -115,13 +115,8 @@ export const getStudyOutputById = async (
   studyId: string,
   outputId: string,
 ): Promise<StudyOutput | undefined> => {
-  try {
-    const outputs = await getStudyOutputs(studyId);
-
-    return outputs.find((output) => output.name === outputId);
-  } catch {
-    return undefined;
-  }
+  const outputs = await getStudyOutputs(studyId);
+  return outputs.find((output) => output.name === outputId);
 };
 
 export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {

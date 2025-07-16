@@ -12,9 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import { useDebouncedField } from "@/hooks/useDebouncedField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -22,12 +19,15 @@ import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import { useDebouncedField } from "@/hooks/useDebouncedField";
 import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
 import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { DataType, matchesSearchTerm, Timestep } from "../utils";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 interface ColumnHeader {
   variable: string;

@@ -12,15 +12,10 @@
  * This file is part of the Antares project.
  */
 
-/* eslint-disable no-console */
-
-import { useMemo } from "react";
+import usePromise from "@/hooks/usePromise";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { getStudyOutput } from "@/redux/selectors";
-import { getStudyData, getStudyOutputById } from "@/services/api/study";
-
-import { MAX_YEAR } from "../ResultDetails/utils";
-import usePromise from "@/hooks/usePromise";
+import { getStudyOutputById } from "@/services/api/study";
 
 interface UseStudyOutputOptions {
   studyId: string;
@@ -63,25 +58,18 @@ export default function useStudyOutput({
   studyId,
   outputId,
 }: UseStudyOutputOptions): UseStudyOutputReturn {
-  // Try to get output from Redux store
   const { data: outputFromStore } = useStudySynthesis({
     studyId,
     selector: (state, id) => (outputId ? getStudyOutput(state, id, outputId) : undefined),
   });
 
-  // Check if we have the output in store to avoid unnecessary API calls
-  const hasOutputInStore = useMemo(() => !!outputFromStore, [outputFromStore]);
-
-  // Fetch output metadata if not in store
   const {
     data: fetchedOutput,
     isLoading,
     error,
   } = usePromise<PartialStudyOutput | undefined>(
     async () => {
-      // Skip API call if we already have the data in store
-      if (hasOutputInStore) {
-        console.log("[useStudyOutput] Output found in store:", outputId);
+      if (outputFromStore) {
         return undefined;
       }
 
@@ -98,72 +86,27 @@ export default function useStudyOutput({
       // TODO: The API should ensure that the WebSocket listener is properly set up to notify
       // us of job completion.
 
-      console.log("[useStudyOutput] Fetching output from API:", outputId);
-
       const foundOutput = await getStudyOutputById(studyId, outputId);
 
       if (foundOutput) {
-        console.log("[useStudyOutput] Found output from API by ID:", {
-          id: outputId,
-          output: foundOutput,
-        });
-
         return {
-          id: outputId,
           ...foundOutput,
-        };
-      }
-
-      console.log("[useStudyOutput] Output not in list, trying to get settings:", outputId);
-
-      const outputSettings = await getStudyData(
-        studyId,
-        `output/${outputId}/about-the-study/parameters`,
-      );
-
-      // This case should never happen, but just in case
-      // we use a hard-coded default value to be able to display the output
-      if (!outputSettings) {
-        console.log("[useStudyOutput] Got output settings:", outputSettings);
-        return {
           id: outputId,
-          name: outputId,
-          mode: outputSettings.general?.mode || "economy",
-          nbyears: outputSettings.general?.nbyears || MAX_YEAR,
-          synthesis: outputSettings.output?.synthesis ?? true,
-          date: new Date().toISOString(),
-          by_year: outputSettings.general?.["year-by-year"] ?? true,
-          error: false,
-          type: "economy",
-          settings: outputSettings,
-          completionDate: new Date().toISOString(),
-          status: "completed",
-          archived: false,
         };
       }
 
-      // Return undefined to let the component handle the missing output
-      console.log("[useStudyOutput] Output not found, returning undefined");
       return undefined;
     },
     {
-      // Only depend on studyId, outputId, and whether we have the data in store
-      // This prevents infinite loops caused by outputFromStore reference changes
-      deps: [studyId, outputId, hasOutputInStore],
+      // Only depend on studyId, outputId, and whether we have data in store.
+      // !!outputFromStore to avoid re-running when the object reference changes but the value remains truthy/falsy.
+      deps: [studyId, outputId, !!outputFromStore],
     },
   );
 
-  const data = useMemo(() => {
-    if (outputFromStore) {
-      return outputFromStore;
-    }
-
-    return fetchedOutput;
-  }, [outputFromStore, fetchedOutput]);
-
   return {
-    data,
-    isLoading: !hasOutputInStore && isLoading,
-    error: !hasOutputInStore ? error : undefined,
+    data: outputFromStore || fetchedOutput,
+    isLoading: !outputFromStore && isLoading,
+    error: !outputFromStore ? error : undefined,
   };
 }
