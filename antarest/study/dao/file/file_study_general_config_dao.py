@@ -10,16 +10,13 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict
 
 from typing_extensions import override
 
 from antarest.study.business.model.config.general_model import (
-    BuildingMode,
     GeneralConfig,
 )
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao
-from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.general import (
     GeneralFileData,
     serialize_output_config,
@@ -71,11 +68,10 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
 
         current_general_config = study_data.tree.get(["settings", "generaldata", "general"])
         general_config = serialize_simulation_config(config, study_data.config.version)
+        general_config.update({k: v for k, v in current_general_config.items() if k not in general_config})
         study_data.tree.save(general_config, ["settings", "generaldata", "general"])
 
         current_output_config = study_data.tree.get(["settings", "generaldata", "output"])
         general_output = serialize_output_config(config, study_data.config.version)
         general_output.update({k: v for k, v in current_output_config.items() if k not in general_output})
         study_data.tree.save(general_output, ["settings", "generaldata", "output"])
-
-    

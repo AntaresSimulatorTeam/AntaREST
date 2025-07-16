@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any, Dict, Optional
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, PositiveInt, StrictBool
 
 from antarest.core.serde import AntaresBaseModel
@@ -33,7 +34,7 @@ class GeneralFileData(AntaresBaseModel):
     last_day: Optional[DayNumberType] = Field(default=None, alias="simulation.end")
     horizon: Optional[str | int] = Field(default=None)
     first_month: Optional[Month] = Field(default=None, alias="first-month-in-year")
-    first_week_day: Optional[WeekDay] = Field(default=None, alias="first-weekday")
+    first_week_day: Optional[WeekDay] = Field(default=None, alias="first.weekday")
     first_january: Optional[WeekDay] = Field(default=None, alias="january.1st")
     leap_year: Optional[StrictBool] = Field(default=None, alias="leapyear")
     nb_years: Optional[PositiveInt] = Field(default=None, alias="nbyears")
@@ -60,7 +61,7 @@ class GeneralFileData(AntaresBaseModel):
         return GeneralConfig.model_validate(data)
 
     @classmethod
-    def from_model(cls, config: GeneralConfig, study_version: int) -> "GeneralFileData":
+    def from_model(cls, config: GeneralConfig, study_version: StudyVersion) -> "GeneralFileData":
         data = config.model_dump(exclude={"id"})
         if config.building_mode == BuildingMode.DERATED:
             data["derated"] = True
@@ -72,10 +73,12 @@ class GeneralFileData(AntaresBaseModel):
                 data["custom_ts_numbers"] = config.building_mode == BuildingMode.CUSTOM
         return cls.model_validate(data)
 
-def serialize_simulation_config(config: GeneralConfig, study_version: int) -> Dict[str, Any]:
+
+def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
 
-def serialize_output_config(config: GeneralConfig, study_version: int) -> Dict[str, Any]:
+
+def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, include={"simulation_synthesis", "mc_scenario"})
