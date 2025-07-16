@@ -27,6 +27,7 @@ import type { AppAsyncThunkConfig, AppThunk } from "../store";
 import { makeActionName, FetchStatus, createThunk, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
 import type { StudyEventPayload } from "@/services/webSocket/types";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -92,6 +93,7 @@ const initialState = studiesAdapter.getInitialState({
     users: [],
     groups: [],
     tags: [],
+    ...(storage.getItem(StorageKey.StudiesFilters) || {}),
   },
   sort: {
     property: "name",
