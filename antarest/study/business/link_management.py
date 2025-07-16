@@ -54,6 +54,7 @@ class LinkManager:
             area2=area_to,
             parameters=link_update_dto,
             study_version=study.version,
+            command_context=self._command_context,
         )
         return command
 

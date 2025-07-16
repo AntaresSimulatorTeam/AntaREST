@@ -40,7 +40,6 @@ from antarest.login.main import build_login
 from antarest.login.service import LoginService
 from antarest.matrixstore.main import build_matrix_service
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
@@ -223,27 +222,10 @@ def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Expl
 
 def create_matrix_gc(
     config: Config,
-    app_ctxt: Optional[AppBuildContext],
-    study_service: Optional[StudyService] = None,
-    matrix_service: Optional[MatrixService] = None,
-    matrices_usage_providers: Optional[list[IMatrixUsageProvider]] = None,
+    study_service: "StudyService",
+    matrix_service: "MatrixService",
 ) -> MatrixGarbageCollector:
-    # A mettre dans MatrixService
-    if study_service and matrix_service and matrices_usage_providers:
-        return MatrixGarbageCollector(
-            config=config,
-            study_service=study_service,
-            matrix_service=matrix_service,
-            matrices_usage_providers=matrices_usage_providers,
-        )
-    else:
-        core_services = create_core_services(app_ctxt, config)
-        return MatrixGarbageCollector(
-            config=config,
-            study_service=core_services.study_service,
-            matrix_service=core_services.matrix_service,
-            matrices_usage_providers=matrices_usage_providers,
-        )
+    return matrix_service.create_matrix_gc(config, study_service)
 
 
 def create_archive_worker(
@@ -298,7 +280,6 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
         matrix_garbage_collector = create_matrix_gc(
             config=config,
-            app_ctxt=app_ctxt,
             study_service=core_services.study_service,
             matrix_service=core_services.matrix_service,
         )
