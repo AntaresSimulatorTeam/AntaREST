@@ -21,6 +21,7 @@ from antarest.study.business.model.config.general_model import (
     Month,
     WeekDay,
 )
+from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
@@ -44,20 +45,37 @@ class GeneralFileData(AntaresBaseModel):
     filtering: Optional[StrictBool] = Field(default=None)
     geographic_trimming: Optional[StrictBool] = Field(default=None, alias="geographic-trimming")
     thematic_trimming: Optional[StrictBool] = Field(default=None, alias="thematic-trimming")
+    derated: Optional[StrictBool] = Field(default=None)
+    custom_scenario: Optional[StrictBool] = Field(default=None, alias="custom-scenario")
+    custom_ts_numbers: Optional[StrictBool] = Field(default=None, alias="custom-ts-numbers")
 
     def to_model(self) -> GeneralConfig:
-        return GeneralConfig.model_validate(self.model_dump(exclude_none=True))
+        data = self.model_dump(exclude_none=True, exclude={"derated", "custom_scenario", "custom_ts_numbers"})
+        if self.derated is True:
+            data["building_mode"] = BuildingMode.DERATED
+        elif self.custom_scenario is True:
+            data["building_mode"] = BuildingMode.CUSTOM
+        elif self.custom_ts_numbers is True:
+            data["building_mode"] = BuildingMode.CUSTOM
+        return GeneralConfig.model_validate(data)
 
     @classmethod
-    def from_model(cls, storage: GeneralConfig) -> "GeneralFileData":
-        return cls.model_validate(storage.model_dump(exclude={"id"}))
+    def from_model(cls, config: GeneralConfig, study_version: int) -> "GeneralFileData":
+        data = config.model_dump(exclude={"id"})
+        if config.building_mode == BuildingMode.DERATED:
+            data["derated"] = True
+        else:
+            data["derated"] = False
+            if study_version >= STUDY_VERSION_8:
+                data["custom_scenario"] = config.building_mode == BuildingMode.CUSTOM
+            else:
+                data["custom_ts_numbers"] = config.building_mode == BuildingMode.CUSTOM
+        return cls.model_validate(data)
 
-
-def get_general_config(config: GeneralConfig) -> Dict[str, Any]:
-    file_data = GeneralFileData.from_model(config)
+def serialize_simulation_config(config: GeneralConfig, study_version: int) -> Dict[str, Any]:
+    file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
 
-
-def get_output_config(config: GeneralConfig) -> Dict[str, Any]:
-    file_data = GeneralFileData.from_model(config)
+def serialize_output_config(config: GeneralConfig, study_version: int) -> Dict[str, Any]:
+    file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, include={"simulation_synthesis", "mc_scenario"})

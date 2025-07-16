@@ -15,15 +15,16 @@ from typing import Any, Dict
 from typing_extensions import override
 
 from antarest.study.business.model.config.general_model import (
-    GENERAL,
-    OUTPUT,
     BuildingMode,
     GeneralConfig,
 )
-from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao
-from antarest.study.model import STUDY_VERSION_7_1, STUDY_VERSION_8
-from antarest.study.storage.rawstudy.model.filesystem.config.general import get_general_config, get_output_config
+from antarest.study.model import STUDY_VERSION_8
+from antarest.study.storage.rawstudy.model.filesystem.config.general import (
+    GeneralFileData,
+    serialize_output_config,
+    serialize_simulation_config,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -34,68 +35,47 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
 
     @override
     def get_general_config(self) -> GeneralConfig:
-        def __get_building_mode_value(general_config: Dict[str, Any]) -> BuildingMode:
-            if general_config.get("derated", False):
-                return BuildingMode.DERATED
-            # 'custom-scenario' replaces 'custom-ts-numbers' in study versions >= 800
-            if general_config.get("custom-scenario", False) or general_config.get("custom-ts-numbers", False):
-                return BuildingMode.CUSTOM
-            return BuildingMode.AUTOMATIC
-
         file_study = self.get_file_study()
-        general_data = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
-        general = general_data.get(GENERAL, {})
-        output = general_data.get(OUTPUT, {})
-        study_ver = file_study.config.version
+        general_data = file_study.tree.get(["settings", "generaldata"])
+        general_config_data = general_data.get("general", {})
+        output_config_data = general_data.get("output", {})
 
-        config_values: Dict[str, Any] = {
-            "mode": general.get("mode"),
-            "first_day": general.get("simulation.start"),
-            "last_day": general.get("simulation.end"),
-            "horizon": general.get("horizon"),
-            "first_month": general.get("first-month-in-year"),
-            "first_week_day": general.get("first.weekday"),
-            "first_january": general.get("january.1st"),
-            "leap_year": general.get("leapyear"),
-            "nb_years": general.get("nbyears"),
-            "building_mode": __get_building_mode_value(general),
-            "selection_mode": general.get("user-playlist"),
-            "year_by_year": general.get("year-by-year"),
-            "simulation_synthesis": output.get("synthesis"),
-            "mc_scenario": output.get("storenewset"),
+        extracted_data = {
+            "mode": general_config_data.get("mode"),
+            "first_day": general_config_data.get("simulation.start"),
+            "last_day": general_config_data.get("simulation.end"),
+            "horizon": general_config_data.get("horizon"),
+            "first_month": general_config_data.get("first-month-in-year"),
+            "first_week_day": general_config_data.get("first.weekday"),
+            "first_january": general_config_data.get("january.1st"),
+            "leap_year": general_config_data.get("leapyear"),
+            "nb_years": general_config_data.get("nbyears"),
+            "building_mode": general_config_data.get("building_mode"),
+            "selection_mode": general_config_data.get("user-playlist"),
+            "year_by_year": general_config_data.get("year-by-year"),
+            "simulation_synthesis": output_config_data.get("synthesis"),
+            "mc_scenario": output_config_data.get("storenewset"),
+            "filtering": general_config_data.get("filtering"),
+            "geographic_trimming": general_config_data.get("geographic-trimming"),
+            "thematic_trimming": general_config_data.get("thematic-trimming"),
+            "derated": general_config_data.get("derated"),
+            "custom_scenario": general_config_data.get("custom-scenario"),
+            "custom_ts_numbers": general_config_data.get("custom-ts-numbers"),
         }
-
-        if study_ver <= STUDY_VERSION_7_1:
-            config_values["filtering"] = general.get("filtering")
-
-        if study_ver >= STUDY_VERSION_7_1:
-            config_values["geographic_trimming"] = general.get("geographic-trimming")
-            config_values["thematic_trimming"] = general.get("thematic-trimming")
-
-        return GeneralConfig.model_validate({k: v for k, v in config_values.items() if v is not None})
+        general_file_data = GeneralFileData.model_validate({k: v for k, v in extracted_data.items() if v is not None})
+        return general_file_data.to_model()
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
         study_data = self.get_file_study()
 
         current_general_config = study_data.tree.get(["settings", "generaldata", "general"])
-        general_config = get_general_config(config)
-        general_config = self.update_building_mode(general_config)
-        general_config.update({k: v for k, v in current_general_config.items() if k not in general_config})
+        general_config = serialize_simulation_config(config, study_data.config.version)
         study_data.tree.save(general_config, ["settings", "generaldata", "general"])
 
         current_output_config = study_data.tree.get(["settings", "generaldata", "output"])
-        general_output = get_output_config(config)
+        general_output = serialize_output_config(config, study_data.config.version)
         general_output.update({k: v for k, v in current_output_config.items() if k not in general_output})
         study_data.tree.save(general_output, ["settings", "generaldata", "output"])
 
-    def update_building_mode(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        if config.get("building_mode", "") == BuildingMode.DERATED:
-            config.update({"derated": True})
-        else:
-            config.update({"derated": False})
-            if self.get_file_study().config.version >= STUDY_VERSION_8:
-                config.update({"custom-scenario": BuildingMode.CUSTOM == config.get("building_mode", "")})
-            else:
-                config.update({"custom-ts-numbers": BuildingMode.CUSTOM == config.get("building_mode", "")})
-        return config
+    
