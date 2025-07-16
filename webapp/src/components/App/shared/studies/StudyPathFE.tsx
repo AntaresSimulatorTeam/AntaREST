@@ -15,7 +15,8 @@
 import StringFE, { type StringFEProps } from "@/components/common/fieldEditors/StringFE";
 import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
-import { validatePath } from "@/utils/validation/string";
+import { validatePath, validateString } from "@/utils/validation/string";
+import { combineValidators } from "@/utils/validation/utils";
 import { InputAdornment } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
@@ -42,10 +43,17 @@ function StudyPathFE(props: Props) {
 
 const StudyPathFEWithReactHookFormSupport = reactHookFormSupport({
   defaultValue: "",
-  preValidate: validatePath({
-    allowEmpty: true,
-    allowToStartWithSlash: false,
-  }),
+  preValidate: combineValidators(
+    // Default workspace is set if empty
+    validatePath({
+      allowEmpty: true,
+      allowToStartWithSlash: false,
+    }),
+    validateString({
+      specialChars: { chars: "=", mode: "deny" },
+      allowEmpty: true,
+    }),
+  ),
 })(StudyPathFE);
 
 export default StudyPathFEWithReactHookFormSupport;

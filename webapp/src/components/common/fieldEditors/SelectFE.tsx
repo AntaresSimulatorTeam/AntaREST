@@ -54,8 +54,6 @@ function formatOptions(
   }));
 }
 
-// TODO: replace with TextField with `select` prop https://mui.com/material-ui/react-text-field/#select
-
 function SelectFE(props: SelectFEProps) {
   const {
     options,
@@ -118,6 +116,9 @@ function SelectFE(props: SelectFEProps) {
   );
 }
 
+/**
+ * @deprecated Use NewSelectFE instead.
+ */
 export default reactHookFormSupport<SelectFEProps["value"]>({
   defaultValue: (props: SelectFEProps) => (props.multiple ? [] : ""),
 })(SelectFE);

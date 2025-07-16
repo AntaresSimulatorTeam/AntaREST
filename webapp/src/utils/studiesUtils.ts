@@ -120,8 +120,3 @@ export function filterStudies(filters: StudyFilters, studies: StudyMetadata[]): 
 export const validateStudyName = validateString({
   specialChars: { chars: "=/", mode: "deny" },
 });
-
-export const validateStudyFolder = validateString({
-  specialChars: { chars: "=", mode: "deny" },
-  allowEmpty: true, // `default` folder is set if empty
-});

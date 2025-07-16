@@ -45,9 +45,8 @@ def create_utils_routes(config: Config) -> APIRouter:
         "/version",
         tags=[APITag.misc],
         summary="Get application version",
-        response_model=VersionInfoDTO,
     )
-    def version_info() -> Any:
+    def version_info(with_deps: bool = False) -> VersionInfoDTO:
         """
         Returns the current version of the application, along with relevant dependency information.
 
@@ -62,7 +61,7 @@ def create_utils_routes(config: Config) -> APIRouter:
         return VersionInfoDTO(
             version=antarest_version,
             gitcommit=get_commit_id(config.resources_path),
-            dependencies=get_dependencies(),
+            dependencies=get_dependencies() if with_deps else {},
         )
 
     @bp.get(
