@@ -115,7 +115,7 @@ describe("DateTime Generation - Integration Tests", () => {
 
       // Extract date and hour parts
       const dateHours = result.map((dateStr) => {
-        const dateMatch = dateStr.match(/(\d+) (\w+)/);
+        const dateMatch = dateStr.match(/(\d{1,2}) ([A-Za-z]+)/);
         const hourMatch = dateStr.match(/(\d{2}):00$/);
         return {
           day: dateMatch ? parseInt(dateMatch[1], 10) : -1,
