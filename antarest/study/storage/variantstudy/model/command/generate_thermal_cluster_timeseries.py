@@ -129,7 +129,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     df = pd.DataFrame(data=generated_matrix)
                     df = df[list(df.columns)].astype(int)
                     target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
-                    dump_dataframe(df, target_path, None)
+                    dump_dataframe(df, target_path)
                     # 10- Notify the progress to the notifier
                     generation_performed += 1
                     if listener:

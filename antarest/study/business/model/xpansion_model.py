@@ -248,7 +248,7 @@ XpansionLinkStr: TypeAlias = Annotated[
 class XpansionCandidateBase(AntaresBaseModel, populate_by_name=True):
     name: str
     link: XpansionLinkStr
-    annual_cost_per_mw: float = Field(gt=0)
+    annual_cost_per_mw: float = Field(ge=0)
     unit_size: Optional[float] = Field(default=None, ge=0)
     max_units: Optional[int] = Field(default=None, ge=0)
     max_investment: Optional[float] = Field(default=None, ge=0)

@@ -218,7 +218,7 @@ class TestSTStorage:
         bad_properties = {"efficiency": 2.0}
         res = client.patch(f"{storage_url}/{siemens_battery_id}", json=bad_properties)
         assert res.status_code == 422, res.json()
-        assert res.json()["exception"] == "RequestValidationError", res.json()
+        assert res.json()["exception"] == "ShortTermStorageValuesCoherenceError", res.json()
 
         # The short-term storage properties should not have been updated.
         res = client.get(f"{storage_url}/{siemens_battery_id}")

@@ -36,11 +36,10 @@ import {
   BuildingMode,
   FIRST_JANUARY_OPTIONS,
   MODE_OPTIONS,
-  WEEK_OPTIONS,
-  YEAR_OPTIONS,
   type GeneralFormFields,
   type SetDialogStateType,
 } from "./utils";
+import { WEEK_OPTIONS, YEAR_OPTIONS } from "@/utils/date/constants";
 
 interface Props {
   study: StudyMetadata;

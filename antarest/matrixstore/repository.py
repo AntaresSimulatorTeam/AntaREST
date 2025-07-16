@@ -122,6 +122,10 @@ class MatrixRepository:
         matrix: Matrix = self.session.query(Matrix).get(matrix_hash)
         return matrix
 
+    def get_matrices(self) -> list[Matrix]:
+        matrices_list: list[Matrix] = self.session.query(Matrix).all()
+        return matrices_list
+
     def exists(self, matrix_hash: str) -> bool:
         res: bool = self.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
         return res

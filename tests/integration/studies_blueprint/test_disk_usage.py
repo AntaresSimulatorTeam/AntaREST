@@ -73,7 +73,7 @@ class TestDiskUsage:
         res = client.put(
             f"/v1/studies/{variant_id}/generate",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            params={"denormalize": True, "from_scratch": True},
+            params={"from_scratch": True},
         )
         res.raise_for_status()
         task_id = res.json()
@@ -92,8 +92,9 @@ class TestDiskUsage:
             headers=user_headers,
         )
         assert res.status_code == 200, res.json()
-        disk_usage = res.json()  # currently: 6.38 Mio on Ubuntu.
-        assert 6 * 1024 * 1024 < disk_usage < 7 * 1024 * 1024
+        disk_usage = res.json()
+        # currently: 850 Kio on Ubuntu because the parent study is normalized as it was imported.
+        assert 0.1 * 1024 * 1024 < disk_usage < 0.5 * 1024 * 1024
 
         # Create dummy outputs for the variant
         outputs_dir = tmp_path / "internal_workspace" / variant_id / "output"

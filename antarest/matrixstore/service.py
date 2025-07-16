@@ -47,6 +47,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
+    MatrixMetadataDTO,
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
@@ -99,6 +100,10 @@ class ISimpleMatrixService(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_matrices(self) -> list[MatrixMetadataDTO]:
+        raise NotImplementedError()
+
+    @abstractmethod
     def exists(self, matrix_id: str) -> bool:
         raise NotImplementedError()
 
@@ -146,6 +151,10 @@ class SimpleMatrixService(ISimpleMatrixService):
         return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
 
     @override
+    def get_matrices(self) -> list[MatrixMetadataDTO]:
+        raise NotImplementedError()
+
+    @override
     def exists(self, matrix_id: str) -> bool:
         return self.matrix_content_repository.exists(matrix_id)
 
@@ -184,6 +193,14 @@ def check_dataframe_compliance(df: pd.DataFrame) -> None:
                 raise MatrixNotSupported(
                     f"Supported matrix data types are 'string, np.number, datetime' and you provided {dtype}"
                 )
+
+
+def _matrix_to_dto(matrix: Matrix) -> MatrixMetadataDTO:
+    matrix_model = MatrixMetadataDTO(
+        id=matrix.id, width=matrix.width, height=matrix.height, created_at=matrix.created_at, version=matrix.version
+    )
+
+    return matrix_model
 
 
 class MatrixService(ISimpleMatrixService):
@@ -403,6 +420,17 @@ class MatrixService(ISimpleMatrixService):
         if matrix is None:
             raise MatrixNotFound(matrix_id)
         return self.matrix_content_repository.get(matrix_id, matrix.version)
+
+    @override
+    def get_matrices(self) -> List[MatrixMetadataDTO]:
+        """
+        Get a list of matrix objects from the database
+        Returns:#
+            A list of matrices of the repository
+        """
+
+        matrices = self.repo.get_matrices()
+        return [_matrix_to_dto(m) for m in matrices]
 
     @override
     def exists(self, matrix_id: str) -> bool:

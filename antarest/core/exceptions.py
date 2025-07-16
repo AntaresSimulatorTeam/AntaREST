@@ -315,14 +315,6 @@ class VariantStudyParentNotValid(HTTPException):
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
 
 
-class StudyTypeUnsupported(HTTPException):
-    def __init__(self, uuid: str, type_: str) -> None:
-        super().__init__(
-            HTTPStatus.UNPROCESSABLE_ENTITY,
-            f"Study {uuid} with type {type_} not recognized",
-        )
-
-
 class NotAManagedStudyException(HTTPException):
     def __init__(self, uuid: str) -> None:
         super().__init__(
@@ -815,11 +807,6 @@ class CandidateNotFoundError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class FileAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
-
-
 class IncorrectArgumentsForCopy(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
@@ -829,3 +816,15 @@ class StudyImportFailed(HTTPException):
     def __init__(self, study_name: str, reason: str) -> None:
         message = f"Study '{study_name}' could not be imported: {reason}"
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class ShortTermStorageValuesCoherenceError(HTTPException):
+    def __init__(self, storage_id: str, msg: str) -> None:
+        message = f"Short term storage '{storage_id}' has incoherent values: {msg}"
+        HTTPException.__init__(self, HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class UnsupportedOperationOnThisStudyType(HTTPException):
+    def __init__(self, uuid: str, operation: str, supported_type: str) -> None:
+        msg = f"You cannot {operation} the study '{uuid}'. This is only available for {supported_type} studies."
+        super().__init__(HTTPStatus.BAD_REQUEST, msg)
