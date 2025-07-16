@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "chore/3469-build-artifact"
 
 jobs:
   binary:
