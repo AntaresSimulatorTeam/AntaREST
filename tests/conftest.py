@@ -12,6 +12,7 @@
 
 from pathlib import Path
 from typing import Callable
+from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -58,7 +59,7 @@ def ini_cleaner() -> Callable[[str], str]:
 
 @pytest.fixture(name="matrix_service")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
-    return InMemorySimpleMatrixService()
+    return InMemorySimpleMatrixService(matrix_content_repository=Mock())
 
 
 def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
