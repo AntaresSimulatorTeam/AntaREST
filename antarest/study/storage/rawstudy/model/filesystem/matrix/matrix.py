@@ -19,10 +19,10 @@ from typing import List, Optional, cast
 
 import numpy as np
 import pandas as pd
-from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -46,20 +46,14 @@ class MatrixFrequency(StrEnum):
     HOURLY = "hourly"
 
 
-def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_format: Optional[str] = "%.6f") -> None:
+def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.empty and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        df.to_csv(
-            path_or_buf,
-            sep="\t",
-            header=False,
-            index=False,
-            float_format=float_format,
-        )
+        df.to_csv(path_or_buf, sep="\t", header=False, index=False)
 
 
-def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
+def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
     """Tries to convert bytes to a numpy array when importing a matrix"""
     str_data = data.decode("utf-8")
     if not str_data:
@@ -184,7 +178,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         if df.empty:
             return b""
         buffer = io.StringIO()
-        df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        df.to_csv(buffer, sep="\t", header=False, index=False)
         return buffer.getvalue()  # type: ignore
 
     @override

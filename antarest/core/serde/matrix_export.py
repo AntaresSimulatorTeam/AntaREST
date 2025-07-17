@@ -57,15 +57,7 @@ def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes:
     headers = True
     append = False
     for df in _checked_dataframes_generator(dataframes):
-        df.to_csv(
-            path,
-            mode="a" if append else "w",
-            sep=sep,
-            decimal=decimal,
-            index=False,
-            header=headers,
-            float_format="%.6f",
-        )
+        df.to_csv(path, mode="a" if append else "w", sep=sep, decimal=decimal, index=False, header=headers)
         headers = False
         append = True
 
@@ -176,30 +168,11 @@ class TableExportFormat(EnumIgnoreCase):
                     engine="xlsxwriter",
                 )
             case TableExportFormat.TSV:
-                return df.to_csv(
-                    export_path,
-                    sep="\t",
-                    index=with_index,
-                    header=with_header,
-                    float_format="%.6f",
-                )
+                return df.to_csv(export_path, sep="\t", index=with_index, header=with_header)
             case TableExportFormat.CSV:
-                return df.to_csv(
-                    export_path,
-                    sep=",",
-                    index=with_index,
-                    header=with_header,
-                    float_format="%.6f",
-                )
+                return df.to_csv(export_path, sep=",", index=with_index, header=with_header)
             case TableExportFormat.CSV_SEMICOLON:
-                return df.to_csv(
-                    export_path,
-                    sep=";",
-                    decimal=",",
-                    index=with_index,
-                    header=with_header,
-                    float_format="%.6f",
-                )
+                return df.to_csv(export_path, sep=";", decimal=",", index=with_index, header=with_header)
             case TableExportFormat.HDF5:
                 return df.to_hdf(
                     export_path,

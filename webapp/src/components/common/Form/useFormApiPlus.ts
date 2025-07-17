@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import * as RA from "ramda-adjunct";
+import { useEffect, useMemo, useRef } from "react";
 import type {
   BatchFieldArrayUpdate,
   FieldPath,
@@ -22,14 +24,12 @@ import type {
   UseFormSetValue,
   UseFormUnregister,
 } from "react-hook-form";
-import * as RA from "ramda-adjunct";
-import { useEffect, useMemo, useRef } from "react";
 import useUpdatedRef from "../../../hooks/useUpdatedRef";
 import type {
+  AutoSubmitHandler,
   UseFormRegisterPlus,
   UseFormReturnPlus,
   UseFormSetValues,
-  AutoSubmitHandler,
 } from "./types";
 
 interface Params<TFieldValues extends FieldValues, TContext> {
@@ -136,7 +136,7 @@ function useFormApiPlus<TFieldValues extends FieldValues, TContext>(
       };
 
       const updateFieldArrayWrapper: BatchFieldArrayUpdate = (...args) => {
-        control._updateFieldArray(...args);
+        control._setFieldArray(...args);
         if (dataRef.current.isAutoSubmitEnabled) {
           dataRef.current.submit();
         }
