@@ -13,6 +13,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
+from antarest.study.business.model.hydro_model import HydroManagementUpdate
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -46,7 +47,7 @@ class TestUpdateHydroManagement:
             }
 
             # Update several properties
-            new_properties = {"inter_daily_breakdown": 3.1, "reservoir": True}
+            new_properties = HydroManagementUpdate.model_construct(inter_daily_breakdown=3.1, reservoir=True)
             cmd = UpdateHydroManagement(
                 area_id="fr", properties=new_properties, command_context=command_context, study_version=study_version
             )
@@ -79,7 +80,7 @@ class TestUpdateHydroManagement:
             assert ini_content == expected_content
 
             # Update properties
-            new_properties = {"overflow_spilled_cost_difference": 1.4}
+            new_properties = HydroManagementUpdate.model_construct(overflow_spilled_cost_difference=1.4)
             if study_version < STUDY_VERSION_9_2:
                 # Ensures we can't give a 9.2 parameter inside a v8.8 command
                 with pytest.raises(

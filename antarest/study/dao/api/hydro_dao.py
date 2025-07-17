@@ -10,9 +10,15 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Dict
 
-from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    HydroManagementFileData,
+    HydroProperties,
+    InflowStructure,
+    InflowStructureFileData,
+)
 
 
 class ReadOnlyHydroDao(ABC):
@@ -21,7 +27,7 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_hydro_for_area(self, area_id: str) -> HydroManagement:
+    def get_hydro_management(self, area_id: str) -> HydroManagement:
         raise NotImplementedError()
 
     @abstractmethod
@@ -31,9 +37,9 @@ class ReadOnlyHydroDao(ABC):
 
 class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
-    def save_hydro_management(self, area_id: str, hydro_data: Dict[str, Any]) -> None:
+    def save_hydro_management(self, area_id: str, hydro_data: HydroManagementFileData) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_inflow_structure(self, area_id: str, inflow_data: Dict[str, float]) -> None:
+    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructureFileData) -> None:
         raise NotImplementedError()

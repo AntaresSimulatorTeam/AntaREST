@@ -19,6 +19,7 @@ from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     HydroManagementFileData,
     HydroManagementUpdate,
+    update_hydro_management,
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
@@ -50,15 +51,16 @@ class UpdateHydroManagement(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        hydro_manager = HydroManagementFileData(**study_data.get_file_study().tree.get(HYDRO_PATH.split("/")))
+        hydro_manager = HydroManagementFileData(**study_data.get_file_study().tree.get(HYDRO_PATH))
+        hydro_manager.get_hydro_management(self.area_id, study_data.get_version())
 
-        new_hydro = hydro_manager.get_hydro_management(self.area_id, study_data.get_version()).model_copy(
-            update=self.properties.model_dump(exclude_none=True)
+        new_hydro = update_hydro_management(
+            hydro_manager.get_hydro_management(self.area_id, study_data.get_version()), self.properties
         )
 
         hydro_manager.set_hydro_management(self.area_id, new_hydro)
 
-        study_data.save_hydro_management(self.area_id, hydro_manager.model_dump(by_alias=True, exclude_none=True))
+        study_data.save_hydro_management(self.area_id, hydro_manager)
 
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 

@@ -316,7 +316,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(msg=f"Getting Hydro management config for area {area_id} of study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_hydro_for_area(study_interface, area_id)
+        return study_service.hydro_manager.get_hydro_management(study_interface, area_id)
 
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/form",

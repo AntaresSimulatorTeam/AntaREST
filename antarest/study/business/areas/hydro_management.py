@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Dict
-
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -28,14 +26,14 @@ class HydroManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_hydro_properties(self, study: StudyInterface) -> Dict[str, HydroProperties]:
+    def get_all_hydro_properties(self, study: StudyInterface) -> dict[str, HydroProperties]:
         return study.get_study_dao().get_all_hydro_properties()
 
-    def get_hydro_for_area(self, study: StudyInterface, area_id: str) -> HydroManagement:
+    def get_hydro_management(self, study: StudyInterface, area_id: str) -> HydroManagement:
         """
         Get management options for a given area
         """
-        return study.get_study_dao().get_hydro_for_area(area_id)
+        return study.get_study_dao().get_hydro_management(area_id)
 
     def update_hydro_management(
         self,

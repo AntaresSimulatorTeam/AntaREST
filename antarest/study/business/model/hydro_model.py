@@ -19,8 +19,11 @@ from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import STUDY_VERSION_9_2
 
-HYDRO_PATH = "input/hydro/hydro"
-INFLOW_PATH = "input/hydro/prepro/{area_id}/prepro/prepro"
+HYDRO_PATH = ["input", "hydro", "hydro"]
+
+
+def get_inflow_path(area_id: str) -> list[str]:
+    return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
 
 
 class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
@@ -163,3 +166,13 @@ class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name
 class HydroProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     management_options: HydroManagement
     inflow_structure: InflowStructure
+
+
+def update_hydro_management(hydro_management: HydroManagement, hydro_data: HydroManagementUpdate) -> HydroManagement:
+    return hydro_management.model_copy(update=hydro_data.model_dump(exclude_none=True))
+
+
+def update_inflow_structure(
+    inflow_structure: InflowStructureFileData, inflow_data: InflowStructureUpdate
+) -> InflowStructureFileData:
+    return inflow_structure.model_copy(update=inflow_data.model_dump(exclude_none=True))

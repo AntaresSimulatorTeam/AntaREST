@@ -20,7 +20,15 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    HydroProperties,
+    InflowStructure,
+    HydroManagementFileData,
+    InflowStructureFileData,
+    update_hydro_management,
+    HydroManagementUpdate,
+)
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
@@ -223,7 +231,7 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties
 
     @override
-    def get_hydro_for_area(self, area_id: str) -> HydroManagement:
+    def get_hydro_management(self, area_id: str) -> HydroManagement:
         return self._hydro_properties[area_id].management_options
 
     @override
@@ -231,11 +239,11 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties[area_id].inflow_structure
 
     @override
-    def save_hydro_management(self, area_id: str, hydro_data: Dict[str, Any]) -> None:
+    def save_hydro_management(self, area_id: str, hydro_data: HydroManagementFileData) -> None:
         self._hydro_properties[area_id].management_options.model_copy(update=hydro_data)
 
     @override
-    def save_inflow_structure(self, area_id: str, inflow_data: Dict[str, float]) -> None:
+    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructureFileData) -> None:
         self._hydro_properties[area_id].inflow_structure.model_copy(update=inflow_data)
 
     @override
