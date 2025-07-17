@@ -20,7 +20,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, User
 from antarest.study.model import Study
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from tests.helpers import with_db_context
+from tests.helpers import with_db_context, create_study
 
 
 class TestAbstractStorageService:
@@ -52,7 +52,7 @@ class TestAbstractStorageService:
         db.session.add(group)
         db.session.commit()
         # noinspection PyArgumentList
-        metadata = Study(
+        metadata = create_study(
             name="My Study",
             version="860",
             author="John Smith",

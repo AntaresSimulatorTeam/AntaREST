@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from antarest.core.tasks.model import TaskJob, TaskJobLog
 from antarest.login.model import Password, User
 from antarest.study.model import RawStudy
+from tests.helpers import create_raw_study
 
 
 class TestTaskJob:
@@ -77,7 +78,7 @@ class TestTaskJob:
         # Insert a Study object and attach several TaskJob objects to it
         with db_session:
             study_id = str(uuid.uuid4())
-            db_session.add(RawStudy(id=study_id, name="Study 1", version="8.8"))
+            db_session.add(create_raw_study(id=study_id, name="Study 1", version="8.8"))
             db_session.commit()
 
         with db_session:

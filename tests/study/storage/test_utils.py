@@ -22,6 +22,7 @@ from antarest.study.model import STUDY_VERSION_8_8, Study
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import is_folder_safe, update_antares_info
+from tests.helpers import create_study
 
 
 @pytest.fixture
@@ -80,7 +81,7 @@ def test_update_antares_info_version(tmp_path: Path, version: str, expected_vers
     antares_study_path = study_path / "study.antares"
     write_ini_file(antares_study_path, {"antares": {"version": "700"}})
 
-    metadata = Study(name="my-study", version=version, created_at=datetime.now(), updated_at=datetime.now())
+    metadata = create_study(name="my-study", version=version, created_at=datetime.now(), updated_at=datetime.now())
     update_antares_info(metadata, tree, update_author=False)
     updated = read_ini(antares_study_path)
     assert str(updated["antares"]["version"]) == expected_version

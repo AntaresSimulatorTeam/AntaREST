@@ -47,7 +47,6 @@ from antarest.eventbus.service import EventBusService
 from antarest.login.model import User
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.service_creator import SESSION_ARGS
-from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -55,7 +54,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
-from tests.helpers import with_admin_user, with_db_context
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 from tests.storage.test_service import build_study_service
 
 
@@ -190,7 +189,7 @@ def test_repository() -> None:
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db.session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db.session.add(create_raw_study(id=study_id, name="foo", version="860"))
     db.session.commit()
 
     # Create a TaskJobService
@@ -379,7 +378,7 @@ def test_get_progress(admin_user: JWTUser, core_config: Config, event_bus: IEven
 
     # Create a RawStudy in the database
     study_id = "e34fe4d5-5964-4ef2-9baf-fad66dadc512"
-    db.session.add(RawStudy(id=study_id, name="foo", version="860"))
+    db.session.add(create_raw_study(id=study_id, name="foo", version="860"))
     db.session.commit()
 
     # Create a TaskJobService
@@ -458,7 +457,7 @@ def test_ts_generation_task(
     db.session.add(regular_user)
     db.session.commit()
 
-    raw_study = RawStudy(
+    raw_study = create_raw_study(
         id="my_raw_study",
         name="my_raw_study",
         version="860",

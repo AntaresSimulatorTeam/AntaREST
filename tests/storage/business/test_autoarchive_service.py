@@ -17,13 +17,12 @@ from unittest.mock import Mock
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.interfaces.cache import ICache
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 from antarest.study.storage.output_service import OutputService
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
-from tests.helpers import with_db_context
+from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 @with_db_context
@@ -43,7 +42,7 @@ def test_auto_archival(tmp_path: Path):
     db_session = repository.session
     db_session.add_all(
         [
-            RawStudy(
+            create_raw_study(
                 id="a",
                 name="study_a",
                 version="8.7",
@@ -52,7 +51,7 @@ def test_auto_archival(tmp_path: Path):
                 created_at=now,
                 updated_at=now - datetime.timedelta(days=61),
             ),
-            RawStudy(
+            create_raw_study(
                 id="b",
                 name="study_b",
                 version="8.7",
@@ -61,7 +60,7 @@ def test_auto_archival(tmp_path: Path):
                 created_at=now,
                 updated_at=now - datetime.timedelta(days=59),
             ),
-            RawStudy(
+            create_raw_study(
                 id="c",
                 name="study_c",
                 version="8.7",
@@ -71,7 +70,7 @@ def test_auto_archival(tmp_path: Path):
                 updated_at=now - datetime.timedelta(days=61),
                 archived=True,
             ),
-            RawStudy(
+            create_raw_study(
                 id="d",
                 name="study_d",
                 version="8.7",
@@ -81,7 +80,7 @@ def test_auto_archival(tmp_path: Path):
                 updated_at=now - datetime.timedelta(days=61),
                 archived=False,
             ),
-            VariantStudy(
+            create_variant_study(
                 id="e",
                 name="study_e",
                 version="8.7",
@@ -89,7 +88,7 @@ def test_auto_archival(tmp_path: Path):
                 created_at=now,
                 updated_at=now - datetime.timedelta(days=61),
             ),
-            VariantStudy(
+            create_variant_study(
                 id="f",
                 name="study_f",
                 version="8.7",

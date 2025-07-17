@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from operator import and_
-from typing import Optional, cast
+from typing import Optional
 
 from sqlalchemy import select
 
@@ -41,8 +41,8 @@ class ConfigDataRepository:
 
     def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
         configdata = self.get(key, owner)
-        if configdata:
-            data: JSON = from_json(cast(str, configdata.value))
+        if configdata and configdata.value is not None:
+            data: JSON = from_json(configdata.value)
             return data
         return None
 

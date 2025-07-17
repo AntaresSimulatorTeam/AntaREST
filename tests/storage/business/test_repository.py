@@ -16,9 +16,8 @@ from unittest.mock import Mock
 from sqlalchemy.orm import Session
 
 from antarest.core.interfaces.cache import ICache
-from antarest.study.model import RawStudy
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from tests.helpers import create_raw_study, create_variant_study
 
 
 class TestVariantStudyRepository:
@@ -31,7 +30,7 @@ class TestVariantStudyRepository:
         repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
 
         # Create a root study
-        raw_study = RawStudy(name="My Root")
+        raw_study = create_raw_study(name="My Root")
         db_session.add(raw_study)
         db_session.commit()
 
@@ -46,8 +45,8 @@ class TestVariantStudyRepository:
         day4 = datetime.datetime(2023, 1, 4)
 
         # Create two variant studies of the same parent
-        variant1 = VariantStudy(name="My Variant 1", parent_id=raw_study.id, created_at=day1)
-        variant2 = VariantStudy(name="My Variant 2", parent_id=raw_study.id, created_at=day3)
+        variant1 = create_variant_study(name="My Variant 1", parent_id=raw_study.id, created_at=day1)
+        variant2 = create_variant_study(name="My Variant 2", parent_id=raw_study.id, created_at=day3)
         db_session.add_all([variant1, variant2])
         db_session.commit()
 
@@ -63,7 +62,7 @@ class TestVariantStudyRepository:
         assert children == []
 
         # Add a variant study between the two existing ones (in reverse chronological order)
-        variant3 = VariantStudy(name="My Variant 3", parent_id=raw_study.id, created_at=day2)
+        variant3 = create_variant_study(name="My Variant 3", parent_id=raw_study.id, created_at=day2)
         db_session.add(variant3)
         db_session.commit()
 
@@ -73,7 +72,7 @@ class TestVariantStudyRepository:
         assert children[0].created_at > children[1].created_at > children[2].created_at
 
         # Add a variant of a variant
-        variant3a = VariantStudy(name="My Variant 3a", parent_id=variant3.id, created_at=day4)
+        variant3a = create_variant_study(name="My Variant 3a", parent_id=variant3.id, created_at=day4)
         db_session.add(variant3a)
         db_session.commit()
 

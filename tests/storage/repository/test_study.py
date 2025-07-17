@@ -20,7 +20,7 @@ from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, StudyContentStatus
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from tests.helpers import create_raw_study, create_variant_study, create_study
 
 
 def test_lifecycle(db_session: Session) -> None:
@@ -29,7 +29,7 @@ def test_lifecycle(db_session: Session) -> None:
     user = User(id=1, name="admin")
     group = Group(id="my-group", name="group")
 
-    a = Study(
+    a = create_study(
         name="a",
         version="820",
         author="John Smith",
@@ -39,7 +39,7 @@ def test_lifecycle(db_session: Session) -> None:
         owner=user,
         groups=[group],
     )
-    b = RawStudy(
+    b = create_raw_study(
         name="b",
         version="830",
         author="Morpheus",
@@ -49,7 +49,7 @@ def test_lifecycle(db_session: Session) -> None:
         owner=user,
         groups=[group],
     )
-    c = RawStudy(
+    c = create_raw_study(
         name="c",
         version="830",
         author="Trinity",
@@ -60,7 +60,7 @@ def test_lifecycle(db_session: Session) -> None:
         groups=[group],
         missing=datetime.utcnow(),
     )
-    d = VariantStudy(
+    d = create_variant_study(
         name="d",
         version="830",
         author="Mr. Anderson",
@@ -97,7 +97,7 @@ def test_study__additional_data(db_session: Session) -> None:
     group = Group(id="my-group", name="group")
 
     patch = {"foo": "bar"}
-    a = RawStudy(
+    a = create_raw_study(
         name="a",
         version="820",
         author="John Smith",
@@ -138,7 +138,7 @@ def test_study_inheritance(db_session: Session) -> None:
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
-    a = RawStudy(
+    a = create_raw_study(
         name="a",
         version="820",
         author="John Smith",

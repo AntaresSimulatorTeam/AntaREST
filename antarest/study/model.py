@@ -261,12 +261,12 @@ class Study(Base):  # type: ignore
     )
     name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
-    version: Mapped[str] = mapped_column(String(255), index=True, default="9.2")
+    version: Mapped[str] = mapped_column(String(255), index=True)
     author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String(), default=DEFAULT_WORKSPACE_NAME)
+    path: Mapped[str] = mapped_column(String())
     folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     parent_id: Mapped[Optional[str]] = mapped_column(
         String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
