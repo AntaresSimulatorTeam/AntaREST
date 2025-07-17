@@ -37,7 +37,7 @@ export enum Timestep {
 }
 
 interface Params {
-  output: Simulation & { id: string };
+  output: Partial<Simulation> & { id: string; name: string };
   item: (Area & { id: string }) | LinkElement;
   dataType: DataType;
   timestep: Timestep;
@@ -48,10 +48,12 @@ export const MAX_YEAR = 99999;
 
 export function createPath(params: Params): string {
   const { output, item, dataType, timestep, year } = params;
-  const { id, mode } = output;
+  const { id, mode = "economy" } = output;
   const isYearPeriod = year && year > 0;
   const periodFolder = isYearPeriod
-    ? `mc-ind/${Math.min(year, output.nbyears).toString().padStart(5, "0")}`
+    ? `mc-ind/${Math.min(year, output.nbyears || MAX_YEAR)
+        .toString()
+        .padStart(5, "0")}`
     : "mc-all";
   const isLink = "area1" in item;
   const itemType = isLink ? OutputItemType.Links : OutputItemType.Areas;
