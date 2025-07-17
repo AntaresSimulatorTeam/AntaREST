@@ -30,7 +30,7 @@ import {
 import FormContext from "../components/common/Form/FormContext";
 import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
 import type { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
-import { getComponentDisplayName } from "../utils/reactUtils";
+import { composeRefs, getComponentDisplayName } from "../utils/reactUtils";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
@@ -232,7 +232,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
                 {...fieldProps}
                 onChange={handleChange(onChange)}
                 onBlur={handleBlur(onBlur)}
-                inputRef={ref}
+                inputRef={composeRefs(ref, feProps.inputRef)}
                 error={!!error}
                 helperText={error?.message || feProps.helperText}
                 disabled={
