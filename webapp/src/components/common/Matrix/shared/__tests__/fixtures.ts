@@ -46,7 +46,7 @@ export const DATE_TIME_TEST_CASES = [
       level: TimeFrequency.Weekly,
       first_week_size: 1,
     },
-    expected: ["W. 01", "W. 02", "W. 03"],
+    expected: ["global.time.weekShort 01", "global.time.weekShort 02", "global.time.weekShort 03"],
   },
   {
     name: "daily format",
