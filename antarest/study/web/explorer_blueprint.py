@@ -17,7 +17,7 @@ from fastapi import APIRouter
 
 from antarest.core.config import Config
 from antarest.login.auth import Auth
-from antarest.study.model import FolderDTO, WorkspaceMetadata
+from antarest.study.model import FolderDTO, WorkspaceDTO
 from antarest.study.storage.explorer_service import Explorer
 
 logger = logging.getLogger(__name__)
@@ -58,9 +58,9 @@ def create_explorer_routes(config: Config, explorer: Explorer) -> APIRouter:
     @bp.get(
         "/explorer/_list_workspaces",
         summary="List all workspaces",
-        response_model=List[WorkspaceMetadata],
+        response_model=List[WorkspaceDTO],
     )
-    def list_workspaces() -> List[WorkspaceMetadata]:
+    def list_workspaces() -> List[WorkspaceDTO]:
         """
         Endpoint to list workspaces
         Args:
