@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
