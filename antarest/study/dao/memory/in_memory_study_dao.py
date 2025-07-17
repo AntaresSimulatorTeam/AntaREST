@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Any, Dict, Sequence
+from typing import Dict, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -22,12 +22,10 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
+    HydroManagementFileData,
     HydroProperties,
     InflowStructure,
-    HydroManagementFileData,
     InflowStructureFileData,
-    update_hydro_management,
-    HydroManagementUpdate,
 )
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -240,11 +238,19 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_hydro_management(self, area_id: str, hydro_data: HydroManagementFileData) -> None:
-        self._hydro_properties[area_id].management_options.model_copy(update=hydro_data)
+        new_hydro_management = hydro_data.get_hydro_management(area_id, self.get_version())
+        updated_hydro_properties = self._hydro_properties[area_id].management_options.model_copy(
+            update=new_hydro_management.model_dump(exclude_none=True)
+        )
+        self._hydro_properties[area_id].management_options = updated_hydro_properties
 
     @override
     def save_inflow_structure(self, area_id: str, inflow_data: InflowStructureFileData) -> None:
-        self._hydro_properties[area_id].inflow_structure.model_copy(update=inflow_data)
+        inflow_structure = InflowStructure.model_construct(**inflow_data.model_dump(by_alias=True))
+        updated_hydro_properties = self._hydro_properties[area_id].inflow_structure.model_copy(
+            update=inflow_structure.model_dump()
+        )
+        self._hydro_properties[area_id].inflow_structure = updated_hydro_properties
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
