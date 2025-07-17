@@ -20,7 +20,7 @@ from sqlalchemy.orm import Session
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Tag
 from antarest.study.repository import (
     AccessPermissions,
     StudyFilter,
@@ -28,7 +28,6 @@ from antarest.study.repository import (
     StudyPagination,
     StudySortBy,
 )
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, create_variant_study
 

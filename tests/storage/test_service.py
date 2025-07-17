@@ -20,7 +20,7 @@ from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from unittest.mock import ANY, Mock, call, patch, seal
+from unittest.mock import ANY, Mock, patch, seal
 
 import numpy as np
 import pandas as pd
@@ -375,9 +375,7 @@ def test_sync_studies_from_disk() -> None:
     # (f, workspace1) exist on disc but not in DB so it should be added
     # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
     # we check that we indeed save them in DB
-    saved_studies_map = {
-        (s.path, s.workspace): s for s in [c.args[0] for c in repository.save.call_args_list]
-    }
+    saved_studies_map = {(s.path, s.workspace): s for s in [c.args[0] for c in repository.save.call_args_list]}
     assert len(saved_studies_map) == 5
 
     # study 'b' is in DB but not on disk, so it should be marked as missing

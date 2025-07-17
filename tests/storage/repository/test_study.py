@@ -18,9 +18,9 @@ from sqlalchemy.orm import Session
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study, StudyAdditionalData, StudyContentStatus
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData, StudyContentStatus
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from tests.helpers import create_raw_study, create_variant_study, create_study
+from tests.helpers import create_raw_study, create_study, create_variant_study
 
 
 def test_lifecycle(db_session: Session) -> None:

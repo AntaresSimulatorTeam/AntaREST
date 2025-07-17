@@ -18,7 +18,7 @@ import pytest
 from antarest.core.config import WorkspaceConfig
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
-from antarest.study.model import STUDY_VERSION_8_8, Study
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import is_folder_safe, update_antares_info

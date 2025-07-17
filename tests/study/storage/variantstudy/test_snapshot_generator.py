@@ -32,15 +32,21 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import Study, StudyAdditionalData
+from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import AnyUUID, create_raw_study, create_variant_study, with_admin_user, with_db_context, \
-    create_study
+from tests.helpers import (
+    AnyUUID,
+    create_raw_study,
+    create_study,
+    create_variant_study,
+    with_admin_user,
+    with_db_context,
+)
 
 logger = logging.getLogger(__name__)
 
