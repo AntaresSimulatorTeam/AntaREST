@@ -335,6 +335,26 @@ class Study(Base):  # type: ignore
         """
         return normalize_path(folder)
 
+    def get_created_at(self) -> datetime:
+        """Get the creation date, raising an error if not set."""
+        if self.created_at is None:
+            raise ValueError(f"Study {self.id} has no creation date")
+        return self.created_at
+
+    def get_updated_at(self) -> datetime:
+        """Get the last update date, raising an error if not set."""
+        if self.updated_at is None:
+            raise ValueError(f"Study {self.id} has no update date")
+        return self.updated_at
+
+    def get_created_at_timestamp(self) -> float:
+        """Get the creation timestamp, raising an error if not set."""
+        return self.get_created_at().timestamp()
+
+    def get_updated_at_timestamp(self) -> float:
+        """Get the last update timestamp, raising an error if not set."""
+        return self.get_updated_at().timestamp()
+
 
 def normalize_path(path: Optional[str]) -> Optional[str]:
     """
@@ -368,7 +388,7 @@ class RawStudy(Study):
     )
     content_status: Mapped[Optional[StudyContentStatus]] = mapped_column(Enum(StudyContentStatus), nullable=True)
     workspace: Mapped[str] = mapped_column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
-    missing: Mapped[Optional[DateTime]] = mapped_column(DateTime, nullable=True, index=True)
+    missing: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",

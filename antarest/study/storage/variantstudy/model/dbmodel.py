@@ -45,7 +45,7 @@ class VariantStudySnapshot(Base):  # type: ignore
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime.date] = mapped_column(DateTime)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
     last_executed_command: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
 
     __mapper_args__ = {
