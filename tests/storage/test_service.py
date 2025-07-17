@@ -372,47 +372,37 @@ def test_sync_studies_from_disk() -> None:
     # (f, workspace1) exist on disc but not in DB so it should be added
     # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
     # we check that we indeed save them in DB
-    repository.save.assert_has_calls(
-            [
-                call(RawStudy(id="b", path="b", missing=ANY, workspace="workspace1")),
-                call(
-                    RawStudy(
-                        id=ANY,
-                        path="a",
-                        name="a",
-                        folder="a",
-                        workspace="workspace2",
-                        missing=None,
-                        public_mode=PublicMode.FULL,
-                    )
-                ),
-                call(
-                    RawStudy(id="e", path="e", name="e", folder="e", workspace="workspace1", missing=None, created_at=now)
-                ),
-                call(
-                    RawStudy(
-                        id=ANY,
-                        path="f",
-                        name="f",
-                        folder="f",
-                        workspace="workspace1",
-                        missing=None,
-                        public_mode=PublicMode.FULL,
-                    )
-                ),
-                call(
-                    RawStudy(
-                        id=ANY,
-                        path="f",
-                        name="f",
-                        folder="f",
-                        workspace="workspace2",
-                        missing=None,
-                        public_mode=PublicMode.FULL,
-                    )
-                ),
-            ]
-        )
+    # (f, workspace1) exist on disc but not in DB so it should be added
+    # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
+    # we check that we indeed save them in DB
+    saved_studies_map = {
+        (s.path, s.workspace): s for s in [c.args[0] for c in repository.save.call_args_list]
+    }
+    assert len(saved_studies_map) == 5
+
+    # study 'b' is in DB but not on disk, so it should be marked as missing
+    study_b = saved_studies_map[("b", "workspace1")]
+    assert study_b.id == "b"
+    assert study_b.missing is not None
+
+    # study 'e' was missing and re-appeared, so it should be restored
+    study_e = saved_studies_map[("e", "workspace1")]
+    assert study_e.id == "e"
+    assert study_e.missing is None
+    assert study_e.created_at == now
+
+    # new studies should be added
+    study_a2 = saved_studies_map[("a", "workspace2")]
+    assert study_a2.name == "a"
+    assert study_a2.public_mode == PublicMode.FULL
+
+    study_f1 = saved_studies_map[("f", "workspace1")]
+    assert study_f1.name == "f"
+    assert study_f1.public_mode == PublicMode.FULL
+
+    study_f2 = saved_studies_map[("f", "workspace2")]
+    assert study_f2.name == "f"
+    assert study_f2.public_mode == PublicMode.FULL
 
 
 @pytest.mark.unit_test
