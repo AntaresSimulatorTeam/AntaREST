@@ -15,12 +15,12 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
+    INFLOW_PATH,
     InflowStructureFileData,
     InflowStructureUpdate,
-    get_inflow_path,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -43,16 +43,17 @@ class UpdateInflowStructure(ICommand):
     properties: InflowStructureUpdate
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        path = get_inflow_path(self.area_id)
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        file_study = study_data.get_file_study()
+        path = INFLOW_PATH.format(area_id=self.area_id).split("/")
 
-        current_inflow = InflowStructureFileData(**study_data.tree.get(path))
+        current_inflow = InflowStructureFileData(**file_study.tree.get(path))
 
         updated_inflow = current_inflow.model_copy(update=self.properties.model_dump()).model_dump(by_alias=True)
 
-        study_data.tree.save(updated_inflow, path)
+        study_data.save_inflow_structure(self.area_id, updated_inflow)
 
-        return CommandOutput(status=True, message=f"Inflow properties in '{self.area_id}' updated.")
+        return command_succeeded(f"Inflow properties in '{self.area_id}' updated.")
 
     @override
     def to_dto(self) -> CommandDTO:
