@@ -20,9 +20,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobLog, JobLogType, JobResult, JobStatus
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Identity
-from antarest.study.model import RawStudy
 from antarest.study.repository import StudyMetadataRepository
-from tests.helpers import with_db_context
+from tests.helpers import create_raw_study, with_db_context
 
 
 @pytest.mark.unit_test
@@ -31,7 +30,7 @@ def test_job_result() -> None:
     repo = JobResultRepository()
     study_id = str(uuid4())
     study_repo = StudyMetadataRepository(Mock())
-    study_repo.save(RawStudy(id=study_id))
+    study_repo.save(create_raw_study(id=study_id))
     a = JobResult(
         id=str(uuid4()),
         study_id=study_id,

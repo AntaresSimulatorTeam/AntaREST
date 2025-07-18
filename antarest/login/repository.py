@@ -13,8 +13,8 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import exists  # type: ignore
-from sqlalchemy.orm import Session, joinedload  # type: ignore
+from sqlalchemy import exists, select
+from sqlalchemy.orm import Session, joinedload
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Bot, Group, Identity, Role, User, UserLdap
@@ -52,12 +52,10 @@ class GroupRepository:
         return group
 
     def get(self, id: str) -> Optional[Group]:
-        group: Group = self.session.query(Group).get(id)
-        return group
+        return self.session.get(Group, id)
 
-    def get_by_name(self, name: str) -> Group:
-        group: Group = self.session.query(Group).filter_by(name=name).first()
-        return group
+    def get_by_name(self, name: str) -> Optional[Group]:
+        return self.session.execute(select(Group).where(Group.name == name)).scalar_one_or_none()
 
     def get_all(self) -> List[Group]:
         groups: List[Group] = self.session.query(Group).all()
@@ -124,19 +122,19 @@ class UserRepository:
         return user
 
     def get(self, id_number: int) -> Optional[User]:
-        user: User = self.session.query(User).get(id_number)
-        return user
+        return self.session.get(User, id_number)
 
     def get_by_name(self, name: str) -> Optional[User]:
-        user: User = self.session.query(User).filter_by(name=name).first()
-        return user
+        return self.session.execute(select(User).where(User.name == name)).scalar_one_or_none()
 
     def delete(self, id: int) -> None:
-        u: User = self.session.query(User).get(id)
-        self.session.delete(u)
-        self.session.commit()
-
-        logger.debug(f"User {id} deleted")
+        u: User | None = self.session.get(User, id)
+        if u:
+            self.session.delete(u)
+            self.session.commit()
+            logger.debug(f"User {id} deleted")
+        else:
+            logger.warning(f"User {id} not found for deletion")
 
 
 class UserLdapRepository:
@@ -173,19 +171,19 @@ class UserLdapRepository:
         return user_ldap
 
     def get_by_name(self, name: str) -> Optional[UserLdap]:
-        user: UserLdap = self.session.query(UserLdap).filter_by(name=name).first()
-        return user
+        return self.session.execute(select(UserLdap).where(UserLdap.name == name)).scalar_one_or_none()
 
     def get_by_external_id(self, external_id: str) -> Optional[UserLdap]:
-        user: UserLdap = self.session.query(UserLdap).filter_by(external_id=external_id).first()
-        return user
+        return self.session.execute(select(UserLdap).where(UserLdap.external_id == external_id)).scalar_one_or_none()
 
     def delete(self, id_number: int) -> None:
-        u: UserLdap = self.session.query(UserLdap).get(id_number)
-        self.session.delete(u)
-        self.session.commit()
-
-        logger.debug(f"User LDAP {id_number} deleted")
+        u: UserLdap | None = self.session.get(UserLdap, id_number)
+        if u:
+            self.session.delete(u)
+            self.session.commit()
+            logger.debug(f"User LDAP {id_number} deleted")
+        else:
+            logger.warning(f"User LDAP {id_number} not found for deletion")
 
 
 class BotRepository:
@@ -207,7 +205,7 @@ class BotRepository:
         return self._session
 
     def save(self, bot: Bot) -> Bot:
-        res = self.session.query(exists().where(Bot.id == bot.id)).scalar()
+        res = self.session.execute(select(exists().where(Bot.id == bot.id))).scalar()
         if res:
             raise ValueError("Bot already exist")
         else:
@@ -218,8 +216,7 @@ class BotRepository:
         return bot
 
     def get(self, id_number: int) -> Optional[Bot]:
-        bot: Bot = self.session.query(Bot).get(id_number)
-        return bot
+        return self.session.get(Bot, id_number)
 
     def get_all(
         self,
@@ -228,19 +225,20 @@ class BotRepository:
         return bots
 
     def delete(self, id_number: int) -> None:
-        u: Bot = self.session.query(Bot).get(id_number)
-        self.session.delete(u)
-        self.session.commit()
-
-        logger.debug(f"Bot {id_number} deleted")
+        u: Bot | None = self.session.get(Bot, id_number)
+        if u:
+            self.session.delete(u)
+            self.session.commit()
+            logger.debug(f"Bot {id_number} deleted")
+        else:
+            logger.warning(f"Bot {id_number} not found for deletion")
 
     def get_all_by_owner(self, owner: int) -> List[Bot]:
         bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
         return bots
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
-        bot: Bot = self.session.query(Bot).filter_by(owner=owner, name=name).first()
-        return bot
+        return self.session.execute(select(Bot).where(Bot.owner == owner, Bot.name == name)).scalar_one_or_none()
 
     def exists(self, id_number: int) -> bool:
         res: bool = self.session.query(exists().where(Bot.id == id_number)).scalar()
@@ -276,8 +274,7 @@ class RoleRepository:
         return role
 
     def get(self, user: int, group: str) -> Optional[Role]:
-        role: Role = self.session.query(Role).get((user, group))
-        return role
+        return self.session.get(Role, (user, group))
 
     def get_all(self, details: bool, groups: Optional[list[Group]] = None) -> list[Role]:
         q = self.session.query(Role)

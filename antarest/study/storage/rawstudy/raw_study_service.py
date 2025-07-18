@@ -121,7 +121,7 @@ class RawStudyService(AbstractStorageService):
             )
             if fallback_on_default is not None:
                 metadata.name = metadata.name or "unnamed"
-                metadata.version = metadata.version or 0
+                metadata.version = metadata.version or "0.0"
                 metadata.created_at = metadata.created_at or datetime.utcnow()
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
@@ -369,7 +369,8 @@ class RawStudyService(AbstractStorageService):
         try:
             self.checks_antares_web_compatibility(metadata)
         except NotImplementedError as e:
-            raise StudyImportFailed(metadata.name, e.args[0]) from e
+            study_name = metadata.name or "Unknown Study"
+            raise StudyImportFailed(study_name, e.args[0])
 
         metadata.path = str(study_path)
         return metadata

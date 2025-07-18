@@ -980,7 +980,8 @@ class StudyService:
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                if study.missing < clean_up_missing_studies_threshold:
+
+                if study.missing and study.missing < clean_up_missing_studies_threshold:
                     logger.info(
                         "Study %s at %s is not present in disk and will be deleted",
                         study.id,
