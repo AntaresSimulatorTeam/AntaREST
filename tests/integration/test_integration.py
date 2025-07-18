@@ -1125,6 +1125,15 @@ def test_maintenance(client: TestClient, admin_access_token: str) -> None:
     assert res.json() == message
 
 
+def zip_study(src_path: Path, dest_path: Path) -> None:
+    with zipfile.ZipFile(dest_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
+        len_dir_path = len(str(src_path))
+        for root, _, files in os.walk(src_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, file_path[len_dir_path:])
+
+
 def test_import(client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
@@ -1248,14 +1257,6 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     app = CreateApp(study_dir=study_path, caption="A", version=StudyVersion.parse("9.2"), author="Unknown")
     app()
 
-    def zip_study(src_path: Path, dest_path: Path) -> None:
-        with zipfile.ZipFile(dest_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
-            len_dir_path = len(str(src_path))
-            for root, _, files in os.walk(src_path):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    zipf.write(file_path, file_path[len_dir_path:])
-
     # Zip it
     archive_path = tmp_path / "test.zip"
     zip_study(study_path, archive_path)
@@ -1281,6 +1282,12 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         res.json()["description"]
         == "Study 'A' could not be imported: AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
     )
+
+
+def test_import_with_editor(
+    client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # 1. Create two users: 'creator' and 'importer'
     client.post("/v1/users", json={"name": "creator", "password": "password123"})
