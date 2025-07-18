@@ -61,6 +61,24 @@ def sanitize_uuid(uuid: str) -> str:
     return uuid
 
 
+def validate_study_name(name: str) -> str:
+    if any(char in name for char in ["=", "/"]):
+        raise HTTPException(
+            status_code=http.HTTPStatus.BAD_REQUEST, detail=f"study name {name} contains illegal characters (=, /)"
+        )
+    return name.strip()
+
+
+def validate_folder_name(name: str) -> str:
+    if "=" in name:
+        raise HTTPException(
+            status_code=http.HTTPStatus.BAD_REQUEST, detail=f"folder name {name} contains illegal character '='"
+        )
+    if name.endswith("/"):
+        raise HTTPException(status_code=http.HTTPStatus.BAD_REQUEST, detail=f"folder name {name} cannot end with '/'")
+    return name.strip()
+
+
 def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
 

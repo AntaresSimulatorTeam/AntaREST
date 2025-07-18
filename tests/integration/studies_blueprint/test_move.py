@@ -29,15 +29,17 @@ class TestMove:
 
         # asserts move to a folder with //// removes the unwanted `/`
         res = client.put(f"/v1/studies/{study_id}/move", params={"folder_dest": "folder2///////"})
-        res.raise_for_status()
-        res = client.get(f"/v1/studies/{study_id}")
-        assert res.json()["folder"] == f"folder2/{study_id}"
+        assert res.status_code == 400
+        assert res.json() == {
+            "description": "folder name folder2/////// cannot end with '/'",
+            "exception": "HTTPException",
+        }
 
         # asserts the created variant has the same parent folder
         res = client.post(f"/v1/studies/{study_id}/variants?name=Variant1")
         variant_id = res.json()
         res = client.get(f"/v1/studies/{variant_id}")
-        assert res.json()["folder"] == f"folder2/{variant_id}"
+        assert res.json()["folder"] == f"folder1/{variant_id}"
 
         # asserts move doesn't work on un-managed studies
         res = client.put(f"/v1/studies/{internal_study_id}/move", params={"folder_dest": "folder1"})

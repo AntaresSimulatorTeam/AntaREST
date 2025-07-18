@@ -24,7 +24,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_name, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -348,7 +348,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         group_ids = [sanitize_string(gid) for gid in group_ids_raw]
 
         uuid_sanitized = sanitize_uuid(uuid)
-        destination_name_sanitized = escape(study_name)
+        destination_name_sanitized = validate_study_name(escape(study_name))
 
         task_id = study_service.copy_study(
             src_uuid=uuid_sanitized,
@@ -369,7 +369,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def move_study(uuid: str, folder_dest: str) -> Any:
         logger.info(f"Moving study {uuid} into folder '{folder_dest}'")
-        study_service.move_study(uuid, folder_dest)
+        study_service.move_study(uuid, validate_folder_name(folder_dest))
 
     @bp.post(
         "/studies",
@@ -380,7 +380,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def create_study(name: str, version: StudyVersionStr | None = None, groups: str = "") -> Any:
         logger.info(f"Creating new study '{name}'")
-        name_sanitized = escape(name)
+        name_sanitized = validate_study_name(escape(name))
         group_ids = _split_comma_separated_values(groups)
         group_ids = [sanitize_string(gid) for gid in group_ids]
 
@@ -516,6 +516,8 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def update_study_metadata(uuid: str, study_metadata_patch: StudyMetadataPatchDTO) -> Any:
         logger.info(f"Updating metadata for study {uuid}")
+        if study_metadata_patch.name:
+            study_metadata_patch.name = validate_study_name(study_metadata_patch.name)
         study_metadata = study_service.update_study_information(uuid, study_metadata_patch)
         return study_metadata
 

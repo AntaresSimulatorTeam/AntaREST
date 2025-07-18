@@ -126,3 +126,22 @@ class TestupdateStudyMetadata:
         assert res.status_code == 200
         updated_antares_info = res.json()
         assert updated_antares_info["caption"] == new_name
+
+        new_name = "  Updated Study Name   "
+        res = client.put(f"/v1/studies/{internal_study_id}", json={"name": new_name})
+        assert res.status_code == 200
+        updated_study_info = res.json()
+        assert updated_study_info["name"] == new_name.strip()
+
+        res = client.get(f"/v1/studies/{internal_study_id}/raw?path=study/antares")
+        assert res.status_code == 200
+        updated_antares_info = res.json()
+        assert updated_antares_info["caption"] == new_name.strip()
+
+        new_name = "Updated Study Name /"
+        res = client.put(f"/v1/studies/{internal_study_id}", json={"name": new_name})
+        assert res.status_code == 400
+        assert res.json() == {
+            "description": "study name Updated Study Name / contains illegal characters (=, /)",
+            "exception": "HTTPException",
+        }
