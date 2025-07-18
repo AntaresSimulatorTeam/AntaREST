@@ -110,8 +110,12 @@ function StorageForm({ study, areaId, storageId }: Props) {
                 }}
               />
             ) : (
-              // Add autocomplete with STORAGE_GROUPS
-              <StringFE label={t("global.group")} name="group" control={control} />
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                datalist={STORAGE_GROUPS}
+                control={control}
+              />
             )}
             {studyVersion >= 880 && (
               <SwitchFE label={t("global.enabled")} name="enabled" control={control} />

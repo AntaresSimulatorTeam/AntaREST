@@ -17,12 +17,12 @@ from typing import List, Optional
 
 import numpy as np
 import pandas as pd
-from numpy import typing as npt
 from pandas.errors import EmptyDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
@@ -44,7 +44,7 @@ class InputSeriesMatrix(MatrixNode):
         config: FileStudyTreeConfig,
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
-        default_empty: Optional[npt.NDArray[np.float64]] = None,  # optional only for the capacity matrix in Xpansion
+        default_empty: Optional[NpArray] = None,  # optional only for the capacity matrix in Xpansion
     ):
         super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
         self.nb_columns = nb_columns
@@ -80,7 +80,7 @@ class InputSeriesMatrix(MatrixNode):
                     study_id = self.config.study_id
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
                     raise ChildNotFoundError(f"File '{relpath}' not found in the study '{study_id}'") from e
-            stopwatch.log_elapsed(lambda x: logger.info(f"Matrix parsed in {x}s"))
+            stopwatch.log_elapsed(lambda x: logger.debug(f"Matrix parsed in {x}s"))
             final_matrix = matrix.dropna(how="any", axis=1)
             if final_matrix.empty:
                 raise EmptyDataError
@@ -138,7 +138,7 @@ class InputSeriesMatrix(MatrixNode):
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()
-            dump_dataframe(df, buffer, None)
+            dump_dataframe(df, buffer)
             content = buffer.getvalue()
             suffix = target_path.suffix
             filename = target_path.name

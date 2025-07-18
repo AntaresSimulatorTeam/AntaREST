@@ -33,11 +33,7 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
-
-interface Workspace {
-  name: string;
-}
+import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -53,8 +49,8 @@ export const getStudies = async (): Promise<StudyMetadata[]> => {
 };
 
 export const getWorkspaces = async () => {
-  const res = await client.get<Workspace[]>(`/v1/private/explorer/_list_workspaces`);
-  return res.data.map((folder) => folder.name);
+  const res = await client.get<WorkspaceDTO[]>(`/v1/private/explorer/_list_workspaces`);
+  return res.data;
 };
 
 /**
@@ -105,6 +101,22 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
 export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
   const res = await client.get(`/v1/studies/${sid}/outputs`);
   return res.data;
+};
+
+/**
+ * Utility function to get a study output by its ID.
+ * Since the API endpoint for getting a single output is not available, we fetch all outputs and filter by ID.
+ *
+ * @param studyId - The ID of the study.
+ * @param outputId - The ID of the output to retrieve.
+ * @returns The study output if found, or null if not found.
+ */
+export const getStudyOutputById = async (
+  studyId: string,
+  outputId: string,
+): Promise<StudyOutput | undefined> => {
+  const outputs = await getStudyOutputs(studyId);
+  return outputs.find((output) => output.name === outputId);
 };
 
 export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {

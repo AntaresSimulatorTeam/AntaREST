@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import pytest
 
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.model import STUDY_VERSION_8_7
@@ -123,14 +123,25 @@ class TestRemoveXpansionResource:
             in output.message
         )
 
-    def test_error_case_for_capa(self, empty_study_870: FileStudy, command_context: CommandContext):
+    @pytest.mark.parametrize(
+        "profile",
+        [
+            "link-profile",
+            "already-installed-link-profile",
+            "direct-link-profile",
+            "indirect-link-profile",
+            "already-installed-direct-link-profile",
+            "already-installed-indirect-link-profile",
+        ],
+    )
+    def test_error_case_for_capa(self, empty_study_870: FileStudy, command_context: CommandContext, profile: str):
         empty_study = empty_study_870
         self.set_up(empty_study)
         file_name = "capa1"
 
         settings_file = empty_study.config.path / "user" / "expansion" / "candidates.ini"
         with open(settings_file, "w") as f:
-            f.write(f"[0]\nlink-profile = {file_name}")
+            f.write(f"[0]\n{profile} = {file_name}")
 
         cmd = RemoveXpansionResource(
             resource_type=XpansionResourceFileType.CAPACITIES,

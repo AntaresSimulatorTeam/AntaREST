@@ -12,17 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { TextField, IconButton, InputAdornment, type TextFieldProps } from "@mui/material";
-import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
-import { useState } from "react";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import { IconButton, InputAdornment, TextField, type TextFieldProps } from "@mui/material";
+import { useState } from "react";
+import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
-export type PasswordFEProps = {
+export interface PasswordFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
   value?: string;
   defaultValue?: string;
   autoComplete?: "new-password" | "current-password"; // https://web.dev/sign-in-form-best-practices/#current-password
-} & Omit<TextFieldProps, "type" | "value" | "defaultValue">;
+}
 
 function PasswordFE({ autoComplete = "new-password", ...rest }: PasswordFEProps) {
   const [showPassword, setShowPassword] = useState(false);

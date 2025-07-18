@@ -10,13 +10,14 @@
 #
 # This file is part of the Antares project.
 
+import os
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, FolderDTO, WorkspaceMetadata
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, FolderDTO, WorkspaceDTO
 from antarest.study.storage.explorer_service import Explorer
 
 
@@ -27,6 +28,18 @@ def build_config(root: Path) -> Config:
                 DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
                 "diese": WorkspaceConfig(path=root / "diese", filter_out=[".git", ".*RECYCLE.BIN"]),
                 "test": WorkspaceConfig(path=root / "test"),
+            }
+        ),
+    )
+
+
+def build_config_windows(root: Path) -> Config:
+    drive = f"{os.path.splitdrive(str(root))[0]}\\"
+    return Config(
+        storage=StorageConfig(
+            workspaces={
+                DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=root / DEFAULT_WORKSPACE_NAME),
+                drive: WorkspaceConfig(path=root),
             }
         ),
     )
@@ -166,4 +179,21 @@ def test_list_workspaces(tmp_path: Path):
     explorer = Explorer(config)
 
     result = explorer.list_workspaces()
-    assert result == [WorkspaceMetadata(name="diese"), WorkspaceMetadata(name="test")]
+    expected = [
+        WorkspaceDTO(
+            name="diese",
+        ),
+        WorkspaceDTO(
+            name="test",
+        ),
+    ]
+
+    assert result == expected
+
+    if os.name == "nt":
+        config = build_config_windows(tmp_path)
+        explorer = Explorer(config)
+
+        result = explorer.list_workspaces()
+        assert len(result) == 1
+        assert result[0].disk_name is not None

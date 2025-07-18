@@ -189,6 +189,8 @@
   "button.save": "Save",
   "button.explore": "Explore",
   "button.newCommand": "New command",
+  "button.selectAll": "Select All",
+  "button.deselectAll": "Deselect All",
   "common.noContent": "No content",
   "common.underConstruction": "Page under construction",
   "common.dialog.import.dropzoneText": "Drop a file here, or click to select a file",
