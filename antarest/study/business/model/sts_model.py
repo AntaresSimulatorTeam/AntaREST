@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import ast
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStorageValuesCoherenceError
@@ -250,3 +251,109 @@ def update_st_storage(storage: STStorage, data: STStorageUpdate, version: StudyV
     storage = storage.model_copy(update=data.model_dump(exclude_none=True))
     check_attributes_coherence(storage, version)
     return storage
+
+
+##########################
+# Additional constraints part
+##########################
+
+
+class AdditionalConstraintVariable(EnumIgnoreCase):
+    WITHDRAWAL = "withdrawal"
+    INJECTION = "injection"
+    NETTING = "netting"
+
+
+class AdditionalConstraintOperator(EnumIgnoreCase):
+    LESS = "less"
+    GREATER = "greater"
+    EQUAL = "equal"
+
+
+HOURS_TYPE: TypeAlias = list[list[int]] | list[int]
+
+
+def _hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
+    def _checks_compliance(x: Any) -> None:
+        if not isinstance(x, int) or (x < 0 or x > 168):
+            raise ValueError(f"Hours must be integers between 0 and 168, got {x}")
+
+    if isinstance(value, str):
+        value = ast.literal_eval(value)
+    for item in value:
+        if isinstance(item, list):
+            for subitem in item:
+                _checks_compliance(subitem)
+        else:
+            _checks_compliance(item)
+    return value  # type: ignore
+
+
+Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(_hours_parser), PlainSerializer(str)]
+
+
+class STStorageAdditionalConstraint(AntaresBaseModel):
+    """
+    Short-term storage additional constraints model.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    id: LowerCaseId
+    variable: AdditionalConstraintVariable
+    operator: AdditionalConstraintOperator
+    hours: Hours
+    enabled: bool = True
+
+
+class STStorageAdditionalConstraintCreation(AntaresBaseModel):
+    """
+    Represents a creation request for a short-term storage additional constraint.
+
+    Most fields are optional: at creation time, default values of the constraint will be used.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    name: ItemName
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    hours: Optional[Hours] = None
+    enabled: Optional[bool] = None
+
+
+class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
+    """
+    Represents an update of a short-term storage additional constraint.
+
+    Only not-None fields will be used to update the constraint.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    id: LowerCaseId
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    hours: Optional[Hours] = None
+    enabled: Optional[bool] = None
+
+
+STStorageAdditionalConstraintUpdates = dict[LowerCaseId, dict[LowerCaseId, list[STStorageAdditionalConstraintUpdate]]]
+
+
+def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:
+    """
+    Creates a short-term storage constraint from a creation request
+    """
+    args = cluster_data.model_dump(exclude_none=True, exclude={"name"})
+    args["id"] = transform_name_to_id(cluster_data.name)
+    return STStorageAdditionalConstraint.model_validate(args)
+
+
+def update_st_storage_constraint(
+    storage: STStorageAdditionalConstraint, data: STStorageAdditionalConstraintUpdate
+) -> STStorageAdditionalConstraint:
+    """
+    Updates a short-term storage constraint according to the provided update data.
+    """
+    return storage.model_copy(update=data.model_dump(exclude_none=True))
