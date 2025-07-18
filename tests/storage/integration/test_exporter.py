@@ -27,10 +27,10 @@ from antarest.core.config import Config, SecurityConfig, StorageConfig, Workspac
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.utils import export_study_flat
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-from tests.helpers import with_admin_user
+from tests.helpers import create_raw_study, with_admin_user
 from tests.storage.conftest import SimpleFileTransferManager, SimpleSyncTaskService
 from tests.storage.integration.conftest import UUID
 
@@ -53,7 +53,7 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=path_studies)}),
     )
 
-    md = RawStudy(
+    md = create_raw_study(
         id=UUID,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / "STA-mini"),

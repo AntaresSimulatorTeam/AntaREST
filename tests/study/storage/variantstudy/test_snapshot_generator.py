@@ -32,14 +32,21 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import RawStudy, Study, StudyAdditionalData
+from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import AnyUUID, with_admin_user, with_db_context
+from tests.helpers import (
+    AnyUUID,
+    create_raw_study,
+    create_study,
+    create_variant_study,
+    with_admin_user,
+    with_db_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +63,7 @@ def _create_variant(
     """
     variant_dir = tmp_path.joinpath(f"some_place/{variant_name}")
     variant_dir.mkdir(parents=True, exist_ok=True)
-    variant = VariantStudy(
+    variant = create_variant_study(
         id=str(uuid.uuid4()),
         name=variant_name,
         updated_at=updated_at,
@@ -132,7 +139,7 @@ class TestSearchRefStudy:
         Then the root study is returned as reference study,
         and an empty list of commands is returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
         references: t.Sequence[VariantStudy] = []
         search_result = search_ref_study(root_study, references)
         assert search_result.ref_study == root_study
@@ -151,7 +158,7 @@ class TestSearchRefStudy:
         Then the root study is returned as reference study,
         and all commands of all variants are returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots
         variant1 = _create_variant(
@@ -227,7 +234,7 @@ class TestSearchRefStudy:
         We expect to have a reference study corresponding to the root study
         and the list of commands of all variants in order.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         # Variant 1 has no snapshot.
@@ -311,7 +318,7 @@ class TestSearchRefStudy:
         We expect to have a reference study corresponding to the second variant
         and the list of commands of the third variant.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         # Variant 1 has an up-to-date snapshot.
@@ -388,7 +395,7 @@ class TestSearchRefStudy:
         We expect to have a reference study corresponding to the first variant
         and the list of commands of the second and third variants.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         # Variant 1 has an up-to-date snapshot, but is more recent than variant 2.
@@ -467,7 +474,7 @@ class TestSearchRefStudy:
         When calling search_ref_study with the flag from_scratch=False,
         Then the variant is returned as reference study, and no commands are returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -526,7 +533,7 @@ class TestSearchRefStudy:
         When calling search_ref_study with the flag from_scratch=False,
         Then the variant is returned as reference study, and the remaining commands are returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -581,7 +588,7 @@ class TestSearchRefStudy:
         but the last executed command is missing (probably caused by a bug).
         We expect to have the list of all variant commands, so that the snapshot can be re-generated.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -636,7 +643,7 @@ class TestSearchRefStudy:
         but the last executed command is missing (removed).
         We expect to have the list of all variant commands, so that the snapshot can be re-generated.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -748,7 +755,7 @@ class TestSnapshotGenerator:
         # Prepare a RAW study in the temporary folder
         study_dir = tmp_path / "my-study"
         root_study_id = str(uuid.uuid4())
-        root_study = RawStudy(
+        root_study = create_raw_study(
             id=root_study_id,
             workspace="default",
             path=str(study_dir),

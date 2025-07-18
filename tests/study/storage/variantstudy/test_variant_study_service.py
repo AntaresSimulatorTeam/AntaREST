@@ -28,7 +28,7 @@ from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.model import StudyAdditionalData
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -36,7 +36,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_db_context
+from tests.helpers import create_raw_study, with_db_context
 
 # noinspection SpellCheckingInspection
 EXPECTED_DENORMALIZED = {
@@ -147,7 +147,7 @@ class TestVariantStudyService:
         ## First create a raw study (root of the variant)
         raw_study_path = tmp_path / "My RAW Study"
         # noinspection PyArgumentList
-        raw_study = RawStudy(
+        raw_study = create_raw_study(
             id="my_raw_study",
             name=raw_study_path.name,
             version="860",
@@ -288,7 +288,7 @@ class TestVariantStudyService:
         # Create a raw study (root of the variant)
         raw_study_path = tmp_path / "My RAW Study"
         # noinspection PyArgumentList
-        raw_study = RawStudy(
+        raw_study = create_raw_study(
             id="my_raw_study",
             name=raw_study_path.name,
             version="860",
