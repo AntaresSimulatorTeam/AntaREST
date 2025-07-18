@@ -18,7 +18,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -51,6 +51,11 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+    from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
+    from antarest.study.service import StudyService
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -106,6 +111,10 @@ class ISimpleMatrixService(ABC):
     def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
+        raise NotImplementedError()
+
     def get_matrix_id(self, matrix: List[List[float]] | str) -> str:
         """
         Get the matrix ID from a matrix or a matrix link.
@@ -131,6 +140,7 @@ class ISimpleMatrixService(ABC):
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
         super().__init__(matrix_content_repository=matrix_content_repository)
+        self.usage_providers: List[IMatrixUsageProvider] = []
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -151,6 +161,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def delete(self, matrix_id: str) -> None:
         self.matrix_content_repository.delete(matrix_id)
+
+    @override
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
+        self.usage_providers.append(usage_provider)
 
 
 def check_dataframe_compliance(df: pd.DataFrame) -> None:
@@ -207,6 +221,7 @@ class MatrixService(ISimpleMatrixService):
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.config = config
+        self.usage_providers: List[IMatrixUsageProvider] = []
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -452,6 +467,10 @@ class MatrixService(ISimpleMatrixService):
             with contextlib.suppress(FileNotFoundError):
                 self.matrix_content_repository.delete(matrix_id)
 
+    @override
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
+        self.usage_providers.append(usage_provider)
+
     @staticmethod
     def check_access_permission(dataset: MatrixDataSet, write: bool = False) -> bool:
         user = require_current_user()
@@ -538,3 +557,36 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
+
+    def get_datasets_matrices(self) -> Set[str]:
+        # Matrix_service
+        logger.info("Getting all matrices used in datasets")
+        datasets = self.repo_dataset.get_all_datasets()
+        return {matrix.matrix_id for dataset in datasets for matrix in dataset.matrices}
+
+    def create_matrix_gc(
+        self,
+        config: Config,
+        study_service: "StudyService",
+    ) -> "MatrixGarbageCollector":
+        return MatrixGarbageCollector(
+            config=config,
+            study_service=study_service,
+            matrix_service=self,
+            matrices_usage_providers=self.usage_providers,
+        )
+
+    def get_studies_matrices(self) -> Set[str]:
+        logger.info("Getting all matrices used in raw studies")
+
+        return {
+            matrix_reference.matrix_id
+            for provider in self.usage_providers
+            for matrix_reference in provider.get_matrix_usage()
+        }
+
+    def get_used_matrices(self) -> Set[str]:
+        """Return all matrices used in raw studies, variant studies and datasets"""
+        datasets_matrices = self.get_datasets_matrices()
+        studies_matrices = self.get_studies_matrices()
+        return studies_matrices | datasets_matrices

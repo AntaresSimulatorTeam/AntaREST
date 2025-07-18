@@ -9,11 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from unittest.mock import Mock
 
 import pytest
 from pydantic import ValidationError
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -37,7 +39,7 @@ class TestCreateLink:
             )
 
     def test_apply(self, command_context: CommandContext):
-        study_dao = InMemoryStudyDao(STUDY_VERSION_8_8, InMemorySimpleMatrixService())
+        study_dao = InMemoryStudyDao(STUDY_VERSION_8_8, InMemorySimpleMatrixService(Mock(spec=MatrixContentRepository)))
         area1 = "Area1"
         area1_id = transform_name_to_id(area1)
 

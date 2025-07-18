@@ -135,6 +135,11 @@ class MatrixDataSetRelation(Base):  # type: ignore
         return res
 
 
+class MatrixReference(AntaresBaseModel):
+    matrix_id: str
+    use_description: str
+
+
 class MatrixDataSet(Base):  # type: ignore
     """
     Represents a user dataset containing matrices in the database.

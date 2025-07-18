@@ -627,3 +627,109 @@ def _create_upload_file(filename: str, file: t.IO = None, content_type: str = ""
     headers = Headers(headers={"content-type": content_type})
     # noinspection PyTypeChecker,PyArgumentList
     return UploadFile(filename=filename, file=file, headers=headers)
+
+
+# @pytest.mark.unit_test
+# def test_get_matrices_used_in_raw_studies(
+#     matrix_service: MatrixService,
+# ):
+#     """
+#     Test that the get_matrices_used_in_raw_studies function returns a list of
+#     all matrices used in raw studies.
+#     """
+#     matrix_name1 = "matrix_name1"
+#     matrix_name2 = "matrix_name2"
+#     matrix_name3 = "matrix_name3"
+#     matrix_name4 = "matrix_name4"
+#
+#     raw_study_path = matrix_service.managed_studies_path / "raw_study"
+#     raw_study_path.mkdir()
+#     (raw_study_path / f"{matrix_name1}.link").write_text(f"matrix://{matrix_name1}")
+#     (raw_study_path / f"{matrix_name2}.link").write_text(f"matrix://{matrix_name2}")
+#     (raw_study_path / f"{matrix_name3}.link").write_text(f"matrix://{matrix_name3}")
+#     (raw_study_path / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
+#
+#     output = matrix_garbage_collector._get_raw_studies_matrices()
+#
+#     assert len(output) == 3
+#     assert matrix_name1 in output
+#     assert matrix_name2 in output
+#     assert matrix_name3 in output
+#     assert matrix_name4 not in output
+#
+# @pytest.mark.unit_test
+# def test_get_matrices_used_in_variant_studies(
+#     matrix_service: MatrixService,
+#     variant_study_repository: VariantStudyRepository,
+#     study_service
+# ):
+#     with db():
+#         study_id = "study_id"
+#
+#         study_version = "880"
+#         variant_study_repository.save(VariantStudy(id=study_id, version=study_version))
+#         command_study_matrix_usage_provider = CommandMatrixUsageProvider(study_service, matrix_service)
+#         # TODO: add series to the command blocks
+#         command_block1 = CommandBlock(
+#             study_id=study_id,
+#             command=CommandName.CREATE_LINK.value,
+#             args='{"area1": "area1", "area2": "area2"}',
+#             index=0,
+#             version=7,
+#             study_version=study_version,
+#         )
+#         command_block2 = CommandBlock(
+#             study_id=study_id,
+#             command=CommandName.CREATE_LINK.value,
+#             args='{"area1": "area2", "area2": "area3"}',
+#             index=0,
+#             version=7,
+#             study_version=study_version,
+#         )
+#         # db.session.add(command_block1)
+#         # db.session.add(command_block2)
+#         # db.session.commit()
+#         matrices = []
+#         for variant_study_matrix in matrix_service.get_studies_matrices():
+#             if isinstance(variant_study_matrix, CommandMatrixUsageProvider):
+#                 matrices.append(variant_study_matrix)
+#         assert not matrices
+#         command_block1 = CommandBlock(
+#             study_id=study_id,
+#             command=CommandName.CREATE_LINK.value,
+#             args='{"area1": "area1", "area2": "area2","series": "[[1,2,3]]"}',
+#             index=0,
+#             version=7,
+#             study_version=study_version,
+#         )
+#         command_block2 = CommandBlock(
+#             study_id=study_id,
+#             command=CommandName.CREATE_LINK.value,
+#             args='{"area1": "area2", "area2": "area3","series": "[[1,2,4]]"}',
+#             index=0,
+#             version=7,
+#             study_version=study_version,
+#         )
+#         db.session.add(command_block1)
+#         db.session.add(command_block2)
+#         db.session.commit()
+#         matrices = matrix_service.get_studies_matrices()
+#         assert len(matrices) == 2
+#         assert "[[1,2,3]]" in matrices
+#         assert "[[1,2,4]]" in matrices
+
+
+@pytest.mark.unit_test
+def test_get_used_matrices(matrix_service: MatrixService):
+    with db():
+        matrix_service.get_studies_matrices = Mock(
+            return_value={"matrix1", "matrix2", "matrix3", "matrix4", "matrix6", "constant_matrix"}
+        )
+        assert matrix_service.get_used_matrices() == {
+            "matrix1",
+            "matrix2",
+            "matrix3",
+            "matrix4",
+            "matrix6",
+            "constant_matrix",
+        }
