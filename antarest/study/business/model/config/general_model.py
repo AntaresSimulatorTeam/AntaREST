@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Annotated, Any, Dict, TypeAlias, cast
 
-from pydantic import ConfigDict, Field, PositiveInt, StrictBool, model_validator
+from pydantic import ConfigDict, Field, PositiveInt, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel

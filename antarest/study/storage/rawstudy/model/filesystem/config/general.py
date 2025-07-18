@@ -27,7 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 class GeneralFileData(AntaresBaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
     mode: Optional[Mode] = Field(default=None)
     first_day: Optional[DayNumberType] = Field(default=None, alias="simulation.start")
