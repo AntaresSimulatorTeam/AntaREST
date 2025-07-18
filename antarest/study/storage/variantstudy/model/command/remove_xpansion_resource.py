@@ -45,12 +45,12 @@ def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
     all_profiles = set()
     for candidate in candidates.values():
         for profile in [
-            "link_profile",
-            "already_installed_link_profile",
-            "direct_link_profile",
-            "indirect_link_profile",
-            "already_installed_direct_link_profile",
-            "already_installed_indirect_link_profile",
+            "link-profile",
+            "already-installed-link-profile",
+            "direct-link-profile",
+            "indirect-link-profile",
+            "already-installed-direct-link-profile",
+            "already-installed-indirect-link-profile",
         ]:
             all_profiles.add(candidate.get(profile))
     return filename in all_profiles
