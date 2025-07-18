@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { type GridCell, GridCellKind, type Item } from "@glideapps/glide-data-grid";
 import { useCallback, useMemo } from "react";
-import { GridCellKind, type GridCell, type Item } from "@glideapps/glide-data-grid";
-import type { EnhancedGridColumn, ColumnType, MatrixAggregates } from "../../shared/types";
-import { formatGridNumber } from "../../shared/utils";
 import { Column } from "../../shared/constants";
+import type { ColumnType, EnhancedGridColumn, MatrixAggregates } from "../../shared/types";
+import { formatGridNumber } from "../../shared/utils";
 import type { CellContentGenerator } from "./types";
 
 /**
