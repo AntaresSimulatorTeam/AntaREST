@@ -20,8 +20,9 @@ from py7zr import SevenZipFile
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
+from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from tests.helpers import create_raw_study
 
 
 @pytest.mark.unit_test
@@ -42,7 +43,7 @@ def test_export_file(tmp_path: Path):
     study_service.export_file.return_value = b"Hello"
 
     # Test good study
-    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
+    md = create_raw_study(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=study_path)
     export_path = tmp_path / "export.7z"
     study_service.export_study(md, export_path)
 
@@ -67,7 +68,7 @@ def test_export_archived_study(tmp_path: Path, outputs: bool):
         cache=Mock(),
     )
 
-    study = RawStudy(id="Yo", path=root)
+    study = create_raw_study(id="Yo", path=root)
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
@@ -112,7 +113,7 @@ def test_export_flat(tmp_path: Path):
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 
-    study = RawStudy(id="id", path=root)
+    study = create_raw_study(id="id", path=root)
 
     study_service.export_study_flat(study, tmp_path / "copy_with_output", outputs=True)
 
@@ -147,7 +148,7 @@ def test_export_output(tmp_path: Path):
         cache=Mock(),
     )
 
-    study = RawStudy(id="Yo", path=root)
+    study = create_raw_study(id="Yo", path=root)
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 

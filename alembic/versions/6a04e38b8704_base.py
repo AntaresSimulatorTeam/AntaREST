@@ -151,9 +151,9 @@ def downgrade():
     op.drop_table('groups')
     # ### end Alembic commands ###
 
-    op.execute("DROP TYPE jobstatus;")
-    op.execute("DROP TYPE matrixfreq;")
-    op.execute("DROP TYPE publicmode;")
-    op.execute("DROP TYPE roletype;")
-    op.execute("DROP TYPE studycontentstatus;")
+    op.execute(sa.text("DROP TYPE jobstatus;"))
+    op.execute(sa.text("DROP TYPE matrixfreq;"))
+    op.execute(sa.text("DROP TYPE publicmode;"))
+    op.execute(sa.text("DROP TYPE roletype;"))
+    op.execute(sa.text("DROP TYPE studycontentstatus;"))
 

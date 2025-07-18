@@ -21,7 +21,7 @@ import pandas as pd
 import pytest
 from numpy import typing as npt
 from pandas._testing import assert_frame_equal
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User
@@ -43,7 +43,7 @@ class TestMatrixRepository:
     def test_db_lifecycle(self, db_session: Session) -> None:
         with db_session:
             repo = MatrixRepository(db_session)
-            m = Matrix(id="hello", created_at=datetime.datetime.now())
+            m = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m)
             assert m.id
             assert m == repo.get(m.id)
@@ -83,9 +83,9 @@ class TestMatrixRepository:
 
             dataset_repo = MatrixDataSetRepository(session=db_session)
 
-            m1 = Matrix(id="hello", created_at=datetime.datetime.now())
+            m1 = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m1)
-            m2 = Matrix(id="world", created_at=datetime.datetime.now())
+            m2 = Matrix(id="world", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m2)
 
             dataset = MatrixDataSet(
@@ -127,12 +127,12 @@ class TestMatrixRepository:
         with db_session:
             user_repo = UserRepository(session=db_session)
             user1 = user_repo.save(User(name="foo", password=Password("bar")))
-            user2 = user_repo.save(User(name="hello", password=Password("world")))
+            user2 = user_repo.save(User(name="hello", password=Password("world  ")))
 
             repo = MatrixRepository(session=db_session)
-            m1 = Matrix(id="hello", created_at=datetime.datetime.now())
+            m1 = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m1)
-            m2 = Matrix(id="world", created_at=datetime.datetime.now())
+            m2 = Matrix(id="world", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m2)
 
             dataset_repo = MatrixDataSetRepository(session=db_session)

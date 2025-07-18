@@ -20,10 +20,11 @@ import py7zr
 import pytest
 
 from antarest.core.exceptions import BadArchiveContent, StudyValidationError
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import fix_study_root
+from tests.helpers import create_raw_study
 
 
 @pytest.mark.unit_test
@@ -57,7 +58,7 @@ def test_import_study(tmp_path: Path) -> None:
 
     path_zip = Path(filepath_zip)
 
-    md = RawStudy(
+    md = create_raw_study(
         id="other-study-zip",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=tmp_path / "other-study-zip",
@@ -84,7 +85,7 @@ def test_import_study(tmp_path: Path) -> None:
 
     shutil.rmtree(study_path)
 
-    md = RawStudy(
+    md = create_raw_study(
         id="other-study-7zip",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=tmp_path / "other-study-7zip",
