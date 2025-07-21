@@ -109,11 +109,11 @@ function CheckboxesTagsFE<
   );
 }
 
-const CheckboxesTagsFEWithRHFSupport = reactHookFormSupport()(CheckboxesTagsFE);
+const CheckboxesTagsFEWithRHF = reactHookFormSupport()(CheckboxesTagsFE);
 
 // The HOC doesn't automatically forward component generics
 
-export default CheckboxesTagsFEWithRHFSupport as <
+export default CheckboxesTagsFEWithRHF as <
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined,

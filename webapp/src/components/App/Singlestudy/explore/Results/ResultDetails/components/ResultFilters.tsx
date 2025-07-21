@@ -12,6 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { useDebouncedField } from "@/hooks/useDebouncedField";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import FilterListOffIcon from "@mui/icons-material/FilterListOff";
 import { Box, IconButton, Tooltip } from "@mui/material";
@@ -19,14 +24,9 @@ import startCase from "lodash/startCase";
 import * as R from "ramda";
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import { useDebouncedField } from "@/hooks/useDebouncedField";
 import DownloadMatrixButton from "../../../../../../common/buttons/DownloadMatrixButton";
 import BooleanFE from "../../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import { DataType, matchesSearchTerm, Timestep } from "../utils";
 
 interface ColumnHeader {
@@ -236,7 +236,7 @@ function ResultFilters({
     {
       id: "mc",
       field: (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <>
           <BooleanFE
             label={t("study.results.mc")}
             value={year <= 0}
@@ -244,7 +244,8 @@ function ResultFilters({
             falseText="Year by year"
             size="extra-small"
             margin="dense"
-            onChange={(event) => setYear(event?.target.value ? -1 : 1)}
+            onChange={(event) => setYear(event.target.value ? -1 : 1)}
+            sx={{ minWidth: 94 }}
           />
           {localYear > 0 && (
             <NumberFE
@@ -262,7 +263,7 @@ function ResultFilters({
               sx={{ minWidth: 65 }}
             />
           )}
-        </Box>
+        </>
       ),
     },
     {
@@ -281,7 +282,6 @@ function ResultFilters({
           size="extra-small"
           onChange={(event) => setDataType(event?.target.value as DataType)}
           margin="dense"
-          sx={{ minWidth: 80 }}
         />
       ),
     },
@@ -301,7 +301,7 @@ function ResultFilters({
           size="extra-small"
           onChange={(event) => setTimestep(event?.target.value as Timestep)}
           margin="dense"
-          sx={{ minWidth: 93 }}
+          sx={{ minWidth: 94 }}
         />
       ),
     },
@@ -326,6 +326,7 @@ function ResultFilters({
             width: 1,
             display: "flex",
             alignItems: "center",
+            gap: 1,
           }}
         >
           <Box
@@ -343,7 +344,7 @@ function ResultFilters({
               <Fragment key={id}>{field}</Fragment>
             ))}
           </Box>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             <Tooltip title={t("matrix.filter.filterData")}>
               <IconButton onClick={onToggleFilter}>
                 <FilterListIcon />
