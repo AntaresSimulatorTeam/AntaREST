@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from threading import Thread
-from typing import Any, BinaryIO, List, Optional, Sequence
+from typing import BinaryIO, List, Optional, Sequence
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
@@ -89,65 +89,49 @@ class RawStudyService(AbstractStorageService):
         )
         self.cleanup_thread.start()
 
-    def _apply_fallback_defaults(self, metadata: RawStudy) -> None:
-        """Applies default values to the study metadata in case of processing failure."""
-        metadata.name = metadata.name or "unnamed"
-        metadata.version = metadata.version or "0.0"
-        metadata.created_at = metadata.created_at or datetime.utcnow()
-        metadata.updated_at = metadata.updated_at or datetime.utcnow()
-        if metadata.additional_data is None:
-            metadata.additional_data = StudyAdditionalData()
-        metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
-        metadata.additional_data.author = metadata.additional_data.author or "Unknown"
-        metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
-
-    def _update_metadata_fields(self, metadata: RawStudy, raw_meta: dict[str, Any]) -> None:
-        """Updates the metadata fields from the raw study configuration."""
-        metadata.name = raw_meta.get("caption", metadata.name)
-        metadata.version = str(raw_meta.get("version", metadata.version))
-        if created_ts := raw_meta.get("created"):
-            metadata.created_at = datetime.utcfromtimestamp(created_ts)
-        if lastsave_ts := raw_meta.get("lastsave"):
-            metadata.updated_at = datetime.utcfromtimestamp(lastsave_ts)
-
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
     ) -> None:
         """
-        Update metadata from study raw metadata.
-
+        Update metadata from study raw metadata
         Args:
-            metadata: The study metadata to update.
-            fallback_on_default: If True, use default values in case of failure.
-            study_path: Optional path to the study directory.
+            metadata: study
+            fallback_on_default: use default values in case of failure
+            study_path: optional study path
         """
         path = study_path or self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(path, is_managed(metadata), study_id="")
-
         try:
             raw_meta = study.tree.get(["study", "antares"])
+            if metadata.additional_data and metadata.additional_data.editor:
+                raw_meta["editor"] = metadata.additional_data.editor
+                study.tree.save(raw_meta, ["study", "antares"])
 
-            # Side effect: update the editor in the raw study file if necessary
-            if editor := getattr(metadata.additional_data, "editor", None):
-                if raw_meta.get("editor") != editor:
-                    raw_meta["editor"] = editor
-                    study.tree.save(raw_meta, ["study", "antares"])
+            metadata.name = raw_meta["caption"]
+            metadata.version = str(raw_meta["version"])
+            metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+            metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
-            # Update metadata object from raw_meta
-            self._update_metadata_fields(metadata, raw_meta)
-
-            # Update additional data
             metadata.additional_data = self._read_additional_data_from_files(study)
-
         except Exception as e:
             logger.error(
-                f"Failed to fetch study '{metadata.path}' raw metadata, using fallback.",
+                "Failed to fetch study %s raw metadata!",
+                str(metadata.path),
                 exc_info=e,
             )
-            if fallback_on_default:
-                self._apply_fallback_defaults(metadata)
+            if fallback_on_default is not None:
+                metadata.name = metadata.name or "unnamed"
+                metadata.version = metadata.version or "0.0"
+                metadata.created_at = metadata.created_at or datetime.utcnow()
+                metadata.updated_at = metadata.updated_at or datetime.utcnow()
+                if metadata.additional_data is None:
+                    metadata.additional_data = StudyAdditionalData()
+                metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
+                metadata.additional_data.author = metadata.additional_data.author or "Unknown"
+                metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
+
             else:
-                raise
+                raise e
 
     def update_name_and_version_from_raw_meta(self, metadata: RawStudy) -> bool:
         """
