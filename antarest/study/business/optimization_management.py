@@ -27,12 +27,16 @@ class OptimizationManager:
         self._command_context = command_context
 
     def get_optimization_preferences(self, study: StudyInterface) -> OptimizationPreferences:
+        """
+        Get optimization preferences
+        """
+
         study_dao = study.get_study_dao()
         return study_dao.get_optimization_preferences()
 
     def update_optimization_preferences(self, study: StudyInterface, config: OptimizationPreferencesUpdate) -> None:
         """
-        Set optimization config from the webapp form
+        Set optimization preferences from the webapp form
         """
 
         command = UpdateOptimizationPreferences(

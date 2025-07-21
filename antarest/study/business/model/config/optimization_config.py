@@ -14,9 +14,8 @@ from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.utils import GENERAL_DATA_PATH
 
-OPTIMIZATION_PATH = f"{GENERAL_DATA_PATH}/optimization"
+OPTIMIZATION_PATH = ["settings", "generaldata", "optimization"]
 
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
