@@ -831,6 +831,6 @@ class UnsupportedOperationOnThisStudyType(HTTPException):
 
 
 class XpansionCandidateDeletionError(HTTPException):
-    def __init__(self, uuid: str, cdt_name: str) -> None:
-        msg = f"You cannot delete the candidate {cdt_name} in study '{uuid}'. It is referenced in the sensivity config."
+    def __init__(self, uuid: str, name: str) -> None:
+        msg = f"You cannot delete the candidate {name} in study '{uuid}'. It is referenced in the sensitivity config."
         super().__init__(HTTPStatus.BAD_REQUEST, msg)
