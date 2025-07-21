@@ -9,11 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Dict, Optional, TypeAlias, cast
+from typing import Annotated, Any, Dict, TypeAlias, cast
 
-from pydantic import ConfigDict, Field, PositiveInt, StrictBool, model_validator
+from pydantic import ConfigDict, Field, PositiveInt, model_validator
 from pydantic.alias_generators import to_camel
-from pydantic_core.core_schema import ValidationInfo
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -56,8 +55,6 @@ DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
 GENERAL = "general"
 OUTPUT = "output"
 GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
-OUTPUT_PATH = f"{GENERAL_DATA_PATH}/{OUTPUT}"
-BUILDING_MODE = "building_mode"
 
 
 class GeneralConfig(AntaresBaseModel):
@@ -70,29 +67,28 @@ class GeneralConfig(AntaresBaseModel):
     first_month: Month = Month.JANUARY
     first_week_day: WeekDay = WeekDay.MONDAY
     first_january: WeekDay = WeekDay.MONDAY
-    leap_year: StrictBool = False
+    leap_year: bool = False
     nb_years: PositiveInt = 1
     building_mode: BuildingMode = BuildingMode.AUTOMATIC
-    selection_mode: StrictBool = False
-    year_by_year: StrictBool = False
-    simulation_synthesis: StrictBool = True
-    mc_scenario: StrictBool = False
-    filtering: Optional[bool] = None
-    geographic_trimming: StrictBool = False
-    thematic_trimming: StrictBool = False
+    selection_mode: bool = False
+    year_by_year: bool = False
+    simulation_synthesis: bool = True
+    mc_scenario: bool = False
+    filtering: bool | None = None
+    geographic_trimming: bool | None = None
+    thematic_trimming: bool | None = None
 
     @model_validator(mode="before")
-    def day_fields_validation(cls, values: Dict[str, Any] | ValidationInfo) -> Dict[str, Any]:
-        new_values = values if isinstance(values, dict) else values.data
-        first_day = new_values.get("first_day")
-        last_day = new_values.get("last_day")
-        leap_year = new_values.get("leap_year")
+    def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        first_day = values.get("first_day")
+        last_day = values.get("last_day")
+        leap_year = values.get("leap_year")
         day_fields = [first_day, last_day, leap_year]
 
         if all(v is None for v in day_fields):
             # The user wishes to update another field than these three.
             # no need to validate anything:
-            return new_values
+            return values
 
         if any(v is None for v in day_fields):
             raise ValueError("First day, last day and leap year fields must be defined together")
@@ -107,34 +103,34 @@ class GeneralConfig(AntaresBaseModel):
         if last_day > num_days_in_year:
             raise ValueError(f"Last day cannot be greater than {num_days_in_year}")
 
-        return new_values
+        return values
 
 
 class GeneralConfigUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    mode: Optional[Mode] = None
-    first_day: Optional[DayNumberType] = None
-    last_day: Optional[DayNumberType] = None
-    horizon: Optional[str | int] = None
-    first_month: Optional[Month] = None
-    first_week_day: Optional[WeekDay] = None
-    first_january: Optional[WeekDay] = None
-    leap_year: Optional[StrictBool] = None
-    nb_years: Optional[PositiveInt] = None
-    building_mode: Optional[BuildingMode] = None
-    selection_mode: Optional[StrictBool] = None
-    year_by_year: Optional[StrictBool] = None
-    simulation_synthesis: Optional[StrictBool] = None
-    mc_scenario: Optional[StrictBool] = None
-    filtering: Optional[StrictBool] = None
-    geographic_trimming: Optional[StrictBool] = None
-    thematic_trimming: Optional[StrictBool] = None
+    mode: Mode | None = None
+    first_day: DayNumberType | None = None
+    last_day: DayNumberType | None = None
+    horizon: str | int | None = None
+    first_month: Month | None = None
+    first_week_day: WeekDay | None = None
+    first_january: WeekDay | None = None
+    leap_year: bool | None = None
+    nb_years: PositiveInt | None = None
+    building_mode: BuildingMode | None = None
+    selection_mode: bool | None = None
+    year_by_year: bool | None = None
+    simulation_synthesis: bool | None = None
+    mc_scenario: bool | None = None
+    filtering: bool | None = None
+    geographic_trimming: bool | None = None
+    thematic_trimming: bool | None = None
 
 
 def update_general_config(config: GeneralConfig, new_config: GeneralConfigUpdate) -> GeneralConfig:
     """
-    Updates a link according to the provided update data.
+    Updates the general config according to the provided update data.
     """
     current_properties = config.model_dump(mode="json")
     new_properties = new_config.model_dump(mode="json", exclude_none=True)

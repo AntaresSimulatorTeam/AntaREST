@@ -9,185 +9,65 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from unittest.mock import Mock
-
-import pytest
-
-from antarest.study.business.model.config.general_model import (
-    BuildingMode,
-    GeneralConfig,
-    GeneralConfigUpdate,
-    Mode,
-    Month,
-    WeekDay,
-)
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.business.model.config.general_model import GeneralConfigUpdate
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.unit_test
-def test_update_general_config_apply_dao(command_context):
-    # Mock StudyDao
-    mock_study_dao = Mock()
+class TestUpdateGeneralConfig:
+    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
+        self.study = study
 
-    # Initial GeneralConfig
-    initial_config = GeneralConfig(
-        horizon="2023",
-        nb_years=1,
-        mode=Mode.ECONOMY,
-        first_day=1,
-        last_day=365,
-        leap_year=False,
-    )
-    mock_study_dao.get_general_config.return_value = initial_config
+    def test_update_general_config(self, empty_study_880: FileStudy, command_context: CommandContext):
+        study = empty_study_880
 
-    # Parameters for update
-    update_params = GeneralConfigUpdate(
-        horizon="2025",
-        nb_years=2,
-    )
-
-    # Create command instance
-    command = UpdateGeneralConfig(
-        parameters=update_params,
-        study_version=STUDY_VERSION_8_8,
-        command_context=command_context,
-    )
-
-    # Apply the command
-    output = command._apply_dao(mock_study_dao)
-
-    # Assertions
-    assert output.status
-    assert output.message == "General config updated successfully."
-
-    # Expected updated config
-    expected_updated_config = initial_config.model_copy(
-        update={
-            "horizon": "2025",
-            "nb_years": 2,
+        default_values = {
+            "custom-scenario": False,
+            "derated": False,
+            "first-month-in-year": "january",
+            "first.weekday": "Monday",
+            "generate": "",
+            "geographic-trimming": False,
+            "horizon": "",
+            "inter-modal": "",
+            "intra-modal": "",
+            "january.1st": "Monday",
+            "leapyear": False,
+            "mode": "Economy",
+            "nbtimeserieshydro": 1,
+            "nbtimeseriesload": 1,
+            "nbtimeseriessolar": 1,
+            "nbtimeseriesthermal": 1,
+            "nbtimeserieswind": 1,
+            "nbyears": 1,
+            "readonly": False,
+            "refreshintervalhydro": 100,
+            "refreshintervalload": 100,
+            "refreshintervalsolar": 100,
+            "refreshintervalthermal": 100,
+            "refreshintervalwind": 100,
+            "refreshtimeseries": "",
+            "simulation.end": 365,
+            "simulation.start": 1,
+            "thematic-trimming": False,
+            "user-playlist": False,
+            "year-by-year": False,
         }
-    )
 
-    mock_study_dao.save_general_config.assert_called_once_with(expected_updated_config)
-
-
-@pytest.mark.unit_test
-def test_update_general_config_apply_dao_more_fields(command_context):
-    # Mock StudyDao
-    mock_study_dao = Mock()
-
-    # Initial GeneralConfig with more fields
-    initial_config = GeneralConfig(
-        horizon="2023",
-        nb_years=1,
-        mode=Mode.ECONOMY,
-        first_day=1,
-        last_day=365,
-        leap_year=False,
-        building_mode=BuildingMode.AUTOMATIC,
-        first_month=Month.JANUARY,
-        first_week_day=WeekDay.MONDAY,
-        simulation_synthesis=True,
-    )
-    mock_study_dao.get_general_config.return_value = initial_config
-
-    # Parameters for update
-    update_params = GeneralConfigUpdate(
-        horizon="2026",
-        nb_years=3,
-        building_mode=BuildingMode.CUSTOM,
-        first_month=Month.FEBRUARY,
-        first_week_day=WeekDay.TUESDAY,
-        simulation_synthesis=False,
-    )
-
-    # Create command instance
-    command = UpdateGeneralConfig(
-        parameters=update_params,
-        study_version=STUDY_VERSION_8_8,
-        command_context=command_context,
-    )
-
-    # Apply the command
-    output = command._apply_dao(mock_study_dao)
-
-    # Assertions
-    assert output.status
-    assert output.message == "General config updated successfully."
-
-    # Expected updated config
-    expected_updated_config = initial_config.model_copy(
-        update={
-            "horizon": "2026",
-            "nb_years": 3,
-            "building_mode": BuildingMode.CUSTOM,
-            "first_month": Month.FEBRUARY,
-            "first_week_day": WeekDay.TUESDAY,
-            "simulation_synthesis": False,
+        args = {
+            "horizon": 2030,
         }
-    )
 
-    mock_study_dao.save_general_config.assert_called_once_with(expected_updated_config)
+        properties = GeneralConfigUpdate.model_validate(args)
 
+        command = UpdateGeneralConfig(
+            parameters=properties, command_context=command_context, study_version=study.config.version
+        )
+        output = command.apply(study_data=study)
+        assert output.status
+        default_values.update({"horizon": 2030, "building_mode": "Automatic"})
 
-@pytest.mark.unit_test
-def test_update_general_config_apply_dao_none_values(command_context):
-    # Mock StudyDao
-    mock_study_dao = Mock()
+        general_config = study.tree.get(["settings", "generaldata", "general"])
 
-    # Initial GeneralConfig
-    initial_config = GeneralConfig(
-        horizon="2023",
-        nb_years=1,
-        mode=Mode.ECONOMY,
-        first_day=1,
-        last_day=365,
-        leap_year=False,
-        building_mode=BuildingMode.AUTOMATIC,
-    )
-    mock_study_dao.get_general_config.return_value = initial_config
-
-    # Parameters for update with None values
-    update_params = GeneralConfigUpdate(
-        horizon=None,
-        nb_years=None,
-        building_mode=None,
-    )
-
-    # Create command instance
-    command = UpdateGeneralConfig(
-        parameters=update_params,
-        study_version=STUDY_VERSION_8_8,
-        command_context=command_context,
-    )
-
-    # Apply the command
-    output = command._apply_dao(mock_study_dao)
-
-    # Assertions
-    assert output.status
-    assert output.message == "General config updated successfully."
-
-    # Expected updated config should be the same as initial_config
-    expected_updated_config = initial_config.model_copy()
-
-    mock_study_dao.save_general_config.assert_called_once_with(expected_updated_config)
-
-
-def test_update_general_config_to_dto(command_context):
-    update_params = GeneralConfigUpdate(
-        horizon="2025",
-        nb_years=2,
-    )
-    command = UpdateGeneralConfig(
-        parameters=update_params,
-        study_version=STUDY_VERSION_8_8,
-        command_context=command_context,
-    )
-    dto = command.to_dto()
-
-    assert dto.action == "update_general_config"
-    assert dto.study_version == 880
-    assert dto.args == {"parameters": {"horizon": "2025", "nb_years": 2}}
+        assert general_config == default_values
