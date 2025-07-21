@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 from antarest.study.business.model.config.optimization_config import (
     OptimizationPreferencesUpdate,
-    SimplexOptimizationRange,
     UnfeasibleProblemBehavior,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
