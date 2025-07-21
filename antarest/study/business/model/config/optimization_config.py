@@ -18,6 +18,7 @@ from antarest.study.business.utils import GENERAL_DATA_PATH
 
 OPTIMIZATION_PATH = f"{GENERAL_DATA_PATH}/optimization"
 
+
 class LegacyTransmissionCapacities(EnumIgnoreCase):
     INFINITE = "infinite"
 
@@ -41,6 +42,7 @@ class SimplexOptimizationRange(EnumIgnoreCase):
     DAY = "day"
     WEEK = "week"
 
+
 class OptimizationPreferences(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
@@ -56,6 +58,7 @@ class OptimizationPreferences(AntaresBaseModel):
     export_mps: bool | str = False
     unfeasible_problem_behavior: UnfeasibleProblemBehavior = UnfeasibleProblemBehavior.ERROR_VERBOSE
     simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
+
 
 class OptimizationPreferencesUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)

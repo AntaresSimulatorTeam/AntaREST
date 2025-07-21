@@ -9,26 +9,40 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pydantic import ConfigDict
-from pydantic.alias_generators import to_camel
+from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.config.optimization_config import LegacyTransmissionCapacities, \
-    TransmissionCapacities, UnfeasibleProblemBehavior, SimplexOptimizationRange
+from antarest.study.business.model.config.optimization_config import (
+    LegacyTransmissionCapacities,
+    SimplexOptimizationRange,
+    TransmissionCapacities,
+    UnfeasibleProblemBehavior, OptimizationPreferences,
+)
 
 
 class OptimizationPreferencesFileData(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
-    binding_constraints: bool = True
-    hurdle_costs: bool = True
-    transmission_capacities: bool | LegacyTransmissionCapacities | TransmissionCapacities = True
-    thermal_clusters_min_stable_power: bool = True
-    thermal_clusters_min_ud_time: bool = True
-    day_ahead_reserve: bool = True
-    primary_reserve: bool = True
-    strategic_reserve: bool = True
-    spinning_reserve: bool = True
-    export_mps: bool | str = False
-    unfeasible_problem_behavior: UnfeasibleProblemBehavior = UnfeasibleProblemBehavior.ERROR_VERBOSE
-    simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
+    binding_constraints: bool | None = Field(default=None, alias="include-constraints")
+    hurdle_costs: bool | None = Field(default=None, alias="include-hurdlecosts")
+    transmission_capacities: bool | LegacyTransmissionCapacities | TransmissionCapacities | None = Field(
+        default=None, alias="transmission-capacities"
+    )
+    thermal_clusters_min_stable_power: bool | None = Field(default=None, alias="include-tc-minstablepower")
+    thermal_clusters_min_ud_time: bool | None = Field(default=None, alias="include-tc-min-ud-time")
+    day_ahead_reserve: bool | None = Field(default=None, alias="include-dayahead")
+    primary_reserve: bool | None = Field(default=None, alias="include-primaryreserve")
+    strategic_reserve: bool | None = Field(default=None, alias="include-strategicreserve")
+    spinning_reserve: bool | None = Field(default=None, alias="include-spinningreserve")
+    export_mps: bool | str | None = Field(default=None, alias="include-exportmps")
+    unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = Field(
+        default=None, alias="include-unfeasible-problem-behavior"
+    )
+    simplex_optimization_range: SimplexOptimizationRange | None = Field(default=None, alias="simplex-range")
+
+    def to_model(self) -> OptimizationPreferences:
+        return OptimizationPreferences.model_validate(self.model_dump(exclude_none=True))
+
+    @classmethod
+    def from_model(cls, config: OptimizationPreferences) -> "OptimizationPreferencesFileData":
+        return cls.model_validate(config.model_dump(exclude={"id"}))

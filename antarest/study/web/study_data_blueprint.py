@@ -54,6 +54,10 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
 )
+from antarest.study.business.model.config.optimization_config import (
+    OptimizationPreferences,
+    OptimizationPreferencesUpdate,
+)
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -74,7 +78,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
-from antarest.study.business.optimization_management import OptimizationFormFields
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
@@ -618,25 +621,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Get optimization config values for form",
-        response_model=OptimizationFormFields,
+        response_model=OptimizationPreferences,
         response_model_exclude_none=True,
     )
-    def get_optimization_form_values(uuid: str) -> OptimizationFormFields:
+    def get_optimization_form_values(uuid: str) -> OptimizationPreferences:
         logger.info(msg=f"Getting optimization config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.optimization_manager.get_field_values(study_interface)
+        return study_service.optimization_manager.get_optimization_preferences(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Set optimization config with values from form",
     )
-    def set_optimization_form_values(uuid: str, field_values: OptimizationFormFields) -> None:
+    def set_optimization_form_values(uuid: str, field_values: OptimizationPreferencesUpdate) -> None:
         logger.info(f"Updating optimization config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.optimization_manager.set_field_values(study_interface, field_values)
+        study_service.optimization_manager.update_optimization_preferences(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/adequacypatch/form",
