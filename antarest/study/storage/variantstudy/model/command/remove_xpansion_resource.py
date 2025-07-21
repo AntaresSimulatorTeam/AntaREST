@@ -42,9 +42,18 @@ def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:
 
 def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
     candidates = file_study.tree.get(["user", "expansion", "candidates"])
-    all_link_profiles = [candidate.get("link-profile", None) for candidate in candidates.values()]
-    all_link_profiles += [candidate.get("already-installed-link-profile", None) for candidate in candidates.values()]
-    return filename in all_link_profiles
+    all_profiles = set()
+    for candidate in candidates.values():
+        for profile in [
+            "link-profile",
+            "already-installed-link-profile",
+            "direct-link-profile",
+            "indirect-link-profile",
+            "already-installed-direct-link-profile",
+            "already-installed-indirect-link-profile",
+        ]:
+            all_profiles.add(candidate.get(profile))
+    return filename in all_profiles
 
 
 def checks_resource_deletion_is_allowed(

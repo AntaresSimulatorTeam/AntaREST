@@ -12,7 +12,7 @@
 
 import datetime
 
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob
 

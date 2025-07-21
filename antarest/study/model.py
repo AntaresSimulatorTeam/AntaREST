@@ -16,7 +16,7 @@ import secrets
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias, cast
+from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, Tuple, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -29,9 +29,8 @@ from pydantic import (
     computed_field,
     field_validator,
 )
-from sqlalchemy import (  # type: ignore
+from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     Enum,
     ForeignKey,
@@ -39,7 +38,7 @@ from sqlalchemy import (  # type: ignore
     PrimaryKeyConstraint,
     String,
 )
-from sqlalchemy.orm import relationship, validates  # type: ignore
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from typing_extensions import override
 
 from antarest.core.exceptions import ShouldNotHappenException
@@ -107,8 +106,12 @@ class StudyGroup(Base):  # type:ignore
     __tablename__ = "group_metadata"
     __table_args__ = (PrimaryKeyConstraint("study_id", "group_id"),)
 
-    group_id: str = Column(String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False)
-    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
+    group_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("groups.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    study_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False
+    )
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -135,8 +138,12 @@ class StudyTag(Base):  # type:ignore
     __tablename__ = "study_tag"
     __table_args__ = (PrimaryKeyConstraint("study_id", "tag_label"),)
 
-    study_id: str = Column(String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False)
-    tag_label: str = Column(String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False)
+    study_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("study.id", ondelete="CASCADE"), index=True, nullable=False
+    )
+    tag_label: Mapped[str] = mapped_column(
+        String(40), ForeignKey("tag.label", ondelete="CASCADE"), index=True, nullable=False
+    )
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -164,14 +171,14 @@ class Tag(Base):  # type:ignore
 
     __tablename__ = "tag"
 
-    label = Column(String(40), primary_key=True, index=True)
-    color: str = Column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
+    label: Mapped[str] = mapped_column(String(40), primary_key=True, index=True)
+    color: Mapped[str] = mapped_column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
 
-    studies: List["Study"] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
+    studies: Mapped[List["Study"]] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
     @override
     def __str__(self) -> str:  # pragma: no cover
-        return cast(str, self.label)
+        return self.label
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -198,14 +205,14 @@ class StudyAdditionalData(Base):  # type:ignore
 
     __tablename__ = "study_additional_data"
 
-    study_id = Column(
+    study_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    author = Column(String(255), default="Unknown")
-    horizon = Column(String)
-    patch = Column(String(), index=True, nullable=True)
+    author: Mapped[str] = mapped_column(String(255), default="Unknown")
+    horizon: Mapped[Optional[str]] = mapped_column(String)
+    patch: Mapped[Optional[str]] = mapped_column(String(), index=True, nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:
@@ -246,27 +253,29 @@ class Study(Base):  # type: ignore
 
     __tablename__ = "study"
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name = Column(String(255), index=True)
-    type = Column(String(50), index=True)
-    version = Column(String(255), index=True)
-    author = Column(String(255))
-    created_at = Column(DateTime, index=True)
-    updated_at = Column(DateTime, index=True)
-    last_access = Column(DateTime)
-    path = Column(String())
-    folder = Column(String, nullable=True, index=True)
-    parent_id = Column(String(36), ForeignKey("study.id", name="fk_study_study_id"), index=True)
-    public_mode = Column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id = Column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
-    archived = Column(Boolean(), default=False, index=True)
+    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    type: Mapped[str] = mapped_column(String(50), index=True)
+    version: Mapped[str] = mapped_column(String(255), index=True)
+    author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    path: Mapped[str] = mapped_column(String())
+    folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
+    parent_id: Mapped[Optional[str]] = mapped_column(
+        String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
+    )
+    public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
+    owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    archived: Mapped[bool] = mapped_column(Boolean(), default=False, index=True)
 
-    tags: List[Tag] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
+    tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     additional_data = relationship(
@@ -277,7 +286,9 @@ class Study(Base):  # type: ignore
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    jobs: List["TaskJob"] = relationship("TaskJob", back_populates="study", cascade="all, delete, delete-orphan")
+    jobs: Mapped[List["TaskJob"]] = relationship(
+        "TaskJob", back_populates="study", cascade="all, delete, delete-orphan"
+    )
 
     __mapper_args__ = {"polymorphic_identity": "study", "polymorphic_on": type}
 
@@ -317,12 +328,32 @@ class Study(Base):  # type: ignore
     def to_json_summary(self) -> Any:
         return {"id": self.id, "name": self.name}
 
-    @validates("folder")  # type: ignore
+    @validates("folder")
     def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
         """
         We want to store the path in posix format in the database, even on windows.
         """
         return normalize_path(folder)
+
+    def get_created_at(self) -> datetime:
+        """Get the creation date, raising an error if not set."""
+        if self.created_at is None:
+            raise ValueError(f"Study {self.id} has no creation date")
+        return self.created_at
+
+    def get_updated_at(self) -> datetime:
+        """Get the last update date, raising an error if not set."""
+        if self.updated_at is None:
+            raise ValueError(f"Study {self.id} has no update date")
+        return self.updated_at
+
+    def get_created_at_timestamp(self) -> float:
+        """Get the creation timestamp, raising an error if not set."""
+        return self.get_created_at().timestamp()
+
+    def get_updated_at_timestamp(self) -> float:
+        """Get the last update timestamp, raising an error if not set."""
+        return self.get_updated_at().timestamp()
 
 
 def normalize_path(path: Optional[str]) -> Optional[str]:
@@ -350,14 +381,14 @@ class RawStudy(Study):
 
     __tablename__ = "rawstudy"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status: StudyContentStatus = Column(Enum(StudyContentStatus))
-    workspace: str = Column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
-    missing = Column(DateTime, nullable=True, index=True)
+    content_status: Mapped[Optional[StudyContentStatus]] = mapped_column(Enum(StudyContentStatus), nullable=True)
+    workspace: Mapped[str] = mapped_column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
+    missing: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",
