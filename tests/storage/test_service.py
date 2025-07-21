@@ -20,13 +20,13 @@ from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from unittest.mock import ANY, Mock, call, patch, seal
+from unittest.mock import ANY, Mock, patch, seal
 
 import numpy as np
 import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 from starlette.responses import Response
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -96,7 +96,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.archive_worker import ArchiveTaskArgs
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import with_admin_user, with_db_context
+from tests.helpers import create_raw_study, create_study, create_variant_study, with_admin_user, with_db_context
 
 JWT_USER = JWTUser(id=0, impersonator=0, type="users")
 
@@ -192,7 +192,7 @@ def test_study_listing(db_session: Session) -> None:
     alice = User(id=3, name="alice")
 
     study_version = "810"
-    a = RawStudy(
+    a = create_raw_study(
         id="A",
         owner=bob,
         type="rawstudy",
@@ -204,7 +204,7 @@ def test_study_listing(db_session: Session) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         additional_data=StudyAdditionalData(),
     )
-    b = RawStudy(
+    b = create_raw_study(
         id="B",
         owner=alice,
         type="rawstudy",
@@ -216,7 +216,7 @@ def test_study_listing(db_session: Session) -> None:
         workspace="other",
         additional_data=StudyAdditionalData(),
     )
-    c = RawStudy(
+    c = create_raw_study(
         id="C",
         owner=bob,
         type="rawstudy",
@@ -302,15 +302,14 @@ def test_study_listing(db_session: Session) -> None:
     assert expected_result == studies
 
 
-# noinspection PyArgumentList
 @pytest.mark.unit_test
 def test_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
 
     # Studies in DB
-    ma = RawStudy(id="a", path="a", workspace="workspace1")
-    mb = RawStudy(id="b", path="b")
-    mc = RawStudy(
+    ma = create_raw_study(id="a", path="a", workspace="workspace1")
+    mb = create_raw_study(id="b", path="b", workspace="workspace1")
+    mc = create_raw_study(
         id="c",
         path="c",
         name="c",
@@ -318,13 +317,13 @@ def test_sync_studies_from_disk() -> None:
         workspace="workspace1",
         owner=User(id=0),
     )
-    md = RawStudy(
+    md = create_raw_study(
         id="d",
         path="d",
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
         workspace="workspace1",
     )
-    me = RawStudy(
+    me = create_raw_study(
         id="e",
         path="e",
         folder="e",
@@ -333,7 +332,7 @@ def test_sync_studies_from_disk() -> None:
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT - 1),
         workspace="workspace1",
     )
-    mg = RawStudy(
+    mg = create_raw_study(
         id="g",
         path="g",
         folder="g",
@@ -369,52 +368,39 @@ def test_sync_studies_from_disk() -> None:
     service.sync_studies_on_disk([fa, fa2, fc, fe, ff, ff2])
 
     # here d exists in DB but not on disc so it should be removed
-    # notice b also exists in DB but not on disk but it's not deleted yet,  rather it's marked for deletion by a save call
     repository.delete.assert_called_once_with(md.id)
     # (f, workspace1) exist on disc but not in DB so it should be added
     # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
     # we check that we indeed save them in DB
-    repository.save.assert_has_calls(
-        [
-            call(RawStudy(id="b", path="b", missing=ANY)),
-            call(
-                RawStudy(
-                    id=ANY,
-                    path="a",
-                    name="a",
-                    folder="a",
-                    workspace="workspace2",
-                    missing=None,
-                    public_mode=PublicMode.FULL,
-                )
-            ),
-            call(
-                RawStudy(id="e", path="e", name="e", folder="e", workspace="workspace1", missing=None, created_at=now)
-            ),
-            call(
-                RawStudy(
-                    id=ANY,
-                    path="f",
-                    name="f",
-                    folder="f",
-                    workspace="workspace1",
-                    missing=None,
-                    public_mode=PublicMode.FULL,
-                )
-            ),
-            call(
-                RawStudy(
-                    id=ANY,
-                    path="f",
-                    name="f",
-                    folder="f",
-                    workspace="workspace2",
-                    missing=None,
-                    public_mode=PublicMode.FULL,
-                )
-            ),
-        ]
-    )
+    # (f, workspace1) exist on disc but not in DB so it should be added
+    # The studies a and f exists in workspace 2, studies under the same path exists in workspace 1,
+    # we check that we indeed save them in DB
+    saved_studies_map = {(s.path, s.workspace): s for s in [c.args[0] for c in repository.save.call_args_list]}
+    assert len(saved_studies_map) == 5
+
+    # study 'b' is in DB but not on disk, so it should be marked as missing
+    study_b = saved_studies_map[("b", "workspace1")]
+    assert study_b.id == "b"
+    assert study_b.missing is not None
+
+    # study 'e' was missing and re-appeared, so it should be restored
+    study_e = saved_studies_map[("e", "workspace1")]
+    assert study_e.id == "e"
+    assert study_e.missing is None
+    assert study_e.created_at == now
+
+    # new studies should be added
+    study_a2 = saved_studies_map[("a", "workspace2")]
+    assert study_a2.name == "a"
+    assert study_a2.public_mode == PublicMode.FULL
+
+    study_f1 = saved_studies_map[("f", "workspace1")]
+    assert study_f1.name == "f"
+    assert study_f1.public_mode == PublicMode.FULL
+
+    study_f2 = saved_studies_map[("f", "workspace2")]
+    assert study_f2.name == "f"
+    assert study_f2.public_mode == PublicMode.FULL
 
 
 @pytest.mark.unit_test
@@ -464,9 +450,9 @@ def test_sync_unsuppported_study_from_disk(caplog) -> None:
 @pytest.mark.unit_test
 def test_partial_sync_studies_from_disk() -> None:
     now = datetime.utcnow()
-    ma = RawStudy(id="a", path="a")
-    mb = RawStudy(id="b", path="b")
-    mc = RawStudy(
+    ma = create_raw_study(id="a", path="a")
+    mb = create_raw_study(id="b", path="b")
+    mc = create_raw_study(
         id="c",
         path=f"directory{os.sep}c",
         name="c",
@@ -474,12 +460,12 @@ def test_partial_sync_studies_from_disk() -> None:
         workspace="workspace1",
         owner=User(id=0),
     )
-    md = RawStudy(
+    md = create_raw_study(
         id="d",
         path=f"directory{os.sep}d",
         missing=datetime.utcnow() - timedelta(MAX_MISSING_STUDY_TIMEOUT + 1),
     )
-    me = RawStudy(
+    me = create_raw_study(
         id="e",
         path=f"directory{os.sep}e",
         created_at=now,
@@ -513,11 +499,11 @@ def test_partial_sync_studies_from_disk() -> None:
 
 @pytest.mark.unit_test
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
-    ma = RawStudy(id="a", folder="folder/studyA", workspace="workspace1")
-    mb = RawStudy(id="b", folder="folder/studyB", workspace="workspace1")
-    mc = RawStudy(id="c", folder="folder/studyC", workspace="workspace1")
-    mc2 = RawStudy(id="c2", folder="folder/studyC", workspace="workspace2")
-    md = RawStudy(id="managed", folder="managed", workspace="default")
+    ma = create_raw_study(id="a", folder="folder/studyA", workspace="workspace1")
+    mb = create_raw_study(id="b", folder="folder/studyB", workspace="workspace1")
+    mc = create_raw_study(id="c", folder="folder/studyC", workspace="workspace1")
+    mc2 = create_raw_study(id="c2", folder="folder/studyC", workspace="workspace2")
+    md = create_raw_study(id="managed", folder="managed", workspace="default")
 
     repository = Mock()
     repository.get_all_raw.side_effect = [[ma, mb, mc, mc2, md]]
@@ -539,9 +525,9 @@ def test_delete_missing_studies_desktop(study_tree: Path) -> None:
 @with_db_context
 def test_remove_duplicate(db_session: Session) -> None:
     with db_session:
-        db_session.add(RawStudy(id="a", path="/path/to/a"))
-        db_session.add(RawStudy(id="b", path="/path/to/a"))
-        db_session.add(RawStudy(id="c", path="/path/to/c"))
+        db_session.add(create_raw_study(id="a", path="/path/to/a"))
+        db_session.add(create_raw_study(id="b", path="/path/to/a"))
+        db_session.add(create_raw_study(id="c", path="/path/to/c"))
         db_session.commit()
         study_count = db_session.query(RawStudy).filter(RawStudy.path == "/path/to/a").count()
         assert study_count == 2  # there are 2 studies with same path before removing duplicates
@@ -572,7 +558,7 @@ def test_create_study() -> None:
     user = User(id=0, name="user")
     group = Group(id="my-group", name="group")
 
-    expected = RawStudy(
+    expected = create_raw_study(
         id=str(uuid.uuid4()),
         name="new-study",
         version="700",
@@ -642,7 +628,7 @@ def test_save_metadata() -> None:
     group = Group(id="my-group", name="group")
 
     # Expected
-    study = RawStudy(
+    study = create_raw_study(
         id=study_id,
         content_status=StudyContentStatus.VALID,
         workspace=DEFAULT_WORKSPACE_NAME,
@@ -654,7 +640,7 @@ def test_save_metadata() -> None:
 
     service.user_service.get_user.return_value = user  # type: ignore
     with current_user_context(jwt):
-        service._save_study(RawStudy(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
+        service._save_study(create_raw_study(id=study_id, workspace=DEFAULT_WORKSPACE_NAME))
     repository.save.assert_called_once_with(study)
 
 
@@ -665,7 +651,7 @@ def test_download_output() -> None:
     repository = Mock(spec=StudyMetadataRepository)
 
     study_version = 870
-    input_study = RawStudy(
+    input_study = create_raw_study(
         id="c",
         path="c",
         name="c",
@@ -908,7 +894,7 @@ def test_change_owner() -> None:
         variant_study_service=variant_study_service,
     )
 
-    study = RawStudy(id=study_id, owner=alice)
+    study = create_raw_study(id=study_id, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
     service._edit_study_using_command = Mock()
@@ -918,8 +904,8 @@ def test_change_owner() -> None:
 
     service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
     user_service.get_user.assert_called_once_with(2)
-    repository.save.assert_called_with(RawStudy(id=study_id, owner=bob, last_access=ANY))
-    repository.save.assert_called_with(RawStudy(id=study_id, owner=bob))
+    repository.save.assert_called_with(create_raw_study(id=study_id, owner=bob, last_access=ANY))
+    repository.save.assert_called_with(create_raw_study(id=study_id, owner=bob))
 
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt_user):
@@ -941,7 +927,7 @@ def test_manage_group() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config, user_service=user_service)
 
-    repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a])
+    repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a])
 
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(user):
@@ -953,18 +939,18 @@ def test_manage_group() -> None:
         service.add_group(study_id, "b")
 
     user_service.get_group.assert_called_once_with("b")
-    repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
+    repository.save.assert_called_with(create_study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
-    repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
+    repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a, group_b])
     with current_user_context(user):
         service.add_group(study_id, "b")
         user_service.get_group.assert_called_with("b")
-    repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_a, group_b]))
+    repository.save.assert_called_with(create_study(id=study_id, owner=alice, groups=[group_a, group_b]))
 
-    repository.get.return_value = Study(id=study_id, owner=alice, groups=[group_a, group_b])
+    repository.get.return_value = create_study(id=study_id, owner=alice, groups=[group_a, group_b])
     with current_user_context(user):
         service.remove_group(study_id, "a")
-    repository.save.assert_called_with(Study(id=study_id, owner=alice, groups=[group_b]))
+    repository.save.assert_called_with(create_study(id=study_id, owner=alice, groups=[group_b]))
 
 
 # noinspection PyArgumentList
@@ -979,7 +965,7 @@ def test_set_public_mode() -> None:
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     service = build_study_service(Mock(), repository, config, user_service=user_service)
 
-    repository.get.return_value = Study(id=study_id)
+    repository.get.return_value = create_study(id=study_id)
 
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(user):
@@ -988,7 +974,7 @@ def test_set_public_mode() -> None:
     user.groups.append(group_admin)
     with current_user_context(user):
         service.set_public_mode(study_id, PublicMode.FULL)
-    repository.save.assert_called_with(Study(id=study_id, public_mode=PublicMode.FULL))
+    repository.save.assert_called_with(create_study(id=study_id, public_mode=PublicMode.FULL))
 
 
 # noinspection PyArgumentList
@@ -997,7 +983,7 @@ def test_check_errors() -> None:
     study_service = Mock()
     study_service.check_errors.return_value = ["Hello", "World"]
 
-    study = RawStudy(id="hello world")
+    study = create_raw_study(id="hello world")
     repo = Mock()
     repo.get.return_value = study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
@@ -1048,35 +1034,35 @@ def test_assert_permission() -> None:
     service = build_study_service(Mock(), repository, config)
 
     # wrong owner
-    repository.get.return_value = Study(id=study_id, owner=wrong)
+    repository.get.return_value = create_study(id=study_id, owner=wrong)
     study = service.get_study(study_id)
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt):
             assert_permission(study, StudyPermissionType.READ)
 
     # good owner
-    study = Study(id=study_id, owner=good)
+    study = create_study(id=study_id, owner=good)
     with current_user_context(jwt):
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # wrong group
-    study = Study(id=study_id, owner=wrong, groups=[Group(id="wrong")])
+    study = create_study(id=study_id, owner=wrong, groups=[Group(id="wrong")])
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt):
             assert_permission(study, StudyPermissionType.READ)
 
     # good group
-    study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group")])
+    study = create_study(id=study_id, owner=wrong, groups=[Group(id="my-group")])
     with current_user_context(jwt):
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # super admin can do whatever he wants..
-    study = Study(id=study_id)
+    study = create_study(id=study_id)
     with current_user_context(admin):
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
 
     # when study found in workspace without group
-    study = Study(id=study_id, public_mode=PublicMode.FULL)
+    study = create_study(id=study_id, public_mode=PublicMode.FULL)
     with pytest.raises(UserHasNotPermissionError):
         with current_user_context(jwt):
             assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
@@ -1086,7 +1072,7 @@ def test_assert_permission() -> None:
         assert_permission(study, StudyPermissionType.RUN)
 
     # some group roles
-    study = Study(id=study_id, owner=wrong, groups=[Group(id="my-group-2")])
+    study = create_study(id=study_id, owner=wrong, groups=[Group(id="my-group-2")])
     with current_user_context(jwt_2):
         with pytest.raises(UserHasNotPermissionError):
             assert_permission(study, StudyPermissionType.WRITE)
@@ -1157,9 +1143,9 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # They all belong to the same group.
     writers = db_session.query(Group).filter(Group.name == "Writers").one()
     studies = [
-        Study(id=uuid.uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
-        Study(id=uuid.uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
-        Study(id=uuid.uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        create_study(id=uuid.uuid4(), name="Main Study", owner_id=jwt_users["John"].id, groups=[writers]),
+        create_study(id=uuid.uuid4(), name="Variant Study 1", owner_id=jwt_users["Jane"].id, groups=[writers]),
+        create_study(id=uuid.uuid4(), name="Variant Study 2", owner_id=jwt_users["Jane"].id, groups=[writers]),
     ]
 
     # All admin and writers should have WRITE access to the studies.
@@ -1176,7 +1162,7 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
     # Jack creates a additional variant study and adds it to the readers and writers groups.
     readers = db_session.query(Group).filter(Group.name == "Readers").one()
     studies.append(
-        Study(id=uuid.uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers])
+        create_study(id=uuid.uuid4(), name="Variant Study 3", owner_id=jwt_users["Jack"].id, groups=[readers, writers])
     )
 
     # All admin and writers should have READ access to the studies.
@@ -1350,7 +1336,7 @@ def test_delete_recursively(tmp_path: Path) -> None:
         return str(_study_dir)
 
     study_path = create_study_fs_mock()
-    study_mock = RawStudy(
+    study_mock = create_raw_study(
         archived=False,
         id="my_study",
         path=study_path,
@@ -1361,9 +1347,9 @@ def test_delete_recursively(tmp_path: Path) -> None:
         last_access=datetime.utcnow(),
     )
 
-    v1 = VariantStudy(id="variant_1", path=create_study_fs_mock(variant=True))
-    v2 = VariantStudy(id="variant_2", path=create_study_fs_mock(variant=True))
-    v3 = VariantStudy(id="sub_variant_1", path=create_study_fs_mock(variant=True))
+    v1 = create_variant_study(id="variant_1", path=create_study_fs_mock(variant=True))
+    v2 = create_variant_study(id="variant_2", path=create_study_fs_mock(variant=True))
+    v3 = create_variant_study(id="sub_variant_1", path=create_study_fs_mock(variant=True))
 
     def get_study(study_id: str) -> Study:
         if study_id == "my_study":
@@ -1928,7 +1914,7 @@ def test_upgrade_study__raw_study__nominal(
 
     # Prepare a RAW study
     # noinspection PyArgumentList
-    raw_study = RawStudy(
+    raw_study = create_raw_study(
         id=study_id,
         name=study_name,
         workspace=workspace,
@@ -2017,7 +2003,7 @@ def test_upgrade_study__variant_study__nominal(
 
     # Prepare a RAW study
     # noinspection PyArgumentList
-    variant_study = VariantStudy(
+    variant_study = create_variant_study(
         id=study_id,
         name=study_name,
         path=str(tmp_path),
@@ -2106,7 +2092,7 @@ def test_upgrade_study__raw_study__failed(tmp_path: Path) -> None:
 
     # Prepare a RAW study
     # noinspection PyArgumentList
-    raw_study = RawStudy(
+    raw_study = create_raw_study(
         id=study_id,
         name=study_name,
         workspace=DEFAULT_WORKSPACE_NAME,
