@@ -621,8 +621,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Get optimization config values for form",
-        response_model=OptimizationPreferences,
-        response_model_exclude_none=True,
     )
     def get_optimization_form_values(uuid: str) -> OptimizationPreferences:
         logger.info(msg=f"Getting optimization config for study {uuid}")
