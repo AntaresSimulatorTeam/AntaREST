@@ -18,6 +18,12 @@ depends_on = None
 
 
 def upgrade():
+    """
+    This update fixes an incident with the folder path of some managed studies.
+    Sometimes, a study's folder does not end with its own ID
+    (as seen in the top entry of the image below), even though this should always be
+    the case). So this function add the ID to the end of the folder path if it is not already there.
+    """
     op.execute(
         sa.text("""
         UPDATE study AS s SET
@@ -44,4 +50,8 @@ def upgrade():
 
 
 def downgrade():
+    """
+    We cannot downgrade this migration because we cannot make the difference between a folder path that was
+    correctly set and one that was incorrectly set.
+    """
     pass
