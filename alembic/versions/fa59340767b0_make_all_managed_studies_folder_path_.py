@@ -23,8 +23,10 @@ def upgrade():
         UPDATE study AS s SET
             folder = (
                 CASE
-                    WHEN folder LIKE '%/' THEN concat(folder, id)
-                    ELSE concat(concat(folder, '/'), id)
+                    WHEN folder LIKE '%/' THEN 
+                        folder || id
+                    ELSE 
+                        folder || '/' || id
                 END
             )
         WHERE
