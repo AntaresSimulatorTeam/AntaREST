@@ -31,7 +31,7 @@ def upgrade():
             )
         WHERE
             s.folder IS NOT NULL
-            AND s.folder NOT LIKE concat('%', id)
+            AND s.folder NOT LIKE '%' || id
             AND (
                 EXISTS (
                     SELECT 1 FROM rawstudy r
