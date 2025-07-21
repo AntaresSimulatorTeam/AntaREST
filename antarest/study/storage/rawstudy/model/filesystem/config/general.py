@@ -9,10 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, PositiveInt, StrictBool
+from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.config.general_model import (
@@ -29,26 +29,26 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 class GeneralFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True)
 
-    mode: Optional[Mode] = Field(default=None)
-    first_day: Optional[DayNumberType] = Field(default=None, alias="simulation.start")
-    last_day: Optional[DayNumberType] = Field(default=None, alias="simulation.end")
-    horizon: Optional[str | int] = Field(default=None)
-    first_month: Optional[Month] = Field(default=None, alias="first-month-in-year")
-    first_week_day: Optional[WeekDay] = Field(default=None, alias="first.weekday")
-    first_january: Optional[WeekDay] = Field(default=None, alias="january.1st")
-    leap_year: Optional[StrictBool] = Field(default=None, alias="leapyear")
-    nb_years: Optional[PositiveInt] = Field(default=None, alias="nbyears")
-    building_mode: Optional[BuildingMode] = Field(default=None)
-    selection_mode: Optional[StrictBool] = Field(default=None, alias="user-playlist")
-    year_by_year: Optional[StrictBool] = Field(default=None, alias="year-by-year")
-    simulation_synthesis: Optional[StrictBool] = Field(default=None, alias="synthesis")
-    mc_scenario: Optional[StrictBool] = Field(default=None, alias="storenewset")
-    filtering: Optional[StrictBool] = Field(default=None)
-    geographic_trimming: Optional[StrictBool] = Field(default=None, alias="geographic-trimming")
-    thematic_trimming: Optional[StrictBool] = Field(default=None, alias="thematic-trimming")
-    derated: Optional[StrictBool] = Field(default=None)
-    custom_scenario: Optional[StrictBool] = Field(default=None, alias="custom-scenario")
-    custom_ts_numbers: Optional[StrictBool] = Field(default=None, alias="custom-ts-numbers")
+    mode: Mode | None = Field(default=None)
+    first_day: DayNumberType | None = Field(default=None, alias="simulation.start")
+    last_day: DayNumberType | None = Field(default=None, alias="simulation.end")
+    horizon: str | int | None = Field(default=None)
+    first_month: Month | None = Field(default=None, alias="first-month-in-year")
+    first_week_day: WeekDay | None = Field(default=None, alias="first.weekday")
+    first_january: WeekDay | None = Field(default=None, alias="january.1st")
+    leap_year: bool | None = Field(default=None, alias="leapyear")
+    nb_years: int | None = Field(default=None, alias="nbyears")
+    building_mode: BuildingMode | None = Field(default=None)
+    selection_mode: bool | None = Field(default=None, alias="user-playlist")
+    year_by_year: bool | None = Field(default=None, alias="year-by-year")
+    simulation_synthesis: bool | None = Field(default=None, alias="synthesis")
+    mc_scenario: bool | None = Field(default=None, alias="storenewset")
+    filtering: bool | None = Field(default=None)
+    geographic_trimming: bool | None = Field(default=None, alias="geographic-trimming")
+    thematic_trimming: bool | None = Field(default=None, alias="thematic-trimming")
+    derated: bool | None = Field(default=None)
+    custom_scenario: bool | None = Field(default=None, alias="custom-scenario")
+    custom_ts_numbers: bool | None = Field(default=None, alias="custom-ts-numbers")
 
     def to_model(self) -> GeneralConfig:
         data = self.model_dump(exclude_none=True, exclude={"derated", "custom_scenario", "custom_ts_numbers"})
