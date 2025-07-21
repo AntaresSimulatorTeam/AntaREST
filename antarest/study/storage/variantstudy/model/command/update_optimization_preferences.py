@@ -13,7 +13,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.config.optimization_config import OptimizationPreferencesUpdate
+from antarest.study.business.model.config.optimization_config import (
+    OptimizationPreferencesUpdate,
+    update_optimization_preferences,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -22,7 +25,6 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class UpdateOptimizationPreferences(ICommand):
-
     """
     Command used to update multiple areas properties
     """
@@ -40,7 +42,8 @@ class UpdateOptimizationPreferences(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_config = study_data.get_optimization_preferences()
-
+        new_config = update_optimization_preferences(current_config, self.parameters)
+        study_data.save_optimization_preferences(new_config)
         return command_succeeded("General config updated successfully.")
 
     @override

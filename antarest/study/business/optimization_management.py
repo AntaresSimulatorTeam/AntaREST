@@ -35,5 +35,7 @@ class OptimizationManager:
         Set optimization config from the webapp form
         """
 
-        command = UpdateOptimizationPreferences(parameters=config, command_context=self._command_context, study_version=study.version)
+        command = UpdateOptimizationPreferences(
+            parameters=config, command_context=self._command_context, study_version=study.version
+        )
         study.add_commands([command])

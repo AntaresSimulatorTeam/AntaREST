@@ -35,14 +35,21 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 class ReadOnlyStudyDao(
-    ReadOnlyLinkDao, ReadOnlyThermalDao, ReadOnlyRenewableDao, ReadOnlyConstraintDao, ReadOnlySTStorageDao, ReadOnlyOptimizationPreferencesDao
+    ReadOnlyLinkDao,
+    ReadOnlyThermalDao,
+    ReadOnlyRenewableDao,
+    ReadOnlyConstraintDao,
+    ReadOnlySTStorageDao,
+    ReadOnlyOptimizationPreferencesDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
 
-class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, ConstraintDao, STStorageDao, OptimizationPreferencesDao):
+class StudyDao(
+    ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, ConstraintDao, STStorageDao, OptimizationPreferencesDao
+):
     """
     Abstraction for access to study data. Handles all reading
     and writing from underlying storage format.

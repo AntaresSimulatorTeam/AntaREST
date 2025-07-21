@@ -75,3 +75,15 @@ class OptimizationPreferencesUpdate(AntaresBaseModel):
     export_mps: bool | str | None = None
     unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = None
     simplex_optimization_range: SimplexOptimizationRange | None = None
+
+
+def update_optimization_preferences(
+    config: OptimizationPreferences, new_config: OptimizationPreferencesUpdate
+) -> OptimizationPreferences:
+    """
+    Updates the optimization preferences according to the provided update data.
+    """
+    current_properties = config.model_dump(mode="json")
+    new_properties = new_config.model_dump(mode="json", exclude_none=True)
+    current_properties.update(new_properties)
+    return OptimizationPreferences.model_validate(current_properties)

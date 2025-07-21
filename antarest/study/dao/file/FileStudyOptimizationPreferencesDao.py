@@ -14,10 +14,10 @@ from abc import ABC, abstractmethod
 from typing_extensions import override
 
 from antarest.study.business.model.config.optimization_config import OptimizationPreferences
-from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
-from antarest.study.storage.rawstudy.model.filesystem.config.optimization_preferences import \
-    OptimizationPreferencesFileData
+from antarest.study.storage.rawstudy.model.filesystem.config.optimization_preferences import (
+    OptimizationPreferencesFileData,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -29,10 +29,21 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         file_study = self.get_file_study()
-        tree_data = file_study.tree.get(["settings" , "generaldata", "optimization"])
+        tree_data = file_study.tree.get(["settings", "generaldata", "optimization"])
         file_data = OptimizationPreferencesFileData.model_validate(tree_data)
         return file_data.to_model()
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
-        pass
+        file_study = self.get_file_study()
+
+        current_optimization_preferences = file_study.tree.get(["settings", "generaldata", "optimization"])
+
+        optimization_preferences = OptimizationPreferencesFileData.from_model(config).model_dump(
+            by_alias=True, exclude_none=True
+        )
+        optimization_preferences.update(
+            {k: v for k, v in current_optimization_preferences.items() if k not in optimization_preferences}
+        )
+
+        file_study.tree.save(optimization_preferences, ["settings", "generaldata", "optimization"])

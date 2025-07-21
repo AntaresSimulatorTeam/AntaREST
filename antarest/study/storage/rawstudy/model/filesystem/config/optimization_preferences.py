@@ -14,9 +14,10 @@ from pydantic import ConfigDict, Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.config.optimization_config import (
     LegacyTransmissionCapacities,
+    OptimizationPreferences,
     SimplexOptimizationRange,
     TransmissionCapacities,
-    UnfeasibleProblemBehavior, OptimizationPreferences,
+    UnfeasibleProblemBehavior,
 )
 
 
