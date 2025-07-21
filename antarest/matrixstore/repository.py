@@ -271,23 +271,30 @@ class MatrixContentRepository:
 
         matrix_hash = compute_hash(content)
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
+
+        # First check for the fast path without locking
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
             return MatrixCreationResult(hash=matrix_hash, new=False)
 
+        # Ensure exclusive access to the matrix file between multiple processes (or threads).
         lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
-        for internal_format in InternalMatrixFormat:
-            matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
-            if matrix_in_another_format_path.exists():
-                # We want to migrate the old matrix in the given repository format.
-                # Ensure exclusive access to the matrix file between multiple processes (or threads).
-                with FileLock(lock_file, timeout=15):
+        with FileLock(lock_file, timeout=15):
+            # we check again for the existence of the file, as it might have been created by another process or thread
+            if matrix_path.exists():
+                # Avoid having to save the matrix again (that's the whole point of using a hash).
+                return MatrixCreationResult(hash=matrix_hash, new=False)
+
+            other_formats = [f for f in InternalMatrixFormat if f != self.format]
+            for internal_format in other_formats:
+                matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+                if matrix_in_another_format_path.exists():
+                    # We want to migrate the old matrix in the given repository format.
+                    # Ensure exclusive access to the matrix file between multiple processes (or threads).
                     save_matrix(self.format, content, matrix_path)
                     matrix_in_another_format_path.unlink()
-                return MatrixCreationResult(hash=matrix_hash, new=True)
+                    return MatrixCreationResult(hash=matrix_hash, new=True)
 
-        # Ensure exclusive access to the matrix file between multiple processes (or threads).
-        with FileLock(lock_file, timeout=15):
             save_matrix(self.format, content, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
@@ -295,7 +302,7 @@ class MatrixContentRepository:
             # However, this deletion is possible when the matrix is no longer in use.
             # This is done in `MatrixGarbageCollector` when matrix files are deleted.
 
-        return MatrixCreationResult(hash=matrix_hash, new=True)
+            return MatrixCreationResult(hash=matrix_hash, new=True)
 
     def delete(self, matrix_hash: str) -> None:
         """
