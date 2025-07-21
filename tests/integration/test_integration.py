@@ -1447,6 +1447,20 @@ def test_copy(client: TestClient, admin_access_token: str, internal_study_id: st
     assert res["groups"] == []
     assert res["public_mode"] == "READ"
 
+    # Copy a study with incorrect study name
+
+    res = client.post(
+        f"/v1/studies/{internal_study_id}/copy",
+        params={
+            "study_name": "copied=",
+        },
+    )
+    assert res.status_code == 400
+    assert res.json() == {
+        "description": "study name copied= contains illegal characters (=, /)",
+        "exception": "HTTPException",
+    }
+
 
 def test_copy_variant_as_raw(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
