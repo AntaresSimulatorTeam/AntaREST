@@ -1122,7 +1122,13 @@ class StudyService:
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
+                origin_study,
+                dest_study_name,
+                group_ids,
+                destination_folder,
+                output_ids,
+                with_outputs,
+                self.get_user_name(),
             )
 
             self._save_study(study, group_ids)

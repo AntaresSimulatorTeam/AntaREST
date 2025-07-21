@@ -70,19 +70,43 @@ TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 
-# noinspection SpellCheckingInspection
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_author: bool) -> None:
+def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool, editor: str = "") -> None:
+    """
+    Update antares study information in the study.antares file.
+
+    Args:
+        metadata: Study metadata containing name, version, dates, etc.
+        study_tree: File study tree to update
+        update_author: Whether to update the author field
+        editor: Editor name (fallback to metadata.additional_data.author if empty)
+    """
     study_data_info = study_tree.get(["study"])
-    study_data_info["antares"]["caption"] = metadata.name
-    study_data_info["antares"]["created"] = metadata.created_at.timestamp() if metadata.created_at is not None else "0"
-    study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp() if metadata.updated_at is not None else "0"
-    version = StudyVersion.parse(metadata.version)
-    study_data_info["antares"]["version"] = f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
+    antares_info = study_data_info["antares"]
+
+    # Update basic fields
+    antares_info["caption"] = metadata.name
+    antares_info["created"] = _format_timestamp(metadata.created_at)
+    antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
+    antares_info["version"] = _format_version(metadata.version)
+
+    # Update author-related fields if additional_data exists
     if metadata.additional_data:
-        study_data_info["antares"]["editor"] = metadata.additional_data.editor or metadata.additional_data.author
+        antares_info["editor"] = editor or metadata.additional_data.author
         if update_author:
-            study_data_info["antares"]["author"] = metadata.additional_data.author
+            antares_info["author"] = metadata.additional_data.author
+
     study_tree.save(study_data_info, ["study"])
+
+
+def _format_timestamp(dt: Optional[datetime]) -> str:
+    """Format datetime as timestamp string or '0' if None."""
+    return str(dt.timestamp()) if dt is not None else "0"
+
+
+def _format_version(version_str: str) -> str:
+    """Format version string according to version rules."""
+    version = StudyVersion.parse(version_str)
+    return f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
 
 
 def fix_study_root(study_path: Path) -> None:

@@ -1342,6 +1342,85 @@ def test_import_with_editor(
     assert imported_antares_data["editor"] == "importer"
 
 
+def test_copy_with_editor_preservation(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # 1. Create a group and two users
+    group_name = "test_copy_group"
+    res = client.post("/v1/groups", json={"name": group_name})
+    res.raise_for_status()
+    group_id = res.json()["id"]
+
+    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
+    client.post("/v1/users", json={"name": "copier_2", "password": "password456"})
+
+    # Log in as 'creator' to get ID
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator.raise_for_status()
+    creator_creds = res_creator.json()
+    creator_id = creator_creds["user"]
+
+    # Log in as 'copier' to get ID
+    res_copier = client.post("/v1/login", json={"username": "copier_2", "password": "password456"})
+    res_copier.raise_for_status()
+    copier_creds = res_copier.json()
+    copier_id = copier_creds["user"]
+
+    # Add users to the group
+    client.post(
+        "/v1/roles",
+        json={"type": 40, "group_id": group_id, "identity_id": creator_id},  # ADMIN
+    )
+    client.post(
+        "/v1/roles",
+        json={"type": 30, "group_id": group_id, "identity_id": copier_id},  # WRITER
+    )
+
+    # Refresh tokens to update permissions
+    res_creator = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {creator_creds['refresh_token']}"},
+    )
+    creator_creds = res_creator.json()
+    creator_token = creator_creds["access_token"]
+
+    res_copier = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {copier_creds['refresh_token']}"},
+    )
+    copier_creds = res_copier.json()
+    copier_token = copier_creds["access_token"]
+
+    # 2. 'creator' creates a new study associated with the group
+    headers_creator = {"Authorization": f"Bearer {creator_token}"}
+    study_name = "test_author_preservation_on_copy"
+    res_create = client.post(f"/v1/studies?name={study_name}&groups={group_id}", headers=headers_creator)
+    res_create.raise_for_status()
+    study_id = res_create.json()
+
+    # 3. Verify that 'author' and 'editor' are set to 'creator'
+    res_raw_initial = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator)
+    initial_antares_data = res_raw_initial.json()["antares"]
+    assert initial_antares_data["author"] == "creator_2"
+    assert initial_antares_data["editor"] == "creator_2"
+
+    # 4. 'copier' copies the study
+    headers_copier = {"Authorization": f"Bearer {copier_token}"}
+    copied_study_name = "copied_study_for_author_test"
+    res_copy = client.post(
+        f"/v1/studies/{study_id}/copy?study_name={copied_study_name}&use_task=false",
+        headers=headers_copier,
+    )
+    res_copy.raise_for_status()
+    copied_study_id = res_copy.json()
+
+    # 5. Verify 'author' is preserved and 'editor' is updated in the copied study
+    res_raw_copied = client.get(f"/v1/studies/{copied_study_id}/raw?path=study", headers=headers_copier)
+    copied_antares_data = res_raw_copied.json()["antares"]
+    assert copied_antares_data["author"] == "creator_2"
+    assert copied_antares_data["editor"] == "copier_2"
+
+
 def test_copy(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
