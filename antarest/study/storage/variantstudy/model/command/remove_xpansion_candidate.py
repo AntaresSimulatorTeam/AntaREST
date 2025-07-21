@@ -21,6 +21,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandOutput,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.xpansion_common import checks_candidate_can_be_deleted
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -42,6 +43,7 @@ class RemoveXpansionCandidate(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        checks_candidate_can_be_deleted(self.candidate_name, study_data)
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
         candidate_number = None
         for cdt_number, cdt in candidates.items():

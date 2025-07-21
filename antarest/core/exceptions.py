@@ -828,3 +828,9 @@ class UnsupportedOperationOnThisStudyType(HTTPException):
     def __init__(self, uuid: str, operation: str, supported_type: str) -> None:
         msg = f"You cannot {operation} the study '{uuid}'. This is only available for {supported_type} studies."
         super().__init__(HTTPStatus.BAD_REQUEST, msg)
+
+
+class XpansionCandidateDeletionError(HTTPException):
+    def __init__(self, uuid: str, cdt_name: str) -> None:
+        msg = f"You cannot delete the candidate {cdt_name} in study '{uuid}'. It is referenced in the sensivity config."
+        super().__init__(HTTPStatus.BAD_REQUEST, msg)
