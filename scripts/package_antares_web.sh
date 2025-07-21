@@ -22,7 +22,7 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   ANTARES_SOLVER_FOLDER_NAME="antares-solver_windows"
   ANTARES_SOLVER_ZIPFILE_NAME="$ANTARES_SOLVER_FOLDER_NAME.zip"
 else
-  ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu20.04.tar.gz"
+  ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu22.04.tar.gz"
 fi
 
 LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v$ANTARES_SOLVER_FULL_VERSION/$ANTARES_SOLVER_ZIPFILE_NAME"
