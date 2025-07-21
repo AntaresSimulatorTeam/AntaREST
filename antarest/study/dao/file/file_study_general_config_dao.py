@@ -45,12 +45,17 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
     def save_general_config(self, config: GeneralConfig) -> None:
         study_data = self.get_file_study()
 
-        current_general_config = study_data.tree.get(["settings", "generaldata", "general"])
+        current_config = study_data.tree.get(["settings", "generaldata"])
+        current_general_config = current_config["general"]
+        current_output_config = current_config["output"]
+
         general_config = serialize_simulation_config(config, study_data.config.version)
         general_config.update({k: v for k, v in current_general_config.items() if k not in general_config})
-        study_data.tree.save(general_config, ["settings", "generaldata", "general"])
 
-        current_output_config = study_data.tree.get(["settings", "generaldata", "output"])
         general_output = serialize_output_config(config, study_data.config.version)
         general_output.update({k: v for k, v in current_output_config.items() if k not in general_output})
-        study_data.tree.save(general_output, ["settings", "generaldata", "output"])
+
+        current_config["general"] = general_config
+        current_config["output"] = general_output
+
+        study_data.tree.save(current_config, ["settings", "generaldata"])

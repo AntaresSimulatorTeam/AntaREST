@@ -53,7 +53,6 @@ class BuildingMode(EnumIgnoreCase):
 
 DayNumberType: TypeAlias = Annotated[int, Field(ge=1, le=366)]
 GENERAL = "general"
-OUTPUT = "output"
 GENERAL_PATH = f"{GENERAL_DATA_PATH}/{GENERAL}"
 
 

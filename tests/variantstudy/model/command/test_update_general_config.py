@@ -16,44 +16,10 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateGeneralConfig:
-    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
-        self.study = study
-
     def test_update_general_config(self, empty_study_880: FileStudy, command_context: CommandContext):
         study = empty_study_880
 
-        default_values = {
-            "custom-scenario": False,
-            "derated": False,
-            "first-month-in-year": "january",
-            "first.weekday": "Monday",
-            "generate": "",
-            "geographic-trimming": False,
-            "horizon": "",
-            "inter-modal": "",
-            "intra-modal": "",
-            "january.1st": "Monday",
-            "leapyear": False,
-            "mode": "Economy",
-            "nbtimeserieshydro": 1,
-            "nbtimeseriesload": 1,
-            "nbtimeseriessolar": 1,
-            "nbtimeseriesthermal": 1,
-            "nbtimeserieswind": 1,
-            "nbyears": 1,
-            "readonly": False,
-            "refreshintervalhydro": 100,
-            "refreshintervalload": 100,
-            "refreshintervalsolar": 100,
-            "refreshintervalthermal": 100,
-            "refreshintervalwind": 100,
-            "refreshtimeseries": "",
-            "simulation.end": 365,
-            "simulation.start": 1,
-            "thematic-trimming": False,
-            "user-playlist": False,
-            "year-by-year": False,
-        }
+        default_values = study.tree.get(["settings", "generaldata", "general"])
 
         args = {
             "horizon": 2030,
