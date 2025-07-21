@@ -24,7 +24,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadArchiveContent, BadZipBinary
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.model import PublicMode
-from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_name, validate_study_name
+from antarest.core.utils.utils import sanitize_string, sanitize_uuid, validate_folder_path, validate_study_name
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.login.utils import require_current_user
@@ -369,7 +369,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     )
     def move_study(uuid: str, folder_dest: str) -> Any:
         logger.info(f"Moving study {uuid} into folder '{folder_dest}'")
-        study_service.move_study(uuid, validate_folder_name(folder_dest))
+        study_service.move_study(uuid, validate_folder_path(folder_dest))
 
     @bp.post(
         "/studies",
