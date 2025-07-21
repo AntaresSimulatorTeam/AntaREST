@@ -88,6 +88,7 @@ def validate_folder_path(path: str) -> str:
     path = path.rstrip("/")
     return path.strip()
 
+
 def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
 
