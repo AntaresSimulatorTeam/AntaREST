@@ -34,8 +34,8 @@ These steps should work on any linux system with docker and docker-compose insta
 2. Then download and unzip AntaresSimulator binaries:
 
    ```shell
-   wget https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v8.8.17/antares-8.8.17-Ubuntu-20.04.tar.gz
-   tar xzf antares-8.8.17-Ubuntu-20.04.tar.gz
+   wget https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v8.8.17/antares-8.8.17-Ubuntu-22.04.tar.gz
+   tar xzf antares-8.8.17-Ubuntu-22.04.tar.gz
    ```
 
 3. Build the docker image
