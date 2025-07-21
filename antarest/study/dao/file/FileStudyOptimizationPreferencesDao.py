@@ -43,7 +43,7 @@ class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):
             by_alias=True, exclude_none=True
         )
 
-        # Include field that are in the optimization part of the generaldata.ini file but not in the optimization class
+        # Include fields that are in the optimization part of the generaldata.ini file but not in the optimization class
         optimization_preferences.update(
             {k: v for k, v in current_optimization_preferences.items() if k not in optimization_preferences}
         )
