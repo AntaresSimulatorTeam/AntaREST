@@ -130,6 +130,6 @@ def checks_candidate_can_be_deleted(candidate_name: str, file_study: FileStudy) 
     Ensures the candidate isn't referenced inside the sensitivity file as a projection.
     """
     sensitivity_config = get_xpansion_sensitivity(file_study)
-    projections = sensitivity_config.get("projections", {})
+    projections = sensitivity_config.get("projection", {})
     if candidate_name in projections:
         raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)
