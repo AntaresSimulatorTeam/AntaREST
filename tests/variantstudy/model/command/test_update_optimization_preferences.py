@@ -22,28 +22,10 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 
 class TestUpdateOptimizationPreferences:
-    def _set_up(self, study: FileStudy, command_context: CommandContext) -> None:
-        self.study = study
-
     def test_update_optimization_preferences(self, empty_study_880: FileStudy, command_context: CommandContext):
         study = empty_study_880
 
-        default_values = {
-            "include-constraints": True,
-            "include-hurdlecosts": True,
-            "transmission-capacities": True,
-            "include-tc-minstablepower": True,
-            "include-exportstructure": False,
-            "include-tc-min-ud-time": True,
-            "include-dayahead": True,
-            "include-primaryreserve": True,
-            "include-strategicreserve": True,
-            "include-spinningreserve": True,
-            "include-exportmps": False,
-            "include-unfeasible-problem-behavior": UnfeasibleProblemBehavior.ERROR_VERBOSE,
-            "simplex-range": SimplexOptimizationRange.WEEK,
-            "link-type": "local",
-        }
+        default_values = study.tree.get(["settings", "generaldata", "optimization"])
 
         args = {
             "hurdleCosts": False,
