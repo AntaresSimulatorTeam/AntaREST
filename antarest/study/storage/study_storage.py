@@ -93,7 +93,7 @@ class IStudyStorage(ABC):
             destination_folder: The path where the destination study should be created. If not provided, the default path will be used.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            editor: The name of the editor that should be assigned to the destination study.
+            editor: The editor's name that should be assigned to the destination study.
 
         Returns:
             The newly created study.
