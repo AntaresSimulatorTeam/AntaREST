@@ -17,6 +17,7 @@ from antarest.study.business.model.sts_model import (
     AdditionalConstraintVariable,
     STStorageAdditionalConstraintCreation,
 )
+from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -164,5 +165,5 @@ class TestCreateSTStorageAdditionalConstraint:
                 area_id="fr",
                 storage_id="sts_1",
                 constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
-                study_version="8.8",
+                study_version=STUDY_VERSION_8_8,
             )
