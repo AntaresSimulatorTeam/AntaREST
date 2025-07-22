@@ -21,16 +21,17 @@ from antarest.study.storage.variantstudy.business.matrix_constants.st_storage im
 
 
 class InputSTStorageConstraintsArea(FolderNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, area: str):
         super().__init__(matrix_mapper, config)
+        self.area = area
 
     @override
     def build(self) -> TREE:
         children: TREE = {"additional_constraints": IniFileNode(self.config.next_file("additional-constraints.ini"))}
-        for matrix_file in self.config.path.glob("*.txt"):
-            children[matrix_file.stem] = InputSeriesMatrix(
+        for constraint in self.config.areas[self.area].st_storages_additional_constraints:
+            children[f"rhs_{constraint.id}"] = InputSeriesMatrix(
                 self.matrix_mapper,
-                self.config.next_file(matrix_file.name),
+                self.config.next_file(f"rhs_{constraint.id}.txt"),
                 default_empty=series.additional_constraints,
             )
 

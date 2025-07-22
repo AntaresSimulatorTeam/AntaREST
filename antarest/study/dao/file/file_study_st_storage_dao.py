@@ -322,6 +322,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def save_st_storage_additional_constraints(
         self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
     ) -> None:
+        study_data = self.get_file_study()
         existing_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
 
         existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
@@ -335,7 +336,10 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             for constraint_id, constraint_update in value.items():
                 ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
 
-        study_data = self.get_file_study()
+                # Save into the config
+                study_data.config.areas[area_id].st_storages_additional_constraints.append(constraint_update)
+
+        # Save into the files
         if not existing_constraints:
             # We have to create the folder first
             (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id).mkdir(
