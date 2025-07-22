@@ -316,9 +316,9 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: ItemName
-    variable: Optional[AdditionalConstraintVariable] = None
-    operator: Optional[AdditionalConstraintOperator] = None
-    hours: Optional[Hours] = None
+    variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
+    operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
+    hours: Hours = []
     enabled: Optional[bool] = None
 
 

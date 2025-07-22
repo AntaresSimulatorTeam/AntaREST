@@ -334,7 +334,13 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         for storage_id, value in existing_map.items():
             for constraint_id, constraint_update in value.items():
                 ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
+
         study_data = self.get_file_study()
+        if not existing_constraints:
+            # We have to create the folder first
+            (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id).mkdir(
+                parents=True, exist_ok=True
+            )
         study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional_constraints"])
 
     @staticmethod

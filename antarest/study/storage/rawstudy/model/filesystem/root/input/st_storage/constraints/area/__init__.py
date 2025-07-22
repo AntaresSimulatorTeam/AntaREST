@@ -27,7 +27,7 @@ class InputSTStorageConstraintsArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {"additional_constraints": IniFileNode(self.config.next_file("additional-constraints.ini"))}
-        for matrix_file in self.config.path.rglob("*.txt"):
+        for matrix_file in self.config.path.glob("*.txt"):
             children[matrix_file.stem] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file(matrix_file.name),
