@@ -129,3 +129,25 @@ class TestCreateSTStorageAdditionalConstraint:
         output = cmd.apply(study)
         assert not output.status
         assert output.message == "Short-term storage 'fake_storage' inside area 'fr' does not exist."
+
+        # Create the storage `sts_1`
+        cmd = CreateSTStorage(
+            area_id="fr", parameters={"name": "sts_1"}, command_context=command_context, study_version=version
+        )
+        cmd.apply(study_data=study)
+
+        # Create a constraint
+        cmd = CreateSTStorageAdditionalConstraints(
+            command_context=command_context,
+            area_id="fr",
+            storage_id="sts_1",
+            constraints=[{"name": "constraint"}],
+            study_version=version,
+        )
+        output = cmd.apply(study)
+        assert output.status
+
+        # Create a constraint with the same name
+        output = cmd.apply(study)
+        assert not output.status
+        assert output.message == "Short-term storage constraint 'constraint' already exists."
