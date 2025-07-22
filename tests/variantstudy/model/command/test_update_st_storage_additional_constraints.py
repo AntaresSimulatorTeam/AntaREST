@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
@@ -99,6 +99,39 @@ class TestUpdateSTStorageAdditionalConstraint:
         assert output.status
 
         # Checks the ini content
+        # Area `fr`
+        constraints_path = study.config.study_path / "input" / "st-storage" / "constraints"
+        ini_path = constraints_path / "fr" / "additional-constraints.ini"
+        ini_content = read_ini(ini_path)
+        assert ini_content == {
+            "constraint": {
+                "cluster": "sts_fr",
+                "enabled": True,
+                "hours": "[5, 6, 7], [167, 168]",
+                "operator": "less",
+                "variable": "withdrawal",
+            },
+            "constraint_2": {
+                "cluster": "sts_fr",
+                "enabled": False,
+                "hours": "[2, 4]",
+                "operator": "less",
+                "variable": "netting",
+            },
+        }
+
+        # Area `de`
+        ini_path = constraints_path / "de" / "additional-constraints.ini"
+        ini_content = read_ini(ini_path)
+        assert ini_content == {
+            "c3": {
+                "cluster": "sts_de",
+                "enabled": False,
+                "hours": "[1, 2, 3, 4], [12, 13]",
+                "operator": "equal",
+                "variable": "withdrawal",
+            }
+        }
 
     def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
