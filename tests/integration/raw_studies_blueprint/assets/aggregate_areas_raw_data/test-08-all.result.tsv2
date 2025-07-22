@@ -1,0 +1,19 @@
+area	cluster	timeId	NODU	NP Cost
+de	01_solar	1	167.0	0.0
+de	02_wind_on	1	147.0	0.0
+de	03_wind_off	1	127.0	0.0
+de	04_res	1	107.0	0.0
+de	05_nuclear	1	87.0	0.0
+de	06_coal	1	67.0	0.0
+de	07_gas	1	47.0	0.0
+de	08_non-res	1	27.0	0.0
+de	09_hydro_pump	1	7.0	0.0
+es	01_solar	1	167.0	0.0
+es	02_wind_on	1	147.0	0.0
+es	03_wind_off	1	127.0	0.0
+es	04_res	1	107.0	0.0
+es	05_nuclear	1	87.0	0.0
+es	06_coal	1	67.0	0.0
+es	07_gas	1	47.0	0.0
+es	08_non-res	1	27.0	0.0
+es	09_hydro_pump	1	7.0	0.0

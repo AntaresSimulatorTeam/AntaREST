@@ -1,4 +1,4 @@
-area	cluster	mcYear	timeId	production	NP Cost	NODU
+area	cluster	mcYear	timeId	MWh	NP Cost - Euro	NODU
 de	01_solar	1	1	0.0	0.0	0.0
 de	02_wind_on	1	1	0.0	0.0	0.0
 de	03_wind_off	1	1	0.0	0.0	0.0
