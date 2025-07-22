@@ -49,6 +49,7 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidat
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     assert_link_exist,
+    checks_candidate_can_be_deleted,
     checks_settings_are_correct_and_returns_fields_to_exclude,
     get_resource_dir,
     get_xpansion_settings,
@@ -141,7 +142,7 @@ class XpansionManager:
 
     def delete_candidate(self, study: StudyInterface, candidate_name: str) -> None:
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
-
+        checks_candidate_can_be_deleted(candidate_name, study.get_files())
         command = RemoveXpansionCandidate(
             candidate_name=candidate_name,
             command_context=self._command_context,

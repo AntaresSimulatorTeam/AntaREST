@@ -2074,7 +2074,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.delete_candidate(study_interface, candidate_name)
+        self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
     def update_xpansion_constraints_settings(
         self,

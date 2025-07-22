@@ -144,6 +144,7 @@ max-units = 7
     def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
         empty_study = empty_study_870
         self.set_up(empty_study, command_context)
+        empty_study.config.study_id = "study_id"
 
         # Wrongly formatted candidates
         with pytest.raises(ValidationError, match="Field required"):
@@ -229,3 +230,33 @@ max-units = 7
         output = cmd.apply(study_data=empty_study)
         assert output.status is False
         assert "The candidate 'fake_name' does not exist" in output.message
+
+        # Create a sensitivity config referencing the candidate `cdt_1`
+        expansion_path = empty_study.config.study_path / "user" / "expansion"
+        (expansion_path / "sensitivity").mkdir()
+        with open(expansion_path / "sensitivity" / "sensitivity_in.json", "w") as f:
+            f.write('{"projection": ["cdt_1"]}')
+
+        # Rename a candidate referenced in the sensitivity config
+        cmd = ReplaceXpansionCandidate(
+            candidate_name="cdt_1",
+            properties=XpansionCandidate(name="cdt_3", link="at - be", annual_cost_per_mw=30, max_investment=100),
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        expected_msg = (
+            "You cannot delete the candidate cdt_1 in study 'study_id'. It is referenced in the sensitivity config."
+        )
+        assert expected_msg in output.message
+
+        # Remove a candidate referenced in the sensitivity config
+        cmd = RemoveXpansionCandidate(
+            candidate_name="cdt_1",
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
+        output = cmd.apply(study_data=empty_study)
+        assert output.status is False
+        assert expected_msg in output.message
