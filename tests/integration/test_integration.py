@@ -1125,6 +1125,15 @@ def test_maintenance(client: TestClient, admin_access_token: str) -> None:
     assert res.json() == message
 
 
+def zip_study(src_path: Path, dest_path: Path) -> None:
+    with zipfile.ZipFile(dest_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
+        len_dir_path = len(str(src_path))
+        for root, _, files in os.walk(src_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                zipf.write(file_path, file_path[len_dir_path:])
+
+
 def test_import(client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
@@ -1248,14 +1257,6 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     app = CreateApp(study_dir=study_path, caption="A", version=StudyVersion.parse("9.2"), author="Unknown")
     app()
 
-    def zip_study(src_path: Path, dest_path: Path) -> None:
-        with zipfile.ZipFile(dest_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
-            len_dir_path = len(str(src_path))
-            for root, _, files in os.walk(src_path):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    zipf.write(file_path, file_path[len_dir_path:])
-
     # Zip it
     archive_path = tmp_path / "test.zip"
     zip_study(study_path, archive_path)
@@ -1268,9 +1269,11 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     ini_content = read_ini(ini_path)
     ini_content["compatibility"]["hydro-pmax"] = "hourly"
     write_ini_file(ini_path, ini_content)
+
     # Zip it again
     archive_path = tmp_path / "test2.zip"
     zip_study(study_path, archive_path)
+
     # Asserts the import fails
     res = client.post("/v1/studies/_import", files={"study": io.BytesIO(archive_path.read_bytes())})
     assert res.status_code == 422
@@ -1279,6 +1282,143 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
         res.json()["description"]
         == "Study 'A' could not be imported: AntaresWeb doesn't support the value 'hourly' for the flag 'hydro-pmax'"
     )
+
+
+def test_import_with_editor(
+    client: TestClient, admin_access_token: str, internal_study_id: str, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # 1. Create two users: 'creator' and 'importer'
+    client.post("/v1/users", json={"name": "creator", "password": "password123"})
+    client.post("/v1/users", json={"name": "importer", "password": "password456"})
+
+    # Log in as 'creator'
+    res_creator = client.post("/v1/login", json={"username": "creator", "password": "password123"})
+    res_creator.raise_for_status()
+    creator_creds = res_creator.json()
+    creator_token = creator_creds["access_token"]
+
+    # Log in as 'importer'
+    res_importer = client.post("/v1/login", json={"username": "importer", "password": "password456"})
+    res_importer.raise_for_status()
+    importer_creds = res_importer.json()
+    importer_token = importer_creds["access_token"]
+
+    # 2. 'creator' creates a new study
+    headers_creator = {"Authorization": f"Bearer {creator_token}"}
+    study_name = "test_author_preservation"
+    res_create = client.post(f"/v1/studies?name={study_name}", headers=headers_creator)
+    res_create.raise_for_status()
+    study_id = res_create.json()
+
+    # 3. Verify that 'author' and 'editor' are set to 'creator'
+    res_raw_initial = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator)
+    initial_antares_data = res_raw_initial.json()["antares"]
+    assert initial_antares_data["author"] == "creator"
+    assert initial_antares_data["editor"] == "creator"
+
+    # 4. Zip the study directory manually
+    study_path = tmp_path / "internal_workspace" / study_id
+    archive_path = tmp_path / f"{study_name}.zip"
+
+    zip_study(study_path, archive_path)
+    study_zip_data = archive_path.read_bytes()
+
+    # 5. 'importer' imports the study
+    headers_importer = {"Authorization": f"Bearer {importer_token}"}
+    res_import = client.post(
+        "/v1/studies/_import",
+        files={"study": (f"{study_name}.zip", study_zip_data, "application/zip")},
+        headers=headers_importer,
+    )
+    res_import.raise_for_status()
+    imported_study_id = res_import.json()
+
+    # 6. Verify 'author' is preserved and 'editor' is updated
+    res_raw_imported = client.get(f"/v1/studies/{imported_study_id}/raw?path=study", headers=headers_importer)
+    imported_antares_data = res_raw_imported.json()["antares"]
+    assert imported_antares_data["author"] == "creator"
+    assert imported_antares_data["editor"] == "importer"
+
+
+def test_copy_with_editor_preservation(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # 1. Create a group and two users
+    group_name = "test_copy_group"
+    res = client.post("/v1/groups", json={"name": group_name})
+    res.raise_for_status()
+    group_id = res.json()["id"]
+
+    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
+    client.post("/v1/users", json={"name": "copier_2", "password": "password456"})
+
+    # Log in as 'creator' to get ID
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    res_creator.raise_for_status()
+    creator_creds = res_creator.json()
+    creator_id = creator_creds["user"]
+
+    # Log in as 'copier' to get ID
+    res_copier = client.post("/v1/login", json={"username": "copier_2", "password": "password456"})
+    res_copier.raise_for_status()
+    copier_creds = res_copier.json()
+    copier_id = copier_creds["user"]
+
+    # Add users to the group
+    client.post(
+        "/v1/roles",
+        json={"type": 40, "group_id": group_id, "identity_id": creator_id},  # ADMIN
+    )
+    client.post(
+        "/v1/roles",
+        json={"type": 30, "group_id": group_id, "identity_id": copier_id},  # WRITER
+    )
+
+    # Refresh tokens to update permissions
+    res_creator = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {creator_creds['refresh_token']}"},
+    )
+    creator_creds = res_creator.json()
+    creator_token = creator_creds["access_token"]
+
+    res_copier = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {copier_creds['refresh_token']}"},
+    )
+    copier_creds = res_copier.json()
+    copier_token = copier_creds["access_token"]
+
+    # 2. 'creator' creates a new study associated with the group
+    headers_creator = {"Authorization": f"Bearer {creator_token}"}
+    study_name = "test_author_preservation_on_copy"
+    res_create = client.post(f"/v1/studies?name={study_name}&groups={group_id}", headers=headers_creator)
+    res_create.raise_for_status()
+    study_id = res_create.json()
+
+    # 3. Verify that 'author' and 'editor' are set to 'creator'
+    res_raw_initial = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator)
+    initial_antares_data = res_raw_initial.json()["antares"]
+    assert initial_antares_data["author"] == "creator_2"
+    assert initial_antares_data["editor"] == "creator_2"
+
+    # 4. 'copier' copies the study
+    headers_copier = {"Authorization": f"Bearer {copier_token}"}
+    copied_study_name = "copied_study_for_author_test"
+    res_copy = client.post(
+        f"/v1/studies/{study_id}/copy?study_name={copied_study_name}&use_task=false",
+        headers=headers_copier,
+    )
+    res_copy.raise_for_status()
+    copied_study_id = res_copy.json()
+
+    # 5. Verify 'author' is preserved and 'editor' is updated in the copied study
+    res_raw_copied = client.get(f"/v1/studies/{copied_study_id}/raw?path=study", headers=headers_copier)
+    copied_antares_data = res_raw_copied.json()["antares"]
+    assert copied_antares_data["author"] == "creator_2"
+    assert copied_antares_data["editor"] == "copier_2"
 
 
 def test_copy(client: TestClient, admin_access_token: str, internal_study_id: str) -> None:
