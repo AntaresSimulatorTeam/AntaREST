@@ -336,8 +336,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             for constraint_id, constraint_update in value.items():
                 ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
 
-                # Save into the config
-                study_data.config.areas[area_id].st_storages_additional_constraints.append(constraint_update)
+        # Save into the config
+        self._update_st_storage_additional_constraints_config(area_id, constraints)
 
         # Save into the files
         if not existing_constraints:
@@ -378,3 +378,14 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 study_data.areas[area_id].st_storages[k] = storage
                 return
         study_data.areas[area_id].st_storages.append(storage)
+
+    def _update_st_storage_additional_constraints_config(
+        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
+    ) -> None:
+        area = self.get_file_study().config.areas[area_id]
+        existing_ids = {c.id: k for k, c in enumerate(area.st_storages_additional_constraints)}
+        for cs in constraints.values():
+            for constraint in cs:
+                if constraint.id in existing_ids:
+                    del area.st_storages_additional_constraints[existing_ids[constraint.id]]
+                area.st_storages_additional_constraints.append(constraint)

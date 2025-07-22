@@ -361,9 +361,12 @@ def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCrea
 
 
 def update_st_storage_constraint(
-    storage: STStorageAdditionalConstraint, data: STStorageAdditionalConstraintUpdate
+    constraint: STStorageAdditionalConstraint, data: STStorageAdditionalConstraintUpdate
 ) -> STStorageAdditionalConstraint:
     """
     Updates a short-term storage constraint according to the provided update data.
     """
-    return storage.model_copy(update=data.model_dump(exclude_none=True))
+    current_constraint = constraint.model_dump(mode="json")
+    update_constraint = data.model_dump(mode="json", exclude_none=True)
+    current_constraint.update(update_constraint)
+    return STStorageAdditionalConstraint.model_validate(current_constraint)
