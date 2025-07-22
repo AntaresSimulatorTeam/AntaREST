@@ -60,6 +60,11 @@ class CreateSTStorageAdditionalConstraints(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        if not study_data.st_storage_exists(self.area_id, self.storage_id):
+            return command_failed(
+                f"Short-term storage '{self.storage_id}' inside area '{self.area_id}' does not exist."
+            )
+
         constraints = [create_st_storage_constraint(constraint) for constraint in self.constraints]
 
         # Checks if the constraint already exists in the study
