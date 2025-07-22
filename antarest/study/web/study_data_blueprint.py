@@ -1868,6 +1868,17 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         )
         return all_constraints[area_id][storage_id]
 
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/storages/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Delete additional constraint(s) for a given area",
+    )
+    def delete_additional_constraints(uuid: str, area_id: str, constraints_ids: list[str]) -> None:
+        logger.info(f"Deleting short-term storage additional constraint(s) for area {area_id} for study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.st_storage_manager.delete_additional_constraints(study_interface, area_id, constraints_ids)
+
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/{cluster_type}/{source_cluster_id}",
         tags=[APITag.study_data],
