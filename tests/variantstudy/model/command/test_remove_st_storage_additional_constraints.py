@@ -11,10 +11,7 @@
 # This file is part of the Antares project.
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import (
-    AdditionalConstraintOperator,
-    AdditionalConstraintVariable,
     STStorageAdditionalConstraintCreation,
-    STStorageAdditionalConstraintUpdate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -25,13 +22,10 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage_constra
 from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_constraints import (
     RemoveMultipleSTStorageConstraints,
 )
-from antarest.study.storage.variantstudy.model.command.update_st_storage_additional_constraints import (
-    UpdateSTStorageAdditionalConstraints,
-)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-class TestUpdateSTStorageAdditionalConstraint:
+class TestRemoveSTStorageAdditionalConstraint:
     def test_nominal_case(self, command_context: CommandContext, empty_study_920: FileStudy):
         ####### Set Up ########
         study = empty_study_920
@@ -51,88 +45,36 @@ class TestUpdateSTStorageAdditionalConstraint:
             storage_id="sts_fr",
             constraints=[
                 STStorageAdditionalConstraintCreation(name="constraint"),
-                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[2, 4], enabled=False),
+                STStorageAdditionalConstraintCreation(name="constraint_2"),
+                STStorageAdditionalConstraintCreation(name="constraint_3"),
             ],
             study_version=version,
         )
         output = cmd.apply(study)
         assert output.status
 
-        cmd = CreateSTStorageAdditionalConstraints(
+        # Removes several constraints
+        cmd = RemoveMultipleSTStorageConstraints(
             command_context=command_context,
-            area_id="de",
-            storage_id="sts_de",
-            constraints=[
-                STStorageAdditionalConstraintCreation(
-                    name="c3",
-                    variable=AdditionalConstraintVariable.WITHDRAWAL,
-                    operator=AdditionalConstraintOperator.GREATER,
-                    hours=[[1, 2, 3, 4], [12, 13]],
-                )
-            ],
-            study_version=version,
-        )
-        output = cmd.apply(study)
-        assert output.status
-
-        # Update several constraints
-        cmd = UpdateSTStorageAdditionalConstraints(
-            command_context=command_context,
-            additional_constraint_properties={
-                "fr": {
-                    "sts_fr": [
-                        STStorageAdditionalConstraintUpdate(
-                            id="constraint",
-                            variable=AdditionalConstraintVariable.WITHDRAWAL,
-                            hours=[[5, 6, 7], [167, 168]],
-                        ),
-                    ]
-                },
-                "de": {
-                    "sts_de": [
-                        STStorageAdditionalConstraintUpdate(
-                            id="c3", enabled=False, operator=AdditionalConstraintOperator.EQUAL
-                        )
-                    ]
-                },
-            },
+            area_id="fr",
+            ids=["constraint", "constraint_2"],
             study_version=version,
         )
         output = cmd.apply(study)
         assert output.status
 
         # Checks the ini content
-        # Area `fr`
-        constraints_path = study.config.study_path / "input" / "st-storage" / "constraints"
-        ini_path = constraints_path / "fr" / "additional-constraints.ini"
+        ini_path = (
+            study.config.study_path / "input" / "st-storage" / "constraints" / "fr" / "additional-constraints.ini"
+        )
         ini_content = read_ini(ini_path)
         assert ini_content == {
-            "constraint": {
+            "constraint_3": {
                 "cluster": "sts_fr",
                 "enabled": True,
-                "hours": "[5, 6, 7], [167, 168]",
-                "operator": "less",
-                "variable": "withdrawal",
-            },
-            "constraint_2": {
-                "cluster": "sts_fr",
-                "enabled": False,
-                "hours": "[2, 4]",
+                "hours": "[]",
                 "operator": "less",
                 "variable": "netting",
-            },
-        }
-
-        # Area `de`
-        ini_path = constraints_path / "de" / "additional-constraints.ini"
-        ini_content = read_ini(ini_path)
-        assert ini_content == {
-            "c3": {
-                "cluster": "sts_de",
-                "enabled": False,
-                "hours": "[1, 2, 3, 4], [12, 13]",
-                "operator": "equal",
-                "variable": "withdrawal",
             }
         }
 
