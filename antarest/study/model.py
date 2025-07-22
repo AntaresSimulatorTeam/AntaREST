@@ -212,6 +212,7 @@ class StudyAdditionalData(Base):  # type:ignore
         primary_key=True,
     )
     author: Mapped[str] = mapped_column(String(255), default="Unknown")
+    editor: Mapped[str] = mapped_column(String(255), default="Unknown")
     horizon: Mapped[Optional[str]] = mapped_column(String)
     patch: Mapped[Optional[str]] = mapped_column(String(), index=True, nullable=True)
 

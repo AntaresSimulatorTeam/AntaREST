@@ -856,7 +856,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author),
+            additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -1122,7 +1122,13 @@ class StudyService:
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
+                origin_study,
+                dest_study_name,
+                group_ids,
+                destination_folder,
+                output_ids,
+                with_outputs,
+                self.get_user_name(),
             )
 
             self._save_study(study, group_ids)
@@ -1330,12 +1336,11 @@ class StudyService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            additional_data=StudyAdditionalData(),
+            additional_data=StudyAdditionalData(editor=self.get_user_name()),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)

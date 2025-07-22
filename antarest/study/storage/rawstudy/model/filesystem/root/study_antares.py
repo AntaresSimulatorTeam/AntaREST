@@ -26,6 +26,7 @@ class StudyAntares(IniFileNode):
     created = 1480683452
     lastsave = 1602678639
     author = Andrea SGATTONI
+    editor = Theo PASCOLI
 
     """
 
@@ -37,6 +38,7 @@ class StudyAntares(IniFileNode):
                 "created": int,
                 "lastsave": int,
                 "author": str,
+                "editor": str,
             }
         }
         IniFileNode.__init__(self, config, types=types)
