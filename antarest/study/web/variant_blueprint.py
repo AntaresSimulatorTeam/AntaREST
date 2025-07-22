@@ -82,8 +82,8 @@ def create_study_variant_routes(
                             "antares": {
                                 "version": variant_study.version,
                                 "caption": variant_study.name,
-                                "created": variant_study.created_at.timestamp(),
-                                "lastsave": variant_study.created_at.timestamp(),
+                                "created": variant_study.get_created_at_timestamp(),
+                                "lastsave": variant_study.get_updated_at_timestamp(),
                                 "author": author,
                             }
                         },

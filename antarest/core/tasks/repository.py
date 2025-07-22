@@ -16,7 +16,7 @@ from operator import and_
 from typing import List, Optional
 
 from fastapi import HTTPException
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -46,7 +46,7 @@ class TaskJobRepository:
 
     def get(self, id: str) -> Optional[TaskJob]:
         session = self.session
-        task: TaskJob = session.get(TaskJob, id)
+        task: TaskJob | None = session.get(TaskJob, id)
         if task is not None:
             session.refresh(task)
         return task
@@ -63,9 +63,9 @@ class TaskJobRepository:
             q = q.filter(TaskJob.owner_id == user)
         if len(filter.status) > 0:
             _values = [status.value for status in filter.status]
-            q = q.filter(TaskJob.status.in_(_values))  # type: ignore
+            q = q.filter(TaskJob.status.in_(_values))
         if filter.name:
-            q = q.filter(TaskJob.name.ilike(f"%{filter.name}%"))  # type: ignore
+            q = q.filter(TaskJob.name.ilike(f"%{filter.name}%"))
         if filter.to_creation_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.to_creation_date_utc)
             q = q.filter(TaskJob.creation_date <= _date)
@@ -74,17 +74,17 @@ class TaskJobRepository:
             q = q.filter(TaskJob.creation_date >= _date)
         if filter.to_completion_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.to_completion_date_utc)
-            _clause = and_(TaskJob.completion_date.isnot(None), TaskJob.completion_date <= _date)  # type: ignore
+            _clause = and_(TaskJob.completion_date.isnot(None), TaskJob.completion_date <= _date)
             q = q.filter(_clause)
         if filter.from_completion_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.from_completion_date_utc)
-            _clause = and_(TaskJob.completion_date.isnot(None), TaskJob.completion_date >= _date)  # type: ignore
+            _clause = and_(TaskJob.completion_date.isnot(None), TaskJob.completion_date >= _date)
             q = q.filter(_clause)
         if filter.ref_id is not None:
             q = q.filter(TaskJob.ref_id == filter.ref_id)
         if filter.type:
             _types = [task_type.value for task_type in filter.type]
-            q = q.filter(TaskJob.type.in_(_types))  # type: ignore
+            q = q.filter(TaskJob.type.in_(_types))
         tasks: List[TaskJob] = q.all()
         return tasks
 

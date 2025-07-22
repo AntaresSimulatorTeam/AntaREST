@@ -18,13 +18,14 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.login.model import Group, Role, User
-from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from tests.helpers import create_raw_study, create_variant_study
 
 
 @pytest.fixture(name="user_id")
@@ -46,7 +47,7 @@ def fixture_user_id(db_session: Session) -> int:
 def fixture_raw_study_id(tmp_path: Path, db_session: Session, user_id: int) -> str:
     with db_session:
         root_study_id = str(uuid.uuid4())
-        root_study = RawStudy(
+        root_study = create_raw_study(
             id=root_study_id,
             workspace="default",
             path=str(tmp_path.joinpath("root_study")),
@@ -65,7 +66,7 @@ def fixture_raw_study_id(tmp_path: Path, db_session: Session, user_id: int) -> s
 def fixture_variant_study_id(tmp_path: Path, db_session: Session, raw_study_id: str, user_id: int) -> str:
     with db_session:
         variant_study_id = str(uuid.uuid4())
-        variant = VariantStudy(
+        variant = create_variant_study(
             id=variant_study_id,
             name="Variant Study",
             version="860",
@@ -190,7 +191,7 @@ class TestVariantStudy:
         variant_study_path = "path/to/variant"
 
         with db_session:
-            variant = VariantStudy(
+            variant = create_variant_study(
                 id=variant_study_id,
                 name="Variant Study",
                 version="860",
@@ -288,7 +289,7 @@ class TestVariantStudy:
             # Given a variant study (referencing the raw study)
             # with optionally a snapshot and a snapshot directory
             variant_id = str(uuid.uuid4())
-            variant = VariantStudy(
+            variant = create_variant_study(
                 id=variant_id,
                 name="Study 3.0",
                 author="Sandrine",

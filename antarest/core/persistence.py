@@ -15,7 +15,7 @@ import os
 from io import StringIO
 from pathlib import Path
 
-from sqlalchemy.orm import declarative_base  # type: ignore
+from sqlalchemy.orm import declarative_base
 
 from alembic import command
 from alembic.config import Config
