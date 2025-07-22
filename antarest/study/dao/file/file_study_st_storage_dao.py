@@ -319,11 +319,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 study_data.tree.delete(path)
 
         # Deleting the constraints in the configuration must be done AFTER deleting the files and folders.
-        existing_ids = {
-            c.id: k for k, c in enumerate(study_data.config.areas[area_id].st_storages_additional_constraints)
-        }
+        existing_ids = {c.id: c for c in study_data.config.areas[area_id].st_storages_additional_constraints}
         for constraint in constraints:
-            del study_data.config.areas[area_id].st_storages_additional_constraints[existing_ids[constraint]]
+            study_data.config.areas[area_id].st_storages_additional_constraints.remove(existing_ids[constraint])
 
     @override
     def save_st_storage_additional_constraints(
@@ -390,9 +388,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
     ) -> None:
         area = self.get_file_study().config.areas[area_id]
-        existing_ids = {c.id: k for k, c in enumerate(area.st_storages_additional_constraints)}
+        existing_ids = {c.id: c for c in area.st_storages_additional_constraints}
         for cs in constraints.values():
             for constraint in cs:
                 if constraint.id in existing_ids:
-                    del area.st_storages_additional_constraints[existing_ids[constraint.id]]
+                    area.st_storages_additional_constraints.remove(existing_ids[constraint.id])
                 area.st_storages_additional_constraints.append(constraint)
