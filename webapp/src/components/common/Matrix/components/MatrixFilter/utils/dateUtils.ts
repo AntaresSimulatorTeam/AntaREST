@@ -37,20 +37,14 @@ export function parseFlexibleDate(dateStr: string): Date | null {
 /**
  * Extracts a numeric value from a date string based on the specified indexing type
  *
- * @param dateStr - The date string to process
+ * @param date - The date string to process
  * @param indexingType - The type of temporal index to extract (day, month, etc.)
  * @returns A numeric value representing the requested temporal index
  * @throws Error if the date string cannot be parsed
  */
-export function extractValueFromDate(dateStr: string, indexingType: TimeIndexingType): number {
-  const locale = getCurrentLanguage();
-  const date = parseFlexibleDate(dateStr);
-
-  if (!date) {
-    throw new Error(`Invalid date format: "${dateStr}"`);
-  }
-
-  return extractTemporalValue(dateStr, indexingType, locale);
+//TODO SL: delete it
+export function extractValueFromDate(date: Date, indexingType: TimeIndexingType): number {
+  return extractTemporalValue(date, indexingType);
 }
 
 /**

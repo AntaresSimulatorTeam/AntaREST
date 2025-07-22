@@ -42,7 +42,7 @@ export interface MatrixGridProps {
   data: NonEmptyMatrix;
   rows: number;
   columns: readonly EnhancedGridColumn[];
-  dateTime?: string[];
+  dateTime?: Date[];
   aggregates?: Partial<MatrixAggregates>;
   rowHeaders?: string[];
   width?: string;

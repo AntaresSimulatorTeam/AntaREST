@@ -18,7 +18,7 @@ import { TIME_INDEXING } from "../constants";
 import { extractValueFromDate, getDefaultRangeForIndexType } from "../utils/dateUtils";
 
 interface UseTemporalDataProps {
-  dateTime?: string[];
+  dateTime?: Date[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
 }
@@ -74,9 +74,9 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
       for (const indexType of dynamicTypes) {
         try {
           const values = dateTime
-            .map((dateStr) => {
+            .map((date) => {
               try {
-                return extractValueFromDate(dateStr, indexType);
+                return extractValueFromDate(date, indexType);
               } catch {
                 return null;
               }

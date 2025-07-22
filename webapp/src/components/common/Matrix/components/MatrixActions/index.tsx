@@ -31,7 +31,7 @@ interface MatrixActionsProps {
   onImport: SplitButtonProps["onClick"];
   onSave: VoidFunction;
   disabled: boolean;
-  dateTime: string[];
+  dateTime: Date[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   onMatrixUpdated: VoidFunction;

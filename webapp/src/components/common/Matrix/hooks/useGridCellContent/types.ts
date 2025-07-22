@@ -31,7 +31,7 @@ export type CellContentGenerator = (
   col: number,
   column: EnhancedGridColumn,
   data: number[][],
-  dateTime?: string[],
+  dateTime?: Date[],
   aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
 ) => GridCell;

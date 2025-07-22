@@ -129,13 +129,13 @@ export function getTemporalIndices({
 
   // Extract temporal values from date strings
   const temporalIndices = dateTime
-    .map((dateStr, index) => {
+    .map((date, index) => {
       if (timeFrequency === TimeFrequency.Annual) {
         return { index, value: index + 1 };
       }
 
       try {
-        const value = extractValueFromDate(dateStr, rowFilter.indexingType);
+        const value = extractValueFromDate(date, rowFilter.indexingType);
         return { index, value };
       } catch {
         // Skip invalid dates
@@ -267,7 +267,7 @@ export function getFilteredTemporalOptions(
  */
 export function processRowFilters(
   filter: FilterState,
-  dateTime: string[] | undefined,
+  dateTime: Date[] | undefined,
   isTimeSeries: boolean,
   timeFrequency: TimeFrequencyType | undefined,
   totalRows: number,

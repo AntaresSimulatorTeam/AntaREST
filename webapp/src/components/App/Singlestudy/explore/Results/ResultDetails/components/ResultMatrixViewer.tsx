@@ -36,7 +36,7 @@ interface ResultMatrixViewerProps {
   filteredData: number[][];
   resultColumns: EnhancedGridColumn[];
   matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
-  dateTime: string[] | undefined;
+  dateTime: Date[] | undefined;
   dateTimeMetadata: MatrixIndex | undefined;
   year: number;
   setYear: (year: number) => void;

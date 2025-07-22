@@ -21,7 +21,7 @@ import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
   filter: FilterState;
-  dateTime?: string[];
+  dateTime?: Date[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   rowCount: number;

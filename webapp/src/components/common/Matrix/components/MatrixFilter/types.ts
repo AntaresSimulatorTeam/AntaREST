@@ -49,7 +49,7 @@ export interface FilterCriteria {
 }
 
 export interface MatrixFilterProps {
-  dateTime?: string[];
+  dateTime?: Date[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   readOnly?: boolean;
@@ -65,7 +65,7 @@ export interface ColumnFilterProps extends FilterSectionProps {
 }
 
 export interface RowFilterProps extends FilterSectionProps {
-  dateTime?: string[];
+  dateTime?: Date[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   onAddFilter?: () => void;
@@ -87,7 +87,7 @@ export interface SelectionSummaryProps {
 export interface TemporalIndexingParams {
   filter: FilterState;
   rowFilter: RowFilter;
-  dateTime?: string[];
+  dateTime?: Date[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   totalRows: number;

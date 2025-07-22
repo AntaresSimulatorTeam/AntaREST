@@ -130,9 +130,9 @@ export function getLocale(): Locale {
  * @param config.level - The time frequency level (ANNUAL, MONTHLY, WEEKLY, DAILY, HOURLY)
  * @returns An array of formatted date/time strings
  */
-export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
-  const { start_date, steps, first_week_size, level } = config;
-  const { increment, format } = TIME_FREQUENCY_CONFIG[level];
+export const generateDateTime = (config: DateTimeMetadataDTO): Date[] => {
+  const { start_date, steps, level } = config;
+  const { increment } = TIME_FREQUENCY_CONFIG[level];
 
   /**
    * TIMEZONE DETECTION BUG FIX:
@@ -164,10 +164,8 @@ export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
 
   const initialDate = new UTCDate(dateStr);
 
-  return Array.from({ length: steps }, (_, index) => {
-    const date = increment(initialDate, index);
-    return format(date, first_week_size);
-  });
+  // TODO SL: handle first_week_size in some way
+  return Array.from({ length: steps }, (_, index) => increment(initialDate, index));
 };
 
 /**

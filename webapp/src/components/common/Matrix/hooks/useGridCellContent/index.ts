@@ -34,7 +34,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
   [Column.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
-    displayData: dateTime?.[row] ?? "",
+    displayData: dateTime?.[row].toUTCString() ?? "", // TODO SL, format it correctly
     readonly: !column.editable,
     allowOverlay: false,
   }),
@@ -98,7 +98,7 @@ export function useGridCellContent(
   data: number[][],
   columns: readonly EnhancedGridColumn[],
   gridToData: (cell: Item) => Item | null,
-  dateTime?: string[],
+  dateTime?: Date[],
   aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
   readOnly = false,

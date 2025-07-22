@@ -16,16 +16,7 @@ import { getDate, getDayOfYear, getHours, getMonth } from "date-fns";
 import type { TFunction } from "i18next";
 import { toError } from "../fnUtils";
 import { DAYS_IN, HOURS_IN, MONTH_NAMES, type SupportedLocale, WEEKDAY_NAMES } from "./constants";
-import {
-  extractDayOfMonth,
-  extractHour,
-  findMonthIndex,
-  findWeekdayIndex,
-  getHourOfYear,
-  getWeekdayIndex,
-  getWeekFromDayOfYear,
-  parseFlexibleDate,
-} from "./dateUtils";
+import { getHourOfYear, getWeekdayIndex, getWeekFromDayOfYear } from "./dateUtils";
 
 // Time indexing types from matrix constants
 export const TIME_INDEXING = {
@@ -48,82 +39,38 @@ export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING
  * @param locale - Locale for parsing
  * @returns A numeric value representing the requested temporal index
  */
-export function extractTemporalValue(
-  dateStr: string,
-  indexingType: TimeIndexingType,
-  locale: SupportedLocale = "en",
-): number {
+export function extractTemporalValue(date: Date, indexingType: TimeIndexingType): number {
   try {
-    // For weekday indexing, try direct string matching first
-    if (indexingType === TIME_INDEXING.WEEKDAY) {
-      const weekdayIndex = findWeekdayIndex(dateStr, locale);
-      if (weekdayIndex !== null) {
-        return weekdayIndex;
+    switch (indexingType) {
+      case TIME_INDEXING.MONTH:
+        return getMonth(date) + 1; // getMonth is 0-based
+
+      case TIME_INDEXING.WEEKDAY:
+        return getWeekdayIndex(date);
+
+      case TIME_INDEXING.DAY_OF_MONTH:
+        return getDate(date);
+
+      case TIME_INDEXING.DAY_HOUR:
+        return getHours(date); // Keep 0-23
+
+      case TIME_INDEXING.WEEK: {
+        const dayOfYear = getDayOfYear(date);
+        return getWeekFromDayOfYear(dayOfYear);
       }
+
+      case TIME_INDEXING.DAY_OF_YEAR:
+        return getDayOfYear(date);
+
+      case TIME_INDEXING.HOUR_YEAR:
+        return getHourOfYear(date);
+
+      default:
+        throw new Error(`Unknown indexing type: ${indexingType}`);
     }
-
-    // For month indexing, try direct string matching first
-    if (indexingType === TIME_INDEXING.MONTH) {
-      const monthIndex = findMonthIndex(dateStr, locale);
-      if (monthIndex !== null) {
-        return monthIndex;
-      }
-    }
-
-    // Try to parse the full date
-    const parsedDate = parseFlexibleDate(dateStr, locale);
-
-    if (parsedDate) {
-      switch (indexingType) {
-        case TIME_INDEXING.MONTH:
-          return getMonth(parsedDate) + 1; // getMonth is 0-based
-
-        case TIME_INDEXING.WEEKDAY:
-          return getWeekdayIndex(parsedDate);
-
-        case TIME_INDEXING.DAY_OF_MONTH:
-          return getDate(parsedDate);
-
-        case TIME_INDEXING.DAY_HOUR:
-          return getHours(parsedDate); // Keep 0-23
-
-        case TIME_INDEXING.WEEK: {
-          const dayOfYear = getDayOfYear(parsedDate);
-          return getWeekFromDayOfYear(dayOfYear);
-        }
-
-        case TIME_INDEXING.DAY_OF_YEAR:
-          return getDayOfYear(parsedDate);
-
-        case TIME_INDEXING.HOUR_YEAR:
-          return getHourOfYear(parsedDate);
-
-        default:
-          throw new Error(`Unknown indexing type: ${indexingType}`);
-      }
-    }
-
-    // Fallback to pattern matching for specific types
-    if (indexingType === TIME_INDEXING.DAY_OF_MONTH) {
-      const day = extractDayOfMonth(dateStr);
-      if (day !== null) {
-        return day;
-      }
-    }
-
-    if (indexingType === TIME_INDEXING.DAY_HOUR) {
-      const hour = extractHour(dateStr);
-      if (hour !== null) {
-        return hour; // Keep 0-23
-      }
-    }
-
-    throw new Error(
-      `Unable to extract temporal value from "${dateStr}" for indexing type: ${indexingType}`,
-    );
   } catch (error) {
     throw new Error(
-      `Failed to extract temporal value from "${dateStr}" for indexing type: ${indexingType}: ${toError(error)}`,
+      `Failed to extract temporal value from "${date}" for indexing type: ${indexingType}: ${toError(error)}`,
     );
   }
 }
