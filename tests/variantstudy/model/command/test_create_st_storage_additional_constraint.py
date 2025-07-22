@@ -167,3 +167,7 @@ class TestCreateSTStorageAdditionalConstraint:
                 constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
                 study_version=STUDY_VERSION_8_8,
             )
+
+        # Create an object `STStorageAdditionalConstraintCreation` with wrong `hours`
+        with pytest.raises(ValueError, match="Hours must be integers between 0 and 168, got 173"):
+            STStorageAdditionalConstraintCreation(name="c1", hours=[173])
