@@ -32,50 +32,6 @@ export const TIME_INDEXING = {
 export type TimeIndexingType = (typeof TIME_INDEXING)[keyof typeof TIME_INDEXING];
 
 /**
- * Extract a temporal value from a date string based on indexing type
- *
- * @param dateStr - The date string to process
- * @param indexingType - The type of temporal index to extract
- * @param locale - Locale for parsing
- * @returns A numeric value representing the requested temporal index
- */
-export function extractTemporalValue(date: Date, indexingType: TimeIndexingType): number {
-  try {
-    switch (indexingType) {
-      case TIME_INDEXING.MONTH:
-        return getMonth(date) + 1; // getMonth is 0-based
-
-      case TIME_INDEXING.WEEKDAY:
-        return getWeekdayIndex(date);
-
-      case TIME_INDEXING.DAY_OF_MONTH:
-        return getDate(date);
-
-      case TIME_INDEXING.DAY_HOUR:
-        return getHours(date); // Keep 0-23
-
-      case TIME_INDEXING.WEEK: {
-        const dayOfYear = getDayOfYear(date);
-        return getWeekFromDayOfYear(dayOfYear);
-      }
-
-      case TIME_INDEXING.DAY_OF_YEAR:
-        return getDayOfYear(date);
-
-      case TIME_INDEXING.HOUR_YEAR:
-        return getHourOfYear(date);
-
-      default:
-        throw new Error(`Unknown indexing type: ${indexingType}`);
-    }
-  } catch (error) {
-    throw new Error(
-      `Failed to extract temporal value from "${date}" for indexing type: ${indexingType}: ${toError(error)}`,
-    );
-  }
-}
-
-/**
  * Get the default range for a temporal indexing type
  *
  * @param indexingType - The type of temporal index

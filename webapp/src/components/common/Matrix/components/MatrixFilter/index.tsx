@@ -28,8 +28,10 @@ import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
 import { COMPONENT_DIMENSIONS, DESIGN_TOKENS, DRAWER_STYLES } from "./styles";
-import type { MatrixFilterProps } from "./types";
+import type { MatrixFilterProps, ParsedDateInfo } from "./types";
 import { getMatrixDimensions } from "./utils";
+import { getDayOfYear } from "date-fns";
+import { getHourOfYear, getWeekFromDayOfYear } from "@/utils/date/dateUtils";
 
 export interface MatrixFilterHandle {
   toggle: () => void;
@@ -56,10 +58,30 @@ function MatrixFilter(
     timeFrequency,
   });
 
+  const parsedDates = useMemo(() => {
+    if (!dateTime || !isTimeSeries || dateTime.values.length === 0) {
+      return [];
+    }
+
+    return dateTime.values.map((date) => {
+      const dayOfYear = getDayOfYear(date);
+      return {
+        date,
+        dayOfYear: dayOfYear,
+        hourOfYear: getHourOfYear(date),
+        dayOfMonth: date.getDate(),
+        week: getWeekFromDayOfYear(dayOfYear),
+        month: date.getMonth() + 1,
+        dayHour: date.getHours(),
+        weekday: date.getDay() + 1,
+      };
+    });
+  }, [dateTime, isTimeSeries]);
+
   // Filtered data based on current filter settings
   const currentFilteredData = useFilteredData({
     filter,
-    dateTime,
+    dateTime: parsedDates,
     isTimeSeries,
     timeFrequency,
     rowCount,
@@ -176,7 +198,7 @@ function MatrixFilter(
           <MultiRowFilter
             filter={filter}
             setFilter={setFilter}
-            dateTime={dateTime}
+            dateTime={parsedDates}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
           />

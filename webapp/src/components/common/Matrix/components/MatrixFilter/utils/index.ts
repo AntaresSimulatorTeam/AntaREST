@@ -29,8 +29,10 @@ import type {
   SliderMark,
   TemporalIndexingParams,
   TemporalOption,
+  TimeIndexingType,
 } from "../types";
-import { extractValueFromDate, getLocalizedTimeLabels } from "./dateUtils";
+import { getLocalizedTimeLabels } from "./dateUtils";
+import type { ParsedDateInfo } from "@/components/common/Matrix/components/MatrixFilter/hooks/useTemporalData";
 
 const createRowIndices = R.memoizeWith(
   (size: number) => String(size),
@@ -128,13 +130,21 @@ export function getTemporalIndices({
   }
 
   // Extract temporal values from date strings
-  const temporalIndices = dateTime.values
+  const temporalIndices = dateTime
     .map((date, index) => {
       if (timeFrequency === TimeFrequency.Annual) {
         return { index, value: index + 1 };
       }
 
       try {
+        switch (rowFilter.indexingType) {
+          case TIME_INDEXING.MONTH:
+          case TIME_INDEXING.MONTH:
+          case TIME_INDEXING.MONTH:
+          case TIME_INDEXING.MONTH:
+          case TIME_INDEXING.MONTH:
+          case TIME_INDEXING.MONTH:
+        }
         const value = extractValueFromDate(date, rowFilter.indexingType);
         return { index, value };
       } catch {
@@ -267,7 +277,7 @@ export function getFilteredTemporalOptions(
  */
 export function processRowFilters(
   filter: FilterState,
-  dateTime: DateTimes | undefined,
+  dateTime: ParsedDateInfo[] | undefined,
   isTimeSeries: boolean,
   timeFrequency: TimeFrequencyType | undefined,
   totalRows: number,
@@ -426,4 +436,20 @@ export function parseRangeInput(input: string): number[] {
     .filter((v) => v !== null) as number[];
 
   return values;
+}
+
+// Define mapping from indexing type to parsed data property
+const INDEX_TYPE_TO_PROPERTY: Record<string, keyof ParsedDateInfo> = {
+  [TIME_INDEXING.DAY_OF_YEAR]: "dayOfYear",
+  [TIME_INDEXING.HOUR_YEAR]: "hourOfYear",
+  [TIME_INDEXING.DAY_OF_MONTH]: "dayOfMonth",
+  [TIME_INDEXING.WEEK]: "week",
+  [TIME_INDEXING.MONTH]: "month",
+  [TIME_INDEXING.DAY_HOUR]: "dayHour",
+  [TIME_INDEXING.WEEKDAY]: "weekday",
+};
+
+export function extractTemporalValue(date: ParsedDateInfo, indexingType: TimeIndexingType): number {
+  const property = INDEX_TYPE_TO_PROPERTY[indexingType];
+  return date[property] as number;
 }
