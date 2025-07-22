@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Any, Dict
+
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
@@ -47,3 +49,11 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
     @classmethod
     def from_model(cls, config: OptimizationPreferences) -> "OptimizationPreferencesFileData":
         return cls.model_validate(config.model_dump(exclude={"id"}))
+
+
+def parse_optimization_preferences(data: Dict[str, Any]) -> OptimizationPreferences:
+    return OptimizationPreferencesFileData.model_validate(data).to_model()
+
+
+def serialize_optimization_preferences(config: OptimizationPreferences) -> dict[str, Any]:
+    return OptimizationPreferencesFileData.from_model(config).model_dump(mode="json", by_alias=True, exclude_none=True)
