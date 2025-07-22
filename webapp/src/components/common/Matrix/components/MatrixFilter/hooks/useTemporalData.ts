@@ -13,9 +13,10 @@
  */
 
 import { useMemo } from "react";
+import { getHourOfYear, getWeekFromDayOfYear, parseFlexibleDate } from "@/utils/date/dateUtils";
 import type { TimeFrequencyType } from "../../../shared/types";
 import { TIME_INDEXING } from "../constants";
-import { extractValueFromDate, getDefaultRangeForIndexType } from "../utils/dateUtils";
+import { getDefaultRangeForIndexType } from "../utils/dateUtils";
 
 interface UseTemporalDataProps {
   dateTime?: string[];
@@ -23,9 +24,19 @@ interface UseTemporalDataProps {
   timeFrequency?: TimeFrequencyType;
 }
 
+interface ParsedDateInfo {
+  date: Date | null;
+  dayOfYear: number | null;
+  hourOfYear: number | null;
+  dayOfMonth: number | null;
+  week: number | null;
+  month: number | null;
+  dayHour: number | null;
+  weekday: number | null;
+}
+
 export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps) {
   const indexTypeRanges = useMemo(() => {
-    // Create a map of all default ranges
     return Object.values(TIME_INDEXING).reduce(
       (acc, type) => {
         acc[type] = getDefaultRangeForIndexType(type);
@@ -35,7 +46,57 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
     );
   }, []);
 
-  // Get the range values based on data or defaults
+  const parsedDates = useMemo(() => {
+    if (!dateTime || !isTimeSeries || dateTime.length === 0) {
+      return [];
+    }
+
+    return dateTime.map((dateStr): ParsedDateInfo => {
+      try {
+        const date = parseFlexibleDate(dateStr);
+
+        if (!date) {
+          return {
+            date: null,
+            dayOfYear: null,
+            hourOfYear: null,
+            dayOfMonth: null,
+            week: null,
+            month: null,
+            dayHour: null,
+            weekday: null,
+          };
+        }
+
+        const dayOfYear = Math.floor(
+          (date.getTime() - new Date(date.getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        return {
+          date,
+          dayOfYear,
+          hourOfYear: getHourOfYear(date),
+          dayOfMonth: date.getDate(),
+          week: getWeekFromDayOfYear(dayOfYear),
+          month: date.getMonth() + 1,
+          dayHour: date.getHours(),
+          weekday: date.getDay() + 1,
+        };
+      } catch {
+        return {
+          date: null,
+          dayOfYear: null,
+          hourOfYear: null,
+          dayOfMonth: null,
+          week: null,
+          month: null,
+          dayHour: null,
+          weekday: null,
+        };
+      }
+    });
+  }, [dateTime, isTimeSeries]);
+
   const valuesByIndexType = useMemo(() => {
     // Start with a fresh object using the default ranges
     const result = { ...indexTypeRanges } as Record<
@@ -43,6 +104,7 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
       { min: number; max: number; uniqueValues?: number[] }
     >;
 
+    // Set static values that don't depend on data
     result[TIME_INDEXING.DAY_HOUR] = {
       min: 0,
       max: 23,
@@ -61,8 +123,16 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
       uniqueValues: Array.from({ length: 12 }, (_, i) => i + 1),
     };
 
-    // Only try to extract data-based values if we have time series data
-    if (dateTime && isTimeSeries && dateTime.length > 0) {
+    // Only try to extract data-based values if we have parsed dates
+    if (parsedDates.length > 0) {
+      // Define mapping from indexing type to parsed data property
+      const indexTypeToProperty: Record<string, keyof ParsedDateInfo> = {
+        [TIME_INDEXING.DAY_OF_YEAR]: "dayOfYear",
+        [TIME_INDEXING.HOUR_YEAR]: "hourOfYear",
+        [TIME_INDEXING.DAY_OF_MONTH]: "dayOfMonth",
+        [TIME_INDEXING.WEEK]: "week",
+      };
+
       // Only update the ranges that should be data-dependent
       const dynamicTypes = [
         TIME_INDEXING.DAY_OF_YEAR,
@@ -72,53 +142,63 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
       ];
 
       for (const indexType of dynamicTypes) {
-        try {
-          const values = dateTime
-            .map((dateStr) => {
-              try {
-                return extractValueFromDate(dateStr, indexType);
-              } catch {
-                return null;
-              }
-            })
-            .filter((value): value is number => value !== null);
+        const property = indexTypeToProperty[indexType];
 
-          if (values.length > 0) {
-            const min = Math.min(...values);
-            const max = Math.max(...values);
-            const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
-            result[indexType] = { min, max, uniqueValues };
-          }
-        } catch {
-          // Keep defaults on error
+        if (!property) {
+          continue;
+        }
+
+        const values = parsedDates
+          .map((parsed) => parsed[property] as number | null)
+          .filter((value): value is number => value !== null);
+
+        if (values.length > 0) {
+          const uniqueSet = new Set(values);
+          const uniqueValues = Array.from(uniqueSet).sort((a, b) => a - b);
+          result[indexType] = {
+            min: Math.min(...uniqueValues),
+            max: Math.max(...uniqueValues),
+            uniqueValues,
+          };
         }
       }
     }
 
     return result;
-  }, [dateTime, isTimeSeries, indexTypeRanges]);
+  }, [parsedDates, indexTypeRanges]);
 
   const temporalValues = useMemo(() => {
-    if (!dateTime || !isTimeSeries || dateTime.length === 0) {
+    if (parsedDates.length === 0) {
       return {};
     }
 
     const result: Record<string, number[]> = {};
 
+    // Define mapping from indexing type to parsed data property
+    const indexTypeToProperty: Record<string, keyof ParsedDateInfo> = {
+      [TIME_INDEXING.DAY_OF_YEAR]: "dayOfYear",
+      [TIME_INDEXING.HOUR_YEAR]: "hourOfYear",
+      [TIME_INDEXING.DAY_OF_MONTH]: "dayOfMonth",
+      [TIME_INDEXING.WEEK]: "week",
+      [TIME_INDEXING.MONTH]: "month",
+      [TIME_INDEXING.DAY_HOUR]: "dayHour",
+      [TIME_INDEXING.WEEKDAY]: "weekday",
+    };
+
     for (const indexType of Object.values(TIME_INDEXING)) {
-      result[indexType] = dateTime
-        .map((dateStr) => {
-          try {
-            return extractValueFromDate(dateStr, indexType);
-          } catch {
-            return null;
-          }
-        })
+      const property = indexTypeToProperty[indexType];
+
+      if (!property) {
+        continue;
+      }
+
+      result[indexType] = parsedDates
+        .map((parsed) => parsed[property] as number | null)
         .filter((value): value is number => value !== null);
     }
 
     return result;
-  }, [dateTime, isTimeSeries]);
+  }, [parsedDates]);
 
   return {
     indexTypeRanges,
