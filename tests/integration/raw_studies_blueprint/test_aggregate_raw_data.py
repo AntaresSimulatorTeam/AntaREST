@@ -244,7 +244,7 @@ AREAS_REQUESTS__ALL = [
             "areas_ids": "de,fr,it",
             "columns_names": "",
         },
-        "test-02-all.result.tsv",
+        "test-02-all.result.tsv2",
     ),
     (
         {
@@ -680,7 +680,7 @@ class TestRawDataAggregationMCAll:
     Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
     """
 
-    @pytest.mark.parametrize("params, expected_result_filename", AREAS_REQUESTS__IND)
+    @pytest.mark.parametrize("params, expected_result_filename", AREAS_REQUESTS__ALL)
     def test_area_aggregation(
         self,
         client: TestClient,

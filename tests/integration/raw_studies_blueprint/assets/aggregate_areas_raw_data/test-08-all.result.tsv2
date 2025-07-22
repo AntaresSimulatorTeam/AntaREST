@@ -1,4 +1,4 @@
-area	cluster	timeId	NODU	NP Cost
+area	cluster	timeId	NODU	NP Cost - Euro
 de	01_solar	1	167.0	0.0
 de	02_wind_on	1	147.0	0.0
 de	03_wind_off	1	127.0	0.0

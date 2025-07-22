@@ -1,0 +1,10 @@
+area	cluster	timeId	MWh	NODU	NP Cost - Euro
+de	01_solar	1	315000.0	167.0	0.0
+de	02_wind_on	1	275000.0	147.0	0.0
+de	03_wind_off	1	235000.0	127.0	0.0
+de	04_res	1	195000.0	107.0	0.0
+de	05_nuclear	1	155000.0	87.0	0.0
+de	06_coal	1	115000.0	67.0	0.0
+de	07_gas	1	75000.0	47.0	0.0
+de	08_non-res	1	35000.0	27.0	0.0
+de	09_hydro_pump	1	2800.0	7.0	0.0
