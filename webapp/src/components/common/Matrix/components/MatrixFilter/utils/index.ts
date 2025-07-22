@@ -32,7 +32,7 @@ import type {
   TimeIndexingType,
 } from "../types";
 import { getLocalizedTimeLabels } from "./dateUtils";
-import type { ParsedDateInfo } from "@/components/common/Matrix/components/MatrixFilter/hooks/useTemporalData";
+import type { DateInfo } from "@/components/common/Matrix/components/MatrixFilter/hooks/useTemporalData";
 
 const createRowIndices = R.memoizeWith(
   (size: number) => String(size),
@@ -124,33 +124,19 @@ export function getTemporalIndices({
   totalRows,
 }: TemporalIndexingParams): number[] {
   // Use simple indices for non-time series data
-  if (!isTimeSeries || !dateTime?.values.length) {
+  if (!isTimeSeries || !dateTime?.length) {
     const indices = createIndexedValues(totalRows);
     return applyRowFilter(rowFilter, indices, totalRows);
   }
 
-  // Extract temporal values from date strings
+  // Extract temporal values from dates
   const temporalIndices = dateTime
     .map((date, index) => {
       if (timeFrequency === TimeFrequency.Annual) {
         return { index, value: index + 1 };
       }
-
-      try {
-        switch (rowFilter.indexingType) {
-          case TIME_INDEXING.MONTH:
-          case TIME_INDEXING.MONTH:
-          case TIME_INDEXING.MONTH:
-          case TIME_INDEXING.MONTH:
-          case TIME_INDEXING.MONTH:
-          case TIME_INDEXING.MONTH:
-        }
-        const value = extractValueFromDate(date, rowFilter.indexingType);
-        return { index, value };
-      } catch {
-        // Skip invalid dates
-        return null;
-      }
+      const value = extractValueFromDate(date, rowFilter.indexingType);
+      return { index, value };
     })
     .filter((item): item is IndexedValue => item !== null);
 
@@ -277,7 +263,7 @@ export function getFilteredTemporalOptions(
  */
 export function processRowFilters(
   filter: FilterState,
-  dateTime: ParsedDateInfo[] | undefined,
+  dateTime: DateInfo[] | undefined,
   isTimeSeries: boolean,
   timeFrequency: TimeFrequencyType | undefined,
   totalRows: number,
@@ -439,7 +425,7 @@ export function parseRangeInput(input: string): number[] {
 }
 
 // Define mapping from indexing type to parsed data property
-const INDEX_TYPE_TO_PROPERTY: Record<string, keyof ParsedDateInfo> = {
+export const INDEX_TYPE_TO_DATEINFO_PROPERTY: Record<string, keyof DateInfo> = {
   [TIME_INDEXING.DAY_OF_YEAR]: "dayOfYear",
   [TIME_INDEXING.HOUR_YEAR]: "hourOfYear",
   [TIME_INDEXING.DAY_OF_MONTH]: "dayOfMonth",
@@ -449,7 +435,7 @@ const INDEX_TYPE_TO_PROPERTY: Record<string, keyof ParsedDateInfo> = {
   [TIME_INDEXING.WEEKDAY]: "weekday",
 };
 
-export function extractTemporalValue(date: ParsedDateInfo, indexingType: TimeIndexingType): number {
-  const property = INDEX_TYPE_TO_PROPERTY[indexingType];
+export function extractTemporalValue(date: DateInfo, indexingType: TimeIndexingType): number {
+  const property = INDEX_TYPE_TO_DATEINFO_PROPERTY[indexingType];
   return date[property] as number;
 }

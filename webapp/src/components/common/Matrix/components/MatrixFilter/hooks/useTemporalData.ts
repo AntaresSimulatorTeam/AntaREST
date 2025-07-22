@@ -16,14 +16,15 @@ import { useMemo } from "react";
 import type { TimeFrequencyType } from "../../../shared/types";
 import { TIME_INDEXING } from "../constants";
 import { getDefaultRangeForIndexType } from "../utils/dateUtils";
-import type { ParsedDateInfo } from "@/components/common/Matrix/components/MatrixFilter/types";
+import type { DateInfo } from "@/components/common/Matrix/components/MatrixFilter/types";
+import { INDEX_TYPE_TO_DATEINFO_PROPERTY } from "@/components/common/Matrix/components/MatrixFilter/utils";
 interface UseTemporalDataProps {
-  dateTime?: ParsedDateInfo[];
+  datesInfo?: DateInfo[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
 }
 
-export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps) {
+export function useTemporalData({ datesInfo }: UseTemporalDataProps) {
   const indexTypeRanges = useMemo(() => {
     return Object.values(TIME_INDEXING).reduce(
       (acc, type) => {
@@ -33,6 +34,21 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
       {} as Record<string, { min: number; max: number }>,
     );
   }, []);
+
+  const temporalValues = useMemo(() => {
+    if (!datesInfo || datesInfo.length === 0) {
+      return {};
+    }
+
+    const result: Record<string, number[]> = {};
+
+    for (const indexType of Object.values(TIME_INDEXING)) {
+      const property = INDEX_TYPE_TO_DATEINFO_PROPERTY[indexType];
+      result[indexType] = datesInfo.map((parsed) => parsed[property] as number);
+    }
+
+    return result;
+  }, [datesInfo]);
 
   const valuesByIndexType = useMemo(() => {
     // Start with a fresh object using the default ranges
@@ -61,15 +77,7 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
     };
 
     // Only try to extract data-based values if we have parsed dates
-    if (dateTime.length > 0) {
-      // Define mapping from indexing type to parsed data property
-      const indexTypeToProperty: Record<string, keyof ParsedDateInfo> = {
-        [TIME_INDEXING.DAY_OF_YEAR]: "dayOfYear",
-        [TIME_INDEXING.HOUR_YEAR]: "hourOfYear",
-        [TIME_INDEXING.DAY_OF_MONTH]: "dayOfMonth",
-        [TIME_INDEXING.WEEK]: "week",
-      };
-
+    if (datesInfo && datesInfo.length > 0) {
       // Only update the ranges that should be data-dependent
       const dynamicTypes = [
         TIME_INDEXING.DAY_OF_YEAR,
@@ -79,16 +87,7 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
       ];
 
       for (const indexType of dynamicTypes) {
-        const property = indexTypeToProperty[indexType];
-
-        if (!property) {
-          continue;
-        }
-
-        const values = dateTime
-          .map((parsed) => parsed[property] as number | null)
-          .filter((value): value is number => value !== null);
-
+        const values = temporalValues[indexType];
         if (values.length > 0) {
           const uniqueSet = new Set(values);
           const uniqueValues = Array.from(uniqueSet).sort((a, b) => a - b);
@@ -102,29 +101,7 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
     }
 
     return result;
-  }, [parsedDates, indexTypeRanges]);
-
-  const temporalValues = useMemo(() => {
-    if (parsedDates.length === 0) {
-      return {};
-    }
-
-    const result: Record<string, number[]> = {};
-
-    for (const indexType of Object.values(TIME_INDEXING)) {
-      const property = INDEX_TYPE[indexType];
-
-      if (!property) {
-        continue;
-      }
-
-      result[indexType] = parsedDates
-        .map((parsed) => parsed[property] as number | null)
-        .filter((value): value is number => value !== null);
-    }
-
-    return result;
-  }, [parsedDates]);
+  }, [datesInfo, indexTypeRanges, temporalValues]);
 
   return {
     indexTypeRanges,
