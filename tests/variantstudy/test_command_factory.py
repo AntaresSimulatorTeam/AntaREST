@@ -926,6 +926,17 @@ COMMANDS = [
         None,
         id="update_st_storage_additional_constraints",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {"area_id": "fr", "ids": ["c1", "c2", "c3"]},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="remove_st_storage_additional_constraints",
+    ),
 ]
 
 
