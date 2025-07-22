@@ -74,6 +74,12 @@ class GeneralFileData(AntaresBaseModel):
         return cls.model_validate(data)
 
 
+def parse_general_config(data: Dict[str, Any]) -> GeneralConfig:
+    config_data = data.get("general", {})
+    config_data.update(data.get("output", {}))
+    return GeneralFileData.model_validate(config_data).to_model()
+
+
 def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})

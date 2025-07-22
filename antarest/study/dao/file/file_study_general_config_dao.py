@@ -18,7 +18,7 @@ from antarest.study.business.model.config.general_model import (
 )
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.storage.rawstudy.model.filesystem.config.general import (
-    GeneralFileData,
+    parse_general_config,
     serialize_output_config,
     serialize_simulation_config,
 )
@@ -35,11 +35,8 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
         file_study = self.get_file_study()
 
         tree_data = file_study.tree.get(["settings", "generaldata"])
-        config_data = tree_data.get("general", {})
-        config_data.update(tree_data.get("output", {}))
 
-        file_data = GeneralFileData.model_validate(config_data)
-        return file_data.to_model()
+        return parse_general_config(tree_data)
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
