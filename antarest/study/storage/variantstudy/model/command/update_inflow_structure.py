@@ -15,12 +15,16 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
-    InflowStructureFileData,
     InflowStructureUpdate,
     get_inflow_path,
     update_inflow_structure,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
+    InflowStructureFileData,
+    parse_inflow_structure,
+    serialize_inflow_structure,
+)
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -48,10 +52,10 @@ class UpdateInflowStructure(ICommand):
         file_study = study_data.get_file_study()
         path = get_inflow_path(self.area_id)
 
-        current_inflow = InflowStructureFileData(**file_study.tree.get(path))
-
-        # updated_inflow = current_inflow.model_copy(update=self.properties.model_dump()).model_dump(by_alias=True)
-        updated_inflow = update_inflow_structure(current_inflow, self.properties)
+        file_data = file_study.tree.get(path)
+        current_inflow = parse_inflow_structure(file_data)
+        inflow_structure = update_inflow_structure(current_inflow, self.properties)
+        updated_inflow = InflowStructureFileData(**serialize_inflow_structure(inflow_structure))
         study_data.save_inflow_structure(self.area_id, updated_inflow)
 
         return command_succeeded(f"Inflow properties in '{self.area_id}' updated.")

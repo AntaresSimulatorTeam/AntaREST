@@ -14,9 +14,11 @@ from typing import Dict
 
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
-    HydroManagementFileData,
     HydroProperties,
     InflowStructure,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
+    HydroManagementFileData,
     InflowStructureFileData,
 )
 

@@ -17,13 +17,15 @@ from typing_extensions import override
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     HydroManagement,
-    HydroManagementFileData,
     HydroProperties,
     InflowStructure,
-    InflowStructureFileData,
     get_inflow_path,
 )
 from antarest.study.dao.api.hydro_dao import HydroDao
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
+    HydroManagementFileData,
+    InflowStructureFileData,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 

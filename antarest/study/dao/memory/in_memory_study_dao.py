@@ -22,16 +22,18 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
-    HydroManagementFileData,
     HydroProperties,
     InflowStructure,
-    InflowStructureFileData,
 )
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
+    HydroManagementFileData,
+    InflowStructureFileData,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 

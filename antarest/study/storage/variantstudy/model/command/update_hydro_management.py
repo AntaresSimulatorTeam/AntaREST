@@ -17,11 +17,14 @@ from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
-    HydroManagementFileData,
     HydroManagementUpdate,
     update_hydro_management,
 )
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
+    get_hydro_management_file_data,
+    parse_hydro_management,
+)
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -51,16 +54,16 @@ class UpdateHydroManagement(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        hydro_manager = HydroManagementFileData(**study_data.get_file_study().tree.get(HYDRO_PATH))
-        hydro_manager.get_hydro_management(self.area_id, study_data.get_version())
+        file_study = study_data.get_file_study()
+        file_data = file_study.tree.get(HYDRO_PATH)
 
-        new_hydro = update_hydro_management(
-            hydro_manager.get_hydro_management(self.area_id, study_data.get_version()), self.properties
-        )
+        hydro_file_data = get_hydro_management_file_data(file_data)
+        current_hydro_management = parse_hydro_management(hydro_file_data, self.area_id, file_study.config.version)
 
-        hydro_manager.set_hydro_management(self.area_id, new_hydro)
+        updated_hydro_management = update_hydro_management(current_hydro_management, self.properties)
+        hydro_file_data.set_hydro_management(self.area_id, updated_hydro_management)
 
-        study_data.save_hydro_management(self.area_id, hydro_manager)
+        study_data.save_hydro_management(self.area_id, hydro_file_data)
 
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 
