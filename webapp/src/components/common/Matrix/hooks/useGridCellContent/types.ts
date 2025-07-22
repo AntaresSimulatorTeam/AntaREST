@@ -12,26 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import type { GridCell, Item } from "@glideapps/glide-data-grid";
-import type { EnhancedGridColumn, MatrixAggregates } from "../../shared/types";
-
-export type GridToDataFunction = (cell: Item) => Item | null;
-
-export interface UseGridCellContentOptions {
-  data: number[][];
-  columns: EnhancedGridColumn[];
-  gridToData: GridToDataFunction;
-  dateTime?: string[];
-  aggregates?: MatrixAggregates;
-  rowHeaders?: string[];
-}
+import type { GridCell } from "@glideapps/glide-data-grid";
+import type { DateTimes, EnhancedGridColumn, MatrixAggregates } from "../../shared/types";
 
 export type CellContentGenerator = (
   row: number,
   col: number,
   column: EnhancedGridColumn,
   data: number[][],
-  dateTime?: Date[],
+  dateTime?: DateTimes,
   aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
 ) => GridCell;
@@ -39,7 +28,7 @@ export type CellContentGenerator = (
 export interface RenderOptions {
   data: number[][];
   columns: EnhancedGridColumn[];
-  dateTime?: string[];
+  dateTime?: DateTimes;
   aggregates?: MatrixAggregates;
   rowHeaders?: string[];
 }

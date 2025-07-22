@@ -14,14 +14,14 @@
 
 import * as R from "ramda";
 import { useMemo } from "react";
-import type { TimeFrequencyType } from "../../../shared/types";
+import type { DateTimes, TimeFrequencyType } from "../../../shared/types";
 import { FILTER_OPERATORS, FILTER_TYPES } from "../constants";
 import type { FilterCriteria, FilterOperatorType, FilterState } from "../types";
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
   filter: FilterState;
-  dateTime?: Date[];
+  dateTime?: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   rowCount: number;

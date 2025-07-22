@@ -15,7 +15,7 @@
 import type { TFunction } from "i18next";
 import * as R from "ramda";
 import { TimeFrequency } from "../../../shared/constants";
-import type { TimeFrequencyType } from "../../../shared/types";
+import type { DateTimes, TimeFrequencyType } from "../../../shared/types";
 import {
   FILTER_OPERATORS,
   FILTER_TYPES,
@@ -122,13 +122,13 @@ export function getTemporalIndices({
   totalRows,
 }: TemporalIndexingParams): number[] {
   // Use simple indices for non-time series data
-  if (!isTimeSeries || !dateTime?.length) {
+  if (!isTimeSeries || !dateTime?.values.length) {
     const indices = createIndexedValues(totalRows);
     return applyRowFilter(rowFilter, indices, totalRows);
   }
 
   // Extract temporal values from date strings
-  const temporalIndices = dateTime
+  const temporalIndices = dateTime.values
     .map((date, index) => {
       if (timeFrequency === TimeFrequency.Annual) {
         return { index, value: index + 1 };
@@ -267,7 +267,7 @@ export function getFilteredTemporalOptions(
  */
 export function processRowFilters(
   filter: FilterState,
-  dateTime: Date[] | undefined,
+  dateTime: DateTimes | undefined,
   isTimeSeries: boolean,
   timeFrequency: TimeFrequencyType | undefined,
   totalRows: number,

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { TimeFrequencyType } from "../../shared/types";
+import type { DateTimes, TimeFrequencyType } from "../../shared/types";
 import type { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "./constants";
 
 export type FilterType = (typeof FILTER_TYPES)[keyof typeof FILTER_TYPES];
@@ -49,7 +49,7 @@ export interface FilterCriteria {
 }
 
 export interface MatrixFilterProps {
-  dateTime?: Date[];
+  dateTime?: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   readOnly?: boolean;
@@ -65,7 +65,7 @@ export interface ColumnFilterProps extends FilterSectionProps {
 }
 
 export interface RowFilterProps extends FilterSectionProps {
-  dateTime?: Date[];
+  dateTime?: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   onAddFilter?: () => void;
@@ -87,7 +87,7 @@ export interface SelectionSummaryProps {
 export interface TemporalIndexingParams {
   filter: FilterState;
   rowFilter: RowFilter;
-  dateTime?: Date[];
+  dateTime?: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   totalRows: number;

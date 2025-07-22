@@ -40,6 +40,7 @@ import type {
   CustomColumnOptions,
   DataColumnsConfig,
   DateTimeMetadataDTO,
+  DateTimes,
   EnhancedGridColumn,
   FormatGridNumberOptions,
   MatrixAggregates,
@@ -130,8 +131,8 @@ export function getLocale(): Locale {
  * @param config.level - The time frequency level (ANNUAL, MONTHLY, WEEKLY, DAILY, HOURLY)
  * @returns An array of formatted date/time strings
  */
-export const generateDateTime = (config: DateTimeMetadataDTO): Date[] => {
-  const { start_date, steps, level } = config;
+export const generateDateTime = (config: DateTimeMetadataDTO): DateTimes => {
+  const { start_date, steps, first_week_size, level } = config;
   const { increment } = TIME_FREQUENCY_CONFIG[level];
 
   /**
@@ -164,8 +165,8 @@ export const generateDateTime = (config: DateTimeMetadataDTO): Date[] => {
 
   const initialDate = new UTCDate(dateStr);
 
-  // TODO SL: handle first_week_size in some way
-  return Array.from({ length: steps }, (_, index) => increment(initialDate, index));
+  const values = Array.from({ length: steps }, (_, index) => increment(initialDate, index));
+  return { values, first_week_size, level };
 };
 
 /**

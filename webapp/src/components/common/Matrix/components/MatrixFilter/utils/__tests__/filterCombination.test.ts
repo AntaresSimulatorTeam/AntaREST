@@ -15,6 +15,9 @@
 import { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "../../constants";
 import type { FilterOperatorType, FilterState, FilterType, TimeIndexingType } from "../../types";
 import { processRowFilters } from "../index";
+import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
+import type { DateTimes } from "@/components/common/Matrix/shared/types";
+import { UTCDate } from "@date-fns/utc";
 
 describe("Filter Combination Logic", () => {
   const createMockFilter = (
@@ -47,10 +50,15 @@ describe("Filter Combination Logic", () => {
   });
 
   // Mock date/time data for a year (simplified - just marking months and weekdays)
-  const mockDateTime = Array.from({ length: 365 }, (_, i) => {
-    const date = new Date(Date.UTC(2024, 0, 1 + i)); // Start from Jan 1, 2024 UTC
-    return date.toISOString();
+  const mockValues = Array.from({ length: 365 }, (_, i) => {
+    return new Date(Date.UTC(2024, 0, 1 + i)); // Start from Jan 1, 2024 UTC
   });
+
+  const mockDateTime: DateTimes = {
+    values: mockValues,
+    first_week_size: 0,
+    level: TimeFrequency.Daily,
+  };
 
   describe("Mixed Type Filters (AND between types, OR within types)", () => {
     it("should apply AND logic between different indexingTypes", () => {
@@ -76,7 +84,7 @@ describe("Filter Combination Logic", () => {
 
       // Verify all results are actually Mondays in January
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         expect(date.getMonth()).toBe(0); // January is month 0
         expect(date.getDay()).toBe(1); // Monday is day 1
       }
@@ -118,7 +126,7 @@ describe("Filter Combination Logic", () => {
 
       // Verify all results are weekends in summer months
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const month = date.getMonth() + 1; // getMonth() is 0-based
         const dayOfWeek = date.getDay();
 
@@ -149,7 +157,7 @@ describe("Filter Combination Logic", () => {
 
       // Verify each result is either in January or March
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const month = date.getMonth();
         expect([0, 2]).toContain(month); // January is 0, March is 2
       }
@@ -178,7 +186,7 @@ describe("Filter Combination Logic", () => {
 
       // Should include only Mondays in January OR March
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const month = date.getMonth();
         const dayOfWeek = date.getDay();
 
@@ -210,7 +218,7 @@ describe("Filter Combination Logic", () => {
 
       // Should include only weekends in March OR September
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const month = date.getMonth();
         const dayOfWeek = date.getDay();
 
@@ -338,7 +346,7 @@ describe("Filter Combination Logic", () => {
 
       // Should only include Fridays in the first half of July
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         expect(date.getMonth()).toBe(6); // July is month 6
         expect(date.getDay()).toBe(5); // Friday
         expect(date.getDate()).toBeLessThanOrEqual(15);
@@ -373,7 +381,7 @@ describe("Filter Combination Logic", () => {
 
       // Should include only Tuesdays and Thursdays in January, March, or May
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const month = date.getMonth();
         const dayOfWeek = date.getDay();
 
@@ -405,7 +413,7 @@ describe("Filter Combination Logic", () => {
 
       // Should include days 1-5 OR 28-31 in June only
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const month = date.getMonth();
         const day = date.getDate();
 
@@ -442,7 +450,7 @@ describe("Filter Combination Logic", () => {
 
       // Verify the results match the criteria
       for (const index of result) {
-        const date = new Date(mockDateTime[index]);
+        const date = new Date(mockValues[index]);
         const dayOfMonth = date.getDate();
         const matchesGreaterThan = dayOfMonth > 15;
         const matchesLessThan = dayOfMonth < 5;
@@ -474,10 +482,15 @@ describe("Filter Combination Logic", () => {
 
     it("should handle hour-based filters correctly", () => {
       // Create hourly mock data for a single day
-      const hourlyDateTime = Array.from({ length: 24 }, (_, i) => {
-        const date = new Date(Date.UTC(2024, 0, 1, i, 0, 0));
-        return date.toISOString();
+      const hourlyValues = Array.from({ length: 24 }, (_, i) => {
+        return new UTCDate(Date.UTC(2024, 0, 1, i, 0, 0));
       });
+
+      const hourlyDateTime: DateTimes = {
+        values: hourlyValues,
+        first_week_size: 0,
+        level: TimeFrequency.Hourly,
+      };
 
       const filter = createMockFilter([
         {
@@ -495,7 +508,7 @@ describe("Filter Combination Logic", () => {
       const result = processRowFilters(filter, hourlyDateTime, true, undefined, 24);
 
       // Should include hours 0-2 OR 22-23 (5 total hours)
-      const resultHours = result.map((index) => new Date(hourlyDateTime[index]).getUTCHours());
+      const resultHours = result.map((index) => new Date(hourlyValues[index]).getUTCHours());
       const expectedHours = [0, 1, 2, 22, 23];
 
       // Check that we have the right number of results

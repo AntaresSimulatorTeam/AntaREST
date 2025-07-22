@@ -13,12 +13,12 @@
  */
 
 import { useMemo } from "react";
-import type { TimeFrequencyType } from "../../../shared/types";
+import type { DateTimes, TimeFrequencyType } from "../../../shared/types";
 import { TIME_INDEXING } from "../constants";
 import { extractValueFromDate, getDefaultRangeForIndexType } from "../utils/dateUtils";
 
 interface UseTemporalDataProps {
-  dateTime?: Date[];
+  dateTime?: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
 }
@@ -62,7 +62,7 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
     };
 
     // Only try to extract data-based values if we have time series data
-    if (dateTime && isTimeSeries && dateTime.length > 0) {
+    if (dateTime && isTimeSeries && dateTime.values.length > 0) {
       // Only update the ranges that should be data-dependent
       const dynamicTypes = [
         TIME_INDEXING.DAY_OF_YEAR,
@@ -73,7 +73,7 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
 
       for (const indexType of dynamicTypes) {
         try {
-          const values = dateTime
+          const values = dateTime.values
             .map((date) => {
               try {
                 return extractValueFromDate(date, indexType);
@@ -99,17 +99,17 @@ export function useTemporalData({ dateTime, isTimeSeries }: UseTemporalDataProps
   }, [dateTime, isTimeSeries, indexTypeRanges]);
 
   const temporalValues = useMemo(() => {
-    if (!dateTime || !isTimeSeries || dateTime.length === 0) {
+    if (!dateTime || !isTimeSeries || dateTime.values.length === 0) {
       return {};
     }
 
     const result: Record<string, number[]> = {};
 
     for (const indexType of Object.values(TIME_INDEXING)) {
-      result[indexType] = dateTime
-        .map((dateStr) => {
+      result[indexType] = dateTime.values
+        .map((date) => {
           try {
-            return extractValueFromDate(dateStr, indexType);
+            return extractValueFromDate(date, indexType);
           } catch {
             return null;
           }
