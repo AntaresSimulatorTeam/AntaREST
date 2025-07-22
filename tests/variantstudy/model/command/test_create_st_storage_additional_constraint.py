@@ -109,7 +109,7 @@ class TestCreateSTStorageAdditionalConstraint:
             command_context=command_context,
             area_id="fr",
             storage_id="sts_1",
-            constraints=[{"name": "constraint"}],
+            constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
             study_version=version,
         )
         output = cmd.apply(study)
@@ -125,7 +125,7 @@ class TestCreateSTStorageAdditionalConstraint:
             command_context=command_context,
             area_id="fr",
             storage_id="fake_storage",
-            constraints=[{"name": "constraint"}],
+            constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
             study_version=version,
         )
         output = cmd.apply(study)
@@ -143,7 +143,7 @@ class TestCreateSTStorageAdditionalConstraint:
             command_context=command_context,
             area_id="fr",
             storage_id="sts_1",
-            constraints=[{"name": "constraint"}],
+            constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
             study_version=version,
         )
         output = cmd.apply(study)
@@ -163,6 +163,6 @@ class TestCreateSTStorageAdditionalConstraint:
                 command_context=command_context,
                 area_id="fr",
                 storage_id="sts_1",
-                constraints=[{"name": "constraint"}],
+                constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
                 study_version="8.8",
             )
