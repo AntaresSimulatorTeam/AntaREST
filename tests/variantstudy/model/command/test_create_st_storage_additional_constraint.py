@@ -75,29 +75,27 @@ class TestCreateSTStorageAdditionalConstraint:
         )
         ini_content = read_ini(ini_path)
         assert ini_content == {
-            {
-                "constraint": {
-                    "cluster": "sts_1",
-                    "variable": "netting",
-                    "operator": "less",
-                    "hours": "[]",
-                    "enabled": True,
-                },
-                "constraint_2": {
-                    "cluster": "sts_1",
-                    "variable": "netting",
-                    "operator": "less",
-                    "hours": "[2, 4]",
-                    "enabled": False,
-                },
-                "c3": {
-                    "cluster": "sts_2",
-                    "variable": "withdrawal",
-                    "operator": "greater",
-                    "hours": "[1, 2, 3, 4], [12, 13]",
-                    "enabled": True,
-                },
-            }
+            "constraint": {
+                "cluster": "sts_1",
+                "variable": "netting",
+                "operator": "less",
+                "hours": "[]",
+                "enabled": True,
+            },
+            "constraint_2": {
+                "cluster": "sts_1",
+                "variable": "netting",
+                "operator": "less",
+                "hours": "[2, 4]",
+                "enabled": False,
+            },
+            "c3": {
+                "cluster": "sts_2",
+                "variable": "withdrawal",
+                "operator": "greater",
+                "hours": "[1, 2, 3, 4], [12, 13]",
+                "enabled": True,
+            },
         }
 
     def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy):

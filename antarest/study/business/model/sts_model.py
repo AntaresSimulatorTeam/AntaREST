@@ -289,7 +289,17 @@ def _hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
     return value  # type: ignore
 
 
-Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(_hours_parser), PlainSerializer(str)]
+def _hours_serializer(value: HOURS_TYPE) -> str:
+    if not value:
+        return "[]"
+
+    if isinstance(value[0], int):
+        return str(value)
+
+    return ", ".join(str(v) for v in value)
+
+
+Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(_hours_parser), PlainSerializer(_hours_serializer)]
 
 
 class STStorageAdditionalConstraint(AntaresBaseModel):
