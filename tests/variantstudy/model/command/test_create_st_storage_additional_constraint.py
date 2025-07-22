@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
@@ -151,3 +153,16 @@ class TestCreateSTStorageAdditionalConstraint:
         output = cmd.apply(study)
         assert not output.status
         assert output.message == "Short-term storage constraint 'constraint' already exists."
+
+        # Create a constraint with an old study
+        with pytest.raises(
+            ValueError,
+            match="Command 'create_st_storage_additional_constraints' is only available since v9.2 and you're in 8.8",
+        ):
+            CreateSTStorageAdditionalConstraints(
+                command_context=command_context,
+                area_id="fr",
+                storage_id="sts_1",
+                constraints=[{"name": "constraint"}],
+                study_version="8.8",
+            )
