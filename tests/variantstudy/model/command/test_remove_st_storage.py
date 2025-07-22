@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-
 import pytest
 from pydantic import ValidationError
 
@@ -158,3 +157,4 @@ class TestRemoveSTStorage:
         cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts_1", study_version=version)
         output = cmd.apply(study)
         assert not output.status
+        assert "Short-term storage 'sts_1' is referenced in the constraint" in output.message
