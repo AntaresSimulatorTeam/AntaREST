@@ -20,7 +20,7 @@ import pytest
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -892,6 +892,39 @@ COMMANDS = [
         ),
         None,
         id="update_xpansion_settings",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "storage_id": "sts_2",
+                    "constraints": [
+                        {
+                            "name": "c3",
+                            "variable": "withdrawal",
+                            "operator": "greater",
+                            "hours": "[1, 2, 3, 4], [12, 13]",
+                        }
+                    ],
+                }
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="create_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {"additional_constraint_properties": {"fr": {"sts_2": [{"id": "c1"}]}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_st_storage_additional_constraints",
     ),
 ]
 
