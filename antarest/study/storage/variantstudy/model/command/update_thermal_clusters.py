@@ -61,18 +61,16 @@ class UpdateThermalClusters(ICommand):
         """
         memory_mapping = {}
 
-        all_thermals = study_data.get_all_thermals()
-
         for area_id, value in self.cluster_properties.items():
-            if area_id not in all_thermals:
-                return command_failed(f"Area '{area_id}' does not exist")
+            all_thermals_per_area = study_data.get_all_thermals_for_area(area_id)
+            existing_ids = {th.id.lower(): th for th in all_thermals_per_area}
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
-                if cluster_id not in all_thermals[area_id]:
+                if cluster_id not in existing_ids:
                     return command_failed(f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.")
 
-                current_cluster = all_thermals[area_id][cluster_id]
+                current_cluster = existing_ids[cluster_id]
                 new_cluster = update_thermal_cluster(current_cluster, new_properties)
                 new_clusters.append(new_cluster)
 
