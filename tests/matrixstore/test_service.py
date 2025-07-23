@@ -146,7 +146,7 @@ class TestMatrixService:
                 version=2,
             ),
             MatrixMetadataDTO(
-                id="b508399a33d3adb6a9ce11b4f70b2a8fa5cb8e8a37642f699637d1666e966a72",
+                id="539119504d34d284af5a0d0f7d3d28976969aabcdf97cbcbf38f50246d96b6f0",
                 width=1,
                 height=9,
                 created_at=datetime.datetime.now(),
@@ -181,7 +181,7 @@ class TestMatrixService:
                 version=2,
             ),
             MatrixMetadataDTO(
-                id="10d7ca7b8f935d013dd6304466668b87e25f51eb179b92bc995b6f2cc70641a7",
+                id="63c37aca761a6eecc11fc8c6db06f720e72a7c9f7064d8ea3f553ab643468685",
                 width=1,
                 height=18,
                 created_at=datetime.datetime.now(),
