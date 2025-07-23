@@ -104,7 +104,7 @@ describe("Hour Indexing", () => {
         hourOfYear: 1104,
         month: 2,
         week: 7,
-        weekday: 5,
+        weekday: 4, // Thursday, should be 4
       });
     });
   });
@@ -117,7 +117,7 @@ describe("Hour Indexing", () => {
       hourOfYear: 1104,
       month: 2,
       week: 7,
-      weekday: 5,
+      weekday: 4,
     };
 
     it("Hour of day extraction", () => {
@@ -139,7 +139,7 @@ describe("Hour Indexing", () => {
       expect(getTemporalValue(dateInfo, TIME_INDEXING.WEEK)).toEqual(7);
     });
     it("Weekday extraction", () => {
-      expect(getTemporalValue(dateInfo, TIME_INDEXING.WEEKDAY)).toEqual(5);
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.WEEKDAY)).toEqual(4);
     });
   });
 });

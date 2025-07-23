@@ -49,7 +49,7 @@ describe("Filter Combination Logic", () => {
 
   // Mock date/time data for a year (simplified - just marking months and weekdays)
   const mockValues = Array.from({ length: 365 }, (_, i) => {
-    return new Date(Date.UTC(2024, 0, 1 + i)); // Start from Jan 1, 2024 UTC
+    return new UTCDate(Date.UTC(2024, 0, 1 + i)); // Start from Jan 1, 2024 UTC
   });
 
   const mockDatesInfo = extractDatesInfo(mockValues);

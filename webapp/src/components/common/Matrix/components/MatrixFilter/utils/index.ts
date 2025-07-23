@@ -447,6 +447,7 @@ export function getTemporalValue(date: DateInfo, indexingType: TimeIndexingType)
 
 export function extractDateInfo(date: Date): DateInfo {
   const dayOfYear = getDayOfYear(date);
+  const weekDay = date.getDay();
   return {
     dayOfYear: dayOfYear,
     hourOfYear: getHourOfYear(date),
@@ -454,7 +455,7 @@ export function extractDateInfo(date: Date): DateInfo {
     week: getWeekFromDayOfYear(dayOfYear),
     month: date.getMonth() + 1,
     dayHour: date.getHours(),
-    weekday: date.getDay() + 1,
+    weekday: weekDay === 0 ? 7 : weekDay, // we want monday = 1, Sunday = 7
   };
 }
 

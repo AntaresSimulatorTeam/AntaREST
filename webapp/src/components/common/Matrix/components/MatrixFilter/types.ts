@@ -69,9 +69,9 @@ export interface DateInfo {
   hourOfYear: number;
   dayOfMonth: number;
   week: number;
-  month: number;
-  dayHour: number;
-  weekday: number;
+  month: number; // 1-12
+  dayHour: number; // 0-23
+  weekday: number; // Monday is 1, Sunday 7
 }
 
 export interface RowFilterProps extends FilterSectionProps {
