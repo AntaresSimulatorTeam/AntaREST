@@ -13,7 +13,7 @@ import ast
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer, model_validator
+from pydantic import BeforeValidator, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStorageValuesCoherenceError
@@ -273,7 +273,7 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
 HOURS_TYPE: TypeAlias = list[list[int]] | list[int]
 
 
-def _hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
+def hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
     def _checks_compliance(x: Any) -> None:
         if not isinstance(x, int) or (x < 0 or x > 168):
             raise ValueError(f"Hours must be integers between 0 and 168, got {x}")
@@ -289,17 +289,7 @@ def _hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
     return value  # type: ignore
 
 
-def _hours_serializer(value: HOURS_TYPE) -> str:
-    if not value:
-        return "[]"
-
-    if isinstance(value[0], int):
-        return str(value)
-
-    return ", ".join(str(v) for v in value)
-
-
-Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(_hours_parser), PlainSerializer(_hours_serializer)]
+Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(hours_parser)]
 
 
 class STStorageAdditionalConstraint(AntaresBaseModel):

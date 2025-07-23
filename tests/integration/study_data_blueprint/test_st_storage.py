@@ -817,15 +817,15 @@ class TestSTStorage:
         res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c1", "variable": "netting", "operator": "less", "hours": "[2, 3], [148]", "enabled": True},
-            {"id": "c2", "variable": "netting", "operator": "less", "hours": "[]", "enabled": False},
+            {"id": "c1", "variable": "netting", "operator": "less", "hours": [[2, 3], [148]], "enabled": True},
+            {"id": "c2", "variable": "netting", "operator": "less", "hours": [], "enabled": False},
         ]
 
         body = [{"name": "c3", "hours": [1, 2, 57], "operator": "equal", "variable": "injection"}]
         res = client.post(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c3", "variable": "injection", "operator": "equal", "hours": "[1, 2, 57]", "enabled": True}
+            {"id": "c3", "variable": "injection", "operator": "equal", "hours": [1, 2, 57], "enabled": True}
         ]
 
         # Update a constraint
@@ -833,7 +833,7 @@ class TestSTStorage:
         res = client.put(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c3", "variable": "netting", "operator": "equal", "hours": "[1, 2, 57]", "enabled": False}
+            {"id": "c3", "variable": "netting", "operator": "equal", "hours": [1, 2, 57], "enabled": False}
         ]
 
         # Delete all constraints inside area `fr`

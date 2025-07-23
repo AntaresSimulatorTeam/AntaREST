@@ -905,7 +905,7 @@ COMMANDS = [
                             "name": "c3",
                             "variable": "withdrawal",
                             "operator": "greater",
-                            "hours": "[1, 2, 3, 4], [12, 13]",
+                            "hours": [[1, 2, 3, 4], [12, 13]],
                         }
                     ],
                 }

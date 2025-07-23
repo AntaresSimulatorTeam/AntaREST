@@ -9,20 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional
+from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer
 
 from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
+    HOURS_TYPE,
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
-    Hours,
     STStorage,
     STStorageAdditionalConstraint,
     check_attributes_coherence,
+    hours_parser,
     initialize_st_storage,
     validate_st_storage_against_version,
 )
@@ -79,6 +80,19 @@ def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dic
 ##########################
 
 
+def _hours_serializer(value: HOURS_TYPE) -> str:
+    if not value:
+        return "[]"
+
+    if isinstance(value[0], int):
+        return str(value)
+
+    return ", ".join(str(v) for v in value)
+
+
+HoursIni: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(hours_parser), PlainSerializer(_hours_serializer)]
+
+
 class STStorageAdditionalConstraintFileData(AntaresBaseModel):
     """
     Short-term storage additional constraint data parsed from INI file.
@@ -89,7 +103,7 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
     cluster: LowerCaseId
     variable: AdditionalConstraintVariable
     operator: AdditionalConstraintOperator
-    hours: Hours
+    hours: HoursIni
     enabled: bool = True
 
     def to_model(self, constraint_id: str) -> tuple[str, STStorageAdditionalConstraint]:
