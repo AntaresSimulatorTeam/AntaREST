@@ -19,7 +19,13 @@ from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, is_url_writeable
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+    is_url_writeable,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -52,25 +58,25 @@ class CreateUserResource(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        url = [item for item in self.data.path.split("/") if item]
+        resource_type = self.data.resource_type
+        res_path = self.data.path
+        url = [item for item in res_path.split("/") if item]
         study_tree = study_data.tree
         user_node = cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
-            return CommandOutput(
-                status=False, message=f"you are not allowed to create a resource here: {self.data.path}"
-            )
+            return command_failed(message=f"you are not allowed to create a resource here: {res_path}")
         try:
             study_tree.get_node(["user"] + url)
         except ChildNotFoundError:
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            last_value = b"" if self.data.resource_type == ResourceType.FILE else {}
+            last_value = b"" if resource_type == ResourceType.FILE else {}
             nested_dict: JSON = {url[-1]: last_value}
             for key in reversed(url[:-1]):
                 nested_dict = {key: nested_dict}
             study_tree.save({"user": nested_dict})
         else:
-            return CommandOutput(status=False, message=f"the given resource already exists: {self.data.path}")
-        return CommandOutput(status=True, message="ok")
+            return command_failed(message=f"the given resource already exists: {res_path}")
+        return command_succeeded(message=f"{resource_type} {res_path} has been successfully created. ")
 
     @override
     def to_dto(self) -> CommandDTO:
