@@ -46,7 +46,7 @@ AREAS_REQUESTS__IND = [
             "areas_ids": "de,fr,it",
             "columns_names": "",
         },
-        "test-02.result.tsv2",
+        "test-02.result.tsv",
     ),
     (
         {
@@ -97,7 +97,7 @@ AREAS_REQUESTS__IND = [
             "frequency": "hourly",
             "columns_names": "COSt,NODu",
         },
-        "test-07.result.tsv2",
+        "test-07.result.tsv",
     ),
 ]
 
@@ -244,7 +244,7 @@ AREAS_REQUESTS__ALL = [
             "areas_ids": "de,fr,it",
             "columns_names": "",
         },
-        "test-02-all.result.tsv2",
+        "test-02-all.result.tsv",
     ),
     (
         {
@@ -293,7 +293,7 @@ AREAS_REQUESTS__ALL = [
             "frequency": "daily",
             "columns_names": "COsT,NoDU",
         },
-        "test-07-all.result.tsv2",
+        "test-07-all.result.tsv",
     ),
     (
         {
@@ -302,7 +302,7 @@ AREAS_REQUESTS__ALL = [
             "frequency": "monthly",
             "columns_names": "COsT,NoDU",
         },
-        "test-08-all.result.tsv2",
+        "test-08-all.result.tsv",
     ),
 ]
 
