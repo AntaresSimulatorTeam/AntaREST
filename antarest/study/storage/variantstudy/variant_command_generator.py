@@ -54,7 +54,9 @@ class VariantCommandGenerator:
     ) -> GenerationResultInfoDTO:
         stopwatch = StopWatch()
         # Apply commands
-        results: GenerationResultInfoDTO = GenerationResultInfoDTO(success=True, details=[])
+        results: GenerationResultInfoDTO = GenerationResultInfoDTO(
+            success=True, details=[], should_invalidate_cache=False
+        )
 
         logger.info("Applying commands")
         study_id = "-" if metadata is None else metadata.id
@@ -91,6 +93,10 @@ class VariantCommandGenerator:
             if not output.status:
                 logger.error(f"Command {cmd.command_name} failed: {output.message}")
                 break
+
+            # Checks if the command successfully updated the config. If not, change the `results` object
+            if output.should_invalidate_cache:
+                results.should_invalidate_cache = True
 
         results.success = all(detail["status"] for detail in results.details)  # type: ignore
 

@@ -56,6 +56,7 @@ class GenerationResultInfoDTO(AntaresBaseModel):
 
     success: bool
     details: MutableSequence[DetailsDTO]
+    should_invalidate_cache: bool
 
 
 class CommandDTOAPI(AntaresBaseModel):
