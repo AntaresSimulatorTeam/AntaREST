@@ -62,7 +62,7 @@ class UpdateRawFile(ICommand):
             return command_failed(message=f"Study node at path {self.target} is invalid")
 
         study_data.tree.save(base64.decodebytes(self.b64Data.encode("utf-8")), url)
-        return command_succeeded(message=f"File {self.target} updated successfully")
+        return command_succeeded(message=f"File {self.target} updated successfully", should_invalidate_cache=True)
 
     @override
     def to_dto(self) -> CommandDTO:
