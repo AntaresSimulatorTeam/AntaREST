@@ -22,6 +22,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
     command_failed,
+    command_succeeded,
     is_url_writeable,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -61,7 +62,7 @@ class RemoveUserResource(ICommand):
         except ChildNotFoundError:
             return command_failed(message="the given path doesn't exist")
 
-        return CommandOutput(status=True, message="ok")
+        return command_succeeded(message=f"Resource {self.data.path} removed successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:

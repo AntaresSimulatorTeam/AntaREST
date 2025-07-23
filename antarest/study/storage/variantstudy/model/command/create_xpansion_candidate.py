@@ -19,6 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
@@ -61,7 +62,7 @@ class CreateXpansionCandidate(ICommand):
         candidates_data = {"user": {"expansion": {"candidates": candidates}}}
         study_data.tree.save(candidates_data)
 
-        return CommandOutput(status=True, message="ok")
+        return command_succeeded(message=f"Candidate {self.candidate.name} created successfully")
 
     @override
     def to_dto(self) -> CommandDTO:
