@@ -76,7 +76,6 @@ export interface DateInfo {
 
 export interface RowFilterProps extends FilterSectionProps {
   datesInfo?: DateInfo[];
-  isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   onAddFilter?: () => void;
   onRemoveFilter?: (id: string) => void;

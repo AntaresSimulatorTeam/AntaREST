@@ -184,7 +184,6 @@ function MatrixFilter(
             filter={filter}
             setFilter={setFilter}
             datesInfo={datesInfo}
-            isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
           />
 

@@ -68,7 +68,6 @@ function RowFilter({
   filter,
   setFilter,
   datesInfo,
-  isTimeSeries,
   timeFrequency,
   onRemoveFilter,
   filterId,
