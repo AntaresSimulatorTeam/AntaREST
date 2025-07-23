@@ -128,11 +128,11 @@ class SnapshotGenerator:
             self.repository.save(variant_study)
 
             if results.should_invalidate_cache:
-                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
-                update_cache(self.cache, variant_study_id, data)
-            else:
                 # We need to remove the cache
                 remove_from_cache(self.cache, variant_study_id)
+            else:
+                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+                update_cache(self.cache, variant_study_id, data)
 
         except Exception:
             remove_from_cache(self.cache, variant_study_id)
