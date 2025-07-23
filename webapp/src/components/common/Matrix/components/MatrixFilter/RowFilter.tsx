@@ -83,11 +83,7 @@ function RowFilter({
     filterId,
   });
 
-  const { valuesByIndexType } = useTemporalData({
-    datesInfo,
-    isTimeSeries,
-    timeFrequency,
-  });
+  const valuesByIndexType = useTemporalData(datesInfo);
 
   const state = useMemo<RowFilterState>(() => {
     const rowFilter = filter.rowsFilters.find((rf) => rf.id === filterId) || filter.rowsFilters[0];

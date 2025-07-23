@@ -13,18 +13,12 @@
  */
 
 import { useMemo } from "react";
-import type { TimeFrequencyType } from "../../../shared/types";
 import { TIME_INDEXING } from "../constants";
 import { getDefaultRangeForIndexType } from "../utils/dateUtils";
 import type { DateInfo } from "@/components/common/Matrix/components/MatrixFilter/types";
 import { INDEX_TYPE_TO_DATEINFO_PROPERTY } from "@/components/common/Matrix/components/MatrixFilter/utils";
-interface UseTemporalDataProps {
-  datesInfo?: DateInfo[];
-  isTimeSeries: boolean;
-  timeFrequency?: TimeFrequencyType;
-}
 
-export function useTemporalData({ datesInfo }: UseTemporalDataProps) {
+export function useTemporalData(datesInfo?: DateInfo[]) {
   const indexTypeRanges = useMemo(() => {
     return Object.values(TIME_INDEXING).reduce(
       (acc, type) => {
@@ -103,9 +97,5 @@ export function useTemporalData({ datesInfo }: UseTemporalDataProps) {
     return result;
   }, [datesInfo, indexTypeRanges, temporalValues]);
 
-  return {
-    indexTypeRanges,
-    valuesByIndexType,
-    temporalValues,
-  };
+  return valuesByIndexType;
 }

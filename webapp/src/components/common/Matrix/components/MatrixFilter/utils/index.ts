@@ -253,7 +253,7 @@ export function getFilteredTemporalOptions(
  * Applies AND logic between different indexingTypes
  *
  * @param filter - The filter state containing row filters configuration
- * @param datesInfo - Array of date/time strings for temporal indexing
+ * @param datesInfo - Array of date infos for temporal filtering
  * @param isTimeSeries - Whether the data represents a time series
  * @param timeFrequency - The time frequency of the data
  * @param totalRows - Total number of rows in the dataset
