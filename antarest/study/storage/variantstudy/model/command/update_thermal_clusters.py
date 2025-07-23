@@ -14,6 +14,7 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.core.exceptions import ThermalClusterConfigNotFound
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdates,
     update_thermal_cluster,
@@ -62,7 +63,11 @@ class UpdateThermalClusters(ICommand):
         memory_mapping = {}
 
         for area_id, value in self.cluster_properties.items():
-            all_thermals_per_area = study_data.get_all_thermals_for_area(area_id)
+            try:
+                all_thermals_per_area = study_data.get_all_thermals_for_area(area_id)
+            except ThermalClusterConfigNotFound:
+                return command_failed(f"Area '{area_id}' does not exist")
+
             existing_ids = {th.id.lower(): th for th in all_thermals_per_area}
 
             new_clusters = []
