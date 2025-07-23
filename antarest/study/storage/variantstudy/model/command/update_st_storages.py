@@ -14,7 +14,7 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import STStorageConfigNotFound
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.sts_model import (
     STStorageUpdates,
     update_st_storage,
@@ -65,7 +65,7 @@ class UpdateSTStorages(ICommand):
         for area_id, value in self.storage_properties.items():
             try:
                 all_storages_per_area = study_data.get_all_st_storages_for_area(area_id)
-            except STStorageConfigNotFound:
+            except ChildNotFoundError:
                 return command_failed(f"The area '{area_id}' is not found.")
 
             existing_ids = {storage.id: storage for storage in all_storages_per_area}
