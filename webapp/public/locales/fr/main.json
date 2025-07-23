@@ -888,7 +888,7 @@
   "tableMode.type.renewables": "Renouvelables",
   "tableMode.type.st-storages": "Stockages court terme",
   "tableMode.type.binding-constraints": "Contraintes couplantes",
-  "tableMode.type.st-storages-additional-constraints": "Contraintes additionnelles de stockages court-terme"
+  "tableMode.type.st-storages-additional-constraints": "Contraintes additionnelles de stockages court-terme",
   "matrix": {
     "filter": {
       "filterData": "Filtrer les données",
