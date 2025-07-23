@@ -84,7 +84,7 @@ function RowFilter({
   });
 
   const { valuesByIndexType } = useTemporalData({
-    datesInfo: datesInfo,
+    datesInfo,
     isTimeSeries,
     timeFrequency,
   });

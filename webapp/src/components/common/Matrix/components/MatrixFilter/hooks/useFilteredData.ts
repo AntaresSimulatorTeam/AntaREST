@@ -119,7 +119,7 @@ const createDefaultCriteria = R.memoizeWith(
  *
  * @param props - The configuration object for filtering
  * @param props.filter - The filter state containing active status and filter configurations
- * @param props.dateTime - Array of date/time strings for time-based filtering
+ * @param props.datesInfo - Array of dates info for time-based filtering
  * @param props.isTimeSeries - Whether the data represents a time series
  * @param props.timeFrequency - The frequency of the time series data
  * @param props.rowCount - Total number of rows in the dataset

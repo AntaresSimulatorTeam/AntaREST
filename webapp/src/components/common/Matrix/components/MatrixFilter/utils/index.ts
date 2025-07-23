@@ -278,7 +278,7 @@ export function processRowFilters(
     return getTemporalIndices({
       filter,
       rowFilter: rowsFilters[0],
-      datesInfo: datesInfo,
+      datesInfo,
       isTimeSeries,
       timeFrequency,
       totalRows,
@@ -293,7 +293,7 @@ export function processRowFilters(
       getTemporalIndices({
         filter,
         rowFilter,
-        datesInfo: datesInfo,
+        datesInfo,
         isTimeSeries,
         timeFrequency,
         totalRows,

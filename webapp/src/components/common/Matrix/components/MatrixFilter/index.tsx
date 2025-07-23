@@ -66,7 +66,7 @@ function MatrixFilter(
   // Filtered data based on current filter settings
   const currentFilteredData = useFilteredData({
     filter,
-    datesInfo: datesInfo,
+    datesInfo,
     isTimeSeries,
     timeFrequency,
     rowCount,
