@@ -103,13 +103,16 @@ class RawStudyService(AbstractStorageService):
         study = self.study_factory.create_from_fs(path, is_managed(metadata), study_id="")
         try:
             raw_meta = study.tree.get(["study", "antares"])
+            if metadata.additional_data and metadata.additional_data.editor:
+                raw_meta["editor"] = metadata.additional_data.editor
+                study.tree.save(raw_meta, ["study", "antares"])
+
             metadata.name = raw_meta["caption"]
             metadata.version = str(raw_meta["version"])
             metadata.created_at = datetime.utcfromtimestamp(raw_meta["created"])
             metadata.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
 
             metadata.additional_data = self._read_additional_data_from_files(study)
-
         except Exception as e:
             logger.error(
                 "Failed to fetch study %s raw metadata!",
@@ -125,6 +128,7 @@ class RawStudyService(AbstractStorageService):
                     metadata.additional_data = StudyAdditionalData()
                 metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
+                metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
 
             else:
                 raise e
@@ -241,6 +245,7 @@ class RawStudyService(AbstractStorageService):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
+        editor: str,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -252,6 +257,7 @@ class RawStudyService(AbstractStorageService):
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
+            editor: The name of the editor that created the destination study.
 
         Returns:
             The newly created study.
@@ -268,7 +274,8 @@ class RawStudyService(AbstractStorageService):
         copy_output_folders(src_path / "output", dest_path / "output", with_outputs, output_ids)
 
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
-        update_antares_info(dest_study, study.tree, update_author=False)
+
+        update_antares_info(dest_study, study.tree, update_author=False, editor=editor)
 
         return dest_study
 
