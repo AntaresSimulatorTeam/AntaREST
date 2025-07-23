@@ -1290,17 +1290,39 @@ class TestSnapshotGenerator:
         assert cache.get(cache_key) is not None
         starting_cache = cache.get(cache_key)
         assert starting_cache is not None
-        # Performs a little modification in memory for the next tests
-        starting_cache["output_path"] = starting_cache["output_path"].parent / "snapshot" / "output"
-
         # Generates the snapshot
         results = generator.generate_snapshot(variant_study.id, denormalize=False)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
-        assert cache.get(cache_key) == starting_cache
+        generated_cache = cache.get(cache_key)
+        # Performs a little modification in memory just to check that the caches are the same.
+        generated_cache["output_path"] = generated_cache["output_path"].parent.parent / "output"
+        assert generated_cache == starting_cache
+
+        # Add a `create_cluster` command
+        version = StudyVersion.parse(variant_study.version)
+        variant_study_service.append_commands(
+            variant_study.id,
+            [
+                CommandDTO(
+                    action="create_cluster",
+                    args={"area_id": "north", "cluster_name": "my_cluster", "parameters": {}},
+                    study_version=version,
+                )
+            ],
+        )
+
+        # Generates the snapshot
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
+        assert not results.should_invalidate_cache
+        # Ensures the cache was modified accordingly
+        new_cache = cache.get(cache_key)
+        thermals = new_cache["areas"]["north"]["thermals"]
+        assert len(thermals) == 1
+        assert thermals[0]["name"] == "my_cluster"
 
         # Add an `update_config` command
-        version = StudyVersion.parse(variant_study.version)
         variant_study_service.append_commands(
             variant_study.id,
             [
