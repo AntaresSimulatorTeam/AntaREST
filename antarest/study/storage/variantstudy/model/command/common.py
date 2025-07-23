@@ -23,15 +23,16 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 @dataclass(frozen=True)
 class CommandOutput:
     status: bool
+    should_invalidate_cache: bool
     message: str = ""
 
 
 def command_failed(message: str) -> CommandOutput:
-    return CommandOutput(False, message)
+    return CommandOutput(False, False, message)
 
 
-def command_succeeded(message: str) -> CommandOutput:
-    return CommandOutput(True, message)
+def command_succeeded(message: str, should_invalidate_cache: bool = False) -> CommandOutput:
+    return CommandOutput(True, should_invalidate_cache, message)
 
 
 class FilteringOptions:
