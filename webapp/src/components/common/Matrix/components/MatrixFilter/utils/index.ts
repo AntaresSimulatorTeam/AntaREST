@@ -14,8 +14,7 @@
 
 import type { TFunction } from "i18next";
 import * as R from "ramda";
-import { TimeFrequency } from "../../../shared/constants";
-import type { DateTimes, TimeFrequencyType } from "../../../shared/types";
+import type { TimeFrequencyType } from "../../../shared/types";
 import {
   FILTER_OPERATORS,
   FILTER_TYPES,
@@ -23,6 +22,7 @@ import {
   TIME_INDEXING,
 } from "../constants";
 import type {
+  DateInfo,
   FilterState,
   IndexedValue,
   RowFilter,
@@ -32,7 +32,8 @@ import type {
   TimeIndexingType,
 } from "../types";
 import { getLocalizedTimeLabels } from "./dateUtils";
-import type { DateInfo } from "@/components/common/Matrix/components/MatrixFilter/hooks/useTemporalData";
+import { getDayOfYear } from "date-fns";
+import { getHourOfYear, getWeekFromDayOfYear } from "@/utils/date/dateUtils";
 
 const createRowIndices = R.memoizeWith(
   (size: number) => String(size),
@@ -118,24 +119,21 @@ const createIndexedValues = R.memoizeWith(
  */
 export function getTemporalIndices({
   rowFilter,
-  dateTime,
+  datesInfo,
   isTimeSeries,
   timeFrequency,
   totalRows,
 }: TemporalIndexingParams): number[] {
   // Use simple indices for non-time series data
-  if (!isTimeSeries || !dateTime?.length) {
+  if (!isTimeSeries || !datesInfo?.length) {
     const indices = createIndexedValues(totalRows);
     return applyRowFilter(rowFilter, indices, totalRows);
   }
 
   // Extract temporal values from dates
-  const temporalIndices = dateTime
+  const temporalIndices = datesInfo
     .map((date, index) => {
-      if (timeFrequency === TimeFrequency.Annual) {
-        return { index, value: index + 1 };
-      }
-      const value = extractValueFromDate(date, rowFilter.indexingType);
+      const value = getTemporalValue(date, rowFilter.indexingType);
       return { index, value };
     })
     .filter((item): item is IndexedValue => item !== null);
@@ -255,7 +253,7 @@ export function getFilteredTemporalOptions(
  * Applies AND logic between different indexingTypes
  *
  * @param filter - The filter state containing row filters configuration
- * @param dateTime - Array of date/time strings for temporal indexing
+ * @param datesInfo - Array of date/time strings for temporal indexing
  * @param isTimeSeries - Whether the data represents a time series
  * @param timeFrequency - The time frequency of the data
  * @param totalRows - Total number of rows in the dataset
@@ -263,7 +261,7 @@ export function getFilteredTemporalOptions(
  */
 export function processRowFilters(
   filter: FilterState,
-  dateTime: DateInfo[] | undefined,
+  datesInfo: DateInfo[] | undefined,
   isTimeSeries: boolean,
   timeFrequency: TimeFrequencyType | undefined,
   totalRows: number,
@@ -280,7 +278,7 @@ export function processRowFilters(
     return getTemporalIndices({
       filter,
       rowFilter: rowsFilters[0],
-      dateTime,
+      datesInfo: datesInfo,
       isTimeSeries,
       timeFrequency,
       totalRows,
@@ -295,7 +293,7 @@ export function processRowFilters(
       getTemporalIndices({
         filter,
         rowFilter,
-        dateTime,
+        datesInfo: datesInfo,
         isTimeSeries,
         timeFrequency,
         totalRows,
@@ -424,7 +422,7 @@ export function parseRangeInput(input: string): number[] {
   return values;
 }
 
-// Define mapping from indexing type to parsed data property
+// Define mapping from indexing type to date info used for filtering
 export const INDEX_TYPE_TO_DATEINFO_PROPERTY: Record<string, keyof DateInfo> = {
   [TIME_INDEXING.DAY_OF_YEAR]: "dayOfYear",
   [TIME_INDEXING.HOUR_YEAR]: "hourOfYear",
@@ -435,7 +433,31 @@ export const INDEX_TYPE_TO_DATEINFO_PROPERTY: Record<string, keyof DateInfo> = {
   [TIME_INDEXING.WEEKDAY]: "weekday",
 };
 
-export function extractTemporalValue(date: DateInfo, indexingType: TimeIndexingType): number {
+/**
+ * Retrieves the temporal value from a given date object based on the specified indexing type.
+ *
+ * @param {DateInfo} date - The date object.
+ * @param {TimeIndexingType} indexingType - The type of value we want to extract.
+ * @return {number} The extracted temporal value from the date object.
+ */
+export function getTemporalValue(date: DateInfo, indexingType: TimeIndexingType): number {
   const property = INDEX_TYPE_TO_DATEINFO_PROPERTY[indexingType];
-  return date[property] as number;
+  return date[property];
+}
+
+export function extractDateInfo(date: Date): DateInfo {
+  const dayOfYear = getDayOfYear(date);
+  return {
+    dayOfYear: dayOfYear,
+    hourOfYear: getHourOfYear(date),
+    dayOfMonth: date.getDate(),
+    week: getWeekFromDayOfYear(dayOfYear),
+    month: date.getMonth() + 1,
+    dayHour: date.getHours(),
+    weekday: date.getDay() + 1,
+  };
+}
+
+export function extractDatesInfo(dateTimes: Date[]): DateInfo[] {
+  return dateTimes.map(extractDateInfo);
 }

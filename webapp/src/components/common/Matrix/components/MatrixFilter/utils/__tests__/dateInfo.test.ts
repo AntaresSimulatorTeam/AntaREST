@@ -12,10 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { formatTemporalValue } from "@/utils/date/matrixDateUtils";
-import { TIME_INDEXING } from "../constants";
-import { extractValueFromDate, getDefaultRangeForIndexType } from "../utils/dateUtils";
 import { UTCDate } from "@date-fns/utc";
+import {
+  extractDateInfo,
+  getTemporalValue,
+} from "@/components/common/Matrix/components/MatrixFilter/utils";
+import type { TimeIndexingType } from "@/components/common/Matrix/components/MatrixFilter/types";
+import { getDefaultRangeForIndexType } from "@/components/common/Matrix/components/MatrixFilter/utils/dateUtils";
+import { TIME_INDEXING } from "@/components/common/Matrix/components/MatrixFilter/constants";
+import { expect } from "vitest";
+
+function extractValueFromDate(date: Date, indexing: TimeIndexingType): number {
+  const dateInfo = extractDateInfo(date);
+  return getTemporalValue(dateInfo, indexing);
+}
 
 describe("Hour Indexing", () => {
   describe("Hour of Year (HOUR_YEAR)", () => {
@@ -82,20 +92,54 @@ describe("Hour Indexing", () => {
       const hour = extractValueFromDate(date, TIME_INDEXING.DAY_HOUR);
       expect(hour).toBe(23);
     });
+  });
 
-    it("should format hour 0 as '00:00'", () => {
-      const formatted = formatTemporalValue(0, TIME_INDEXING.DAY_HOUR);
-      expect(formatted).toBe("00:00");
+  describe("Date info extraction", () => {
+    it("Basic test", () => {
+      const date = new UTCDate("2024-02-15T23:00:00Z");
+      expect(extractDateInfo(date)).toEqual({
+        dayHour: 23,
+        dayOfMonth: 15,
+        dayOfYear: 46,
+        hourOfYear: 1104,
+        month: 2,
+        week: 7,
+        weekday: 5,
+      });
     });
+  });
 
-    it("should format hour 12 as '12:00'", () => {
-      const formatted = formatTemporalValue(12, TIME_INDEXING.DAY_HOUR);
-      expect(formatted).toBe("12:00");
+  describe("Temporal value extraction", () => {
+    const dateInfo = {
+      dayHour: 23,
+      dayOfMonth: 15,
+      dayOfYear: 46,
+      hourOfYear: 1104,
+      month: 2,
+      week: 7,
+      weekday: 5,
+    };
+
+    it("Hour of day extraction", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.DAY_HOUR)).toEqual(23);
     });
-
-    it("should format hour 23 as '23:00'", () => {
-      const formatted = formatTemporalValue(23, TIME_INDEXING.DAY_HOUR);
-      expect(formatted).toBe("23:00");
+    it("Hour of year extraction", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.HOUR_YEAR)).toEqual(1104);
+    });
+    it("Day of month", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.DAY_OF_MONTH)).toEqual(15);
+    });
+    it("Day of year", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.DAY_OF_YEAR)).toEqual(46);
+    });
+    it("Mont extraction", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.MONTH)).toEqual(2);
+    });
+    it("Week extraction", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.WEEK)).toEqual(7);
+    });
+    it("Weekday extraction", () => {
+      expect(getTemporalValue(dateInfo, TIME_INDEXING.WEEKDAY)).toEqual(5);
     });
   });
 });

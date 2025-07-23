@@ -14,7 +14,6 @@
 
 import type { DateTimes, TimeFrequencyType } from "../../shared/types";
 import type { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "./constants";
-import type { DateInfo } from "@/components/common/Matrix/components/MatrixFilter/hooks/useTemporalData";
 
 export type FilterType = (typeof FILTER_TYPES)[keyof typeof FILTER_TYPES];
 export type FilterOperatorType = (typeof FILTER_OPERATORS)[keyof typeof FILTER_OPERATORS];
@@ -65,8 +64,18 @@ export interface ColumnFilterProps extends FilterSectionProps {
   columnCount: number;
 }
 
+export interface DateInfo {
+  dayOfYear: number;
+  hourOfYear: number;
+  dayOfMonth: number;
+  week: number;
+  month: number;
+  dayHour: number;
+  weekday: number;
+}
+
 export interface RowFilterProps extends FilterSectionProps {
-  dateTime?: DateInfo[];
+  datesInfo?: DateInfo[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   onAddFilter?: () => void;
@@ -85,21 +94,10 @@ export interface SelectionSummaryProps {
   filteredData: FilterCriteria;
 }
 
-export interface DateInfo {
-  date: Date;
-  dayOfYear: number;
-  hourOfYear: number;
-  dayOfMonth: number;
-  week: number;
-  month: number;
-  dayHour: number;
-  weekday: number;
-}
-
 export interface TemporalIndexingParams {
   filter: FilterState;
   rowFilter: RowFilter;
-  dateTime?: DateInfo[];
+  datesInfo?: DateInfo[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   totalRows: number;

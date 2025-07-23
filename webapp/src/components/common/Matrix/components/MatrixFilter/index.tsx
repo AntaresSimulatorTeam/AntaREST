@@ -28,29 +28,11 @@ import MultiRowFilter from "./MultiRowFilter";
 import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
 import { COMPONENT_DIMENSIONS, DESIGN_TOKENS, DRAWER_STYLES } from "./styles";
-import type { MatrixFilterProps, DateInfo } from "./types";
-import { getMatrixDimensions } from "./utils";
-import { getDayOfYear } from "date-fns";
-import { getHourOfYear, getWeekFromDayOfYear } from "@/utils/date/dateUtils";
+import type { MatrixFilterProps } from "./types";
+import { extractDatesInfo, getMatrixDimensions } from "./utils";
 
 export interface MatrixFilterHandle {
   toggle: () => void;
-}
-
-function extractDatesInfo(dateTimes: Date[]): DateInfo[] {
-  return dateTimes.map((date) => {
-    const dayOfYear = getDayOfYear(date);
-    return {
-      date,
-      dayOfYear: dayOfYear,
-      hourOfYear: getHourOfYear(date),
-      dayOfMonth: date.getDate(),
-      week: getWeekFromDayOfYear(dayOfYear),
-      month: date.getMonth() + 1,
-      dayHour: date.getHours(),
-      weekday: date.getDay() + 1,
-    };
-  });
 }
 
 function MatrixFilter(
@@ -201,7 +183,7 @@ function MatrixFilter(
           <MultiRowFilter
             filter={filter}
             setFilter={setFilter}
-            dateTime={datesInfo}
+            datesInfo={datesInfo}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
           />

@@ -27,7 +27,7 @@ import type { RowFilterProps } from "./types";
 function MultiRowFilter({
   filter,
   setFilter,
-  dateTime,
+  datesInfo,
   isTimeSeries,
   timeFrequency,
 }: RowFilterProps) {
@@ -108,7 +108,7 @@ function MultiRowFilter({
           <RowFilter
             filter={filter}
             setFilter={setFilter}
-            dateTime={dateTime}
+            datesInfo={datesInfo}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
             filterId={rowFilter.id}

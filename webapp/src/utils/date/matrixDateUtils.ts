@@ -12,11 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { getDate, getDayOfYear, getHours, getMonth } from "date-fns";
 import type { TFunction } from "i18next";
-import { toError } from "../fnUtils";
-import { DAYS_IN, HOURS_IN, MONTH_NAMES, type SupportedLocale, WEEKDAY_NAMES } from "./constants";
-import { getHourOfYear, getWeekdayIndex, getWeekFromDayOfYear } from "./dateUtils";
+import { DAYS_IN, HOURS_IN } from "./constants";
 
 // Time indexing types from matrix constants
 export const TIME_INDEXING = {
@@ -127,47 +124,4 @@ export function createLocalizedTemporalLabels(
 export function isValidTemporalValue(value: number, indexingType: TimeIndexingType): boolean {
   const range = getTemporalRange(indexingType);
   return value >= range.min && value <= range.max;
-}
-
-/**
- * Format temporal value for display
- *
- * @param value - The temporal value
- * @param indexingType - The temporal indexing type
- * @param format - Long or short format
- * @param locale - Locale for formatting
- * @returns Formatted string
- */
-export function formatTemporalValue(
-  value: number,
-  indexingType: TimeIndexingType,
-  format: "long" | "short" = "short",
-  locale: SupportedLocale = "en",
-): string {
-  if (!isValidTemporalValue(value, indexingType)) {
-    return String(value);
-  }
-
-  switch (indexingType) {
-    case TIME_INDEXING.MONTH:
-      return MONTH_NAMES[locale][format][value - 1];
-
-    case TIME_INDEXING.WEEKDAY: {
-      // Convert Monday=1 to array index
-      const arrayIndex = value === 7 ? 0 : value;
-      return WEEKDAY_NAMES[locale][format][arrayIndex];
-    }
-
-    case TIME_INDEXING.DAY_HOUR:
-      // Format hour value (0-23) as "00:00" to "23:00"
-      // This provides standard 24-hour time notation for better UX
-      // Examples: 0 -> "00:00", 12 -> "12:00", 23 -> "23:00"
-      return `${String(value).padStart(2, "0")}:00`;
-
-    case TIME_INDEXING.WEEK:
-      return `Week ${value}`;
-
-    default:
-      return String(value);
-  }
 }

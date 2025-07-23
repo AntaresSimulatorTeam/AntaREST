@@ -14,9 +14,7 @@
 
 import { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "../../constants";
 import type { FilterOperatorType, FilterState, FilterType, TimeIndexingType } from "../../types";
-import { processRowFilters } from "../index";
-import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
-import type { DateTimes } from "@/components/common/Matrix/shared/types";
+import { extractDatesInfo, processRowFilters } from "../index";
 import { UTCDate } from "@date-fns/utc";
 
 describe("Filter Combination Logic", () => {
@@ -54,11 +52,7 @@ describe("Filter Combination Logic", () => {
     return new Date(Date.UTC(2024, 0, 1 + i)); // Start from Jan 1, 2024 UTC
   });
 
-  const mockDateTime: DateTimes = {
-    values: mockValues,
-    first_week_size: 0,
-    level: TimeFrequency.Daily,
-  };
+  const mockDatesInfo = extractDatesInfo(mockValues);
 
   describe("Mixed Type Filters (AND between types, OR within types)", () => {
     it("should apply AND logic between different indexingTypes", () => {
@@ -75,7 +69,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // January 2024 has 31 days, and contains 4 or 5 Mondays
       // We expect only the Mondays in January
@@ -104,7 +98,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result).toEqual([]);
     });
 
@@ -122,7 +116,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Verify all results are weekends in summer months
       for (const index of result) {
@@ -150,7 +144,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should include all days in January OR March
       expect(result.length).toBe(62); // January (31) + March (31) = 62 days
@@ -182,7 +176,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should include only Mondays in January OR March
       for (const index of result) {
@@ -214,7 +208,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should include only weekends in March OR September
       for (const index of result) {
@@ -243,7 +237,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should have 12 results (one 1st day per month)
       expect(result.length).toBe(12);
@@ -264,7 +258,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result.length).toBe(365); // Should show all rows when list is empty
     });
 
@@ -283,7 +277,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result.length).toBe(365); // All rows should be shown
 
       // Test mixing empty and non-empty filters
@@ -300,7 +294,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const mixedResult = processRowFilters(mixedFilter, mockDateTime, true, undefined, 365);
+      const mixedResult = processRowFilters(mixedFilter, mockDatesInfo, true, undefined, 365);
       expect(mixedResult.length).toBe(30); // Should show all days in June
     });
 
@@ -313,13 +307,13 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result.length).toBe(31); // July has 31 days
     });
 
     it("should handle no filters", () => {
       const filter = createMockFilter([]);
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result.length).toBe(365); // All rows
     });
 
@@ -342,7 +336,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should only include Fridays in the first half of July
       for (const index of result) {
@@ -377,7 +371,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should include only Tuesdays and Thursdays in January, March, or May
       for (const index of result) {
@@ -409,7 +403,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // Should include days 1-5 OR 28-31 in June only
       for (const index of result) {
@@ -440,7 +434,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
 
       // With OR logic within same type, should include days where (day > 15) OR (day < 5)
       // This includes days 1-4 and 16-31 of each month
@@ -476,7 +470,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, mockDateTime, true, undefined, 365);
+      const result = processRowFilters(filter, mockDatesInfo, true, undefined, 365);
       expect(result).toEqual([]);
     });
 
@@ -486,11 +480,7 @@ describe("Filter Combination Logic", () => {
         return new UTCDate(Date.UTC(2024, 0, 1, i, 0, 0));
       });
 
-      const hourlyDateTime: DateTimes = {
-        values: hourlyValues,
-        first_week_size: 0,
-        level: TimeFrequency.Hourly,
-      };
+      const hourlyDatesInfo = extractDatesInfo(hourlyValues);
 
       const filter = createMockFilter([
         {
@@ -505,7 +495,7 @@ describe("Filter Combination Logic", () => {
         },
       ]);
 
-      const result = processRowFilters(filter, hourlyDateTime, true, undefined, 24);
+      const result = processRowFilters(filter, hourlyDatesInfo, true, undefined, 24);
 
       // Should include hours 0-2 OR 22-23 (5 total hours)
       const resultHours = result.map((index) => new Date(hourlyValues[index]).getUTCHours());

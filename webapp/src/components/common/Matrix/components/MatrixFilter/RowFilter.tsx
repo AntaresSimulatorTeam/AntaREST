@@ -67,7 +67,7 @@ interface RowFilterState {
 function RowFilter({
   filter,
   setFilter,
-  dateTime,
+  datesInfo,
   isTimeSeries,
   timeFrequency,
   onRemoveFilter,
@@ -84,7 +84,7 @@ function RowFilter({
   });
 
   const { valuesByIndexType } = useTemporalData({
-    datesInfo: dateTime,
+    datesInfo: datesInfo,
     isTimeSeries,
     timeFrequency,
   });
