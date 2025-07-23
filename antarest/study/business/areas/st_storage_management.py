@@ -27,6 +27,7 @@ from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintCreation,
+    STStorageAdditionalConstraintsMap,
     STStorageAdditionalConstraintUpdates,
     STStorageCreation,
     STStorageUpdate,
@@ -323,9 +324,7 @@ class STStorageManager:
     # Additional constraints part
     ##########################
 
-    def get_all_additional_constraints(
-        self, study: StudyInterface
-    ) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
+    def get_all_additional_constraints(self, study: StudyInterface) -> STStorageAdditionalConstraintsMap:
         """
         Gets all short-term storage additional constraints inside the study.
 
@@ -400,9 +399,9 @@ class STStorageManager:
 
     def update_additional_constraints(
         self, study: StudyInterface, update_constraints_by_areas: STStorageAdditionalConstraintUpdates
-    ) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
+    ) -> STStorageAdditionalConstraintsMap:
         # Checks the constraint exist and builds the response.
-        new_constraints: dict[str, dict[str, list[STStorageAdditionalConstraint]]] = {}
+        new_constraints: STStorageAdditionalConstraintsMap = {}
         existing_constraints = study.get_study_dao().get_all_st_storage_additional_constraints()
         for area_id, value in update_constraints_by_areas.items():
             if area_id not in existing_constraints:

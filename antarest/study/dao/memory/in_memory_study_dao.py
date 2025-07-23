@@ -22,7 +22,11 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -96,7 +100,7 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
-        self._st_storages_constraints: dict[str, dict[str, list[STStorageAdditionalConstraint]]] = {}
+        self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
         self._st_storages_constraints_terms: Dict[AdditionalConstraintKey, str] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
@@ -446,7 +450,7 @@ class InMemoryStudyDao(StudyDao):
         del self._st_storages[cluster_key(area_id, storage.id)]
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
         return self._st_storages_constraints
 
     @override

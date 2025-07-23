@@ -15,7 +15,11 @@ from typing import Sequence
 
 import pandas as pd
 
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -80,7 +84,7 @@ class ReadOnlySTStorageDao(ABC):
     ##########################
 
     @abstractmethod
-    def get_all_st_storage_additional_constraints(self) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
         raise NotImplementedError()
 
     @abstractmethod

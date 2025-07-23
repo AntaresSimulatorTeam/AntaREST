@@ -17,7 +17,11 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorageConfigNotFound, STStorageNotFound
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
@@ -267,7 +271,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data.config.areas[area_id].st_storages.remove(storage)
 
     @override
-    def get_all_st_storage_additional_constraints(self) -> dict[str, dict[str, list[STStorageAdditionalConstraint]]]:
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
         file_study = self.get_file_study()
         path = ["input", "st-storage", "constraints"]
         try:
