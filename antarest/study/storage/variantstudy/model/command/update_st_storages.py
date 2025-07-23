@@ -68,7 +68,7 @@ class UpdateSTStorages(ICommand):
             except STStorageConfigNotFound:
                 return command_failed(f"The area '{area_id}' is not found.")
 
-            existing_ids = {storage.id.lower(): storage for storage in all_storages_per_area}
+            existing_ids = {storage.id: storage for storage in all_storages_per_area}
 
             new_storages = []
             for storage_id, new_properties in value.items():
