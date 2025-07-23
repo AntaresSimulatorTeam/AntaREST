@@ -1288,12 +1288,16 @@ class TestSnapshotGenerator:
         # Checks the cache content
         cache_key = f"{CacheConstants.STUDY_FACTORY}/{variant_study.id}"
         assert cache.get(cache_key) is not None
+        starting_cache = cache.get(cache_key)
+        assert starting_cache is not None
+        # Performs a little modification in memory for the next tests
+        starting_cache["output_path"] = starting_cache["output_path"].parent / "snapshot" / "output"
 
         # Generates the snapshot
         results = generator.generate_snapshot(variant_study.id, denormalize=False)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
-        assert cache.get(cache_key) is not None
+        assert cache.get(cache_key) == starting_cache
 
         # Add an `update_config` command
         version = StudyVersion.parse(variant_study.version)
