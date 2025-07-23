@@ -889,6 +889,7 @@ class TestSnapshotGenerator:
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1020,6 +1021,7 @@ class TestSnapshotGenerator:
                     },
                 ],
                 "success": True,
+                "should_invalidate_cache": False,
             }
         ]
 
@@ -1052,6 +1054,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1167,6 +1170,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1245,6 +1249,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),

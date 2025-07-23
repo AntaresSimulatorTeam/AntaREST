@@ -165,6 +165,7 @@ class TestVariantStudyService:
         results = generator.generate_snapshot(saved_id, denormalize=False)
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
