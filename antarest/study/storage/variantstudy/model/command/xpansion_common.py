@@ -26,7 +26,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_succeeded
 
 
 def get_resource_dir(resource_type: XpansionResourceFileType) -> list[str]:
@@ -48,9 +48,8 @@ def apply_create_resource_commands(
         raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
     study_data.tree.save(data=data, url=url + [filename])
-    return CommandOutput(
-        status=True,
-        message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created.",
+    return command_succeeded(
+        message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created."
     )
 
 

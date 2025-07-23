@@ -19,7 +19,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.utils import update_antares_info
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_failed
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -72,10 +72,7 @@ class VariantCommandGenerator:
                 output = applier(cmd, data, listener)
             except Exception as e:
                 # Unhandled exception
-                output = CommandOutput(
-                    status=False,
-                    message=f"Error while applying command {cmd.command_name}",
-                )
+                output = command_failed(message=f"Error while applying command {cmd.command_name}")
                 logger.error(output.message, exc_info=e)
 
             # noinspection PyTypeChecker
