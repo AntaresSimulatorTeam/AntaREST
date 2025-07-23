@@ -371,17 +371,19 @@ class STStorageManager:
 
         Args:
             study: The study object.
-            area_id: The area ID.
+            area_id: The area ID where the constraints will be created.
+            storage_id: The storage ID referenced inside the constraints to create.
             constraints: List of constraints to create.
         """
         created_constraints = [create_st_storage_constraint(c) for c in constraints]
 
-        # Checks we're not duplicating existing constraints
+        # Checks we're not duplicating existing constraints or creating 2 constraints with the same names
         existing_constraints = study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
         existing_ids = {c.id for c in existing_constraints}
         for constraint in created_constraints:
             if constraint.id in existing_ids:
                 raise DuplicateSTStorageConstraintName(area_id, constraint.id)
+            existing_ids.add(constraint.id)
 
         # Apply the command
         command = CreateSTStorageAdditionalConstraints(

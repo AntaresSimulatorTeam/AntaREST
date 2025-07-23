@@ -275,18 +275,19 @@ HOURS_TYPE: TypeAlias = list[list[int]] | list[int]
 
 def hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
     def _checks_compliance(x: Any) -> None:
-        if not isinstance(x, int) or (x < 0 or x > 168):
+        if not isinstance(x, int) or not (0 <= x <= 168):
             raise ValueError(f"Hours must be integers between 0 and 168, got {x}")
 
     if isinstance(value, str):
         value = ast.literal_eval(value)
+        assert isinstance(value, (list, tuple))
     for item in value:
         if isinstance(item, list):
             for subitem in item:
                 _checks_compliance(subitem)
         else:
             _checks_compliance(item)
-    return value  # type: ignore
+    return value
 
 
 Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(hours_parser)]
@@ -300,9 +301,9 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: LowerCaseId
-    variable: AdditionalConstraintVariable
-    operator: AdditionalConstraintOperator
-    hours: Hours
+    variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
+    operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
+    hours: Hours = []
     enabled: bool = True
 
 
@@ -316,9 +317,9 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: ItemName
-    variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
-    operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
-    hours: Hours = []
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    hours: Optional[Hours] = None
     enabled: Optional[bool] = None
 
 

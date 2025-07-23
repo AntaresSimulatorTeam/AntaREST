@@ -984,8 +984,8 @@ class TestTableMode:
             )
             assert res.status_code == 200
             assert res.json() == {
-                "fr / tesla c1": {"variable": "netting", "operator": "greater", "hours": [2, 3], "enabled": True},
-                "it / storage3 c3": {"variable": "withdrawal", "operator": "equal", "hours": [], "enabled": False},
+                "fr / tesla / c1": {"variable": "netting", "operator": "greater", "hours": [2, 3], "enabled": True},
+                "it / storage3 / c3": {"variable": "withdrawal", "operator": "equal", "hours": [], "enabled": False},
             }
 
 
