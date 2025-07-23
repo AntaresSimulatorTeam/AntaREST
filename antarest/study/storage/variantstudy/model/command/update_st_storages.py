@@ -14,6 +14,7 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.core.exceptions import STStorageConfigNotFound
 from antarest.study.business.model.sts_model import (
     STStorageUpdates,
     update_st_storage,
@@ -61,20 +62,22 @@ class UpdateSTStorages(ICommand):
         """
         memory_mapping = {}
 
-        all_storages = study_data.get_all_st_storages()
-
         for area_id, value in self.storage_properties.items():
-            if area_id not in all_storages:
+            try:
+                all_storages_per_area = study_data.get_all_st_storages_for_area(area_id)
+            except STStorageConfigNotFound:
                 return command_failed(f"The area '{area_id}' is not found.")
+
+            existing_ids = {storage.id.lower(): storage for storage in all_storages_per_area}
 
             new_storages = []
             for storage_id, new_properties in value.items():
-                if storage_id not in all_storages[area_id]:
+                if storage_id not in existing_ids:
                     return command_failed(
                         f"The short-term storage '{storage_id}' in the area '{area_id}' is not found."
                     )
 
-                current_storage = all_storages[area_id][storage_id]
+                current_storage = existing_ids[storage_id]
                 new_storage = update_st_storage(current_storage, new_properties, self.study_version)
                 new_storages.append(new_storage)
 
