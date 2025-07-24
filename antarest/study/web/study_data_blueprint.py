@@ -594,7 +594,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/general/form",
         tags=[APITag.study_data],
         summary="Get General config values for form",
-        response_model=GeneralConfig,
         response_model_exclude_none=True,
     )
     def get_general_form_values(uuid: str) -> GeneralConfig:

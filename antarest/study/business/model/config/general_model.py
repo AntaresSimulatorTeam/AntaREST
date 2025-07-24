@@ -11,12 +11,15 @@
 # This file is part of the Antares project.
 from typing import Annotated, Any, Dict, TypeAlias, cast
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, PositiveInt, model_validator
 from pydantic.alias_generators import to_camel
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.utils import GENERAL_DATA_PATH
+from antarest.study.model import STUDY_VERSION_7_1
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
@@ -135,3 +138,30 @@ def update_general_config(config: GeneralConfig, new_config: GeneralConfigUpdate
     new_properties = new_config.model_dump(mode="json", exclude_none=True)
     current_properties.update(new_properties)
     return GeneralConfig.model_validate(current_properties)
+
+
+def validate_general_config_version(config: GeneralConfig | GeneralConfigUpdate, version: StudyVersion) -> None:
+    if version > STUDY_VERSION_7_1:
+        if config.filtering is not None:
+            raise InvalidFieldForVersionError(f"Field filtering is not a valid field for study version {version}")
+
+    if version <= STUDY_VERSION_7_1:
+        for field in ["geographic_trimming", "thematic_trimming"]:
+            value = getattr(config, field)
+            if value is not None:
+                raise InvalidFieldForVersionError(f"Field '{field}' is not a valid field for study version {version}")
+
+
+def initialize_default_values(config: GeneralConfig, version: StudyVersion) -> None:
+    if version <= STUDY_VERSION_7_1:
+        if config.filtering is None:
+            _initialize_field_default(config, "geographic_trimming", False)
+
+    if version >= STUDY_VERSION_7_1:
+        for field in ["geographic_trimming", "thematic_trimming"]:
+            _initialize_field_default(config, field, False)
+
+
+def _initialize_field_default(cluster: GeneralConfig, field: str, default_value: Any) -> None:
+    if getattr(cluster, field) is None:
+        setattr(cluster, field, default_value)

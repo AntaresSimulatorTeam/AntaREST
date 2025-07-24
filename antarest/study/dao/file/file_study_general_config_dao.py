@@ -36,7 +36,7 @@ class FileStudyGeneralConfigDao(GeneralConfigDao, ABC):
 
         tree_data = file_study.tree.get(["settings", "generaldata"])
 
-        return parse_general_config(tree_data)
+        return parse_general_config(tree_data, file_study.config.version)
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:

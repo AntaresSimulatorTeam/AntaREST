@@ -21,6 +21,8 @@ from antarest.study.business.model.config.general_model import (
     GeneralConfig,
     Month,
     WeekDay,
+    initialize_default_values,
+    validate_general_config_version,
 )
 from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
@@ -74,10 +76,13 @@ class GeneralFileData(AntaresBaseModel):
         return cls.model_validate(data)
 
 
-def parse_general_config(data: Dict[str, Any]) -> GeneralConfig:
+def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> GeneralConfig:
     config_data = data.get("general", {})
     config_data.update(data.get("output", {}))
-    return GeneralFileData.model_validate(config_data).to_model()
+    config = GeneralFileData.model_validate(config_data).to_model()
+    validate_general_config_version(config, version)
+    initialize_default_values(config, version)
+    return config
 
 
 def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
