@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class UpdateOptimizationPreferences(ICommand):
     """
-    Command used to update multiple areas properties
+    Command used to update the optimization preferences
     """
 
     # Overloaded metadata
@@ -44,7 +44,7 @@ class UpdateOptimizationPreferences(ICommand):
         current_config = study_data.get_optimization_preferences()
         new_config = update_optimization_preferences(current_config, self.parameters)
         study_data.save_optimization_preferences(new_config)
-        return command_succeeded("General config updated successfully.")
+        return command_succeeded("Optimization config updated successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:

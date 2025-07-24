@@ -48,7 +48,7 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
 
     @classmethod
     def from_model(cls, config: OptimizationPreferences) -> "OptimizationPreferencesFileData":
-        return cls.model_validate(config.model_dump(exclude={"id"}))
+        return cls.model_validate(config.model_dump())
 
 
 def parse_optimization_preferences(data: Dict[str, Any]) -> OptimizationPreferences:
