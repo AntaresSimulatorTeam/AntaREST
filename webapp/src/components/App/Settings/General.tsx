@@ -15,11 +15,11 @@
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import Fieldset from "@/components/common/Fieldset";
 import Form from "@/components/common/Form";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { changeLanguage, getCurrentLanguage } from "@/utils/i18nUtils";
 import { useColorScheme } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { THEME_MODES } from "../shared/constants";
 
 function General() {
@@ -62,7 +62,6 @@ function General() {
                 label: t(`lang.${lang}`),
                 value: lang,
               }))}
-              variant="outlined"
             />
             <SelectFE
               label={t("global.theme")}
@@ -72,7 +71,6 @@ function General() {
                 ...option,
                 label: t(`global.${option.value}`),
               }))}
-              variant="outlined"
             />
           </Fieldset>
         </>

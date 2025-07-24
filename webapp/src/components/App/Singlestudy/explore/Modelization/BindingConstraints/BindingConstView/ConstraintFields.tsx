@@ -14,13 +14,13 @@
 
 import { type BindingConstraint, OPERATORS, OUTPUT_FILTERS, TIME_STEPS } from "./utils";
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import { Box, Button } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../../types/types";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";

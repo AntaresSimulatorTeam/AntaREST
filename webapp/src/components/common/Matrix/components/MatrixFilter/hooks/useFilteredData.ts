@@ -16,12 +16,12 @@ import * as R from "ramda";
 import { useMemo } from "react";
 import type { TimeFrequencyType } from "../../../shared/types";
 import { FILTER_OPERATORS, FILTER_TYPES } from "../constants";
-import type { FilterCriteria, FilterOperatorType, FilterState } from "../types";
+import type { DateInfo, FilterCriteria, FilterOperatorType, FilterState } from "../types";
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
   filter: FilterState;
-  dateTime?: string[];
+  datesInfo?: DateInfo[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   rowCount: number;
@@ -119,7 +119,7 @@ const createDefaultCriteria = R.memoizeWith(
  *
  * @param props - The configuration object for filtering
  * @param props.filter - The filter state containing active status and filter configurations
- * @param props.dateTime - Array of date/time strings for time-based filtering
+ * @param props.datesInfo - Array of dates info for time-based filtering
  * @param props.isTimeSeries - Whether the data represents a time series
  * @param props.timeFrequency - The frequency of the time series data
  * @param props.rowCount - Total number of rows in the dataset
@@ -128,7 +128,7 @@ const createDefaultCriteria = R.memoizeWith(
  */
 export function useFilteredData({
   filter,
-  dateTime,
+  datesInfo,
   isTimeSeries,
   timeFrequency,
   rowCount,
@@ -144,8 +144,8 @@ export function useFilteredData({
     const columnsIndices = filterColumns(filter.columnsFilter, columnCount);
 
     // Filter on rows
-    const rowsIndices = processRowFilters(filter, dateTime, isTimeSeries, timeFrequency, rowCount);
+    const rowsIndices = processRowFilters(filter, datesInfo, isTimeSeries, timeFrequency, rowCount);
 
     return { columnsIndices, rowsIndices };
-  }, [filter, dateTime, isTimeSeries, timeFrequency, rowCount, columnCount]);
+  }, [filter, datesInfo, isTimeSeries, timeFrequency, rowCount, columnCount]);
 }

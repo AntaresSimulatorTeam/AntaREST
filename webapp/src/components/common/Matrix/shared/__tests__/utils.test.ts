@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Column, TimeFrequency } from "../constants";
+import { Column, TIME_FREQUENCY_CONFIG, TimeFrequency } from "../constants";
 import {
   calculateMatrixAggregates,
   formatGridNumber,
@@ -25,6 +25,7 @@ import {
   AGGREGATE_CONFIG_CASES,
   AGGREGATE_TEST_CASES,
   COLUMN_TEST_CASES,
+  DATE_TIME_FORMAT_TEST_CASES,
   DATE_TIME_TEST_CASES,
   FORMAT_TEST_CASES,
 } from "./fixtures";
@@ -53,7 +54,11 @@ describe("Matrix Utils", () => {
   describe("DateTime Generation", () => {
     test.each(DATE_TIME_TEST_CASES)("generates correct $name", ({ config, expected }) => {
       const result = generateDateTime(config);
-      expect(result).toEqual(expected);
+      expect(result).toEqual({
+        values: expected,
+        first_week_size: config.first_week_size,
+        level: config.level,
+      });
     });
 
     describe("Daylight Saving Time handling", () => {
@@ -69,9 +74,8 @@ describe("Matrix Utils", () => {
         const result = generateDateTime(config);
 
         // Extract hours from the generated strings
-        const hours = result.map((dateStr) => {
-          const match = dateStr.match(/(\d{2}):00$/);
-          return match ? parseInt(match[1], 10) : -1;
+        const hours = result.values.map((date) => {
+          return date.getHours();
         });
 
         // Verify all hours are consecutive (starting from 00 of current day in UTC)
@@ -79,10 +83,6 @@ describe("Matrix Utils", () => {
         for (let i = 1; i < 24; i++) {
           expect(hours[i]).toBe(i);
         }
-
-        // Verify no duplicates
-        const uniqueResults = new Set(result);
-        expect(uniqueResults.size).toBe(24);
       });
     });
   });
@@ -152,5 +152,14 @@ describe("Matrix Utils", () => {
     test.each(AGGREGATE_CONFIG_CASES)("handles $name correctly", ({ aggregates, expected }) => {
       expect(getAggregateTypes(aggregates)).toEqual(expected);
     });
+  });
+});
+
+describe("DateTime formatting", () => {
+  test.each(DATE_TIME_FORMAT_TEST_CASES)("format correct $name", ({ input, expected }) => {
+    const result = input.values.map((date) =>
+      TIME_FREQUENCY_CONFIG[input.level].format(date, input.first_week_size),
+    );
+    expect(result).toEqual(expected);
   });
 });
