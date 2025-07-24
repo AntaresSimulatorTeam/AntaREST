@@ -51,12 +51,20 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
 
     def to_model(self, area_id: str, study_version: StudyVersion) -> HydroManagement:
         excluded_fields = _get_fields_to_exclude(study_version)
-        args = _get_args_from_file_data(self, area_id, excluded_fields)
-        return HydroManagement.model_validate(args)
+        initial_data = _parse_hydro_management(self, area_id, excluded_fields)
+        return HydroManagement.model_validate(initial_data)
 
     @classmethod
-    def from_model(cls, args: dict[str, Any]) -> "HydroManagementFileData":
-        return cls.model_validate(args)
+    def from_model(
+        cls,
+        hydro_management: HydroManagement,
+        current_file_data: dict[str, Any],
+        area_id: str,
+        study_version: StudyVersion,
+    ) -> "HydroManagementFileData":
+        excluded_fields = _get_fields_to_exclude(study_version)
+        updated_data = _serialize_hydro_management(hydro_management, current_file_data, area_id, excluded_fields)
+        return cls.model_validate(updated_data)
 
 
 class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
@@ -75,7 +83,7 @@ class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name
         return cls.model_validate(inflow_structure.model_dump(exclude={"id"}))
 
 
-def _get_args_from_file_data(
+def _parse_hydro_management(
     hydro_file_data: HydroManagementFileData, area_id: str, excluded_fields: set[str]
 ) -> dict[str, Any]:
     lower_area_id = area_id.lower()
@@ -86,23 +94,22 @@ def _get_args_from_file_data(
 
 
 def _serialize_hydro_management(
-    hydro_management: HydroManagement, area_id: str, current_file_data: dict[str, Any], version: StudyVersion
+    hydro_management: HydroManagement, current_file_data: dict[str, Any], area_id: str, excluded_fields: set[str]
 ) -> dict[str, Any]:
     lower_area_id = area_id.lower()
-    excluded_fields = _get_fields_to_exclude(version)
     hydro_data = hydro_management.model_dump(exclude_none=True, exclude=excluded_fields)
-    args = dict(current_file_data)
+    hydro_file_data = HydroManagementFileData.model_validate(current_file_data)
 
     for key, value in hydro_data.items():
-        current_dict = args.get(key, {})
+        current_dict = getattr(hydro_file_data, key, {})
         if current_dict is None:
             current_dict = {}
 
         current_dict[lower_area_id] = value
 
-        args[key] = current_dict
+        setattr(hydro_file_data, key, current_dict)
 
-    return args
+    return hydro_file_data.model_dump()
 
 
 def _get_fields_to_exclude(study_version: StudyVersion) -> set[str]:
@@ -132,14 +139,12 @@ def parse_inflow_structure(file_data: dict[str, Any]) -> InflowStructure:
 
 
 def serialize_hydro_management(
-    area_id: str, hydro_management: HydroManagement, file_data: dict[str, Any], version: StudyVersion
+    area_id: str, hydro_management: HydroManagement, file_data: dict[str, Any], study_version: StudyVersion
 ) -> dict[str, Any]:
-    validate_hydro_management_against_version(version, hydro_management)
-    hydro_file_data = HydroManagementFileData.model_validate(file_data)
-    current_file_data = hydro_file_data.model_dump()
-
-    updated_data = _serialize_hydro_management(hydro_management, area_id, current_file_data, version)
-    return hydro_file_data.from_model(updated_data).model_dump(mode="json", exclude_none=True, by_alias=True)
+    validate_hydro_management_against_version(study_version, hydro_management)
+    return HydroManagementFileData.from_model(hydro_management, file_data, area_id, study_version).model_dump(
+        mode="json", exclude_none=True, by_alias=True
+    )
 
 
 def serialize_inflow_structure(inflow_structure: InflowStructure) -> dict[str, Any]:
