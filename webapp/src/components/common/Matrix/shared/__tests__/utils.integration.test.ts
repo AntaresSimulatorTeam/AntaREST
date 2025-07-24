@@ -35,16 +35,10 @@ describe("DateTime Generation - Integration Tests", () => {
       const result = generateDateTime(config);
 
       // Extract hours
-      const hours = result.map((dateStr) => {
-        const match = dateStr.match(/(\d{2}):00$/);
-        return match ? match[1] : null;
-      });
+      const hours = result.values.map((date) => date.getHours());
 
       // In UTC, there should be no gap
-      expect(hours).toEqual(["00", "01", "02", "03", "04"]);
-
-      // Ensure no hour is skipped (particularly 02:00)
-      expect(result.some((r) => r.includes("02:00"))).toBe(true);
+      expect(hours).toEqual([0, 1, 2, 3, 4]);
     });
 
     test("should not duplicate hours during fall DST transition (Europe)", () => {
@@ -58,17 +52,10 @@ describe("DateTime Generation - Integration Tests", () => {
       const result = generateDateTime(config);
 
       // Extract hours
-      const hours = result.map((dateStr) => {
-        const match = dateStr.match(/(\d{2}):00$/);
-        return match ? match[1] : null;
-      });
+      const hours = result.values.map((date) => date.getHours());
 
       // In UTC, there should be no duplicate
-      expect(hours).toEqual(["00", "01", "02", "03", "04"]);
-
-      // Ensure all results are unique
-      const uniqueResults = new Set(result);
-      expect(uniqueResults.size).toBe(result.length);
+      expect(hours).toEqual([0, 1, 2, 3, 4]);
     });
 
     test("should generate 24 consecutive hours across DST boundary", () => {
@@ -82,10 +69,7 @@ describe("DateTime Generation - Integration Tests", () => {
       const result = generateDateTime(config);
 
       // Extract hours
-      const hours = result.map((dateStr) => {
-        const match = dateStr.match(/(\d{2}):00$/);
-        return match ? parseInt(match[1], 10) : -1;
-      });
+      const hours = result.values.map((date) => date.getHours());
 
       // Should have exactly 24 hours starting from 00 (current day in UTC)
       expect(hours.length).toBe(24);
@@ -110,16 +94,14 @@ describe("DateTime Generation - Integration Tests", () => {
       const result = generateDateTime(config);
 
       // Check that we have exactly 72 unique timestamps
-      const uniqueResults = new Set(result);
+      const uniqueResults = new Set(result.values);
       expect(uniqueResults.size).toBe(72);
 
       // Extract date and hour parts
-      const dateHours = result.map((dateStr) => {
-        const dateMatch = dateStr.match(/(\d{1,2}) ([A-Za-z]+)/);
-        const hourMatch = dateStr.match(/(\d{2}):00$/);
+      const dateHours = result.values.map((date) => {
         return {
-          day: dateMatch ? parseInt(dateMatch[1], 10) : -1,
-          hour: hourMatch ? parseInt(hourMatch[1], 10) : -1,
+          day: date.getDate(),
+          hour: date.getHours(),
         };
       });
 
@@ -151,12 +133,9 @@ describe("DateTime Generation - Integration Tests", () => {
       const result = generateDateTime(config);
 
       // Should still show consecutive hours in UTC
-      const hours = result.map((dateStr) => {
-        const match = dateStr.match(/(\d{2}):00$/);
-        return match ? match[1] : null;
-      });
+      const hours = result.values.map((date) => date.getHours());
 
-      expect(hours).toEqual(["00", "01", "02", "03", "04"]);
+      expect(hours).toEqual([0, 1, 2, 3, 4]);
     });
 
     test("should handle different time frequencies across DST", () => {
@@ -172,8 +151,9 @@ describe("DateTime Generation - Integration Tests", () => {
         level: TimeFrequency.Daily,
       };
       const dailyResult = generateDateTime(dailyConfig);
-      expect(dailyResult.length).toBe(14);
-      expect(new Set(dailyResult).size).toBe(14); // All unique
+      expect(dailyResult.level).toBe(TimeFrequency.Daily);
+      expect(dailyResult.values.length).toBe(14);
+      expect(new Set(dailyResult.values).size).toBe(14); // All unique
 
       // Test weekly frequency
       const weeklyConfig: DateTimeMetadataDTO = {
@@ -182,8 +162,9 @@ describe("DateTime Generation - Integration Tests", () => {
         level: TimeFrequency.Weekly,
       };
       const weeklyResult = generateDateTime(weeklyConfig);
-      expect(weeklyResult.length).toBe(4);
-      expect(new Set(weeklyResult).size).toBe(4); // All unique
+      expect(weeklyResult.level).toBe(TimeFrequency.Weekly);
+      expect(weeklyResult.values.length).toBe(4);
+      expect(new Set(weeklyResult.values).size).toBe(4); // All unique
     });
   });
 });

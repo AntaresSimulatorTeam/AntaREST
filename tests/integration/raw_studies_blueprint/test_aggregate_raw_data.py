@@ -440,41 +440,42 @@ class TestRawDataAggregationMCInd:
     Check the aggregation of Raw Data from studies outputs
     """
 
+    @pytest.mark.parametrize("params, expected_result_filename", AREAS_REQUESTS__IND)
     def test_area_aggregation(
         self,
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
+        params: dict,
+        expected_result_filename: str,
     ):
         """
         Test the aggregation of areas data
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in AREAS_REQUESTS__IND:
-            output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
-            assert res.status_code == 200, res.json()
-            download_id = res.json()
+        output_id = params.pop("output_id")
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
+        assert res.status_code == 200, res.json()
+        download_id = res.json()
 
-            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-            assert res.status_code == 200, res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
 
-            res = client.get(f"v1/downloads/{download_id}")
-
-            content = io.BytesIO(res.content)
-            df = pd.read_csv(content, sep=",")
-            resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
-            resource_file.parent.mkdir(exist_ok=True, parents=True)
-            if not resource_file.exists():
-                # create the resource to add it to non-regression tests
-                df.to_csv(resource_file, sep="\t", index=False)
-            expected_df = pd.read_csv(resource_file, sep="\t", header=0)
-            expected_df = expected_df.replace({np.nan: None})
-            # cast types of expected_df to match df
-            for col in expected_df.columns:
-                expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+        res = client.get(f"v1/downloads/{download_id}")
+        content = io.BytesIO(res.content)
+        df = pd.read_csv(content, sep=",")
+        resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
+        resource_file.parent.mkdir(exist_ok=True, parents=True)
+        if not resource_file.exists():
+            # create the resource to add it to non-regression tests
+            df.to_csv(resource_file, sep="\t", index=False)
+        expected_df = pd.read_csv(resource_file, sep="\t", header=0)
+        expected_df = expected_df.replace({np.nan: None})
+        # cast types of expected_df to match df
+        for col in expected_df.columns:
+            expected_df[col] = expected_df[col].astype(df[col].dtype)
+        pd.testing.assert_frame_equal(df, expected_df)
 
     def test_links_aggregation(
         self,
@@ -679,42 +680,44 @@ class TestRawDataAggregationMCAll:
     Check the aggregation of Raw Data from studies outputs in `economy/mc-all`
     """
 
+    @pytest.mark.parametrize("params, expected_result_filename", AREAS_REQUESTS__ALL)
     def test_area_aggregation(
         self,
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
+        params: dict,
+        expected_result_filename: str,
     ):
         """
         Test the aggregation of areas data
         """
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        for params, expected_result_filename in AREAS_REQUESTS__ALL:
-            output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
-            assert res.status_code == 200, res.json()
-            download_id = res.json()
+        output_id = params.pop("output_id")
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
+        assert res.status_code == 200, res.json()
+        download_id = res.json()
 
-            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-            assert res.status_code == 200, res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200, res.json()
 
-            res = client.get(f"v1/downloads/{download_id}")
-            assert res.status_code == 200, res.json()
+        res = client.get(f"v1/downloads/{download_id}")
+        assert res.status_code == 200, res.json()
 
-            content = io.BytesIO(res.content)
-            df = pd.read_csv(content, sep=",")
-            resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
-            resource_file.parent.mkdir(exist_ok=True, parents=True)
-            if not resource_file.exists():
-                # create the resource to add it to non-regression tests
-                df.to_csv(resource_file, sep="\t", index=False)
-            expected_df = pd.read_csv(resource_file, sep="\t", header=0)
-            expected_df = expected_df.replace({np.nan: None})
-            # cast types of expected_df to match df
-            for col in expected_df.columns:
-                expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+        content = io.BytesIO(res.content)
+        df = pd.read_csv(content, sep=",")
+        resource_file = ASSETS_DIR.joinpath(f"aggregate_areas_raw_data/{expected_result_filename}")
+        resource_file.parent.mkdir(exist_ok=True, parents=True)
+        if not resource_file.exists():
+            # create the resource to add it to non-regression tests
+            df.to_csv(resource_file, sep="\t", index=False)
+        expected_df = pd.read_csv(resource_file, sep="\t", header=0)
+        expected_df = expected_df.replace({np.nan: None})
+        # cast types of expected_df to match df
+        for col in expected_df.columns:
+            expected_df[col] = expected_df[col].astype(df[col].dtype)
+        pd.testing.assert_frame_equal(df, expected_df)
 
     def test_links_aggregation(
         self,
