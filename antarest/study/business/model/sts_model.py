@@ -270,7 +270,7 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-HOURS_TYPE: TypeAlias = list[list[int]] | list[int]
+HOURS_TYPE: TypeAlias = list[list[int]]
 
 
 def hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
@@ -281,12 +281,15 @@ def hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
     if isinstance(value, str):
         value = ast.literal_eval(value)
         assert isinstance(value, (list, tuple))
+    # We can have an iterable with only one element, ex: [1, 3]. We want to transform it to [[1, 3]].
+    if not value:
+        # Means we have this `[]`
+        return [[]]
+    if not isinstance(value[0], (list, tuple)):
+        value = [value]
     for item in value:
-        if isinstance(item, list):
-            for subitem in item:
-                _checks_compliance(subitem)
-        else:
-            _checks_compliance(item)
+        for subitem in item:
+            _checks_compliance(subitem)
     return value
 
 

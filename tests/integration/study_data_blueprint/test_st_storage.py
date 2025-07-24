@@ -825,7 +825,7 @@ class TestSTStorage:
         res = client.post(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c3", "variable": "injection", "operator": "equal", "hours": [1, 2, 57], "enabled": True}
+            {"id": "c3", "variable": "injection", "operator": "equal", "hours": [[1, 2, 57]], "enabled": True}
         ]
 
         # Update a constraint
@@ -833,7 +833,7 @@ class TestSTStorage:
         res = client.put(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c3", "variable": "netting", "operator": "equal", "hours": [1, 2, 57], "enabled": False}
+            {"id": "c3", "variable": "netting", "operator": "equal", "hours": [[1, 2, 57]], "enabled": False}
         ]
 
         # Delete all constraints inside area `fr`

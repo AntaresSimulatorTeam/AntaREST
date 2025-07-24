@@ -81,12 +81,6 @@ def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dic
 
 
 def _hours_serializer(value: HOURS_TYPE) -> str:
-    if not value:
-        return "[]"
-
-    if isinstance(value[0], int):
-        return str(value)
-
     return ", ".join(str(v) for v in value)
 
 
