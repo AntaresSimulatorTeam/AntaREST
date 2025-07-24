@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateStudyName } from "@/utils/studiesUtils";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import { Button, IconButton } from "@mui/material";
@@ -26,7 +27,6 @@ import { getGroups, getStudyVersionsFormatted } from "../../../redux/selectors";
 import type { StudyMetadata, StudyPublicMode } from "../../../types/types";
 import FormDialog from "../../common/dialogs/FormDialog";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
-import SelectFE from "../../common/fieldEditors/SelectFE";
 import StringFE from "../../common/fieldEditors/StringFE";
 import Fieldset from "../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../common/Form/types";

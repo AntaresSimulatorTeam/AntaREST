@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import UpgradeIcon from "@mui/icons-material/Upgrade";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,10 +20,8 @@ import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getStudyVersionsFormatted } from "../../../../../redux/selectors";
 import { upgradeStudy } from "../../../../../services/api/study";
 import type { StudyMetadata } from "../../../../../types/types";
-import Fieldset from "../../../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";
 import FormDialog from "../../../../common/dialogs/FormDialog";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
 
 interface Props {
   study: StudyMetadata;
@@ -73,9 +72,14 @@ function UpgradeStudyDialog({ study, onClose, open }: Props) {
       config={{ defaultValues }}
     >
       {({ control }) => (
-        <Fieldset fullFieldWidth>
-          <SelectFE name="version" label="Version" options={versionOptions} control={control} />
-        </Fieldset>
+        <SelectFE
+          name="version"
+          label="Version"
+          options={versionOptions}
+          control={control}
+          margin="dense"
+          fullWidth
+        />
       )}
     </FormDialog>
   );

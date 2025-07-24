@@ -14,7 +14,7 @@
 
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
-import NewSelectFE from "@/components/common/fieldEditors/NewSelectFE";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import Fieldset from "@/components/common/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
@@ -103,14 +103,12 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             response={outputsRes}
             ifPending={() => (
               <FieldSkeleton>
-                <NewSelectFE value="" />
+                <SelectFE value="" />
               </FieldSkeleton>
             )}
-            ifRejected={() => (
-              <NewSelectFE helperText={t("study.error.listOutputs")} error disabled />
-            )}
+            ifRejected={() => <SelectFE helperText={t("study.error.listOutputs")} error disabled />}
             ifFulfilled={(outputs) => (
-              <NewSelectFE
+              <SelectFE
                 name="outputIds"
                 control={control}
                 label={t("global.outputs")}
