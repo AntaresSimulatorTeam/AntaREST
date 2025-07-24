@@ -30,10 +30,6 @@ from antarest.study.business.model.renewable_cluster_model import RenewableClust
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
-    HydroManagementFileData,
-    InflowStructureFileData,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -239,20 +235,12 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties[area_id].inflow_structure
 
     @override
-    def save_hydro_management(self, area_id: str, hydro_data: HydroManagementFileData) -> None:
-        new_hydro_management = hydro_data.get_hydro_management(area_id, self.get_version())
-        updated_hydro_properties = self._hydro_properties[area_id].management_options.model_copy(
-            update=new_hydro_management.model_dump(exclude_none=True)
-        )
-        self._hydro_properties[area_id].management_options = updated_hydro_properties
+    def save_hydro_management(self, area_id: str, hydro_management: HydroManagement) -> None:
+        self._hydro_properties[area_id].management_options = hydro_management
 
     @override
-    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructureFileData) -> None:
-        inflow_structure = InflowStructure.model_construct(**inflow_data.model_dump(by_alias=True))
-        updated_hydro_properties = self._hydro_properties[area_id].inflow_structure.model_copy(
-            update=inflow_structure.model_dump()
-        )
-        self._hydro_properties[area_id].inflow_structure = updated_hydro_properties
+    def save_inflow_structure(self, area_id: str, inflow_structure: InflowStructure) -> None:
+        self._hydro_properties[area_id].inflow_structure = inflow_structure
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:

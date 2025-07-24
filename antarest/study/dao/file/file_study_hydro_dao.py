@@ -23,8 +23,10 @@ from antarest.study.business.model.hydro_model import (
 )
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
-    HydroManagementFileData,
-    InflowStructureFileData,
+    parse_hydro_management,
+    parse_inflow_structure,
+    serialize_hydro_management,
+    serialize_inflow_structure,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -41,11 +43,11 @@ class FileStudyHydroDao(HydroDao):
         """
         all_hydro_properties = {}
 
-        study_data = self.get_file_study()
-        hydro_management_file_data = HydroManagementFileData(**study_data.tree.get(HYDRO_PATH))
+        file_study = self.get_file_study()
+        file_data = file_study.tree.get(HYDRO_PATH)
 
-        for area_id in study_data.config.areas:
-            hydro_management = hydro_management_file_data.get_hydro_management(area_id, study_data.config.version)
+        for area_id in file_study.config.areas:
+            hydro_management = parse_hydro_management(area_id, file_data, file_study.config.version)
             inflow_structure = self.get_inflow_structure(area_id)
             hydro_properties = HydroProperties(management_options=hydro_management, inflow_structure=inflow_structure)
 
@@ -56,23 +58,25 @@ class FileStudyHydroDao(HydroDao):
     @override
     def get_hydro_management(self, area_id: str) -> HydroManagement:
         file_study = self.get_file_study()
-        hydro_manager = HydroManagementFileData(**self.get_file_study().tree.get(HYDRO_PATH))
-        return hydro_manager.get_hydro_management(area_id, file_study.config.version)
+        file_data = file_study.tree.get(HYDRO_PATH)
+        return parse_hydro_management(area_id, file_data, file_study.config.version)
 
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         file_study = self.get_file_study()
-        inflow_path = get_inflow_path(area_id)
-        inter_monthly_correlation = file_study.tree.get(inflow_path).get("intermonthly-correlation")
-        return InflowStructure(inter_monthly_correlation=inter_monthly_correlation)
+        file_data = file_study.tree.get(get_inflow_path(area_id))
+        return parse_inflow_structure(file_data)
 
     @override
-    def save_hydro_management(self, area_id: str, hydro_data: HydroManagementFileData) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(hydro_data.model_dump(by_alias=True, exclude_none=True), HYDRO_PATH)
+    def save_hydro_management(self, area_id: str, hydro_management: HydroManagement) -> None:
+        file_study = self.get_file_study()
+        file_data = file_study.tree.get(HYDRO_PATH)
+        file_data = serialize_hydro_management(area_id, hydro_management, file_data, file_study.config.version)
+        file_study.tree.save(file_data, HYDRO_PATH)
 
     @override
-    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructureFileData) -> None:
-        study_data = self.get_file_study()
+    def save_inflow_structure(self, area_id: str, inflow_structure: InflowStructure) -> None:
+        file_study = self.get_file_study()
         inflow_path = get_inflow_path(area_id)
-        study_data.tree.save(inflow_data.model_dump(by_alias=True), inflow_path)
+        file_data = serialize_inflow_structure(inflow_structure)
+        file_study.tree.save(file_data, inflow_path)

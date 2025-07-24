@@ -47,7 +47,7 @@ class TestUpdateHydroManagement:
             }
 
             # Update several properties
-            new_properties = HydroManagementUpdate.model_construct(inter_daily_breakdown=3.1, reservoir=True)
+            new_properties = HydroManagementUpdate.model_validate({"inter_daily_breakdown": 3.1, "reservoir": True})
             cmd = UpdateHydroManagement(
                 area_id="fr", properties=new_properties, command_context=command_context, study_version=study_version
             )
@@ -85,7 +85,7 @@ class TestUpdateHydroManagement:
                 # Ensures we can't give a 9.2 parameter inside a v8.8 command
                 with pytest.raises(
                     ValidationError,
-                    match="You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2",
+                    match="Field overflow_spilled_cost_difference is not a valid field for study version 8.8",
                 ):
                     UpdateHydroManagement(
                         area_id="fr",

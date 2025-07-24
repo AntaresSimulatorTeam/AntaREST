@@ -19,12 +19,10 @@ from antarest.study.business.model.hydro_model import (
     HYDRO_PATH,
     HydroManagementUpdate,
     update_hydro_management,
+    validate_hydro_management_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
-    get_hydro_management_file_data,
-    parse_hydro_management,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import parse_hydro_management
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -49,7 +47,7 @@ class UpdateHydroManagement(ICommand):
 
     @model_validator(mode="after")
     def validate_properties_against_version(self) -> "UpdateHydroManagement":
-        self.properties.validate_model_against_version(self.study_version)
+        validate_hydro_management_against_version(self.study_version, self.properties)
         return self
 
     @override
@@ -57,13 +55,10 @@ class UpdateHydroManagement(ICommand):
         file_study = study_data.get_file_study()
         file_data = file_study.tree.get(HYDRO_PATH)
 
-        hydro_file_data = get_hydro_management_file_data(file_data)
-        current_hydro_management = parse_hydro_management(hydro_file_data, self.area_id, file_study.config.version)
-
+        current_hydro_management = parse_hydro_management(self.area_id, file_data, file_study.config.version)
         updated_hydro_management = update_hydro_management(current_hydro_management, self.properties)
-        hydro_file_data.set_hydro_management(self.area_id, updated_hydro_management)
 
-        study_data.save_hydro_management(self.area_id, hydro_file_data)
+        study_data.save_hydro_management(self.area_id, updated_hydro_management)
 
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 

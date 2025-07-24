@@ -20,11 +20,7 @@ from antarest.study.business.model.hydro_model import (
     update_inflow_structure,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
-    InflowStructureFileData,
-    parse_inflow_structure,
-    serialize_inflow_structure,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.hydro import parse_inflow_structure
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -51,12 +47,12 @@ class UpdateInflowStructure(ICommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         file_study = study_data.get_file_study()
         path = get_inflow_path(self.area_id)
-
         file_data = file_study.tree.get(path)
+
         current_inflow = parse_inflow_structure(file_data)
-        inflow_structure = update_inflow_structure(current_inflow, self.properties)
-        updated_inflow = InflowStructureFileData(**serialize_inflow_structure(inflow_structure))
-        study_data.save_inflow_structure(self.area_id, updated_inflow)
+        updated_inflow_structure = update_inflow_structure(current_inflow, self.properties)
+
+        study_data.save_inflow_structure(self.area_id, updated_inflow_structure)
 
         return command_succeeded(f"Inflow properties in '{self.area_id}' updated.")
 

@@ -16,7 +16,13 @@ from pydantic import Field
 
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    InflowStructure,
+    initialize_hydro_management,
+    initialize_inflow_structure,
+    validate_hydro_management_against_version,
+)
 from antarest.study.model import STUDY_VERSION_9_2
 
 
@@ -43,43 +49,14 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
         default=None, alias="overflow spilled cost difference"
     )
 
-    def get_hydro_management(self, area_id: str, study_version: StudyVersion) -> HydroManagement:
-        excludes = self._get_fields_to_exclude(study_version)
+    def to_model(self, area_id: str, study_version: StudyVersion) -> HydroManagement:
+        excluded_fields = _get_fields_to_exclude(study_version)
+        args = _get_args_from_file_data(self, area_id, excluded_fields)
+        return HydroManagement.model_validate(args)
 
-        lower_area_id = area_id.lower()
-        args = {
-            key: values.get(lower_area_id)
-            for key, values in self.model_dump(mode="json", exclude=excludes).items()
-            if values and lower_area_id in values
-        }
-        args = self._add_default_values(args, study_version)
-        return HydroManagement(**args)
-
-    @staticmethod
-    def _get_fields_to_exclude(study_version: StudyVersion) -> set[str]:
-        excludes = set()
-        if study_version < STUDY_VERSION_9_2:
-            excludes.add("overflow_spilled_cost_difference")
-        return excludes
-
-    @staticmethod
-    def _add_default_values(data: dict[str, Any], study_version: StudyVersion) -> dict[str, Any]:
-        if study_version >= STUDY_VERSION_9_2 and "overflow_spilled_cost_difference" not in data:
-            data["overflow_spilled_cost_difference"] = 1
-        return data
-
-    def set_hydro_management(self, area_id: str, properties: HydroManagement) -> None:
-        lower_area_id = area_id.lower()
-        properties_dict = properties.model_dump(exclude_none=True)
-
-        for prop_key, prop_value in properties_dict.items():
-            current_dict = getattr(self, prop_key, {})
-            if current_dict is None:
-                current_dict = {}
-
-            current_dict[lower_area_id] = prop_value
-
-            setattr(self, prop_key, current_dict)
+    @classmethod
+    def from_model(cls, args: dict[str, Any]) -> "HydroManagementFileData":
+        return cls.model_validate(args)
 
 
 class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
@@ -90,29 +67,80 @@ class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name
         alias="intermonthly-correlation",
     )
 
+    def to_model(self) -> InflowStructure:
+        return InflowStructure.model_validate(self.model_dump(exclude_none=True))
 
-def parse_hydro_management(
-    hydro_file_data: HydroManagementFileData, area_id: str, study_version: StudyVersion
-) -> HydroManagement:
-    return hydro_file_data.get_hydro_management(area_id, study_version)
-
-
-def parse_inflow_structure(data: Any) -> InflowStructure:
-    inflow_data = InflowStructureFileData.model_validate(data)
-    return InflowStructure(**inflow_data.model_dump())
+    @classmethod
+    def from_model(cls, inflow_structure: InflowStructure) -> "InflowStructureFileData":
+        return cls.model_validate(inflow_structure.model_dump(exclude={"id"}))
 
 
-def serialize_hydro_management(hydro_management: HydroManagement) -> dict[str, Any]:
-    return hydro_management.model_dump()
+def _get_args_from_file_data(
+    hydro_file_data: HydroManagementFileData, area_id: str, excluded_fields: set[str]
+) -> dict[str, Any]:
+    lower_area_id = area_id.lower()
+    data = hydro_file_data.model_dump(mode="json", exclude=excluded_fields).items()
+
+    args = {key: values.get(lower_area_id) for key, values in data if values and lower_area_id in values}
+    return args
+
+
+def _serialize_hydro_management(
+    hydro_management: HydroManagement, area_id: str, current_file_data: dict[str, Any], version: StudyVersion
+) -> dict[str, Any]:
+    lower_area_id = area_id.lower()
+    excluded_fields = _get_fields_to_exclude(version)
+    hydro_data = hydro_management.model_dump(exclude_none=True, exclude=excluded_fields)
+    args = dict(current_file_data)
+
+    for key, value in hydro_data.items():
+        current_dict = args.get(key, {})
+        if current_dict is None:
+            current_dict = {}
+
+        current_dict[lower_area_id] = value
+
+        args[key] = current_dict
+
+    return args
+
+
+def _get_fields_to_exclude(study_version: StudyVersion) -> set[str]:
+    excludes = set()
+    if study_version < STUDY_VERSION_9_2:
+        excludes.add("overflow_spilled_cost_difference")
+    return excludes
+
+
+def _add_default_values(data: dict[str, Any], study_version: StudyVersion) -> dict[str, Any]:
+    if study_version >= STUDY_VERSION_9_2 and "overflow_spilled_cost_difference" not in data:
+        data["overflow_spilled_cost_difference"] = 1
+    return data
+
+
+def parse_hydro_management(area_id: str, file_data: dict[str, Any], study_version: StudyVersion) -> HydroManagement:
+    hydro_management = HydroManagementFileData.model_validate(file_data).to_model(area_id, study_version)
+    validate_hydro_management_against_version(study_version, hydro_management)
+    initialize_hydro_management(hydro_management, study_version)
+    return hydro_management
+
+
+def parse_inflow_structure(file_data: dict[str, Any]) -> InflowStructure:
+    inflow_structure = InflowStructureFileData.model_validate(file_data).to_model()
+    initialize_inflow_structure(inflow_structure)
+    return inflow_structure
+
+
+def serialize_hydro_management(
+    area_id: str, hydro_management: HydroManagement, file_data: dict[str, Any], version: StudyVersion
+) -> dict[str, Any]:
+    validate_hydro_management_against_version(version, hydro_management)
+    hydro_file_data = HydroManagementFileData.model_validate(file_data)
+    current_file_data = hydro_file_data.model_dump()
+
+    updated_data = _serialize_hydro_management(hydro_management, area_id, current_file_data, version)
+    return hydro_file_data.from_model(updated_data).model_dump(mode="json", exclude_none=True, by_alias=True)
 
 
 def serialize_inflow_structure(inflow_structure: InflowStructure) -> dict[str, Any]:
-    return inflow_structure.model_dump()
-
-
-def get_hydro_management_file_data(file_data: dict[str, Any]) -> HydroManagementFileData:
-    return HydroManagementFileData.model_construct(**file_data)
-
-
-def get_inflow_structure_file_data(inflow_structure: InflowStructure) -> InflowStructureFileData:
-    return InflowStructureFileData.model_validate(**serialize_inflow_structure(inflow_structure))
+    return InflowStructureFileData.from_model(inflow_structure).model_dump(exclude_none=True, by_alias=True)

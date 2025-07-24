@@ -17,10 +17,6 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
-    HydroManagementFileData,
-    InflowStructureFileData,
-)
 
 
 class ReadOnlyHydroDao(ABC):
@@ -39,9 +35,9 @@ class ReadOnlyHydroDao(ABC):
 
 class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
-    def save_hydro_management(self, area_id: str, hydro_data: HydroManagementFileData) -> None:
+    def save_hydro_management(self, area_id: str, hydro_data: HydroManagement) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructureFileData) -> None:
+    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructure) -> None:
         raise NotImplementedError()
