@@ -35,7 +35,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 # noinspection SpellCheckingInspection
 class CreateSTStorageAdditionalConstraints(ICommand):
     """
-    Command used to create several short-term storage constraints in an area.
+    Command used to create several short-term storage constraints for a given storage in an area.
     """
 
     # Overloaded metadata
@@ -66,6 +66,13 @@ class CreateSTStorageAdditionalConstraints(ICommand):
             )
 
         constraints = [create_st_storage_constraint(constraint) for constraint in self.constraints]
+
+        # Checks that there's unicity in the given constraints names
+        given_ids = set()
+        for constraint in constraints:
+            if constraint.id in given_ids:
+                return command_failed(f"Several constraints with the same id '{constraint.id}' were given")
+            given_ids.add(constraint.id)
 
         # Checks if the constraint already exists in the study
         existing_constraints = study_data.get_st_storage_additional_constraints(self.area_id, self.storage_id)

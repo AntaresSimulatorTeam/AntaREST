@@ -978,7 +978,7 @@ class TestTableMode:
             res = client.put(
                 f"/v1/studies/{internal_study_id}/table-mode/st-storages-additional-constraints",
                 json={
-                    "fr / tesla / c1": {"operator": "greater", "hours": [2, 3]},
+                    "fr / tesla / c1": {"operator": "greater", "hours": [[2, 3]]},
                     "it / storage3 / c3": {"variable": "withdrawal", "enabled": False},
                 },
             )

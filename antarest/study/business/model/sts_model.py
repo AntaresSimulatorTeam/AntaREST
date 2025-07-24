@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import ast
+import re
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
@@ -22,7 +22,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
 
 
 class STStorageGroup(EnumIgnoreCase):
@@ -270,30 +270,33 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-HOURS_TYPE: TypeAlias = list[list[int]]
+HoursType: TypeAlias = list[list[int]]
 
 
-def hours_parser(value: str | HOURS_TYPE) -> HOURS_TYPE:
+def hours_parser(value: str | HoursType) -> HoursType:
+    def _string_to_list(s: str) -> HoursType:
+        to_return = []
+        numbers_as_list = re.findall(r"\[(.*?)\]", s)
+        if numbers_as_list == [""]:
+            # Happens if the given string is `[]`
+            return [[]]
+        for numbers in numbers_as_list:
+            to_return.append([int(v) for v in numbers.split(",")])
+        return to_return
+
     def _checks_compliance(x: Any) -> None:
         if not isinstance(x, int) or not (0 <= x <= 168):
             raise ValueError(f"Hours must be integers between 0 and 168, got {x}")
 
     if isinstance(value, str):
-        value = ast.literal_eval(value)
-        assert isinstance(value, (list, tuple))
-    # We can have an iterable with only one element, ex: [1, 3]. We want to transform it to [[1, 3]].
-    if not value:
-        # Means we have this `[]`
-        return [[]]
-    if not isinstance(value[0], (list, tuple)):
-        value = [value]
+        value = _string_to_list(value)
     for item in value:
         for subitem in item:
             _checks_compliance(subitem)
     return value
 
 
-Hours: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(hours_parser)]
+Hours: TypeAlias = Annotated[HoursType, BeforeValidator(hours_parser)]
 
 
 class STStorageAdditionalConstraint(AntaresBaseModel):
@@ -306,7 +309,7 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     id: LowerCaseId
     variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
     operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
-    hours: Hours = []
+    hours: Hours = [[]]
     enabled: bool = True
 
 
@@ -342,8 +345,10 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
     enabled: Optional[bool] = None
 
 
-STStorageAdditionalConstraintUpdates = dict[LowerCaseId, dict[LowerCaseId, list[STStorageAdditionalConstraintUpdate]]]
 STStorageAdditionalConstraintsMap = dict[str, dict[str, list[STStorageAdditionalConstraint]]]
+
+# 2nd key corresponds to a short-term storage id
+STStorageAdditionalConstraintUpdates = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraintUpdate]]]
 
 
 def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:

@@ -47,8 +47,8 @@ class TestUpdateSTStorageAdditionalConstraint:
             area_id="fr",
             storage_id="sts_fr",
             constraints=[
-                STStorageAdditionalConstraintCreation(name="constraint"),
-                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[2, 4], enabled=False),
+                STStorageAdditionalConstraintCreation(name="constraint", hours=[[2, 4]]),
+                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[[2, 4]], enabled=False),
             ],
             study_version=version,
         )

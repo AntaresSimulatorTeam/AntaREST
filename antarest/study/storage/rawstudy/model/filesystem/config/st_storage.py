@@ -17,9 +17,9 @@ from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer
 from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
-    HOURS_TYPE,
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
+    HoursType,
     STStorage,
     STStorageAdditionalConstraint,
     check_attributes_coherence,
@@ -80,11 +80,11 @@ def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dic
 ##########################
 
 
-def _hours_serializer(value: HOURS_TYPE) -> str:
+def _hours_serializer(value: HoursType) -> str:
     return ", ".join(str(v) for v in value)
 
 
-HoursIni: TypeAlias = Annotated[HOURS_TYPE, BeforeValidator(hours_parser), PlainSerializer(_hours_serializer)]
+HoursIni: TypeAlias = Annotated[HoursType, BeforeValidator(hours_parser), PlainSerializer(_hours_serializer)]
 
 
 class STStorageAdditionalConstraintFileData(AntaresBaseModel):
@@ -112,6 +112,9 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
 
 
 def parse_st_storage_additional_constraint(constraint_id: str, data: Any) -> tuple[str, STStorageAdditionalConstraint]:
+    """
+    Returns a tuple containing the storage ID and the additional constraint object.
+    """
     return STStorageAdditionalConstraintFileData.model_validate(data).to_model(constraint_id)
 
 

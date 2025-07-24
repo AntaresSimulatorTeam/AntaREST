@@ -639,7 +639,7 @@ def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
             id="netting-1",
             variable=AdditionalConstraintVariable.NETTING,
             operator=AdditionalConstraintOperator.LESS,
-            hours=[1, 168],
+            hours=[[1, 168]],
             enabled=True,
         ),
     ]

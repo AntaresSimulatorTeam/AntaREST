@@ -47,7 +47,7 @@ class TestCreateSTStorageAdditionalConstraint:
             storage_id="sts_1",
             constraints=[
                 STStorageAdditionalConstraintCreation(name="constraint"),
-                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[2, 4], enabled=False),
+                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[[2, 4]], enabled=False),
             ],
             study_version=version,
         )
@@ -170,4 +170,19 @@ class TestCreateSTStorageAdditionalConstraint:
 
         # Create an object `STStorageAdditionalConstraintCreation` with wrong `hours`
         with pytest.raises(ValueError, match="Hours must be integers between 0 and 168, got 173"):
-            STStorageAdditionalConstraintCreation(name="c1", hours=[173])
+            STStorageAdditionalConstraintCreation(name="c1", hours=[[173]])
+
+        # Create 2 constraints with the same id in the same area
+        cmd = CreateSTStorageAdditionalConstraints(
+            command_context=command_context,
+            area_id="fr",
+            storage_id="sts_1",
+            constraints=[
+                STStorageAdditionalConstraintCreation(name="constraint"),
+                STStorageAdditionalConstraintCreation(name="Constraint???"),
+            ],
+            study_version=version,
+        )
+        output = cmd.apply(study)
+        assert not output.status
+        assert output.message == "Several constraints with the same id 'constraint' were given"
