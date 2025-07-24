@@ -147,9 +147,9 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     def delete_candidate(
         uuid: str,
         candidate_name: str,
-    ) -> Any:
+    ) -> None:
         logger.info(f"Deleting candidate {candidate_name} of the study {uuid}")
-        return study_service.delete_xpansion_candidate(uuid, candidate_name)
+        study_service.delete_xpansion_candidate(uuid, candidate_name)
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",

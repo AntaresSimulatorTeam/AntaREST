@@ -1,2 +1,2 @@
-area,cluster,timeId,levels,P.injection,P.withdrawal,CashFlow
+area,cluster,timeId,CashFlow - Euro,Levels - MWh,P-injection - MW,P-withdrawal - MW
 de,storage_1,1,0.000000,0.000000,0.000000,0.000000

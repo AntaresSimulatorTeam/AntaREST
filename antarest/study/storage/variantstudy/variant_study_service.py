@@ -786,6 +786,7 @@ class VariantStudyService(AbstractStorageService):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
+        editor: str,
     ) -> RawStudy:
         """
         Create a new variant study by copying a reference study.
@@ -797,6 +798,7 @@ class VariantStudyService(AbstractStorageService):
             destination_folder: Path where the destination study will be stored. If not specified, the destination path will be the same as the source study.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
+            editor: The name of the editor that created the destination study.
 
         Returns:
             The newly created study.
@@ -815,7 +817,7 @@ class VariantStudyService(AbstractStorageService):
             dest_output_path = Path(dest_study.path) / OUTPUT_RELATIVE_PATH
             copy_output_folders(src_path, dest_output_path, with_outputs, output_ids)
 
-        update_antares_info(dest_study, file_study.tree, update_author=True)
+        update_antares_info(dest_study, file_study.tree, update_author=True, editor=editor)
         return dest_study
 
     def _safe_generation(self, metadata: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:

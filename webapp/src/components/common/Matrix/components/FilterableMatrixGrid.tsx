@@ -86,7 +86,7 @@ function FilterableMatrixGrid(
   );
 
   // Determine if this is a time series based on dateTime presence
-  const isTimeSeries = !!dateTime && dateTime.length > 0;
+  const isTimeSeries = !!dateTime && dateTime.values.length > 0;
 
   return (
     <MatrixProvider {...contextValue}>
