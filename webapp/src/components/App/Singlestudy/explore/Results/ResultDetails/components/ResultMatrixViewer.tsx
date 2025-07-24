@@ -15,7 +15,11 @@
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Skeleton } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import type { EnhancedGridColumn, ResultMatrixDTO } from "@/components/common/Matrix/shared/types";
+import type {
+  DateTimes,
+  EnhancedGridColumn,
+  ResultMatrixDTO,
+} from "@/components/common/Matrix/shared/types";
 import type { UsePromiseResponse } from "@/hooks/usePromise";
 import type { MatrixIndex } from "@/types/types";
 import { toError } from "../../../../../../../utils/fnUtils";
@@ -36,7 +40,7 @@ interface ResultMatrixViewerProps {
   filteredData: number[][];
   resultColumns: EnhancedGridColumn[];
   matrixGridRef: React.RefObject<FilterableMatrixGridHandle>;
-  dateTime: string[] | undefined;
+  dateTime: DateTimes | undefined;
   dateTimeMetadata: MatrixIndex | undefined;
   year: number;
   setYear: (year: number) => void;
