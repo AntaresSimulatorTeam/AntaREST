@@ -893,6 +893,17 @@ COMMANDS = [
         None,
         id="update_xpansion_settings",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_GENERAL_CONFIG.value,
+            args={
+                "parameters": {"horizon": "2030", "first_week_day": "Monday", "year_by_year": True},
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_general_config",
+    ),
 ]
 
 

@@ -62,7 +62,7 @@ class GeneralConfig(AntaresBaseModel):
     mode: Mode = Mode.ECONOMY
     first_day: DayNumberType = 1
     last_day: DayNumberType = 365
-    horizon: str | int = ""
+    horizon: str = ""
     first_month: Month = Month.JANUARY
     first_week_day: WeekDay = WeekDay.MONDAY
     first_january: WeekDay = WeekDay.MONDAY

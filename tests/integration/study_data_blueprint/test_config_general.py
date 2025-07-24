@@ -45,7 +45,7 @@ class TestConfigGeneralForm:
             "firstJanuary": "Monday",
             "firstMonth": "january",
             "firstWeekDay": "Monday",
-            "horizon": 2030,
+            "horizon": "2030",
             "lastDay": 7,
             "leapYear": False,
             "mcScenario": True,
@@ -64,7 +64,7 @@ class TestConfigGeneralForm:
         internal_study_id: str,
     ):
         """Check `set_general_form_values` end point"""
-        obj = {"horizon": 2020}
+        obj = {"horizon": "2020"}
         res = client.put(
             f"/v1/studies/{internal_study_id}/config/general/form",
             headers={"Authorization": f"Bearer {user_access_token}"},

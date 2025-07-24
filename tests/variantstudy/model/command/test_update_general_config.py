@@ -22,7 +22,7 @@ class TestUpdateGeneralConfig:
         default_values = study.tree.get(["settings", "generaldata", "general"])
 
         args = {
-            "horizon": 2030,
+            "horizon": "2030",
         }
 
         properties = GeneralConfigUpdate.model_validate(args)
