@@ -1833,6 +1833,23 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_interface = study_service.get_study_interface(study)
         return study_service.st_storage_manager.get_additional_constraints(study_interface, area_id, storage_id)
 
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints/{constraint_id}",
+        tags=[APITag.study_data],
+        summary="Get a specific constraint relative to a short-term storage object",
+    )
+    def get_additional_constraint(
+        uuid: str, area_id: str, storage_id: str, constraint_id: str
+    ) -> STStorageAdditionalConstraint:
+        logger.info(
+            f"Getting additional constraint {constraint_id} for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_additional_constraint(
+            study_interface, area_id, storage_id, constraint_id
+        )
+
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
         tags=[APITag.study_data],
