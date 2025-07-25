@@ -22,7 +22,11 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -40,6 +44,12 @@ class ClusterKey:
     cluster_id: str
 
 
+@dataclass(frozen=True)
+class AdditionalConstraintKey:
+    area_id: str
+    constraint_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
@@ -47,6 +57,10 @@ def link_key(area1_id: str, area2_id: str) -> LinkKey:
 
 def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
+
+
+def additional_constraint_key(area_id: str, constraint_id: str) -> AdditionalConstraintKey:
+    return AdditionalConstraintKey(area_id, constraint_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -85,6 +99,9 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_level: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
+        # Short-term storages additional constraints
+        self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
+        self._st_storages_constraints_terms: Dict[AdditionalConstraintKey, str] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
@@ -429,5 +446,54 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
 
     @override
-    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        return self._st_storages_constraints
+
+    @override
+    def get_st_storage_additional_constraints_for_area(
+        self, area_id: str
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
+        return self._st_storages_constraints.get(area_id, {})
+
+    @override
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
+
+    @override
+    def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        self._st_storages_constraints_terms[additional_constraint_key(area_id, constraint_id)] = series_id
+
+    @override
+    def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+        constraints_to_remove: dict[str, list[STStorageAdditionalConstraint]] = {}
+        for storage_id, cs in self._st_storages_constraints[area_id].items():
+            for constraint in cs:
+                if constraint.id in constraints:
+                    constraints_to_remove.setdefault(storage_id, []).append(constraint)
+        for storage_id, cs in constraints_to_remove.items():
+            for constraint in cs:
+                self._st_storages_constraints[area_id][storage_id].remove(constraint)
+
+    @override
+    def save_st_storage_additional_constraints(
+        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
+    ) -> None:
+        existing_constraints = self._st_storages_constraints.get(area_id, {})
+
+        existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
+        for map in [existing_constraints, constraints]:
+            for storage_id, cs in map.items():
+                for constraint in cs:
+                    existing_map.setdefault(storage_id, {})[constraint.id] = constraint
+
+        new_constraints = {}
+        for storage_id, value in existing_map.items():
+            new_constraints[storage_id] = list(value.values())
+
+        self._st_storages_constraints[area_id] = new_constraints

@@ -72,7 +72,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         try:
             cluster_data = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ThermalClusterNotFound(path, thermal_id) from None
+            raise ThermalClusterNotFound(area_id, thermal_id) from None
         return parse_thermal_cluster(file_study.config.version, cluster_data)
 
     @override

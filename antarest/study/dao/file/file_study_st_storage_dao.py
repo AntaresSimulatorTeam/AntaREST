@@ -17,10 +17,19 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ChildNotFoundError, STStorageConfigNotFound, STStorageNotFound
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.model import STUDY_VERSION_9_2
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage, serialize_st_storage
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
+    parse_st_storage,
+    parse_st_storage_additional_constraint,
+    serialize_st_storage,
+    serialize_st_storage_additional_constraint,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
@@ -70,7 +79,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         try:
             config = study_data.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise STStorageNotFound(path, storage_id) from None
+            raise STStorageNotFound(area_id, storage_id) from None
         return parse_st_storage(study_data.config.version, config)
 
     @override
@@ -245,7 +254,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         )
 
     @override
-    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         study_data = self.get_file_study()
         storage_id = storage.id
         paths = [
@@ -260,6 +269,92 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        file_study = self.get_file_study()
+        path = ["input", "st-storage", "constraints"]
+        try:
+            all_constraints = {}
+            areas = file_study.tree.get(path, depth=1)
+            for area in areas:
+                constraints = self.get_st_storage_additional_constraints_for_area(area)
+                all_constraints[area] = constraints
+            return all_constraints
+        except ChildNotFoundError:
+            return {}
+
+    @override
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self.get_st_storage_additional_constraints_for_area(area_id).get(storage_id, [])
+
+    @override
+    def get_st_storage_additional_constraints_for_area(
+        self, area_id: str
+    ) -> dict[str, list[STStorageAdditionalConstraint]]:
+        file_study = self.get_file_study()
+        path = ["input", "st-storage", "constraints", area_id, "additional_constraints"]
+        try:
+            constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
+            ini_content = file_study.tree.get(path)
+            for key, value in ini_content.items():
+                storage_id, constraint = parse_st_storage_additional_constraint(key, value)
+                constraints.setdefault(storage_id, []).append(constraint)
+            return constraints
+        except ChildNotFoundError:
+            return {}
+
+    @override
+    def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+        study_data = self.get_file_study()
+        study_data.tree.save(series_id, ["input", "st-storage", "constraints", area_id, f"rhs_{constraint_id}"])
+
+    @override
+    def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+        study_data = self.get_file_study()
+        for constraint in constraints:
+            paths = [
+                ["input", "st-storage", "constraints", area_id, f"rhs_{constraint}"],
+                ["input", "st-storage", "constraints", area_id, "additional_constraints", constraint],
+            ]
+            for path in paths:
+                study_data.tree.delete(path)
+
+        # Deleting the constraints in the configuration must be done AFTER deleting the files and folders.
+        existing_ids = {c.id: c for c in study_data.config.areas[area_id].st_storages_additional_constraints}
+        for constraint in constraints:
+            study_data.config.areas[area_id].st_storages_additional_constraints.remove(existing_ids[constraint])
+
+    @override
+    def save_st_storage_additional_constraints(
+        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
+    ) -> None:
+        study_data = self.get_file_study()
+        existing_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
+
+        existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
+        for map in [existing_constraints, constraints]:
+            for storage_id, cs in map.items():
+                for constraint in cs:
+                    existing_map.setdefault(storage_id, {})[constraint.id] = constraint
+
+        ini_content = {}
+        for storage_id, value in existing_map.items():
+            for constraint_id, constraint_update in value.items():
+                ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
+
+        # Save into the config
+        self._update_st_storage_additional_constraints_config(area_id, constraints)
+
+        # Save into the files
+        if not existing_constraints:
+            # We have to create the folder first
+            (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id).mkdir(
+                parents=True, exist_ok=True
+            )
+        study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional_constraints"])
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
@@ -292,3 +387,14 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 study_data.areas[area_id].st_storages[k] = storage
                 return
         study_data.areas[area_id].st_storages.append(storage)
+
+    def _update_st_storage_additional_constraints_config(
+        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
+    ) -> None:
+        area = self.get_file_study().config.areas[area_id]
+        existing_ids = {c.id: c for c in area.st_storages_additional_constraints}
+        for cs in constraints.values():
+            for constraint in cs:
+                if constraint.id in existing_ids:
+                    area.st_storages_additional_constraints.remove(existing_ids[constraint.id])
+                area.st_storages_additional_constraints.append(constraint)
