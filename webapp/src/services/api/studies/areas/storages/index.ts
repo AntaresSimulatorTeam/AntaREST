@@ -24,65 +24,54 @@ import type {
 } from "./types";
 
 const BASE_URL = "/v1/studies/{studyId}/areas/{areaId}/storages";
-const URL = `${BASE_URL}/{storageId}/additional-constraints`;
+const CONSTRAINTS_URL = `${BASE_URL}/{storageId}/additional-constraints`;
 
-////////////////////////////////////////////////////////////////
-// Additional Constraints
-////////////////////////////////////////////////////////////////
+const buildConstraintUrl = (
+  params: { studyId: string; areaId: string; storageId: string },
+  constraintId?: string,
+) => {
+  const url = format(CONSTRAINTS_URL, params);
+  return constraintId ? `${url}/${constraintId}` : url;
+};
 
-export async function getAdditionalConstraints({
-  studyId,
-  areaId,
-  storageId,
-}: GetAdditionalConstraintsParams) {
-  const url = format(URL, { studyId, areaId, storageId });
-  const { data } = await client.get<AdditionalConstraint[]>(url);
+export async function getAdditionalConstraints(params: GetAdditionalConstraintsParams) {
+  const { data } = await client.get<AdditionalConstraint[]>(buildConstraintUrl(params));
   return data;
 }
 
 export async function getAdditionalConstraint({
-  studyId,
-  areaId,
-  storageId,
   constraintId,
+  ...params
 }: GetAdditionalConstraintParams) {
-  const url = format(`${URL}/{constraintId}`, {
-    studyId,
-    areaId,
-    storageId,
-    constraintId,
-  });
-  const { data } = await client.get<AdditionalConstraint>(url);
+  const { data } = await client.get<AdditionalConstraint>(buildConstraintUrl(params, constraintId));
   return data;
 }
 
 export async function createAdditionalConstraints({
-  studyId,
-  areaId,
-  storageId,
   constraints,
+  ...params
 }: CreateAdditionalConstraintsParams) {
-  const url = format(URL, { studyId, areaId, storageId });
-  const { data } = await client.post<AdditionalConstraint[]>(url, constraints);
+  const { data } = await client.post<AdditionalConstraint[]>(
+    buildConstraintUrl(params),
+    constraints,
+  );
   return data;
 }
 
 export async function updateAdditionalConstraints({
-  studyId,
-  areaId,
-  storageId,
   constraints,
+  ...params
 }: UpdateAdditionalConstraintsParams) {
-  const url = format(URL, { studyId, areaId, storageId });
-  const { data } = await client.put<AdditionalConstraint[]>(url, constraints);
+  const { data } = await client.put<AdditionalConstraint[]>(
+    buildConstraintUrl(params),
+    constraints,
+  );
   return data;
 }
 
 export async function deleteAdditionalConstraints({
-  studyId,
-  areaId,
   constraintIds,
+  ...params
 }: DeleteAdditionalConstraintsParams) {
-  const url = format(`${BASE_URL}/additional-constraints`, { studyId, areaId });
-  await client.delete(url, { data: constraintIds });
+  await client.delete(buildConstraintUrl(params), { data: constraintIds });
 }
