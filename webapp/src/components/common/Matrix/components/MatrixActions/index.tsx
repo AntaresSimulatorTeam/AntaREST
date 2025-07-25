@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import MatrixResize from "../MatrixResize";
 import MatrixFilter from "../MatrixFilter";
-import type { TimeFrequencyType } from "../../shared/types";
+import type { DateTimes, TimeFrequencyType } from "../../shared/types";
 
 interface MatrixActionsProps {
   studyId: string;
@@ -31,7 +31,7 @@ interface MatrixActionsProps {
   onImport: SplitButtonProps["onClick"];
   onSave: VoidFunction;
   disabled: boolean;
-  dateTime: string[];
+  dateTime: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   onMatrixUpdated: VoidFunction;

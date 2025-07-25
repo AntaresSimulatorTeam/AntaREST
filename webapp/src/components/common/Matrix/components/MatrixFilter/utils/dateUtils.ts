@@ -13,45 +13,12 @@
  */
 
 import type { TFunction } from "i18next";
-import { parseFlexibleDate as parseFlexibleDateBase } from "@/utils/date/dateUtils";
 import {
   createLocalizedTemporalLabels,
-  extractTemporalValue,
   getTemporalRange,
   type TimeIndexingType,
 } from "@/utils/date/matrixDateUtils";
-import { getCurrentLanguage } from "@/utils/i18nUtils";
 import type { LocalizedTimeLabel, TemporalRange } from "../types";
-
-/**
- * Attempts to parse a date string using multiple formats
- *
- * @param dateStr - The date string to parse
- * @returns A valid Date object or null if parsing failed
- */
-export function parseFlexibleDate(dateStr: string): Date | null {
-  const locale = getCurrentLanguage();
-  return parseFlexibleDateBase(dateStr, locale);
-}
-
-/**
- * Extracts a numeric value from a date string based on the specified indexing type
- *
- * @param dateStr - The date string to process
- * @param indexingType - The type of temporal index to extract (day, month, etc.)
- * @returns A numeric value representing the requested temporal index
- * @throws Error if the date string cannot be parsed
- */
-export function extractValueFromDate(dateStr: string, indexingType: TimeIndexingType): number {
-  const locale = getCurrentLanguage();
-  const date = parseFlexibleDate(dateStr);
-
-  if (!date) {
-    throw new Error(`Invalid date format: "${dateStr}"`);
-  }
-
-  return extractTemporalValue(dateStr, indexingType, locale);
-}
 
 /**
  * Gets the default min and max values for a given indexing type

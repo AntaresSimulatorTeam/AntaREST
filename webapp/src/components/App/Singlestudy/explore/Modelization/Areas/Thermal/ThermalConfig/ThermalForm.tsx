@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { validateNumber } from "@/utils/validation/number";
 import { useTranslation } from "react-i18next";
 import type { Area, Cluster, StudyMetadata } from "../../../../../../../../types/types";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";

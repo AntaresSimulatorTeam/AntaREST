@@ -15,7 +15,8 @@
 import { Autocomplete, TextField, type TextFieldProps } from "@mui/material";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
-interface AutocompleteChangeEvent {
+// Used when a value is selected from the datalist
+interface DatalistChangeEvent {
   target: { value: string; name: string };
 }
 
@@ -23,7 +24,7 @@ type TextFieldChangeEvent = Parameters<NonNullable<TextFieldProps["onChange"]>>[
 
 interface WithDatalist {
   datalist: string[] | readonly string[];
-  onChange?: (event: AutocompleteChangeEvent | TextFieldChangeEvent) => void;
+  onChange?: (event: DatalistChangeEvent | TextFieldChangeEvent) => void;
 }
 
 interface WithoutDatalist {

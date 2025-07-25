@@ -47,7 +47,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 10,
@@ -72,7 +72,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 10,
@@ -106,7 +106,7 @@ describe("useFilteredData", () => {
         const { result } = renderHook(() =>
           useFilteredData({
             filter,
-            dateTime: undefined,
+            datesInfo: undefined,
             isTimeSeries: false,
             timeFrequency: undefined,
             rowCount: 5,
@@ -132,7 +132,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -156,7 +156,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -181,7 +181,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -206,7 +206,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -231,7 +231,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -256,7 +256,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -280,7 +280,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 5,
@@ -297,7 +297,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter: defaultFilter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 0,
@@ -322,7 +322,7 @@ describe("useFilteredData", () => {
       const { result } = renderHook(() =>
         useFilteredData({
           filter,
-          dateTime: undefined,
+          datesInfo: undefined,
           isTimeSeries: false,
           timeFrequency: undefined,
           rowCount: 1000,
