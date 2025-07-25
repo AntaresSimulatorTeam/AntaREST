@@ -14,11 +14,13 @@
 
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { getStorageAdditionalConstraints } from "@/services/api/studies/areas/storages";
 import type { Area, StudyMetadata } from "@/types/types";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useTranslation } from "react-i18next";
+import { useAsync } from "react-use";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
@@ -41,6 +43,43 @@ interface Props {
 function StorageForm({ study, areaId, storageId }: Props) {
   const { t } = useTranslation();
   const studyVersion = Number(study.version);
+
+  useAsync(async () => {
+    const constraints = await getStorageAdditionalConstraints({
+      studyId: study.id,
+      areaId,
+      storageId,
+    });
+
+    console.log("GET", constraints);
+
+    // const res = await createStorageAdditionalConstraints({
+    //   studyId: study.id,
+    //   areaId,
+    //   storageId,
+    //   constraints: [
+    //     {
+    //       name: "test-3",
+    //     },
+    //   ],
+    // });
+
+    // // console.log("post", res);
+
+    // const res = await updateStorageAdditionalConstraints({
+    //   studyId: study.id,
+    //   areaId,
+    //   storageId,
+    //   constraints: [
+    //     {
+    //       id: "test-3",
+    //       operator: "greater",
+    //     },
+    //   ],
+    // });
+
+    // console.log("PUT", res);
+  }, []);
 
   ////////////////////////////////////////////////////////////////
   // Config
