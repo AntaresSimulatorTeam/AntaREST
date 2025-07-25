@@ -13,6 +13,7 @@ from typing import Any, List, Optional
 
 from typing_extensions import override
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdates, update_renewable_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -49,18 +50,20 @@ class UpdateRenewablesClusters(ICommand):
         """
         memory_mapping = {}
 
-        all_renewables = study_data.get_all_renewables()
-
         for area_id, value in self.cluster_properties.items():
-            if area_id not in all_renewables:
+            try:
+                all_renewables_per_area = study_data.get_all_renewables_for_area(area_id)
+            except ChildNotFoundError:
                 return command_failed(f"The area '{area_id}' is not found.")
+
+            existing_ids = {renewable.id.lower(): renewable for renewable in all_renewables_per_area}
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
-                if cluster_id not in all_renewables[area_id]:
+                if cluster_id not in existing_ids:
                     return command_failed(f"The renewable cluster '{cluster_id}' in the area '{area_id}' is not found.")
 
-                current_cluster = all_renewables[area_id][cluster_id]
+                current_cluster = existing_ids[cluster_id]
                 new_cluster = update_renewable_cluster(current_cluster, new_properties)
                 new_clusters.append(new_cluster)
 

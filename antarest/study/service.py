@@ -50,7 +50,7 @@ from antarest.core.exceptions import (
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key, update_cache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -403,12 +403,22 @@ class RawStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
-
+        should_invalidate_cache = False
+        file_study = self.get_files()
         for command in commands:
-            result = command.apply(FileStudyTreeDao(self.get_files()), listener)
+            result = command.apply(FileStudyTreeDao(file_study), listener)
+            if result.should_invalidate_cache:
+                should_invalidate_cache = True
             if not result.status:
                 raise CommandApplicationError(result.message)
-        remove_from_cache(self._raw_study_service.cache, study.id)
+
+        # if commands that can't update the cache are applied, we need to invalidate it.
+        # Otherwise, we can update it.
+        if should_invalidate_cache:
+            remove_from_cache(self._raw_study_service.cache, study.id)
+        else:
+            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+            update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
 
 

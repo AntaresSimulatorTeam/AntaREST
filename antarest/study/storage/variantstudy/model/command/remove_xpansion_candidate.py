@@ -19,6 +19,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import checks_candidate_can_be_deleted
@@ -60,7 +61,7 @@ class RemoveXpansionCandidate(ICommand):
 
         study_data.tree.save(data=new_dict, url=["user", "expansion", "candidates"])
 
-        return CommandOutput(status=True, message="ok")
+        return command_succeeded(message=f"Candidate {self.candidate_name} removed successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
