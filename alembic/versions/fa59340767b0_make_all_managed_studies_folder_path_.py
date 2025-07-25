@@ -30,7 +30,7 @@ def upgrade():
 
     rawstudy_table = table("rawstudy", column("id"), column("workspace"))
 
-    # add id to folder, handle case whith and without a trailing slash
+    # add id to folder, handle case with and without a trailing slash
     add_id_exp = case(
         (
             study_table.c.folder.like("%/"),
