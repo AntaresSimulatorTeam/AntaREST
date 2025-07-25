@@ -6,8 +6,7 @@ Create Date: 2025-07-21 12:16:43.213036
 
 """
 
-import sqlalchemy as sa
-from sqlalchemy.sql import and_, case, column, literal, not_, or_, select, table, update
+from sqlalchemy.sql import and_, case, column, exists, literal, not_, or_, table, update
 
 from alembic import op
 
@@ -27,18 +26,9 @@ def upgrade():
     # Create db connection
     bind = op.get_bind()
 
-    study_table = table(
-        "study",
-        column("id"),
-        column("folder"),
-        column("type"),
-    )
+    study_table = table("study", column("id"), column("folder"), column("type"))
 
-    rawstudy_table = table(
-        "rawstudy",
-        column("id"),
-        column("workspace"),
-    )
+    rawstudy_table = table("rawstudy", column("id"), column("workspace"))
 
     # add id to folder, handle case whith and without a trailing slash
     add_id_exp = case(
@@ -49,10 +39,8 @@ def upgrade():
         else_=study_table.c.folder + literal("/") + study_table.c.id,
     )
 
-    is_in_default_workspace_subq = (
-        select(sa.literal(1))
-        .where(and_(rawstudy_table.c.id == study_table.c.id, rawstudy_table.c.workspace == "default"))
-        .exists()
+    is_in_default_workspace_subq = exists().where(
+        and_(rawstudy_table.c.id == study_table.c.id, rawstudy_table.c.workspace == "default")
     )
 
     # managed study = in default workspace or is variant
@@ -62,7 +50,7 @@ def upgrade():
     # whose folder name doesn't end with their own ID.
     where_clause = and_(
         study_table.c.folder.isnot(None),
-        not_(study_table.c.folder.like("%" + study_table.c.id.cast(sa.String))),
+        not_(study_table.c.folder.like(literal("%") + study_table.c.id)),
         is_managed,
     )
 
