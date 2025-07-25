@@ -68,14 +68,17 @@ class FileStudyHydroDao(HydroDao):
         return parse_inflow_structure(file_data)
 
     @override
-    def save_hydro_management(self, area_id: str, hydro_management: HydroManagement) -> None:
+    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         file_study = self.get_file_study()
-        file_data = file_study.tree.get(HYDRO_PATH)
-        file_data = serialize_hydro_management(area_id, hydro_management, file_data, file_study.config.version)
-        file_study.tree.save(file_data, HYDRO_PATH)
+        initial_hydro_data = file_study.tree.get(HYDRO_PATH)
+        new_hydro_data = serialize_hydro_management(hydro_management, area_id, file_study.config.version)
+        updated_hydro_data = {
+            field: {**initial_hydro_data.get(field, {}), **new_hydro_data[field]} for field in new_hydro_data.keys()
+        }
+        file_study.tree.save(updated_hydro_data, HYDRO_PATH)
 
     @override
-    def save_inflow_structure(self, area_id: str, inflow_structure: InflowStructure) -> None:
+    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
         file_study = self.get_file_study()
         inflow_path = get_inflow_path(area_id)
         file_data = serialize_inflow_structure(inflow_structure)

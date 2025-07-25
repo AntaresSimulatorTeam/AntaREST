@@ -80,7 +80,7 @@ class TestUpdateHydroManagement:
             assert ini_content == expected_content
 
             # Update properties
-            new_properties = HydroManagementUpdate.model_construct(overflow_spilled_cost_difference=1.4)
+            new_properties = HydroManagementUpdate.model_validate({"overflow_spilled_cost_difference": 1.4})
             if study_version < STUDY_VERSION_9_2:
                 # Ensures we can't give a 9.2 parameter inside a v8.8 command
                 with pytest.raises(

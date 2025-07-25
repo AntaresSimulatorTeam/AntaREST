@@ -35,9 +35,9 @@ class ReadOnlyHydroDao(ABC):
 
 class HydroDao(ReadOnlyHydroDao):
     @abstractmethod
-    def save_hydro_management(self, area_id: str, hydro_data: HydroManagement) -> None:
+    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_inflow_structure(self, area_id: str, inflow_data: InflowStructure) -> None:
+    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
         raise NotImplementedError()

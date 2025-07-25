@@ -16,13 +16,11 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
-    HYDRO_PATH,
     HydroManagementUpdate,
     update_hydro_management,
     validate_hydro_management_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.hydro import parse_hydro_management
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -52,13 +50,10 @@ class UpdateHydroManagement(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        file_study = study_data.get_file_study()
-        file_data = file_study.tree.get(HYDRO_PATH)
-
-        current_hydro_management = parse_hydro_management(self.area_id, file_data, file_study.config.version)
+        current_hydro_management = study_data.get_hydro_management(area_id=self.area_id)
         updated_hydro_management = update_hydro_management(current_hydro_management, self.properties)
 
-        study_data.save_hydro_management(self.area_id, updated_hydro_management)
+        study_data.save_hydro_management(updated_hydro_management, self.area_id)
 
         return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 

@@ -235,11 +235,11 @@ class InMemoryStudyDao(StudyDao):
         return self._hydro_properties[area_id].inflow_structure
 
     @override
-    def save_hydro_management(self, area_id: str, hydro_management: HydroManagement) -> None:
+    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
         self._hydro_properties[area_id].management_options = hydro_management
 
     @override
-    def save_inflow_structure(self, area_id: str, inflow_structure: InflowStructure) -> None:
+    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
         self._hydro_properties[area_id].inflow_structure = inflow_structure
 
     @override
