@@ -16,6 +16,7 @@ from typing_extensions import override
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
+from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
@@ -29,6 +30,7 @@ class FileStudyTreeDao(
     FileStudyRenewableDao,
     FileStudyConstraintDao,
     FileStudySTStorageDao,
+    FileStudyOptimizationPreferencesDao,
 ):
     """
     Implementation of study DAO over the simulator input format.
