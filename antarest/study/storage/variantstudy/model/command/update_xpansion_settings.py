@@ -26,7 +26,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import XpansionSettingsUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
     checks_settings_are_correct_and_returns_fields_to_exclude,
@@ -68,7 +68,7 @@ class UpdateXpansionSettings(ICommand):
             sensitivity_obj = self.settings.sensitivity_config.model_dump(mode="json", by_alias=True)
             study_data.tree.save(sensitivity_obj, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
-        return CommandOutput(status=True, message="Xpansion settings updated successfully")
+        return command_succeeded(message="Xpansion settings updated successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -23,8 +23,7 @@ from typing import List, NamedTuple, Optional, Sequence, Tuple
 from antarest.core.exceptions import VariantGenerationError
 from antarest.core.interfaces.cache import (
     ICache,
-    study_config_cache_key,
-    study_raw_cache_key,
+    update_cache,
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
@@ -124,11 +123,16 @@ class SnapshotGenerator:
                 last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
             )
 
-            logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+            logger.info(f"Reading additional data from files for study {variant_study_id}")
             variant_study.additional_data = self._read_additional_data(file_study)
             self.repository.save(variant_study)
 
-            self._update_cache(file_study)
+            if results.should_invalidate_cache:
+                # We need to remove the cache
+                remove_from_cache(self.cache, variant_study_id)
+            else:
+                data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+                update_cache(self.cache, variant_study_id, data)
 
         except Exception:
             remove_from_cache(self.cache, variant_study_id)
@@ -206,14 +210,6 @@ class SnapshotGenerator:
         assert isinstance(horizon, (str, int))
         study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
         return study_additional_data
-
-    def _update_cache(self, file_study: FileStudy) -> None:
-        # The study configuration is changed, so we update the cache.
-        self.cache.invalidate(study_raw_cache_key(file_study.config.study_id))
-        self.cache.put(
-            study_config_cache_key(file_study.config.study_id),
-            FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump(),
-        )
 
 
 class RefStudySearchResult(NamedTuple):

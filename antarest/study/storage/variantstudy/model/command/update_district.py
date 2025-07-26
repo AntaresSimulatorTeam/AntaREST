@@ -16,7 +16,12 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.create_district import DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -62,10 +67,7 @@ class UpdateDistrict(ICommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if self.id not in study_data.config.sets:
-            return CommandOutput(
-                status=False,
-                message=f"District '{self.id}' does not exist and should be created",
-            )
+            return command_failed(message=f"District '{self.id}' does not exist and should be created")
 
         data = self.update_in_config(study_data.config)
 
@@ -86,7 +88,7 @@ class UpdateDistrict(ICommand):
             ["input", "areas", "sets", district_id],
         )
 
-        return CommandOutput(status=True, message=self.id)
+        return command_succeeded(message=self.id)
 
     @override
     def to_dto(self) -> CommandDTO:
