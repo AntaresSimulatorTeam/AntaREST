@@ -23,15 +23,17 @@ from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 @dataclass(frozen=True)
 class CommandOutput:
     status: bool
-    message: str = ""
+    message: str
+    # If the command cannot guarantee the study config is still valid after it was applied, this should be set to True.
+    should_invalidate_cache: bool = False
 
 
 def command_failed(message: str) -> CommandOutput:
     return CommandOutput(False, message)
 
 
-def command_succeeded(message: str) -> CommandOutput:
-    return CommandOutput(True, message)
+def command_succeeded(message: str, should_invalidate_cache: bool = False) -> CommandOutput:
+    return CommandOutput(True, message, should_invalidate_cache)
 
 
 class FilteringOptions:

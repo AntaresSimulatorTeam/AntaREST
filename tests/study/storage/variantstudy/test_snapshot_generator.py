@@ -23,8 +23,9 @@ import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.exceptions import VariantGenerationError
-from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.interfaces.cache import CacheConstants, update_cache
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
@@ -33,6 +34,8 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
 from antarest.study.model import StudyAdditionalData
+from antarest.study.service import VariantStudyInterface
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -889,6 +892,7 @@ class TestSnapshotGenerator:
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1020,6 +1024,7 @@ class TestSnapshotGenerator:
                     },
                 ],
                 "success": True,
+                "should_invalidate_cache": False,
             }
         ]
 
@@ -1052,6 +1057,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1167,6 +1173,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1245,6 +1252,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1254,3 +1262,82 @@ class TestSnapshotGenerator:
                 },
             ],
         }
+
+    @with_admin_user
+    @with_db_context
+    def test_generate_invalidate_cache(
+        self, variant_study_service: VariantStudyService, variant_study: VariantStudy
+    ) -> None:
+        cache = LocalCache()
+        variant_study_service.cache = cache
+        generator = SnapshotGenerator(
+            cache=cache,
+            raw_study_service=variant_study_service.raw_study_service,
+            command_factory=variant_study_service.command_factory,
+            study_factory=variant_study_service.study_factory,
+            repository=variant_study_service.repository,
+        )
+
+        # Fill the cache for the test.
+        study = db.session.query(VariantStudy).get(variant_study.id)  #  `variant_study` isn't bound to the session yet.
+        study_interface = VariantStudyInterface(variant_study_service, study)
+        file_study = study_interface.get_files()
+        data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+        update_cache(cache, variant_study.id, data)
+
+        # Checks the cache content
+        cache_key = f"{CacheConstants.STUDY_FACTORY}/{variant_study.id}"
+        assert cache.get(cache_key) is not None
+        starting_cache = cache.get(cache_key)
+        assert starting_cache is not None
+        # Generates the snapshot
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
+        assert not results.should_invalidate_cache
+        generated_cache = cache.get(cache_key)
+        # Performs a little modification in memory just to check that the caches are the same.
+        generated_cache["output_path"] = generated_cache["output_path"].parent.parent / "output"
+        assert generated_cache == starting_cache
+
+        # Add a `create_cluster` command
+        version = StudyVersion.parse(variant_study.version)
+        variant_study_service.append_commands(
+            variant_study.id,
+            [
+                CommandDTO(
+                    action="create_cluster",
+                    args={"area_id": "north", "cluster_name": "my_cluster", "parameters": {}},
+                    study_version=version,
+                )
+            ],
+        )
+
+        # Generates the snapshot
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
+        assert not results.should_invalidate_cache
+        # Ensures the cache was modified accordingly
+        new_cache = cache.get(cache_key)
+        thermals = new_cache["areas"]["north"]["thermals"]
+        assert len(thermals) == 1
+        assert thermals[0]["name"] == "my_cluster"
+
+        # Add an `update_config` command
+        variant_study_service.append_commands(
+            variant_study.id,
+            [
+                CommandDTO(
+                    action="update_config",
+                    args={
+                        "target": "input/areas/north/optimization/filtering/filter_synthesis",
+                        "data": "annual",
+                    },
+                    study_version=version,
+                )
+            ],
+        )
+
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
+        assert results.should_invalidate_cache
+        assert cache.get(cache_key) is None

@@ -17,7 +17,7 @@ from typing_extensions import override
 from antarest.core.exceptions import FileCurrentlyUsedInSettings
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.xpansion_common import get_resource_dir
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -91,7 +91,7 @@ class RemoveXpansionResource(ICommand):
 
         study_data.tree.delete(get_resource_dir(self.resource_type) + [self.filename])
 
-        return CommandOutput(status=True, message=f"Xpansion resource {self.filename} removed successfully")
+        return command_succeeded(message=f"Xpansion resource {self.filename} removed successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -20,7 +20,13 @@ from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VER
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, FilteringOptions
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    FilteringOptions,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -81,10 +87,7 @@ class CreateArea(ICommand):
         area_id = transform_name_to_id(self.area_name)
 
         if area_id in config.areas.keys():
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_name}' already exists and could not be created",
-            )
+            return command_failed(message=f"Area '{self.area_name}' already exists and could not be created")
 
         config.areas[area_id] = Area(
             name=self.area_name,
@@ -271,7 +274,7 @@ class CreateArea(ICommand):
 
         study_data.tree.save(new_area_data)
 
-        return CommandOutput(status=True, message=f"Area '{self.area_name}' created")
+        return command_succeeded(message=f"Area '{self.area_name}' created")
 
     @override
     def to_dto(self) -> CommandDTO:
