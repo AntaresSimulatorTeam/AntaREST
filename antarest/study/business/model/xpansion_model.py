@@ -316,4 +316,6 @@ def create_xpansion_candidate(candidate_data: XpansionCandidateCreation) -> Xpan
     """
     Creates a candidate from a creation request, checking and initializing it against the specified study version.
     """
-    return XpansionCandidate.model_validate(candidate_data.model_dump(exclude_none=True))
+    candidate = XpansionCandidate.model_validate(candidate_data.model_dump(exclude_none=True))
+    validate_xpansion_candidate(candidate)
+    return candidate

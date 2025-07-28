@@ -16,7 +16,12 @@ from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
-from antarest.study.business.model.xpansion_model import CandidateName, XpansionCandidate, XpansionLinkStr
+from antarest.study.business.model.xpansion_model import (
+    CandidateName,
+    XpansionCandidate,
+    XpansionLinkStr,
+    validate_xpansion_candidate,
+)
 
 
 class XpansionCandidateFileData(AntaresBaseModel):
@@ -51,8 +56,11 @@ class XpansionCandidateFileData(AntaresBaseModel):
 
 
 def parse_xpansion_candidate(data: Any) -> XpansionCandidate:
-    return XpansionCandidateFileData.model_validate(data).to_model()
+    candidate = XpansionCandidateFileData.model_validate(data).to_model()
+    validate_xpansion_candidate(candidate)
+    return candidate
 
 
 def serialize_xpansion_candidate(candidate: XpansionCandidate) -> dict[str, Any]:
+    validate_xpansion_candidate(candidate)
     return XpansionCandidateFileData.from_model(candidate).model_dump(mode="json", by_alias=True, exclude_none=True)
