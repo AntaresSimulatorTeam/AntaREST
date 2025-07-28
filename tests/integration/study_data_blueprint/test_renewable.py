@@ -494,6 +494,30 @@ class TestRenewable:
         assert other_cluster_name.upper() in description
         assert obj["exception"] == "DuplicateRenewableCluster"
 
+        # ===========================
+        #  VERSION 9.3
+        # ===========================
+
+        # Upgrade study to version 9.3
+        res = client.put(
+            f"/v1/studies/{internal_study_id}/upgrade",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            params={"target_version": 930},
+        )
+        res.raise_for_status()
+        task_id = res.json()
+        task = wait_task_completion(client, user_access_token, task_id)
+        assert task.status == TaskStatus.COMPLETED, task
+
+        # Checks creation with free `group`
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/renewable",
+            headers={"Authorization": f"Bearer {user_access_token}"},
+            json={"name": "free cluster", "group": "GroupFoo"},
+        )
+        assert res.status_code == 200, res.json()
+        assert res.json()["group"] == "groupfoo"
+
     @pytest.fixture(name="base_study_id")
     def base_study_id_fixture(self, request: t.Any, client: TestClient, user_access_token: str) -> str:
         """Prepare a managed study for the variant study tests."""
