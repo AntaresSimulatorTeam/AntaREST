@@ -25,7 +25,8 @@ from antarest.core.exceptions import (
 from antarest.core.model import JSON
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
-    XpansionCandidateDTO,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
@@ -92,7 +93,7 @@ class XpansionManager:
         study.add_commands([command])
         return self.get_xpansion_settings(study)
 
-    def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
+    def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateCreation) -> XpansionCandidate:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
 
         file_study = study.get_files()
@@ -107,29 +108,29 @@ class XpansionManager:
         # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
         return self.get_candidate(study, xpansion_candidate.name)
 
-    def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidateDTO:
+    def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidate:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
         # This takes the first candidate with the given name and not the id, because the name is the primary key.
         file_study = study.get_files()
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
         try:
             candidate = next(c for c in candidates.values() if c["name"] == candidate_name)
-            return XpansionCandidateDTO(**candidate)
+            return XpansionCandidate(**candidate)
 
         except StopIteration:
             raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
 
-    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidate]:
         logger.info(f"Getting all candidates of study {study.id}")
         file_study = study.get_files()
         candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        return [XpansionCandidateDTO(**c) for c in candidates.values()]
+        return [XpansionCandidate(**c) for c in candidates.values()]
 
-    def update_candidate(
+    def replace_candidate(
         self,
         study: StudyInterface,
         candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
+        xpansion_candidate_dto: XpansionCandidateCreation,
     ) -> None:
         internal_candidate = xpansion_candidate_dto.to_internal_model()
         command = ReplaceXpansionCandidate(

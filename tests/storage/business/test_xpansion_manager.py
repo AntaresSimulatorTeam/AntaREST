@@ -351,7 +351,7 @@ def test_update_candidates(
             "max-investment": 1,
         }
     )
-    xpansion_manager.update_candidate(study, new_candidate.name, new_candidate2)
+    xpansion_manager.replace_candidate(study, new_candidate.name, new_candidate2)
 
     assert xpansion_manager.get_candidate(study, candidate_name=new_candidate.name) == new_candidate2
 

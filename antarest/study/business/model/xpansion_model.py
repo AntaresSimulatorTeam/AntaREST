@@ -245,8 +245,26 @@ XpansionLinkStr: TypeAlias = Annotated[
 ]
 
 
-class XpansionCandidateBase(AntaresBaseModel, populate_by_name=True):
-    name: str
+def _validate_candidate_name(name: str) -> Optional[str]:
+    if name is None:
+        return None
+    # The name is written directly inside the ini file so a specific check is performed here
+    if name.strip() == "":
+        raise CandidateNameIsEmpty()
+
+    illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
+    for char in name:
+        if char in illegal_name_characters:
+            raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
+
+    return name
+
+
+CandidateName: TypeAlias = Annotated[str, BeforeValidator(_validate_candidate_name)]
+
+
+class XpansionCandidate(AntaresBaseModel, alias_generator=to_kebab_case):
+    name: CandidateName
     link: XpansionLinkStr
     annual_cost_per_mw: float = Field(ge=0)
     unit_size: Optional[float] = Field(default=None, ge=0)
@@ -262,38 +280,35 @@ class XpansionCandidateBase(AntaresBaseModel, populate_by_name=True):
     already_installed_direct_link_profile: Optional[str] = None
     already_installed_indirect_link_profile: Optional[str] = None
 
-    @model_validator(mode="after")
-    def validate_model(self) -> "XpansionCandidateBase":
-        possible_format_1 = self.max_investment is None and (self.max_units is not None and self.unit_size is not None)
-        possible_format_2 = self.max_investment is not None and (self.max_units is None and self.unit_size is None)
 
-        if not (possible_format_1 or possible_format_2):
-            raise BadCandidateFormatError(
-                "The candidate is not well formatted."
-                "\nIt should either contain max-investment or (max-units and unit-size)."
-            )
-
-        return self
-
-    @field_validator("name", mode="before")
-    def validate_name(cls, name: str) -> str:
-        # The name is written directly inside the ini file so a specific check is performed here
-        if name.strip() == "":
-            raise CandidateNameIsEmpty()
-
-        illegal_name_characters = [" ", "\n", "\t", "\r", "\f", "\v", "-", "+", "=", ":", "[", "]", "(", ")"]
-        for char in name:
-            if char in illegal_name_characters:
-                raise IllegalCharacterInNameError(f"The character '{char}' is not allowed in the candidate name")
-
-        return name
+class XpansionCandidateCreation(AntaresBaseModel, alias_generator=to_kebab_case):
+    name: CandidateName
+    link: XpansionLinkStr
+    annual_cost_per_mw: float = Field(ge=0)
+    unit_size: Optional[float] = Field(default=None, ge=0)
+    max_units: Optional[int] = Field(default=None, ge=0)
+    max_investment: Optional[float] = Field(default=None, ge=0)
+    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    # this is obsolete (replaced by direct/indirect)
+    link_profile: Optional[str] = None
+    # this is obsolete (replaced by direct/indirect)
+    already_installed_link_profile: Optional[str] = None
+    direct_link_profile: Optional[str] = None
+    indirect_link_profile: Optional[str] = None
+    already_installed_direct_link_profile: Optional[str] = None
+    already_installed_indirect_link_profile: Optional[str] = None
 
 
-class XpansionCandidate(XpansionCandidateBase, alias_generator=to_kebab_case):
-    pass
+def validate_xpansion_candidate(candidate: XpansionCandidate | XpansionCandidateCreation) -> None:
+    possible_format_1 = candidate.max_investment is None and (
+        candidate.max_units is not None and candidate.unit_size is not None
+    )
+    possible_format_2 = candidate.max_investment is not None and (
+        candidate.max_units is None and candidate.unit_size is None
+    )
 
-
-class XpansionCandidateDTO(XpansionCandidateBase, alias_generator=to_kebab_case):
-    # todo: change the aliases for camel_case in the future
-    def to_internal_model(self) -> XpansionCandidate:
-        return XpansionCandidate.model_validate(self.model_dump(mode="json", by_alias=True))
+    if not (possible_format_1 or possible_format_2):
+        raise BadCandidateFormatError(
+            "The candidate is not well formatted."
+            "\nIt should either contain max-investment or (max-units and unit-size)."
+        )

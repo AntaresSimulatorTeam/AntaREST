@@ -23,7 +23,8 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
-    XpansionCandidateDTO,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
@@ -98,10 +99,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def add_candidate(
         uuid: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> XpansionCandidateDTO:
-        logger.info(f"Adding new candidate {xpansion_candidate_dto.model_dump(by_alias=True)} to study {uuid}")
-        return study_service.add_candidate(uuid, xpansion_candidate_dto)
+        xpansion_candidate: XpansionCandidateCreation,
+    ) -> XpansionCandidate:
+        logger.info(f"Adding new candidate {xpansion_candidate.model_dump(by_alias=True)} to study {uuid}")
+        return study_service.add_candidate(uuid, xpansion_candidate)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
@@ -111,7 +112,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     def get_candidate(
         uuid: str,
         candidate_name: str,
-    ) -> XpansionCandidateDTO:
+    ) -> XpansionCandidate:
         logger.info("Fetching study list")
         return study_service.get_candidate(uuid, candidate_name)
 
@@ -122,7 +123,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     )
     def get_candidates(
         uuid: str,
-    ) -> Sequence[XpansionCandidateDTO]:
+    ) -> Sequence[XpansionCandidate]:
         logger.info("Fetching study list")
         return study_service.get_candidates(uuid)
 
@@ -134,10 +135,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     def update_candidate(
         uuid: str,
         candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> Any:
-        logger.info(f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}")
-        return study_service.update_xpansion_candidate(uuid, candidate_name, xpansion_candidate_dto)
+        xpansion_candidate: XpansionCandidateCreation,
+    ) -> None:
+        logger.info(f"Updating xpansion candidate {xpansion_candidate.name} of the study {uuid}")
+        return study_service.replace_xpansion_candidate(uuid, candidate_name, xpansion_candidate)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
