@@ -12,6 +12,7 @@
 
 from typing import Any, Dict, Final, List, Optional
 
+from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
@@ -61,13 +62,14 @@ class CreateRenewablesCluster(ICommand):
                 if version == 1:
                     parameters["name"] = values.pop("cluster_name")
                 if version < 3:
-                    cluster = parse_renewable_cluster(parameters)
+                    study_version = StudyVersion.parse(values["study_version"])
+                    cluster = parse_renewable_cluster(study_version, parameters)
                     values["parameters"] = RenewableClusterCreation.from_cluster(cluster)
         return values
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        renewable = create_renewable_cluster(self.parameters)
+        renewable = create_renewable_cluster(self.parameters, self.study_version)
         renewable_id = renewable.id
         lower_renewable_id = renewable_id.lower()
         if study_data.renewable_exists(self.area_id, lower_renewable_id):

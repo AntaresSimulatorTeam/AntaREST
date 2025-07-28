@@ -9,15 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional, cast
+from typing import Any, Optional, TypeAlias, cast
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
-from antarest.core.model import LowerCaseId
+from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
@@ -75,6 +78,9 @@ class RenewableClusterGroup(EnumIgnoreCase):
         return cast(Optional["RenewableClusterGroup"], super()._missing_(value))
 
 
+Group: TypeAlias = Optional[LowerCaseStr]
+
+
 class RenewableCluster(AntaresBaseModel):
     """
     Renewable cluster model.
@@ -95,7 +101,7 @@ class RenewableCluster(AntaresBaseModel):
     enabled: bool = True
     unit_count: int = Field(default=1, ge=1)
     nominal_capacity: float = Field(default=0.0, ge=0)
-    group: RenewableClusterGroup = RenewableClusterGroup.OTHER1
+    group: Group = RenewableClusterGroup.OTHER1.value
     ts_interpretation: TimeSeriesInterpretation = TimeSeriesInterpretation.POWER_GENERATION
 
 
@@ -112,7 +118,7 @@ class RenewableClusterCreation(AntaresBaseModel):
     enabled: Optional[bool] = None
     unit_count: Optional[int] = Field(default=None, ge=1)
     nominal_capacity: Optional[float] = Field(default=None, ge=0)
-    group: Optional[RenewableClusterGroup] = None
+    group: Group = None
     ts_interpretation: Optional[TimeSeriesInterpretation] = None
 
     @classmethod
@@ -149,17 +155,33 @@ class RenewableClusterUpdate(AntaresBaseModel):
     enabled: Optional[bool] = None
     unit_count: Optional[int] = Field(default=None, ge=1)
     nominal_capacity: Optional[float] = Field(default=None, ge=0)
-    group: Optional[RenewableClusterGroup] = None
+    group: Group = None
     ts_interpretation: Optional[TimeSeriesInterpretation] = None
 
 
 RenewableClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, RenewableClusterUpdate]]
 
 
-def create_renewable_cluster(cluster_data: RenewableClusterCreation) -> RenewableCluster:
+def validate_renewable_cluster_against_version(
+    version: StudyVersion,
+    cluster_data: RenewableCluster | RenewableClusterCreation | RenewableClusterUpdate,
+) -> None:
+    """
+    Validates input renewable cluster data against the provided study versions
+
+    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
+    """
+    if cluster_data.group is not None and version < STUDY_VERSION_9_3:
+        # We need to be sure we're able to cast the group to a RenewableClusterGroup enum value
+        if cluster_data.group not in [e.value for e in RenewableClusterGroup]:
+            raise InvalidFieldForVersionError(f"Free groups are available since v9.3 and your study is in {version}")
+
+
+def create_renewable_cluster(cluster_data: RenewableClusterCreation, version: StudyVersion) -> RenewableCluster:
     """
     Creates a renewable cluster from a creation request
     """
+    validate_renewable_cluster_against_version(version, cluster_data)
     return RenewableCluster.model_validate(cluster_data.model_dump(exclude_none=True))
 
 
