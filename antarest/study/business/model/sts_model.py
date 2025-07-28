@@ -353,8 +353,10 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
 STStorageAdditionalConstraintsMap = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]
 
-# 2nd key corresponds to a short-term storage id
-STStorageAdditionalConstraintUpdates = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraintUpdate]]]
+# 2nd key corresponds to a short-term storage id and 3rd to the constraint id.
+STStorageAdditionalConstraintUpdates = dict[
+    AreaId, dict[LowerCaseId, dict[LowerCaseId, STStorageAdditionalConstraintUpdate]]
+]
 
 
 def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:

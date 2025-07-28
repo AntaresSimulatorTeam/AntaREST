@@ -15,7 +15,6 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.sts_model import (
-    STStorageAdditionalConstraint,
     STStorageAdditionalConstraintUpdates,
     update_st_storage_constraint,
 )
@@ -58,37 +57,36 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         for area_id, value in self.additional_constraint_properties.items():
-            for storage_id, updated_constraints in value.items():
+            for storage_id, values in value.items():
+                new_constraints = []
                 all_constraints_per_storage = study_data.get_st_storage_additional_constraints(area_id, storage_id)
-                if not all_constraints_per_storage:
-                    return command_failed(f"Short-term storage {storage_id} not found in area '{area_id}'.")
-
-                new_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
-
                 existing_ids = {c.id: index for index, c in enumerate(all_constraints_per_storage)}
-                for upd_constraint in updated_constraints:
-                    if upd_constraint.id not in existing_ids:
+
+                for constraint_id, updated_constraint in values.items():
+                    if constraint_id not in existing_ids:
                         return command_failed(
-                            f"Constraint {upd_constraint.id} not found for short-term storage {storage_id} in area '{area_id}'."
+                            f"Constraint {constraint_id} not found for short-term storage {storage_id} in area '{area_id}'."
                         )
 
-                    current_constraint = all_constraints_per_storage[existing_ids[upd_constraint.id]]
-                    new_constraint = update_st_storage_constraint(current_constraint, upd_constraint)
-                    new_constraints.setdefault(storage_id, []).append(new_constraint)
+                    current_constraint = all_constraints_per_storage[existing_ids[constraint_id]]
+                    new_constraint = update_st_storage_constraint(current_constraint, updated_constraint)
+                    new_constraints.append(new_constraint)
 
-            study_data.save_st_storage_additional_constraints(area_id, new_constraints)
+                study_data.save_st_storage_additional_constraints(area_id, storage_id, new_constraints)
 
         return command_succeeded("The short-term storage additional constraints were successfully updated.")
 
     @override
     def to_dto(self) -> CommandDTO:
-        args: dict[str, dict[str, list[dict[str, Any]]]] = {}
+        args: dict[str, dict[str, dict[str, dict[str, Any]]]] = {}
 
         for area_id, value in self.additional_constraint_properties.items():
-            for storage_id, updated_constraints in value.items():
-                for constraint in updated_constraints:
-                    body = constraint.model_dump(mode="json", exclude_unset=True)
-                    args.setdefault(area_id, {}).setdefault(storage_id, []).append(body)
+            args.setdefault(area_id, {})
+            for storage_id, values in value.items():
+                args[area_id].setdefault(storage_id, {})
+                for constraint_id, updated_constraint in values.items():
+                    body = updated_constraint.model_dump(mode="json", exclude_unset=True)
+                    args[area_id][storage_id][constraint_id] = body
 
         return CommandDTO(
             action=self.command_name.value,
