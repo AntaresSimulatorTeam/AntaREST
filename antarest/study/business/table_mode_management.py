@@ -268,8 +268,10 @@ class TableModeManager:
             update_constraints_by_areas: STStorageAdditionalConstraintUpdates = collections.defaultdict(dict)
             for key, values in data.items():
                 area_id, storage_id, constraint_id = key.split(" / ")
-                update_constraint = STStorageAdditionalConstraintUpdate.model_validate({"id": constraint_id, **values})
-                update_constraints_by_areas.setdefault(area_id, {}).setdefault(storage_id, []).append(update_constraint)
+                update_constraint = STStorageAdditionalConstraintUpdate.model_validate(values)
+                update_constraints_by_areas.setdefault(area_id, {}).setdefault(storage_id, {})[constraint_id] = (
+                    update_constraint
+                )
             constraints_map = self._st_storage_manager.update_additional_constraints(study, update_constraints_by_areas)
             data = {
                 f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
