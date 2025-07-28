@@ -1848,7 +1848,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
-        summary="Get a short-term storage time series",
+        summary="Get a short-term storage time series (deprecated)",
         response_model=STStorageMatrix,
         deprecated=True,
     )
@@ -1880,7 +1880,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
         tags=[APITag.study_data],
-        summary="Update a short-term storage time series",
+        summary="Update a short-term storage time series (deprecated)",
         deprecated=True,
     )
     def update_st_storage_matrix(
