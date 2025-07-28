@@ -10,14 +10,18 @@
 #
 # This file is part of the Antares project.
 
-from typing import Mapping, Sequence
+from typing import Any, List, Literal, Mapping, MutableMapping, Sequence, TypeAlias
 
+import numpy as np
 from antares.study.version import StudyVersion
+from pydantic import field_validator
 
 from antarest.core.exceptions import (
     DuplicateSTStorage,
+    STStorageMatrixNotFound,
 )
 from antarest.core.model import JSON
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageCreation,
@@ -35,9 +39,66 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
+# =============
+#  Time series
+# =============
+
+
+class STStorageMatrix(AntaresBaseModel):
+    """
+    Short-Term Storage Matrix  Model.
+
+    This model represents a matrix associated with short-term storage
+    and validates its integrity against specific conditions.
+
+    Attributes:
+        data: The 2D-array matrix containing time series values.
+        index: List of lines for the data matrix.
+        columns: List of columns for the data matrix.
+    """
+
+    class Config:
+        extra = "forbid"
+
+    data: List[List[float]]
+    index: List[int]
+    columns: List[int]
+
+    @field_validator("data")
+    def validate_time_series(cls, data: List[List[float]]) -> List[List[float]]:
+        """
+        Validator to check the integrity of the time series data.
+
+        Note:
+            - The time series must have a shape of (8760, 1).
+            - Time series values must not be empty or contain NaN values.
+        """
+        array = np.array(data)
+        if array.size == 0:
+            raise ValueError("time series must not be empty")
+        if array.shape != (8760, 1):
+            raise ValueError(f"time series must have shape ({8760}, 1)")
+        if np.any(np.isnan(array)):
+            raise ValueError("time series must not contain NaN values")
+        return data
+
+
+# noinspection SpellCheckingInspection
+STStorageTimeSeries: TypeAlias = Literal[
+    "pmax_injection",
+    "pmax_withdrawal",
+    "lower_rule_curve",
+    "upper_rule_curve",
+    "inflows",
+]
+
 # ============================
 #  Short-term storage manager
 # ============================
+
+_STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
+_STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
+_ALL_STORAGE_PATH = "input/st-storage/clusters"
 
 
 class STStorageManager:
@@ -288,6 +349,80 @@ class STStorageManager:
         study.add_commands(commands)
 
         return create_st_storage(creation_form, study.version)
+
+    def get_matrix(
+        self,
+        study: StudyInterface,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+    ) -> STStorageMatrix:
+        """
+        Get the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
+
+        Args:
+            study: The study object.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
+            ts_name: Name of the time series to get.
+
+        Returns:
+            STStorageMatrix object containing the short-term storage time series.
+        """
+        matrix = self._get_matrix_obj(study, area_id, storage_id, ts_name)
+        return STStorageMatrix(**matrix)
+
+    def _get_matrix_obj(
+        self,
+        study: StudyInterface,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+    ) -> MutableMapping[str, Any]:
+        file_study = study.get_files()
+        path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        try:
+            matrix = file_study.tree.get(path.split("/"), depth=1)
+        except KeyError:
+            raise STStorageMatrixNotFound(path) from None
+        return matrix
+
+    def update_matrix(
+        self,
+        study: StudyInterface,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        ts: STStorageMatrix,
+    ) -> None:
+        """
+        Update the time series `ts_name` for the given `study`, `area_id`, and `storage_id`.
+
+        Args:
+            study: The study object.
+            area_id: The area ID of the short-term storage.
+            storage_id: The ID of the short-term storage.
+            ts_name: Name of the time series to update.
+            ts: Matrix of the time series to update.
+        """
+        self._save_matrix_obj(study, area_id, storage_id, ts_name, ts.data)
+
+    def _save_matrix_obj(
+        self,
+        study: StudyInterface,
+        area_id: str,
+        storage_id: str,
+        ts_name: STStorageTimeSeries,
+        matrix_data: List[List[float]],
+    ) -> None:
+        path = _STORAGE_SERIES_PATH.format(area_id=area_id, storage_id=storage_id, ts_name=ts_name)
+        command = ReplaceMatrix(
+            target=path,
+            matrix=matrix_data,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
 
     @staticmethod
     def get_table_schema() -> JSON:
