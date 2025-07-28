@@ -157,7 +157,7 @@ class STStorageDao(ReadOnlySTStorageDao):
 
     @abstractmethod
     def save_st_storage_constraint_matrix(
-        self, area_id: str, constraint_id: str, storage_id: str, series_id: str
+        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
     ) -> None:
         raise NotImplementedError()
 

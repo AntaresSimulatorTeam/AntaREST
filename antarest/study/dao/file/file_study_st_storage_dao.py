@@ -275,11 +275,12 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         file_study = self.get_file_study()
         path = ["input", "st-storage", "constraints"]
         try:
-            all_constraints = {}
-            areas = file_study.tree.get(path, depth=1)
-            for area in areas:
-                constraints = self.get_st_storage_additional_constraints_for_area(area)
-                all_constraints[area] = constraints
+            all_constraints: STStorageAdditionalConstraintsMap = {}
+            areas = file_study.tree.get(path, depth=2)
+            for area, storages in areas.items():
+                for storage in storages:
+                    constraints = self.get_st_storage_additional_constraints(area, storage)
+                    all_constraints.setdefault(area, {})[storage] = constraints
             return all_constraints
         except ChildNotFoundError:
             return {}
