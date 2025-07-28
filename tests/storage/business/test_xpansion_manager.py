@@ -32,12 +32,13 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
-    XpansionCandidateDTO,
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -197,7 +198,7 @@ def test_add_candidate(
     actual = study.get_files().tree.get(["user", "expansion", "candidates"])
     assert actual == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
+    new_candidate = XpansionCandidateCreation.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -206,7 +207,7 @@ def test_add_candidate(
         }
     )
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
+    new_candidate2 = XpansionCandidateCreation.model_validate(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -253,29 +254,25 @@ def test_get_candidate(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_1 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_2",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_2 = {
+        "name": "candidate_2",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    xpansion_manager.add_candidate(study, new_candidate)
-    xpansion_manager.add_candidate(study, new_candidate2)
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
-    assert xpansion_manager.get_candidate(study, new_candidate.name) == new_candidate
-    assert xpansion_manager.get_candidate(study, new_candidate2.name) == new_candidate2
+    assert xpansion_manager.get_candidate(study, cdt_1["name"]) == XpansionCandidate(**cdt_1)
+    assert xpansion_manager.get_candidate(study, cdt_2["name"]) == XpansionCandidate(**cdt_2)
 
 
 @pytest.mark.unit_test
@@ -292,31 +289,24 @@ def test_get_candidates(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_1 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_2",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_2 = {
+        "name": "candidate_2",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    xpansion_manager.add_candidate(study, new_candidate)
-    xpansion_manager.add_candidate(study, new_candidate2)
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
-    assert xpansion_manager.get_candidates(study) == [
-        new_candidate,
-        new_candidate2,
-    ]
+    assert xpansion_manager.get_candidates(study) == [XpansionCandidate(**cdt_1), XpansionCandidate(**cdt_2)]
 
 
 @pytest.mark.unit_test
@@ -333,27 +323,25 @@ def test_update_candidates(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
-    xpansion_manager.add_candidate(study, new_candidate)
+    cdt_1 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
-    xpansion_manager.replace_candidate(study, new_candidate.name, new_candidate2)
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
 
-    assert xpansion_manager.get_candidate(study, candidate_name=new_candidate.name) == new_candidate2
+    cdt_2 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
+
+    xpansion_manager.replace_candidate(study, cdt_1["name"], XpansionCandidateCreation(**cdt_2))
+
+    assert xpansion_manager.get_candidate(study, candidate_name=cdt_1["name"]) == XpansionCandidate(**cdt_2)
 
 
 @pytest.mark.unit_test
@@ -370,7 +358,7 @@ def test_delete_candidate(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
+    new_candidate = XpansionCandidateCreation.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -380,19 +368,17 @@ def test_delete_candidate(
     )
     xpansion_manager.add_candidate(study, new_candidate)
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_2",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
-    xpansion_manager.add_candidate(study, new_candidate2)
+    cdt_2 = {
+        "name": "candidate_2",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
     xpansion_manager.delete_candidate(study, new_candidate.name)
 
-    assert xpansion_manager.get_candidates(study) == [new_candidate2]
+    assert xpansion_manager.get_candidates(study) == [XpansionCandidate(**cdt_2)]
 
 
 @pytest.mark.unit_test

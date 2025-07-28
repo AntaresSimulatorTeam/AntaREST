@@ -261,7 +261,7 @@ def _validate_candidate_name(name: str) -> str:
 CandidateName: TypeAlias = Annotated[str, BeforeValidator(_validate_candidate_name)]
 
 
-class XpansionCandidate(AntaresBaseModel, alias_generator=to_kebab_case):
+class XpansionCandidate(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
     name: CandidateName
     link: XpansionLinkStr
     annual_cost_per_mw: float = Field(ge=0)
@@ -279,7 +279,7 @@ class XpansionCandidate(AntaresBaseModel, alias_generator=to_kebab_case):
     already_installed_indirect_link_profile: Optional[str] = None
 
 
-class XpansionCandidateCreation(AntaresBaseModel, alias_generator=to_kebab_case):
+class XpansionCandidateCreation(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
     name: CandidateName
     link: XpansionLinkStr
     annual_cost_per_mw: float = Field(ge=0)
