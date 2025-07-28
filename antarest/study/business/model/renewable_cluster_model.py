@@ -16,7 +16,6 @@ from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
-from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
@@ -172,9 +171,9 @@ def validate_renewable_cluster_against_version(
     Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
     """
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
-        # We need to be sure we're able to cast the group to a RenewableClusterGroup enum value
-        if cluster_data.group not in [e.value for e in RenewableClusterGroup]:
-            raise InvalidFieldForVersionError(f"Free groups are available since v9.3 and your study is in {version}")
+        # Performs this transformation to fit with old behavior
+        # Before, when giving a fake group, we used to write `other res 1` instead and not crash.
+        cluster_data.group = RenewableClusterGroup(cluster_data.group)
 
 
 def create_renewable_cluster(cluster_data: RenewableClusterCreation, version: StudyVersion) -> RenewableCluster:

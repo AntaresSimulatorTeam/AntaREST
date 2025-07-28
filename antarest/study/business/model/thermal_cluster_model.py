@@ -369,9 +369,9 @@ def validate_thermal_cluster_against_version(
             _check_min_version(cluster_data, field, version)
 
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
-        # We need to be sure we're able to cast the group to a ThermalClusterGroup enum value
-        if cluster_data.group not in [e.value for e in ThermalClusterGroup]:
-            raise InvalidFieldForVersionError(f"Free groups are available since v9.3 and your study is in {version}")
+        # Performs this transformation to fit with old behavior
+        # Before, when giving a fake group, we used to write `other 1` instead and not crash.
+        cluster_data.group = ThermalClusterGroup(cluster_data.group)
 
 
 def _initialize_field_default(cluster: ThermalCluster, field: str, default_value: Any) -> None:
