@@ -53,13 +53,6 @@ class RemoveSTStorage(ICommand):
             return command_failed(f"Short-term storage '{self.storage_id}' in area '{self.area_id}' does not exist")
 
         storage = study_data.get_st_storage(self.area_id, self.storage_id)
-
-        # Checks the storage is not referenced in any constraint
-        existing_constraints = study_data.get_st_storage_additional_constraints(self.area_id, self.storage_id)
-        if existing_constraints:
-            ids = {c.id for c in existing_constraints}
-            return command_failed(f"Short-term storage '{self.storage_id}' is referenced in the constraint(s) '{ids}'.")
-
         study_data.delete_st_storage(self.area_id, storage)
 
         return command_succeeded(f"Short-term storage '{self.storage_id}' inside area '{self.area_id}' deleted")

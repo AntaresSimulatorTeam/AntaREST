@@ -832,19 +832,6 @@ class AreaReferencedInsideSTStorageAdditionalConstraints(HTTPException):
         )
 
 
-class STStorageReferencedInsideAdditionalConstraints(HTTPException):
-    """
-    Exception raised when a sts is not allowed to be deleted because it is referenced inside some additional constraints.
-    """
-
-    def __init__(self, storage_id: str, constraint_ids: set[str]) -> None:
-        ids = " , ".join(constraint_ids)
-        super().__init__(
-            HTTPStatus.CONFLICT,
-            f"The Short-term storage '{storage_id}' is not allowed to be deleted as it is referenced inside this additional-constraint(s) {ids}.",
-        )
-
-
 class STStorageAdditionalConstraintNotFound(HTTPException):
     def __init__(self, area_id: str, constraint_id: str) -> None:
         msg = f"The constraint '{constraint_id}' inside area {area_id} was not found."

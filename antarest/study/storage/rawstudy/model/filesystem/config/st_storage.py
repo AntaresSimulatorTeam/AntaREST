@@ -14,7 +14,6 @@ from typing import Annotated, Any, Optional, TypeAlias
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer
 
-from antarest.core.model import LowerCaseId
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
@@ -94,15 +93,14 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    cluster: LowerCaseId
     variable: AdditionalConstraintVariable
     operator: AdditionalConstraintOperator
     hours: HoursIni
     enabled: bool = True
 
-    def to_model(self, constraint_id: str) -> tuple[str, STStorageAdditionalConstraint]:
-        args = {"id": constraint_id, **self.model_dump(mode="json", exclude={"cluster"})}
-        return self.cluster, STStorageAdditionalConstraint.model_validate(args)
+    def to_model(self, constraint_name: str) -> STStorageAdditionalConstraint:
+        args = {"name": constraint_name, **self.model_dump(mode="json")}
+        return STStorageAdditionalConstraint.model_validate(args)
 
     @classmethod
     def from_model(
@@ -111,11 +109,11 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
         return cls.model_validate({"cluster": storage_id, **additional_constraint.model_dump(exclude={"id"})})
 
 
-def parse_st_storage_additional_constraint(constraint_id: str, data: Any) -> tuple[str, STStorageAdditionalConstraint]:
+def parse_st_storage_additional_constraint(constraint_name: str, data: Any) -> STStorageAdditionalConstraint:
     """
     Returns a tuple containing the storage ID and the additional constraint object.
     """
-    return STStorageAdditionalConstraintFileData.model_validate(data).to_model(constraint_id)
+    return STStorageAdditionalConstraintFileData.model_validate(data).to_model(constraint_name)
 
 
 def serialize_st_storage_additional_constraint(

@@ -306,7 +306,14 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    id: LowerCaseId
+    @model_validator(mode="before")
+    @classmethod
+    def set_id(cls, data: dict[str, Any]) -> dict[str, Any]:
+        data["id"] = transform_name_to_id(data["name"])
+        return data
+
+    id: str
+    name: ItemName
     variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
     operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
     hours: Hours = [[]]
@@ -338,14 +345,13 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    id: LowerCaseId
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
     hours: Optional[Hours] = None
     enabled: Optional[bool] = None
 
 
-STStorageAdditionalConstraintsMap = dict[str, dict[str, list[STStorageAdditionalConstraint]]]
+STStorageAdditionalConstraintsMap = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]
 
 # 2nd key corresponds to a short-term storage id
 STStorageAdditionalConstraintUpdates = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraintUpdate]]]
@@ -355,8 +361,7 @@ def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCrea
     """
     Creates a short-term storage constraint from a creation request
     """
-    args = cluster_data.model_dump(exclude_none=True, exclude={"name"})
-    args["id"] = transform_name_to_id(cluster_data.name)
+    args = cluster_data.model_dump(exclude_none=True)
     return STStorageAdditionalConstraint.model_validate(args)
 
 

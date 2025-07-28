@@ -30,7 +30,6 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
-    AreaReferencedInsideSTStorageAdditionalConstraints,
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
@@ -1778,12 +1777,6 @@ class StudyService:
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
-
-        referencing_st_storage_constraints = self.st_storage_manager.get_additional_constraints_for_area(
-            study_interface, area_id
-        )
-        if referencing_st_storage_constraints:
-            raise AreaReferencedInsideSTStorageAdditionalConstraints(area_id)
 
         # Delete the area
         self.area_manager.delete_area(study_interface, area_id)

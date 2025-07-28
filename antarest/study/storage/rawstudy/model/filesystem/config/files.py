@@ -30,9 +30,9 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
@@ -52,7 +52,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.model import (
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
-    parse_st_storage_additional_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
@@ -401,7 +400,6 @@ def parse_area(root: Path, area: str) -> "Area":
         filters_synthesis=filter_synthesis,
         filters_year=filter_year_by_year,
         st_storages=_parse_st_storage(root, area_id),
-        st_storages_additional_constraints=_parse_st_storage_additional_constraints(root, area_id),
     )
 
 
@@ -475,34 +473,6 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid short-term storage configuration: '{section}' in '{config_path}'", exc_info=exc)
-    return config_list
-
-
-def _parse_st_storage_additional_constraints(root: Path, area: str) -> List[STStorageAdditionalConstraint]:
-    """
-    Parse the additional-constraints INI file, return an empty list if missing.
-    """
-
-    # The additional-constraints feature exists only since the 9.2 version
-    version = _parse_version(root)
-    if version < STUDY_VERSION_9_2:
-        return []
-
-    relpath = Path(f"input/st-storage/constraints/{area}/additional-constraints.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
-        root=root,
-        inside_root_path=relpath,
-        file_type=FileType.SIMPLE_INI,
-    )
-    config_list = []
-    for section, values in config_dict.items():
-        try:
-            config_list.append(parse_st_storage_additional_constraint(section, values)[1])
-        except ValueError as exc:
-            config_path = root.joinpath(relpath)
-            logger.warning(
-                f"Invalid additional-constraints configuration: '{section}' in '{config_path}'", exc_info=exc
-            )
     return config_list
 
 

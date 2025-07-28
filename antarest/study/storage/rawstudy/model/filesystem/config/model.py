@@ -86,7 +86,7 @@ class Area(AntaresBaseModel, extra="forbid"):
     # since v8.6
     st_storages: List[STStorage] = []
     # Since v9.2
-    st_storages_additional_constraints: List[STStorageAdditionalConstraint] = []
+    st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
 
 
 class DistrictSet(AntaresBaseModel):
