@@ -13,6 +13,7 @@ from abc import ABC, abstractmethod
 
 from typing_extensions import override
 
+from antarest.core.exceptions import CandidateNotFoundError
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -25,11 +26,21 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        return [XpansionCandidate(**c) for c in candidates.values()]
 
     @override
     def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
-        raise NotImplementedError()
+        # This takes the first candidate with the given name and not the id, because the name is the primary key.
+        file_study = self.get_file_study()
+        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        try:
+            candidate = next(c for c in candidates.values() if c["name"] == candidate_id)
+            return XpansionCandidate(**candidate)
+
+        except StopIteration:
+            raise CandidateNotFoundError(f"The candidate '{candidate_id}' does not exist")
 
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate) -> None:

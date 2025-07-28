@@ -16,7 +16,6 @@ from typing import List
 from fastapi import UploadFile
 
 from antarest.core.exceptions import (
-    CandidateNotFoundError,
     ChildNotFoundError,
     FileImportFailed,
     MatrixImportFailed,
@@ -111,21 +110,11 @@ class XpansionManager:
 
     def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidate:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
-        # This takes the first candidate with the given name and not the id, because the name is the primary key.
-        file_study = study.get_files()
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        try:
-            candidate = next(c for c in candidates.values() if c["name"] == candidate_name)
-            return XpansionCandidate(**candidate)
-
-        except StopIteration:
-            raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
+        return study.get_study_dao().get_xpansion_candidate(candidate_name)
 
     def get_candidates(self, study: StudyInterface) -> List[XpansionCandidate]:
         logger.info(f"Getting all candidates of study {study.id}")
-        file_study = study.get_files()
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        return [XpansionCandidate(**c) for c in candidates.values()]
+        return study.get_study_dao().get_all_xpansion_candidates()
 
     def replace_candidate(
         self,
