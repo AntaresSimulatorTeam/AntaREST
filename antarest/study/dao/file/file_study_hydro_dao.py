@@ -14,13 +14,7 @@ from typing import Dict
 
 from typing_extensions import override
 
-from antarest.study.business.model.hydro_model import (
-    HYDRO_PATH,
-    HydroManagement,
-    HydroProperties,
-    InflowStructure,
-    get_inflow_path,
-)
+from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
     parse_hydro_management,
@@ -29,6 +23,12 @@ from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
     serialize_inflow_structure,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+HYDRO_PATH = ["input", "hydro", "hydro"]
+
+
+def get_inflow_path(area_id: str) -> list[str]:
+    return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
 
 
 class FileStudyHydroDao(HydroDao):
@@ -72,10 +72,8 @@ class FileStudyHydroDao(HydroDao):
         file_study = self.get_file_study()
         initial_hydro_data = file_study.tree.get(HYDRO_PATH)
         new_hydro_data = serialize_hydro_management(hydro_management, area_id, file_study.config.version)
-        updated_hydro_data = {
-            field: {**initial_hydro_data.get(field, {}), **new_hydro_data[field]} for field in new_hydro_data.keys()
-        }
-        file_study.tree.save(updated_hydro_data, HYDRO_PATH)
+        final_hydro_data = {key: {**initial_hydro_data.get(key, {}), **value} for key, value in new_hydro_data.items()}
+        file_study.tree.save(final_hydro_data, HYDRO_PATH)
 
     @override
     def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:

@@ -12,7 +12,8 @@
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.business.model.hydro_model import InflowStructureUpdate, get_inflow_path
+from antarest.study.business.model.hydro_model import InflowStructureUpdate
+from antarest.study.dao.file.file_study_hydro_dao import get_inflow_path
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure

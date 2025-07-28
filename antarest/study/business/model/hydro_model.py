@@ -19,12 +19,6 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import STUDY_VERSION_9_2
 
-HYDRO_PATH = ["input", "hydro", "hydro"]
-
-
-def get_inflow_path(area_id: str) -> list[str]:
-    return ["input", "hydro", "prepro", area_id, "prepro", "prepro"]
-
 
 class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
     inter_daily_breakdown: Optional[float] = Field(default=1, ge=0)

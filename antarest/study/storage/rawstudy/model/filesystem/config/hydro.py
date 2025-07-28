@@ -49,8 +49,11 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
     )
 
     def to_model(self, area_id: str) -> HydroManagement:
-        initial_data = _parse_hydro_management(self, area_id)
-        return HydroManagement.model_validate(initial_data)
+        lower_area_id = area_id.lower()
+        data = self.model_dump(mode="json").items()
+
+        args = {key: values.get(lower_area_id) for key, values in data if values and lower_area_id in values}
+        return HydroManagement.model_validate(args)
 
     @classmethod
     def from_model(
@@ -58,25 +61,12 @@ class HydroManagementFileData(AntaresBaseModel, extra="forbid", populate_by_name
         hydro_management: HydroManagement,
         area_id: str,
     ) -> "HydroManagementFileData":
-        updated_data = cls._serialize_hydro_management(hydro_management, area_id)
-        return cls.model_validate(updated_data)
-
-    @classmethod
-    def _serialize_hydro_management(cls, hydro_management: HydroManagement, area_id: str) -> dict[str, Any]:
         lower_area_id = area_id.lower()
         hydro_data = hydro_management.model_dump(exclude_none=True)
-        hydro_file_data = HydroManagementFileData()
-
+        args: dict[str, Any] = {}
         for key, value in hydro_data.items():
-            current_dict = getattr(hydro_file_data, key, {})
-            if current_dict is None:
-                current_dict = {}
-
-            current_dict[lower_area_id] = value
-
-            setattr(hydro_file_data, key, current_dict)
-
-        return hydro_file_data.model_dump()
+            args.setdefault(key, {})[lower_area_id] = value
+        return HydroManagementFileData.model_validate(args)
 
 
 class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
@@ -93,14 +83,6 @@ class InflowStructureFileData(AntaresBaseModel, extra="forbid", populate_by_name
     @classmethod
     def from_model(cls, inflow_structure: InflowStructure) -> "InflowStructureFileData":
         return cls.model_validate(inflow_structure.model_dump(exclude={"id"}))
-
-
-def _parse_hydro_management(hydro_file_data: HydroManagementFileData, area_id: str) -> dict[str, Any]:
-    lower_area_id = area_id.lower()
-    data = hydro_file_data.model_dump(mode="json").items()
-
-    args = {key: values.get(lower_area_id) for key, values in data if values and lower_area_id in values}
-    return args
 
 
 def parse_hydro_management(area_id: str, file_data: dict[str, Any], study_version: StudyVersion) -> HydroManagement:
