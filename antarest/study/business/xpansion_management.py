@@ -29,6 +29,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
+    create_xpansion_candidate,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
@@ -97,11 +98,11 @@ class XpansionManager:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
 
         file_study = study.get_files()
-        internal_candidate = xpansion_candidate.to_internal_model()
-        assert_link_exist(file_study, internal_candidate)
+        candidate = create_xpansion_candidate(xpansion_candidate)
+        assert_link_exist(file_study, candidate)
 
         command = CreateXpansionCandidate(
-            candidate=internal_candidate, command_context=self._command_context, study_version=study.version
+            candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
 
@@ -130,12 +131,11 @@ class XpansionManager:
         self,
         study: StudyInterface,
         candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateCreation,
+        xpansion_candidate: XpansionCandidateCreation,
     ) -> None:
-        internal_candidate = xpansion_candidate_dto.to_internal_model()
         command = ReplaceXpansionCandidate(
             candidate_name=candidate_name,
-            properties=internal_candidate,
+            properties=xpansion_candidate,
             command_context=self._command_context,
             study_version=study.version,
         )

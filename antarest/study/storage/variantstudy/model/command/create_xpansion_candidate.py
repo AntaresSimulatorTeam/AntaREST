@@ -14,7 +14,11 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.core.exceptions import CandidateAlreadyExistsError
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionCandidateCreation
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionCandidateCreation,
+    create_xpansion_candidate,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -46,6 +50,7 @@ class CreateXpansionCandidate(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        candidate = create_xpansion_candidate(self.candidate)
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
         candidates_dict = {}
         for cdt in candidates.values():
@@ -55,7 +60,7 @@ class CreateXpansionCandidate(ICommand):
         # Checks candidate validity
         if self.candidate.name in candidates_dict:
             raise CandidateAlreadyExistsError(f"The candidate '{self.candidate.name}' already exists")
-        assert_candidate_is_correct(study_data, self.candidate)
+        assert_candidate_is_correct(study_data, candidate)
 
         new_id = str(len(candidates) + 1)  # The first candidate key is 1
         candidates[new_id] = self.candidate.model_dump(mode="json", by_alias=True, exclude_none=True)

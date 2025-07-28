@@ -14,7 +14,11 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.core.exceptions import CandidateAlreadyExistsError, CandidateNotFoundError
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionCandidateCreation
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionCandidateCreation,
+    create_xpansion_candidate,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -49,7 +53,8 @@ class ReplaceXpansionCandidate(ICommand):
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         # Checks candidate validity
-        assert_candidate_is_correct(study_data, self.properties)
+        candidate = create_xpansion_candidate(self.properties)
+        assert_candidate_is_correct(study_data, candidate)
         candidates = study_data.tree.get(["user", "expansion", "candidates"])
         candidates_dict = {}
         candidate_number = None

@@ -312,3 +312,10 @@ def validate_xpansion_candidate(candidate: XpansionCandidate | XpansionCandidate
             "The candidate is not well formatted."
             "\nIt should either contain max-investment or (max-units and unit-size)."
         )
+
+
+def create_xpansion_candidate(candidate_data: XpansionCandidateCreation) -> XpansionCandidate:
+    """
+    Creates a candidate from a creation request, checking and initializing it against the specified study version.
+    """
+    return XpansionCandidate.model_validate(candidate_data.model_dump(exclude_none=True))
