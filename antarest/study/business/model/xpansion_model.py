@@ -297,7 +297,7 @@ class XpansionCandidateCreation(AntaresBaseModel, populate_by_name=True, alias_g
     already_installed_indirect_link_profile: Optional[str] = None
 
 
-def validate_xpansion_candidate(candidate: XpansionCandidate | XpansionCandidateCreation) -> None:
+def validate_xpansion_candidate(candidate: XpansionCandidate) -> None:
     possible_format_1 = candidate.max_investment is None and (
         candidate.max_units is not None and candidate.unit_size is not None
     )
