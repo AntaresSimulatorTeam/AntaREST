@@ -337,23 +337,11 @@ class STStorageManager:
             storage_id: The short-term storage ID.
             constraint_id: The constraint ID.
         """
-        constraints_by_storage = self.get_additional_constraints_for_area(study, area_id)
-        for constraint in constraints_by_storage.get(storage_id, {}):
+        constraints = study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
+        for constraint in constraints:
             if constraint.id == constraint_id:
                 return constraint
         raise STStorageAdditionalConstraintNotFound(area_id, constraint_id)
-
-    def get_additional_constraints_for_area(
-        self, study: StudyInterface, area_id: str
-    ) -> dict[str, list[STStorageAdditionalConstraint]]:
-        """
-        Gets additional constraints for a given area.
-
-        Args:
-            study: The study object.
-            area_id: The area ID.
-        """
-        return study.get_study_dao().get_st_storage_additional_constraints_for_area(area_id)
 
     def get_additional_constraints(
         self, study: StudyInterface, area_id: str, storage_id: str

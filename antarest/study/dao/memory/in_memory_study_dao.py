@@ -108,7 +108,7 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
         # Short-term storages additional constraints
         self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
-        self._st_storages_constraints_terms: Dict[AdditionalConstraintKey, str] = {}
+        self._st_storages_constraints_terms: Dict[str, dict[str, str]] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
@@ -481,46 +481,38 @@ class InMemoryStudyDao(StudyDao):
         return self._st_storages_constraints
 
     @override
-    def get_st_storage_additional_constraints_for_area(
-        self, area_id: str
-    ) -> dict[str, list[STStorageAdditionalConstraint]]:
-        return self._st_storages_constraints.get(area_id, {})
-
-    @override
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
         return self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
     @override
-    def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
-        self._st_storages_constraints_terms[additional_constraint_key(area_id, constraint_id)] = series_id
+    def save_st_storage_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
+    ) -> None:
+        self._st_storages_constraints_terms.setdefault(area_id, {})[storage_id] = series_id
 
     @override
-    def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
-        constraints_to_remove: dict[str, list[STStorageAdditionalConstraint]] = {}
-        for storage_id, cs in self._st_storages_constraints[area_id].items():
-            for constraint in cs:
-                if constraint.id in constraints:
-                    constraints_to_remove.setdefault(storage_id, []).append(constraint)
-        for storage_id, cs in constraints_to_remove.items():
-            for constraint in cs:
-                self._st_storages_constraints[area_id][storage_id].remove(constraint)
+    def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
+        existing_constraints = self._st_storages_constraints[area_id][storage_id]
+        constraints_to_remove = []
+        for constraint in existing_constraints:
+            if constraint.id in constraints:
+                constraints_to_remove.append(constraint)
+        for constraint in constraints_to_remove:
+            self._st_storages_constraints[area_id][storage_id].remove(constraint)
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
+        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
     ) -> None:
-        existing_constraints = self._st_storages_constraints.get(area_id, {})
+        existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
 
-        existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
-        for map in [existing_constraints, constraints]:
-            for storage_id, cs in map.items():
-                for constraint in cs:
-                    existing_map.setdefault(storage_id, {})[constraint.id] = constraint
+        existing_map = {}
+        for constraint in existing_constraints:
+            existing_map[constraint.id] = constraint
 
-        new_constraints = {}
-        for storage_id, value in existing_map.items():
-            new_constraints[storage_id] = list(value.values())
+        for constraint in constraints:
+            existing_map[constraint.id] = constraint
 
-        self._st_storages_constraints[area_id] = new_constraints
+        self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())

@@ -246,12 +246,6 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_st_storage_additional_constraints()
 
     @override
-    def get_st_storage_additional_constraints_for_area(
-        self, area_id: str
-    ) -> dict[str, list[STStorageAdditionalConstraint]]:
-        return self._adaptee.get_st_storage_additional_constraints_for_area(area_id)
-
-    @override
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:

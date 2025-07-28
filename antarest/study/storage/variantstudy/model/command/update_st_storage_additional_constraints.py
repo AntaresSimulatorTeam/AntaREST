@@ -58,23 +58,21 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         for area_id, value in self.additional_constraint_properties.items():
-            all_constraints_per_area = study_data.get_st_storage_additional_constraints_for_area(area_id)
-
-            new_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
-            if not all_constraints_per_area:
-                return command_failed(f"The area '{area_id}' is not found.")
-
             for storage_id, updated_constraints in value.items():
-                if storage_id not in all_constraints_per_area:
+                all_constraints_per_storage = study_data.get_st_storage_additional_constraints(area_id, storage_id)
+                if not all_constraints_per_storage:
                     return command_failed(f"Short-term storage {storage_id} not found in area '{area_id}'.")
-                existing_ids = {c.id: index for index, c in enumerate(all_constraints_per_area[storage_id])}
+
+                new_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
+
+                existing_ids = {c.id: index for index, c in enumerate(all_constraints_per_storage)}
                 for upd_constraint in updated_constraints:
                     if upd_constraint.id not in existing_ids:
                         return command_failed(
                             f"Constraint {upd_constraint.id} not found for short-term storage {storage_id} in area '{area_id}'."
                         )
 
-                    current_constraint = all_constraints_per_area[storage_id][existing_ids[upd_constraint.id]]
+                    current_constraint = all_constraints_per_storage[existing_ids[upd_constraint.id]]
                     new_constraint = update_st_storage_constraint(current_constraint, upd_constraint)
                     new_constraints.setdefault(storage_id, []).append(new_constraint)
 

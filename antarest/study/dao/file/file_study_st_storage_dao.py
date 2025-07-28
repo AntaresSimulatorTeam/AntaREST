@@ -290,7 +290,6 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     ) -> list[STStorageAdditionalConstraint]:
         return self.get_st_storage_additional_constraints_for_area(area_id).get(storage_id, [])
 
-    @override
     def get_st_storage_additional_constraints_for_area(
         self, area_id: str
     ) -> dict[str, list[STStorageAdditionalConstraint]]:
