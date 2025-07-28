@@ -24,6 +24,7 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -431,3 +432,15 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
+
+    @override
+    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
+        raise NotImplementedError()
+
+    @override
+    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
+        raise NotImplementedError()
+
+    @override
+    def save_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+        raise NotImplementedError()
