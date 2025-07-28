@@ -82,14 +82,14 @@ class CreateSTStorageAdditionalConstraints(ICommand):
                 return command_failed(f"Short-term storage constraint '{constraint.id}' already exists.")
 
         # Save the new constraints
-        study_data.save_st_storage_additional_constraints(self.area_id, {self.storage_id: constraints})
+        study_data.save_st_storage_additional_constraints(self.area_id, self.storage_id, constraints)
         # Save the default matrices
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
         for constraint in constraints:
-            study_data.save_st_storage_constraint_matrix(self.area_id, constraint.id, null_matrix)
+            study_data.save_st_storage_constraint_matrix(self.area_id, self.storage_id, constraint.id, null_matrix)
 
         return command_succeeded(
-            f"Short-term storage additional constraints successfully added to area '{self.area_id}'."
+            f"Short-term storage additional constraints successfully added to storage {self.storage_id} in area '{self.area_id}'."
         )
 
     @override
