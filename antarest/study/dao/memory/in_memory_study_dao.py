@@ -92,6 +92,8 @@ class InMemoryStudyDao(StudyDao):
         self._constraints_less_term_matrix: dict[str, str] = {}
         self._constraints_greater_term_matrix: dict[str, str] = {}
         self._constraints_equal_term_matrix: dict[str, str] = {}
+        # Xpansion
+        self._xpansion_candidates: dict[str, XpansionCandidate] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -435,12 +437,12 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
-        raise NotImplementedError()
+        return list(self._xpansion_candidates.values())
 
     @override
     def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
-        raise NotImplementedError()
+        return self._xpansion_candidates[candidate_id]
 
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
-        raise NotImplementedError()
+        self._xpansion_candidates[candidate.name] = candidate
