@@ -245,9 +245,7 @@ XpansionLinkStr: TypeAlias = Annotated[
 ]
 
 
-def _validate_candidate_name(name: str) -> Optional[str]:
-    if name is None:
-        return None
+def _validate_candidate_name(name: str) -> str:
     # The name is written directly inside the ini file so a specific check is performed here
     if name.strip() == "":
         raise CandidateNameIsEmpty()
