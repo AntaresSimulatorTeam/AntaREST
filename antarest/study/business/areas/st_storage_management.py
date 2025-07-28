@@ -405,16 +405,16 @@ class STStorageManager:
             if area_id not in existing_constraints:
                 raise AreaNotFound(area_id)
 
-            for storage_id, updated_constraints in value.items():
-                if storage_id not in existing_constraints[area_id]:
-                    raise STStorageNotFound(area_id, storage_id)
-                existing_ids = {c.id: index for index, c in enumerate(existing_constraints[area_id][storage_id])}
-                for upd_constraint in updated_constraints:
-                    if upd_constraint.id not in existing_ids:
-                        raise STStorageAdditionalConstraintNotFound(area_id, upd_constraint.id)
+            for storage_id, values in value.items():
+                for constraint_id, updated_constraint in values.items():
+                    if storage_id not in existing_constraints[area_id]:
+                        raise STStorageNotFound(area_id, storage_id)
+                    existing_ids = {c.id: index for index, c in enumerate(existing_constraints[area_id][storage_id])}
+                    if constraint_id not in existing_ids:
+                        raise STStorageAdditionalConstraintNotFound(area_id, constraint_id)
 
-                    current_constraint = existing_constraints[area_id][storage_id][existing_ids[upd_constraint.id]]
-                    new_constraint = update_st_storage_constraint(current_constraint, upd_constraint)
+                    current_constraint = existing_constraints[area_id][storage_id][existing_ids[constraint_id]]
+                    new_constraint = update_st_storage_constraint(current_constraint, updated_constraint)
                     new_constraints.setdefault(area_id, {}).setdefault(storage_id, []).append(new_constraint)
 
         # Apply the command
