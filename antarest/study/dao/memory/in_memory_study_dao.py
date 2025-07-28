@@ -20,6 +20,11 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.hydro_model import (
+    HydroManagement,
+    HydroProperties,
+    InflowStructure,
+)
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -84,6 +89,8 @@ class InMemoryStudyDao(StudyDao):
         self._thermal_series: Dict[ClusterKey, str] = {}
         self._thermal_fuel_cost: Dict[ClusterKey, str] = {}
         self._thermal_co2_cost: Dict[ClusterKey, str] = {}
+        # Hydro
+        self._hydro_properties: Dict[str, HydroProperties] = {}
         # Renewables
         self._renewables: Dict[ClusterKey, RenewableCluster] = {}
         self._renewable_series: Dict[ClusterKey, str] = {}
@@ -231,6 +238,26 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
         del self._thermals[cluster_key(area_id, thermal.id)]
+
+    @override
+    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+        return self._hydro_properties
+
+    @override
+    def get_hydro_management(self, area_id: str) -> HydroManagement:
+        return self._hydro_properties[area_id].management_options
+
+    @override
+    def get_inflow_structure(self, area_id: str) -> InflowStructure:
+        return self._hydro_properties[area_id].inflow_structure
+
+    @override
+    def save_hydro_management(self, hydro_management: HydroManagement, area_id: str) -> None:
+        self._hydro_properties[area_id].management_options = hydro_management
+
+    @override
+    def save_inflow_structure(self, inflow_structure: InflowStructure, area_id: str) -> None:
+        self._hydro_properties[area_id].inflow_structure = inflow_structure
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
