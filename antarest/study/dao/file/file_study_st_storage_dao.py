@@ -328,24 +328,22 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         study_data = self.get_file_study()
         existing_constraints = self.get_st_storage_additional_constraints(area_id, storage_id)
 
-        existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
-        for map in [existing_constraints, constraints]:
-            for storage_id, cs in map.items():
-                for constraint in cs:
-                    existing_map.setdefault(storage_id, {})[constraint.id] = constraint
+        existing_map = {c.id: c for c in existing_constraints}
+        existing_map.update({c.id: c for c in constraints})
 
         ini_content = {}
-        for storage_id, value in existing_map.items():
-            for constraint_id, constraint_update in value.items():
-                ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
+        for constraint_id, constraint_update in existing_map.items():
+            ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
 
         # Save into the files
         if not existing_constraints:
             # We have to create the folder first
-            (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id).mkdir(
+            (study_data.config.study_path / "input" / "st-storage" / "constraints" / area_id / storage_id).mkdir(
                 parents=True, exist_ok=True
             )
-        study_data.tree.save(ini_content, ["input", "st-storage", "constraints", area_id, "additional_constraints"])
+        study_data.tree.save(
+            ini_content, ["input", "st-storage", "constraints", area_id, storage_id, "additional_constraints"]
+        )
 
     @staticmethod
     def _get_all_storages_for_area(file_study: FileStudy, area_id: str) -> dict[str, STStorage]:
