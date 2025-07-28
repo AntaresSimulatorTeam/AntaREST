@@ -12,16 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import { Box } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import BackButton from "@/components/common/buttons/BackButton";
+import TabsView from "@/components/common/TabsView";
 import { getCurrentAreaId } from "@/redux/selectors";
 import { nameToId } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
-import { Chip, Divider } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import AdditionalConstraints from "./AdditionalConstraints";
 import StorageForm from "./StorageForm";
-import StorageMatrices from "./StorageMatrices";
 
 function StorageConfig() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -29,7 +30,8 @@ function StorageConfig() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { storageId = "" } = useParams();
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
+  // const studyVersion = Number(study.version);
+  // TODO: conditionnal render of additional constraints only for studies > 9.2 ?
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -38,16 +40,27 @@ function StorageConfig() {
   return (
     <>
       <BackButton onClick={() => navigate("../storages")} />
-      <StorageForm study={study} areaId={areaId} storageId={storageId} />
-      <Divider sx={{ my: 2 }} variant="middle">
-        <Chip label={t("global.matrices")} size="small" />
-      </Divider>
-      <StorageMatrices
-        study={study}
-        areaId={areaId}
-        storageId={nameToId(storageId)}
-        studyVersion={studyVersion}
-      />
+      <Box sx={{ width: 1, height: "calc(100% - 45px)" }}>
+        <TabsView
+          divider
+          items={[
+            {
+              label: t("study.modelization.storages.operatingParameters"),
+              content: () => <StorageForm study={study} areaId={areaId} storageId={storageId} />,
+            },
+            {
+              label: t("study.modelization.storages.additionalConstraints"),
+              content: () => (
+                <AdditionalConstraints
+                  study={study}
+                  areaId={areaId}
+                  storageId={nameToId(storageId)}
+                />
+              ),
+            },
+          ]}
+        />
+      </Box>
     </>
   );
 }
