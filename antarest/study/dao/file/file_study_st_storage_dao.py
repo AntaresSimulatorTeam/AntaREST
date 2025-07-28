@@ -288,45 +288,44 @@ class FileStudySTStorageDao(STStorageDao, ABC):
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
-        return self.get_st_storage_additional_constraints_for_area(area_id).get(storage_id, [])
-
-    def get_st_storage_additional_constraints_for_area(
-        self, area_id: str
-    ) -> dict[str, list[STStorageAdditionalConstraint]]:
         file_study = self.get_file_study()
-        path = ["input", "st-storage", "constraints", area_id, "additional_constraints"]
+        path = ["input", "st-storage", "constraints", area_id, storage_id, "additional_constraints"]
         try:
-            constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
+            constraints: list[STStorageAdditionalConstraint] = []
             ini_content = file_study.tree.get(path)
             for key, value in ini_content.items():
-                storage_id, constraint = parse_st_storage_additional_constraint(key, value)
-                constraints.setdefault(storage_id, []).append(constraint)
+                constraint = parse_st_storage_additional_constraint(key, value)
+                constraints.append(constraint)
             return constraints
         except ChildNotFoundError:
-            return {}
+            return []
 
     @override
-    def save_st_storage_constraint_matrix(self, area_id: str, constraint_id: str, series_id: str) -> None:
+    def save_st_storage_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
+    ) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "st-storage", "constraints", area_id, f"rhs_{constraint_id}"])
+        study_data.tree.save(
+            series_id, ["input", "st-storage", "constraints", area_id, storage_id, f"rhs_{constraint_id}"]
+        )
 
     @override
-    def delete_st_storage_additional_constraints(self, area_id: str, constraints: list[str]) -> None:
+    def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
         study_data = self.get_file_study()
         for constraint in constraints:
             paths = [
-                ["input", "st-storage", "constraints", area_id, f"rhs_{constraint}"],
-                ["input", "st-storage", "constraints", area_id, "additional_constraints", constraint],
+                ["input", "st-storage", "constraints", area_id, storage_id, f"rhs_{constraint}"],
+                ["input", "st-storage", "constraints", area_id, storage_id, "additional_constraints", constraint],
             ]
             for path in paths:
                 study_data.tree.delete(path)
 
     @override
     def save_st_storage_additional_constraints(
-        self, area_id: str, constraints: dict[str, list[STStorageAdditionalConstraint]]
+        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
     ) -> None:
         study_data = self.get_file_study()
-        existing_constraints = self.get_st_storage_additional_constraints_for_area(area_id)
+        existing_constraints = self.get_st_storage_additional_constraints(area_id, storage_id)
 
         existing_map: dict[str, dict[str, STStorageAdditionalConstraint]] = {}
         for map in [existing_constraints, constraints]:
