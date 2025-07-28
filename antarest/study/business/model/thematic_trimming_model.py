@@ -27,6 +27,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_1,
+    STUDY_VERSION_9_3,
 )
 
 
@@ -140,6 +141,9 @@ class ThematicTrimming(FormFieldsBaseModel):
     npcap_hours: Optional[bool] = None
     # Since v9.1
     sts_by_group: Optional[bool] = None
+    # Since v9.3
+    dispatch_gen: Optional[bool] = None
+    renewable_gen: Optional[bool] = None
 
 
 def _get_default_fields() -> list[str]:
@@ -233,6 +237,10 @@ def _get_sts_fields() -> list[str]:
     return ["sts_inj_by_plant", "sts_withdrawal_by_plant", "sts_lvl_by_plant"]
 
 
+def _get_v_9_3_fields() -> list[str]:
+    return ["dispatch_gen", "renewable_gen"]
+
+
 def _get_sts_group_fields() -> list[str]:
     return [
         "psp_open_injection",
@@ -262,6 +270,35 @@ def _get_sts_group_fields() -> list[str]:
         "other5_injection",
         "other5_withdrawal",
         "other5_level",
+    ]
+
+
+def _get_dispatch_gen_fields() -> list[str]:
+    return [
+        "nuclear",
+        "lignite",
+        "coal",
+        "gas",
+        "oil",
+        "mix_fuel",
+        "misc_dtg",
+        "misc_dtg_2",
+        "misc_dtg_3",
+        "misc_dtg_4",
+    ]
+
+
+def _get_renewable_gen_fields() -> list[str]:
+    return [
+        "wind_offshore",
+        "wind_onshore",
+        "solar_concrt",
+        "solar_pv",
+        "solar_rooft",
+        "renw_1",
+        "renw_2",
+        "renw_3",
+        "renw_4",
     ]
 
 
@@ -302,6 +339,15 @@ def validate_against_version(thematic_trimming: ThematicTrimming, version: Study
         for field in sts_group_fields:
             _check_version(thematic_trimming, field, version)
 
+    if version < STUDY_VERSION_9_3:
+        for field in _get_v_9_3_fields():
+            _check_version(thematic_trimming, field, version)
+    else:
+        exclude_from_9_3 = _get_dispatch_gen_fields()
+        exclude_from_9_3.extend(_get_renewable_gen_fields())
+        for field in exclude_from_9_3:
+            _check_version(thematic_trimming, field, version)
+
 
 def _initialize_field_default(thematic_trimming: ThematicTrimming, field: str, default_bool: bool) -> None:
     if getattr(thematic_trimming, field) is None:
@@ -339,4 +385,8 @@ def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyV
 
     if version >= STUDY_VERSION_9_1:
         for field in _get_v_9_1_fields():
+            _initialize_field_default(thematic_trimming, field, default_bool)
+
+    if version >= STUDY_VERSION_9_3:
+        for field in _get_v_9_3_fields():
             _initialize_field_default(thematic_trimming, field, default_bool)
