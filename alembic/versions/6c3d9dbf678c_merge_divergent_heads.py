@@ -1,4 +1,4 @@
-"""empty message
+"""resolves a divergence in the Alembic migration history by merging multiple head revisions
 
 Revision ID: 6c3d9dbf678c
 Revises: fa59340767b0, a8c6e9d47b12
