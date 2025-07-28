@@ -15,6 +15,7 @@ from typing import List, Optional
 from pydantic import Field
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseId
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -41,24 +42,25 @@ class RemoveMultipleSTStorageConstraints(ICommand):
     # ==================
 
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
+    storage_id: LowerCaseId
     ids: list[str]
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        existing_constraints = study_data.get_st_storage_additional_constraints_for_area(self.area_id)
-        existing_ids = {c.id for constraints in existing_constraints.values() for c in constraints}
+        existing_constraints = study_data.get_st_storage_additional_constraints(self.area_id, self.storage_id)
+        existing_ids = {c.id for c in existing_constraints}
         for constraint_id in self.ids:
             if constraint_id not in existing_ids:
                 return command_failed(f"Short-term storage constraint '{constraint_id}' not found.")
 
-        study_data.delete_st_storage_additional_constraints(self.area_id, self.ids)
+        study_data.delete_st_storage_additional_constraints(self.area_id, self.storage_id, self.ids)
         return command_succeeded("Short-term storage constraints successfully removed.")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"area_id": self.area_id, "ids": self.ids},
+            args={"area_id": self.area_id, "storage_id": self.storage_id, "ids": self.ids},
             study_version=self.study_version,
         )
 

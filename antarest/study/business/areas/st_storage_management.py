@@ -428,17 +428,21 @@ class STStorageManager:
         # Return the updated constraints
         return new_constraints
 
-    def delete_additional_constraints(self, study: StudyInterface, area_id: str, constraint_ids: list[str]) -> None:
+    def delete_additional_constraints(
+        self, study: StudyInterface, area_id: str, storage_id: str, constraint_ids: list[str]
+    ) -> None:
         """
         Removes several additional-constraints for a given area.
 
         Args:
             study: The study object.
             area_id: The area ID.
+            storage_id: The short-term storage ID.
             constraint_ids: IDs list of constraints to remove.
         """
         command = RemoveMultipleSTStorageConstraints(
             area_id=area_id,
+            storage_id=storage_id,
             ids=constraint_ids,
             command_context=self._command_context,
             study_version=study.version,
