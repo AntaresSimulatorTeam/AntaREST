@@ -100,7 +100,7 @@ class TestHydroManagement:
             # get initial values with get_hydro_management_options
             initial_data = hydro_manager.get_hydro_management(study, area).model_dump()
 
-            # simulate changes on area_id case with another tool
+            # simulate changes on an area_id with another tool
             hydro_ini_path = study.file_study.config.study_path / "input" / "hydro" / "hydro.ini"
             with open(hydro_ini_path) as f:
                 file_content = f.read()
@@ -115,8 +115,9 @@ class TestHydroManagement:
 
             # simulate regular usage by modifying some values
             modified_data = dict(initial_data)
-            modified_data["intra_daily_modulation"] = 5.0
-            hydro_manager.update_hydro_management(study, HydroManagementUpdate(**modified_data), area)
+            modified_data.update(**{"intra_daily_modulation": 5.0})
+            hydro_management_update = HydroManagementUpdate.model_validate(modified_data)
+            hydro_manager.update_hydro_management(study, hydro_management_update, area)
 
             # retrieve edited
             new_data = hydro_manager.get_hydro_management(study, area).model_dump()
@@ -131,7 +132,7 @@ class TestHydroManagement:
             # Ensures updating with a v9.2 field fails
             with pytest.raises(
                 ValidationError,
-                match="You cannot fill the parameter `overflow_spilled_cost_difference` before the v9.2",
+                match="Field overflow_spilled_cost_difference is not a valid field for study version 8.8",
             ):
                 hydro_manager.update_hydro_management(
                     study, HydroManagementUpdate(overflow_spilled_cost_difference=0.3), area
@@ -191,7 +192,7 @@ class TestHydroManagement:
             new_inflow = InflowStructureUpdate(inter_monthly_correlation=0.2)
             hydro_manager.update_inflow_structure(study, "fr", new_inflow)
 
-            # Checks properties were updated
+            # Checks whether properties were updated
             new_fr_properties = copy.deepcopy(default_properties)
             new_fr_properties.management_options.follow_load = False
             new_fr_properties.management_options.intra_daily_modulation = 4.1
