@@ -1873,7 +1873,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update additional constraint(s) for a short-term storage object",
     )
     def update_additional_constraints(
-        uuid: str, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraintUpdate]
+        uuid: str, area_id: str, storage_id: str, constraints: dict[str, STStorageAdditionalConstraintUpdate]
     ) -> list[STStorageAdditionalConstraint]:
         logger.info(
             f"Updating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
