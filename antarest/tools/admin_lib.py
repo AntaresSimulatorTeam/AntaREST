@@ -55,7 +55,7 @@ def reindex_table(config: Path) -> None:
 
     raw_conn = engine.raw_connection()
     try:
-        conn: Psycopg2Connection = raw_conn.connection  # type: ignore[attr-defined]
+        conn: Psycopg2Connection = raw_conn.connection
         conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
         with conn.cursor() as cursor:
