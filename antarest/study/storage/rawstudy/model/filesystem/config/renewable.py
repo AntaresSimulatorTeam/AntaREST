@@ -18,7 +18,6 @@ from pydantic import ConfigDict, Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
-    RenewableClusterGroup,
     TimeSeriesInterpretation,
     validate_renewable_cluster_against_version,
 )
@@ -35,7 +34,7 @@ class RenewableClusterFileData(AntaresBaseModel):
     enabled: Optional[bool] = None
     unit_count: Optional[int] = Field(default=None, alias="unitcount")
     nominal_capacity: Optional[float] = Field(default=None, alias="nominalcapacity")
-    group: Optional[RenewableClusterGroup] = None
+    group: Optional[str] = None
     ts_interpretation: Optional[TimeSeriesInterpretation] = Field(default=None, alias="ts-interpretation")
 
     def to_model(self) -> RenewableCluster:
