@@ -49,15 +49,14 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         candidates = self._get_all_xpansion_candidates()
+        existing_ids = {value["name"]: key for key, value in candidates.items()}
+
         if old_id:
             # We should remove the candidate corresponding to the `old_id`
-            for key, value in candidates.items():
-                if value["name"] == old_id:
-                    del candidates[key]
-                    break
+            del candidates[existing_ids[old_id]]
 
-        new_id = str(len(candidates) + 1)  # The first candidate key is 1
-        candidates[new_id] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
+        new_key = existing_ids.get(candidate.name, str(len(candidates) + 1))  # The first candidate key is 1
+        candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
         candidates_data = {"user": {"expansion": {"candidates": candidates}}}
         self.get_file_study().tree.save(candidates_data)
 
