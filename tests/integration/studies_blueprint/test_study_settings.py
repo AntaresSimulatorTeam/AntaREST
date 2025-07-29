@@ -12,7 +12,7 @@
 from starlette.testclient import TestClient
 
 from antarest.study.business.general_management import Mode
-from antarest.study.business.optimization_management import (
+from antarest.study.business.model.config.optimization_config import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
