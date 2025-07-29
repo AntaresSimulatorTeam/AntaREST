@@ -58,7 +58,7 @@ class ReplaceXpansionCandidate(ICommand):
 
         old_name = None
         if self.properties.name != self.candidate_name:
-            # We're renaming the candidate
+            # We're renaming the candidate, so we need to perform checks
             old_name = self.candidate_name
             if self.properties.name in existing_ids:
                 return command_failed(f"The candidate '{self.properties.name}' already exists")
