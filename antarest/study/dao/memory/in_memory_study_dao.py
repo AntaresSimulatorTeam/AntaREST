@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.optimization_config import OptimizationPreferences
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -98,6 +99,8 @@ class InMemoryStudyDao(StudyDao):
         self._constraints_less_term_matrix: dict[str, str] = {}
         self._constraints_greater_term_matrix: dict[str, str] = {}
         self._constraints_equal_term_matrix: dict[str, str] = {}
+        # Optimization preferences config
+        self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -458,3 +461,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
+
+    @override
+    def get_optimization_preferences(self) -> OptimizationPreferences:
+        return self._optimization_preferences
+
+    @override
+    def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
+        self._optimization_preferences = config
