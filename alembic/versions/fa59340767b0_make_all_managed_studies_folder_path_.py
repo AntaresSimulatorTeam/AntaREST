@@ -6,8 +6,8 @@ Create Date: 2025-07-21 12:16:43.213036
 
 """
 
+import sqlalchemy as sa
 from sqlalchemy.sql import and_, case, column, exists, literal, not_, or_, table, update
-from sqlalchemy.sql.functions import concat
 
 from alembic import op
 
@@ -27,15 +27,16 @@ def upgrade():
     # Create db connection
     bind = op.get_bind()
 
-    study_table = table("study", column("id"), column("folder"), column("type"))
+    type_string = sa.String(length=256)
+    study_table = table("study", column("id", type_string), column("folder", type_string), column("type", type_string))
 
-    rawstudy_table = table("rawstudy", column("id"), column("workspace"))
+    rawstudy_table = table("rawstudy", column("id", type_string), column("workspace", type_string))
 
     # add id to folder, handle case with and without a trailing slash
     add_id_exp = case(
         (
             study_table.c.folder.like("%/"),
-            concat(study_table.c.folder, study_table.c.id),
+            study_table.c.folder + study_table.c.id,
         ),
         else_=study_table.c.folder + literal("/") + study_table.c.id,
     )
