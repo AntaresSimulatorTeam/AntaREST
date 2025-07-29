@@ -741,6 +741,17 @@ class TestThermal:
             # We should write the group as it was given
             assert obj["group"] == "groupfoo"
 
+        # Same verification on GET result
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional}")
+        assert res.status_code == 200, res.json()
+        obj = res.json()
+        if version < 930:
+            # If a group is not found, return the default group ('OTHER1' by default).
+            assert obj["group"] == "other 1"
+        else:
+            # We should write the group as it was given
+            assert obj["group"] == "groupfoo"
+
         # Check PATCH with the wrong `area_id`
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{bad_area_id}/clusters/thermal/{fr_gas_conventional_id}",
