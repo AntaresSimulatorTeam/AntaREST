@@ -7,6 +7,7 @@ Create Date: 2025-07-21 12:16:43.213036
 """
 
 from sqlalchemy.sql import and_, case, column, exists, literal, not_, or_, table, update
+from sqlalchemy.sql.functions import concat
 
 from alembic import op
 
@@ -34,7 +35,7 @@ def upgrade():
     add_id_exp = case(
         (
             study_table.c.folder.like("%/"),
-            study_table.c.folder + study_table.c.id,
+            concat(study_table.c.folder, study_table.c.id),
         ),
         else_=study_table.c.folder + literal("/") + study_table.c.id,
     )
