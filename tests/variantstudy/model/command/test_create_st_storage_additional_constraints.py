@@ -46,7 +46,7 @@ class TestCreateSTStorageAdditionalConstraint:
             area_id="fr",
             storage_id="sts_1",
             constraints=[
-                STStorageAdditionalConstraintCreation(name="constraint"),
+                STStorageAdditionalConstraintCreation(name="Constraint??"),
                 STStorageAdditionalConstraintCreation(name="constraint_2", hours=[[2, 4]], enabled=False),
             ],
             study_version=version,
@@ -77,7 +77,7 @@ class TestCreateSTStorageAdditionalConstraint:
         ini_path = constraints_path / "sts_1" / "additional-constraints.ini"
         ini_content = read_ini(ini_path)
         assert ini_content == {
-            "constraint": {
+            "Constraint??": {
                 "variable": "netting",
                 "operator": "less",
                 "hours": "[]",

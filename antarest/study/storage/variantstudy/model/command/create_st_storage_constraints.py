@@ -67,7 +67,7 @@ class CreateSTStorageAdditionalConstraints(ICommand):
 
         constraints = [create_st_storage_constraint(constraint) for constraint in self.constraints]
 
-        # Checks that there's unicity in the given constraints names
+        # Checks that there's unicity in the given constraints ids
         given_ids = set()
         for constraint in constraints:
             if constraint.id in given_ids:

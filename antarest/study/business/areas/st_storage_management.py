@@ -374,7 +374,7 @@ class STStorageManager:
         """
         created_constraints = [create_st_storage_constraint(c) for c in constraints]
 
-        # Checks we're not duplicating existing constraints or creating 2 constraints with the same names
+        # Checks we're not duplicating existing constraints or creating 2 constraints with the same ids
         existing_constraints = study.get_study_dao().get_st_storage_additional_constraints(area_id, storage_id)
         existing_ids = {c.id for c in existing_constraints}
         for constraint in created_constraints:
