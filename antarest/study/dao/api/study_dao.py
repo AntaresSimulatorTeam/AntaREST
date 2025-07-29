@@ -247,3 +247,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
         return self._adaptee.get_xpansion_candidate(candidate_id)
+
+    @override
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return self._adaptee.checks_xpansion_candidate_coherence(candidate)

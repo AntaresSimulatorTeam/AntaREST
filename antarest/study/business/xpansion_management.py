@@ -26,9 +26,11 @@ from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidate,
     XpansionCandidateCreation,
+    XpansionCandidateUpdate,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
     create_xpansion_candidate,
+    update_xpansion_candidate,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
@@ -116,19 +118,24 @@ class XpansionManager:
         logger.info(f"Getting all candidates of study {study.id}")
         return study.get_study_dao().get_all_xpansion_candidates()
 
-    def replace_candidate(
+    def update_candidate(
         self,
         study: StudyInterface,
         candidate_name: str,
-        xpansion_candidate: XpansionCandidateCreation,
-    ) -> None:
+        xpansion_candidate: XpansionCandidateUpdate,
+    ) -> XpansionCandidate:
+        current_candidate = self.get_candidate(study, candidate_name)
+        final_candidate = update_xpansion_candidate(current_candidate, xpansion_candidate)
+        # Because the current command is a `replace` one, we should create the class that goes with it.
+        cdt_creation = final_candidate.to_creation()
         command = ReplaceXpansionCandidate(
             candidate_name=candidate_name,
-            properties=xpansion_candidate,
+            properties=cdt_creation,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
+        return final_candidate
 
     def delete_candidate(self, study: StudyInterface, candidate_name: str) -> None:
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")

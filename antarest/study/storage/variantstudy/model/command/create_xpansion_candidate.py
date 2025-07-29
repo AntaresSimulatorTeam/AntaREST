@@ -13,22 +13,18 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import CandidateAlreadyExistsError
 from antarest.study.business.model.xpansion_model import (
-    XpansionCandidate,
     XpansionCandidateCreation,
     create_xpansion_candidate,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    assert_candidate_is_correct,
-)
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -49,24 +45,17 @@ class CreateXpansionCandidate(ICommand):
     candidate: XpansionCandidateCreation
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         candidate = create_xpansion_candidate(self.candidate)
-        candidates = study_data.tree.get(["user", "expansion", "candidates"])
-        candidates_dict = {}
-        for cdt in candidates.values():
-            candidate = XpansionCandidate.model_validate(cdt)
-            candidates_dict[candidate.name] = candidate
+        candidates = study_data.get_all_xpansion_candidates()
 
         # Checks candidate validity
-        if self.candidate.name in candidates_dict:
-            raise CandidateAlreadyExistsError(f"The candidate '{self.candidate.name}' already exists")
-        assert_candidate_is_correct(study_data, candidate)
+        for cdt in candidates:
+            if cdt.name == candidate.name:
+                return command_failed(f"The candidate '{candidate.name}' already exists")
+        study_data.checks_xpansion_candidate_coherence(candidate)
 
-        new_id = str(len(candidates) + 1)  # The first candidate key is 1
-        candidates[new_id] = self.candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
-        candidates_data = {"user": {"expansion": {"candidates": candidates}}}
-        study_data.tree.save(candidates_data)
-
+        study_data.save_xpansion_candidate(candidate)
         return command_succeeded(message=f"Candidate {self.candidate.name} created successfully")
 
     @override

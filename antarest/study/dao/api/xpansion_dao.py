@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 
@@ -24,8 +25,12 @@ class ReadOnlyXpansionDao(ABC):
     def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
         raise NotImplementedError()
 
+    @abstractmethod
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
-    def save_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         raise NotImplementedError()

@@ -261,6 +261,42 @@ def _validate_candidate_name(name: str) -> str:
 CandidateName: TypeAlias = Annotated[str, BeforeValidator(_validate_candidate_name)]
 
 
+class XpansionCandidateCreation(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
+    name: CandidateName
+    link: XpansionLinkStr
+    annual_cost_per_mw: float = Field(ge=0)
+    unit_size: Optional[float] = Field(default=None, ge=0)
+    max_units: Optional[int] = Field(default=None, ge=0)
+    max_investment: Optional[float] = Field(default=None, ge=0)
+    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    # this is obsolete (replaced by direct/indirect)
+    link_profile: Optional[str] = None
+    # this is obsolete (replaced by direct/indirect)
+    already_installed_link_profile: Optional[str] = None
+    direct_link_profile: Optional[str] = None
+    indirect_link_profile: Optional[str] = None
+    already_installed_direct_link_profile: Optional[str] = None
+    already_installed_indirect_link_profile: Optional[str] = None
+
+
+class XpansionCandidateUpdate(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
+    name: Optional[CandidateName] = None
+    link: Optional[XpansionLinkStr] = None
+    annual_cost_per_mw: Optional[float] = Field(default=None, ge=0)
+    unit_size: Optional[float] = Field(default=None, ge=0)
+    max_units: Optional[int] = Field(default=None, ge=0)
+    max_investment: Optional[float] = Field(default=None, ge=0)
+    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    # this is obsolete (replaced by direct/indirect)
+    link_profile: Optional[str] = None
+    # this is obsolete (replaced by direct/indirect)
+    already_installed_link_profile: Optional[str] = None
+    direct_link_profile: Optional[str] = None
+    indirect_link_profile: Optional[str] = None
+    already_installed_direct_link_profile: Optional[str] = None
+    already_installed_indirect_link_profile: Optional[str] = None
+
+
 class XpansionCandidate(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
     name: CandidateName
     link: XpansionLinkStr
@@ -278,23 +314,8 @@ class XpansionCandidate(AntaresBaseModel, populate_by_name=True, alias_generator
     already_installed_direct_link_profile: Optional[str] = None
     already_installed_indirect_link_profile: Optional[str] = None
 
-
-class XpansionCandidateCreation(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
-    name: CandidateName
-    link: XpansionLinkStr
-    annual_cost_per_mw: float = Field(ge=0)
-    unit_size: Optional[float] = Field(default=None, ge=0)
-    max_units: Optional[int] = Field(default=None, ge=0)
-    max_investment: Optional[float] = Field(default=None, ge=0)
-    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
-    # this is obsolete (replaced by direct/indirect)
-    link_profile: Optional[str] = None
-    # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: Optional[str] = None
-    direct_link_profile: Optional[str] = None
-    indirect_link_profile: Optional[str] = None
-    already_installed_direct_link_profile: Optional[str] = None
-    already_installed_indirect_link_profile: Optional[str] = None
+    def to_creation(self) -> XpansionCandidateCreation:
+        return XpansionCandidateCreation.model_validate(self.model_dump(exclude_none=True))
 
 
 def validate_xpansion_candidate(candidate: XpansionCandidate) -> None:
@@ -319,3 +340,13 @@ def create_xpansion_candidate(candidate_data: XpansionCandidateCreation) -> Xpan
     candidate = XpansionCandidate.model_validate(candidate_data.model_dump(exclude_none=True))
     validate_xpansion_candidate(candidate)
     return candidate
+
+
+def update_xpansion_candidate(candidate: XpansionCandidate, data: XpansionCandidateUpdate) -> XpansionCandidate:
+    """
+    Updates a candidate according to the provided update data.
+    """
+    current_candidate = candidate.model_dump(mode="json")
+    update_candidate = data.model_dump(mode="json", exclude_none=True)
+    current_candidate.update(update_candidate)
+    return XpansionCandidate.model_validate(current_candidate)

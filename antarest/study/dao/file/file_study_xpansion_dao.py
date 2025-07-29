@@ -10,10 +10,11 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import CandidateNotFoundError
+from antarest.core.exceptions import AreaNotFound, CandidateNotFoundError, LinkNotFound, XpansionFileNotFoundError
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -43,5 +44,34 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             raise CandidateNotFoundError(f"The candidate '{candidate_id}' does not exist")
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        self._assert_link_profile_are_files(candidate)
+        self._assert_link_exist(candidate)
+
+    @override
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         raise NotImplementedError()
+
+    def _assert_link_profile_are_files(self, xpansion_candidate_dto: XpansionCandidate) -> None:
+        file_study = self.get_file_study()
+        existing_files = file_study.tree.get(["user", "expansion", "capa"])
+        for attr in [
+            "link_profile",
+            "already_installed_link_profile",
+            "direct_link_profile",
+            "indirect_link_profile",
+            "already_installed_direct_link_profile",
+            "already_installed_indirect_link_profile",
+        ]:
+            if link_file := getattr(xpansion_candidate_dto, attr, None):
+                if link_file not in existing_files:
+                    raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
+
+    def _assert_link_exist(self, xpansion_candidate_dto: XpansionCandidate) -> None:
+        file_study = self.get_file_study()
+        area_from = xpansion_candidate_dto.link.area_from
+        area_to = xpansion_candidate_dto.link.area_to
+        if area_from not in file_study.config.areas:
+            raise AreaNotFound(area_from)
+        if area_to not in file_study.config.get_links(area_from):
+            raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")

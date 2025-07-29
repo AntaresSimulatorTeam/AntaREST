@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -471,5 +471,11 @@ class InMemoryStudyDao(StudyDao):
         return self._xpansion_candidates[candidate_id]
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+        if old_id:
+            del self._xpansion_candidates[old_id]
         self._xpansion_candidates[candidate.name] = candidate
+
+    @override
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return

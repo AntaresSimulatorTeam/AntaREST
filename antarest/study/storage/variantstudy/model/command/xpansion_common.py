@@ -53,21 +53,6 @@ def apply_create_resource_commands(
     )
 
 
-def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
-    existing_files = file_study.tree.get(["user", "expansion", "capa"])
-    for attr in [
-        "link_profile",
-        "already_installed_link_profile",
-        "direct_link_profile",
-        "indirect_link_profile",
-        "already_installed_direct_link_profile",
-        "already_installed_indirect_link_profile",
-    ]:
-        if link_file := getattr(xpansion_candidate_dto, attr, None):
-            if link_file not in existing_files:
-                raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
-
-
 def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
     area_from = xpansion_candidate_dto.link.area_from
     area_to = xpansion_candidate_dto.link.area_to
@@ -78,7 +63,6 @@ def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCan
 
 
 def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidate) -> None:
-    assert_link_profile_are_files(file_study, candidate)
     assert_link_exist(file_study, candidate)
 
 

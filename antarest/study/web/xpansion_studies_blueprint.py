@@ -25,6 +25,7 @@ from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidate,
     XpansionCandidateCreation,
+    XpansionCandidateUpdate,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
@@ -135,10 +136,10 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     def update_candidate(
         uuid: str,
         candidate_name: str,
-        xpansion_candidate: XpansionCandidateCreation,
-    ) -> None:
+        xpansion_candidate: XpansionCandidateUpdate,
+    ) -> XpansionCandidate:
         logger.info(f"Updating xpansion candidate {xpansion_candidate.name} of the study {uuid}")
-        return study_service.replace_xpansion_candidate(uuid, candidate_name, xpansion_candidate)
+        return study_service.update_xpansion_candidate(uuid, candidate_name, xpansion_candidate)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
