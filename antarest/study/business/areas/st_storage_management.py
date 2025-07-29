@@ -76,8 +76,6 @@ class STStorageMatrix(AntaresBaseModel):
         array = np.array(data)
         if array.size == 0:
             raise ValueError("time series must not be empty")
-        if array.shape != (8760, 1):
-            raise ValueError(f"time series must have shape ({8760}, 1)")
         if np.any(np.isnan(array)):
             raise ValueError("time series must not contain NaN values")
         return data
