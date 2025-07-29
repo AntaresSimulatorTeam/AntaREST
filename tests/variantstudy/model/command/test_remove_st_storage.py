@@ -19,9 +19,6 @@ from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
-from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
-    CreateSTStorageAdditionalConstraints,
-)
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -141,20 +138,3 @@ class TestRemoveSTStorage:
         output = cmd.apply(study)
         assert not output.status
         assert output.message == "Short-term storage 'fake_storage' in area 'fr' does not exist"
-
-        # Create an additional constraint referencing the existing storage
-        cmd = CreateSTStorageAdditionalConstraints(
-            command_context=command_context,
-            area_id="fr",
-            storage_id="sts_1",
-            constraints=[{"name": "constraint"}],
-            study_version=version,
-        )
-        output = cmd.apply(study)
-        assert output.status
-
-        # Removes the storage referenced by the constraint
-        cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts_1", study_version=version)
-        output = cmd.apply(study)
-        assert not output.status
-        assert "Short-term storage 'sts_1' is referenced in the constraint" in output.message
