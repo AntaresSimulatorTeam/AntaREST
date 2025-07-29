@@ -354,7 +354,14 @@ def _initialize_field_default(thematic_trimming: ThematicTrimming, field: str, d
         setattr(thematic_trimming, field, default_bool)
 
 
+def _reset_field(thematic_trimming: ThematicTrimming, field: str) -> None:
+    setattr(thematic_trimming, field, None)
+
+
 def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool) -> None:
+    exclude_from_9_3 = _get_dispatch_gen_fields()
+    exclude_from_9_3.extend(_get_renewable_gen_fields())
+
     for field in _get_default_fields():
         _initialize_field_default(thematic_trimming, field, default_bool)
 
@@ -390,3 +397,5 @@ def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyV
     if version >= STUDY_VERSION_9_3:
         for field in _get_v_9_3_fields():
             _initialize_field_default(thematic_trimming, field, default_bool)
+        for field in exclude_from_9_3:
+            _reset_field(thematic_trimming, field)
