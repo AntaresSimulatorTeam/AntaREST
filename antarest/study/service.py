@@ -87,7 +87,6 @@ from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
     XpansionCandidate,
     XpansionCandidateCreation,
-    XpansionCandidateUpdate,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.optimization_management import OptimizationManager
@@ -2064,17 +2063,17 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidates(study_interface)
 
-    def update_xpansion_candidate(
+    def replace_xpansion_candidate(
         self,
         uuid: str,
         candidate_name: str,
-        xpansion_candidate: XpansionCandidateUpdate,
+        xpansion_candidate: XpansionCandidateCreation,
     ) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate)
+        return self.xpansion_manager.replace_candidate(study_interface, candidate_name, xpansion_candidate)
 
     def delete_xpansion_candidate(self, uuid: str, candidate_name: str) -> None:
         study = self.get_study(uuid)
