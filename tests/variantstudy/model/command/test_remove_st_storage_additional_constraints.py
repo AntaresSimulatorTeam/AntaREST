@@ -57,6 +57,7 @@ class TestRemoveSTStorageAdditionalConstraint:
         cmd = RemoveMultipleSTStorageConstraints(
             command_context=command_context,
             area_id="fr",
+            storage_id="sts_fr",
             ids=["constraint", "constraint_2"],
             study_version=version,
         )
@@ -65,12 +66,17 @@ class TestRemoveSTStorageAdditionalConstraint:
 
         # Checks the ini content
         ini_path = (
-            study.config.study_path / "input" / "st-storage" / "constraints" / "fr" / "additional-constraints.ini"
+            study.config.study_path
+            / "input"
+            / "st-storage"
+            / "constraints"
+            / "fr"
+            / "sts_fr"
+            / "additional-constraints.ini"
         )
         ini_content = read_ini(ini_path)
         assert ini_content == {
             "constraint_3": {
-                "cluster": "sts_fr",
                 "enabled": True,
                 "hours": "[]",
                 "operator": "less",
@@ -86,6 +92,7 @@ class TestRemoveSTStorageAdditionalConstraint:
         cmd = RemoveMultipleSTStorageConstraints(
             command_context=command_context,
             area_id="fr",
+            storage_id="sts",
             ids=["constraint"],
             study_version=version,
         )
