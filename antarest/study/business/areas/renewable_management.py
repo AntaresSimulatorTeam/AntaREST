@@ -93,7 +93,7 @@ class RenewableManager:
         """
         command = self._make_create_cluster_cmd(area_id, cluster_data, study.version)
         study.add_commands([command])
-        return create_renewable_cluster(cluster_data)
+        return create_renewable_cluster(cluster_data, study.version)
 
     def _make_create_cluster_cmd(
         self, area_id: str, cluster_creation: RenewableClusterCreation, study_version: StudyVersion
@@ -206,10 +206,11 @@ class RenewableManager:
             raise DuplicateRenewableCluster(area_id, new_id)
 
         # Cluster duplication
+        version = study.version
         current_cluster = self.get_cluster(study, area_id, source_id)
         current_cluster.name = new_cluster_name
         creation_form = RenewableClusterCreation.from_cluster(current_cluster)
-        create_cluster_cmd = self._make_create_cluster_cmd(area_id, creation_form, study.version)
+        create_cluster_cmd = self._make_create_cluster_cmd(area_id, creation_form, version)
 
         # Matrix edition
         new_path = f"input/renewables/series/{area_id}/{lower_new_id}/series"
@@ -217,12 +218,12 @@ class RenewableManager:
         # Prepare and execute commands
         current_matrix = study.get_study_dao().get_renewable_series(area_id, source_id.lower()).to_numpy().tolist()
         replace_matrix_cmd = ReplaceMatrix(
-            target=new_path, matrix=current_matrix, command_context=self._command_context, study_version=study.version
+            target=new_path, matrix=current_matrix, command_context=self._command_context, study_version=version
         )
         commands = [create_cluster_cmd, replace_matrix_cmd]
         study.add_commands(commands)
 
-        return create_renewable_cluster(creation_form)
+        return create_renewable_cluster(creation_form, version)
 
     def update_renewables_props(
         self,
