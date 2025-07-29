@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 
 from typing_extensions import override
 
@@ -27,15 +27,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
-        file_study = self.get_file_study()
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        candidates = self._get_all_xpansion_candidates()
         return [XpansionCandidate(**c) for c in candidates.values()]
 
     @override
     def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
         # This takes the first candidate with the given name and not the id, because the name is the primary key.
-        file_study = self.get_file_study()
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
+        candidates = self._get_all_xpansion_candidates()
         try:
             candidate = next(c for c in candidates.values() if c["name"] == candidate_id)
             return XpansionCandidate(**candidate)
@@ -51,6 +49,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         raise NotImplementedError()
+
+    def _get_all_xpansion_candidates(self) -> dict[str, Any]:
+        file_study = self.get_file_study()
+        return file_study.tree.get(["user", "expansion", "candidates"])
 
     def _assert_link_profile_are_files(self, xpansion_candidate_dto: XpansionCandidate) -> None:
         file_study = self.get_file_study()
