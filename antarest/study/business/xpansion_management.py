@@ -101,9 +101,7 @@ class XpansionManager:
             candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
-
-        # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
-        return self.get_candidate(study, xpansion_candidate.name)
+        return candidate
 
     def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidate:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
