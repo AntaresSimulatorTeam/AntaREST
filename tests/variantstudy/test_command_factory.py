@@ -895,6 +895,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value,
+            args={"parameters": {"binding_constraints": True, "unfeasible_problem_behavior": "error-verbose"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_optimization_preferences",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
             args=[
                 {
