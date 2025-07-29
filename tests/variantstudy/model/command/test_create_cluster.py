@@ -132,7 +132,7 @@ class TestCreateCluster:
         clusters = configparser.ConfigParser()
         clusters.read(study_path / "input" / "thermal" / "clusters" / area_id / "list.ini")
         assert str(clusters[cluster_name]["name"]) == cluster_name
-        assert str(clusters[cluster_name]["group"]) == parameters.group
+        assert str(clusters[cluster_name]["group"]) == "other 1"
         assert int(clusters[cluster_name]["unitcount"]) == parameters.unit_count
         assert float(clusters[cluster_name]["nominalcapacity"]) == parameters.nominal_capacity
         assert float(clusters[cluster_name]["marginal-cost"]) == parameters.marginal_cost

@@ -446,7 +446,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(parse_renewable_cluster(values))
+            config_list.append(parse_renewable_cluster(version, values))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid renewable configuration: '{section}' in '{config_path}'", exc_info=exc)
