@@ -109,7 +109,7 @@ def create_raw_study_routes(
 
         study = study_service.get_study(uuid)
         file_study = study_service.get_file_study(study)
-        url = path.split("/")
+        url = [item for item in path.split("/") if item]
         node = file_study.tree.get_node(url)
         used_parts = len(node.config.path.relative_to(file_study.config.path).parts)
         output = node.get(url=url[used_parts:], depth=depth, formatted=formatted)
