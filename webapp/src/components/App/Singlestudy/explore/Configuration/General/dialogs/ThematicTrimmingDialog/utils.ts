@@ -46,6 +46,8 @@ const fieldLabelsByGroup: Record<
     spilEnrg: "SPIL. ENRG",
     unspEnrg: "UNSP. ENRG",
     npcapHours: "NPCAP HOURS",
+    dispatchGen: "DISPATCH. GEN.",
+    renewableGen: "RENEWABLE GEN.",
   },
   generationHydro: {
     hCost: "H. COST",

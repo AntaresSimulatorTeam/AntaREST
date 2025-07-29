@@ -118,6 +118,9 @@ export interface ThematicTrimmingConfig {
   npcapHours?: boolean;
   // Since v9.1
   stsByGroup?: boolean;
+  // since v9.3
+  dispatchGen?: boolean;
+  renewableGen?: boolean;
 }
 
 export interface GetThematicTrimmingConfigParams {
