@@ -62,6 +62,7 @@ class ReplaceXpansionCandidate(ICommand):
             old_name = self.candidate_name
             if self.properties.name in existing_ids:
                 return command_failed(f"The candidate '{self.properties.name}' already exists")
+            study_data.checks_xpansion_candidate_can_be_deleted(self.candidate_name)
 
         study_data.save_xpansion_candidate(candidate, old_name)
         return command_succeeded(message=f"Candidate {self.candidate_name} replaced successfully")
