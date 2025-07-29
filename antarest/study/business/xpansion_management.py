@@ -51,7 +51,6 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    assert_link_exist,
     checks_candidate_can_be_deleted,
     checks_settings_are_correct_and_returns_fields_to_exclude,
     get_resource_dir,
@@ -98,9 +97,8 @@ class XpansionManager:
     def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateCreation) -> XpansionCandidate:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
 
-        file_study = study.get_files()
         candidate = create_xpansion_candidate(xpansion_candidate)
-        assert_link_exist(file_study, candidate)
+        study.get_study_dao().checks_xpansion_candidate_coherence(candidate)
 
         command = CreateXpansionCandidate(
             candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version

@@ -12,16 +12,13 @@
 from typing import Any
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     ChildNotFoundError,
-    LinkNotFound,
     XpansionCandidateDeletionError,
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
-    XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
@@ -51,19 +48,6 @@ def apply_create_resource_commands(
     return command_succeeded(
         message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created."
     )
-
-
-def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
-    area_from = xpansion_candidate_dto.link.area_from
-    area_to = xpansion_candidate_dto.link.area_to
-    if area_from not in file_study.config.areas:
-        raise AreaNotFound(area_from)
-    if area_to not in file_study.config.get_links(area_from):
-        raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
-
-
-def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidate) -> None:
-    assert_link_exist(file_study, candidate)
 
 
 def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
