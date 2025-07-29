@@ -341,8 +341,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         existing_map.update({c.id: c for c in constraints})
 
         ini_content = {}
-        for constraint_id, constraint_update in existing_map.items():
-            ini_content[constraint_id] = serialize_st_storage_additional_constraint(constraint_update)
+        for constraint_id, constraint in existing_map.items():
+            ini_content[constraint.name] = serialize_st_storage_additional_constraint(constraint)
 
         # Save into the config
         self._update_st_storage_additional_constraints_config(area_id, storage_id, constraints)
