@@ -378,8 +378,7 @@
         "weekly",
         "annual"
       ],
-      "st_storages": [],
-      "st_storages_additional_constraints": []
+      "st_storages": []
     },
     "es": {
       "name": "ES",
@@ -754,8 +753,7 @@
         "weekly",
         "annual"
       ],
-      "st_storages": [],
-      "st_storages_additional_constraints": []
+      "st_storages": []
     },
     "fr": {
       "name": "FR",
@@ -1125,8 +1123,7 @@
       "filters_year": [
         "hourly"
       ],
-      "st_storages": [],
-      "st_storages_additional_constraints": []
+      "st_storages": []
     },
     "it": {
       "name": "IT",
@@ -1489,8 +1486,7 @@
       "filters_year": [
         "hourly"
       ],
-      "st_storages": [],
-      "st_storages_additional_constraints": []
+      "st_storages": []
     }
   },
   "sets": {
