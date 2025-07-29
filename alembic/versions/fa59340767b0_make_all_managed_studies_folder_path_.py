@@ -35,7 +35,7 @@ def upgrade():
     add_id_exp = case(
         (
             study_table.c.folder.like("%/"),
-            concat(study_table.c.folder + study_table.c.id),
+            concat(study_table.c.folder, study_table.c.id),
         ),
         else_=study_table.c.folder + literal("/") + study_table.c.id,
     )
