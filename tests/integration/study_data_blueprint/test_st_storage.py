@@ -813,29 +813,50 @@ class TestSTStorage:
         res.raise_for_status()
 
         # Create several constraints relative to the storages
-        body = [{"name": "c1", "hours": [[2, 3], [148]]}, {"name": "c2", "enabled": False}]
+        body = [{"name": "C1?", "hours": [[2, 3], [148]]}, {"name": "c2", "enabled": False}]
         res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c1", "variable": "netting", "operator": "less", "hours": [[2, 3], [148]], "enabled": True},
-            {"id": "c2", "variable": "netting", "operator": "less", "hours": [[]], "enabled": False},
+            {
+                "name": "C1?",
+                "id": "c1",
+                "variable": "netting",
+                "operator": "less",
+                "hours": [[2, 3], [148]],
+                "enabled": True,
+            },
+            {"name": "c2", "id": "c2", "variable": "netting", "operator": "less", "hours": [[]], "enabled": False},
         ]
 
         body = [{"name": "c3", "hours": [[1, 2, 57]], "operator": "equal", "variable": "injection"}]
         res = client.post(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c3", "variable": "injection", "operator": "equal", "hours": [[1, 2, 57]], "enabled": True}
+            {
+                "name": "c3",
+                "id": "c3",
+                "variable": "injection",
+                "operator": "equal",
+                "hours": [[1, 2, 57]],
+                "enabled": True,
+            }
         ]
 
         # Update a constraint
-        body = [{"id": "c3", "enabled": False, "variable": "netting"}]
+        body = {"c3": {"enabled": False, "variable": "netting"}}
         res = client.put(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
-            {"id": "c3", "variable": "netting", "operator": "equal", "hours": [[1, 2, 57]], "enabled": False}
+            {
+                "name": "c3",
+                "id": "c3",
+                "variable": "netting",
+                "operator": "equal",
+                "hours": [[1, 2, 57]],
+                "enabled": False,
+            }
         ]
 
         # Delete all constraints inside area `fr`
-        res = client.request("DELETE", f"{areas_url}/fr/storages/additional-constraints", json=["c1", "c2"])
+        res = client.request("DELETE", f"{areas_url}/fr/storages/tesla/additional-constraints", json=["c1", "c2"])
         assert res.status_code == 200

@@ -1886,7 +1886,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         return all_constraints[area_id][storage_id]
 
     @bp.delete(
-        path="/studies/{uuid}/areas/{area_id}/storages{storage_id}/additional-constraints",
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
         tags=[APITag.study_data],
         summary="Delete additional constraint(s) for a given area",
     )
