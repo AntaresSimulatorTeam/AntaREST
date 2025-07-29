@@ -53,7 +53,7 @@ class ReplaceXpansionCandidate(ICommand):
         # Checks candidate validity
         existing_ids = {cdt.name for cdt in candidates}
         if self.candidate_name not in existing_ids:
-            return command_failed(f"The candidate '{candidate.name}' does not exist")
+            return command_failed(f"The candidate '{self.candidate_name}' does not exist")
         study_data.checks_xpansion_candidate_coherence(candidate)
 
         old_name = None
