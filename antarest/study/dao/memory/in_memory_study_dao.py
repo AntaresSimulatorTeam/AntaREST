@@ -477,5 +477,13 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_candidates[candidate.name] = candidate
 
     @override
+    def delete_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+        del self._xpansion_candidates[candidate.name]
+
+    @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return
+
+    @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         return

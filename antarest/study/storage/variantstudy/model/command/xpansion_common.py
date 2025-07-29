@@ -13,7 +13,6 @@ from typing import Any
 
 from antarest.core.exceptions import (
     ChildNotFoundError,
-    XpansionCandidateDeletionError,
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
@@ -90,13 +89,3 @@ def checks_settings_are_correct_and_returns_fields_to_exclude(
             excludes.add(field)
 
     return excludes
-
-
-def checks_candidate_can_be_deleted(candidate_name: str, file_study: FileStudy) -> None:
-    """
-    Ensures the candidate isn't referenced inside the sensitivity file as a projection.
-    """
-    sensitivity_config = get_xpansion_sensitivity(file_study)
-    projections = sensitivity_config.get("projection", {})
-    if candidate_name in projections:
-        raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)

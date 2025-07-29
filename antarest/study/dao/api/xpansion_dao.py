@@ -29,8 +29,16 @@ class ReadOnlyXpansionDao(ABC):
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
         raise NotImplementedError()

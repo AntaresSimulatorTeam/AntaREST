@@ -251,3 +251,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
         return self._adaptee.checks_xpansion_candidate_coherence(candidate)
+
+    @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)

@@ -14,7 +14,14 @@ from typing import Any, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, CandidateNotFoundError, LinkNotFound, XpansionFileNotFoundError
+from antarest.core.exceptions import (
+    AreaNotFound,
+    CandidateNotFoundError,
+    ChildNotFoundError,
+    LinkNotFound,
+    XpansionCandidateDeletionError,
+    XpansionFileNotFoundError,
+)
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -47,6 +54,14 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         self._assert_link_exist(candidate)
 
     @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        file_study = self.get_file_study()
+        sensitivity_config = self._get_xpansion_sensitivity(file_study)
+        projections = sensitivity_config.get("projection", {})
+        if candidate_name in projections:
+            raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)
+
+    @override
     def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
         candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in candidates.items()}
@@ -59,6 +74,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
         candidates_data = {"user": {"expansion": {"candidates": candidates}}}
         self.get_file_study().tree.save(candidates_data)
+
+    @override
+    def delete_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+        raise NotImplementedError()
 
     def _get_all_xpansion_candidates(self) -> dict[str, Any]:
         file_study = self.get_file_study()
@@ -87,3 +106,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             raise AreaNotFound(area_from)
         if area_to not in file_study.config.get_links(area_from):
             raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
+
+    @staticmethod
+    def _get_xpansion_sensitivity(file_study: FileStudy) -> dict[str, Any]:
+        try:
+            return file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
+        except ChildNotFoundError:
+            return {}

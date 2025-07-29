@@ -13,16 +13,13 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import CandidateNotFoundError
-from antarest.study.business.model.xpansion_model import XpansionCandidate
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.xpansion_common import checks_candidate_can_be_deleted
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -43,24 +40,10 @@ class RemoveXpansionCandidate(ICommand):
     candidate_name: str
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        checks_candidate_can_be_deleted(self.candidate_name, study_data)
-        candidates = study_data.tree.get(["user", "expansion", "candidates"])
-        candidate_number = None
-        for cdt_number, cdt in candidates.items():
-            candidate = XpansionCandidate.model_validate(cdt)
-            if candidate.name == self.candidate_name:
-                candidate_number = cdt_number
-
-        if not candidate_number:
-            raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
-
-        del candidates[candidate_number]
-        # Reorder keys of the dict
-        new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
-
-        study_data.tree.save(data=new_dict, url=["user", "expansion", "candidates"])
-
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        study_data.checks_xpansion_candidate_can_be_deleted(self.candidate_name)
+        candidate = study_data.get_xpansion_candidate(self.candidate_name)
+        study_data.delete_xpansion_candidate(candidate)
         return command_succeeded(message=f"Candidate {self.candidate_name} removed successfully.")
 
     @override
