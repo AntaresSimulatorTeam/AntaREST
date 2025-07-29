@@ -137,7 +137,9 @@ class TableModeManager:
         elif table_type == TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS:
             all_additional_constraints = self._st_storage_manager.get_all_additional_constraints(study)
             data = {
-                f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
+                f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(
+                    by_alias=True, exclude={"id", "name"}
+                )
                 for area_id, value in all_additional_constraints.items()
                 for storage_id, constraints in value.items()
                 for constraint in constraints
@@ -274,7 +276,9 @@ class TableModeManager:
                 )
             constraints_map = self._st_storage_manager.update_additional_constraints(study, update_constraints_by_areas)
             data = {
-                f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(by_alias=True, exclude={"id"})
+                f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(
+                    by_alias=True, exclude={"id", "name"}
+                )
                 for area_id, value in constraints_map.items()
                 for storage_id, constraints in value.items()
                 for constraint in constraints
