@@ -28,7 +28,7 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.service import StudyService
+from antarest.study.service import RawDataFormat, StudyService
 from antarest.study.storage.df_download import export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
@@ -91,7 +91,9 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study_data(uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True) -> Any:
+    def get_study_data(
+        uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True, format: RawDataFormat | None = None
+    ) -> Any:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -100,19 +102,18 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to fetch.
         - `depth`: The depth of the data to retrieve.
-        - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
+        - `formatted`: Deprecated in favor of `format`.
+        - `format`: An enum specifying the format in which the data should be returned.
 
         Returns the fetched data: a JSON object (in most cases), a plain text file
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
 
-        study = study_service.get_study(uuid)
-        file_study = study_service.get_file_study(study)
-        url = [item for item in path.split("/") if item]
-        node = file_study.tree.get_node(url)
-        used_parts = len(node.config.path.relative_to(file_study.config.path).parts)
-        output = node.get(url=url[used_parts:], depth=depth, formatted=formatted)
+        raw_format = format
+        if not raw_format:
+            raw_format = RawDataFormat.JSON if formatted else RawDataFormat.BINARY
+        output = study_service.get_raw_data(uuid, path, depth, raw_format)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data

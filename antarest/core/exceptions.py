@@ -834,3 +834,9 @@ class XpansionCandidateDeletionError(HTTPException):
     def __init__(self, uuid: str, name: str) -> None:
         msg = f"You cannot delete the candidate {name} in study '{uuid}'. It is referenced in the sensitivity config."
         super().__init__(HTTPStatus.BAD_REQUEST, msg)
+
+
+class WrongFormatForGivenPathError(HTTPException):
+    def __init__(self, format: str, path: str) -> None:
+        msg = f"You cannot ask for format {format} with this path {path}."
+        super().__init__(HTTPStatus.BAD_REQUEST, msg)
