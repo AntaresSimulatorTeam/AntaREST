@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Sequence
+from typing import Dict, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -18,11 +18,13 @@ from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.optimization_config import OptimizationPreferences
+from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.dao.api.optimization_preferences_dao import (
     OptimizationPreferencesDao,
@@ -40,6 +42,7 @@ class ReadOnlyStudyDao(
     ReadOnlyRenewableDao,
     ReadOnlyConstraintDao,
     ReadOnlySTStorageDao,
+    ReadOnlyHydroDao,
     ReadOnlyOptimizationPreferencesDao,
 ):
     @abstractmethod
@@ -48,7 +51,14 @@ class ReadOnlyStudyDao(
 
 
 class StudyDao(
-    ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, ConstraintDao, STStorageDao, OptimizationPreferencesDao
+    ReadOnlyStudyDao,
+    LinkDao,
+    ThermalDao,
+    RenewableDao,
+    ConstraintDao,
+    STStorageDao,
+    HydroDao,
+    OptimizationPreferencesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -229,6 +239,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
+
+    @override
+    def get_all_hydro_properties(self) -> Dict[str, HydroProperties]:
+        return self._adaptee.get_all_hydro_properties()
+
+    @override
+    def get_hydro_management(self, area_id: str) -> HydroManagement:
+        return self._adaptee.get_hydro_management(area_id)
+
+    @override
+    def get_inflow_structure(self, area_id: str) -> InflowStructure:
+        return self._adaptee.get_inflow_structure(area_id)
 
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:

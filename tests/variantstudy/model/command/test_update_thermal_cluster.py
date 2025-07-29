@@ -13,13 +13,12 @@ import pytest
 from checksumdir import dirhash
 from pydantic import ValidationError
 
-from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
+from antarest.study.business.model.thermal_cluster_model import ThermalClusterGroup, ThermalClusterUpdate
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     LawOption,
     LocalTSGenerationBehavior,
-    ThermalClusterGroup,
     parse_thermal_cluster,
     serialize_thermal_cluster,
 )

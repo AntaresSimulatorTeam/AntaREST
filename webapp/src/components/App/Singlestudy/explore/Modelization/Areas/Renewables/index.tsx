@@ -37,7 +37,6 @@ import {
   duplicateRenewableCluster,
   getRenewableClusters,
   type RenewableClusterWithCapacity,
-  type RenewableGroup,
 } from "./utils";
 
 const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
@@ -47,6 +46,7 @@ function Renewables() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const areaId = useAppSelector(getCurrentAreaId);
+  const studyVersion = Number(study.version);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     RenewableClusterWithCapacity[]
@@ -112,7 +112,7 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow<RenewableGroup>) => {
+  const handleCreate = async (values: TRow) => {
     const cluster = await createRenewableCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };
@@ -141,7 +141,8 @@ function Renewables() {
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}
-      groups={[...RENEWABLE_GROUPS]}
+      groups={[...RENEWABLE_GROUPS] as string[]}
+      allowNewGroups={studyVersion >= 930}
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
