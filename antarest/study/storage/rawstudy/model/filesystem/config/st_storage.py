@@ -104,9 +104,9 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
 
     @classmethod
     def from_model(
-        cls, storage_id: str, additional_constraint: STStorageAdditionalConstraint
+        cls, additional_constraint: STStorageAdditionalConstraint
     ) -> "STStorageAdditionalConstraintFileData":
-        return cls.model_validate({"cluster": storage_id, **additional_constraint.model_dump(exclude={"id"})})
+        return cls.model_validate(additional_constraint.model_dump(exclude={"name", "id"}))
 
 
 def parse_st_storage_additional_constraint(constraint_name: str, data: Any) -> STStorageAdditionalConstraint:
@@ -116,7 +116,5 @@ def parse_st_storage_additional_constraint(constraint_name: str, data: Any) -> S
     return STStorageAdditionalConstraintFileData.model_validate(data).to_model(constraint_name)
 
 
-def serialize_st_storage_additional_constraint(
-    storage_id: str, additional_constraint: STStorageAdditionalConstraint
-) -> dict[str, Any]:
-    return STStorageAdditionalConstraintFileData.from_model(storage_id, additional_constraint).model_dump(mode="json")
+def serialize_st_storage_additional_constraint(additional_constraint: STStorageAdditionalConstraint) -> dict[str, Any]:
+    return STStorageAdditionalConstraintFileData.from_model(additional_constraint).model_dump(mode="json")

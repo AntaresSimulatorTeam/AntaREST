@@ -22,7 +22,7 @@ class InputSTStorageConstraintsSTStorage(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {"additional_constraints": IniFileNode(self.config.next_file("additional-constraints.ini"))}
-        matrices_ids = [d.stem for d in self.config.path.iterdir() if d.is_dir()]
+        matrices_ids = [d.stem for d in self.config.path.iterdir()]
         for matrix_id in matrices_ids:
             children[matrix_id] = InputSeriesMatrix(
                 self.matrix_mapper,

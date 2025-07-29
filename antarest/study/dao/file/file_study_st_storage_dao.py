@@ -333,7 +333,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
         ini_content = {}
         for constraint_id, constraint_update in existing_map.items():
-            ini_content[constraint_id] = serialize_st_storage_additional_constraint(storage_id, constraint_update)
+            ini_content[constraint_id] = serialize_st_storage_additional_constraint(constraint_update)
 
         # Save into the files
         if not existing_constraints:
