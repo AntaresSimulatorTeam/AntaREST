@@ -28,7 +28,10 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
+    AdditionalConstraintOperator,
+    AdditionalConstraintVariable,
     STStorage,
+    STStorageAdditionalConstraint,
     STStorageGroup,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
@@ -39,6 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_renewables,
     _parse_sets,
     _parse_st_storage,
+    _parse_st_storage_additional_constraints,
     _parse_thermal,
     build,
     parse_outputs,
@@ -598,6 +602,67 @@ def test_parse_st_storage(study_path: Path) -> None:
 
 def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
     assert _parse_st_storage(tmp_path, "") == []
+
+
+ADDITIONAL_CONSTRAINTS_INI = """\
+[Withdrawal-1]
+variable = withdrawal
+operator = equal
+hours = [1,3,5], [120,121,122,123,124,125,126,127,128]
+
+[nettinG?-1]
+variable = netting
+operator = less
+hours = [1, 168]
+"""
+
+
+def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
+    # Set up
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 9.2")
+    config_dir = study_path.joinpath("input", "st-storage", "constraints", "fr", "sts_test")
+    config_dir.mkdir(parents=True)
+    config_dir.joinpath("additional-constraints.ini").write_text(ADDITIONAL_CONSTRAINTS_INI)
+
+    storage = STStorage(**{"name": "sts_test"})
+    # Check values
+    assert _parse_st_storage_additional_constraints(study_path, "fr", [storage]) == {
+        "sts_test": [
+            STStorageAdditionalConstraint(
+                id="withdrawal-1",
+                name="Withdrawal-1",
+                variable=AdditionalConstraintVariable.WITHDRAWAL,
+                operator=AdditionalConstraintOperator.EQUAL,
+                hours=[[1, 3, 5], [120, 121, 122, 123, 124, 125, 126, 127, 128]],
+                enabled=True,
+            ),
+            STStorageAdditionalConstraint(
+                id="netting-1",
+                name="nettinG?-1",
+                variable=AdditionalConstraintVariable.NETTING,
+                operator=AdditionalConstraintOperator.LESS,
+                hours=[[1, 168]],
+                enabled=True,
+            ),
+        ]
+    }
+
+    # With a study version anterior to 9.2, it should always return an empty list
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 880")
+    assert _parse_st_storage_additional_constraints(study_path, "fr", [storage]) == {}
+
+
+def test_parse_st_storage_additional_constraints_no_file(study_path: Path) -> None:
+    """
+    The file is optional, and if not present, we should return an empty list.
+    """
+    # Set up
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 9.2")
+    config_dir = study_path.joinpath("input", "st-storage", "constraints")
+    config_dir.mkdir(parents=True)
+
+    # Check values
+    assert _parse_st_storage_additional_constraints(study_path, "fr", []) == {}
 
 
 def test_parse_links(study_path: Path) -> None:
