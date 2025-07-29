@@ -106,7 +106,13 @@ def create_raw_study_routes(
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted)
+
+        study = study_service.get_study(uuid)
+        file_study = study_service.get_file_study(study)
+        url = path.split("/")
+        node = file_study.tree.get_node(url)
+        used_parts = len(node.config.path.relative_to(file_study.config.path).parts)
+        output = node.get(url=url[used_parts:], depth=depth, formatted=formatted)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
