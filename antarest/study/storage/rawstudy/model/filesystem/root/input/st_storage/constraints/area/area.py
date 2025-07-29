@@ -28,7 +28,7 @@ class InputSTStorageConstraintsArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            sts: InputSTStorageConstraintsSTStorage(self.matrix_mapper, self.config.next_file(sts), sts)
+            sts: InputSTStorageConstraintsSTStorage(self.matrix_mapper, self.config.next_file(sts), self.area, sts)
             for sts in self.config.get_st_storage_ids(self.area)
         }
         return children
