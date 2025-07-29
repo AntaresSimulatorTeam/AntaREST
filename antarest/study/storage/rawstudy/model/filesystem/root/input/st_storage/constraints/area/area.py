@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.constraints.area.st_storage import (
@@ -19,11 +21,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.cons
 
 
 class InputSTStorageConstraintsArea(FolderNode):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, area: str):
+        super().__init__(matrix_mapper, config)
+        self.area = area
+
     @override
     def build(self) -> TREE:
-        storage_ids = [d.stem for d in self.config.path.iterdir() if d.is_dir()]
         children: TREE = {
-            sts: InputSTStorageConstraintsSTStorage(self.matrix_mapper, self.config.next_file(sts))
-            for sts in storage_ids
+            sts: InputSTStorageConstraintsSTStorage(self.matrix_mapper, self.config.next_file(sts), sts)
+            for sts in self.config.get_st_storage_ids(self.area)
         }
         return children
