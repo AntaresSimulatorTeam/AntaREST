@@ -956,7 +956,7 @@ class TestTableMode:
         if study_version >= 920:
             # Create some constraints to test the table-mode
             areas_url = f"/v1/studies/{internal_study_id}/areas"
-            body = [{"name": "c1", "hours": [[2, 3], [148]]}, {"name": "c2", "enabled": False}]
+            body = [{"name": "C1", "hours": [[2, 3], [148]]}, {"name": "c2", "enabled": False}]
             res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
             assert res.status_code == 200
             body = [{"name": "c3", "operator": "equal", "variable": "injection"}]
