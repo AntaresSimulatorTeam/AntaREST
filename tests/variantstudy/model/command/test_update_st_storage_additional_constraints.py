@@ -77,20 +77,19 @@ class TestUpdateSTStorageAdditionalConstraint:
             command_context=command_context,
             additional_constraint_properties={
                 "fr": {
-                    "sts_fr": [
-                        STStorageAdditionalConstraintUpdate(
-                            id="constraint",
+                    "sts_fr": {
+                        "constraint": STStorageAdditionalConstraintUpdate(
                             variable=AdditionalConstraintVariable.WITHDRAWAL,
                             hours=[[5, 6, 7], [167, 168]],
-                        ),
-                    ]
+                        )
+                    }
                 },
                 "de": {
-                    "sts_de": [
-                        STStorageAdditionalConstraintUpdate(
-                            id="c3", enabled=False, operator=AdditionalConstraintOperator.EQUAL
+                    "sts_de": {
+                        "c3": STStorageAdditionalConstraintUpdate(
+                            enabled=False, operator=AdditionalConstraintOperator.EQUAL
                         )
-                    ]
+                    }
                 },
             },
             study_version=version,
@@ -101,18 +100,16 @@ class TestUpdateSTStorageAdditionalConstraint:
         # Checks the ini content
         # Area `fr`
         constraints_path = study.config.study_path / "input" / "st-storage" / "constraints"
-        ini_path = constraints_path / "fr" / "additional-constraints.ini"
+        ini_path = constraints_path / "fr" / "sts_fr" / "additional-constraints.ini"
         ini_content = read_ini(ini_path)
         assert ini_content == {
             "constraint": {
-                "cluster": "sts_fr",
                 "enabled": True,
                 "hours": "[5, 6, 7], [167, 168]",
                 "operator": "less",
                 "variable": "withdrawal",
             },
             "constraint_2": {
-                "cluster": "sts_fr",
                 "enabled": False,
                 "hours": "[2, 4]",
                 "operator": "less",
@@ -121,11 +118,10 @@ class TestUpdateSTStorageAdditionalConstraint:
         }
 
         # Area `de`
-        ini_path = constraints_path / "de" / "additional-constraints.ini"
+        ini_path = constraints_path / "de" / "sts_de" / "additional-constraints.ini"
         ini_content = read_ini(ini_path)
         assert ini_content == {
             "c3": {
-                "cluster": "sts_de",
                 "enabled": False,
                 "hours": "[1, 2, 3, 4], [12, 13]",
                 "operator": "equal",
@@ -140,12 +136,12 @@ class TestUpdateSTStorageAdditionalConstraint:
         # Update a constraint in a fake area
         cmd = UpdateSTStorageAdditionalConstraints(
             command_context=command_context,
-            additional_constraint_properties={"fr": {"sts_1": [STStorageAdditionalConstraintUpdate(id="constraint")]}},
+            additional_constraint_properties={"fr": {"sts_1": {"constraint": STStorageAdditionalConstraintUpdate()}}},
             study_version=version,
         )
         output = cmd.apply(study)
         assert not output.status
-        assert output.message == "The area 'fr' is not found."
+        assert output.message == "Constraint constraint not found for short-term storage sts_1 in area 'fr'."
 
         # Create the area `fr`
         cmd = CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version)
@@ -154,7 +150,7 @@ class TestUpdateSTStorageAdditionalConstraint:
         # Update a constraint with a fake storage
         cmd = UpdateSTStorageAdditionalConstraints(
             command_context=command_context,
-            additional_constraint_properties={"fr": {"sts_1": [STStorageAdditionalConstraintUpdate(id="constraint")]}},
+            additional_constraint_properties={"fr": {"sts_1": {"constraint": STStorageAdditionalConstraintUpdate()}}},
             study_version=version,
         )
         output = cmd.apply(study)
@@ -177,7 +173,7 @@ class TestUpdateSTStorageAdditionalConstraint:
         # Update a fake constraint
         cmd = UpdateSTStorageAdditionalConstraints(
             command_context=command_context,
-            additional_constraint_properties={"fr": {"sts_1": [STStorageAdditionalConstraintUpdate(id="fake")]}},
+            additional_constraint_properties={"fr": {"sts_1": {"fake": STStorageAdditionalConstraintUpdate()}}},
             study_version=version,
         )
         output = cmd.apply(study)
