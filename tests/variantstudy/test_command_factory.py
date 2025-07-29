@@ -919,7 +919,7 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
             args=[
-                {"additional_constraint_properties": {"fr": {"sts_2": [{"id": "c1"}]}}},
+                {"additional_constraint_properties": {"fr": {"sts_2": {"c1": {"enabled": False}}}}},
             ],
             study_version=STUDY_VERSION_9_2,
         ),
@@ -930,7 +930,7 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
             args=[
-                {"area_id": "fr", "ids": ["c1", "c2", "c3"]},
+                {"area_id": "fr", "storage_id": "sts", "ids": ["c1", "c2", "c3"]},
             ],
             study_version=STUDY_VERSION_9_2,
         ),
