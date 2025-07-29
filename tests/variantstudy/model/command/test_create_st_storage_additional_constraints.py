@@ -73,27 +73,27 @@ class TestCreateSTStorageAdditionalConstraint:
         assert output.status
 
         # Checks the ini content
-        ini_path = (
-            study.config.study_path / "input" / "st-storage" / "constraints" / "fr" / "additional-constraints.ini"
-        )
+        constraints_path = study.config.study_path / "input" / "st-storage" / "constraints" / "fr"
+        ini_path = constraints_path / "sts_1" / "additional-constraints.ini"
         ini_content = read_ini(ini_path)
         assert ini_content == {
             "constraint": {
-                "cluster": "sts_1",
                 "variable": "netting",
                 "operator": "less",
                 "hours": "[]",
                 "enabled": True,
             },
             "constraint_2": {
-                "cluster": "sts_1",
                 "variable": "netting",
                 "operator": "less",
                 "hours": "[2, 4]",
                 "enabled": False,
             },
+        }
+        ini_path = constraints_path / "sts_2" / "additional-constraints.ini"
+        ini_content = read_ini(ini_path)
+        assert ini_content == {
             "c3": {
-                "cluster": "sts_2",
                 "variable": "withdrawal",
                 "operator": "greater",
                 "hours": "[1, 2, 3, 4], [12, 13]",
