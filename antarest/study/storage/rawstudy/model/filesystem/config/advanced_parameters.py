@@ -76,11 +76,18 @@ class AdvancedParametersFileData(AntaresBaseModel):
     advanced_parameters: AdvancedParametersSection | None = Field(default=None, alias="advanced parameters")
 
     def to_model(self) -> AdvancedParameters:
-        raise NotImplementedError
+        args = {}
+        for value in self.model_dump(exclude_none=True).values():
+            args.update(value)
+        return AdvancedParameters.model_validate(args)
 
     @classmethod
     def from_model(cls, parameters: AdvancedParameters) -> "AdvancedParametersFileData":
-        raise NotImplementedError
+        args = {}
+        args["other_preferences"] = parameters.model_dump(include=set(OtherPreferencesSection.model_fields))
+        args["seed_parameters"] = parameters.model_dump(include=set(SeedParametersSection.model_fields))
+        args["advanced_parameters"] = parameters.model_dump(include=set(AdvancedParametersSection.model_fields))
+        return cls.model_validate(args)
 
 
 def parse_advanced_parameters(version: StudyVersion, data: dict[str, Any]) -> AdvancedParameters:
