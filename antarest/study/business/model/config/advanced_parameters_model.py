@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
 class InitialReservoirLevel(EnumIgnoreCase):
@@ -116,6 +116,8 @@ class AdvancedParameters(AntaresBaseModel):
     seed_initial_reservoir_levels: int = 10005489
     # Field removed in v9.2
     initial_reservoir_levels: Optional[InitialReservoirLevel] = None
+    # Field introduced in v9.3
+    accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
 
 
 class AdvancedParametersUpdate(AntaresBaseModel):
@@ -142,6 +144,7 @@ class AdvancedParametersUpdate(AntaresBaseModel):
     seed_hydro_costs: Optional[int] = None
     seed_initial_reservoir_levels: Optional[int] = None
     initial_reservoir_levels: Optional[InitialReservoirLevel] = None
+    accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
 
 
 def update_advanced_parameters(
@@ -173,6 +176,9 @@ def validate_advanced_parameters_against_version(
     if version < STUDY_VERSION_8_8 and parameters_data.unit_commitment_mode == UnitCommitmentMode.MILP:
         raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
 
+    if version < STUDY_VERSION_9_3:
+        _check_min_version(parameters_data, "accurate_shave_peaks_include_short_term_storage", version)
+
     if version >= STUDY_VERSION_9_2:
         _check_min_version(parameters_data, "initial_reservoir_levels", version)
 
@@ -188,3 +194,6 @@ def initialize_advanced_parameters(parameters: AdvancedParameters, version: Stud
     """
     if version < STUDY_VERSION_9_2:
         _initialize_field_default(parameters, "initial_reservoir_levels", InitialReservoirLevel.COLD_START)
+
+    if version >= STUDY_VERSION_9_3:
+        _initialize_field_default(parameters, "accurate_shave_peaks_include_short_term_storage", False)

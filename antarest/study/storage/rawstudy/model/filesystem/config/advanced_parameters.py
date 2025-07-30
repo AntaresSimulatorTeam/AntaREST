@@ -67,6 +67,7 @@ class OtherPreferencesSection(AntaresBaseModel):
     number_of_cores_mode: SimulationCore | None = None
     day_ahead_reserve_management: ReserveManagement | None = None
     renewable_generation_modelling: RenewableGenerationModeling | None = None
+    accurate_shave_peaks_include_short_term_storage: bool | None = None
 
 
 class AdvancedParametersFileData(AntaresBaseModel):
