@@ -28,6 +28,7 @@ export interface ThematicTrimmingConfig {
   hRor: boolean;
   wind: boolean;
   solar: boolean;
+  // Optional fields not present in study >= 9.3
   nuclear?: boolean;
   lignite?: boolean;
   coal?: boolean;
@@ -118,7 +119,7 @@ export interface ThematicTrimmingConfig {
   npcapHours?: boolean;
   // Since v9.1
   stsByGroup?: boolean;
-  // since v9.3
+  // Since v9.3
   dispatchGen?: boolean;
   renewableGen?: boolean;
 }
