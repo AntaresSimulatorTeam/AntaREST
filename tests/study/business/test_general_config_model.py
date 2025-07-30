@@ -25,6 +25,12 @@ from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_7_1, STUDY_VER
 
 def test_general_config_default_values():
     config = GeneralConfig()
+    initialize_default_values(config, version=STUDY_VERSION_7_0)
+    assert config.filtering is False
+    assert config.geographic_trimming is None
+    assert config.thematic_trimming is None
+
+    config = GeneralConfig()
     initialize_default_values(config, version=STUDY_VERSION_7_2)
     assert config.filtering is None
     assert config.geographic_trimming is False
