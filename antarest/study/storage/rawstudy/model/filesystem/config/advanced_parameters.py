@@ -100,6 +100,6 @@ def parse_advanced_parameters(version: StudyVersion, data: dict[str, Any]) -> Ad
     return parameters
 
 
-def serialize_optimization_preferences(version: StudyVersion, parameters: AdvancedParameters) -> dict[str, Any]:
+def serialize_advanced_parameters(version: StudyVersion, parameters: AdvancedParameters) -> dict[str, Any]:
     validate_advanced_parameters_against_version(version, parameters)
     return AdvancedParametersFileData.from_model(parameters).model_dump(mode="json", by_alias=True, exclude_none=True)
