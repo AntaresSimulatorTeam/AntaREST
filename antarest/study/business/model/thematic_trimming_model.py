@@ -274,6 +274,23 @@ def _get_sts_group_fields() -> list[str]:
 
 
 def _get_dispatch_gen_fields() -> list[str]:
+    """
+    Returns a list of dispatch generation fields.
+
+    These fields overlap with some fields in `_get_default_fields()`, including:
+    - nuclear
+    - lignite
+    - coal
+    - gas
+    - oil
+    - mix_fuel
+    - misc_dtg
+
+    In version 9.3, these fields are excluded for specific reasons related to
+    the study's requirements. This exclusion ensures compatibility with the
+    thematic trimming panel's behavior in version 9.3. Developers should
+    consult the study documentation for more details on this exclusion.
+    """
     return [
         "nuclear",
         "lignite",
