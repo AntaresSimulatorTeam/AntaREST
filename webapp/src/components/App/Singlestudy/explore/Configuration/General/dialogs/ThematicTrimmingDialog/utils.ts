@@ -46,8 +46,6 @@ const fieldLabelsByGroup: Record<
     spilEnrg: "SPIL. ENRG",
     unspEnrg: "UNSP. ENRG",
     npcapHours: "NPCAP HOURS",
-    dispatchGen: "DISPATCH. GEN.",
-    renewableGen: "RENEWABLE GEN.",
   },
   generationHydro: {
     hCost: "H. COST",
@@ -73,6 +71,7 @@ const fieldLabelsByGroup: Record<
     wind: "WIND",
     windOffshore: "WIND OFFSHORE",
     windOnshore: "WIND ONSHORE",
+    renewableGen: "RENEWABLE GEN.",
   },
   generationStStorages: {
     batteryInjection: "BATTERY INJECTION",
@@ -129,6 +128,7 @@ const fieldLabelsByGroup: Record<
     nuclear: "NUCLEAR",
     oil: "OIL",
     profitByPlant: "PROFIT BY PLANT",
+    dispatchGen: "DISPATCH. GEN.",
   },
   links: {
     congFeeAbs: "CONG. FEE (ABS.)",
