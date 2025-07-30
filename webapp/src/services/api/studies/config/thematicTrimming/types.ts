@@ -28,13 +28,14 @@ export interface ThematicTrimmingConfig {
   hRor: boolean;
   wind: boolean;
   solar: boolean;
-  nuclear: boolean;
-  lignite: boolean;
-  coal: boolean;
-  gas: boolean;
-  oil: boolean;
-  mixFuel: boolean;
-  miscDtg: boolean;
+  // Optional fields not present in study >= 9.3
+  nuclear?: boolean;
+  lignite?: boolean;
+  coal?: boolean;
+  gas?: boolean;
+  oil?: boolean;
+  mixFuel?: boolean;
+  miscDtg?: boolean;
   hStor: boolean;
   hPump: boolean;
   hLev: boolean;
@@ -118,6 +119,9 @@ export interface ThematicTrimmingConfig {
   npcapHours?: boolean;
   // Since v9.1
   stsByGroup?: boolean;
+  // Since v9.3
+  dispatchGen?: boolean;
+  renewableGen?: boolean;
 }
 
 export interface GetThematicTrimmingConfigParams {
