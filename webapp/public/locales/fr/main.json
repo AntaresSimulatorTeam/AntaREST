@@ -511,6 +511,7 @@
   "study.configuration.advancedParameters.unitCommitmentMode": "Unit commitment mode",
   "study.configuration.advancedParameters.simulationCores": "Simulation cores",
   "study.configuration.advancedParameters.renewableGenerationModeling": "Renewable generation modeling",
+  "study.configuration.advancedParameters.accurateShavePeaksIncludeShortTermStorage": "Accurate shave peaks include short term storage",
   "study.configuration.economicOpt": "Options économiques",
   "study.configuration.geographicTrimmingAreas": "Filtre géographique (zones)",
   "study.configuration.geographicTrimmingLinks": "Filtre géographique (liens)",
