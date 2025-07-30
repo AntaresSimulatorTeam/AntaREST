@@ -40,5 +40,10 @@ class FileStudyAdvancedParametersDao(AdvancedParametersDao, ABC):
         file_study = self.get_file_study()
         general_data = file_study.tree.get(GENERAL_DATA_PATH)
         new_content = serialize_advanced_parameters(file_study.config.version, parameters)
-        general_data.update(new_content)
+
+        # Include fields that are in the generaldata.ini file but not in the FileData class
+        for key, v in new_content.items():
+            for field, value in v.items():
+                general_data[key][field] = value
+
         file_study.tree.save(general_data, GENERAL_DATA_PATH)

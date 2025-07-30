@@ -25,32 +25,6 @@ class TestUpdateAdvancedParameters:
         study = empty_study_880
         general_data_content = study.tree.get(["settings", "generaldata"])
 
-        assert general_data_content["other preferences"] == {
-            "day-ahead-reserve-management": "global",
-            "hydro-heuristic-policy": "accommodate rule curves",
-            "hydro-pricing-mode": "fast",
-            "initial-reservoir-levels": "cold start",
-            "number-of-cores-mode": "medium",
-            "power-fluctuations": "free modulations",
-            "renewable-generation-modelling": "clusters",
-            "shedding-policy": "shave peaks",
-            "shedding-strategy": "share margins",
-            "unit-commitment-mode": "fast",
-        }
-        assert general_data_content["seeds - Mersenne Twister"] == {
-            "seed-tsgen-wind": 5489,
-            "seed-tsgen-load": 1005489,
-            "seed-tsgen-hydro": 2005489,
-            "seed-tsgen-thermal": 3005489,
-            "seed-tsgen-solar": 4005489,
-            "seed-tsnumbers": 5005489,
-            "seed-unsupplied-energy-costs": 6005489,
-            "seed-spilled-energy-costs": 7005489,
-            "seed-thermal-costs": 8005489,
-            "seed-hydro-costs": 9005489,
-            "seed-initial-reservoir-levels": 10005489,
-        }
-
         args = {"power_fluctuations": "minimize ramping", "seed_tsgen_thermal": 33}
         parameters = AdvancedParametersUpdate.model_validate(args)
 
@@ -60,11 +34,10 @@ class TestUpdateAdvancedParameters:
         output = command.apply(study_data=study)
         assert output.status
 
-        new_general_data_content = study.tree.get(["settings", "generaldata"])
         general_data_content["seeds - Mersenne Twister"]["seed-tsgen-thermal"] = 33
         general_data_content["other preferences"]["power-fluctuations"] = "minimize ramping"
 
-        assert new_general_data_content == general_data_content
+        assert general_data_content == study.tree.get(["settings", "generaldata"])
 
     def test_error_cases(self, command_context: CommandContext):
         # Give fields that do not match the version

@@ -33,7 +33,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 
 
 class AdvancedParametersSection(AntaresBaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
 
     accuracy_on_correlation: AccuracyOnCorrelation | None = None
 
@@ -55,7 +55,7 @@ class SeedParametersSection(AntaresBaseModel):
 
 
 class OtherPreferencesSection(AntaresBaseModel):
-    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
 
     initial_reservoir_levels: InitialReservoirLevel | None = None
     power_fluctuations: PowerFluctuation | None = None
