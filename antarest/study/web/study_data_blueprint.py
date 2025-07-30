@@ -26,7 +26,6 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
-from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
@@ -55,6 +54,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
 )
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
@@ -1344,26 +1344,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Get Advanced parameters form values",
-        response_model=AdvancedParamsFormFields,
         response_model_exclude_none=True,
     )
-    def get_advanced_parameters(uuid: str) -> AdvancedParamsFormFields:
+    def get_advanced_parameters(uuid: str) -> AdvancedParameters:
         logger.info(msg=f"Getting Advanced Parameters for study {uuid}")
 
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.advanced_parameters_manager.get_field_values(study_interface)
+        return study_service.advanced_parameters_manager.get_advanced_parameters(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Set Advanced parameters new values",
     )
-    def set_advanced_parameters(uuid: str, field_values: AdvancedParamsFormFields) -> None:
+    def set_advanced_parameters(uuid: str, field_values: AdvancedParametersUpdate) -> None:
         logger.info(f"Updating Advanced parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.advanced_parameters_manager.set_field_values(study_interface, field_values)
+        study_service.advanced_parameters_manager.update_advanced_parameters(study_interface, field_values)
 
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
