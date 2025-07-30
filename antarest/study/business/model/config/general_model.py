@@ -141,11 +141,11 @@ def update_general_config(config: GeneralConfig, new_config: GeneralConfigUpdate
 
 
 def validate_general_config_version(config: GeneralConfig | GeneralConfigUpdate, version: StudyVersion) -> None:
-    if version > STUDY_VERSION_7_1:
+    if version >= STUDY_VERSION_7_1:
         if config.filtering is not None:
             raise InvalidFieldForVersionError(f"Field filtering is not a valid field for study version {version}")
 
-    if version <= STUDY_VERSION_7_1:
+    if version < STUDY_VERSION_7_1:
         for field in ["geographic_trimming", "thematic_trimming"]:
             value = getattr(config, field)
             if value is not None:
@@ -153,9 +153,8 @@ def validate_general_config_version(config: GeneralConfig | GeneralConfigUpdate,
 
 
 def initialize_default_values(config: GeneralConfig, version: StudyVersion) -> None:
-    if version <= STUDY_VERSION_7_1:
-        if config.filtering is None:
-            _initialize_field_default(config, "geographic_trimming", False)
+    if version < STUDY_VERSION_7_1:
+        _initialize_field_default(config, "filtering", False)
 
     if version >= STUDY_VERSION_7_1:
         for field in ["geographic_trimming", "thematic_trimming"]:
