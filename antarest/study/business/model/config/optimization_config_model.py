@@ -15,8 +15,6 @@ from pydantic.alias_generators import to_camel
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
-OPTIMIZATION_PATH = ["settings", "generaldata", "optimization"]
-
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
     INFINITE = "infinite"

@@ -11,16 +11,16 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 
 
-class ReadOnlyOptimizationPreferencesDao(ABC):
+class ReadOnlyAdvancedParametersDao(ABC):
     @abstractmethod
-    def get_optimization_preferences(self) -> OptimizationPreferences:
+    def get_advanced_parameters(self) -> AdvancedParameters:
         raise NotImplementedError()
 
 
-class OptimizationPreferencesDao(ReadOnlyOptimizationPreferencesDao):
+class AdvancedParametersDao(ReadOnlyAdvancedParametersDao):
     @abstractmethod
-    def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
+    def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
         raise NotImplementedError()

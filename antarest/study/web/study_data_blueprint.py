@@ -56,7 +56,7 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTermUpdate,
 )
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
-from antarest.study.business.model.config.optimization_config import (
+from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )

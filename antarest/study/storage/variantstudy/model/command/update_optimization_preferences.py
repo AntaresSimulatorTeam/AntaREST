@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.config.optimization_config import (
+from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferencesUpdate,
     update_optimization_preferences,
 )

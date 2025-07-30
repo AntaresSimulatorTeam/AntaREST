@@ -17,13 +17,15 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
-from antarest.study.business.model.config.optimization_config import OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -47,6 +49,7 @@ class ReadOnlyStudyDao(
     ReadOnlyHydroDao,
     ReadOnlyGeneralConfigDao,
     ReadOnlyOptimizationPreferencesDao,
+    ReadOnlyAdvancedParametersDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -63,6 +66,7 @@ class StudyDao(
     HydroDao,
     GeneralConfigDao,
     OptimizationPreferencesDao,
+    AdvancedParametersDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -263,3 +267,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         return self._adaptee.get_optimization_preferences()
+
+    @override
+    def get_advanced_parameters(self) -> AdvancedParameters:
+        return self._adaptee.get_advanced_parameters()
