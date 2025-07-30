@@ -93,7 +93,7 @@ def create_raw_study_routes(
     )
     def get_study_data(
         uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True, format: RawDataFormat | None = None
-    ) -> Any:
+    ) -> Response:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -116,6 +116,10 @@ def create_raw_study_routes(
         output = study_service.get_raw_data(uuid, path, depth, raw_format)
 
         if isinstance(output, bytes):
+            # Handle arrow format
+            if format in {RawDataFormat.ARROW_COMPRESSED, RawDataFormat.ARROW_UNCOMPRESSED}:
+                return Response(content=output, media_type="application/vnd.apache.arrow.file")
+
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
             parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True)
