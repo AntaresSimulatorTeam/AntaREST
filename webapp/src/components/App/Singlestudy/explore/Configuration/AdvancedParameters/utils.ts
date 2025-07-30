@@ -47,9 +47,10 @@ enum PowerFluctuation {
   MinimizeRamping = "minimize ramping",
 }
 
-enum SheddingPolicy {
+export enum SheddingPolicy {
   ShavePeaks = "shave peaks",
   MinimizeDuration = "minimize duration",
+  // Since v9.2
   AccurateShavePeaks = "accurate shave peaks",
 }
 

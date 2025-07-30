@@ -32,6 +32,7 @@ import {
   SPATIAL_CORRELATIONS_OPTIONS,
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
+  SheddingPolicy,
   type AdvancedParamsFormFields,
 } from "./utils";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
@@ -145,7 +146,9 @@ function Fields() {
         />
         <SelectFE
           label={t("study.configuration.advancedParameters.sheddingPolicy")}
-          options={SHEDDING_POLICY_OPTIONS}
+          options={SHEDDING_POLICY_OPTIONS.filter(
+            (v) => v !== SheddingPolicy.AccurateShavePeaks || studyVersion >= 920,
+          )}
           name="sheddingPolicy"
           control={control}
         />
