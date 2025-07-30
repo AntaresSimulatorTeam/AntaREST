@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 
 
 class InitialReservoirLevel(EnumIgnoreCase):
@@ -170,7 +170,10 @@ def validate_advanced_parameters_against_version(
 
     Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
     """
-    if version < STUDY_VERSION_9_2:
+    if version < STUDY_VERSION_8_8 and parameters_data.unit_commitment_mode == UnitCommitmentMode.MILP:
+        raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
+
+    if version >= STUDY_VERSION_9_2:
         _check_min_version(parameters_data, "initial_reservoir_levels", version)
 
 
@@ -183,5 +186,5 @@ def initialize_advanced_parameters(parameters: AdvancedParameters, version: Stud
     """
     Set undefined version-specific fields to default values.
     """
-    if version >= STUDY_VERSION_9_2:
+    if version < STUDY_VERSION_9_2:
         _initialize_field_default(parameters, "initial_reservoir_levels", InitialReservoirLevel.COLD_START)

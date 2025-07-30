@@ -17,6 +17,7 @@ from pydantic import ConfigDict, Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.config.advanced_parameters_model import (
+    AccuracyOnCorrelation,
     AdvancedParameters,
     HydroHeuristicPolicy,
     HydroPricingMode,
@@ -34,7 +35,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 class AdvancedParametersSection(AntaresBaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
 
-    accuracy_on_correlation: bool | None = None
+    accuracy_on_correlation: AccuracyOnCorrelation | None = None
     adequacy_block_size: int | None = None
 
 
@@ -77,8 +78,12 @@ class AdvancedParametersFileData(AntaresBaseModel):
 
     def to_model(self) -> AdvancedParameters:
         args = {}
-        for value in self.model_dump(exclude_none=True).values():
-            args.update(value)
+        if self.other_preferences:
+            args.update(self.other_preferences.model_dump(exclude_none=True))
+        if self.seed_parameters:
+            args.update(self.seed_parameters.model_dump(exclude_none=True))
+        if self.advanced_parameters:
+            args.update(self.advanced_parameters.model_dump(exclude_none=True, exclude={"adequacy_block_size"}))
         return AdvancedParameters.model_validate(args)
 
     @classmethod

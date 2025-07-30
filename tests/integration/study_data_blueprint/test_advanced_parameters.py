@@ -121,5 +121,5 @@ class TestAdvancedParametersForm:
         else:
             assert res.status_code == 422
             response = res.json()
-            assert response["exception"] == "InvalidFieldForVersionError"
-            assert response["description"] == "Unit commitment mode `MILP` only exists in v8.8+ studies"
+            assert response["exception"] == "ValidationError"
+            assert "Unit commitment mode `MILP` only exists in v8.8+ studies" in response["description"]
