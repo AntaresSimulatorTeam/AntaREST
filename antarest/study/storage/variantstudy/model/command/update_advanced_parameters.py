@@ -13,7 +13,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.config.general_model import GeneralConfigUpdate, update_general_config
+from antarest.study.business.model.config.advanced_parameters_model import (
+    AdvancedParametersUpdate,
+    update_advanced_parameters,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -21,26 +24,26 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateGeneralConfig(ICommand):
+class UpdateAdvancedParameters(ICommand):
     """
-    Command used to update the general config.
+    Command used to update the advanced parameters of a study
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_GENERAL_CONFIG
+    command_name: CommandName = CommandName.UPDATE_ADVANCED_PARAMETERS
 
     # Command parameters
     # ==================
-    parameters: GeneralConfigUpdate
+    parameters: AdvancedParametersUpdate
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_config = study_data.get_general_config()
-        new_config = update_general_config(current_config, self.parameters)
-        study_data.save_general_config(new_config)
-        return command_succeeded("General config updated successfully.")
+        current_parameters = study_data.get_advanced_parameters()
+        new_parameters = update_advanced_parameters(current_parameters, self.parameters)
+        study_data.save_advanced_parameters(new_parameters)
+        return command_succeeded("Advanced parameters updated successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
