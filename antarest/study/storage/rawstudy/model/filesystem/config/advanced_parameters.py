@@ -33,14 +33,13 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 
 
 class AdvancedParametersSection(AntaresBaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
 
     accuracy_on_correlation: AccuracyOnCorrelation | None = None
-    adequacy_block_size: int | None = None
 
 
 class SeedParametersSection(AntaresBaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
 
     seed_tsgen_wind: int | None = None
     seed_tsgen_load: int | None = None
@@ -56,7 +55,7 @@ class SeedParametersSection(AntaresBaseModel):
 
 
 class OtherPreferencesSection(AntaresBaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
 
     initial_reservoir_levels: InitialReservoirLevel | None = None
     power_fluctuations: PowerFluctuation | None = None
@@ -84,7 +83,7 @@ class AdvancedParametersFileData(AntaresBaseModel):
         if self.seed_parameters:
             args.update(self.seed_parameters.model_dump(exclude_none=True))
         if self.advanced_parameters:
-            args.update(self.advanced_parameters.model_dump(exclude_none=True, exclude={"adequacy_block_size"}))
+            args.update(self.advanced_parameters.model_dump(exclude_none=True))
         return AdvancedParameters.model_validate(args)
 
     @classmethod
