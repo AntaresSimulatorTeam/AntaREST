@@ -176,10 +176,11 @@ def validate_advanced_parameters_against_version(
     if version < STUDY_VERSION_8_8 and parameters_data.unit_commitment_mode == UnitCommitmentMode.MILP:
         raise InvalidFieldForVersionError("Unit commitment mode `MILP` only exists in v8.8+ studies")
 
+    if version < STUDY_VERSION_9_2 and parameters_data.shedding_policy == SheddingPolicy.ACCURATE_SHAVE_PEAKS:
+        raise InvalidFieldForVersionError("Shedding policy `accurate shave peaks` only exists in v9.2+ studies")
+
     if version < STUDY_VERSION_9_3:
         _check_min_version(parameters_data, "accurate_shave_peaks_include_short_term_storage", version)
-        if parameters_data.shedding_policy == SheddingPolicy.ACCURATE_SHAVE_PEAKS:
-            raise InvalidFieldForVersionError("Shedding policy `accurate shave peaks` only exists in v9.2+ studies")
 
     if version >= STUDY_VERSION_9_2:
         _check_min_version(parameters_data, "initial_reservoir_levels", version)
