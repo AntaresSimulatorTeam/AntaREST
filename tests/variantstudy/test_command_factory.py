@@ -895,6 +895,17 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.UPDATE_GENERAL_CONFIG.value,
+            args={
+                "parameters": {"horizon": "2030", "first_week_day": "Monday", "year_by_year": True},
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_general_config",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value,
             args={"parameters": {"binding_constraints": True, "unfeasible_problem_behavior": "error-verbose"}},
             study_version=STUDY_VERSION_8_8,
