@@ -13,6 +13,7 @@
 
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -30,4 +31,7 @@ class AdvancedParamsManager:
         """
         Update Advanced parameters values from the webapp form
         """
-        raise NotImplementedError
+        command = UpdateAdvancedParameters(
+            command_context=self._command_context, study_version=study.version, parameters=parameters
+        )
+        study.add_commands([command])
