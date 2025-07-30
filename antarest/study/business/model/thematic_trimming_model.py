@@ -381,20 +381,16 @@ def _reset_field(thematic_trimming: ThematicTrimming, field: str) -> None:
 
 
 def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool) -> None:
-    v_9_3_exclude_field = _get_v_9_3_exclude_field()
     for field in _get_default_fields():
-        if field not in v_9_3_exclude_field:
-            _initialize_field_default(thematic_trimming, field, default_bool)
+        _initialize_field_default(thematic_trimming, field, default_bool)
 
     if version >= STUDY_VERSION_8_1:
         for field in _get_v_8_1_fields():
-            if field not in v_9_3_exclude_field:
-                _initialize_field_default(thematic_trimming, field, default_bool)
+            _initialize_field_default(thematic_trimming, field, default_bool)
 
     if version >= STUDY_VERSION_8_3:
         for field in _get_v_8_3_fields():
-            if field not in v_9_3_exclude_field:
-                _initialize_field_default(thematic_trimming, field, default_bool)
+            _initialize_field_default(thematic_trimming, field, default_bool)
 
     if version >= STUDY_VERSION_8_4:
         for field in _get_v_8_4_fields():
