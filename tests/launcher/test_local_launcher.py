@@ -137,10 +137,10 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
                 assert sim_args == [f"--solver={solver}"]
 
     # Xpress cases
-    os.environ["XPRESS_DIR"] = "fake_path_for_test"
+    os.environ["XPRESSDIR"] = "fake_path_for_test"
     launcher_parameters.other_options = "xpress presolve"
     sim_args, env_variables = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_2)
-    assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+    assert env_variables["XPRESSDIR"] == "fake_path_for_test"
     assert sim_args == [
         "--solver=xpress",
         '--lp-solver-param-optim-1="PRESOLVE 1"',
@@ -156,16 +156,17 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
         '--lp-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
         '--lp-solver-param-optim-2="LPFLAGS 5"',
     ]
+    del os.environ["XPRESSDIR"]
 
 
 @pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path):
-    os.environ["XPRESS_DIR"] = "fake_path_for_test"
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = LocalConfig.from_dict(data)
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
-    _, env_variables = local_launcher._parse_launcher_options(LauncherParametersDTO(), SolverVersion.parse("9.2"))
-    assert env_variables["XPRESS_DIR"] == "fake_path_for_test"
+    launch_parameters = LauncherParametersDTO(other_options="xpress")
+    _, env_variables = local_launcher._parse_launcher_options(launch_parameters, SolverVersion.parse("9.2"))
+    assert env_variables["XPRESSDIR"] == "fake_path_for_test"
 
 
 @pytest.mark.unit_test
