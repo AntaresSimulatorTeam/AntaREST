@@ -913,6 +913,15 @@ COMMANDS = [
         None,
         id="update_optimization_preferences",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADVANCED_PARAMETERS.value,
+            args={"parameters": {"seed_tsgen_thermal": 2, "hydro_pricing_mode": "accurate"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_advanced_parameters",
+    ),
 ]
 
 
