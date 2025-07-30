@@ -54,7 +54,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         renewables_by_areas: dict[str, dict[str, RenewableCluster]] = {}
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                renewable = parse_renewable_cluster(cluster)
+                renewable = parse_renewable_cluster(file_study.config.version, cluster)
                 renewables_by_areas.setdefault(area_id, {})[renewable.id.lower()] = renewable
 
         return renewables_by_areas
@@ -63,7 +63,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
         file_study = self.get_file_study()
         clusters_data = self._get_all_renewables_for_area(file_study, area_id)
-        return [parse_renewable_cluster(cluster) for cluster in clusters_data.values()]
+        return [parse_renewable_cluster(file_study.config.version, cluster) for cluster in clusters_data.values()]
 
     @override
     def get_renewable(self, area_id: str, renewable_id: str) -> RenewableCluster:
@@ -73,7 +73,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
             cluster = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
             raise RenewableClusterNotFound(path, renewable_id)
-        return parse_renewable_cluster(cluster)
+        return parse_renewable_cluster(file_study.config.version, cluster)
 
     @override
     def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
@@ -98,7 +98,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         self._update_renewable_config(study_data.config, area_id, renewable)
 
         study_data.tree.save(
-            serialize_renewable_cluster(renewable),
+            serialize_renewable_cluster(study_data.config.version, renewable),
             ["input", "renewables", "clusters", area_id, "list", renewable.id],
         )
 
@@ -108,7 +108,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         ini_content = self._get_all_renewables_for_area(study_data, area_id)
         for renewable in renewables:
             self._update_renewable_config(study_data.config, area_id, renewable)
-            ini_content[renewable.id] = serialize_renewable_cluster(renewable)
+            ini_content[renewable.id] = serialize_renewable_cluster(study_data.config.version, renewable)
         study_data.tree.save(ini_content, ["input", "renewables", "clusters", area_id, "list"])
 
     @override

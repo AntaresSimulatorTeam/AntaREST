@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config import OptimizationPreferences
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -27,6 +28,10 @@ from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnl
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
+from antarest.study.dao.api.optimization_preferences_dao import (
+    OptimizationPreferencesDao,
+    ReadOnlyOptimizationPreferencesDao,
+)
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
@@ -41,6 +46,7 @@ class ReadOnlyStudyDao(
     ReadOnlySTStorageDao,
     ReadOnlyHydroDao,
     ReadOnlyGeneralConfigDao,
+    ReadOnlyOptimizationPreferencesDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -48,7 +54,15 @@ class ReadOnlyStudyDao(
 
 
 class StudyDao(
-    ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, ConstraintDao, STStorageDao, HydroDao, GeneralConfigDao
+    ReadOnlyStudyDao,
+    LinkDao,
+    ThermalDao,
+    RenewableDao,
+    ConstraintDao,
+    STStorageDao,
+    HydroDao,
+    GeneralConfigDao,
+    OptimizationPreferencesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -245,3 +259,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_general_config(self) -> GeneralConfig:
         return self._adaptee.get_general_config()
+
+    @override
+    def get_optimization_preferences(self) -> OptimizationPreferences:
+        return self._adaptee.get_optimization_preferences()

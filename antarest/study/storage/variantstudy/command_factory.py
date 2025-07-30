@@ -67,6 +67,9 @@ from antarest.study.storage.variantstudy.model.command.update_general_config imp
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
+from antarest.study.storage.variantstudy.model.command.update_optimization_preferences import (
+    UpdateOptimizationPreferences,
+)
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
@@ -124,6 +127,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
     CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
+    CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value: UpdateOptimizationPreferences,
 }
 
 
