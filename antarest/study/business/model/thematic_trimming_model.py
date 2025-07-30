@@ -241,6 +241,32 @@ def _get_v_9_3_fields() -> list[str]:
     return ["dispatch_gen", "renewable_gen"]
 
 
+def _get_v_9_3_exclude_field() -> list[str]:
+    return [
+        # replaces by dispatch_gen
+        "nuclear",
+        "lignite",
+        "coal",
+        "gas",
+        "oil",
+        "mix_fuel",
+        "misc_dtg",
+        "misc_dtg_2",
+        "misc_dtg_3",
+        "misc_dtg_4",
+        # replaced by renewable_gen
+        "wind_offshore",
+        "wind_onshore",
+        "solar_concrt",
+        "solar_pv",
+        "solar_rooft",
+        "renw_1",
+        "renw_2",
+        "renw_3",
+        "renw_4",
+    ]
+
+
 def _get_sts_group_fields() -> list[str]:
     return [
         "psp_open_injection",
@@ -270,35 +296,6 @@ def _get_sts_group_fields() -> list[str]:
         "other5_injection",
         "other5_withdrawal",
         "other5_level",
-    ]
-
-
-def _get_dispatch_gen_fields() -> list[str]:
-    return [
-        "nuclear",
-        "lignite",
-        "coal",
-        "gas",
-        "oil",
-        "mix_fuel",
-        "misc_dtg",
-        "misc_dtg_2",
-        "misc_dtg_3",
-        "misc_dtg_4",
-    ]
-
-
-def _get_renewable_gen_fields() -> list[str]:
-    return [
-        "wind_offshore",
-        "wind_onshore",
-        "solar_concrt",
-        "solar_pv",
-        "solar_rooft",
-        "renw_1",
-        "renw_2",
-        "renw_3",
-        "renw_4",
     ]
 
 
@@ -343,9 +340,7 @@ def validate_against_version(thematic_trimming: ThematicTrimming, version: Study
         for field in _get_v_9_3_fields():
             _check_version(thematic_trimming, field, version)
     else:
-        exclude_from_9_3 = _get_dispatch_gen_fields()
-        exclude_from_9_3.extend(_get_renewable_gen_fields())
-        for field in exclude_from_9_3:
+        for field in _get_v_9_3_exclude_field():
             _check_version(thematic_trimming, field, version)
 
 
@@ -359,9 +354,6 @@ def _reset_field(thematic_trimming: ThematicTrimming, field: str) -> None:
 
 
 def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool) -> None:
-    exclude_from_9_3 = _get_dispatch_gen_fields()
-    exclude_from_9_3.extend(_get_renewable_gen_fields())
-
     for field in _get_default_fields():
         _initialize_field_default(thematic_trimming, field, default_bool)
 
@@ -397,5 +389,5 @@ def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyV
     if version >= STUDY_VERSION_9_3:
         for field in _get_v_9_3_fields():
             _initialize_field_default(thematic_trimming, field, default_bool)
-        for field in exclude_from_9_3:
+        for field in _get_v_9_3_exclude_field():
             _reset_field(thematic_trimming, field)
