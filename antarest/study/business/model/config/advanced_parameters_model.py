@@ -9,13 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Optional, TypeAlias
+from typing import Annotated, Any, Optional, TypeAlias
 
+from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_9_2
 
 
 class InitialReservoirLevel(EnumIgnoreCase):
@@ -151,3 +154,34 @@ def update_advanced_parameters(
     new_properties = new_parameters.model_dump(mode="json", exclude_none=True)
     current_properties.update(new_properties)
     return AdvancedParameters.model_validate(current_properties)
+
+
+def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
+    if getattr(data, field) is not None:
+        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
+
+
+def validate_advanced_parameters_against_version(
+    version: StudyVersion,
+    parameters_data: AdvancedParameters | AdvancedParametersUpdate,
+) -> None:
+    """
+    Validates input advanced parameters data against the provided study versions
+
+    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
+    """
+    if version < STUDY_VERSION_9_2:
+        _check_min_version(parameters_data, "initial_reservoir_levels", version)
+
+
+def _initialize_field_default(parameters: AdvancedParameters, field: str, default_value: Any) -> None:
+    if getattr(parameters, field) is None:
+        setattr(parameters, field, default_value)
+
+
+def initialize_advanced_parameters(parameters: AdvancedParameters, version: StudyVersion) -> None:
+    """
+    Set undefined version-specific fields to default values.
+    """
+    if version >= STUDY_VERSION_9_2:
+        _initialize_field_default(parameters, "initial_reservoir_levels", InitialReservoirLevel.COLD_START)
