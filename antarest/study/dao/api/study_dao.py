@@ -17,6 +17,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config import OptimizationPreferences
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
@@ -24,6 +25,7 @@ from antarest.study.business.model.renewable_cluster_model import RenewableClust
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.dao.api.optimization_preferences_dao import (
@@ -43,6 +45,7 @@ class ReadOnlyStudyDao(
     ReadOnlyConstraintDao,
     ReadOnlySTStorageDao,
     ReadOnlyHydroDao,
+    ReadOnlyGeneralConfigDao,
     ReadOnlyOptimizationPreferencesDao,
 ):
     @abstractmethod
@@ -58,6 +61,7 @@ class StudyDao(
     ConstraintDao,
     STStorageDao,
     HydroDao,
+    GeneralConfigDao,
     OptimizationPreferencesDao,
 ):
     """
@@ -251,6 +255,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         return self._adaptee.get_inflow_structure(area_id)
+
+    @override
+    def get_general_config(self) -> GeneralConfig:
+        return self._adaptee.get_general_config()
 
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
