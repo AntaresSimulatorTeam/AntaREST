@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
@@ -26,6 +27,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SheddingPolicy,
     SimulationCore,
     UnitCommitmentMode,
+    validate_advanced_parameters_against_version,
 )
 
 
@@ -81,9 +83,12 @@ class AdvancedParametersFileData(AntaresBaseModel):
         raise NotImplementedError
 
 
-def parse_advanced_parameters(data: dict[str, Any]) -> AdvancedParameters:
-    raise NotImplementedError
+def parse_advanced_parameters(version: StudyVersion, data: dict[str, Any]) -> AdvancedParameters:
+    parameters = AdvancedParametersFileData.model_validate(data).to_model()
+    validate_advanced_parameters_against_version(version, parameters)
+    return parameters
 
 
-def serialize_optimization_preferences(parameters: AdvancedParameters) -> dict[str, Any]:
-    raise NotImplementedError
+def serialize_optimization_preferences(version: StudyVersion, parameters: AdvancedParameters) -> dict[str, Any]:
+    validate_advanced_parameters_against_version(version, parameters)
+    return AdvancedParametersFileData.from_model(parameters).model_dump(mode="json", by_alias=True, exclude_none=True)
