@@ -160,6 +160,7 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
 
 @pytest.mark.unit_test
 def test_parse_xpress_dir(tmp_path: Path):
+    os.environ["XPRESS_DIR"] = "fake_path_for_test"
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
     launcher_config = LocalConfig.from_dict(data)
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
