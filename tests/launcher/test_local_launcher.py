@@ -108,8 +108,18 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig):
     )
 
 
+@pytest.fixture
+def xpress_env():
+    """
+    Defines XPRESSDIR env var and ensure removal after unit test
+    """
+    os.environ["XPRESSDIR"] = "fake_path_for_test"
+    yield None
+    del os.environ["XPRESSDIR"]
+
+
 @pytest.mark.unit_test
-def test_parse_launcher_arguments(launcher_config: LocalConfig):
+def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     solver_version_8_8 = SolverVersion.parse("8.8")
     solver_version_9_2 = SolverVersion.parse("9.2")
@@ -156,7 +166,6 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig):
         '--lp-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
         '--lp-solver-param-optim-2="LPFLAGS 5"',
     ]
-    del os.environ["XPRESSDIR"]
 
 
 @pytest.mark.unit_test
