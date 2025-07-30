@@ -9,10 +9,49 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
 
 class TestCreateStudy:
+    @pytest.mark.parametrize(
+        "study_version",
+        [
+            "7.0",
+            "7.1",
+            "7.2",
+            "8.0",
+            "8.1",
+            "8.2",
+            "8.3",
+            "8.4",
+            "8.5",
+            "8.6",
+            "8.7",
+            "8.7",
+            "9.2",
+            "9.3",
+        ],
+    )
+    def test_create_study_versions(
+        self,
+        study_version: str,
+        client: TestClient,
+        admin_access_token: str,
+    ):
+        res = client.post(
+            f"/v1/studies?name=study&version={study_version}", headers={"Authorization": f"Bearer {admin_access_token}"}
+        )
+        assert res.status_code == 201
+        study_id = res.json()
+
+        res = client.get(f"/v1/studies/{study_id}", headers={"Authorization": f"Bearer {admin_access_token}"})
+        assert res.status_code == 200
+        study_metadata = res.json()
+        assert study_metadata["name"] == "study"
+        assert StudyVersion.parse(study_metadata["version"]) == StudyVersion.parse(study_version)
+
     def test_create_study_with_different_names(
         self,
         client: TestClient,
