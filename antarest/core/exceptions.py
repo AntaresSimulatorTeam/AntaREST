@@ -478,15 +478,6 @@ class IncorrectPathError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class FileTooLargeError(HTTPException):
-    def __init__(self, estimated_size: int, maximum_size: int) -> None:
-        message = (
-            f"Cannot aggregate output data."
-            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
-        )
-        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
-
-
 class UrlNotMatchJsonDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
@@ -833,10 +824,4 @@ class UnsupportedOperationOnThisStudyType(HTTPException):
 class XpansionCandidateDeletionError(HTTPException):
     def __init__(self, uuid: str, name: str) -> None:
         msg = f"You cannot delete the candidate {name} in study '{uuid}'. It is referenced in the sensitivity config."
-        super().__init__(HTTPStatus.BAD_REQUEST, msg)
-
-
-class WrongFormatForGivenPathError(HTTPException):
-    def __init__(self, format: str, path: str) -> None:
-        msg = f"You cannot ask for format {format} with this path {path}."
         super().__init__(HTTPStatus.BAD_REQUEST, msg)

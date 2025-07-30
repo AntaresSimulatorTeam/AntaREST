@@ -260,28 +260,6 @@ class TestFetchRawData:
             "use-phase-shifter": False,
         }
 
-        # If we ask for a matrix, we should have a JSON content if formatted is True
-        rel_path = "/input/links/de/fr"
-        res = client.get(raw_url, params={"path": rel_path, "formatted": True})
-        assert res.status_code == 200, res.json()
-        actual = res.json()
-        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
-
-        # If we ask for a matrix, we should have a CSV content if formatted is False
-        res = client.get(raw_url, params={"path": rel_path, "formatted": False})
-        assert res.status_code == 200, res.json()
-        actual = res.json()
-        actual_lines = actual.splitlines()
-        first_row = [float(x) for x in actual_lines[0].split("\t")]
-        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
-
-        # If ask for an empty matrix, we should return its default value
-        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
-        assert res.status_code == 200, res.json()
-        assert res.json()["index"] == list(range(365))
-        assert res.json()["columns"] == list(range(6))
-        assert res.json()["data"] == default_data_matrix.tolist()
-
         # We can access to the configuration the classic way,
         # for instance, we can get the list of areas:
         res = client.get(raw_url, params={"path": "/input/areas/list", "depth": 1})
@@ -299,6 +277,37 @@ class TestFetchRawData:
             res = client.get(raw_url, params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
 
+        ####### Matrices #######
+
+        # We should have a JSON content if formatted is True
+        rel_path = "/input/links/de/fr"
+        res = client.get(raw_url, params={"path": rel_path, "formatted": True})
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        assert actual == {"index": ANY, "columns": ANY, "data": ANY}
+
+        # We should have a CSV content if formatted is False
+        res = client.get(raw_url, params={"path": rel_path, "formatted": False})
+        assert res.status_code == 200, res.json()
+        actual = res.json()
+        actual_lines = actual.splitlines()
+        first_row = [float(x) for x in actual_lines[0].split("\t")]
+        assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
+
+        # We can fetch the matrix in arrow format
+        for arrow_format in ["arrow compressed", "arrow uncompressed"]:
+            res = client.get(raw_url, params={"path": rel_path, "format": arrow_format})
+            assert res.status_code == 200
+            df = pd.read_feather(io.BytesIO(res.content))
+            assert df.shape == (8760, 8)
+
+        # If the matrix is empty, we should return its default value
+        res = client.get(raw_url, params={"path": "input/thermal/prepro/de/01_solar/data", "formatted": True})
+        assert res.status_code == 200, res.json()
+        assert res.json()["index"] == list(range(365))
+        assert res.json()["columns"] == list(range(6))
+        assert res.json()["data"] == default_data_matrix.tolist()
+
         # =============================
         #  ERRORS
         # =============================
@@ -315,6 +324,20 @@ class TestFetchRawData:
         assert res.status_code == 422
         assert res.json()["exception"] == "MatrixImportFailed"
         assert res.json()["description"] == "Could not parse the given matrix"
+
+        # Use a wrong format
+        res = client.get(raw_url, params={"path": rel_path, "format": "my format"})
+        assert res.status_code == 422
+        assert res.json()["exception"] == "RequestValidationError"
+        assert (
+            res.json()["description"] == "Input should be 'json', 'arrow compressed', 'arrow uncompressed' or 'binary'"
+        )
+
+        # Asks for content in arrow for a file that's not a matrix
+        res = client.get(raw_url, params={"path": "/input/areas/list", "format": "arrow compressed"})
+        assert res.status_code == 404
+        assert res.json()["exception"] == "IncorrectPathError"
+        assert res.json()["description"] == "The provided path does not point to a valid matrix: '/input/areas/list'"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_delete_raw(

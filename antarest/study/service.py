@@ -47,7 +47,6 @@ from antarest.core.exceptions import (
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
     UnsupportedOperationOnThisStudyType,
-    WrongFormatForGivenPathError,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -2447,7 +2446,7 @@ class StudyService:
         node = file_study.tree.get_node(url)
 
         if not isinstance(node, MatrixNode):
-            raise WrongFormatForGivenPathError(raw_data_format.value, path)
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         df = node.parse_as_dataframe()
         buffer = io.BytesIO()
