@@ -21,7 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.adequacy_patch_para
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
-GENERAL_DATA_PATH = ["settings", "generaldata"]
+ADEQUACY_PATCH_PATH = ["settings", "generaldata", "adequacy patch"]
 
 
 class FileStudyAdequacyPatchParametersDao(AdequacyPatchParametersDao, ABC):
@@ -32,18 +32,16 @@ class FileStudyAdequacyPatchParametersDao(AdequacyPatchParametersDao, ABC):
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
         file_study = self.get_file_study()
-        general_data = file_study.tree.get(GENERAL_DATA_PATH)
-        return parse_adequacy_patch_parameters(file_study.config.version, general_data)
+        data = file_study.tree.get(ADEQUACY_PATCH_PATH)
+        return parse_adequacy_patch_parameters(file_study.config.version, data)
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
         file_study = self.get_file_study()
-        general_data = file_study.tree.get(GENERAL_DATA_PATH)
+        data = file_study.tree.get(ADEQUACY_PATCH_PATH)
         new_content = serialize_adequacy_patch_parameters(file_study.config.version, parameters)
 
         # Include fields that are in the generaldata.ini file but not in the FileData class
-        for key, v in new_content.items():
-            for field, value in v.items():
-                general_data[key][field] = value
+        new_content.update({k: v for k, v in data.items() if k not in new_content})
 
-        file_study.tree.save(general_data, GENERAL_DATA_PATH)
+        file_study.tree.save(new_content, ADEQUACY_PATCH_PATH)

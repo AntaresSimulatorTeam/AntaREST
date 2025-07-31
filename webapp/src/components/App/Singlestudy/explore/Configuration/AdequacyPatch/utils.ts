@@ -32,14 +32,17 @@ export interface AdequacyPatchFormFields {
   // Version 830
   enableAdequacyPatch: boolean;
   ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch: boolean;
-  ntcBetweenPhysicalAreasOutAdequacyPatch: boolean;
   // Version 850
-  priceTakingOrder: PriceTakingOrder;
-  includeHurdleCostCsr: boolean;
-  checkCsrCostFunction: boolean;
+  priceTakingOrder?: PriceTakingOrder;
+  includeHurdleCostCsr?: boolean;
+  checkCsrCostFunction?: boolean;
   thresholdInitiateCurtailmentSharingRule: number;
   thresholdDisplayLocalMatchingRuleViolations: number;
   thresholdCsrVariableBoundsRelaxation: number;
+  // Appeared in v8.3 and removed in v9.2
+  ntcBetweenPhysicalAreasOutAdequacyPatch?: boolean;
+  // Version 9.3
+  redispatch?: boolean;
 }
 
 ////////////////////////////////////////////////////////////////

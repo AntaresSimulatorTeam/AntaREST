@@ -51,8 +51,7 @@ class AdequacyPatchParametersFileData(AntaresBaseModel):
 
 
 def parse_adequacy_patch_parameters(version: StudyVersion, data: dict[str, Any]) -> AdequacyPatchParameters:
-    args = data.get("adequacy patch", {})
-    parameters = AdequacyPatchParametersFileData.model_validate(args).to_model()
+    parameters = AdequacyPatchParametersFileData.model_validate(data).to_model()
     validate_adequacy_patch_parameters_against_version(version, parameters)
     initialize_adequacy_patch_parameters(parameters, version)
     return parameters
