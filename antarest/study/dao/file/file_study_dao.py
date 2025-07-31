@@ -23,6 +23,7 @@ from antarest.study.dao.file.file_study_optimization_preferences import FileStud
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
+from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -33,6 +34,7 @@ class FileStudyTreeDao(
     FileStudyRenewableDao,
     FileStudyConstraintDao,
     FileStudySTStorageDao,
+    FileStudyXpansionDao,
     FileStudyHydroDao,
     FileStudyGeneralConfigDao,
     FileStudyOptimizationPreferencesDao,

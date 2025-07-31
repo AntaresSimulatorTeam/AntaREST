@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -36,6 +36,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -124,6 +125,8 @@ class InMemoryStudyDao(StudyDao):
         self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
         # Advanced parameters config
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
+        # Xpansion
+        self._xpansion_candidates: dict[str, XpansionCandidate] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -549,3 +552,29 @@ class InMemoryStudyDao(StudyDao):
             existing_map[constraint.id] = constraint
 
         self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
+
+    @override
+    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
+        return list(self._xpansion_candidates.values())
+
+    @override
+    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
+        return self._xpansion_candidates[candidate_id]
+
+    @override
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+        if old_id:
+            del self._xpansion_candidates[old_id]
+        self._xpansion_candidates[candidate.name] = candidate
+
+    @override
+    def delete_xpansion_candidate(self, candidate_name: str) -> None:
+        del self._xpansion_candidates[candidate_name]
+
+    @override
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return
+
+    @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        return

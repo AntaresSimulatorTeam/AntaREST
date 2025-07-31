@@ -29,6 +29,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
@@ -41,6 +42,7 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
+from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -54,6 +56,7 @@ class ReadOnlyStudyDao(
     ReadOnlyGeneralConfigDao,
     ReadOnlyOptimizationPreferencesDao,
     ReadOnlyAdvancedParametersDao,
+    ReadOnlyXpansionDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -71,6 +74,7 @@ class StudyDao(
     GeneralConfigDao,
     OptimizationPreferencesDao,
     AdvancedParametersDao,
+    XpansionDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -285,3 +289,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
         return self._adaptee.get_st_storage_additional_constraints(area_id, storage_id)
+
+    @override
+    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
+        return self._adaptee.get_all_xpansion_candidates()
+
+    @override
+    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
+        return self._adaptee.get_xpansion_candidate(candidate_id)
+
+    @override
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return self._adaptee.checks_xpansion_candidate_coherence(candidate)
+
+    @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)
