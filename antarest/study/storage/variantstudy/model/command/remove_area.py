@@ -16,7 +16,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    ReferencedObjectDeletionNotAllowed,
+)
 from antarest.core.model import JSON
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, LinkTerm
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_2, STUDY_VERSION_8_6
