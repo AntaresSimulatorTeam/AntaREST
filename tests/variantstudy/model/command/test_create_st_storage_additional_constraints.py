@@ -47,7 +47,9 @@ class TestCreateSTStorageAdditionalConstraint:
             storage_id="sts_1",
             constraints=[
                 STStorageAdditionalConstraintCreation(name="Constraint??"),
-                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[[2, 4]], enabled=False),
+                STStorageAdditionalConstraintCreation(
+                    name="constraint_2", occurences=[{"hours": [2, 4]}], enabled=False
+                ),
             ],
             study_version=version,
         )
@@ -64,7 +66,7 @@ class TestCreateSTStorageAdditionalConstraint:
                     name="c3",
                     variable=AdditionalConstraintVariable.WITHDRAWAL,
                     operator=AdditionalConstraintOperator.GREATER,
-                    hours=[[1, 2, 3, 4], [12, 13]],
+                    occurences=[{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
                 )
             ],
             study_version=version,
@@ -170,7 +172,7 @@ class TestCreateSTStorageAdditionalConstraint:
 
         # Create an object `STStorageAdditionalConstraintCreation` with wrong `hours`
         with pytest.raises(ValueError, match="Hours must be integers between 0 and 168, got 173"):
-            STStorageAdditionalConstraintCreation(name="c1", hours=[[173]])
+            STStorageAdditionalConstraintCreation(name="c1", occurences=[{"hours": [173]}])
 
         # Create 2 constraints with the same id in the same area
         cmd = CreateSTStorageAdditionalConstraints(

@@ -17,7 +17,6 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    AreaReferencedInsideSTStorageAdditionalConstraints,
     ChildNotFoundError,
     ReferencedObjectDeletionNotAllowed,
 )
@@ -179,13 +178,6 @@ class RemoveArea(ICommand):
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(self.id, binding_ids, object_type="Area")
-
-        # Checks that the area is not referenced in any st-storage constraint
-        path = ["input", "st-storage", "constraints", self.id]
-        with contextlib.suppress(ChildNotFoundError):
-            files = study_data.tree.get(path, depth=1)
-            if files:
-                raise AreaReferencedInsideSTStorageAdditionalConstraints(self.id)
 
         # Delete files
         study_data.tree.delete(["input", "areas", self.id])

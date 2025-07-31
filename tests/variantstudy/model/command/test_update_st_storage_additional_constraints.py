@@ -47,8 +47,10 @@ class TestUpdateSTStorageAdditionalConstraint:
             area_id="fr",
             storage_id="sts_fr",
             constraints=[
-                STStorageAdditionalConstraintCreation(name="constraint", hours=[[2, 4]]),
-                STStorageAdditionalConstraintCreation(name="constraint_2", hours=[[2, 4]], enabled=False),
+                STStorageAdditionalConstraintCreation(name="constraint", occurences=[{"hours": [2, 4]}]),
+                STStorageAdditionalConstraintCreation(
+                    name="constraint_2", occurences=[{"hours": [2, 4]}], enabled=False
+                ),
             ],
             study_version=version,
         )
@@ -64,7 +66,7 @@ class TestUpdateSTStorageAdditionalConstraint:
                     name="c3",
                     variable=AdditionalConstraintVariable.WITHDRAWAL,
                     operator=AdditionalConstraintOperator.GREATER,
-                    hours=[[1, 2, 3, 4], [12, 13]],
+                    occurences=[{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
                 )
             ],
             study_version=version,
@@ -80,7 +82,7 @@ class TestUpdateSTStorageAdditionalConstraint:
                     "sts_fr": {
                         "constraint": STStorageAdditionalConstraintUpdate(
                             variable=AdditionalConstraintVariable.WITHDRAWAL,
-                            hours=[[5, 6, 7], [167, 168]],
+                            occurences=[{"hours": [5, 6, 7]}, {"hours": [167, 168]}],
                         )
                     }
                 },

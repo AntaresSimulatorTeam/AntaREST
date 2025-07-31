@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
@@ -270,33 +269,17 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-HoursType: TypeAlias = list[list[int]]
-
-
-def hours_parser(value: str | HoursType) -> HoursType:
-    def _string_to_list(s: str) -> HoursType:
-        to_return = []
-        numbers_as_list = re.findall(r"\[(.*?)\]", s)
-        if numbers_as_list == [""]:
-            # Happens if the given string is `[]`
-            return [[]]
-        for numbers in numbers_as_list:
-            to_return.append([int(v) for v in numbers.split(",")])
-        return to_return
-
-    def _checks_compliance(x: Any) -> None:
-        if not isinstance(x, int) or not (0 <= x <= 168):
-            raise ValueError(f"Hours must be integers between 0 and 168, got {x}")
-
-    if isinstance(value, str):
-        value = _string_to_list(value)
-    for item in value:
-        for subitem in item:
-            _checks_compliance(subitem)
+def check_hours_compliance(value: int) -> int:
+    if not isinstance(value, int) or not (0 <= value <= 168):
+        raise ValueError(f"Hours must be integers between 0 and 168, got {value}")
     return value
 
 
-Hours: TypeAlias = Annotated[HoursType, BeforeValidator(hours_parser)]
+WeekHour: TypeAlias = Annotated[int, BeforeValidator(check_hours_compliance)]
+
+
+class Occurence(AntaresBaseModel):
+    hours: list[WeekHour]
 
 
 class STStorageAdditionalConstraint(AntaresBaseModel):
@@ -316,7 +299,7 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     name: ItemName
     variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
     operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
-    hours: Hours = [[]]
+    occurences: list[Occurence] = []
     enabled: bool = True
 
 
@@ -332,7 +315,7 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     name: ItemName
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
-    hours: Optional[Hours] = None
+    occurences: Optional[list[Occurence]] = None
     enabled: Optional[bool] = None
 
 
@@ -347,7 +330,7 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
-    hours: Optional[Hours] = None
+    occurences: Optional[list[Occurence]] = None
     enabled: Optional[bool] = None
 
 

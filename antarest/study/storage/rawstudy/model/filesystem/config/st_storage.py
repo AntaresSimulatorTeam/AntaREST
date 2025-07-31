@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
@@ -18,11 +19,10 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
-    HoursType,
     STStorage,
     STStorageAdditionalConstraint,
     check_attributes_coherence,
-    hours_parser,
+    check_hours_compliance,
     initialize_st_storage,
     validate_st_storage_against_version,
 )
@@ -78,6 +78,27 @@ def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dic
 # Additional constraints part
 ##########################
 
+HoursType: TypeAlias = list[list[int]]
+
+
+def hours_parser(value: str | HoursType) -> HoursType:
+    def _string_to_list(s: str) -> HoursType:
+        to_return = []
+        numbers_as_list = re.findall(r"\[(.*?)\]", s)
+        if numbers_as_list == [""]:
+            # Happens if the given string is `[]`
+            return [[]]
+        for numbers in numbers_as_list:
+            to_return.append([int(v) for v in numbers.split(",")])
+        return to_return
+
+    if isinstance(value, str):
+        value = _string_to_list(value)
+    for item in value:
+        for subitem in item:
+            check_hours_compliance(subitem)
+    return value
+
 
 def _hours_serializer(value: HoursType) -> str:
     return ", ".join(str(v) for v in value)
@@ -99,14 +120,20 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
     enabled: bool = True
 
     def to_model(self, constraint_name: str) -> STStorageAdditionalConstraint:
-        args = {"name": constraint_name, **self.model_dump(mode="json")}
+        args: dict[str, Any] = {"name": constraint_name, **self.model_dump(mode="json", exclude={"hours"})}
+        args["occurences"] = [{"hours": hour} for hour in self.hours]
         return STStorageAdditionalConstraint.model_validate(args)
 
     @classmethod
     def from_model(
         cls, additional_constraint: STStorageAdditionalConstraint
     ) -> "STStorageAdditionalConstraintFileData":
-        return cls.model_validate(additional_constraint.model_dump(exclude={"name", "id"}))
+        args = additional_constraint.model_dump(exclude={"name", "id", "occurences"})
+        if additional_constraint.occurences:
+            args["hours"] = [occurence.hours for occurence in additional_constraint.occurences]
+        else:
+            args["hours"] = [[]]
+        return cls.model_validate(args)
 
 
 def parse_st_storage_additional_constraint(constraint_name: str, data: Any) -> STStorageAdditionalConstraint:
