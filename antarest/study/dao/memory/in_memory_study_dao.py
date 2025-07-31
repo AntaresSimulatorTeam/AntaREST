@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config import OptimizationPreferences
 from antarest.study.business.model.hydro_model import (
@@ -104,6 +105,8 @@ class InMemoryStudyDao(StudyDao):
         self._general_config: GeneralConfig = GeneralConfig()
         # Optimization preferences config
         self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
+        # AdequacyPatch parameters
+        self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -480,3 +483,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
         self._optimization_preferences = config
+
+    @override
+    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
+        return self._adequacy_patch_parameters
+
+    @override
+    def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
+        self._adequacy_patch_parameters = parameters
