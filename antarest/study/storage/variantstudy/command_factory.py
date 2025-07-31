@@ -27,6 +27,9 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
+    CreateSTStorageAdditionalConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.create_user_resource import CreateUserResource
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
@@ -46,6 +49,9 @@ from antarest.study.storage.variantstudy.model.command.remove_link import Remove
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
 )
+from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_constraints import (
+    RemoveMultipleSTStorageConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
@@ -59,6 +65,7 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidat
 from antarest.study.storage.variantstudy.model.command.update_adequacy_patch_parameters import (
     UpdateAdequacyPatchParameters,
 )
+from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
@@ -77,6 +84,9 @@ from antarest.study.storage.variantstudy.model.command.update_playlist import Up
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
+from antarest.study.storage.variantstudy.model.command.update_st_storage_additional_constraints import (
+    UpdateSTStorageAdditionalConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
@@ -131,6 +141,10 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
     CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
     CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value: UpdateOptimizationPreferences,
+    CommandName.UPDATE_ADVANCED_PARAMETERS.value: UpdateAdvancedParameters,
+    CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: CreateSTStorageAdditionalConstraints,
+    CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: UpdateSTStorageAdditionalConstraints,
+    CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: RemoveMultipleSTStorageConstraints,
     CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value: UpdateAdequacyPatchParameters,
 }
 

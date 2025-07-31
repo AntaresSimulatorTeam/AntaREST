@@ -18,6 +18,7 @@ const THERMAL = "thermals";
 const RENEWABLE = "renewables";
 const ST_STORAGE = "st-storages";
 const BINDING_CONSTRAINT = "binding-constraints";
+const ST_STORAGE_ADDITIONAL_CONSTRAINTS = "st-storages-additional-constraints";
 
 export const TABLE_MODE_TYPES = [
   AREA,
@@ -26,6 +27,7 @@ export const TABLE_MODE_TYPES = [
   RENEWABLE,
   ST_STORAGE,
   BINDING_CONSTRAINT,
+  ST_STORAGE_ADDITIONAL_CONSTRAINTS,
 ] as const;
 
 // Deprecated types (breaking change from v2.16.8)
@@ -137,5 +139,12 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "filterYearByYear",
     // Since v8.7
     "group",
+  ],
+  [ST_STORAGE_ADDITIONAL_CONSTRAINTS]: [
+    // Since v9.2
+    "cluster",
+    "variable",
+    "operator",
+    "enabled",
   ],
 } as const;

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from starlette.testclient import TestClient
 
-from antarest.study.business.model.config.optimization_config import (
+from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,

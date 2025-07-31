@@ -13,19 +13,18 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import CandidateAlreadyExistsError, CandidateNotFoundError
-from antarest.study.business.model.xpansion_model import XpansionCandidate
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidateCreation,
+    create_xpansion_candidate,
+)
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
+    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    assert_candidate_is_correct,
-    checks_candidate_can_be_deleted,
-)
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
@@ -44,34 +43,29 @@ class ReplaceXpansionCandidate(ICommand):
     # ==================
 
     candidate_name: str
-    properties: XpansionCandidate
+    properties: XpansionCandidateCreation
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        candidate = create_xpansion_candidate(self.properties)
+        candidates = study_data.get_all_xpansion_candidates()
+
         # Checks candidate validity
-        assert_candidate_is_correct(study_data, self.properties)
-        candidates = study_data.tree.get(["user", "expansion", "candidates"])
-        candidates_dict = {}
-        candidate_number = None
-        for cdt_number, cdt in candidates.items():
-            candidate = XpansionCandidate.model_validate(cdt)
-            if candidate.name == self.candidate_name:
-                candidate_number = cdt_number
-            candidates_dict[candidate.name] = candidate
+        existing_ids = {cdt.name for cdt in candidates}
+        if self.candidate_name not in existing_ids:
+            return command_failed(f"The candidate '{self.candidate_name}' does not exist")
+        study_data.checks_xpansion_candidate_coherence(candidate)
 
-        if candidate_number is None:
-            raise CandidateNotFoundError(f"The candidate '{self.candidate_name}' does not exist")
-
+        old_name = None
         if self.properties.name != self.candidate_name:
             # We're renaming the candidate, so we need to perform checks
-            if self.properties.name in candidates_dict:
-                raise CandidateAlreadyExistsError(f"The candidate '{self.properties.name}' already exists")
-            checks_candidate_can_be_deleted(self.candidate_name, study_data)
+            old_name = self.candidate_name
+            if self.properties.name in existing_ids:
+                return command_failed(f"The candidate '{self.properties.name}' already exists")
+            study_data.checks_xpansion_candidate_can_be_deleted(self.candidate_name)
 
-        candidates[candidate_number] = self.properties.model_dump(mode="json", by_alias=True, exclude_none=True)
-        study_data.tree.save(candidates, ["user", "expansion", "candidates"])
-
-        return command_succeeded(message=f"Candidate '{self.candidate_name}' replaced successfully")
+        study_data.save_xpansion_candidate(candidate, old_name)
+        return command_succeeded(message=f"Candidate {self.candidate_name} replaced successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

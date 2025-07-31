@@ -25,7 +25,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
@@ -58,8 +57,9 @@ from antarest.study.business.model.config.adequacy_patch_model import (
     AdequacyPatchParameters,
     AdequacyPatchParametersUpdate,
 )
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
-from antarest.study.business.model.config.optimization_config import (
+from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )
@@ -76,7 +76,14 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
-from antarest.study.business.model.sts_model import STStorage, STStorageCreation, STStorageUpdate
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintCreation,
+    STStorageAdditionalConstraintUpdate,
+    STStorageCreation,
+    STStorageUpdate,
+)
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
@@ -1348,26 +1355,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Get Advanced parameters form values",
-        response_model=AdvancedParamsFormFields,
         response_model_exclude_none=True,
     )
-    def get_advanced_parameters(uuid: str) -> AdvancedParamsFormFields:
+    def get_advanced_parameters(uuid: str) -> AdvancedParameters:
         logger.info(msg=f"Getting Advanced Parameters for study {uuid}")
 
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.advanced_parameters_manager.get_field_values(study_interface)
+        return study_service.advanced_parameters_manager.get_advanced_parameters(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Set Advanced parameters new values",
     )
-    def set_advanced_parameters(uuid: str, field_values: AdvancedParamsFormFields) -> None:
+    def set_advanced_parameters(uuid: str, field_values: AdvancedParametersUpdate) -> AdvancedParameters:
         logger.info(f"Updating Advanced parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.advanced_parameters_manager.set_field_values(study_interface, field_values)
+        return study_service.advanced_parameters_manager.update_advanced_parameters(study_interface, field_values)
 
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
@@ -1820,6 +1826,84 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.st_storage_manager.delete_storages(study_interface, area_id, storage_ids)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Get all additional constraints relative to a short-term storage object",
+    )
+    def get_additional_constraints(uuid: str, area_id: str, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        logger.info(f"Getting additional constraints for short-term storage {storage_id} in {area_id} for study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_additional_constraints(study_interface, area_id, storage_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints/{constraint_id}",
+        tags=[APITag.study_data],
+        summary="Get a specific constraint relative to a short-term storage object",
+    )
+    def get_additional_constraint(
+        uuid: str, area_id: str, storage_id: str, constraint_id: str
+    ) -> STStorageAdditionalConstraint:
+        logger.info(
+            f"Getting additional constraint {constraint_id} for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_additional_constraint(
+            study_interface, area_id, storage_id, constraint_id
+        )
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Create additional constraint(s) for a short-term storage object",
+    )
+    def create_additional_constraints(
+        uuid: str, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraintCreation]
+    ) -> list[STStorageAdditionalConstraint]:
+        logger.info(
+            f"Creating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.create_additional_constraints(
+            study_interface, area_id, storage_id, constraints
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Update additional constraint(s) for a short-term storage object",
+    )
+    def update_additional_constraints(
+        uuid: str, area_id: str, storage_id: str, constraints: dict[str, STStorageAdditionalConstraintUpdate]
+    ) -> list[STStorageAdditionalConstraint]:
+        logger.info(
+            f"Updating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        all_constraints = study_service.st_storage_manager.update_additional_constraints(
+            study_interface, {area_id: {storage_id: constraints}}
+        )
+        return all_constraints[area_id][storage_id]
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Delete additional constraint(s) for a given area",
+    )
+    def delete_additional_constraints(uuid: str, area_id: str, storage_id: str, constraints_ids: list[str]) -> None:
+        logger.info(
+            f"Deleting short-term storage additional constraint(s) for storage {storage_id} in area {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.st_storage_manager.delete_additional_constraints(
+            study_interface, area_id, storage_id, constraints_ids
+        )
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/{cluster_type}/{source_cluster_id}",

@@ -23,7 +23,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 class UpdateGeneralConfig(ICommand):
     """
-    Command used to update multiple areas properties
+    Command used to update the general config.
     """
 
     # Overloaded metadata

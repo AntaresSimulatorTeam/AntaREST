@@ -63,8 +63,11 @@ class CommandName(Enum):
     REMOVE_RENEWABLES_CLUSTER = "remove_renewables_cluster"
     UPDATE_RENEWABLES_CLUSTERS = "update_renewables_clusters"
     CREATE_ST_STORAGE = "create_st_storage"
+    CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS = "create_st_storage_additional_constraints"
     REMOVE_ST_STORAGE = "remove_st_storage"
+    REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS = "remove_st_storage_additional_constraints"
     UPDATE_ST_STORAGES = "update_st_storages"
+    UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS = "update_st_storage_additional_constraints"
     UPDATE_HYDRO_PROPERTIES = "update_hydro_properties"
     UPDATE_INFLOW_STRUCTURE = "update_inflow_structure"
     REPLACE_MATRIX = "replace_matrix"
@@ -89,6 +92,7 @@ class CommandName(Enum):
     UPDATE_XPANSION_SETTINGS = "update_xpansion_settings"
     UPDATE_GENERAL_CONFIG = "update_general_config"
     UPDATE_OPTIMIZATION_PREFERENCES = "update_optimization_preferences"
+    UPDATE_ADVANCED_PARAMETERS = "update_advanced_parameters"
     UPDATE_ADEQUACY_PATCH_PARAMETERS = "update_adequacy_patch_parameters"
 
 
