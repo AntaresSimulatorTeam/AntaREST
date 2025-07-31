@@ -334,10 +334,11 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
     enabled: Optional[bool] = None
 
 
-STStorageAdditionalConstraintsMap = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]
+STStorageAdditionalConstraintsMap: TypeAlias = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]
+
 
 # 2nd key corresponds to a short-term storage id and 3rd to the constraint id.
-STStorageAdditionalConstraintUpdates = dict[
+STStorageAdditionalConstraintUpdates: TypeAlias = dict[
     AreaId, dict[LowerCaseId, dict[LowerCaseId, STStorageAdditionalConstraintUpdate]]
 ]
 

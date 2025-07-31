@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List, Optional, Self
+from typing import List, Optional, Self
 
-from pydantic import model_validator
+from pydantic import TypeAdapter, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.sts_model import (
@@ -29,6 +29,8 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+_CONSTRAINTS_TYPE_ADAPTER = TypeAdapter(type=STStorageAdditionalConstraintUpdates)
 
 
 class UpdateSTStorageAdditionalConstraints(ICommand):
@@ -78,19 +80,13 @@ class UpdateSTStorageAdditionalConstraints(ICommand):
 
     @override
     def to_dto(self) -> CommandDTO:
-        args: dict[str, dict[str, dict[str, dict[str, Any]]]] = {}
-
-        for area_id, value in self.additional_constraint_properties.items():
-            args.setdefault(area_id, {})
-            for storage_id, values in value.items():
-                args[area_id].setdefault(storage_id, {})
-                for constraint_id, updated_constraint in values.items():
-                    body = updated_constraint.model_dump(mode="json", exclude_unset=True)
-                    args[area_id][storage_id][constraint_id] = body
-
         return CommandDTO(
             action=self.command_name.value,
-            args={"additional_constraint_properties": args},
+            args={
+                "additional_constraint_properties": _CONSTRAINTS_TYPE_ADAPTER.dump_python(
+                    self.additional_constraint_properties, exclude_defaults=True
+                )
+            },
             study_version=self.study_version,
         )
 
