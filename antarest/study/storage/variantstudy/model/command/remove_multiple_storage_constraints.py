@@ -15,8 +15,8 @@ from typing import List, Optional
 from pydantic import Field
 from typing_extensions import override
 
+from antarest.core.model import LowerCaseId
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_8_6
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -27,48 +27,40 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-# minimum required version.
-REQUIRED_VERSION = STUDY_VERSION_8_6
 
-
-class RemoveSTStorage(ICommand):
+class RemoveMultipleSTStorageConstraints(ICommand):
     """
-    Command used to remove a short-term storage from an area.
+    Command used to remove several short-term storage additional constraints from an area.
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.REMOVE_ST_STORAGE
+    command_name: CommandName = CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS
 
     # Command parameters
     # ==================
 
     area_id: str = Field(description="Area ID", pattern=r"[a-z0-9_(),& -]+")
-    storage_id: str = Field(description="Short term storage ID", pattern=r"[a-z0-9_(),& -]+")
+    storage_id: LowerCaseId
+    ids: list[str]
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        if not study_data.st_storage_exists(self.area_id, self.storage_id):
-            return command_failed(f"Short-term storage '{self.storage_id}' in area '{self.area_id}' does not exist")
+        existing_constraints = study_data.get_st_storage_additional_constraints(self.area_id, self.storage_id)
+        existing_ids = {c.id for c in existing_constraints}
+        for constraint_id in self.ids:
+            if constraint_id not in existing_ids:
+                return command_failed(f"Short-term storage constraint '{constraint_id}' not found.")
 
-        storage = study_data.get_st_storage(self.area_id, self.storage_id)
-        study_data.delete_st_storage(self.area_id, storage)
-
-        return command_succeeded(f"Short-term storage '{self.storage_id}' inside area '{self.area_id}' deleted")
+        study_data.delete_st_storage_additional_constraints(self.area_id, self.storage_id, self.ids)
+        return command_succeeded("Short-term storage constraints successfully removed.")
 
     @override
     def to_dto(self) -> CommandDTO:
-        """
-        Converts the current object to a Data Transfer Object (DTO)
-        which is stored in the `CommandBlock` in the database.
-
-        Returns:
-            The DTO object representing the current command.
-        """
         return CommandDTO(
             action=self.command_name.value,
-            args={"area_id": self.area_id, "storage_id": self.storage_id},
+            args={"area_id": self.area_id, "storage_id": self.storage_id, "ids": self.ids},
             study_version=self.study_version,
         )
 

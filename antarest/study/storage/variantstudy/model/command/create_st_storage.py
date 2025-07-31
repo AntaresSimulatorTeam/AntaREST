@@ -22,7 +22,7 @@ from typing_extensions import override
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
@@ -37,9 +37,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-# Minimum required version.
-REQUIRED_VERSION = STUDY_VERSION_8_6
 
 MatrixType: TypeAlias = Optional[list[list[MatrixData]] | str]
 
