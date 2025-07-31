@@ -334,7 +334,7 @@ class TestFetchRawData:
         )
 
         # Asks for content in arrow for a file that's not a matrix
-        res = client.get(raw_url, params={"path": "/input/areas/list", "format": "arrow compressed"})
+        res = client.get(raw_url, params={"path": "/input/areas/list", "matrix_format": "arrow compressed"})
         assert res.status_code == 404
         assert res.json()["exception"] == "IncorrectPathError"
         assert res.json()["description"] == "The provided path does not point to a valid matrix: '/input/areas/list'"

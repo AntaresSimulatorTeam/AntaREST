@@ -22,6 +22,7 @@ from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
+from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat
@@ -127,7 +128,7 @@ def create_raw_study_routes(
         path: PATH_TYPE = "/",
         depth: int = 3,
         formatted: bool = True,
-        matrix_format: MatrixFormat = MatrixFormat.JSON,
+        matrix_format: MatrixFormat | None = None,
     ) -> Response:
         """
         Fetches raw data from a study, and returns the data
@@ -147,7 +148,14 @@ def create_raw_study_routes(
 
         df = study_service.get_dataframe_if_the_url_corresponds_to_a_matrix(uuid, path)
         if df is not None:
+            # The user requested a matrix
+            if matrix_format is None:
+                matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
             return matrix_format.parse_dataframe(df)
+
+        if matrix_format in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
+            # The user asked for a format only supported for matrices.
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         output = study_service.get(uuid, path, depth=depth, formatted=formatted)
 
