@@ -25,7 +25,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
@@ -54,6 +53,10 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintUpdateWithMatrices,
     ConstraintTerm,
     ConstraintTermUpdate,
+)
+from antarest.study.business.model.config.adequacy_patch_model import (
+    AdequacyPatchParameters,
+    AdequacyPatchParametersUpdate,
 )
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
 from antarest.study.business.model.config.optimization_config import (
@@ -644,25 +647,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/adequacypatch/form",
         tags=[APITag.study_data],
         summary="Get adequacy patch config values for form",
-        response_model=AdequacyPatchFormFields,
         response_model_exclude_none=True,
     )
-    def get_adequacy_patch_form_values(uuid: str) -> AdequacyPatchFormFields:
+    def get_adequacy_patch_form_values(uuid: str) -> AdequacyPatchParameters:
         logger.info(msg=f"Getting adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.adequacy_patch_manager.get_field_values(study_interface)
+        return study_service.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/adequacypatch/form",
         tags=[APITag.study_data],
         summary="Set adequacy patch config with values from form",
     )
-    def set_adequacy_patch_form_values(uuid: str, field_values: AdequacyPatchFormFields) -> None:
+    def set_adequacy_patch_form_values(
+        uuid: str, field_values: AdequacyPatchParametersUpdate
+    ) -> AdequacyPatchParameters:
         logger.info(f"Updating adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.adequacy_patch_manager.set_field_values(study_interface, field_values)
+        return study_service.adequacy_patch_manager.set_adequacy_patch_parameters(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/timeseries/config",
