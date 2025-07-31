@@ -43,7 +43,7 @@ class RemoveXpansionCandidate(ICommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.checks_xpansion_candidate_can_be_deleted(self.candidate_name)
         candidate = study_data.get_xpansion_candidate(self.candidate_name)
-        study_data.delete_xpansion_candidate(candidate)
+        study_data.delete_xpansion_candidate(candidate.name)
         return command_succeeded(message=f"Candidate {self.candidate_name} removed successfully.")
 
     @override

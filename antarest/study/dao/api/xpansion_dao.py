@@ -40,5 +40,5 @@ class XpansionDao(ReadOnlyXpansionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+    def delete_xpansion_candidate(self, candidate_name: str) -> None:
         raise NotImplementedError()

@@ -75,10 +75,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         self._save_candidates(candidates)
 
     @override
-    def delete_xpansion_candidate(self, candidate: XpansionCandidate) -> None:
+    def delete_xpansion_candidate(self, candidate_name: str) -> None:
         candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in candidates.items()}
-        del candidates[existing_ids[candidate.name]]
+        del candidates[existing_ids[candidate_name]]
         # Reorder keys of the dict
         new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
         self._save_candidates(new_dict)
