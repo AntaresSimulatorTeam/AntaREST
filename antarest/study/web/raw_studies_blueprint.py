@@ -72,14 +72,14 @@ DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description
 PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
-class RawDataFormat(EnumIgnoreCase):
+class MatrixFormat(EnumIgnoreCase):
     JSON = "json"
     ARROW_COMPRESSED = "arrow compressed"
     ARROW_UNCOMPRESSED = "arrow uncompressed"
-    BINARY = "binary"
+    PLAIN = "plain"
 
     def parse_dataframe(self, dataframe: pd.DataFrame) -> Response:
-        if self == RawDataFormat.BINARY:
+        if self == MatrixFormat.PLAIN:
             if dataframe.empty:
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
@@ -88,14 +88,14 @@ class RawDataFormat(EnumIgnoreCase):
             return Response(content=json_response, media_type="application/json")
 
         buffer = io.BytesIO()
-        if self == RawDataFormat.JSON:
+        if self == MatrixFormat.JSON:
             dataframe.to_json(buffer, orient="split")
             return Response(content=buffer.getvalue(), media_type="application/json")
 
         else:
             compression_mapping = {
-                RawDataFormat.ARROW_COMPRESSED: None,
-                RawDataFormat.ARROW_UNCOMPRESSED: "uncompressed",
+                MatrixFormat.ARROW_COMPRESSED: None,
+                MatrixFormat.ARROW_UNCOMPRESSED: "uncompressed",
             }
             dataframe.to_feather(buffer, compression=compression_mapping[self])
             return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
@@ -123,7 +123,11 @@ def create_raw_study_routes(
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
     def get_study_data(
-        uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True, format: RawDataFormat | None = None
+        uuid: str,
+        path: PATH_TYPE = "/",
+        depth: int = 3,
+        formatted: bool = True,
+        matrix_format: MatrixFormat = MatrixFormat.JSON,
     ) -> Response:
         """
         Fetches raw data from a study, and returns the data
@@ -133,21 +137,17 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to fetch.
         - `depth`: The depth of the data to retrieve.
-        - `formatted`: Deprecated in favor of `format`.
-        - `format`: An enum specifying the format in which the data should be returned.
+        - `formatted`: Flag used to retrieve data from files which aren't matrices.
+        - `matrix_format`: An enum specifying the format in which the matrix should be returned.
 
         Returns the fetched data: a JSON object (in most cases), a plain text file
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
 
-        raw_format = format
-        if not raw_format:
-            raw_format = RawDataFormat.JSON if formatted else RawDataFormat.BINARY
-
         df = study_service.get_dataframe_if_the_url_corresponds_to_a_matrix(uuid, path)
         if df is not None:
-            return raw_format.parse_dataframe(df)
+            return matrix_format.parse_dataframe(df)
 
         output = study_service.get(uuid, path, depth=depth, formatted=formatted)
 

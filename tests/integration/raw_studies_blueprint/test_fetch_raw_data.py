@@ -296,7 +296,7 @@ class TestFetchRawData:
 
         # We can fetch the matrix in arrow format
         for arrow_format in ["arrow compressed", "arrow uncompressed"]:
-            res = client.get(raw_url, params={"path": rel_path, "format": arrow_format})
+            res = client.get(raw_url, params={"path": rel_path, "matrix_format": arrow_format})
             assert res.status_code == 200
             df = pd.read_feather(io.BytesIO(res.content))
             assert df.shape == (8760, 8)
@@ -326,11 +326,11 @@ class TestFetchRawData:
         assert res.json()["description"] == "Could not parse the given matrix"
 
         # Use a wrong format
-        res = client.get(raw_url, params={"path": rel_path, "format": "my format"})
+        res = client.get(raw_url, params={"path": rel_path, "matrix_format": "my format"})
         assert res.status_code == 422
         assert res.json()["exception"] == "RequestValidationError"
         assert (
-            res.json()["description"] == "Input should be 'json', 'arrow compressed', 'arrow uncompressed' or 'binary'"
+            res.json()["description"] == "Input should be 'json', 'arrow compressed', 'arrow uncompressed' or 'plain'"
         )
 
         # Asks for content in arrow for a file that's not a matrix
