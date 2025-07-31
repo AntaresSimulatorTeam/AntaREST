@@ -13,13 +13,15 @@ from abc import ABC, abstractmethod
 
 from typing_extensions import override
 
-from antarest.study.business.model.config.optimization_config import OPTIMIZATION_PATH, OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.storage.rawstudy.model.filesystem.config.optimization_preferences import (
     parse_optimization_preferences,
     serialize_optimization_preferences,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+OPTIMIZATION_PATH = ["settings", "generaldata", "optimization"]
 
 
 class FileStudyOptimizationPreferencesDao(OptimizationPreferencesDao, ABC):

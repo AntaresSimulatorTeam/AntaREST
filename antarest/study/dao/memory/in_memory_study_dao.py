@@ -20,8 +20,9 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
-from antarest.study.business.model.config.optimization_config import OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -121,6 +122,8 @@ class InMemoryStudyDao(StudyDao):
         self._general_config: GeneralConfig = GeneralConfig()
         # Optimization preferences config
         self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
+        # Advanced parameters config
+        self._advanced_parameters: AdvancedParameters = AdvancedParameters()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -497,6 +500,14 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
         self._optimization_preferences = config
+
+    @override
+    def get_advanced_parameters(self) -> AdvancedParameters:
+        return self._advanced_parameters
+
+    @override
+    def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
+        self._advanced_parameters = parameters
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
