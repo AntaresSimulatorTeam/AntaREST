@@ -844,7 +844,7 @@ class TestSTStorage:
         res.raise_for_status()
 
         # Create several constraints relative to the storages
-        body = [{"name": "C1?", "hours": [[2, 3], [148]]}, {"name": "c2", "enabled": False}]
+        body = [{"name": "C1?", "occurences": [{"hours": [2, 3]}, {"hours": [148]}]}, {"name": "c2", "enabled": False}]
         res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
@@ -853,13 +853,13 @@ class TestSTStorage:
                 "id": "c1",
                 "variable": "netting",
                 "operator": "less",
-                "hours": [[2, 3], [148]],
+                "occurences": [{"hours": [2, 3]}, {"hours": [148]}],
                 "enabled": True,
             },
-            {"name": "c2", "id": "c2", "variable": "netting", "operator": "less", "hours": [[]], "enabled": False},
+            {"name": "c2", "id": "c2", "variable": "netting", "operator": "less", "occurences": [], "enabled": False},
         ]
 
-        body = [{"name": "c3", "hours": [[1, 2, 57]], "operator": "equal", "variable": "injection"}]
+        body = [{"name": "c3", "occurences": [{"hours": [1, 2, 57]}], "operator": "equal", "variable": "injection"}]
         res = client.post(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [
@@ -868,7 +868,7 @@ class TestSTStorage:
                 "id": "c3",
                 "variable": "injection",
                 "operator": "equal",
-                "hours": [[1, 2, 57]],
+                "occurences": [{"hours": [1, 2, 57]}],
                 "enabled": True,
             }
         ]
@@ -883,7 +883,7 @@ class TestSTStorage:
                 "id": "c3",
                 "variable": "netting",
                 "operator": "equal",
-                "hours": [[1, 2, 57]],
+                "occurences": [{"hours": [1, 2, 57]}],
                 "enabled": False,
             }
         ]

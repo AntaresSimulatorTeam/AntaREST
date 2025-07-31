@@ -956,7 +956,10 @@ class TestTableMode:
         if study_version >= 920:
             # Create some constraints to test the table-mode
             areas_url = f"/v1/studies/{internal_study_id}/areas"
-            body = [{"name": "C1", "hours": [[2, 3], [148]]}, {"name": "c2", "enabled": False}]
+            body = [
+                {"name": "C1", "occurences": [{"hours": [2, 3]}, {"hours": [148]}]},
+                {"name": "c2", "enabled": False},
+            ]
             res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
             assert res.status_code == 200
             body = [{"name": "c3", "operator": "equal", "variable": "injection"}]
@@ -965,27 +968,37 @@ class TestTableMode:
             # Get
             res = client.get(f"/v1/studies/{internal_study_id}/table-mode/st-storages-additional-constraints")
             assert res.json() == {
-                "it / storage3 / c3": {"variable": "injection", "operator": "equal", "hours": [[]], "enabled": True},
+                "it / storage3 / c3": {"variable": "injection", "operator": "equal", "occurences": [], "enabled": True},
                 "fr / tesla / c1": {
                     "variable": "netting",
                     "operator": "less",
-                    "hours": [[2, 3], [148]],
+                    "occurences": [{"hours": [2, 3]}, {"hours": [148]}],
                     "enabled": True,
                 },
-                "fr / tesla / c2": {"variable": "netting", "operator": "less", "hours": [[]], "enabled": False},
+                "fr / tesla / c2": {"variable": "netting", "operator": "less", "occurences": [], "enabled": False},
             }
             # Update
             res = client.put(
                 f"/v1/studies/{internal_study_id}/table-mode/st-storages-additional-constraints",
                 json={
-                    "fr / tesla / c1": {"operator": "greater", "hours": [[2, 3]]},
+                    "fr / tesla / c1": {"operator": "greater", "occurences": [{"hours": [2, 3]}]},
                     "it / storage3 / c3": {"variable": "withdrawal", "enabled": False},
                 },
             )
             assert res.status_code == 200
             assert res.json() == {
-                "fr / tesla / c1": {"variable": "netting", "operator": "greater", "hours": [[2, 3]], "enabled": True},
-                "it / storage3 / c3": {"variable": "withdrawal", "operator": "equal", "hours": [[]], "enabled": False},
+                "fr / tesla / c1": {
+                    "variable": "netting",
+                    "operator": "greater",
+                    "occurences": [{"hours": [2, 3]}],
+                    "enabled": True,
+                },
+                "it / storage3 / c3": {
+                    "variable": "withdrawal",
+                    "operator": "equal",
+                    "occurences": [],
+                    "enabled": False,
+                },
             }
 
 

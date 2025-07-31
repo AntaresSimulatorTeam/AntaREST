@@ -145,7 +145,6 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
     "cluster",
     "variable",
     "operator",
-    "hours",
     "enabled",
   ],
 } as const;
