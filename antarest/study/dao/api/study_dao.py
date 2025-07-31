@@ -22,7 +22,11 @@ from antarest.study.business.model.config.optimization_config import Optimizatio
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
@@ -263,3 +267,13 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         return self._adaptee.get_optimization_preferences()
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        return self._adaptee.get_all_st_storage_additional_constraints()
+
+    @override
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self._adaptee.get_st_storage_additional_constraints(area_id, storage_id)
