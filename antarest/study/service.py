@@ -14,7 +14,6 @@ import base64
 import collections
 import contextlib
 import http
-import io
 import logging
 import os
 import time
@@ -78,7 +77,6 @@ from antarest.study.business.binding_constraint_management import BindingConstra
 from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
@@ -170,13 +168,6 @@ from antarest.study.storage.variantstudy.variant_study_service import VariantStu
 logger = logging.getLogger(__name__)
 
 MAX_MISSING_STUDY_TIMEOUT = 2  # days
-
-
-class RawDataFormat(EnumIgnoreCase):
-    JSON = "json"
-    ARROW_COMPRESSED = "arrow compressed"
-    ARROW_UNCOMPRESSED = "arrow uncompressed"
-    BINARY = "binary"
 
 
 def get_disk_usage(path: str | Path) -> int:
@@ -2433,26 +2424,15 @@ class StudyService:
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
 
-    def get_raw_data(self, uuid: str, path: str, depth: int, raw_data_format: RawDataFormat) -> bytes | JSON:
-        if raw_data_format in {RawDataFormat.JSON, RawDataFormat.BINARY}:
-            formatted = True if raw_data_format == RawDataFormat.JSON else False
-            return self.get(uuid, path, depth=depth, formatted=formatted)
-
-        # The user asked for data in arrow format.
+    def get_dataframe_if_the_url_corresponds_to_a_matrix(self, uuid: str, path: str) -> pd.DataFrame | None:
+        """
+        Returns a DataFrame if the provided url corresponds to a matrix.
+        """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
         node = file_study.tree.get_node(url)
-
-        if not isinstance(node, MatrixNode):
-            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
-
-        df = node.parse_as_dataframe()
-        buffer = io.BytesIO()
-        compression_mapping = {
-            RawDataFormat.ARROW_COMPRESSED: None,
-            RawDataFormat.ARROW_UNCOMPRESSED: "uncompressed",
-        }
-        df.to_feather(buffer, compression=compression_mapping[raw_data_format])
-        return buffer.getvalue()
+        if isinstance(node, MatrixNode):
+            return node.parse_as_dataframe()
+        return None

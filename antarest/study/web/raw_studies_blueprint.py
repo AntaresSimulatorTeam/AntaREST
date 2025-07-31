@@ -16,6 +16,7 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
+import pandas as pd
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
@@ -28,7 +29,8 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.service import RawDataFormat, StudyService
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
@@ -68,6 +70,35 @@ CONTENT_TYPES = {
 
 DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description="Export format", title="Export Format")
 PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
+
+
+class RawDataFormat(EnumIgnoreCase):
+    JSON = "json"
+    ARROW_COMPRESSED = "arrow compressed"
+    ARROW_UNCOMPRESSED = "arrow uncompressed"
+    BINARY = "binary"
+
+    def parse_dataframe(self, dataframe: pd.DataFrame) -> Response:
+        if self == RawDataFormat.BINARY:
+            if dataframe.empty:
+                return Response(content=b"", media_type="application/octet-stream")
+            string_buffer = io.StringIO()
+            dataframe.to_csv(string_buffer, sep="\t", header=False, index=False)
+            json_response = to_json(string_buffer.getvalue())
+            return Response(content=json_response, media_type="application/json")
+
+        buffer = io.BytesIO()
+        if self == RawDataFormat.JSON:
+            dataframe.to_json(buffer, orient="split")
+            return Response(content=buffer.getvalue(), media_type="application/json")
+
+        else:
+            compression_mapping = {
+                RawDataFormat.ARROW_COMPRESSED: None,
+                RawDataFormat.ARROW_UNCOMPRESSED: "uncompressed",
+            }
+            dataframe.to_feather(buffer, compression=compression_mapping[self])
+            return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
 
 
 def create_raw_study_routes(
@@ -113,13 +144,14 @@ def create_raw_study_routes(
         raw_format = format
         if not raw_format:
             raw_format = RawDataFormat.JSON if formatted else RawDataFormat.BINARY
-        output = study_service.get_raw_data(uuid, path, depth, raw_format)
+
+        df = study_service.get_dataframe_if_the_url_corresponds_to_a_matrix(uuid, path)
+        if df is not None:
+            return raw_format.parse_dataframe(df)
+
+        output = study_service.get(uuid, path, depth=depth, formatted=formatted)
 
         if isinstance(output, bytes):
-            # Handle arrow format
-            if format in {RawDataFormat.ARROW_COMPRESSED, RawDataFormat.ARROW_UNCOMPRESSED}:
-                return Response(content=output, media_type="application/vnd.apache.arrow.file")
-
             # Guess the suffix form the target data
             resource_path = PurePosixPath(path)
             parent_cfg = study_service.get(uuid, str(resource_path.parent), depth=2, formatted=True)
