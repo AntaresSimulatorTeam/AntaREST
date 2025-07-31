@@ -96,6 +96,7 @@ def create_test_client(
 @pytest.mark.unit_test
 def test_server() -> None:
     mock_service = Mock()
+    mock_service.get_dataframe_if_the_url_corresponds_to_a_matrix.return_value = None
     mock_service.get.return_value = {}
 
     client = create_test_client(mock_service)
@@ -107,6 +108,7 @@ def test_server() -> None:
 @pytest.mark.unit_test
 def test_404() -> None:
     mock_storage_service = Mock()
+    mock_storage_service.get_dataframe_if_the_url_corresponds_to_a_matrix.return_value = None
     mock_storage_service.get.side_effect = UrlNotMatchJsonDataError("Test")
 
     client = create_test_client(mock_storage_service, raise_server_exceptions=False)
@@ -120,6 +122,7 @@ def test_404() -> None:
 @pytest.mark.unit_test
 def test_server_with_parameters() -> None:
     mock_storage_service = Mock()
+    mock_storage_service.get_dataframe_if_the_url_corresponds_to_a_matrix.return_value = None
     mock_storage_service.get.return_value = {}
 
     client = create_test_client(mock_storage_service)
