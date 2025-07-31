@@ -22,7 +22,6 @@ from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
     check_attributes_coherence,
-    check_hours_compliance,
     initialize_st_storage,
     validate_st_storage_against_version,
 )
@@ -81,7 +80,7 @@ def serialize_st_storage(study_version: StudyVersion, storage: STStorage) -> dic
 HoursType: TypeAlias = list[list[int]]
 
 
-def hours_parser(value: str | HoursType) -> HoursType:
+def _hours_parser(value: str | HoursType) -> HoursType:
     def _string_to_list(s: str) -> HoursType:
         to_return = []
         numbers_as_list = re.findall(r"\[(.*?)\]", s)
@@ -94,9 +93,6 @@ def hours_parser(value: str | HoursType) -> HoursType:
 
     if isinstance(value, str):
         value = _string_to_list(value)
-    for item in value:
-        for subitem in item:
-            check_hours_compliance(subitem)
     return value
 
 
@@ -104,7 +100,7 @@ def _hours_serializer(value: HoursType) -> str:
     return ", ".join(str(v) for v in value)
 
 
-HoursIni: TypeAlias = Annotated[HoursType, BeforeValidator(hours_parser), PlainSerializer(_hours_serializer)]
+HoursIni: TypeAlias = Annotated[HoursType, BeforeValidator(_hours_parser), PlainSerializer(_hours_serializer)]
 
 
 class STStorageAdditionalConstraintFileData(AntaresBaseModel):

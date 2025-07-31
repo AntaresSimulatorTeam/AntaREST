@@ -15,6 +15,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
+    Occurence,
     STStorageAdditionalConstraintCreation,
 )
 from antarest.study.model import STUDY_VERSION_8_8
@@ -48,7 +49,7 @@ class TestCreateSTStorageAdditionalConstraint:
             constraints=[
                 STStorageAdditionalConstraintCreation(name="Constraint??"),
                 STStorageAdditionalConstraintCreation(
-                    name="constraint_2", occurences=[{"hours": [2, 4]}], enabled=False
+                    name="constraint_2", occurences=[Occurence(hours=[2, 4])], enabled=False
                 ),
             ],
             study_version=version,
@@ -66,7 +67,7 @@ class TestCreateSTStorageAdditionalConstraint:
                     name="c3",
                     variable=AdditionalConstraintVariable.WITHDRAWAL,
                     operator=AdditionalConstraintOperator.GREATER,
-                    occurences=[{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
+                    occurences=[Occurence(hours=[1, 2, 3, 4]), Occurence(hours=[12, 13])],
                 )
             ],
             study_version=version,
@@ -172,7 +173,7 @@ class TestCreateSTStorageAdditionalConstraint:
 
         # Create an object `STStorageAdditionalConstraintCreation` with wrong `hours`
         with pytest.raises(ValueError, match="Hours must be integers between 0 and 168, got 173"):
-            STStorageAdditionalConstraintCreation(name="c1", occurences=[{"hours": [173]}])
+            STStorageAdditionalConstraintCreation(name="c1", occurences=[Occurence(hours=[173])])
 
         # Create 2 constraints with the same id in the same area
         cmd = CreateSTStorageAdditionalConstraints(

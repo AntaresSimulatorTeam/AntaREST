@@ -30,6 +30,7 @@ from antarest.study.business.model.renewable_cluster_model import RenewableClust
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
+    Occurence,
     STStorage,
     STStorageAdditionalConstraint,
     STStorageGroup,
@@ -633,7 +634,7 @@ def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
                 name="Withdrawal-1",
                 variable=AdditionalConstraintVariable.WITHDRAWAL,
                 operator=AdditionalConstraintOperator.EQUAL,
-                hours=[[1, 3, 5], [120, 121, 122, 123, 124, 125, 126, 127, 128]],
+                occurences=[Occurence(hours=[1, 3, 5]), Occurence(hours=[120, 121, 122, 123, 124, 125, 126, 127, 128])],
                 enabled=True,
             ),
             STStorageAdditionalConstraint(
@@ -641,7 +642,7 @@ def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
                 name="nettinG?-1",
                 variable=AdditionalConstraintVariable.NETTING,
                 operator=AdditionalConstraintOperator.LESS,
-                hours=[[1, 168]],
+                occurences=[Occurence(hours=[1, 168])],
                 enabled=True,
             ),
         ]
