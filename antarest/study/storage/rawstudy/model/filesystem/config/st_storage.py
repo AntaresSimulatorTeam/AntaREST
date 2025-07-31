@@ -117,16 +117,16 @@ class STStorageAdditionalConstraintFileData(AntaresBaseModel):
 
     def to_model(self, constraint_name: str) -> STStorageAdditionalConstraint:
         args: dict[str, Any] = {"name": constraint_name, **self.model_dump(mode="json", exclude={"hours"})}
-        args["occurences"] = [{"hours": hour} for hour in self.hours if hour]
+        args["occurrences"] = [{"hours": hour} for hour in self.hours if hour]
         return STStorageAdditionalConstraint.model_validate(args)
 
     @classmethod
     def from_model(
         cls, additional_constraint: STStorageAdditionalConstraint
     ) -> "STStorageAdditionalConstraintFileData":
-        args = additional_constraint.model_dump(exclude={"name", "id", "occurences"})
-        if additional_constraint.occurences:
-            args["hours"] = [occurence.hours for occurence in additional_constraint.occurences]
+        args = additional_constraint.model_dump(exclude={"name", "id", "occurrences"})
+        if additional_constraint.occurrences:
+            args["hours"] = [occurrence.hours for occurrence in additional_constraint.occurrences]
         else:
             args["hours"] = [[]]
         return cls.model_validate(args)

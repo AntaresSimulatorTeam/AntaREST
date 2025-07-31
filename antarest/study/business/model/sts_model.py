@@ -270,15 +270,15 @@ class AdditionalConstraintOperator(EnumIgnoreCase):
 
 
 def check_hours_compliance(value: int) -> int:
-    if not isinstance(value, int) or not (0 <= value <= 168):
-        raise ValueError(f"Hours must be integers between 0 and 168, got {value}")
+    if not isinstance(value, int) or not (1 <= value <= 168):
+        raise ValueError(f"Hours must be integers between 1 and 168, got {value}")
     return value
 
 
 WeekHour: TypeAlias = Annotated[int, BeforeValidator(check_hours_compliance)]
 
 
-class Occurence(AntaresBaseModel):
+class Occurrence(AntaresBaseModel):
     hours: list[WeekHour]
 
 
@@ -299,7 +299,7 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     name: ItemName
     variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
     operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
-    occurences: list[Occurence] = []
+    occurrences: list[Occurrence] = []
     enabled: bool = True
 
 
@@ -315,7 +315,7 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     name: ItemName
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
-    occurences: Optional[list[Occurence]] = None
+    occurrences: Optional[list[Occurrence]] = None
     enabled: Optional[bool] = None
 
 
@@ -330,12 +330,11 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     variable: Optional[AdditionalConstraintVariable] = None
     operator: Optional[AdditionalConstraintOperator] = None
-    occurences: Optional[list[Occurence]] = None
+    occurrences: Optional[list[Occurrence]] = None
     enabled: Optional[bool] = None
 
 
 STStorageAdditionalConstraintsMap: TypeAlias = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]
-
 
 # 2nd key corresponds to a short-term storage id and 3rd to the constraint id.
 STStorageAdditionalConstraintUpdates: TypeAlias = dict[

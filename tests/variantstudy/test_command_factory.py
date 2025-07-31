@@ -925,7 +925,7 @@ COMMANDS = [
                             "name": "c3",
                             "variable": "withdrawal",
                             "operator": "greater",
-                            "occurences": [{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
+                            "occurrences": [{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
                         }
                     ],
                 }

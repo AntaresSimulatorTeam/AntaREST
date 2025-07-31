@@ -13,7 +13,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
-    Occurence,
+    Occurrence,
     STStorageAdditionalConstraintCreation,
     STStorageAdditionalConstraintUpdate,
 )
@@ -48,9 +48,9 @@ class TestUpdateSTStorageAdditionalConstraint:
             area_id="fr",
             storage_id="sts_fr",
             constraints=[
-                STStorageAdditionalConstraintCreation(name="constraint", occurences=[Occurence(hours=[2, 4])]),
+                STStorageAdditionalConstraintCreation(name="constraint", occurrences=[Occurrence(hours=[2, 4])]),
                 STStorageAdditionalConstraintCreation(
-                    name="constraint_2", occurences=[Occurence(hours=[2, 4])], enabled=False
+                    name="constraint_2", occurrences=[Occurrence(hours=[2, 4])], enabled=False
                 ),
             ],
             study_version=version,
@@ -67,7 +67,7 @@ class TestUpdateSTStorageAdditionalConstraint:
                     name="c3",
                     variable=AdditionalConstraintVariable.WITHDRAWAL,
                     operator=AdditionalConstraintOperator.GREATER,
-                    occurences=[Occurence(hours=[1, 2, 3, 4]), Occurence(hours=[12, 13])],
+                    occurrences=[Occurrence(hours=[1, 2, 3, 4]), Occurrence(hours=[12, 13])],
                 )
             ],
             study_version=version,
@@ -83,7 +83,7 @@ class TestUpdateSTStorageAdditionalConstraint:
                     "sts_fr": {
                         "constraint": STStorageAdditionalConstraintUpdate(
                             variable=AdditionalConstraintVariable.WITHDRAWAL,
-                            occurences=[Occurence(hours=[5, 6, 7]), Occurence(hours=[167, 168])],
+                            occurrences=[Occurrence(hours=[5, 6, 7]), Occurrence(hours=[167, 168])],
                         )
                     }
                 },
