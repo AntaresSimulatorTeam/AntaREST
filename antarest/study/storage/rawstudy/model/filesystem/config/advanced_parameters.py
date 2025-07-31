@@ -28,6 +28,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SheddingPolicy,
     SimulationCore,
     UnitCommitmentMode,
+    initialize_advanced_parameters_against_version,
     validate_advanced_parameters_against_version,
 )
 
@@ -102,6 +103,7 @@ def parse_advanced_parameters(version: StudyVersion, data: dict[str, Any]) -> Ad
     args["seed_parameters"] = data.get("seeds - Mersenne Twister", {})
     parameters = AdvancedParametersFileData.model_validate(args).to_model()
     validate_advanced_parameters_against_version(version, parameters)
+    initialize_advanced_parameters_against_version(parameters, version)
     return parameters
 
 

@@ -27,7 +27,9 @@ class AdvancedParamsManager:
         """
         return study.get_study_dao().get_advanced_parameters()
 
-    def update_advanced_parameters(self, study: StudyInterface, parameters: AdvancedParametersUpdate) -> None:
+    def update_advanced_parameters(
+        self, study: StudyInterface, parameters: AdvancedParametersUpdate
+    ) -> AdvancedParameters:
         """
         Update Advanced parameters values from the webapp form
         """
@@ -35,3 +37,4 @@ class AdvancedParamsManager:
             command_context=self._command_context, study_version=study.version, parameters=parameters
         )
         study.add_commands([command])
+        return self.get_advanced_parameters(study)

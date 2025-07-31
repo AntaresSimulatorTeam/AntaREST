@@ -191,7 +191,7 @@ def _initialize_field_default(parameters: AdvancedParameters, field: str, defaul
         setattr(parameters, field, default_value)
 
 
-def initialize_advanced_parameters(parameters: AdvancedParameters, version: StudyVersion) -> None:
+def initialize_advanced_parameters_against_version(parameters: AdvancedParameters, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """

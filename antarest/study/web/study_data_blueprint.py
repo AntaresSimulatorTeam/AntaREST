@@ -1358,11 +1358,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set Advanced parameters new values",
     )
-    def set_advanced_parameters(uuid: str, field_values: AdvancedParametersUpdate) -> None:
+    def set_advanced_parameters(uuid: str, field_values: AdvancedParametersUpdate) -> AdvancedParameters:
         logger.info(f"Updating Advanced parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.advanced_parameters_manager.update_advanced_parameters(study_interface, field_values)
+        return study_service.advanced_parameters_manager.update_advanced_parameters(study_interface, field_values)
 
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
