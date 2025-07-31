@@ -89,6 +89,7 @@ class CommandName(Enum):
     UPDATE_XPANSION_SETTINGS = "update_xpansion_settings"
     UPDATE_GENERAL_CONFIG = "update_general_config"
     UPDATE_OPTIMIZATION_PREFERENCES = "update_optimization_preferences"
+    UPDATE_ADEQUACY_PATCH_PARAMETERS = "update_adequacy_patch_parameters"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:
