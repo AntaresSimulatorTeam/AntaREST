@@ -16,6 +16,9 @@ from antarest.study.business.model.config.adequacy_patch_model import (
     AdequacyPatchParametersUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.update_adequacy_patch_parameters import (
+    UpdateAdequacyPatchParameters,
+)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -35,4 +38,8 @@ class AdequacyPatchManager:
         """
         Set adequacy patch config from the webapp form
         """
-        raise NotImplementedError()
+        command = UpdateAdequacyPatchParameters(
+            parameters=parameters, command_context=self._command_context, study_version=study.version
+        )
+        study.add_commands([command])
+        return self.get_adequacy_patch_parameters(study)
