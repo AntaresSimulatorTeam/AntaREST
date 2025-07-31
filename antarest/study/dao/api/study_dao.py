@@ -17,14 +17,22 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.config.optimization_config import OptimizationPreferences
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.dao.api.optimization_preferences_dao import (
@@ -45,7 +53,9 @@ class ReadOnlyStudyDao(
     ReadOnlyConstraintDao,
     ReadOnlySTStorageDao,
     ReadOnlyHydroDao,
+    ReadOnlyGeneralConfigDao,
     ReadOnlyOptimizationPreferencesDao,
+    ReadOnlyAdvancedParametersDao,
     ReadOnlyXpansionDao,
 ):
     @abstractmethod
@@ -61,7 +71,9 @@ class StudyDao(
     ConstraintDao,
     STStorageDao,
     HydroDao,
+    GeneralConfigDao,
     OptimizationPreferencesDao,
+    AdvancedParametersDao,
     XpansionDao,
 ):
     """
@@ -257,8 +269,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_inflow_structure(area_id)
 
     @override
+    def get_general_config(self) -> GeneralConfig:
+        return self._adaptee.get_general_config()
+
+    @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
         return self._adaptee.get_optimization_preferences()
+
+    @override
+    def get_advanced_parameters(self) -> AdvancedParameters:
+        return self._adaptee.get_advanced_parameters()
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        return self._adaptee.get_all_st_storage_additional_constraints()
+
+    @override
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self._adaptee.get_st_storage_additional_constraints(area_id, storage_id)
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:

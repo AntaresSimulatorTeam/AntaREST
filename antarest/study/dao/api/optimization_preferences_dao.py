@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.config.optimization_config import OptimizationPreferences
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 
 
 class ReadOnlyOptimizationPreferencesDao(ABC):
