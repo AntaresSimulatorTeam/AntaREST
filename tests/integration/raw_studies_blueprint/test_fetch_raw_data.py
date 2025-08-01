@@ -288,8 +288,8 @@ class TestFetchRawData:
 
         # We should have a CSV content if formatted is False
         res = client.get(raw_url, params={"path": rel_path, "formatted": False})
-        assert res.status_code == 200, res.json()
-        actual = res.json()
+        assert res.status_code == 200
+        actual = res.text
         actual_lines = actual.splitlines()
         first_row = [float(x) for x in actual_lines[0].split("\t")]
         assert first_row == [100000, 100000, 0.01, 0.01, 0, 0, 0, 0]
