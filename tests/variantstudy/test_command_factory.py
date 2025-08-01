@@ -966,6 +966,15 @@ COMMANDS = [
         None,
         id="remove_st_storage_additional_constraints",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value,
+            args={"parameters": {"enable_adequacy_patch": False, "price_taking_order": "DENS"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_adequacy_patch_parameters",
+    ),
 ]
 
 

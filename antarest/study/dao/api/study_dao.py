@@ -17,6 +17,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
@@ -30,6 +31,10 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.dao.api.adequacy_patch_parameters_dao import (
+    AdequacyPatchParametersDao,
+    ReadOnlyAdequacyPatchParametersDao,
+)
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
@@ -57,6 +62,7 @@ class ReadOnlyStudyDao(
     ReadOnlyOptimizationPreferencesDao,
     ReadOnlyAdvancedParametersDao,
     ReadOnlyXpansionDao,
+    ReadOnlyAdequacyPatchParametersDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -75,6 +81,7 @@ class StudyDao(
     OptimizationPreferencesDao,
     AdvancedParametersDao,
     XpansionDao,
+    AdequacyPatchParametersDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -305,3 +312,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)
+
+    @override
+    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
+        return self._adaptee.get_adequacy_patch_parameters()

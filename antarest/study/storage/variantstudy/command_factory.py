@@ -62,6 +62,9 @@ from antarest.study.storage.variantstudy.model.command.replace_matrix import Rep
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
     ReplaceXpansionCandidate,
 )
+from antarest.study.storage.variantstudy.model.command.update_adequacy_patch_parameters import (
+    UpdateAdequacyPatchParameters,
+)
 from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
@@ -142,6 +145,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: CreateSTStorageAdditionalConstraints,
     CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: UpdateSTStorageAdditionalConstraints,
     CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: RemoveMultipleSTStorageConstraints,
+    CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value: UpdateAdequacyPatchParameters,
 }
 
 
