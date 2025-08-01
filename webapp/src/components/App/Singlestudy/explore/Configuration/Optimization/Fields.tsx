@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "../../../../../../types/types";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
@@ -71,17 +71,22 @@ function Fields(props: Props) {
         />
       </Fieldset>
       <Fieldset legend={t("study.configuration.optimization.legend.links")}>
-        <SelectFE
-          label={t("study.configuration.optimization.transmissionCapacities")}
-          options={
-            version >= 840
-              ? TRANSMISSION_CAPACITIES_OPTIONS
-              : LEGACY_TRANSMISSION_CAPACITIES_OPTIONS
-          }
-          name="transmissionCapacities"
-          control={control}
-          rules={{ setValueAs: toBooleanIfNeeded }}
-        />
+        {version >= 840 ? (
+          <SelectFE
+            label={t("study.configuration.optimization.transmissionCapacities")}
+            options={TRANSMISSION_CAPACITIES_OPTIONS}
+            name="transmissionCapacities"
+            control={control}
+          />
+        ) : (
+          <SelectFE
+            label={t("study.configuration.optimization.transmissionCapacities")}
+            options={LEGACY_TRANSMISSION_CAPACITIES_OPTIONS}
+            name="transmissionCapacities"
+            control={control}
+            rules={{ setValueAs: toBooleanIfNeeded }}
+          />
+        )}
       </Fieldset>
       <Fieldset legend={t("study.configuration.optimization.legend.thermalClusters")}>
         <SwitchFE

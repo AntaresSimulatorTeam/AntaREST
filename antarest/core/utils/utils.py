@@ -61,6 +61,34 @@ def sanitize_uuid(uuid: str) -> str:
     return uuid
 
 
+def validate_study_name(name: str) -> str:
+    """
+    Validates study name by rejecting '=' and '/' characters.
+
+    These characters are forbidden as they conflict with URL parameters
+    and file system paths.
+    """
+    if any(char in name for char in ["=", "/"]):
+        raise HTTPException(
+            status_code=http.HTTPStatus.BAD_REQUEST, detail=f"study name {name} contains illegal characters (=, /)"
+        )
+    return name.strip()
+
+
+def validate_folder_path(path: str) -> str:
+    """
+    Validates folder path by rejecting '=' character and removing trailing '/'.
+
+    The '=' character is forbidden as it conflicts with URL parameters.
+    """
+    if "=" in path:
+        raise HTTPException(
+            status_code=http.HTTPStatus.BAD_REQUEST, detail=f"folder name {path} contains illegal character '='"
+        )
+    path = path.rstrip("/")
+    return path.strip()
+
+
 def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
 

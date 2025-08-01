@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.model import FolderDTO, WorkspaceMetadata
+from antarest.study.model import FolderDTO, WorkspaceDTO
 
 BAD_REQUEST_STATUS_CODE = 400
 # Status code for directory listing with invalid parameters
@@ -118,10 +118,10 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
     expected = [
-        WorkspaceMetadata(
+        WorkspaceDTO(
             name="ext",
         )
     ]
     res = res.json()
-    res = [WorkspaceMetadata(**e) for e in res]
+    res = [WorkspaceDTO(**e) for e in res]
     assert res == expected

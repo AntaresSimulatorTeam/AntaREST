@@ -14,6 +14,7 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdates,
     update_thermal_cluster,
@@ -55,22 +56,32 @@ class UpdateThermalClusters(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        all_thermals = study_data.get_all_thermals()
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping = {}
 
         for area_id, value in self.cluster_properties.items():
-            if area_id not in all_thermals:
+            try:
+                all_thermals_per_area = study_data.get_all_thermals_for_area(area_id)
+            except ChildNotFoundError:
                 return command_failed(f"Area '{area_id}' does not exist")
+
+            existing_ids = {th.id.lower(): th for th in all_thermals_per_area}
 
             new_clusters = []
             for cluster_id, new_properties in value.items():
-                lowered_id = cluster_id.lower()
-                if lowered_id not in all_thermals[area_id]:
+                if cluster_id not in existing_ids:
                     return command_failed(f"The thermal cluster '{cluster_id}' in the area '{area_id}' is not found.")
 
-                current_cluster = all_thermals[area_id][lowered_id]
+                current_cluster = existing_ids[cluster_id]
                 new_cluster = update_thermal_cluster(current_cluster, new_properties)
                 new_clusters.append(new_cluster)
 
+            memory_mapping[area_id] = new_clusters
+
+        for area_id, new_clusters in memory_mapping.items():
             study_data.save_thermals(area_id, new_clusters)
 
         return command_succeeded("All thermal clusters updated")

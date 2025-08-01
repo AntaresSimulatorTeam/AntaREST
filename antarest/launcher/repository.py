@@ -13,7 +13,7 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import exists  # type: ignore
+from sqlalchemy import exists
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobResult
@@ -37,10 +37,14 @@ class JobResultRepository:
         db.session.commit()
         return job
 
+    def save_all(self, jobs: List[JobResult]) -> None:
+        logger.debug(f"Saving {len(jobs)} new JobResults")
+        db.session.add_all(jobs)
+        db.session.commit()
+
     def get(self, id: str) -> Optional[JobResult]:
         logger.debug(f"Retrieving JobResult {id}")
-        job: JobResult = db.session.query(JobResult).get(id)
-        return job
+        return db.session.get(JobResult, id)
 
     def get_all(self, filter_orphan: bool = False, latest: Optional[int] = None) -> List[JobResult]:
         logger.debug("Retrieving all JobResults")
@@ -61,6 +65,16 @@ class JobResultRepository:
     def find_by_study(self, study_id: str) -> List[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
         job_results: List[JobResult] = db.session.query(JobResult).filter(JobResult.study_id == study_id).all()
+        return job_results
+
+    def find_by_study_and_output_ids(self, study_id: str, output_ids: List[str]) -> List[JobResult]:
+        logger.debug(f"Retrieving JobResults from study {study_id}")
+        job_results: List[JobResult] = (
+            db.session.query(JobResult)
+            .filter(JobResult.study_id == study_id)
+            .filter(JobResult.output_id.in_(output_ids))
+            .all()
+        )
         return job_results
 
     def delete(self, id: str) -> None:

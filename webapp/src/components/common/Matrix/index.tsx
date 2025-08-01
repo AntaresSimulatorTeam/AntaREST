@@ -51,7 +51,7 @@ interface MatrixProps {
 
 function Matrix({
   url,
-  title: titleProp,
+  title,
   customRowHeaders = [],
   dateTimeColumn = true,
   isTimeSeries = true,
@@ -62,13 +62,12 @@ function Matrix({
   customColumns,
   colWidth,
   fetchMatrixData,
-  canImport = false,
+  canImport = true,
   rowCountSource,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const [uploadType, setUploadType] = useState<"file" | "database" | undefined>(undefined);
-  const title = titleProp ?? t("global.timeSeries");
 
   const aggregateTypes = useMemo(
     () => getAggregateTypes(aggregateColumns || []),
@@ -90,6 +89,7 @@ function Matrix({
     isDirty,
     reload,
     rowCount,
+    matrixTimeFrequency,
   } = useMatrixData({
     studyId: study.id,
     path: url,
@@ -133,33 +133,31 @@ function Matrix({
 
   return (
     <MatrixProvider
-      {...{
-        data: currentState.data,
-        currentState,
-        isSubmitting,
-        updateCount,
-        setMatrixData,
-        undo,
-        redo,
-        canUndo,
-        canRedo,
-        isDirty,
-        aggregateTypes,
-      }}
+      currentState={currentState}
+      isSubmitting={isSubmitting}
+      updateCount={updateCount}
+      aggregateTypes={aggregateTypes}
+      setMatrixData={setMatrixData}
+      undo={undo}
+      redo={redo}
+      canUndo={canUndo}
+      canRedo={canRedo}
+      isDirty={isDirty}
     >
       <MatrixContainer>
-        {/* The <Box> allows to keep the height on vertical resize */}
         <Box>
           <CustomScrollbar>
             <MatrixHeader>
               <Tooltip title={title}>
-                <MatrixTitle>{title}</MatrixTitle>
+                <MatrixTitle>{title || t("global.timeSeries")}</MatrixTitle>
               </Tooltip>
               <MatrixActions
                 studyId={study.id}
                 path={url}
                 disabled={currentState.data.length === 0}
+                dateTime={dateTime}
                 isTimeSeries={isTimeSeries}
+                timeFrequency={matrixTimeFrequency}
                 onSave={handleSaveUpdates}
                 onMatrixUpdated={reload}
                 canImport={canImport}

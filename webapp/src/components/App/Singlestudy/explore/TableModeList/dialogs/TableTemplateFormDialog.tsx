@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import Fieldset from "@/components/common/Fieldset";
 import { validateArray } from "@/utils/validation/array";
 import { validateString } from "@/utils/validation/string";
@@ -21,7 +22,6 @@ import { useTranslation } from "react-i18next";
 import { TABLE_MODE_TYPES } from "../../../../../../services/api/studies/tableMode/constants";
 import FormDialog, { type FormDialogProps } from "../../../../../common/dialogs/FormDialog";
 import ListFE from "../../../../../common/fieldEditors/ListFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import { getTableColumnsForType, type TableTemplate } from "../utils";
 

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
 import { Box } from "@mui/material";
 import { useSnackbar } from "notistack";
@@ -23,7 +24,6 @@ import useAppDispatch from "../../../../../../redux/hooks/useAppDispatch";
 import { createBindingConstraint } from "../../../../../../services/api/studydata";
 import type { StudyMetadata } from "../../../../../../types/types";
 import FormDialog from "../../../../../common/dialogs/FormDialog";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";

@@ -27,9 +27,9 @@ from antarest.login.model import User
 from antarest.login.utils import current_user_context
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.helpers import create_variant_study
 
 
 def build_config(study_path: Path):
@@ -74,7 +74,7 @@ def test_get(tmp_path: str, project_path) -> None:
         event_bus=Mock(),
     )
 
-    metadata = VariantStudy(id="study2.py", path=str(path_study), generation_task="1")
+    metadata = create_variant_study(id="study2.py", path=str(path_study), generation_task="1")
     study_service.exists = Mock()
     study_service.exists.return_value = False
 
@@ -146,7 +146,7 @@ def test_get_cache(tmp_path: str) -> None:
         event_bus=Mock(),
     )
 
-    metadata = VariantStudy(id="study2.py", path=str(path_study))
+    metadata = create_variant_study(id="study2.py", path=str(path_study))
 
     cache_id = f"{CacheConstants.RAW_STUDY}/{metadata.id}"
     study_service.exists = Mock()
@@ -186,7 +186,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         event_bus=Mock(),
     )
 
-    metadata = VariantStudy(id=study_name, path=str(path_study2))
+    metadata = create_variant_study(id=study_name, path=str(path_study2))
 
     study_service.exists = Mock()
     study_service.exists.return_value = True
@@ -219,7 +219,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         event_bus=Mock(),
     )
 
-    metadata = VariantStudy(id=study_name, path=str(path_study2))
+    metadata = create_variant_study(id=study_name, path=str(path_study2))
 
     study_service.exists = Mock()
     study_service.exists.return_value = False
@@ -248,7 +248,7 @@ def test_delete_study(tmp_path: Path) -> None:
         event_bus=Mock(),
     )
 
-    md = VariantStudy(id=name, path=str(study_path))
+    md = create_variant_study(id=name, path=str(study_path))
 
     study_service.delete(md)
     cache.invalidate_all.assert_called_once_with(
@@ -289,7 +289,7 @@ def test_get_variant_children(tmp_path: Path, admin_user) -> None:
         event_bus=Mock(),
     )
 
-    parent = VariantStudy(
+    parent = create_variant_study(
         id="parent",
         name="parent",
         type="variant",
@@ -302,7 +302,7 @@ def test_get_variant_children(tmp_path: Path, admin_user) -> None:
         additional_data=StudyAdditionalData(),
     )
     children = [
-        VariantStudy(
+        create_variant_study(
             id="child1",
             name="child1",
             type="variant",
@@ -314,7 +314,7 @@ def test_get_variant_children(tmp_path: Path, admin_user) -> None:
             public_mode=PublicMode.NONE,
             additional_data=StudyAdditionalData(),
         ),
-        VariantStudy(
+        create_variant_study(
             id="child2",
             name="child2",
             type="variant",
@@ -352,7 +352,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    md = VariantStudy(id=name, path=str(study_path))
+    md = create_variant_study(id=name, path=str(study_path))
 
     additional_data = StudyAdditionalData(horizon=2050, patch="{}", author="Zoro")
 

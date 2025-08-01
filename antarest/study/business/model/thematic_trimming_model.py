@@ -23,6 +23,7 @@ from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.model import (
     STUDY_VERSION_8_1,
     STUDY_VERSION_8_3,
+    STUDY_VERSION_8_4,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_1,
@@ -101,6 +102,8 @@ class ThematicTrimming(FormFieldsBaseModel):
     # since v8.3
     dens: Optional[bool] = None
     profit_by_plant: Optional[bool] = None
+    # since v8.4
+    bc_marg_cost: Optional[bool] = None
     # since v8.6
     sts_inj_by_plant: Optional[bool] = None
     sts_withdrawal_by_plant: Optional[bool] = None
@@ -214,6 +217,10 @@ def _get_v_8_3_fields() -> list[str]:
     return ["dens", "profit_by_plant"]
 
 
+def _get_v_8_4_fields() -> list[str]:
+    return ["bc_marg_cost"]
+
+
 def _get_v_8_8_fields() -> list[str]:
     return ["sts_cashflow_by_cluster", "npcap_hours"]
 
@@ -274,6 +281,10 @@ def validate_against_version(thematic_trimming: ThematicTrimming, version: Study
         for field in _get_v_8_3_fields():
             _check_version(thematic_trimming, field, version)
 
+    if version < STUDY_VERSION_8_4:
+        for field in _get_v_8_4_fields():
+            _check_version(thematic_trimming, field, version)
+
     if version < STUDY_VERSION_8_6:
         sts_fields = _get_sts_fields()
         sts_fields.extend(sts_group_fields)
@@ -307,6 +318,10 @@ def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyV
 
     if version >= STUDY_VERSION_8_3:
         for field in _get_v_8_3_fields():
+            _initialize_field_default(thematic_trimming, field, default_bool)
+
+    if version >= STUDY_VERSION_8_4:
+        for field in _get_v_8_4_fields():
             _initialize_field_default(thematic_trimming, field, default_bool)
 
     if version >= STUDY_VERSION_8_6:

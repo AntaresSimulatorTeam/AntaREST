@@ -16,7 +16,7 @@ import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
 import type { UserInfo } from "../../types/types";
 import type { TableTemplate } from "../../components/App/Singlestudy/explore/TableModeList/utils";
-import type { StudiesSortConf, StudiesState } from "../../redux/ducks/studies";
+import type { StudiesSortConf, StudiesState, StudyFilters } from "../../redux/ducks/studies";
 import type { UIState } from "../../redux/ducks/ui";
 import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 import type { FolderDTO } from "@/components/App/Studies/StudyTree/types";
@@ -27,10 +27,13 @@ export const StorageKey = {
   // Studies
   StudiesFavorites: "studies.favorites",
   StudiesSort: "studies.sort",
+  StudiesFilters: "studies.filters",
   StudiesModelTableModeTemplates: "studies.model.tableMode.templates",
   StudyTreeFolders: "studyTree.folders",
   // UI
   UIMenuCollapsed: "ui.menuCollapsed",
+  // Tasks
+  TasksFilterUser: "tasks.filter.user",
 } as const;
 
 type Key = (typeof StorageKey)[keyof typeof StorageKey] | string;
@@ -43,8 +46,10 @@ interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
   [StorageKey.StudiesFavorites]: StudiesState["favorites"];
   [StorageKey.StudiesSort]: Partial<StudiesSortConf>;
+  [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesModelTableModeTemplates]: Array<Omit<TableTemplate, "id">>;
   [StorageKey.StudyTreeFolders]: FolderDTO[];
+  [StorageKey.TasksFilterUser]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];
   [key: string]: unknown;
 }

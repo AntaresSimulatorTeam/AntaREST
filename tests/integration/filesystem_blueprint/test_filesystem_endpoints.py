@@ -260,7 +260,7 @@ class TestFilesystemEndpoints:
             res = client.get(
                 "/v1/filesystem/ws/ext/ls",
                 headers=user_headers,
-                params={"path": "STA-mini", "details": True},  # type: ignore
+                params={"path": "STA-mini", "details": True},
             )
             assert res.status_code == 200, res.json()
             actual = res.json()

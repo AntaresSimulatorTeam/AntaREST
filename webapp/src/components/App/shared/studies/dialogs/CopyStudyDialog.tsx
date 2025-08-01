@@ -23,10 +23,9 @@ import usePromise from "@/hooks/usePromise";
 import { copyStudy } from "@/services/api/studies";
 import { getStudyOutputs } from "@/services/api/study";
 import type { StudyMetadata, StudyOutput } from "@/types/types";
-import { validateStudyFolder, validateStudyName } from "@/utils/studiesUtils";
+import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
-import { Box, Chip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import StudyPathFE from "../StudyPathFE";
 
@@ -90,7 +89,7 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
       config={{ defaultValues }}
       allowSubmitOnPristine
     >
-      {({ control }) => (
+      {({ control, setValue }) => (
         <Fieldset fullFieldWidth>
           <StringFE
             name="studyName"
@@ -99,41 +98,26 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyPathFE
-            name="destinationFolder"
-            control={control}
-            rules={{ validate: validateStudyFolder }}
-          />
+          <StudyPathFE name="destinationFolder" control={control} />
           <UsePromiseCond
             response={outputsRes}
             ifPending={() => (
               <FieldSkeleton>
-                <SelectFE options={[]} />
+                <SelectFE value="" />
               </FieldSkeleton>
             )}
-            ifRejected={() => (
-              <SelectFE options={[]} helperText={t("study.error.listOutputs")} error disabled />
-            )}
+            ifRejected={() => <SelectFE helperText={t("study.error.listOutputs")} error disabled />}
             ifFulfilled={(outputs) => (
               <SelectFE
                 name="outputIds"
-                label={t("global.outputs")}
                 control={control}
+                label={t("global.outputs")}
                 defaultValue={outputs}
                 options={outputs}
                 startCaseLabel={false}
                 multiple
-                renderValue={(selected) => {
-                  if (Array.isArray(selected)) {
-                    return (
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                        {selected.map((value) => (
-                          <Chip key={value} label={value} />
-                        ))}
-                      </Box>
-                    );
-                  }
-                }}
+                onSelectAllOptions={(values) => setValue("outputIds", values)}
+                onDeselectAllOptions={() => setValue("outputIds", [])}
               />
             )}
           />

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import pytest
+from checksumdir import dirhash
 from pydantic import ValidationError
 
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate
@@ -115,23 +116,27 @@ class TestUpdateThermalCluster:
         assert serialize_thermal_cluster(STUDY_VERSION_8_1, empty_study.config.areas[area_id].thermals[0]) == expected
 
     def test_update_thermal_cluster_does_not_exist(self, empty_study_810: FileStudy, command_context: CommandContext):
-        empty_study = empty_study_810
-        area_id = "fr"
-        thermal_cluster_id = "no"
-
-        self._set_up(empty_study, command_context, area_id, "cluster")
-
+        # Set up
+        study = empty_study_810
+        self._set_up(study, command_context, "fr", "test")
+        self._set_up(study, command_context, "second_area", "test_2")
+        # Ensures updating an unexisting thermal cluster raises an Exception.
+        # Also ensures the study wasn't partially modified.
+        hash_before_update = dirhash(study.config.study_path / "input" / "thermal", "md5")
+        fake_cluster = "no"
         properties = ThermalClusterUpdate(**{})
-
+        mapping = {"fr": {"test": properties}, "second_area": {fake_cluster: properties}}
         command = UpdateThermalClusters(
-            cluster_properties={area_id: {thermal_cluster_id: properties}},
+            cluster_properties=mapping,
             command_context=command_context,
-            study_version=empty_study.config.version,
+            study_version=study.config.version,
         )
 
-        output = command.apply(study_data=empty_study)
+        output = command.apply(study_data=study)
         assert not output.status
-        assert output.message == "The thermal cluster 'no' in the area 'fr' is not found."
+        assert output.message == f"The thermal cluster '{fake_cluster}' in the area 'second_area' is not found."
+        hash_after_update = dirhash(study.config.study_path / "input" / "thermal", "md5")
+        assert hash_before_update == hash_after_update
 
     def test_invalid_field_for_version_should_raise_validation_error(self, command_context: CommandContext):
         update_data = ThermalClusterUpdate(nox=12.0)

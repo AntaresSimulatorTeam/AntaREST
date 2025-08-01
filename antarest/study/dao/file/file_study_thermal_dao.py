@@ -16,7 +16,6 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
-from antarest.study.business.model.binding_constraint_model import ClusterTerm
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -56,8 +55,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
         for area_id, cluster_obj in clusters.items():
             for cluster_id, cluster in cluster_obj.items():
-                lowered_id = cluster_id.lower()
-                thermals_by_areas.setdefault(area_id, {})[lowered_id] = parse_thermal_cluster(version, cluster)
+                thermal = parse_thermal_cluster(version, cluster)
+                thermals_by_areas.setdefault(area_id, {})[thermal.id.lower()] = thermal
         return thermals_by_areas
 
     @override
@@ -181,10 +180,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
         for path in paths:
             study_data.tree.delete(path)
 
-        self._remove_cluster_from_binding_constraints(study_data, area_id, cluster_id)
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
-        return self._remove_from_config(study_data.config, area_id, thermal)
+        study_data.config.areas[area_id].thermals.remove(thermal)
 
     @staticmethod
     def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
@@ -223,68 +221,3 @@ class FileStudyThermalDao(ThermalDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
-
-    @staticmethod
-    def _remove_cluster_from_binding_constraints(study_data: FileStudy, area_id: str, thermal_id: str) -> None:
-        """
-        Remove the binding constraints that are related to the thermal cluster.
-
-        Notes:
-            A binding constraint has properties, a list of terms (which form a linear equation) and
-            a right-hand side (which is the matrix of the binding constraint).
-            The terms are of the form `area1%area2` or `area.cluster` where `area` is the ID of the area
-            and `cluster` is the ID of the cluster.
-
-            When a thermal cluster is removed, it has an impact on the terms of the binding constraints.
-            At first, we could decide to remove the terms that are related to the area.
-            However, this would lead to a linear equation that is not valid anymore.
-
-            Instead, we decide to remove the binding constraints that are related to the cluster.
-        """
-        # See also `RemoveCluster`
-        # noinspection SpellCheckingInspection
-        url = ["input", "bindingconstraints", "bindingconstraints"]
-        binding_constraints = study_data.tree.get(url)
-
-        # Collect the binding constraints that are related to the area to remove
-        # by searching the terms that contain the ID of the area.
-        bc_to_remove = []
-        for bc_index, bc in list(binding_constraints.items()):
-            for key in bc:
-                if "." not in key:
-                    # This key identifies a link or belongs to the set of properties.
-                    # It isn't a cluster ID, so we skip it.
-                    continue
-                # Term IDs are in the form `area1%area2` or `area.cluster`
-                # noinspection PyTypeChecker
-                related_area_id, related_cluster_id = map(str.lower, key.split("."))
-                if (area_id, thermal_id) == (related_area_id, related_cluster_id):
-                    bc_to_remove.append(binding_constraints.pop(bc_index)["id"])
-                    break
-
-        matrix_suffixes = ["_lt", "_gt", "_eq"] if study_data.config.version >= 870 else [""]
-
-        existing_files = study_data.tree.get(["input", "bindingconstraints"], depth=1)
-        for bc_id, suffix in zip(bc_to_remove, matrix_suffixes):
-            matrix_id = f"{bc_id}{suffix}"
-            if matrix_id in existing_files:
-                study_data.tree.delete(["input", "bindingconstraints", matrix_id])
-
-        study_data.tree.save(binding_constraints, url)
-
-    @staticmethod
-    def _remove_from_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
-        study_data.areas[area_id].thermals.remove(thermal)
-
-        # Also removes thermal cluster from constraint terms
-        # Cluster IDs are stored in lower case in the binding constraints file.
-        thermal_id = thermal.id.lower()
-        bindings_to_remove = []
-        for bc in study_data.bindings:
-            for term in bc.terms:
-                term_data = term.data
-                if isinstance(term_data, ClusterTerm) and term_data.cluster == thermal_id:
-                    bindings_to_remove.append(bc)
-                    break
-        for bc in bindings_to_remove:
-            study_data.bindings.remove(bc)

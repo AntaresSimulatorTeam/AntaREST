@@ -56,7 +56,8 @@ class AutoArchiveService(IService):
             study_ids_to_archive = [
                 (study.id, isinstance(study, RawStudy))
                 for study in studies
-                if (study.last_access or study.updated_at) < old_date
+                if (last_activity := study.last_access or study.updated_at) is not None
+                and last_activity < old_date
                 and (isinstance(study, VariantStudy) or not study.archived)
             ]
         for study_id, is_raw_study in study_ids_to_archive[0 : self.max_parallel]:

@@ -21,6 +21,8 @@ import userEvent from "@testing-library/user-event";
 import MatrixActions from ".";
 import { MatrixProvider } from "../../context/MatrixContext";
 import { vi } from "vitest";
+import { UTCDate } from "@date-fns/utc";
+import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
 
 vi.mock("../buttons/SplitButton", () => ({
   default: ({
@@ -54,7 +56,12 @@ const defaultProps = {
   path: "/path/to/matrix",
   disabled: false,
   isTimeSeries: true,
-  canImport: false,
+  canImport: true,
+  dateTime: {
+    values: [new UTCDate("2023-01-01"), new UTCDate("2023-01-02")],
+    first_week_size: 0,
+    level: TimeFrequency.Daily,
+  },
 };
 
 type RenderOptions = Partial<typeof defaultProps>;
@@ -79,6 +86,14 @@ const defaultContext = {
   canRedo: true,
   isDirty: false,
   aggregateTypes: [],
+  filterPreview: {
+    active: false,
+    criteria: {
+      columnsIndices: [],
+      rowsIndices: [],
+    },
+  },
+  setFilterPreview: vi.fn(),
 };
 
 const renderMatrixActions = (
@@ -211,6 +226,18 @@ describe("MatrixActions", () => {
       renderMatrixActions({}, { isSubmitting: true });
       expect(getButton("global.import")).toBeDisabled();
       expect(getButton("global.export")).toBeDisabled();
+    });
+
+    test("manages import button state based on canImport prop", () => {
+      const { rerender } = renderMatrixActions();
+      expect(getButton("global.import")).not.toBeDisabled();
+
+      rerender(
+        <MatrixProvider {...defaultContext}>
+          <MatrixActions {...defaultProps} canImport={false} />
+        </MatrixProvider>,
+      );
+      expect(getButton("global.import")).toBeDisabled();
     });
 
     test("manages export button state based on disabled prop", () => {

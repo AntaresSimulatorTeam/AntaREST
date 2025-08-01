@@ -61,9 +61,15 @@ def test_get_input_areas_sets(tmp_path: Path) -> None:
     for the case where the subdirectories or the INI file do not exist.
     """
 
-    study_factory = StudyFactory(Mock(), Mock())
+    matrix_mapper_factory = Mock()
+    matrix_mapper_factory.create.return_value = Mock()
+
+    study_factory = StudyFactory(matrix_mapper_factory=matrix_mapper_factory, cache=Mock())
     study_id = "c5633166-afe1-4ce5-9305-75bc2779aad6"
-    file_study = study_factory.create_from_fs(tmp_path, study_id, use_cache=False)
+
+    file_study = study_factory.create_from_fs(
+        path=tmp_path, with_matrix_normalization=True, study_id=study_id, use_cache=False
+    )
     url = ["input", "areas", "sets"]  # sets.ini
 
     # Empty study tree structure
@@ -110,10 +116,15 @@ def test_get_user_expansion_sensitivity_sensitivity_in(tmp_path: Path) -> None:
     The goal of this test is to verify the behavior of the `get` method of the `FileStudyTree` class
     for the case where the subdirectories or the JSON file do not exist.
     """
+    matrix_mapper_factory = Mock()
+    matrix_mapper_factory.create.return_value = Mock()
 
-    study_factory = StudyFactory(Mock(), Mock())
+    study_factory = StudyFactory(matrix_mapper_factory=matrix_mapper_factory, cache=Mock())
     study_id = "616ac707-c108-47af-9e02-c37cc043511a"
-    file_study = study_factory.create_from_fs(tmp_path, study_id, use_cache=False)
+    file_study = study_factory.create_from_fs(
+        tmp_path, with_matrix_normalization=True, study_id=study_id, use_cache=False
+    )
+
     url = ["user", "expansion", "sensitivity", "sensitivity_in"]
 
     # Empty study tree structure
@@ -220,7 +231,7 @@ def test_delete(tmp_path: Path) -> None:
     ini_node2.touch()
     data_node = sub_folder / "data.txt"
     data_node.touch()
-    data_link_node = sub_folder / "data_link.txt.link"
+    data_link_node = sub_folder / "data_link.txt"
     data_link_node.touch()
 
     assert area_list.exists()

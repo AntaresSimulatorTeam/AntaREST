@@ -15,9 +15,9 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Sequence, String  # type: ignore
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.orm import relationship, sessionmaker  # type: ignore
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -112,9 +112,9 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
 class TaskJobLog(Base):  # type: ignore
     __tablename__ = "taskjoblog"
 
-    id = Column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
-    message = Column(String, nullable=False)
-    task_id = Column(
+    id: Mapped[int] = mapped_column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
+    message: Mapped[str] = mapped_column(String, nullable=False)
+    task_id: Mapped[str] = mapped_column(
         String(),
         ForeignKey("taskjob.id", name="fk_log_taskjob_id", ondelete="CASCADE"),
         nullable=False,
@@ -122,7 +122,7 @@ class TaskJobLog(Base):  # type: ignore
 
     # Define a many-to-one relationship between `TaskJobLog` and `TaskJob`.
     # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
-    job: "TaskJob" = relationship("TaskJob", back_populates="logs", uselist=False)
+    job: Mapped["TaskJob"] = relationship("TaskJob", back_populates="logs", uselist=False)
 
     @override
     def __eq__(self, other: Any) -> bool:
@@ -141,24 +141,24 @@ class TaskJobLog(Base):  # type: ignore
 class TaskJob(Base):  # type: ignore
     __tablename__ = "taskjob"
 
-    id: str = Column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
-    name: str = Column(String(), nullable=False, index=True)
-    status: int = Column(Integer(), default=lambda: TaskStatus.PENDING.value, index=True)
-    creation_date: datetime = Column(DateTime, default=datetime.utcnow, index=True)
-    completion_date: Optional[datetime] = Column(DateTime, nullable=True, default=None)
-    result_msg: Optional[str] = Column(String(), nullable=True, default=None)
-    result: Optional[str] = Column(String(), nullable=True, default=None)
-    result_status: Optional[bool] = Column(Boolean(), nullable=True, default=None)
-    type: Optional[str] = Column(String(), nullable=True, default=None, index=True)
-    progress: Optional[int] = Column(Integer(), nullable=True, default=None)
-    owner_id: int = Column(
+    id: Mapped[str] = mapped_column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
+    name: Mapped[str] = mapped_column(String(), nullable=False, index=True)
+    status: Mapped[int] = mapped_column(Integer(), default=lambda: TaskStatus.PENDING.value, index=True)
+    creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
+    result_msg: Mapped[Optional[str]] = mapped_column(String(), nullable=True, default=None)
+    result: Mapped[Optional[str]] = mapped_column(String(), nullable=True, default=None)
+    result_status: Mapped[Optional[bool]] = mapped_column(Boolean(), nullable=True, default=None)
+    type: Mapped[Optional[str]] = mapped_column(String(), nullable=True, default=None, index=True)
+    progress: Mapped[Optional[int]] = mapped_column(Integer(), nullable=True, default=None)
+    owner_id: Mapped[Optional[int]] = mapped_column(
         Integer(),
         ForeignKey("identities.id", name="fk_taskjob_identity_id", ondelete="SET NULL"),
         nullable=True,
         default=None,
         index=True,
     )
-    ref_id: Optional[str] = Column(
+    ref_id: Mapped[Optional[str]] = mapped_column(
         String(),
         ForeignKey("study.id", name="fk_taskjob_study_id", ondelete="CASCADE"),
         nullable=True,
@@ -168,15 +168,17 @@ class TaskJob(Base):  # type: ignore
 
     # Define a one-to-many relationship between `TaskJob` and `TaskJobLog`.
     # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
-    logs: List["TaskJobLog"] = relationship("TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan")
+    logs: Mapped[List["TaskJobLog"]] = relationship(
+        "TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan"
+    )
 
     # Define a many-to-one relationship between `TaskJob` and `Identity`.
     # If the Identity is deleted, all attached TaskJob must be preserved.
-    owner: "Identity" = relationship("Identity", back_populates="owned_jobs", uselist=False)
+    owner: Mapped["Identity"] = relationship("Identity", back_populates="owned_jobs", uselist=False)
 
     # Define a many-to-one relationship between `TaskJob` and `Study`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    study: "Study" = relationship("Study", back_populates="jobs", uselist=False)
+    study: Mapped["Study"] = relationship("Study", back_populates="jobs", uselist=False)
 
     def to_dto(self, with_logs: bool = False) -> TaskDTO:
         result = None
@@ -233,7 +235,7 @@ class TaskJob(Base):  # type: ignore
         )
 
 
-def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> None:
+def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None:
     """
     Cancel all tasks that are currently running or pending.
 
@@ -255,6 +257,6 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, bool]) -> Non
     orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
     make_session = sessionmaker(bind=engine, **session_args)
     with make_session() as session:
-        q = session.query(TaskJob).filter(TaskJob.status.in_(orphan_status))  # type: ignore
+        q = session.query(TaskJob).filter(TaskJob.status.in_(orphan_status))
         q.update(updated_values, synchronize_session=False)
         session.commit()

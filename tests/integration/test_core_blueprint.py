@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import re
-from unittest import mock
 
 from fastapi import FastAPI
 from starlette.testclient import TestClient
@@ -44,6 +43,11 @@ class TestVersionInfo:
             "name": "AntaREST",
             "version": RegEx(r"\d+(?:\.\d+)+"),
             "gitcommit": RegEx(r"^[0-9a-fA-F]{40}$"),
-            "dependencies": mock.ANY,
+            "dependencies": {},
         }
         assert actual == expected
+
+        res = client.get("/version?with_deps=true")
+        res.raise_for_status()
+        actual = res.json()
+        assert actual["dependencies"] != {}

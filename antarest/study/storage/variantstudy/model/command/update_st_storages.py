@@ -14,17 +14,19 @@ from typing import Any, List, Optional, Self
 from pydantic import model_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.business.model.sts_model import STStorageUpdates
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorageConfigType,
-    create_st_storage_config,
-    create_st_storage_properties,
+from antarest.core.exceptions import AreaNotFound
+from antarest.study.business.model.sts_model import (
+    STStorageUpdates,
+    update_st_storage,
+    validate_st_storage_against_version,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, IdMapping
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -46,63 +48,45 @@ class UpdateSTStorages(ICommand):
     storage_properties: STStorageUpdates
 
     @model_validator(mode="after")
-    def validate_properties_against_version(self) -> Self:
+    def validate_against_version(self) -> Self:
         for value in self.storage_properties.values():
             for properties in value.values():
-                properties.validate_model_against_version(self.study_version)
+                validate_st_storage_against_version(self.study_version, properties)
         return self
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        for area_id, value in self.storage_properties.items():
-            if area_id not in study_data.areas:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
-
-            storage_mapping: dict[str, tuple[int, STStorageConfigType]] = {}
-            for index, storage in enumerate(study_data.areas[area_id].st_storages):
-                storage_mapping[transform_name_to_id(storage.id)] = (index, storage)
-
-            for storage_id in value:
-                if storage_id not in storage_mapping:
-                    return CommandOutput(
-                        status=False,
-                        message=f"The short-term storage '{storage_id}' in the area '{area_id}' is not found.",
-                    )
-
-                index, storage = storage_mapping[storage_id]
-                study_data.areas[area_id].st_storages[index] = self.update_st_storage_config(area_id, storage)
-
-        return CommandOutput(status=True, message="The short-term storages were successfully updated.")
-
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        """
+        We validate ALL objects before saving them.
+        This way, if some data is invalid, we're not modifying the study partially only.
+        """
+        memory_mapping = {}
+
         for area_id, value in self.storage_properties.items():
-            ini_path = ["input", "st-storage", "clusters", area_id, "list"]
-
             try:
-                all_clusters_for_area = study_data.tree.get(ini_path)
-            except ChildNotFoundError:
-                return CommandOutput(status=False, message=f"The area '{area_id}' is not found.")
+                all_storages_per_area = study_data.get_all_st_storages_for_area(area_id)
+            except AreaNotFound:
+                return command_failed(f"The area '{area_id}' is not found.")
 
-            # Validates the Ini file
-            id_mapping = IdMapping(create_st_storage_properties, all_clusters_for_area, self.study_version)
+            existing_ids = {storage.id: storage for storage in all_storages_per_area}
 
-            for storage_id, properties in value.items():
-                if not id_mapping.asserts_id_exists(storage_id):
-                    return CommandOutput(
-                        status=False,
-                        message=f"The short-term storage '{storage_id}' in the area '{area_id}' is not found.",
+            new_storages = []
+            for storage_id, new_properties in value.items():
+                if storage_id not in existing_ids:
+                    return command_failed(
+                        f"The short-term storage '{storage_id}' in the area '{area_id}' is not found."
                     )
-                # Performs the update
-                new_properties_dict = properties.model_dump(mode="json", by_alias=False, exclude_unset=True)
-                storage_key, current_properties_obj = id_mapping.get_key_and_properties(storage_id)
-                updated_obj = current_properties_obj.model_copy(update=new_properties_dict)
-                all_clusters_for_area[storage_key] = updated_obj.model_dump(mode="json", by_alias=True)
 
-            study_data.tree.save(data=all_clusters_for_area, url=ini_path)
+                current_storage = existing_ids[storage_id]
+                new_storage = update_st_storage(current_storage, new_properties, self.study_version)
+                new_storages.append(new_storage)
 
-        output = self.update_in_config(study_data.config)
+            memory_mapping[area_id] = new_storages
 
-        return output
+        for area_id, new_storages in memory_mapping.items():
+            study_data.save_st_storages(area_id, new_storages)
+
+        return command_succeeded("The short-term storages were successfully updated.")
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -119,21 +103,3 @@ class UpdateSTStorages(ICommand):
     @override
     def get_inner_matrices(self) -> List[str]:
         return []
-
-    def update_st_storage_config(self, area_id: str, storage: STStorageConfigType) -> STStorageConfigType:
-        # Set the object to the correct version
-        versioned_storage = create_st_storage_config(
-            study_version=self.study_version, **storage.model_dump(exclude_unset=True, exclude_none=True)
-        )
-        # Update the object with the new properties
-        updated_versioned_storage = versioned_storage.model_copy(
-            update=self.storage_properties[area_id][transform_name_to_id(storage.id)].model_dump(
-                exclude_unset=True, exclude_none=True
-            )
-        )
-        # Create the new object to be saved
-        storage_config = create_st_storage_config(
-            study_version=self.study_version,
-            **updated_versioned_storage.model_dump(),
-        )
-        return storage_config

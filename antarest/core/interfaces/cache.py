@@ -71,3 +71,8 @@ class ICache:
     @abstractmethod
     def invalidate_all(self, ids: List[str]) -> None:
         pass
+
+
+def update_cache(cache: ICache, study_id: str, data: JSON) -> None:
+    cache.invalidate(study_raw_cache_key(study_id))
+    cache.put(study_config_cache_key(study_id), data)

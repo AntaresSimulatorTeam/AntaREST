@@ -15,7 +15,7 @@
 import { DEFAULT_WORKSPACE_NAME, ROOT_NODE_NAME } from "@/components/common/utils/constants";
 import * as api from "../../../../services/api/study";
 import type { StudyMetadata } from "../../../../types/types";
-import type { FolderDTO, StudyTreeNode } from "./types";
+import type { FolderDTO, StudyTreeNodeMetadata, WorkspaceDTO } from "./types";
 
 /**
  * Builds a tree structure from a list of study metadata.
@@ -27,7 +27,7 @@ export function buildStudyTree(studies: StudyMetadata[]) {
   // It is important to initialize the root node with the default workspace as a child
   // Otherwise we won't see the default workspace if no study has a path (which only
   // happens when a user moves a study to another folder)
-  const tree: StudyTreeNode = {
+  const tree: StudyTreeNodeMetadata = {
     name: ROOT_NODE_NAME,
     children: [
       {
@@ -49,8 +49,18 @@ export function buildStudyTree(studies: StudyMetadata[]) {
     let current = tree;
 
     for (let i = 0; i < path.length; i++) {
-      // Skip the last folder, as it represents the study itself
+      // add the study folder with the isScannedStudy set to true
+      // this flag will be used to not display the study folder in the study tree
+      // even if the folder isn't displayed we still need it in the study tree
+      // as it makes it easier to distinguish scanned studies from unscanend studies
       if (i === path.length - 1) {
+        const studyFolderName = path[i];
+        current.children.push({
+          name: studyFolderName,
+          children: [],
+          path: current.path ? `${current.path}/${studyFolderName}` : `/${studyFolderName}`,
+          isScannedStudy: true,
+        });
         break;
       }
 
@@ -86,7 +96,10 @@ export function buildStudyTree(studies: StudyMetadata[]) {
  * @returns study tree with the folder inserted if it wasn't already there.
  * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
-function insertFolderIfNotExist(studiesTree: StudyTreeNode, folder: FolderDTO): StudyTreeNode {
+function insertFolderIfNotExist(
+  studiesTree: StudyTreeNodeMetadata,
+  folder: FolderDTO,
+): StudyTreeNodeMetadata {
   const currentNodePath = `${studiesTree.path}`;
   // Early return if folder doesn't belong in this branch
   if (!folder.parentPath.startsWith(currentNodePath)) {
@@ -147,9 +160,9 @@ function insertFolderIfNotExist(studiesTree: StudyTreeNode, folder: FolderDTO): 
  * New branch is created if it contain the folder otherwise the branch is left unchanged.
  */
 export function insertFoldersIfNotExist(
-  studiesTree: StudyTreeNode,
+  studiesTree: StudyTreeNodeMetadata,
   folders: FolderDTO[],
-): StudyTreeNode {
+): StudyTreeNodeMetadata {
   const sortedFolders = [...folders].sort((a, b) => a.path.localeCompare(b.path));
   return sortedFolders.reduce(insertFolderIfNotExist, { ...studiesTree });
 }
@@ -160,25 +173,40 @@ export function insertFoldersIfNotExist(
  * This function doesn't mutate the tree, it returns a new tree with the workspace inserted.
  *
  * @param workspace - key of the workspace
- * @param stydyTree - study tree to insert the workspace into
+ * @param studyTree - study tree to insert the workspace into
  * @returns study tree with the empty workspace inserted if it wasn't already there.
  */
-function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string): StudyTreeNode {
+function insertWorkspaceIfNotExist(
+  studyTree: StudyTreeNodeMetadata,
+  workspace: WorkspaceDTO,
+): StudyTreeNodeMetadata {
   const emptyNode = {
-    name: workspace,
-    path: `/${workspace}`,
+    name: workspace.name,
+    path: `/${workspace.name}`,
     children: [],
     hasChildren: true,
+    alias: workspace.diskName,
   };
-  if (stydyTree.children.some((child) => child.name === workspace)) {
-    return stydyTree;
+  if (studyTree.children.some((child) => isNodeMatchWorkspace(child, workspace))) {
+    return {
+      ...studyTree,
+      children: studyTree.children.map((child) => {
+        if (isNodeMatchWorkspace(child, workspace)) {
+          return { ...child, alias: workspace.diskName };
+        }
+        return child;
+      }),
+    };
   }
   return {
-    ...stydyTree,
-    children: [...stydyTree.children, emptyNode],
+    ...studyTree,
+    children: [...studyTree.children, emptyNode],
   };
 }
 
+function isNodeMatchWorkspace(a: StudyTreeNodeMetadata, b: WorkspaceDTO): boolean {
+  return a.name === b.name;
+}
 /**
  * Insert several workspaces into the study tree if they don't exist already in the tree.
  *
@@ -191,9 +219,9 @@ function insertWorkspaceIfNotExist(stydyTree: StudyTreeNode, workspace: string):
  * @returns study tree with the empty workspaces inserted if they weren't already there.
  */
 export function insertWorkspacesIfNotExist(
-  studyTree: StudyTreeNode,
-  workspaces: string[],
-): StudyTreeNode {
+  studyTree: StudyTreeNodeMetadata,
+  workspaces: WorkspaceDTO[],
+): StudyTreeNodeMetadata {
   return workspaces.reduce((acc, workspace) => insertWorkspaceIfNotExist(acc, workspace), {
     ...studyTree,
   });
@@ -209,10 +237,13 @@ export function insertWorkspacesIfNotExist(
  * @param studyTree - study tree to insert the workspaces into
  * @returns study tree with the workspaces inserted if they weren't already there.
  */
-export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promise<StudyTreeNode> {
+export async function fetchAndInsertWorkspaces(
+  studyTree: StudyTreeNodeMetadata,
+): Promise<StudyTreeNodeMetadata> {
   const workspaces = await api.getWorkspaces();
   return insertWorkspacesIfNotExist(studyTree, workspaces);
 }
+
 /**
  * Insert workspaces and folders into the study tree if they don't exist already.
  *
@@ -224,8 +255,8 @@ export async function fetchAndInsertWorkspaces(studyTree: StudyTreeNode): Promis
  * @returns study tree with the workspaces and folders inserted if they weren't already there.
  */
 export function insertIfNotExist(
-  studyTree: StudyTreeNode,
-  workspaces: string[],
+  studyTree: StudyTreeNodeMetadata,
+  workspaces: WorkspaceDTO[],
   folders: FolderDTO[],
 ) {
   const treeWithWorkspaces = insertWorkspacesIfNotExist(studyTree, workspaces);

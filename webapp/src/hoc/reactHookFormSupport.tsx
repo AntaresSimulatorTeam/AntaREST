@@ -25,16 +25,17 @@ import {
   type FieldPathValue,
   type FieldValues,
   type Validate,
+  type ValidateResult,
 } from "react-hook-form";
 import FormContext from "../components/common/Form/FormContext";
 import type { ControlPlus, RegisterOptionsPlus } from "../components/common/Form/types";
 import type { FakeBlurEventHandler, FakeChangeEventHandler } from "../utils/feUtils";
-import { getComponentDisplayName } from "../utils/reactUtils";
+import { composeRefs, getComponentDisplayName } from "../utils/reactUtils";
 
 interface ReactHookFormSupport<TValue> {
   defaultValue?: NonNullable<TValue> | ((props: any) => NonNullable<TValue>);
   setValueAs?: (value: any) => any;
-  preValidate?: (value: any, formValues: any) => boolean | string | undefined;
+  preValidate?: (value: any, formValues: any) => ValidateResult;
 }
 
 // `...args: any` allows to be compatible with all field editors
@@ -99,7 +100,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
    * @param FieldEditor - The field editor component to wrap.
    * @returns The wrapped component with added React Hook Form support.
    */
-  function withReactHookFormSupport<TProps extends FieldEditorProps<TValue>>(
+  function withReactHookForm<TProps extends FieldEditorProps<TValue>>(
     FieldEditor: React.ComponentType<TProps>,
   ) {
     /**
@@ -109,7 +110,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
      * @param props - The props of the field editor, extended with React Hook Form and custom options.
      * @returns The field editor component wrapped with React Hook Form functionality.
      */
-    function WithReactHookFormSupport<
+    function WithReactHookForm<
       TFieldValues extends FieldValues = FieldValues,
       TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
       TContext = any,
@@ -231,7 +232,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
                 {...fieldProps}
                 onChange={handleChange(onChange)}
                 onBlur={handleBlur(onBlur)}
-                inputRef={ref}
+                inputRef={composeRefs(ref, feProps.inputRef)}
                 error={!!error}
                 helperText={error?.message || feProps.helperText}
                 disabled={
@@ -250,14 +251,12 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
       return <FieldEditor {...(feProps as TProps)} />;
     }
 
-    WithReactHookFormSupport.displayName = `WithReactHookFormSupport(${getComponentDisplayName(
-      FieldEditor,
-    )})`;
+    WithReactHookForm.displayName = `WithReactHookForm(${getComponentDisplayName(FieldEditor)})`;
 
-    return hoistNonReactStatics(WithReactHookFormSupport, FieldEditor);
+    return hoistNonReactStatics(WithReactHookForm, FieldEditor);
   }
 
-  return withReactHookFormSupport;
+  return withReactHookForm;
 }
 
 export default reactHookFormSupport;

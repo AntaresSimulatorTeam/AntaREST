@@ -147,13 +147,21 @@ export default {
   MuiTextField: {
     variants: [
       {
-        props: { size: "extra-small" },
+        props: { size: "extra-small", select: false },
         style: {
           ".MuiInputBase-root": {
             padding: "0 9px",
           },
           "input, textarea": {
             padding: "4px 0",
+          },
+        },
+      },
+      {
+        props: { size: "extra-small", select: true },
+        style: {
+          ".MuiSelect-select": {
+            padding: "4px 9px",
           },
         },
       },

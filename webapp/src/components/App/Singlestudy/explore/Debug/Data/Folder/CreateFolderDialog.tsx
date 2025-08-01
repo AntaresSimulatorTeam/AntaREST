@@ -12,16 +12,13 @@
  * This file is part of the Antares project.
  */
 
+import StudyPathFE from "@/components/App/shared/studies/StudyPathFE";
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
 import Fieldset from "@/components/common/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { createFolder } from "@/services/api/studies/raw";
 import type { StudyMetadata } from "@/types/types";
-import { validateStudyFolder } from "@/utils/studiesUtils";
-import { validatePath } from "@/utils/validation/string";
-import { combineValidators } from "@/utils/validation/utils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -88,17 +85,11 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
-          <StringFE
-            label={t("global.name")}
+          <StudyPathFE
             helperText={t("study.debug.folder.new.name.helper")}
             name="folder"
             control={control}
-            rules={{
-              validate: combineValidators(
-                validatePath({ allowToStartWithSlash: false, allowToEndWithSlash: false }),
-                validateStudyFolder,
-              ),
-            }}
+            rules={{ required: t("form.field.required") }}
           />
           <CheckBoxFE
             label={t("study.debug.folder.new.openDirectory")}

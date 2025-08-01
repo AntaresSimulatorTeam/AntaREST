@@ -13,12 +13,11 @@
  */
 
 import type { BaseGridColumn, EditableGridCell, Item } from "@glideapps/glide-data-grid";
-import type { Aggregate, Column, Operation, TimeFrequency } from "./constants";
+import type { Aggregate, Column, TimeFrequency } from "./constants";
 import type { NonEmptyArray } from "@/utils/tsUtils";
 
 // Derived types
 export type ColumnType = (typeof Column)[keyof typeof Column];
-export type OperationType = (typeof Operation)[keyof typeof Operation];
 export type AggregateType = (typeof Aggregate)[keyof typeof Aggregate];
 export type TimeFrequencyType = (typeof TimeFrequency)[keyof typeof TimeFrequency];
 
@@ -34,6 +33,16 @@ export type NonEmptyMatrix = NonEmptyArray<NonEmptyArray<number>>;
 export interface DateTimeMetadataDTO {
   start_date: string;
   steps: number;
+  first_week_size: number;
+  level: TimeFrequencyType;
+}
+
+/**
+ * Packs together actual datetimes and some metadata
+ * that can be useful for filtering/formatting
+ */
+export interface DateTimes {
+  values: Date[];
   first_week_size: number;
   level: TimeFrequencyType;
 }
@@ -114,24 +123,10 @@ export interface ResultMatrixDTO {
   index: string[];
 }
 
-export type Coordinates = [number, number];
-
 // Shape of updates provided by Glide Data Grid
 export interface GridUpdate {
   coordinates: Item; // The cell being updated
   value: EditableGridCell;
-}
-
-// Shape of updates to be sent to the API
-export interface MatrixUpdate {
-  operation: OperationType;
-  value: number;
-}
-
-// Shape of multiple updates to be sent to the API
-export interface MatrixUpdateDTO {
-  coordinates: number[][]; // Array of [col, row] pairs
-  operation: MatrixUpdate;
 }
 
 ////////////////////////////////////////////////////////////////

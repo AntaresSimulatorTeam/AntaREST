@@ -336,10 +336,13 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
     def _read_additional_data_from_files(self, file_study: FileStudy) -> StudyAdditionalData:
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
-        author = file_study.tree.get(url=["study", "antares", "author"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
         assert isinstance(author, str)
+        assert isinstance(editor, str)
         assert isinstance(horizon, (str, int))
-        study_additional_data = StudyAdditionalData(horizon=horizon, author=author)
+        study_additional_data = StudyAdditionalData(horizon=horizon, author=author, editor=editor)
         return study_additional_data
 
     @override

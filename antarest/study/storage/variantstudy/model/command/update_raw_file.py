@@ -17,7 +17,12 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -54,13 +59,10 @@ class UpdateRawFile(ICommand):
         url = self.target.split("/")
         tree_node = study_data.tree.get_node(url)
         if not isinstance(tree_node, RawFileNode):
-            return CommandOutput(
-                status=False,
-                message=f"Study node at path {self.target} is invalid",
-            )
+            return command_failed(message=f"Study node at path {self.target} is invalid")
 
         study_data.tree.save(base64.decodebytes(self.b64Data.encode("utf-8")), url)
-        return CommandOutput(status=True, message="ok")
+        return command_succeeded(message=f"File {self.target} updated successfully", should_invalidate_cache=True)
 
     @override
     def to_dto(self) -> CommandDTO:

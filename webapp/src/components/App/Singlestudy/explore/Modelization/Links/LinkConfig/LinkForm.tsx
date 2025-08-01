@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { getLink, updateLink } from "@/services/api/studies/links";
 import { AssetType, TransmissionCapacity } from "@/services/api/studies/links/constants";
@@ -19,7 +20,6 @@ import type { Link, UpdateLinkParams } from "@/services/api/studies/links/types"
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { LinkElement, StudyMetadata } from "../../../../../../../types/types";
-import SelectFE from "../../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../common/Fieldset";
 import Form from "../../../../../../common/Form";

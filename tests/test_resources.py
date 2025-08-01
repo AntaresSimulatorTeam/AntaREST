@@ -78,10 +78,11 @@ STUDY_FILES = [
 ]
 
 FILES_SINCE_V86 = sorted(["input/st-storage", "input/st-storage/clusters", "input/st-storage/series"] + STUDY_FILES)
+FILES_SINCE_V92 = [f for f in FILES_SINCE_V86 if f not in ["logs", "output", "user"]]
 
 
 @pytest.mark.parametrize(
-    "version", ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880"]
+    "version", ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880", "920"]
 )
 def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion):
     study_path = tmp_path / "test"
@@ -95,8 +96,10 @@ def test_empty_study_zip(tmp_path: pathlib.Path, version: StudyVersion):
 
     if StudyVersion.parse(version) < 860:
         expected_files = STUDY_FILES
-    else:
+    elif StudyVersion.parse(version) < 920:
         expected_files = FILES_SINCE_V86
+    else:
+        expected_files = FILES_SINCE_V92
     assert existing_files == expected_files
 
 

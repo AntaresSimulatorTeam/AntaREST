@@ -16,11 +16,12 @@ Test the database model.
 
 import uuid
 
-from sqlalchemy import inspect  # type: ignore
-from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.orm import Session, joinedload  # type: ignore
+from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session, joinedload
 
 from antarest.study.model import Study, StudyTag, Tag
+from tests.helpers import create_study
 
 
 class TestStudy:
@@ -35,7 +36,7 @@ class TestStudy:
         study_id = uuid.uuid4()
 
         with db_session:
-            db_session.add(Study(id=str(study_id), name="Study 1"))
+            db_session.add(create_study(id=str(study_id), name="Study 1"))
             db_session.commit()
 
         with db_session:
@@ -59,13 +60,13 @@ class TestStudy:
             "ix_study_version",
         }
 
-    def test_index_on_rawstudy(self, db_engine: Engine) -> None:
+    def test_index_on_create_raw_study(self, db_engine: Engine) -> None:
         inspector = inspect(db_engine)
         indexes = inspector.get_indexes("rawstudy")
         index_names = {index["name"] for index in indexes}
         assert index_names == {"ix_rawstudy_workspace", "ix_rawstudy_missing"}
 
-    def test_index_on_variantstudy(self, db_engine: Engine) -> None:
+    def test_index_on_create_variant_study(self, db_engine: Engine) -> None:
         inspector = inspect(db_engine)
         indexes = inspector.get_indexes("variantstudy")
         index_names = {index["name"] for index in indexes}
@@ -85,9 +86,9 @@ class TestStudy:
         with db_session:
             tag1 = Tag(label="test-tag-1")
             tag2 = Tag(label="test-tag-2")
-            db_session.add(Study(id=study_id_1, name="TestStudyTags1", tags=[tag1, tag2]))
-            db_session.add(Study(id=study_id_2, name="TestStudyTags2", tags=[tag1]))
-            db_session.add(Study(id=study_id_3, name="TestStudyTags3"))
+            db_session.add(create_study(id=study_id_1, name="TestStudyTags1", tags=[tag1, tag2]))
+            db_session.add(create_study(id=study_id_2, name="TestStudyTags2", tags=[tag1]))
+            db_session.add(create_study(id=study_id_3, name="TestStudyTags3"))
             db_session.commit()
 
             # verify that when the Study is initialized with tags so would the tables `tag` and `study_tag` be updated

@@ -12,8 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/common/fieldEditors/SelectFE";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import { isSearchMatching } from "@/utils/stringUtils";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   Box,
@@ -29,9 +33,9 @@ import {
   TableSortLabel,
   Tooltip,
   Typography,
-  type SelectChangeEvent,
   type TableSortLabelProps,
 } from "@mui/material";
+import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useInterval } from "react-use";
@@ -41,8 +45,6 @@ import { TaskType } from "../../../services/api/tasks/constants";
 import type { TaskView } from "../../../types/types";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
-import * as R from "ramda";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -66,8 +68,11 @@ interface Props {
 function JobTableView(props: Props) {
   const { content, refresh } = props;
   const [t] = useTranslation();
-  const [dateOrder, setDateOrder] = useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
+  const [orderBy, setOrderBy] = useState<"date" | "user">("date");
+  const [orderDirection, setOrderDirection] =
+    useState<NonNullable<TableSortLabelProps["direction"]>>("desc");
   const [filterType, setFilterType] = useState<FilterListType | "">("");
+  const [filterUser, setFilterUser] = useState(storage.getItem(StorageKey.TasksFilterUser) || "");
   const [filterRunningStatus, setFilterRunningStatus] = useState<boolean>(false);
 
   const launcherMetrics = usePromiseWithSnackbarError(getLauncherMetrics, {
@@ -84,37 +89,47 @@ function JobTableView(props: Props) {
         [
           filterRunningStatus && (({ status }: TaskView) => status === "running"),
           filterType && (({ type }: TaskView) => type === filterType),
+          filterUser && (({ userName }: TaskView) => isSearchMatching(filterUser, userName || "")),
         ].filter(Boolean),
       ),
       content,
     );
 
+    const getUserName = R.compose(R.toLower, R.propOr("", "userName"));
+
+    const criterion: (t: TaskView) => string = orderBy === "date" ? R.prop("date") : getUserName;
     return R.sort(
-      dateOrder === "asc" ? R.ascend(R.prop("date")) : R.descend(R.prop("date")),
+      orderDirection === "asc" ? R.ascend(criterion) : R.descend(criterion),
       filteredContent,
     );
-  }, [content, dateOrder, filterRunningStatus, filterType]);
+  }, [content, orderBy, orderDirection, filterRunningStatus, filterType, filterUser]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: SelectChangeEvent<unknown>) => {
-    setFilterType(event.target.value as FilterListType | "");
+  const handleChange = (event: SelectFEChangeEvent<FilterListType, true>) => {
+    setFilterType(event.target.value);
   };
 
   const handleFilterStatusChange = () => {
     setFilterRunningStatus(!filterRunningStatus);
   };
 
-  const handleRequestDateSort = () => {
-    setDateOrder(dateOrder === "asc" ? "desc" : "asc");
+  const handleRequestSort = (column: "date" | "user") => {
+    const isAsc = orderBy === column && orderDirection === "asc";
+    setOrderDirection(isAsc ? "desc" : "asc");
+    setOrderBy(column);
+  };
+
+  const handleUserValueFilterChange = (input: string) => {
+    setFilterUser(input);
+    storage.setItem(StorageKey.TasksFilterUser, input);
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
   return (
     <>
       {/* Header */}
@@ -182,10 +197,18 @@ function JobTableView(props: Props) {
               onChange={handleFilterStatusChange}
               sx={{ textWrap: "nowrap" }}
             />
+
+            <SearchFE
+              size="extra-small"
+              value={filterUser}
+              onSearchValueChange={handleUserValueFilterChange}
+              sx={{ maxWidth: 200 }}
+              label={t("global.user")}
+            />
             <SelectFE
               label={t("tasks.typeFilter")}
               value={filterType}
-              onChange={handleChange}
+              onChange={(e) => handleChange(e)}
               emptyValue
               options={FILTER_LIST.map((item) => ({
                 value: item,
@@ -206,8 +229,21 @@ function JobTableView(props: Props) {
               <TableCell>{t("global.jobs")}</TableCell>
               <TableCell align="right">{t("study.type")}</TableCell>
               <TableCell align="right">
-                <TableSortLabel active direction={dateOrder} onClick={handleRequestDateSort}>
+                <TableSortLabel
+                  active={orderBy === "date"}
+                  direction={orderBy === "date" ? orderDirection : "asc"}
+                  onClick={() => handleRequestSort("date")}
+                >
                   {t("global.date")}
+                </TableSortLabel>
+              </TableCell>
+              <TableCell align="right">
+                <TableSortLabel
+                  active={orderBy === "user"}
+                  direction={orderBy === "user" ? orderDirection : "asc"}
+                  onClick={() => handleRequestSort("user")}
+                >
+                  {t("global.user")}
                 </TableSortLabel>
               </TableCell>
               <TableCell align="right">{t("tasks.action")}</TableCell>
@@ -221,6 +257,7 @@ function JobTableView(props: Props) {
                 </TableCell>
                 <TableCell align="right">{t(`tasks.type.${row.type}`)}</TableCell>
                 <TableCell align="right">{row.dateView}</TableCell>
+                <TableCell align="right">{row.userName || ""}</TableCell>
                 <TableCell align="right">{row.action}</TableCell>
               </TableRow>
             ))}

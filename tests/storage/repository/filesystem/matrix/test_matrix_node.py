@@ -16,7 +16,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper, MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency, MatrixNode
@@ -47,7 +47,8 @@ class TestMatrixNode:
         matrix_service = Mock()
         matrix_service.create.return_value = "my-id"
 
-        matrix_mapper = MatrixUriMapper(matrix_service)
+        factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+        matrix_mapper = factory.create(NormalizedMatrixUriMapper.NORMALIZED)
 
         node = MockMatrixNode(
             matrix_mapper=matrix_mapper,
@@ -57,7 +58,7 @@ class TestMatrixNode:
         node.normalize()
 
         # check the result
-        assert node.get_link_path().read_text() == "matrix://my-id"
+        assert node.matrix_mapper.get_link_content(node) == "matrix://my-id"
         assert not file.exists()
         matrix_service.create.assert_called_once()
         args = matrix_service.create.call_args.args
@@ -70,11 +71,14 @@ class TestMatrixNode:
         link = file.parent / f"{file.name}.link"
         link.write_text("my-id")
 
-        resolver = Mock()
-        resolver.get_matrix.return_value = MOCK_MATRIX
+        matrix_service = Mock()
+        matrix_service.get.return_value = MOCK_MATRIX
+
+        factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+        matrix_mapper = factory.create(NormalizedMatrixUriMapper.NORMALIZED)
 
         node = MockMatrixNode(
-            matrix_mapper=resolver,
+            matrix_mapper=matrix_mapper,
             config=FileStudyTreeConfig(study_path=file, path=file, study_id="mi-id", version=STUDY_VERSION_8_8),
         )
 

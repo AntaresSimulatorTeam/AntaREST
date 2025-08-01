@@ -16,12 +16,12 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.hydro_model import (
-    HYDRO_PATH,
-    HydroManagementFileData,
     HydroManagementUpdate,
+    update_hydro_management,
+    validate_hydro_management_against_version,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -45,22 +45,17 @@ class UpdateHydroManagement(ICommand):
 
     @model_validator(mode="after")
     def validate_properties_against_version(self) -> "UpdateHydroManagement":
-        self.properties.validate_model_against_version(self.study_version)
+        validate_hydro_management_against_version(self.study_version, self.properties)
         return self
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_hydro = HydroManagementFileData(**study_data.tree.get(HYDRO_PATH))
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        current_hydro_management = study_data.get_hydro_management(area_id=self.area_id)
+        updated_hydro_management = update_hydro_management(current_hydro_management, self.properties)
 
-        new_hydro = current_hydro.get_hydro_management(self.area_id, self.study_version).model_copy(
-            update=self.properties.model_dump(exclude_none=True)
-        )
+        study_data.save_hydro_management(updated_hydro_management, self.area_id)
 
-        current_hydro.set_hydro_management(self.area_id, new_hydro)
-
-        study_data.tree.save(current_hydro.model_dump(by_alias=True, exclude_none=True), HYDRO_PATH)
-
-        return CommandOutput(status=True, message=f"Hydro properties in '{self.area_id}' updated.")
+        return command_succeeded(f"Hydro properties in '{self.area_id}' updated.")
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -11,28 +11,29 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Dict, Final, List, Optional, TypeAlias, cast
+from typing import Any, Dict, Final, List, Optional, Self, TypeAlias, cast
 
 import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import Field, model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.core.model import JSON
 from antarest.matrixstore.model import MatrixData
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.business.model.sts_model import STStorageCreation, validate_st_storage_against_version
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStoragePropertiesType,
-    create_st_storage_config,
-    create_st_storage_properties,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import parse_st_storage
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -56,53 +57,26 @@ class CreateSTStorage(ICommand):
 
     # version 2: parameters changed from STStorageConfigType to STStoragePropertiesType
     #            This actually did not require a version increment, but was done by mistake.
-    _SERIALIZATION_VERSION: Final[int] = 2
+    # version 3: type parameters as STStorageCreation
+    _SERIALIZATION_VERSION: Final[int] = 3
 
     # Command parameters
     # ==================
 
     area_id: AreaId
-    parameters: STStoragePropertiesType
-    pmax_injection: MatrixType = Field(
-        default=None,
-        description="Charge capacity (modulation)",
-    )
-    pmax_withdrawal: MatrixType = Field(
-        default=None,
-        description="Discharge capacity (modulation)",
-    )
-    lower_rule_curve: MatrixType = Field(
-        default=None,
-        description="Lower rule curve (coefficient)",
-    )
-    upper_rule_curve: MatrixType = Field(
-        default=None,
-        description="Upper rule curve (coefficient)",
-    )
-    inflows: MatrixType = Field(
-        default=None,
-        description="Inflows (MW)",
-    )
-    cost_injection: MatrixType = Field(
-        default=None,
-        description="Charge Cost (€/MWh)",
-    )
-    cost_withdrawal: MatrixType = Field(
-        default=None,
-        description="Discharge Cost (€/MWh)",
-    )
-    cost_level: MatrixType = Field(
-        default=None,
-        description="Level Cost (€/MWh)",
-    )
-    cost_variation_injection: MatrixType = Field(
-        default=None,
-        description="Cost of injection variation (€/MWh)",
-    )
-    cost_variation_withdrawal: MatrixType = Field(
-        default=None,
-        description="Cost of withdrawal variation (€/MWh)",
-    )
+    parameters: STStorageCreation
+
+    # Matrices
+    pmax_injection: MatrixType = Field(default=None, description="Charge capacity (modulation)")
+    pmax_withdrawal: MatrixType = Field(default=None, description="Discharge capacity (modulation)")
+    lower_rule_curve: MatrixType = Field(default=None, description="Lower rule curve (coefficient)")
+    upper_rule_curve: MatrixType = Field(default=None, description="Upper rule curve (coefficient)")
+    inflows: MatrixType = Field(default=None, description="Inflows (MW)")
+    cost_injection: MatrixType = Field(default=None, description="Charge Cost (€/MWh)")
+    cost_withdrawal: MatrixType = Field(default=None, description="Discharge Cost (€/MWh)")
+    cost_level: MatrixType = Field(default=None, description="Level Cost (€/MWh)")
+    cost_variation_injection: MatrixType = Field(default=None, description="Cost of injection variation (€/MWh)")
+    cost_variation_withdrawal: MatrixType = Field(default=None, description="Cost of withdrawal variation (€/MWh)")
 
     @property
     def storage_id(self) -> str:
@@ -116,14 +90,24 @@ class CreateSTStorage(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
         if isinstance(values["parameters"], dict):
             properties_as_dict = values["parameters"]
         else:
             properties_as_dict = values["parameters"].model_dump(mode="json", exclude_unset=True)
-        study_version = StudyVersion.parse(values["study_version"])
-        values["parameters"] = create_st_storage_properties(study_version, data=properties_as_dict)
+
+        if info.context:
+            version = info.context.version
+            if version < 3:
+                study_version = StudyVersion.parse(values["study_version"])
+                cluster = parse_st_storage(study_version, properties_as_dict)
+                values["parameters"] = STStorageCreation.from_storage(cluster)
         return values
+
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_st_storage_against_version(self.study_version, self.parameters)
+        return self
 
     def validate_field(self, v: MatrixType, field: str) -> MatrixType:
         """
@@ -151,22 +135,7 @@ class CreateSTStorage(ICommand):
         """
         values = {"command_context": self.command_context}
         if v is None:
-            # As of simulator v9.2.1 and v8.8.15 the default sts matrices are not needed by the Simulator
-            # todo: once v8.8.15 is released change this test to `if self.study_version >= STUDY_VERSION_8_8:`
-            if self.study_version >= STUDY_VERSION_9_2:
-                return None
-            # use an already-registered default matrix
-            constants: GeneratorMatrixConstants
-            constants = self.command_context.generator_matrix_constants
-            # Directly access the methods instead of using `getattr` for maintainability
-            methods = {
-                "pmax_injection": constants.get_st_storage_pmax_injection,
-                "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal,
-                "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
-                "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
-                "inflows": constants.get_st_storage_inflows,
-            }
-            return methods[field]()
+            return None
         if isinstance(v, str):
             # Check the matrix link
             return validate_matrix(v, values)
@@ -222,92 +191,35 @@ class CreateSTStorage(ICommand):
 
         return self
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        """
-        validate inputs and add the short-term storage in the storages list.
-
-        Args:
-            study_data: The study data configuration.
-
-        Returns:
-            A tuple containing the command output and the storage_id of the created storage.
-        """
-
-        # Check if the study version is above the minimum required version.
-        storage_id = self.storage_id
-        version = study_data.version
-        if version < REQUIRED_VERSION:
-            return CommandOutput(
-                status=False,
-                message=f"Invalid study version {version}, at least version {REQUIRED_VERSION} is required.",
-            )
-
-        # Search the Area in the configuration
-        if self.area_id not in study_data.areas:
-            return CommandOutput(
-                status=False,
-                message=f"Area '{self.area_id}' does not exist in the study configuration.",
-            )
-        area: Area = study_data.areas[self.area_id]
-
-        # Check if the short-term storage already exists in the area
-        if any(s.id == storage_id for s in area.st_storages):
-            return CommandOutput(
-                status=False,
-                message=f"Short-term storage '{self.storage_name}' already exists in the area '{self.area_id}'.",
-            )
-
-        # Create a new short-term storage and add it to the area
-        storage_config = create_st_storage_config(
-            self.study_version, **self.parameters.model_dump(mode="json", by_alias=True)
-        )
-        area.st_storages.append(storage_config)
-        return CommandOutput(
-            status=True,
-            message=f"Short-term st_storage '{self.storage_name}' successfully added to area '{self.area_id}'.",
-        )
-
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        """
-        Applies the study data to update storage configurations and saves the changes.
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        storage = parse_st_storage(self.study_version, self.parameters.model_dump(mode="json"))
+        if study_data.st_storage_exists(self.area_id, storage.id):
+            return command_failed(f"Short-term storage '{storage.id}' already exists in the area '{self.area_id}'")
 
-        Saves the changes made to the storage configurations.
+        study_data.save_st_storage(self.area_id, storage)
 
-        Args:
-            study_data: The study data to be applied.
+        # Matrices
+        matrices = self._fill_none_matrices()
 
-        Returns:
-            The output of the command execution.
-        """
-        storage_id = self.storage_id
-        output = self.update_in_config(study_data.config)
-        if not output.status:
-            return output
+        study_data.save_st_storage_pmax_injection(self.area_id, storage.id, matrices["pmax_injection"])
+        study_data.save_st_storage_pmax_withdrawal(self.area_id, storage.id, matrices["pmax_withdrawal"])
+        study_data.save_st_storage_upper_rule_curve(self.area_id, storage.id, matrices["upper_rule_curve"])
+        study_data.save_st_storage_lower_rule_curve(self.area_id, storage.id, matrices["lower_rule_curve"])
+        study_data.save_st_storage_inflows(self.area_id, storage.id, matrices["inflows"])
 
-        # Fill-in the "list.ini" file with the parameters.
-        # On creation, it's better to write all the parameters in the file.
-        config = study_data.tree.get(["input", "st-storage", "clusters", self.area_id, "list"])
-        config[storage_id] = self.parameters.model_dump(mode="json", by_alias=True)
+        if self.study_version >= STUDY_VERSION_9_2:
+            study_data.save_st_storage_cost_injection(self.area_id, storage.id, matrices["cost_injection"])
+            study_data.save_st_storage_cost_withdrawal(self.area_id, storage.id, matrices["cost_withdrawal"])
+            study_data.save_st_storage_cost_level(self.area_id, storage.id, matrices["cost_level"])
 
-        new_data: JSON = {
-            "input": {
-                "st-storage": {
-                    "clusters": {self.area_id: {"list": config}},
-                    "series": {
-                        self.area_id: {
-                            storage_id: {
-                                matrix_name: matrix_data or {}
-                                for matrix_name, matrix_data in self._get_matrices().items()
-                            }
-                        }
-                    },
-                }
-            }
-        }
-        study_data.tree.save(new_data)
+            matrix = matrices["cost_variation_injection"]
+            study_data.save_st_storage_cost_variation_injection(self.area_id, storage.id, matrix)
 
-        return output
+            matrix = matrices["cost_variation_withdrawal"]
+            study_data.save_st_storage_cost_variation_withdrawal(self.area_id, storage.id, matrix)
+
+        return command_succeeded(f"Short-term storage '{storage.id}' successfully added to area '{self.area_id}'.")
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -318,7 +230,10 @@ class CreateSTStorage(ICommand):
         Returns:
             The DTO object representing the current command.
         """
-        args = {"area_id": self.area_id, "parameters": self.parameters.model_dump(mode="json", by_alias=True)}
+        args = {
+            "area_id": self.area_id,
+            "parameters": self.parameters.model_dump(mode="json", by_alias=True, exclude_none=True),
+        }
         for matrix_name, matrix_data in self._get_matrices().items():
             if matrix_data is not None:
                 args[matrix_name] = strip_matrix_protocol(matrix_data)
@@ -339,3 +254,25 @@ class CreateSTStorage(ICommand):
             if matrix_data is not None:
                 matrices.append(strip_matrix_protocol(matrix_data))
         return matrices
+
+    def _fill_none_matrices(self) -> dict[str, str]:
+        constants: GeneratorMatrixConstants = self.command_context.generator_matrix_constants
+        empty_matrix = constants.get_null_matrix()
+
+        v_8_6_matrices = {
+            "pmax_injection": constants.get_st_storage_pmax_injection,
+            "pmax_withdrawal": constants.get_st_storage_pmax_withdrawal,
+            "lower_rule_curve": constants.get_st_storage_lower_rule_curve,
+            "upper_rule_curve": constants.get_st_storage_upper_rule_curve,
+            "inflows": constants.get_st_storage_inflows,
+        }
+
+        matrices = self._get_matrices()
+        for matrix_name, matrix_data in matrices.items():
+            if matrix_data is None:
+                if self.study_version >= STUDY_VERSION_8_8:
+                    matrices[matrix_name] = empty_matrix
+                else:
+                    matrices[matrix_name] = v_8_6_matrices[matrix_name]()
+
+        return cast(dict[str, str], matrices)

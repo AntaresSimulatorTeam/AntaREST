@@ -12,26 +12,43 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  DataColumnsConfig,
-  ResultColumn,
-  EnhancedGridColumn,
-  TimeSeriesColumnOptions,
-  CustomColumnOptions,
-  MatrixAggregates,
-  AggregateType,
-  AggregateConfig,
-  DateTimeMetadataDTO,
-  FormatGridNumberOptions,
-  ResultColumnsOptions,
-  ResizeMatrixParams,
-  CalculateAggregatesParams,
-} from "./types";
-import { parseISO, type Locale } from "date-fns";
-import { fr, enUS } from "date-fns/locale";
+/* eslint-disable camelcase */
+/**
+ * Copyright (c) 2025, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { UTCDate } from "@date-fns/utc";
+import type { Locale } from "date-fns";
+import { enUS, fr } from "date-fns/locale";
 import { getCurrentLanguage } from "@/utils/i18nUtils";
-import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
 import { groupHeaderTheme } from "../styles";
+import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
+import type {
+  AggregateConfig,
+  AggregateType,
+  CalculateAggregatesParams,
+  CustomColumnOptions,
+  DataColumnsConfig,
+  DateTimeMetadataDTO,
+  DateTimes,
+  EnhancedGridColumn,
+  FormatGridNumberOptions,
+  MatrixAggregates,
+  ResizeMatrixParams,
+  ResultColumn,
+  ResultColumnsOptions,
+  TimeSeriesColumnOptions,
+} from "./types";
 
 /**
  * Formats a number for display in a grid cell by adding thousand separators and handling decimals.
@@ -114,16 +131,42 @@ export function getLocale(): Locale {
  * @param config.level - The time frequency level (ANNUAL, MONTHLY, WEEKLY, DAILY, HOURLY)
  * @returns An array of formatted date/time strings
  */
-export const generateDateTime = (config: DateTimeMetadataDTO): string[] => {
-  // eslint-disable-next-line camelcase
+export const generateDateTime = (config: DateTimeMetadataDTO): DateTimes => {
   const { start_date, steps, first_week_size, level } = config;
-  const { increment, format } = TIME_FREQUENCY_CONFIG[level];
-  const initialDate = parseISO(start_date);
+  const { increment } = TIME_FREQUENCY_CONFIG[level];
 
-  return Array.from({ length: steps }, (_, index) => {
-    const date = increment(initialDate, index);
-    return format(date, first_week_size);
-  });
+  /**
+   * TIMEZONE DETECTION BUG FIX:
+   *
+   * Previously, we used a naive approach to detect timezone information:
+   *   start_date.includes("Z") || start_date.includes("+") || start_date.includes("-")
+   *
+   * This caused a critical bug where date strings like "2018-01-01 00:00:00"
+   * were incorrectly identified as having timezone info because they contain
+   * "-" characters in the date part (2018-01-01).
+   *
+   * Result: The "Z" suffix wasn't appended, causing dates to be interpreted
+   * in local timezone instead of UTC, leading to:
+   * - "2018-01-01 00:00:00" → "2017-12-31T23:00:00.000Z" in UTC+1
+   * - Display showed "Sun 31 Dec 23:00" instead of "Mon 1 Jan 00:00"
+   *
+   * SOLUTION:
+   * Use a regex that only matches timezone indicators at the END of the string:
+   * - /[Z]$/ matches "Z" at the end
+   * - /[+-]\d{2}:?\d{2}$/ matches "+HH:MM", "+HHMM", "-HH:MM", "-HHMM" at the end
+   *
+   * This ensures date separators like "2018-01-01" are not mistaken for timezone info.
+   */
+  const timezoneRegex = /[Z]$|[+-]\d{2}:?\d{2}$/;
+  const hasTimezone = timezoneRegex.test(start_date);
+
+  // Append 'Z' to indicate UTC if no timezone is specified
+  const dateStr = hasTimezone ? start_date : `${start_date}Z`;
+
+  const initialDate = new UTCDate(dateStr);
+
+  const values = Array.from({ length: steps }, (_, index) => increment(initialDate, index));
+  return { values, first_week_size, level };
 };
 
 /**

@@ -23,8 +23,9 @@ import numpy as np
 import pytest
 from antares.study.version import StudyVersion
 
+from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.exceptions import VariantGenerationError
-from antarest.core.interfaces.cache import CacheConstants
+from antarest.core.interfaces.cache import CacheConstants, update_cache
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
@@ -32,14 +33,23 @@ from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import RawStudy, Study, StudyAdditionalData
+from antarest.study.model import StudyAdditionalData
+from antarest.study.service import VariantStudyInterface
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator, search_ref_study
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import AnyUUID, with_admin_user, with_db_context
+from tests.helpers import (
+    AnyUUID,
+    create_raw_study,
+    create_study,
+    create_variant_study,
+    with_admin_user,
+    with_db_context,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +66,7 @@ def _create_variant(
     """
     variant_dir = tmp_path.joinpath(f"some_place/{variant_name}")
     variant_dir.mkdir(parents=True, exist_ok=True)
-    variant = VariantStudy(
+    variant = create_variant_study(
         id=str(uuid.uuid4()),
         name=variant_name,
         updated_at=updated_at,
@@ -132,7 +142,7 @@ class TestSearchRefStudy:
         Then the root study is returned as reference study,
         and an empty list of commands is returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
         references: t.Sequence[VariantStudy] = []
         search_result = search_ref_study(root_study, references)
         assert search_result.ref_study == root_study
@@ -151,7 +161,7 @@ class TestSearchRefStudy:
         Then the root study is returned as reference study,
         and all commands of all variants are returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots
         variant1 = _create_variant(
@@ -227,7 +237,7 @@ class TestSearchRefStudy:
         We expect to have a reference study corresponding to the root study
         and the list of commands of all variants in order.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         # Variant 1 has no snapshot.
@@ -311,7 +321,7 @@ class TestSearchRefStudy:
         We expect to have a reference study corresponding to the second variant
         and the list of commands of the third variant.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         # Variant 1 has an up-to-date snapshot.
@@ -388,7 +398,7 @@ class TestSearchRefStudy:
         We expect to have a reference study corresponding to the first variant
         and the list of commands of the second and third variants.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         # Variant 1 has an up-to-date snapshot, but is more recent than variant 2.
@@ -467,7 +477,7 @@ class TestSearchRefStudy:
         When calling search_ref_study with the flag from_scratch=False,
         Then the variant is returned as reference study, and no commands are returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -526,7 +536,7 @@ class TestSearchRefStudy:
         When calling search_ref_study with the flag from_scratch=False,
         Then the variant is returned as reference study, and the remaining commands are returned.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -581,7 +591,7 @@ class TestSearchRefStudy:
         but the last executed command is missing (probably caused by a bug).
         We expect to have the list of all variant commands, so that the snapshot can be re-generated.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -636,7 +646,7 @@ class TestSearchRefStudy:
         but the last executed command is missing (removed).
         We expect to have the list of all variant commands, so that the snapshot can be re-generated.
         """
-        root_study = Study(id=str(uuid.uuid4()), name="root")
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
         variant1 = _create_variant(
@@ -748,7 +758,7 @@ class TestSnapshotGenerator:
         # Prepare a RAW study in the temporary folder
         study_dir = tmp_path / "my-study"
         root_study_id = str(uuid.uuid4())
-        root_study = RawStudy(
+        root_study = create_raw_study(
             id=root_study_id,
             workspace="default",
             path=str(study_dir),
@@ -870,17 +880,19 @@ class TestSnapshotGenerator:
             )
 
         # Check: the number of database queries is kept as low as possible.
-        # We expect 5 queries:
+        # We expect 6 queries:
         # - 1 query to fetch the ancestors of a variant study,
         # - 1 query to fetch the root study (with owner and groups for permission check),
         # - 1 query to fetch the list of variants with snapshot, commands, etc.,
+        # - 1 query to fetch raw study information,
         # - 1 query to update the variant study additional_data,
         # - 1 query to insert the variant study snapshot.
-        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
+        assert len(db_recorder.sql_statements) == 6, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1012,6 +1024,7 @@ class TestSnapshotGenerator:
                     },
                 ],
                 "success": True,
+                "should_invalidate_cache": False,
             }
         ]
 
@@ -1044,6 +1057,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1159,6 +1173,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1237,6 +1252,7 @@ class TestSnapshotGenerator:
         # Check the results
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -1246,3 +1262,82 @@ class TestSnapshotGenerator:
                 },
             ],
         }
+
+    @with_admin_user
+    @with_db_context
+    def test_generate_invalidate_cache(
+        self, variant_study_service: VariantStudyService, variant_study: VariantStudy
+    ) -> None:
+        cache = LocalCache()
+        variant_study_service.cache = cache
+        generator = SnapshotGenerator(
+            cache=cache,
+            raw_study_service=variant_study_service.raw_study_service,
+            command_factory=variant_study_service.command_factory,
+            study_factory=variant_study_service.study_factory,
+            repository=variant_study_service.repository,
+        )
+
+        # Fill the cache for the test.
+        study = db.session.query(VariantStudy).get(variant_study.id)  #  `variant_study` isn't bound to the session yet.
+        study_interface = VariantStudyInterface(variant_study_service, study)
+        file_study = study_interface.get_files()
+        data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+        update_cache(cache, variant_study.id, data)
+
+        # Checks the cache content
+        cache_key = f"{CacheConstants.STUDY_FACTORY}/{variant_study.id}"
+        assert cache.get(cache_key) is not None
+        starting_cache = cache.get(cache_key)
+        assert starting_cache is not None
+        # Generates the snapshot
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
+        assert not results.should_invalidate_cache
+        generated_cache = cache.get(cache_key)
+        # Performs a little modification in memory just to check that the caches are the same.
+        generated_cache["output_path"] = generated_cache["output_path"].parent.parent / "output"
+        assert generated_cache == starting_cache
+
+        # Add a `create_cluster` command
+        version = StudyVersion.parse(variant_study.version)
+        variant_study_service.append_commands(
+            variant_study.id,
+            [
+                CommandDTO(
+                    action="create_cluster",
+                    args={"area_id": "north", "cluster_name": "my_cluster", "parameters": {}},
+                    study_version=version,
+                )
+            ],
+        )
+
+        # Generates the snapshot
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
+        assert not results.should_invalidate_cache
+        # Ensures the cache was modified accordingly
+        new_cache = cache.get(cache_key)
+        thermals = new_cache["areas"]["north"]["thermals"]
+        assert len(thermals) == 1
+        assert thermals[0]["name"] == "my_cluster"
+
+        # Add an `update_config` command
+        variant_study_service.append_commands(
+            variant_study.id,
+            [
+                CommandDTO(
+                    action="update_config",
+                    args={
+                        "target": "input/areas/north/optimization/filtering/filter_synthesis",
+                        "data": "annual",
+                    },
+                    study_version=version,
+                )
+            ],
+        )
+
+        results = generator.generate_snapshot(variant_study.id, denormalize=False)
+        # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
+        assert results.should_invalidate_cache
+        assert cache.get(cache_key) is None

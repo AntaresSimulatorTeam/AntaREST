@@ -24,9 +24,9 @@ from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.common import CommandName
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from tests.helpers import with_admin_user, with_db_context
+from tests.helpers import create_variant_study, with_admin_user, with_db_context
 
 
 @pytest.fixture
@@ -119,7 +119,7 @@ def test_get_matrices_used_in_variant_studies(
         study_id = "study_id"
 
         study_version = "880"
-        variant_study_repository.save(VariantStudy(id=study_id, version=study_version))
+        variant_study_repository.save(create_variant_study(id=study_id, version=study_version))
 
         # TODO: add series to the command blocks
         command_block1 = CommandBlock(

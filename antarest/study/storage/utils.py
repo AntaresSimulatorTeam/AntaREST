@@ -70,27 +70,46 @@ TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 
-# noinspection SpellCheckingInspection
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, *, update_author: bool) -> None:
+def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool, editor: str = "") -> None:
     """
-    Update the "antares" information directly in the study tree.
+    Update antares study information in the study.antares file.
 
     Args:
-        metadata: The study object extracted from the database.
-        study_tree: The study tree object.
-        update_author: Specifies whether the author should be modified or not.
-            The author's name should be updated when the study is created,
-            but it is not changed if the study is copied.
+        metadata: Study metadata containing name, version, dates, etc.
+        study_tree: File study tree to update
+        update_author: Whether to update the author field
+        editor: Editor name (fallback to metadata.additional_data.author if empty)
     """
     study_data_info = study_tree.get(["study"])
-    study_data_info["antares"]["caption"] = metadata.name
-    study_data_info["antares"]["created"] = metadata.created_at.timestamp()
-    study_data_info["antares"]["lastsave"] = metadata.updated_at.timestamp()
-    version = StudyVersion.parse(metadata.version)
-    study_data_info["antares"]["version"] = f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
-    if update_author and metadata.additional_data:
-        study_data_info["antares"]["author"] = metadata.additional_data.author
+    antares_info = study_data_info["antares"]
+    author = "Unknown"
+
+    if metadata.additional_data:
+        author = metadata.additional_data.author
+
+    # Update basic fields
+    antares_info["caption"] = metadata.name
+    antares_info["created"] = _format_timestamp(metadata.created_at)
+    antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
+    antares_info["version"] = _format_version(metadata.version)
+    antares_info["editor"] = editor or author
+
+    # Update author-related fields if additional_data exists
+    if update_author and metadata.additional_data and metadata.additional_data.author:
+        antares_info["author"] = metadata.additional_data.author
+
     study_tree.save(study_data_info, ["study"])
+
+
+def _format_timestamp(dt: Optional[datetime]) -> str:
+    """Format datetime as timestamp string or '0' if None."""
+    return str(dt.timestamp()) if dt is not None else "0"
+
+
+def _format_version(version_str: str) -> str:
+    """Format version string according to version rules."""
+    version = StudyVersion.parse(version_str)
+    return f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
 
 
 def fix_study_root(study_path: Path) -> None:
@@ -366,6 +385,7 @@ def export_study_flat(
     output_list_filter: Optional[List[str]] = None,
     denormalize: bool = True,
     output_src_path: Optional[Path] = None,
+    is_study_managed: bool = True,
 ) -> None:
     start_time = time.time()
 
@@ -401,7 +421,7 @@ def export_study_flat(
     duration = "{:.3f}".format(stop_time - start_time)
     with_outputs = "with outputs" if outputs else "without outputs"
     logger.info(f"Study '{study_dir}' exported ({with_outputs}, flat mode) in {duration}s")
-    study = study_factory.create_from_fs(dest, "", use_cache=False)
+    study = study_factory.create_from_fs(dest, is_study_managed, "", use_cache=False)
     if denormalize:
         study.tree.denormalize()
         duration = "{:.3f}".format(time.time() - stop_time)

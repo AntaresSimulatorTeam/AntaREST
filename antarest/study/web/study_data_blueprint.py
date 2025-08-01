@@ -31,6 +31,8 @@ from antarest.study.business.allocation_management import AllocationField, Alloc
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
     STStorageManager,
+    STStorageMatrix,
+    STStorageTimeSeries,
 )
 from antarest.study.business.areas.thermal_management import (
     ThermalManager,
@@ -67,7 +69,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
-from antarest.study.business.model.sts_model import STStorageCreation, STStorageOutput, STStorageUpdate
+from antarest.study.business.model.sts_model import STStorage, STStorageCreation, STStorageUpdate
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
@@ -1646,9 +1648,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}",
         tags=[APITag.study_data],
         summary="Get the short-term storage properties",
-        response_model=STStorageOutput,
     )
-    def get_st_storage(uuid: str, area_id: str, storage_id: str) -> STStorageOutput:
+    def get_st_storage(uuid: str, area_id: str, storage_id: str) -> STStorage:
         """
         Retrieve the storages by given uuid and area id of a study.
 
@@ -1680,9 +1681,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Get the list of short-term storage properties",
-        response_model=Sequence[STStorageOutput],
     )
-    def get_st_storages(uuid: str, area_id: str) -> Sequence[STStorageOutput]:
+    def get_st_storages(uuid: str, area_id: str) -> Sequence[STStorage]:
         """
         Retrieve the short-term storages by given uuid and area ID of a study.
 
@@ -1713,9 +1713,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/areas/{area_id}/storages",
         tags=[APITag.study_data],
         summary="Create a new short-term storage in an area",
-        response_model=STStorageOutput,
     )
-    def create_st_storage(uuid: str, area_id: str, form: STStorageCreation) -> STStorageOutput:
+    def create_st_storage(uuid: str, area_id: str, form: STStorageCreation) -> STStorage:
         """
         Create a new short-term storage in an area.
 
@@ -1757,7 +1756,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Update the short-term storage properties",
     )
-    def update_st_storage(uuid: str, area_id: str, storage_id: str, form: STStorageUpdate) -> STStorageOutput:
+    def update_st_storage(uuid: str, area_id: str, storage_id: str, form: STStorageUpdate) -> STStorage:
         """
         Update short-term storage of a study.
 
@@ -1829,7 +1828,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         cluster_type: ClusterType,
         source_cluster_id: str,
         new_cluster_name: str = Query(..., alias="newName", title="New Cluster Name"),
-    ) -> STStorageOutput | ThermalCluster | RenewableCluster:
+    ) -> STStorage | ThermalCluster | RenewableCluster:
         logger.info(f"Duplicates {cluster_type.value} {source_cluster_id} of {area_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
 
@@ -1845,5 +1844,64 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
 
         study_interface = study_service.get_study_interface(study)
         return manager.duplicate_cluster(study_interface, area_id, source_cluster_id, new_cluster_name)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
+        tags=[APITag.study_data],
+        summary="Get a short-term storage time series (deprecated)",
+        response_model=STStorageMatrix,
+        deprecated=True,
+    )
+    def get_st_storage_matrix(
+        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries
+    ) -> STStorageMatrix:
+        """
+        Retrieve the matrix of the specified time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
+        - `ts_name`: the name of the time series to retrieve.
+
+        Returns: The time series matrix with the following attributes:
+        - `index`: a list of 0-indexed time series lines (8760 lines).
+        - `columns`: a list of 0-indexed time series columns (1 column).
+        - `data`: a 2D-array matrix representing the time series.
+
+        Permissions:
+        - User must have READ permission on the study.
+        """
+        logger.info(f"Retrieving time series for study {uuid} and short-term storage {storage_id}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_matrix(study_interface, area_id, storage_id, ts_name)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/series/{ts_name}",
+        tags=[APITag.study_data],
+        summary="Update a short-term storage time series (deprecated)",
+        deprecated=True,
+    )
+    def update_st_storage_matrix(
+        uuid: str, area_id: str, storage_id: str, ts_name: STStorageTimeSeries, ts: STStorageMatrix
+    ) -> None:
+        """
+        Update the matrix of the specified time series for the given short-term storage.
+
+        Args:
+        - `uuid`: The UUID of the study.
+        - `area_id`: the area ID.
+        - `storage_id`: the ID of the short-term storage.
+        - `ts_name`: the name of the time series to retrieve.
+        - `ts`: the time series matrix to update.
+
+        Permissions:
+        - User must have WRITE permission on the study.
+        """
+        logger.info(f"Update time series for study {uuid} and short-term storage {storage_id}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
 
     return bp

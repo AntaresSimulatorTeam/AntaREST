@@ -12,6 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/common/Form/types";
+import {
+  getThematicTrimmingConfig,
+  setThematicTrimmingConfig,
+} from "@/services/api/studies/config/thematicTrimming";
+import type { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
+import type { StudyMetadata } from "@/types/types";
+import { isSearchMatching } from "@/utils/stringUtils";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
   AccordionDetails,
@@ -21,27 +30,18 @@ import {
   Grid2 as Grid,
   Stack,
 } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import * as R from "ramda";
 import type * as RA from "ramda-adjunct";
 import { useState } from "react";
-import type { StudyMetadata } from "@/types/types";
-import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import type { SubmitHandlerPlus, UseFormReturnPlus } from "@/components/common/Form/types";
-import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
-import { isSearchMatching } from "@/utils/stringUtils";
+import { useTranslation } from "react-i18next";
 import FormDialog from "../../../../../../../common/dialogs/FormDialog";
+import SearchFE from "../../../../../../../common/fieldEditors/SearchFE";
+import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   THEMATIC_TRIMMING_GROUPS,
   getFieldLabelsForGroup,
   type ThematicTrimmingGroup,
 } from "./utils";
-import type { ThematicTrimmingConfig } from "@/services/api/studies/config/thematicTrimming/types";
-import {
-  getThematicTrimmingConfig,
-  setThematicTrimmingConfig,
-} from "@/services/api/studies/config/thematicTrimming";
-import { useTranslation } from "react-i18next";
 
 interface Props {
   study: StudyMetadata;
@@ -119,12 +119,7 @@ function ThematicTrimmingDialog(props: Props) {
       {(api) => (
         <>
           <Stack direction="row" justifyContent="space-between" sx={{ pb: 2 }}>
-            <SearchFE
-              sx={{ m: 0 }}
-              value={search}
-              onSearchValueChange={setSearch}
-              onClear={() => setSearch("")}
-            />
+            <SearchFE sx={{ m: 0 }} value={search} onSearchValueChange={setSearch} />
             <Stack direction="row" spacing={1}>
               <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.T)}>
                 {t("study.configuration.general.thematicTrimming.action.enableAll")}

@@ -18,7 +18,7 @@ from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     STUDY_VERSION_7_2,
@@ -28,6 +28,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_7,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -87,10 +88,13 @@ def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixServi
         sets={},
     )
     # sourcery skip: inline-immediately-returned-variable
+    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+
     file_study = FileStudy(
         config=config,
         tree=FileStudyTree(
-            matrix_mapper=MatrixUriMapper(matrix_service=matrix_service),
+            matrix_mapper=matrix_mapper,
             config=config,
         ),
     )
@@ -130,3 +134,8 @@ def empty_study_fixture_880(matrix_service: MatrixService, tmp_path: Path) -> Fi
 @pytest.fixture(name="empty_study_920")
 def empty_study_fixture_920(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
     return empty_study_fixture(STUDY_VERSION_9_2, matrix_service, tmp_path)
+
+
+@pytest.fixture(name="empty_study_930")
+def empty_study_fixture_930(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+    return empty_study_fixture(STUDY_VERSION_9_3, matrix_service, tmp_path)

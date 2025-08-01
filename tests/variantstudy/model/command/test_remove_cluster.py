@@ -25,6 +25,9 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
+from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
+    RemoveMultipleBindingConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.variantstudy.model.command.helpers import reset_line_separator
@@ -106,10 +109,26 @@ class TestRemoveCluster:
             ).apply(study_data=empty_study)
             assert output.status, output.message
 
-            output = RemoveCluster(
+            # Ensures the command fails cause the cluster is referenced in a constraint term
+            remove_cluster_cmd = RemoveCluster(
                 area_id=area_id, cluster_id=cluster_id, command_context=command_context, study_version=study_version
-            ).apply(empty_study)
+            )
+            output = remove_cluster_cmd.apply(empty_study)
+            assert not output.status
+            assert (
+                "Cluster 'cluster name' is not allowed to be deleted, because it is referenced in the following binding constraints"
+                in output.message
+            )
+            assert "bd 1" in output.message
 
+            # First remove the constraint
+            output = RemoveMultipleBindingConstraints(
+                id="bd 1", command_context=command_context, study_version=study_version
+            ).apply(study_data=empty_study)
+            assert output.status, output.message
+
+            # Then remove the cluster
+            output = remove_cluster_cmd.apply(empty_study)
             assert output.status, output.message
             assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 

@@ -22,6 +22,8 @@ import { Button, Divider, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useMatrixContext } from "../../context/MatrixContext";
 import MatrixResize from "../MatrixResize";
+import MatrixFilter from "../MatrixFilter";
+import type { DateTimes, TimeFrequencyType } from "../../shared/types";
 
 interface MatrixActionsProps {
   studyId: string;
@@ -29,7 +31,9 @@ interface MatrixActionsProps {
   onImport: SplitButtonProps["onClick"];
   onSave: VoidFunction;
   disabled: boolean;
+  dateTime: DateTimes;
   isTimeSeries: boolean;
+  timeFrequency?: TimeFrequencyType;
   onMatrixUpdated: VoidFunction;
   canImport?: boolean;
 }
@@ -40,7 +44,9 @@ function MatrixActions({
   onImport,
   onSave,
   disabled,
+  dateTime,
   isTimeSeries,
+  timeFrequency,
   canImport = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
@@ -85,17 +91,21 @@ function MatrixActions({
       {isTimeSeries && (
         <>
           <MatrixResize />
+          <MatrixFilter
+            dateTime={dateTime}
+            isTimeSeries={isTimeSeries}
+            timeFrequency={timeFrequency}
+          />
           <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
         </>
       )}
-
       <SplitButton
         options={[t("global.import.fromFile"), t("global.import.fromDatabase")]}
         onClick={onImport}
         ButtonProps={{
           startIcon: <FileUploadIcon />,
         }}
-        disabled={isSubmitting || canImport}
+        disabled={isSubmitting || !canImport}
       >
         {t("global.import")}
       </SplitButton>

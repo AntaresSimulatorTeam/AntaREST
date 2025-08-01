@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import type { Area, StudyMetadata } from "@/types/types";
 import { validateNumber } from "@/utils/validation/number";
@@ -19,7 +20,6 @@ import { Box, Tooltip } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useTranslation } from "react-i18next";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
@@ -110,8 +110,12 @@ function StorageForm({ study, areaId, storageId }: Props) {
                 }}
               />
             ) : (
-              // Add autocomplete with STORAGE_GROUPS
-              <StringFE label={t("global.group")} name="group" control={control} />
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                datalist={STORAGE_GROUPS}
+                control={control}
+              />
             )}
             {studyVersion >= 880 && (
               <SwitchFE label={t("global.enabled")} name="enabled" control={control} />

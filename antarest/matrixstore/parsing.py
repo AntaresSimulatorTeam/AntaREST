@@ -46,7 +46,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
 
 def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pd.DataFrame, path: Path) -> None:
     if matrix_format == InternalMatrixFormat.TSV:
-        dataframe.to_csv(path, sep="\t", float_format="%.6f", index=False)
+        dataframe.to_csv(path, sep="\t", index=False)
     elif matrix_format == InternalMatrixFormat.HDF:
         dataframe.to_hdf(str(path), key="data", index=False)
     elif matrix_format == InternalMatrixFormat.PARQUET:

@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useEffect, useMemo, useState } from "react";
@@ -21,7 +22,6 @@ import { createVariant } from "../../../../../services/api/variant";
 import { createListFromTree } from "../../../../../services/utils";
 import type { GenericInfo, VariantTree } from "../../../../../types/types";
 import FormDialog from "../../../../common/dialogs/FormDialog";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";

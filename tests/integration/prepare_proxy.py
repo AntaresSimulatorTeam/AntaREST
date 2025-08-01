@@ -55,7 +55,7 @@ class PreparerProxy:
         """
         res = self.client.post(
             "/v1/studies",
-            params={"name": name, "version": version},  # type: ignore
+            params={"name": name, "version": version},
             headers=self.headers,
         )
         assert res.status_code == 201, res.json()

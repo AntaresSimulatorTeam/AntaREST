@@ -49,9 +49,9 @@ describe("useColumnMapping", () => {
           createCoordinate(4, 0), // Aggregate column
         ];
 
-        nonDataCoordinates.forEach((coord) => {
+        for (const coord of nonDataCoordinates) {
           expect(result.current.gridToData(coord)).toBeNull();
-        });
+        }
       });
 
       test("should map data columns correctly", () => {
@@ -62,9 +62,9 @@ describe("useColumnMapping", () => {
           { grid: createCoordinate(3, 1), expected: createCoordinate(1, 1) }, // Second Number column
         ];
 
-        mappings.forEach(({ grid, expected }) => {
+        for (const { grid, expected } of mappings) {
           expect(result.current.gridToData(grid)).toEqual(expected);
-        });
+        }
       });
     });
 
@@ -86,10 +86,10 @@ describe("useColumnMapping", () => {
           { grid: createCoordinate(1, 1), data: createCoordinate(1, 1) },
         ];
 
-        mappings.forEach(({ grid, data }) => {
+        for (const { grid, data } of mappings) {
           expect(result.current.gridToData(grid)).toEqual(data);
           expect(result.current.dataToGrid(data)).toEqual(grid);
-        });
+        }
       });
     });
   });
@@ -102,9 +102,9 @@ describe("useColumnMapping", () => {
         { data: createCoordinate(1, 1), expected: createCoordinate(3, 1) }, // Second data column
       ];
 
-      mappings.forEach(({ data, expected }) => {
+      for (const { data, expected } of mappings) {
         expect(result.current.dataToGrid(data)).toEqual(expected);
-      });
+      }
     });
   });
 });

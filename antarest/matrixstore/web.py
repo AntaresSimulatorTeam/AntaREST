@@ -20,10 +20,18 @@ from starlette.responses import FileResponse
 
 from antarest.core.config import Config
 from antarest.core.filetransfer.service import FileTransferManager
+from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.matrixstore.model import MatrixData, MatrixDataSetDTO, MatrixDataSetUpdateDTO, MatrixInfoDTO
+from antarest.login.utils import require_current_user
+from antarest.matrixstore.model import (
+    MatrixData,
+    MatrixDataSetDTO,
+    MatrixDataSetUpdateDTO,
+    MatrixInfoDTO,
+    MatrixMetadataDTO,
+)
 from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
@@ -67,6 +75,16 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
     ) -> Any:
         logger.info("Importing new matrix dataset")
         return service.create_by_importation(file, is_json=json)
+
+    @bp.get("/matrix", tags=[APITag.matrix], description="Return a list of matrices metadata")
+    def get_matrices() -> list[MatrixMetadataDTO]:
+        logger.info("Fetching matrices metadatas")
+        user = require_current_user()
+
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError()
+
+        return service.get_matrices()
 
     @bp.get("/matrix/{id}", tags=[APITag.matrix])
     def get(id: str) -> MatrixDTO:

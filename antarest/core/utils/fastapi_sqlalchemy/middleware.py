@@ -1,11 +1,11 @@
 from contextvars import ContextVar, Token
 from typing import Any, Dict, Optional, Type, Union
 
-from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.engine import Engine  # type: ignore
-from sqlalchemy.engine.url import URL  # type: ignore
-from sqlalchemy.event import listen  # type: ignore
-from sqlalchemy.orm import Session, sessionmaker  # type: ignore
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.engine.url import URL
+from sqlalchemy.event import listen
+from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -14,7 +14,7 @@ from typing_extensions import override
 
 from antarest.core.utils.fastapi_sqlalchemy.exceptions import MissingSessionError, SessionNotInitialisedError
 
-_Session: Optional[sessionmaker] = None
+_Session: Optional[sessionmaker[Session]] = None
 _session: ContextVar[Optional[Session]] = ContextVar("_session", default=None)
 
 
@@ -52,6 +52,7 @@ class DBSessionMiddleware(BaseHTTPMiddleware):
         if not custom_engine and not db_url:
             raise ValueError("You need to pass a db_url or a custom_engine parameter.")
         if not custom_engine:
+            assert db_url is not None, "Database URL cannot be None"
             engine = create_engine(db_url, **engine_args)
         else:
             engine = custom_engine
