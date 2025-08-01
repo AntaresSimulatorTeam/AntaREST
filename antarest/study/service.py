@@ -129,7 +129,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -2428,13 +2428,22 @@ class StudyService:
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
 
-    def get_node(self, uuid: str, path: str) -> INode[Any, Any, Any]:
+    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
-        Returns a DataFrame if the provided url corresponds to a matrix.
+        Returns the content of a node based on the provided arguments.
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
         node = file_study.tree.get_node(url)
-        return node
+
+        if isinstance(node, MatrixNode):
+            return node.parse_as_dataframe()
+
+        relative_url: Sequence[str]
+        if node.config.archive_path:
+            relative_url = node.get_relative_path_inside_archive(node.config.archive_path).split("/")
+        else:
+            relative_url = node.config.path.relative_to(node.config.study_path).parts
+        return node.get(url=url[len(relative_url) :], depth=depth, formatted=formatted)
