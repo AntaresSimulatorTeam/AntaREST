@@ -156,7 +156,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         matrix = node.parse_as_dataframe()
         matrix_uri = self.create_matrix(matrix)
         link_path.write_text(matrix_uri)
-        node.config.path.unlink()
+        node.config.path.unlink(missing_ok=True)
 
     @override
     def denormalize(self, node: MatrixNode) -> None:
@@ -167,7 +167,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         uuid = link_path.read_text()
         matrix = self.get_matrix(uuid)
         node.dump(matrix)
-        link_path.unlink(missing_ok=True)
+        link_path.unlink()
 
     @override
     def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
