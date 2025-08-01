@@ -14,7 +14,7 @@ from typing import Any, Dict
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.config.optimization_config import (
+from antarest.study.business.model.config.optimization_config_model import (
     LegacyTransmissionCapacities,
     OptimizationPreferences,
     SimplexOptimizationRange,

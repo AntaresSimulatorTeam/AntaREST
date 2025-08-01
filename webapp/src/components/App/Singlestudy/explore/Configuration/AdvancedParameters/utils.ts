@@ -47,9 +47,11 @@ enum PowerFluctuation {
   MinimizeRamping = "minimize ramping",
 }
 
-enum SheddingPolicy {
+export enum SheddingPolicy {
   ShavePeaks = "shave peaks",
   MinimizeDuration = "minimize duration",
+  // Since v9.2
+  AccurateShavePeaks = "accurate shave peaks",
 }
 
 enum ReserveManagement {
@@ -117,6 +119,8 @@ export interface AdvancedParamsFormFields {
   seedUnsuppliedEnergyCosts: number;
   sheddingPolicy: string;
   unitCommitmentMode: string;
+  // Since v9.3
+  accurateShavePeaksIncludeShortTermStorage?: boolean;
 }
 
 type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCorrelation"> & {

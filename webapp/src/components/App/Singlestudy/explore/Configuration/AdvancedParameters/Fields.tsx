@@ -32,8 +32,10 @@ import {
   SPATIAL_CORRELATIONS_OPTIONS,
   UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
+  SheddingPolicy,
   type AdvancedParamsFormFields,
 } from "./utils";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 
 function Fields() {
   const [t] = useTranslation();
@@ -144,7 +146,9 @@ function Fields() {
         />
         <SelectFE
           label={t("study.configuration.advancedParameters.sheddingPolicy")}
-          options={SHEDDING_POLICY_OPTIONS}
+          options={SHEDDING_POLICY_OPTIONS.filter(
+            (v) => v !== SheddingPolicy.AccurateShavePeaks || studyVersion >= 920,
+          )}
           name="sheddingPolicy"
           control={control}
         />
@@ -173,6 +177,16 @@ function Fields() {
             label={t("study.configuration.advancedParameters.renewableGenerationModeling")}
             options={RENEWABLE_GENERATION_OPTIONS}
             name="renewableGenerationModelling"
+            control={control}
+          />
+        )}
+        {studyVersion >= 930 && (
+          <SwitchFE
+            label={t(
+              "study.configuration.advancedParameters.accurateShavePeaksIncludeShortTermStorage",
+            )}
+            name="accurateShavePeaksIncludeShortTermStorage"
+            sx={{ textWrap: "nowrap" }}
             control={control}
           />
         )}
