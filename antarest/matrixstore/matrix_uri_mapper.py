@@ -167,7 +167,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
         uuid = link_path.read_text()
         matrix = self.get_matrix(uuid)
         node.dump(matrix)
-        link_path.unlink()
+        link_path.unlink(missing_ok=True)
 
     @override
     def delete(self, node: MatrixNode, url: Optional[List[str]] = None) -> None:
