@@ -93,33 +93,21 @@ def create_test_client(
     return TestClient(app_ctxt.build(), raise_server_exceptions=raise_server_exceptions)
 
 
-def _set_up_node() -> Mock:
-    node = Mock()
-    node.config.path = Path("study/input")
-    node.config.study_path = Path("study")
-    node.get.return_value = {}
-    return node
-
-
 @pytest.mark.unit_test
 def test_server() -> None:
-    node = _set_up_node()
     mock_service = Mock()
-    mock_service.get_node.return_value = node
+    mock_service.get_raw_content.return_value = {}
 
     client = create_test_client(mock_service)
     client.get("/v1/studies/study1/raw?path=settings/general/params")
 
-    mock_service.get_node.assert_called_once_with("study1", "settings/general/params")
-    node.get.assert_called_once_with(url=["general", "params"], depth=3, formatted=True)
+    mock_service.get_raw_content.assert_called_once_with("study1", "settings/general/params", 3, True)
 
 
 @pytest.mark.unit_test
 def test_404() -> None:
-    node = _set_up_node()
-    node.get.side_effect = UrlNotMatchJsonDataError("Test")
     mock_storage_service = Mock()
-    mock_storage_service.get_node.return_value = node
+    mock_storage_service.get_raw_content.side_effect = UrlNotMatchJsonDataError("Test")
 
     client = create_test_client(mock_storage_service, raise_server_exceptions=False)
     result = client.get("/v1/studies/study1/raw?path=settings/general/params")
@@ -131,16 +119,14 @@ def test_404() -> None:
 
 @pytest.mark.unit_test
 def test_server_with_parameters() -> None:
-    node = _set_up_node()
     mock_storage_service = Mock()
-    mock_storage_service.get_node.return_value = node
+    mock_storage_service.get_raw_content.return_value = {}
 
     client = create_test_client(mock_storage_service)
     result = client.get("/v1/studies/study1/raw?depth=4")
 
     assert result.status_code == HTTPStatus.OK
-    mock_storage_service.get_node.assert_called_once_with("study1", "/")
-    node.get.assert_called_once_with(url=[], depth=4, formatted=True)
+    mock_storage_service.get_raw_content.assert_called_once_with("study1", "/", 4, True)
 
     result = client.get("/v1/studies/study2/raw?depth=WRONG_TYPE")
     assert result.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
@@ -148,8 +134,7 @@ def test_server_with_parameters() -> None:
     result = client.get("/v1/studies/study2/raw")
     assert result.status_code == HTTPStatus.OK
 
-    mock_storage_service.get_node.assert_called_with("study2", "/")
-    node.get.assert_called_with(url=[], depth=3, formatted=True)
+    mock_storage_service.get_raw_content.assert_called_with("study2", "/", 3, True)
 
 
 @pytest.mark.unit_test
