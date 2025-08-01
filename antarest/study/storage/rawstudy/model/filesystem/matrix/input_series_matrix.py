@@ -159,4 +159,11 @@ class InputSeriesMatrix(MatrixNode):
             filename = target_path.name
         else:
             content = self.config.path.read_bytes()
+
+        if content == b"" and self.default_empty is not None:
+            # The file is empty, we should return the `default_empty` value
+            buffer = io.BytesIO()
+            dump_dataframe(pd.DataFrame(self.default_empty), buffer)
+            content = buffer.getvalue()
+
         return OriginalFile(content=content, suffix=suffix, filename=filename)
