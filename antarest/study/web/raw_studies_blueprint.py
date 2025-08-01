@@ -79,14 +79,13 @@ class MatrixFormat(EnumIgnoreCase):
     ARROW_UNCOMPRESSED = "arrow uncompressed"
     PLAIN = "plain"
 
-    def parse_dataframe(self, dataframe: pd.DataFrame) -> Response:
+    def serialize_dataframe(self, dataframe: pd.DataFrame) -> Response:
         if self == MatrixFormat.PLAIN:
             if dataframe.empty:
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
             dataframe.to_csv(string_buffer, sep="\t", header=False, index=False)
-            json_response = to_json(string_buffer.getvalue())
-            return Response(content=json_response, media_type="application/json")
+            return Response(content=string_buffer.getvalue(), media_type="text/csv")
 
         buffer = io.BytesIO()
         if self == MatrixFormat.JSON:
@@ -151,7 +150,7 @@ def create_raw_study_routes(
             # The user requested a matrix
             if matrix_format is None:
                 matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
-            return matrix_format.parse_dataframe(df)
+            return matrix_format.serialize_dataframe(df)
 
         if matrix_format in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
             # The user asked for a format only supported for matrices.
