@@ -129,7 +129,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -2428,7 +2428,7 @@ class StudyService:
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
 
-    def get_dataframe_if_the_url_corresponds_to_a_matrix(self, uuid: str, path: str) -> pd.DataFrame | None:
+    def get_node(self, uuid: str, path: str) -> INode[Any, Any, Any]:
         """
         Returns a DataFrame if the provided url corresponds to a matrix.
         """
@@ -2437,6 +2437,4 @@ class StudyService:
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
         node = file_study.tree.get_node(url)
-        if isinstance(node, MatrixNode):
-            return node.parse_as_dataframe()
-        return None
+        return node

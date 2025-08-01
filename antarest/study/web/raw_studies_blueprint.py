@@ -33,6 +33,7 @@ from antarest.login.auth import Auth
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_file
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
 
 logger = logging.getLogger(__name__)
@@ -145,9 +146,10 @@ def create_raw_study_routes(
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
 
-        df = study_service.get_dataframe_if_the_url_corresponds_to_a_matrix(uuid, path)
-        if df is not None:
-            # The user requested a matrix
+        node = study_service.get_node(uuid, path)
+
+        if isinstance(node, MatrixNode):
+            df = node.parse_as_dataframe()
             if matrix_format is None:
                 matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
             return matrix_format.serialize_dataframe(df)
@@ -156,7 +158,9 @@ def create_raw_study_routes(
             # The user asked for a format only supported for matrices.
             raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted)
+        used_parts = len(node.config.path.relative_to(node.config.study_path).parts)
+        url = [item for item in path.split("/") if item]
+        output = node.get(url=url[used_parts:], depth=depth, formatted=formatted)
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
