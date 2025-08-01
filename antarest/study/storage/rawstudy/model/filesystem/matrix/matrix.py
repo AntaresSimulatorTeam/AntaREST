@@ -213,11 +213,15 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
                 df = pd.DataFrame(**data)
             else:
                 df = data
-            dump_dataframe(df, self.config.path)
+            self.write_dataframe(df)
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
         """
         Parse the matrix content and return it as a DataFrame object
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_dataframe(self, df: pd.DataFrame) -> None:
         raise NotImplementedError()
