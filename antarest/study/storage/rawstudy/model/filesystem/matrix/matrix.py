@@ -225,4 +225,3 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     @abstractmethod
     def write_dataframe(self, df: pd.DataFrame) -> None:
         raise NotImplementedError()
-
