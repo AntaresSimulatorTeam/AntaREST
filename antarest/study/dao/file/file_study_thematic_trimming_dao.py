@@ -15,7 +15,10 @@ from typing_extensions import override
 
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.dao.api.thematic_trimming_dao import ThematicTrimmingDao
+from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming import parse_thematic_trimming
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+GENERAL_DATA_PATH = ["settings", "generaldata"]
 
 
 class FileStudyThematicTrimmingDao(ThematicTrimmingDao, ABC):
@@ -25,7 +28,10 @@ class FileStudyThematicTrimmingDao(ThematicTrimmingDao, ABC):
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
-        raise NotImplementedError
+        file_study = self.get_file_study()
+        config = file_study.tree.get(GENERAL_DATA_PATH)
+        trimming_config = config.get("variables selection") or {}
+        return parse_thematic_trimming(file_study.config.version, trimming_config)
 
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:

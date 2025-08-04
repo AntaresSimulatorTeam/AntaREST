@@ -13,9 +13,7 @@
 
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import GENERAL_DATA_PATH
 from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming import (
-    parse_thematic_trimming,
     serialize_thematic_trimming,
 )
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -30,10 +28,7 @@ class ThematicTrimmingManager:
         """
         Get Thematic Trimming field values for the webapp form
         """
-        file_study = study.get_files()
-        config = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
-        trimming_config = config.get("variables selection") or {}
-        return parse_thematic_trimming(study.version, trimming_config)
+        return study.get_study_dao().get_thematic_trimming()
 
     def set_field_values(self, study: StudyInterface, thematic_trimming: ThematicTrimming) -> None:
         """
