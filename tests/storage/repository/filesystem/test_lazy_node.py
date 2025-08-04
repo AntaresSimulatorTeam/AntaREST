@@ -21,12 +21,6 @@ from tests.storage.repository.filesystem.matrix.test_matrix_node import MockMatr
 
 
 class MockLazyNode(LazyNode[str, str, str]):
-    def normalize(self) -> None:
-        pass  # no external store in this node
-
-    def denormalize(self) -> None:
-        pass  # no external store in this node
-
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig) -> None:
         super().__init__(
             config=config,

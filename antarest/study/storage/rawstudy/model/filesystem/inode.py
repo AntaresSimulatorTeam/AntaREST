@@ -114,23 +114,21 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def normalize(self) -> None:
         """
         Scan tree to send matrix in matrix store and replace by its links
         Returns:
 
         """
-        raise NotImplementedError()
+        pass
 
-    @abstractmethod
     def denormalize(self) -> None:
         """
         Scan tree to fetch matrix by its links
         Returns:
 
         """
-        raise NotImplementedError()
+        pass
 
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix

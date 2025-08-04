@@ -156,14 +156,6 @@ class OutputSeriesMatrix(LazyNode[Union[bytes, JSON], Union[bytes, JSON], JSON])
     def dump(self, data: Union[bytes, JSON], url: Optional[List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
-    @override
-    def normalize(self) -> None:
-        pass  # no external store in this node
-
-    @override
-    def denormalize(self) -> None:
-        pass  # no external store in this node
-
 
 class LinkOutputSeriesMatrix(OutputSeriesMatrix):
     def __init__(
