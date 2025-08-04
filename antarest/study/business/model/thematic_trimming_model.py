@@ -416,3 +416,10 @@ def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyV
             _initialize_field_default(thematic_trimming, field, default_bool)
         for field in _get_v_9_3_exclude_field():
             _reset_field(thematic_trimming, field)
+
+
+def update_thematic_trimming(*, current: ThematicTrimming, new: ThematicTrimming) -> ThematicTrimming:
+    """
+    Updates the thematic trimming according to the provided update data.
+    """
+    return current.model_copy(update=new.model_dump(exclude_none=True))

@@ -11,12 +11,9 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, update_thematic_trimming
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming import (
-    serialize_thematic_trimming,
-)
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -30,17 +27,18 @@ class ThematicTrimmingManager:
         """
         return study.get_study_dao().get_thematic_trimming()
 
-    def set_thematic_trimming(self, study: StudyInterface, thematic_trimming: ThematicTrimming) -> None:
+    def set_thematic_trimming(self, study: StudyInterface, thematic_trimming: ThematicTrimming) -> ThematicTrimming:
         """
         Set Thematic Trimming config from the webapp form
         """
         current_thematic_trimming = self.get_thematic_trimming(study)
-        data = serialize_thematic_trimming(study.version, thematic_trimming, current_thematic_trimming)
+        final_thematic_trimming = update_thematic_trimming(current=current_thematic_trimming, new=thematic_trimming)
 
-        command = UpdateConfig(
-            target="settings/generaldata/variables selection",
-            data=data,
+        command = UpdateThematicTrimming(
+            parameters=thematic_trimming,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
+
+        return final_thematic_trimming
