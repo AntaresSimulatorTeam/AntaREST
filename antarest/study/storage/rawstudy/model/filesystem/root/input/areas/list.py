@@ -23,14 +23,6 @@ AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
 class InputAreasList(INode[List[str], List[str], List[str]]):
-    @override
-    def normalize(self) -> None:
-        pass  # no external store in this node
-
-    @override
-    def denormalize(self) -> None:
-        pass  # no external store in this node
-
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(config)
         self.matrix_mapper = matrix_mapper

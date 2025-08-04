@@ -15,7 +15,11 @@ from typing import Sequence
 
 import pandas as pd
 
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
 
 
 class ReadOnlySTStorageDao(ABC):
@@ -75,6 +79,20 @@ class ReadOnlySTStorageDao(ABC):
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pd.DataFrame:
         raise NotImplementedError()
 
+    ##########################
+    # Additional constraints part
+    ##########################
+
+    @abstractmethod
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        raise NotImplementedError()
+
 
 class STStorageDao(ReadOnlySTStorageDao):
     @abstractmethod
@@ -126,5 +144,25 @@ class STStorageDao(ReadOnlySTStorageDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
+        raise NotImplementedError()
+
+    ##########################
+    # Additional constraints part
+    ##########################
+
+    @abstractmethod
+    def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_st_storage_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
+    ) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+    ) -> None:
         raise NotImplementedError()

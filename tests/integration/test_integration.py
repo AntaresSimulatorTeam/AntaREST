@@ -1543,23 +1543,30 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
 
     # Create a fake output file
-    output_file = tmp_path / "internal_workspace" / variant.json() / "output" / "output1" / "output.txt"
+    output_path = tmp_path / "internal_workspace" / variant.json() / "output"
+    output_file = output_path / "output1" / "output.txt"
     output_file.parent.mkdir(parents=True)
     output_file.write_text("Output data")
+
+    # Create a fake zipped output
+    output_zip_file = output_path / "output2.zip"
+    output_zip_file.touch()
 
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"study_name": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output1"]},  # type: ignore
+        params={"study_name": "copied", "with_outputs": True, "output_ids": ["output1", "output2"]},
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
     copied_study = client.get("/v1/studies?name=copied")
     copied_id = next(iter(copied_study.json()))
 
-    # The new study must contain an output fodler with the same data as the source variant study
-    new_output_file = tmp_path / "internal_workspace" / copied_id / "output" / "output1" / "output.txt"
+    # The new study must contain an output folder with the same data as the source variant study
+    new_output_path = tmp_path / "internal_workspace" / copied_id / "output"
+    new_output_file = new_output_path / "output1" / "output.txt"
     assert output_file.read_text() == new_output_file.read_text()
+    assert (new_output_path / "output2.zip").exists()
 
 
 def test_copy_variant_with_specific_path(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:

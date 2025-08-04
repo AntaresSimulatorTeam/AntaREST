@@ -823,3 +823,71 @@ class TestSTStorage:
         )
         assert res.status_code in {200, 201}, res.json()
         assert res.json()[0]["reservoirCapacity"] == 5600
+
+    def test_additional_constraints(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Upgrade study to version 9.2
+        res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": "920"})
+        res.raise_for_status()
+        task_id = res.json()
+        task = wait_task_completion(client, user_access_token, task_id)
+        assert task.status == TaskStatus.COMPLETED, task
+
+        # Create several short-term storage objects
+        areas_url = f"/v1/studies/{internal_study_id}/areas"
+        res = client.post(f"{areas_url}/fr/storages", json={"name": "tesla", "group": "battery"})
+        res.raise_for_status()
+        res = client.post(f"{areas_url}/fr/storages", json={"name": "sts_2", "group": "free group"})
+        res.raise_for_status()
+        res = client.post(f"{areas_url}/de/storages", json={"name": "sts_de"})
+        res.raise_for_status()
+
+        # Create several constraints relative to the storages
+        body = [{"name": "C1?", "occurrences": [{"hours": [2, 3]}, {"hours": [148]}]}, {"name": "c2", "enabled": False}]
+        res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
+        assert res.status_code == 200
+        assert res.json() == [
+            {
+                "name": "C1?",
+                "id": "c1",
+                "variable": "netting",
+                "operator": "less",
+                "occurrences": [{"hours": [2, 3]}, {"hours": [148]}],
+                "enabled": True,
+            },
+            {"name": "c2", "id": "c2", "variable": "netting", "operator": "less", "occurrences": [], "enabled": False},
+        ]
+
+        body = [{"name": "c3", "occurrences": [{"hours": [1, 2, 57]}], "operator": "equal", "variable": "injection"}]
+        res = client.post(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
+        assert res.status_code == 200
+        assert res.json() == [
+            {
+                "name": "c3",
+                "id": "c3",
+                "variable": "injection",
+                "operator": "equal",
+                "occurrences": [{"hours": [1, 2, 57]}],
+                "enabled": True,
+            }
+        ]
+
+        # Update a constraint
+        body = {"c3": {"enabled": False, "variable": "netting"}}
+        res = client.put(f"{areas_url}/de/storages/sts_de/additional-constraints", json=body)
+        assert res.status_code == 200
+        assert res.json() == [
+            {
+                "name": "c3",
+                "id": "c3",
+                "variable": "netting",
+                "operator": "equal",
+                "occurrences": [{"hours": [1, 2, 57]}],
+                "enabled": False,
+            }
+        ]
+
+        # Delete all constraints inside area `fr`
+        res = client.request("DELETE", f"{areas_url}/fr/storages/tesla/additional-constraints", json=["c1", "c2"])
+        assert res.status_code == 200

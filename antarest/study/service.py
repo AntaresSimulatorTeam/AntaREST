@@ -85,7 +85,8 @@ from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
-    XpansionCandidateDTO,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.optimization_management import OptimizationManager
@@ -128,7 +129,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -1770,12 +1771,15 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         study_interface = self.get_study_interface(study)
         self.assert_study_unarchived(study)
+        # Checks the area is not referenced in any constraint
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
             study_interface, ConstraintFilters(area_name=area_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
         self.event_bus.push(
             Event(
@@ -2042,37 +2046,37 @@ class StudyService:
     def add_candidate(
         self,
         uuid: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> XpansionCandidateDTO:
+        xpansion_candidate: XpansionCandidateCreation,
+    ) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate_dto)
+        return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate)
 
-    def get_candidate(self, uuid: str, candidate_name: str) -> XpansionCandidateDTO:
+    def get_candidate(self, uuid: str, candidate_name: str) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
-    def get_candidates(self, uuid: str) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, uuid: str) -> List[XpansionCandidate]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidates(study_interface)
 
-    def update_xpansion_candidate(
+    def replace_xpansion_candidate(
         self,
         uuid: str,
         candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> None:
+        xpansion_candidate: XpansionCandidateCreation,
+    ) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate_dto)
+        return self.xpansion_manager.replace_candidate(study_interface, candidate_name, xpansion_candidate)
 
     def delete_xpansion_candidate(self, uuid: str, candidate_name: str) -> None:
         study = self.get_study(uuid)
@@ -2423,3 +2427,23 @@ class StudyService:
         It will put every matrix in the study in the matrix-store.
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
+
+    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
+        """
+        Returns the content of a node based on the provided arguments.
+        """
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        file_study = self.get_file_study(study)
+        url = [item for item in path.split("/") if item]
+        node = file_study.tree.get_node(url)
+
+        if isinstance(node, MatrixNode):
+            return node.parse_as_dataframe()
+
+        relative_url: Sequence[str]
+        if node.config.archive_path:
+            relative_url = node.get_relative_path_inside_archive(node.config.archive_path).split("/")
+        else:
+            relative_url = node.config.path.relative_to(node.config.study_path).parts
+        return node.get(url=url[len(relative_url) :], depth=depth, formatted=formatted)

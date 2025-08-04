@@ -13,7 +13,7 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.constraints.area import (
+from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.constraints.area.area import (
     InputSTStorageConstraintsArea,
 )
 
@@ -21,8 +21,8 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.cons
 class InputSTStorageConstraints(FolderNode):
     @override
     def build(self) -> TREE:
-        area_ids = [d.stem for d in self.config.path.iterdir() if d.is_dir()]
         children: TREE = {
-            a: InputSTStorageConstraintsArea(self.matrix_mapper, self.config.next_file(a)) for a in area_ids
+            a: InputSTStorageConstraintsArea(self.matrix_mapper, self.config.next_file(a), a)
+            for a in self.config.area_names()
         }
         return children

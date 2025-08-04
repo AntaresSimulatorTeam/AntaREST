@@ -12,16 +12,12 @@
 from typing import Any
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     ChildNotFoundError,
-    LinkNotFound,
-    XpansionCandidateDeletionError,
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
     GetXpansionSettings,
-    XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
@@ -51,35 +47,6 @@ def apply_create_resource_commands(
     return command_succeeded(
         message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created."
     )
-
-
-def assert_link_profile_are_files(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
-    existing_files = file_study.tree.get(["user", "expansion", "capa"])
-    for attr in [
-        "link_profile",
-        "already_installed_link_profile",
-        "direct_link_profile",
-        "indirect_link_profile",
-        "already_installed_direct_link_profile",
-        "already_installed_indirect_link_profile",
-    ]:
-        if link_file := getattr(xpansion_candidate_dto, attr, None):
-            if link_file not in existing_files:
-                raise XpansionFileNotFoundError(f"The '{attr}' file '{link_file}' does not exist")
-
-
-def assert_link_exist(file_study: FileStudy, xpansion_candidate_dto: XpansionCandidate) -> None:
-    area_from = xpansion_candidate_dto.link.area_from
-    area_to = xpansion_candidate_dto.link.area_to
-    if area_from not in file_study.config.areas:
-        raise AreaNotFound(area_from)
-    if area_to not in file_study.config.get_links(area_from):
-        raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
-
-
-def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandidate) -> None:
-    assert_link_profile_are_files(file_study, candidate)
-    assert_link_exist(file_study, candidate)
 
 
 def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
@@ -122,13 +89,3 @@ def checks_settings_are_correct_and_returns_fields_to_exclude(
             excludes.add(field)
 
     return excludes
-
-
-def checks_candidate_can_be_deleted(candidate_name: str, file_study: FileStudy) -> None:
-    """
-    Ensures the candidate isn't referenced inside the sensitivity file as a projection.
-    """
-    sensitivity_config = get_xpansion_sensitivity(file_study)
-    projections = sensitivity_config.get("projection", {})
-    if candidate_name in projections:
-        raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)

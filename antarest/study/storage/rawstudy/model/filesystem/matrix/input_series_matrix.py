@@ -45,6 +45,7 @@ class InputSeriesMatrix(MatrixNode):
         freq: MatrixFrequency = MatrixFrequency.HOURLY,
         nb_columns: Optional[int] = None,
         default_empty: Optional[NpArray] = None,  # optional only for the capacity matrix in Xpansion
+        should_exist: bool = True,
     ):
         super().__init__(matrix_mapper=matrix_mapper, config=config, freq=freq)
         self.nb_columns = nb_columns
@@ -56,6 +57,7 @@ class InputSeriesMatrix(MatrixNode):
             self.default_empty.flags.writeable = True
         # Removes the .link suffix if the matrix is normalized
         self.config.path = self.config.path.parent / self.config.path.name.removesuffix(".link")
+        self.should_exist = should_exist
 
     @override
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
@@ -75,7 +77,11 @@ class InputSeriesMatrix(MatrixNode):
                         float_precision="legacy",
                     )
                 except FileNotFoundError as e:
-                    # Raise 404 'Not Found' if the TSV file is not found
+                    # Some matrices are optional and not required by the Simulator
+                    # If so, we shouldn't raise but just return the `default_empty` value
+                    if not self.should_exist:
+                        return pd.DataFrame(self.default_empty) if self.default_empty is not None else pd.DataFrame()
+                    # Otherwise, we raise a 404 'Not Found' exception.
                     logger.warning(f"Matrix file'{file_path}' not found")
                     study_id = self.config.study_id
                     relpath = file_path.relative_to(self.config.study_path).as_posix()
@@ -91,6 +97,15 @@ class InputSeriesMatrix(MatrixNode):
             if self.default_empty is not None:
                 final_matrix = pd.DataFrame(self.default_empty)
             return final_matrix
+
+    @override
+    def write_dataframe(self, df: pd.DataFrame) -> None:
+        # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
+        # This way, we can write the content quicker, and the file takes less place on the fs.
+        if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
+            self.config.path.touch(exist_ok=True)
+        else:
+            df.to_csv(self.config.path, sep="\t", header=False, index=False)
 
     @override
     def check_errors(
@@ -144,4 +159,11 @@ class InputSeriesMatrix(MatrixNode):
             filename = target_path.name
         else:
             content = self.config.path.read_bytes()
+
+        if content == b"" and self.default_empty is not None:
+            # The file is empty, we should return the `default_empty` value
+            buffer = io.BytesIO()
+            dump_dataframe(pd.DataFrame(self.default_empty), buffer)
+            content = buffer.getvalue()
+
         return OriginalFile(content=content, suffix=suffix, filename=filename)

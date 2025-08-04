@@ -24,6 +24,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_4,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_1,
+    STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -60,6 +61,9 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
         {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS inj by plant"]}},
         # For study version >= 910:
         {"variables selection": {"selected_vars_reset": True, "select_var -": ["STS by group"]}},
+        # For study version >= 930:
+        {"variables selection": {"selected_vars_reset": True, "select_var -": ["RENEWABLE GEN.", "DISPATCH. GEN."]}},
+        {"variables selection": {"selected_vars_reset": True, "select_var +": ["RENEWABLE GEN.", "DISPATCH. GEN."]}},
     ]
 
     study = Mock(StudyInterface)
@@ -105,4 +109,16 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
     actual = thematic_trimming_manager.get_field_values(study)
     expected = ThematicTrimming(sts_by_group=False)
     initialize_with_version(expected, STUDY_VERSION_9_1, True)
+    assert actual == expected
+
+    study.version = config.version = STUDY_VERSION_9_3
+    actual = thematic_trimming_manager.get_field_values(study)
+    expected = ThematicTrimming(dispatch_gen=False, renewable_gen=False)
+    initialize_with_version(expected, STUDY_VERSION_9_3, True)
+    assert actual == expected
+
+    study.version = config.version = STUDY_VERSION_9_3
+    actual = thematic_trimming_manager.get_field_values(study)
+    expected = ThematicTrimming(dispatch_gen=True, renewable_gen=True)
+    initialize_with_version(expected, STUDY_VERSION_9_3, True)
     assert actual == expected

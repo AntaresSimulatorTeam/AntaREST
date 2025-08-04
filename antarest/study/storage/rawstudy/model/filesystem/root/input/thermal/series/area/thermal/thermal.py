@@ -34,11 +34,13 @@ class InputThermalSeriesAreaThermal(FolderNode):
                 self.config.next_file("CO2Cost.txt"),
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
+                should_exist=False,
             )
             children["fuelCost"] = InputSeriesMatrix(
                 self.matrix_mapper,
                 self.config.next_file("fuelCost.txt"),
                 freq=MatrixFrequency.HOURLY,
                 default_empty=default_scenario_hourly,
+                should_exist=False,
             )
         return children

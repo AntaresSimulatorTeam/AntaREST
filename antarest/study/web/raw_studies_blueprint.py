@@ -16,11 +16,13 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
+import pandas as pd
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
 from starlette.responses import FileResponse, JSONResponse, PlainTextResponse, Response, StreamingResponse
 
 from antarest.core.config import Config
+from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat
@@ -28,6 +30,7 @@ from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.service import StudyService
 from antarest.study.storage.df_download import export_file
 from antarest.study.storage.variantstudy.model.command.create_user_resource import ResourceType
@@ -70,6 +73,34 @@ DEFAULT_EXPORT_FORMAT = Query(TableExportFormat.CSV, alias="format", description
 PATH_TYPE = Annotated[str, Query(openapi_examples=get_path_examples())]
 
 
+class MatrixFormat(EnumIgnoreCase):
+    JSON = "json"
+    ARROW_COMPRESSED = "arrow compressed"
+    ARROW_UNCOMPRESSED = "arrow uncompressed"
+    PLAIN = "plain"
+
+    def serialize_dataframe(self, dataframe: pd.DataFrame) -> Response:
+        if self == MatrixFormat.PLAIN:
+            if dataframe.empty:
+                return Response(content=b"", media_type="application/octet-stream")
+            string_buffer = io.StringIO()
+            dataframe.to_csv(string_buffer, sep="\t", header=False, index=False)
+            return Response(content=string_buffer.getvalue(), media_type="text/csv")
+
+        buffer = io.BytesIO()
+        if self == MatrixFormat.JSON:
+            dataframe.to_json(buffer, orient="split")
+            return Response(content=buffer.getvalue(), media_type="application/json")
+
+        else:
+            compression_mapping = {
+                MatrixFormat.ARROW_COMPRESSED: None,
+                MatrixFormat.ARROW_UNCOMPRESSED: "uncompressed",
+            }
+            dataframe.to_feather(buffer, compression=compression_mapping[self])
+            return Response(content=buffer.getvalue(), media_type="application/vnd.apache.arrow.file")
+
+
 def create_raw_study_routes(
     study_service: StudyService,
     config: Config,
@@ -91,7 +122,13 @@ def create_raw_study_routes(
         tags=[APITag.study_raw_data],
         summary="Retrieve Raw Data from Study: JSON, Text, or File Attachment",
     )
-    def get_study_data(uuid: str, path: PATH_TYPE = "/", depth: int = 3, formatted: bool = True) -> Any:
+    def get_study_data(
+        uuid: str,
+        path: PATH_TYPE = "/",
+        depth: int = 3,
+        formatted: bool = True,
+        matrix_format: MatrixFormat | None = None,
+    ) -> Response:
         """
         Fetches raw data from a study, and returns the data
         in different formats based on the file type, or as a JSON response.
@@ -100,13 +137,24 @@ def create_raw_study_routes(
         - `uuid`: The UUID of the study.
         - `path`: The path to the data to fetch.
         - `depth`: The depth of the data to retrieve.
-        - `formatted`: A flag specifying whether the data should be returned in a formatted manner.
+        - `formatted`: Flag used to retrieve data from files which aren't matrices.
+        - `matrix_format`: An enum specifying the format in which the matrix should be returned.
 
         Returns the fetched data: a JSON object (in most cases), a plain text file
         or a file attachment (Microsoft Office document, TSV/TSV file...).
         """
         logger.info(f"📘 Fetching data at {path} (depth={depth}) from study {uuid}")
-        output = study_service.get(uuid, path, depth=depth, formatted=formatted)
+
+        output = study_service.get_raw_content(uuid, path, depth, formatted)
+
+        if isinstance(output, pd.DataFrame):
+            if matrix_format is None:
+                matrix_format = MatrixFormat.JSON if formatted else MatrixFormat.PLAIN
+            return matrix_format.serialize_dataframe(output)
+
+        if matrix_format in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
+            # The user asked for a format only supported for matrices.
+            raise IncorrectPathError(f"The provided path does not point to a valid matrix: '{path}'")
 
         if isinstance(output, bytes):
             # Guess the suffix form the target data
