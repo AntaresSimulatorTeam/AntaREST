@@ -440,12 +440,16 @@ def _get_v_9_1_exclude_fields() -> list[str]:
     ]
 
 
-def _check_version(thematic_trimming: ThematicTrimming, field: str, version: StudyVersion) -> None:
+def _check_version(
+    thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, field: str, version: StudyVersion
+) -> None:
     if getattr(thematic_trimming, field) is not None:
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
 
 
-def validate_against_version(thematic_trimming: ThematicTrimming, version: StudyVersion) -> None:
+def validate_thematic_trimming_against_version(
+    thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, version: StudyVersion
+) -> None:
     if version < STUDY_VERSION_8_1:
         for field in _get_v_8_1_fields():
             _check_version(thematic_trimming, field, version)

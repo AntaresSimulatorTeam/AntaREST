@@ -11,11 +11,13 @@
 # This file is part of the Antares project.
 from typing import List, Optional
 
+from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimmingUpdate,
     update_thematic_trimming,
+    validate_thematic_trimming_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
@@ -38,6 +40,11 @@ class UpdateThematicTrimming(ICommand):
     # ==================
 
     parameters: ThematicTrimmingUpdate
+
+    @model_validator(mode="after")
+    def validate_against_version(self) -> "UpdateThematicTrimming":
+        validate_thematic_trimming_against_version(self.parameters, self.study_version)
+        return self
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
