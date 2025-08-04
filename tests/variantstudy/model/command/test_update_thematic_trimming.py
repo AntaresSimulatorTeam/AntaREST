@@ -13,7 +13,6 @@
 import pytest
 from pydantic import ValidationError
 
-from antarest.study.business.model.config.advanced_parameters_model import AdvancedParametersUpdate
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimmingUpdate
 from antarest.study.model import (
     STUDY_VERSION_8,
@@ -22,7 +21,6 @@ from antarest.study.model import (
     STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.update_advanced_parameters import UpdateAdvancedParameters
 from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -31,20 +29,34 @@ class TestUpdateThematicTrimming:
     def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext):
         study = empty_study_880
         general_data_content = study.tree.get(["settings", "generaldata"])
+        assert "variables selection" not in general_data_content
 
-        args = {"power_fluctuations": "minimize ramping", "seed_tsgen_thermal": 33}
-        parameters = AdvancedParametersUpdate.model_validate(args)
+        args = {"npcap_hours": False, "mrg_price": False}
+        parameters = ThematicTrimmingUpdate.model_validate(args)
 
-        command = UpdateAdvancedParameters(
+        command = UpdateThematicTrimming(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
         output = command.apply(study_data=study)
         assert output.status
 
-        general_data_content["seeds - Mersenne Twister"]["seed-tsgen-thermal"] = 33
-        general_data_content["other preferences"]["power-fluctuations"] = "minimize ramping"
+        actual_content = study.tree.get(["settings", "generaldata"])
+        assert actual_content["variables selection"] == {
+            "select_var -": ["MRG. PRICE", "NPCAP HOURS"],
+            "selected_vars_reset": True,
+        }
 
-        assert general_data_content == study.tree.get(["settings", "generaldata"])
+        args = {"npcap_hours": True}
+        parameters = ThematicTrimmingUpdate.model_validate(args)
+
+        command = UpdateThematicTrimming(
+            parameters=parameters, command_context=command_context, study_version=study.config.version
+        )
+        output = command.apply(study_data=study)
+        assert output.status
+
+        actual_content = study.tree.get(["settings", "generaldata"])
+        assert actual_content["variables selection"] == {"select_var -": ["MRG. PRICE"], "selected_vars_reset": True}
 
     def test_error_cases(self, command_context: CommandContext):
         # Give fields that do not match the version
