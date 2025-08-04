@@ -193,9 +193,6 @@ def parse_thematic_trimming(study_version: StudyVersion, data: Any) -> ThematicT
     return thematic_trimming
 
 
-def serialize_thematic_trimming(
-    study_version: StudyVersion, thematic_trimming_update: ThematicTrimming, current_thematic_trimming: ThematicTrimming
-) -> dict[str, Any]:
-    validate_against_version(thematic_trimming_update, study_version)
-    new_trimming = current_thematic_trimming.model_copy(update=thematic_trimming_update.model_dump(exclude_none=True))
-    return ThematicTrimmingFileData.to_ini_file(new_trimming)
+def serialize_thematic_trimming(study_version: StudyVersion, thematic_trimming: ThematicTrimming) -> dict[str, Any]:
+    validate_against_version(thematic_trimming, study_version)
+    return ThematicTrimmingFileData.to_ini_file(thematic_trimming)
