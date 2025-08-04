@@ -23,7 +23,7 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 # Symbols used in scenario builder data
-_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
+_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp", "sts"
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
 _CLUSTER_RELATED_SYMBOLS = "t", "r"
@@ -52,6 +52,8 @@ class ScenarioType(enum.StrEnum):
     - HYDRO_INITIAL_LEVEL: hydraulic Initial level scenario
     - HYDRO_FINAL_LEVEL: hydraulic Final level scenario
     - HYDRO_GENERATION_POWER: hydraulic Generation power scenario
+    - SHORT_TERM_STORAGE: Short term storage scenario
+
     """
 
     LOAD = "load"
@@ -65,6 +67,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_INITIAL_LEVEL = "hydroInitialLevels"
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
+    SHORT_TERM_STORAGE = "shortTermStorage"
 
     @override
     def __str__(self) -> str:
@@ -84,6 +87,7 @@ SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.HYDRO_INITIAL_LEVEL: "hl",
     ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
     ScenarioType.HYDRO_GENERATION_POWER: "hgp",
+    ScenarioType.SHORT_TERM_STORAGE: "sts",
 }
 
 

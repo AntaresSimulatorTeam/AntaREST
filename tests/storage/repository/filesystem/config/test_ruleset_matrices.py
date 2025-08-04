@@ -29,6 +29,7 @@ SCENARIO_TYPES = {
     "hl": "hydroInitialLevels",
     "hfl": "hydroFinalLevels",
     "hgp": "hydroGenerationPower",
+    "sts": "shortTermStorage",
 }
 
 
@@ -77,6 +78,8 @@ class TestRulesetMatrices:
         assert ruleset.scenarios["hydroFinalLevels"].index.tolist() == ["France", "Germany", "Italy"]
         assert ruleset.scenarios["hydroGenerationPower"].shape == (3, 4)
         assert ruleset.scenarios["hydroGenerationPower"].index.tolist() == ["France", "Germany", "Italy"]
+        assert ruleset.scenarios["shortTermStorage"].shape == (3, 4)
+        assert ruleset.scenarios["shortTermStorage"].index.tolist() == ["France", "Germany", "Italy"]
 
     @pytest.mark.parametrize(
         "symbol, scenario_type",
@@ -86,6 +89,7 @@ class TestRulesetMatrices:
             ("w", "wind"),
             ("s", "solar"),
             ("hgp", "hydroGenerationPower"),
+            ("sts", "shortTermStorage"),
         ],
     )
     def test_update_rules__load(self, ruleset: RulesetMatrices, symbol: str, scenario_type: str) -> None:
@@ -259,6 +263,30 @@ class TestRulesetMatrices:
         for rule_id, ts_number in actual_rules.items():
             assert isinstance(ts_number, int)
 
+    def test_update_rules__short_term_storage(self, ruleset: RulesetMatrices) -> None:
+        rules = {
+            "sts,france,0": 1,
+            "sts,germany,0": 2,
+            "sts,italy,0": 3,
+            "sts,france,1": 4,
+            "sts,germany,1": 5,
+            "sts,italy,1": 6,
+        }
+        ruleset.update_rules(rules)
+        actual = ruleset.scenarios["shortTermStorage"]
+        actual = actual.fillna("NaN").to_dict(orient="index")
+        expected = {
+            "France": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
+            "Germany": {"0": 2, "1": 5, "2": "NaN", "3": "NaN"},
+            "Italy": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
+        }
+        assert actual == expected
+
+        actual_rules = ruleset.get_rules()
+        assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
+
     def test_update_rules__binding_constraints(self, ruleset: RulesetMatrices) -> None:
         rules = {
             "bc,main,0": 1,
@@ -408,6 +436,11 @@ class TestRulesetMatrices:
                 "Germany": {"0": 121, "1": 122, "2": 123, "3": 124},
                 "Italy": {"0": 125, "1": 126, "2": 127, "3": 128},
             },
+            "shortTermStorage": {
+                "France": {"0": 129, "1": 130, "2": 131, "3": 132},
+                "Germany": {"0": 133, "1": 134, "2": 135, "3": 136},
+                "Italy": {"0": 137, "1": 138, "2": 139, "3": 140},
+            },
         }
         for scenario_type, table in table_form.items():
             ruleset.set_table_form(table, scenario_type)
@@ -455,6 +488,18 @@ class TestRulesetMatrices:
             "hgp,italy,1": 126,
             "hgp,italy,2": 127,
             "hgp,italy,3": 128,
+            "sts,france,0": 129,
+            "sts,france,1": 130,
+            "sts,france,2": 131,
+            "sts,france,3": 132,
+            "sts,germany,0": 133,
+            "sts,germany,1": 134,
+            "sts,germany,2": 135,
+            "sts,germany,3": 136,
+            "sts,italy,0": 137,
+            "sts,italy,1": 138,
+            "sts,italy,2": 139,
+            "sts,italy,3": 140,
             "hl,france,0": 0.93,
             "hl,france,1": 0.94,
             "hl,france,2": 0.95,
@@ -558,6 +603,8 @@ class TestRulesetMatrices:
         assert ruleset.get_table_form("hydroInitialLevels") == table_form["hydroInitialLevels"]
         assert ruleset.get_table_form("hydroFinalLevels") == table_form["hydroFinalLevels"]
         assert ruleset.get_table_form("hydroGenerationPower") == table_form["hydroGenerationPower"]
+        assert ruleset.get_table_form("shortTermStorage") == table_form["shortTermStorage"]
+
         # fmt: on
 
         with pytest.raises(KeyError):

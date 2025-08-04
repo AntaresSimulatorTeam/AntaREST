@@ -22,6 +22,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_7,
     STUDY_VERSION_9_1,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -50,6 +51,7 @@ class ScenarioBuilder(IniFileNode):
     | hydro initial levels   |   hl   | `hl,<area>,<year> = <Level>`               |     8.0      |
     | hydro final levels     |  hfl   | `hfl,<area>,<year> = <Level>`              |     9.2      |
     | hydro generation power |  hgp   | `hgp,<area>,<year> = <TS number>`          |     9.1      |
+    | short term storage     |  sts   | `sts,<area>,<year> = <TS number>`          |     9.3      |
 
     Legend:
     - `<area>`: The area ID (in lower case).
@@ -81,6 +83,8 @@ class ScenarioBuilder(IniFileNode):
             self._populate_hydro_final_level_rules(rules)
         if study_version >= STUDY_VERSION_9_1:
             self._populate_hydro_generation_power_rules(rules)
+        if study_version >= STUDY_VERSION_9_3:
+            self._populate_sts_rules(rules)
 
         super().__init__(
             config=config,
@@ -122,6 +126,10 @@ class ScenarioBuilder(IniFileNode):
     def _populate_hydro_generation_power_rules(self, rules: _Rules) -> None:
         for area_id in self.config.areas:
             rules[f"hgp,{area_id},0"] = _TSNumber
+
+    def _populate_sts_rules(self, rules: _Rules) -> None:
+        for area_id in self.config.areas:
+            rules[f"sts,{area_id},0"] = _TSNumber
 
     @override
     def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:

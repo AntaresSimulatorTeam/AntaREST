@@ -31,6 +31,7 @@ export const SCENARIOS = [
   "hydroInitialLevels",
   "bindingConstraints",
   "hydroFinalLevels", // Since v9.2
+  "shortTermStorage", // Since v9.3
 ] as const;
 
 export type ScenarioType = (typeof SCENARIOS)[number];
@@ -122,6 +123,7 @@ export interface ScenarioConfig {
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints?: GenericScenarioConfig;
   hydroFinalLevels?: GenericScenarioConfig;
+  shortTermStorage?: GenericScenarioConfig;
 }
 
 type NonNullableRulesetConfig = {
@@ -141,6 +143,7 @@ export interface HandlerReturnTypes {
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints: GenericScenarioConfig;
   hydroFinalLevels: GenericScenarioConfig;
+  shortTermStorage: GenericScenarioConfig;
 }
 
 const handlers: {
@@ -159,6 +162,7 @@ const handlers: {
   hydroInitialLevels: handleGenericConfig,
   bindingConstraints: handleGenericConfig,
   hydroFinalLevels: handleGenericConfig,
+  shortTermStorage: handleGenericConfig,
 };
 
 /**

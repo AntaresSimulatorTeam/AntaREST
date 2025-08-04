@@ -29,6 +29,7 @@ SCENARIO_TYPES = {
     "hl": "hydro-initial-levels",
     "hfl": "hydro-final-levels",
     "hgp": "hydro-generation-power",
+    "sts": "short-term-storage",
 }
 
 _Value: te.TypeAlias = int | float
@@ -41,7 +42,7 @@ SimpleTableForm: te.TypeAlias = Dict[str, Dict[str, int | float | str | None]]
 ClusterTableForm: te.TypeAlias = Dict[str, SimpleTableForm]
 TableForm: te.TypeAlias = SimpleTableForm | ClusterTableForm
 
-_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "hgp"
+_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "hgp", "sts"
 _BINDING_CONSTRAINTS_RELATED_SYMBOLS = ("bc",)
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
