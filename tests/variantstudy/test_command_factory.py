@@ -20,7 +20,7 @@ import pytest
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -965,6 +965,17 @@ COMMANDS = [
         ),
         None,
         id="remove_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_THEMATIC_TRIMMING.value,
+            args=[
+                {"parameters": {"ov_cost": False, "sts_by_group": True, "dispatch_gen": False}},
+            ],
+            study_version=STUDY_VERSION_9_3,
+        ),
+        None,
+        id="update_thematic_trimming",
     ),
 ]
 

@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import GENERAL_DATA_PATH
-from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming import (
-    parse_thematic_trimming,
-    serialize_thematic_trimming,
+from antarest.study.business.model.thematic_trimming_model import (
+    ThematicTrimming,
+    ThematicTrimmingUpdate,
+    update_thematic_trimming,
 )
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -26,26 +25,24 @@ class ThematicTrimmingManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_field_values(self, study: StudyInterface) -> ThematicTrimming:
+    def get_thematic_trimming(self, study: StudyInterface) -> ThematicTrimming:
         """
         Get Thematic Trimming field values for the webapp form
         """
-        file_study = study.get_files()
-        config = file_study.tree.get(GENERAL_DATA_PATH.split("/"))
-        trimming_config = config.get("variables selection") or {}
-        return parse_thematic_trimming(study.version, trimming_config)
+        return study.get_study_dao().get_thematic_trimming()
 
-    def set_field_values(self, study: StudyInterface, thematic_trimming: ThematicTrimming) -> None:
+    def update_thematic_trimming(self, study: StudyInterface, trimming: ThematicTrimmingUpdate) -> ThematicTrimming:
         """
         Set Thematic Trimming config from the webapp form
         """
-        current_thematic_trimming = self.get_field_values(study)
-        data = serialize_thematic_trimming(study.version, thematic_trimming, current_thematic_trimming)
+        current_thematic_trimming = self.get_thematic_trimming(study)
+        final_thematic_trimming = update_thematic_trimming(current_thematic_trimming, trimming)
 
-        command = UpdateConfig(
-            target="settings/generaldata/variables selection",
-            data=data,
+        command = UpdateThematicTrimming(
+            parameters=trimming,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
+
+        return final_thematic_trimming
