@@ -19,7 +19,7 @@ from pydantic import Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
-    initialize_with_version,
+    initialize_thematic_trimming,
     validate_against_version,
 )
 
@@ -189,7 +189,7 @@ def parse_thematic_trimming(study_version: StudyVersion, data: Any) -> ThematicT
     thematic_trimming_file_data, default_value = ThematicTrimmingFileData.parse_ini_file(data, study_version)
     thematic_trimming = thematic_trimming_file_data.to_model()
     validate_against_version(thematic_trimming, study_version)
-    initialize_with_version(thematic_trimming, study_version, default_value)
+    initialize_thematic_trimming(thematic_trimming, study_version, default_value)
     return thematic_trimming
 
 

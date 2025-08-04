@@ -13,7 +13,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, update_thematic_trimming
+from antarest.study.business.model.thematic_trimming_model import (
+    ThematicTrimmingUpdate,
+    update_thematic_trimming,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -34,12 +37,12 @@ class UpdateThematicTrimming(ICommand):
     # Command parameters
     # ==================
 
-    parameters: ThematicTrimming
+    parameters: ThematicTrimmingUpdate
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         current_thematic_trimming = study_data.get_thematic_trimming()
-        final_thematic_trimming = update_thematic_trimming(current=current_thematic_trimming, new=self.parameters)
+        final_thematic_trimming = update_thematic_trimming(current_thematic_trimming, self.parameters)
         study_data.save_thematic_trimming(final_thematic_trimming)
         return command_succeeded("Thematic trimming updated successfully.")
 

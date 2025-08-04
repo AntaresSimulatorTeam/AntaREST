@@ -21,8 +21,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thematic_trimming i
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
-GENERAL_DATA_PATH = ["settings", "generaldata"]
-
 
 class FileStudyThematicTrimmingDao(ThematicTrimmingDao, ABC):
     @abstractmethod
@@ -32,7 +30,7 @@ class FileStudyThematicTrimmingDao(ThematicTrimmingDao, ABC):
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         file_study = self.get_file_study()
-        general_data = file_study.tree.get(GENERAL_DATA_PATH)
+        general_data = file_study.tree.get(["settings", "generaldata"])
         trimming_config = general_data.get("variables selection") or {}
         return parse_thematic_trimming(file_study.config.version, trimming_config)
 
