@@ -67,13 +67,3 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
         raising: bool = False,
     ) -> List[str]:
         return []
-
-    @override
-    def normalize(self) -> None:
-        # this is not normalizable
-        pass
-
-    @override
-    def denormalize(self) -> None:
-        # this is not normalizable
-        pass
