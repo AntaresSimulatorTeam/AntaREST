@@ -153,7 +153,6 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         and write the matrix data to the file specified by `self.config.path`
         before removing the link file.
         """
-        logger.info(f"Denormalizing matrix {self.config.path}")
         self.matrix_mapper.denormalize(self)
 
     @override
