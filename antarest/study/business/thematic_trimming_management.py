@@ -24,17 +24,17 @@ class ThematicTrimmingManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_field_values(self, study: StudyInterface) -> ThematicTrimming:
+    def get_thematic_trimming(self, study: StudyInterface) -> ThematicTrimming:
         """
         Get Thematic Trimming field values for the webapp form
         """
         return study.get_study_dao().get_thematic_trimming()
 
-    def set_field_values(self, study: StudyInterface, thematic_trimming: ThematicTrimming) -> None:
+    def set_thematic_trimming(self, study: StudyInterface, thematic_trimming: ThematicTrimming) -> None:
         """
         Set Thematic Trimming config from the webapp form
         """
-        current_thematic_trimming = self.get_field_values(study)
+        current_thematic_trimming = self.get_thematic_trimming(study)
         data = serialize_thematic_trimming(study.version, thematic_trimming, current_thematic_trimming)
 
         command = UpdateConfig(

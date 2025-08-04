@@ -70,55 +70,55 @@ def test_thematic_trimming_config(command_context: CommandContext) -> None:
     study.get_files.return_value = FileStudy(config=config, tree=file_tree_mock)
 
     study.version = config.version = STUDY_VERSION_7_0
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming()
     initialize_with_version(expected, STUDY_VERSION_7_0, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(avl_dtg=False)
     initialize_with_version(expected, STUDY_VERSION_8, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_2
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(avl_dtg=False)
     initialize_with_version(expected, STUDY_VERSION_8_2, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_3
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(dens=False, profit_by_plant=False)
     initialize_with_version(expected, STUDY_VERSION_8_3, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_4
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(cong_fee_alg=True)
     initialize_with_version(expected, STUDY_VERSION_8_4, False)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_8_6
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(sts_inj_by_plant=False)
     initialize_with_version(expected, STUDY_VERSION_8_6, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_9_1
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(sts_by_group=False)
     initialize_with_version(expected, STUDY_VERSION_9_1, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_9_3
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(dispatch_gen=False, renewable_gen=False)
     initialize_with_version(expected, STUDY_VERSION_9_3, True)
     assert actual == expected
 
     study.version = config.version = STUDY_VERSION_9_3
-    actual = thematic_trimming_manager.get_field_values(study)
+    actual = thematic_trimming_manager.get_thematic_trimming(study)
     expected = ThematicTrimming(dispatch_gen=True, renewable_gen=True)
     initialize_with_version(expected, STUDY_VERSION_9_3, True)
     assert actual == expected

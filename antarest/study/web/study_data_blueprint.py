@@ -397,7 +397,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.thematic_trimming_manager.get_field_values(study_interface)
+        return study_service.thematic_trimming_manager.get_thematic_trimming(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/thematictrimming/form",
@@ -408,7 +408,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.thematic_trimming_manager.set_field_values(study_interface, field_values)
+        study_service.thematic_trimming_manager.set_thematic_trimming(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/playlist/form",
