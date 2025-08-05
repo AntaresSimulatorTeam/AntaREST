@@ -157,6 +157,7 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResourceData,
 )
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_study_author import ReplaceStudyAuthor
 from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
@@ -1549,6 +1550,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         self.assert_study_unarchived(study)
         new_owner = self.user_service.get_user(owner_id)
+        assert new_owner is not None
         study.owner = new_owner
         self.repository.save(study)
         self.event_bus.push(
@@ -1559,8 +1561,13 @@ class StudyService:
             )
         )
 
-        owner_name = None if new_owner is None else new_owner.name
-        self._edit_study_using_command(study=study, url="study/antares/author", data=owner_name)
+        args = {
+            "author": new_owner.name,
+            "study_version": study.version,
+            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
+        }
+        command = ReplaceStudyAuthor.model_validate(args)
+        self.get_study_interface(study).add_commands([command])
 
         logger.info(
             "user %s change study %s owner to %d",
