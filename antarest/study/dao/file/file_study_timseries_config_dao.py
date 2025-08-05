@@ -26,7 +26,10 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         file_study = self.get_file_study()
-        nb_ts_gen_thermal = file_study.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"])
+        try:
+            nb_ts_gen_thermal = file_study.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"])
+        except KeyError:
+            nb_ts_gen_thermal = 1
         return TimeSeriesConfiguration.model_validate({"thermal": {"number": nb_ts_gen_thermal}})
 
     @override
