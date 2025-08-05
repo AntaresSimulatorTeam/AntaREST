@@ -966,6 +966,15 @@ COMMANDS = [
         None,
         id="remove_st_storage_additional_constraints",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_STUDY_AUTHOR.value,
+            args=[{"author": "Pirate Hunter"}],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="replace_study_author",
+    ),
 ]
 
 
