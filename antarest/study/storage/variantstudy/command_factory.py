@@ -86,6 +86,7 @@ from antarest.study.storage.variantstudy.model.command.update_st_storage_additio
 )
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
+from antarest.study.storage.variantstudy.model.command.update_timeseries_config import UpdateTimeSeriesConfig
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -142,6 +143,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: CreateSTStorageAdditionalConstraints,
     CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: UpdateSTStorageAdditionalConstraints,
     CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: RemoveMultipleSTStorageConstraints,
+    CommandName.UPDATE_TIMESERIES_CONFIG.value: UpdateTimeSeriesConfig,
 }
 
 

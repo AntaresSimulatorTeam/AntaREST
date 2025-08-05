@@ -15,6 +15,7 @@ from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfigurationUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.update_timeseries_config import UpdateTimeSeriesConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -34,4 +35,8 @@ class TimeSeriesConfigManager:
         """
         Set Time-Series generation values
         """
-        raise NotImplementedError()
+        command = UpdateTimeSeriesConfig(
+            command_context=self._command_context, study_version=study.version, parameters=config
+        )
+        study.add_commands([command])
+        return self.get_timeseries_configuration(study)
