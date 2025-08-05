@@ -17,6 +17,8 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
+TIMESERIES_PATH = ["settings", "generaldata", "general", "nbtimeseriesthermal"]
+
 
 class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @abstractmethod
@@ -26,8 +28,11 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         file_study = self.get_file_study()
+        nb_ts_gen_thermal: int
         try:
-            nb_ts_gen_thermal = file_study.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"])
+            data = file_study.tree.get(TIMESERIES_PATH)
+            assert isinstance(data, int)
+            nb_ts_gen_thermal = data
         except KeyError:
             nb_ts_gen_thermal = 1
         return TimeSeriesConfiguration.model_validate({"thermal": {"number": nb_ts_gen_thermal}})
@@ -35,4 +40,4 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
         file_study = self.get_file_study()
-        file_study.tree.save(config.thermal.number, ["settings", "generaldata", "general", "nbtimeseriesthermal"])
+        file_study.tree.save(config.thermal.number, TIMESERIES_PATH)
