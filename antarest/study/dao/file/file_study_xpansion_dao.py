@@ -124,8 +124,8 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             if file := getattr(settings, field, None):
                 file_type = field.split("_")[1]
                 try:
-                    constraints_url = ["user", "expansion", file_type, file]
-                    file_study.tree.get(constraints_url)
+                    file_url = ["user", "expansion", file_type, file]
+                    file_study.tree.get(file_url)
                 except ChildNotFoundError:
                     msg = f"Additional {file_type} file '{file}' does not exist"
                     raise XpansionFileNotFoundError(msg) from None
