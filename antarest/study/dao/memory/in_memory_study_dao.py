@@ -36,7 +36,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -587,3 +587,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
         self._xpansion_settings = settings
+
+    @override
+    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
+        return set()

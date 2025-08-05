@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
 
 
 class ReadOnlyXpansionDao(ABC):
@@ -35,6 +35,10 @@ class ReadOnlyXpansionDao(ABC):
 
     @abstractmethod
     def get_xpansion_settings(self) -> XpansionSettings:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
         raise NotImplementedError()
 
 

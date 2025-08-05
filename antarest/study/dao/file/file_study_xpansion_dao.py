@@ -22,7 +22,7 @@ from antarest.core.exceptions import (
     XpansionCandidateDeletionError,
     XpansionFileNotFoundError,
 )
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -90,6 +90,34 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
         raise NotImplementedError()
+
+    @override
+    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
+        """
+        Checks yearly_weights and additional_constraints fields.
+        - If the attributes are given, it means that the user wants to select a file.
+          It is therefore necessary to check that the file exists.
+        - Else, it means the user want to deselect the additional constraints file,
+         but he does not want to delete it from the expansion configuration folder.
+
+        Returns:
+            set[str] -- The fields to not save inside the ini.file
+        """
+        file_study = self.get_file_study()
+        excludes = {"sensitivity_config"}
+        for field in ["additional_constraints", "yearly_weights"]:
+            if file := getattr(settings, field, None):
+                file_type = field.split("_")[1]
+                try:
+                    constraints_url = ["user", "expansion", file_type, file]
+                    file_study.tree.get(constraints_url)
+                except ChildNotFoundError:
+                    msg = f"Additional {file_type} file '{file}' does not exist"
+                    raise XpansionFileNotFoundError(msg) from None
+            else:
+                excludes.add(field)
+
+        return excludes
 
     def _save_candidates(self, content: dict[str, Any]) -> None:
         self.get_file_study().tree.save(content, ["user", "expansion", "candidates"])

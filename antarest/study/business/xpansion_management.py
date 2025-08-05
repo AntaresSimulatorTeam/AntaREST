@@ -49,9 +49,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    checks_settings_are_correct_and_returns_fields_to_exclude,
     get_resource_dir,
-    get_xpansion_settings,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -75,16 +73,15 @@ class XpansionManager:
 
     def get_xpansion_settings(self, study: StudyInterface) -> XpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
-        file_study = study.get_files()
-        return get_xpansion_settings(file_study)
+        return study.get_study_dao().get_xpansion_settings()
 
     def update_xpansion_settings(
         self, study: StudyInterface, new_xpansion_settings: XpansionSettingsUpdate
     ) -> XpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
         # Checks settings are correct
-        file_study = study.get_files()
-        checks_settings_are_correct_and_returns_fields_to_exclude(new_xpansion_settings, file_study)
+        study_dao = study.get_study_dao()
+        study_dao.checks_settings_are_correct_and_returns_fields_to_exclude(new_xpansion_settings)
         command = UpdateXpansionSettings(
             settings=new_xpansion_settings, command_context=self._command_context, study_version=study.version
         )
