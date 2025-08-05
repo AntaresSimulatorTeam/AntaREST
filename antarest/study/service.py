@@ -1561,11 +1561,8 @@ class StudyService:
             )
         )
 
-        args = {
-            "author": new_owner.name,
-            "study_version": study.version,
-            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
-        }
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        args = {"author": new_owner.name, "study_version": study.version, "command_context": command_context}
         command = ReplaceStudyAuthor.model_validate(args)
         self.get_study_interface(study).add_commands([command])
 
