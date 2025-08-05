@@ -116,7 +116,12 @@ def parse_xpansion_settings(data: Any) -> XpansionSettings:
 
 
 def serialize_xpansion_settings(settings: XpansionSettings) -> dict[str, Any]:
-    return XpansionSettingsFileData.from_model(settings).model_dump()
+    data = XpansionSettingsFileData.from_model(settings).model_dump()
+    # Exclude `yearly-weights` and `additional-constraints` if they are an empty str
+    for field in ["yearly_weights", "additional_constraints"]:
+        if not data[field]:
+            del data[field]
+    return data
 
 
 class XpansionSensitivitySettingsFileData(AntaresBaseModel):
