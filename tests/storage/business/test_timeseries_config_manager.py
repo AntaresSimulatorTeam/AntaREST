@@ -51,9 +51,11 @@ def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext
     config_manager = TimeSeriesConfigManager(command_context)
 
     # Asserts the get method returns the right value
-    assert config_manager.get_values(study) == TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=1))
+    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfigDTO(
+        thermal=TimeSeriesTypeConfig(number=1)
+    )
 
     # Modifies the value and asserts the get takes the modification into account
     new_value = TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=2))
-    config_manager.set_values(study, new_value)
-    assert config_manager.get_values(study) == new_value
+    config_manager.set_timeseries_configuration(study, new_value)
+    assert config_manager.get_timeseries_configuration(study) == new_value
