@@ -96,7 +96,7 @@ def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> Di
 class AdequacyPatchExtension(ILauncherExtension):
     EXTENSION_NAME = "adequacy_patch"
 
-    def __init__(self, study_service: StudyService, config: Config):
+    def __init__(self, study_service: "StudyService", config: Config):
         self.study_service = study_service
 
     @override
