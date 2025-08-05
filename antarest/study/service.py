@@ -2396,11 +2396,8 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
 
-        args = {
-            "data": command_data,
-            "study_version": study.version,
-            "command_context": self.storage_service.variant_study_service.command_factory.command_context,
-        }
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        args = {"data": command_data, "study_version": study.version, "command_context": command_context}
         command = command_class.model_validate(args)
         file_study = self.get_file_study(study)
         try:
