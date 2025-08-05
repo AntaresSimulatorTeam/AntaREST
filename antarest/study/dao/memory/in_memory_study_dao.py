@@ -23,6 +23,7 @@ from antarest.study.business.model.binding_constraint_model import BindingConstr
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -127,6 +128,8 @@ class InMemoryStudyDao(StudyDao):
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
+        # TimeSeries config
+        self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -578,3 +581,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         return
+
+    @override
+    def get_timeseries_config(self) -> TimeSeriesConfiguration:
+        return self._timeseries_config
+
+    @override
+    def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
+        self._timeseries_config = config

@@ -18,7 +18,7 @@ class TimeSeriesType(AntaresBaseModel, extra="forbid", validate_assignment=True,
 
 
 class TimeSeriesConfiguration(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):
-    thermal: TimeSeriesType
+    thermal: TimeSeriesType = TimeSeriesType()
 
 
 class TimeSeriesConfigurationUpdate(AntaresBaseModel, extra="forbid", validate_assignment=True, populate_by_name=True):

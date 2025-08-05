@@ -11,16 +11,22 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 
+from typing_extensions import override
+
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
-class ReadOnlyTimeSeriesConfigDao(ABC):
+class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @abstractmethod
+    def get_file_study(self) -> FileStudy:
+        pass
+
+    @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         raise NotImplementedError()
 
-
-class TimeSeriesConfigDao(ReadOnlyTimeSeriesConfigDao):
-    @abstractmethod
+    @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
         raise NotImplementedError()
