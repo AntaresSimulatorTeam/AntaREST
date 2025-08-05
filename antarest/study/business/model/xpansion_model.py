@@ -119,8 +119,9 @@ class XpansionSettingsUpdate(AntaresBaseModel, extra="ignore", validate_assignme
     DTO object used to update the Xpansion settings.
 
     Fields with a value of `None` are ignored, this allows a partial update of the settings.
-    For that reason the fields "yearly-weights" and "additional-constraints" must
-    be set to "" instead of `None` if you want to remove the file.
+    But there's a special logic for two fields: "yearly-weights" and "additional-constraints".
+    When the user wants to unselect a value for these fields, we have to remove them from the file.
+    For that reason, they must be given if you want to preserve them. Otherwise, they will be removed from the file.
     """
 
     master: Master | None = None
@@ -148,6 +149,9 @@ def update_xpansion_settings(settings: XpansionSettings, data: XpansionSettingsU
     if "sensitivity_config" in update_settings:
         current_settings["sensitivity_config"].update(update_settings.pop("sensitivity_config"))
     current_settings.update(update_settings)
+    for field in ["additional_constraints", "yearly_weights"]:
+        if not getattr(update_settings, field, None):
+            setattr(current_settings, field, None)
     return XpansionSettings.model_validate(current_settings)
 
 
