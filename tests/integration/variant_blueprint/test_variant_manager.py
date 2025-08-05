@@ -167,9 +167,8 @@ def test_variant_manager(
         res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
         assert len(res.json()) == 1
         command = res.json()[0]
-        assert command["action"] == "update_config"
-        assert command["args"]["target"] == "study"
-        assert command["args"]["data"]["antares"]["author"] == "admin"
+        assert command["action"] == "replace_study_author"
+        assert command["args"] == {"author": "admin"}
 
         res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
         assert len(res.json()) == 1
