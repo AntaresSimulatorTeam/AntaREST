@@ -127,6 +127,8 @@ class InMemoryStudyDao(StudyDao):
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
+        # Study owner
+        self._owner = "Unknown"
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -134,6 +136,10 @@ class InMemoryStudyDao(StudyDao):
         To ease transition, to be removed when all goes through other methods
         """
         raise NotImplementedError()
+
+    @override
+    def change_study_owner(self, new_owner: str) -> None:
+        self._owner = new_owner
 
     @override
     def get_version(self) -> StudyVersion:

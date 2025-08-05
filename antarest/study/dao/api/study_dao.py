@@ -95,6 +95,10 @@ class StudyDao(
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def change_study_owner(self, new_owner: str) -> None:
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
