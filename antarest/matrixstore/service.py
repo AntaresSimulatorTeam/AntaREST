@@ -48,6 +48,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixReference,
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
@@ -55,7 +56,6 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataS
 if TYPE_CHECKING:
     from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
     from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-    from antarest.study.service import StudyService
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -82,9 +82,6 @@ Therefore, we rely on this version to know how to read the matrices
 
 
 class ISimpleMatrixService(ABC):
-    def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
-        self.matrix_content_repository = matrix_content_repository
-
     @abstractmethod
     def create(self, data: pd.DataFrame) -> str:
         """
@@ -139,7 +136,7 @@ class ISimpleMatrixService(ABC):
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
-        super().__init__(matrix_content_repository=matrix_content_repository)
+        self.matrix_content_repository = matrix_content_repository
         self.usage_providers: List[IMatrixUsageProvider] = []
 
     @override
@@ -214,7 +211,7 @@ class MatrixService(ISimpleMatrixService):
         config: Config,
         user_service: LoginService,
     ):
-        super().__init__(matrix_content_repository=matrix_content_repository)
+        self.matrix_content_repository = matrix_content_repository
         self.repo = repo
         self.repo_dataset = repo_dataset
         self.user_service = user_service
@@ -222,6 +219,27 @@ class MatrixService(ISimpleMatrixService):
         self.task_service = task_service
         self.config = config
         self.usage_providers: List[IMatrixUsageProvider] = []
+        self.usage_providers.append(self.create_dataset_usage_provider())
+
+    def create_dataset_usage_provider(self) -> IMatrixUsageProvider:
+        repo_dataset = self.repo_dataset
+
+        class DatasetUsageProvider(IMatrixUsageProvider):
+            def __init__(self, matrix_service: "MatrixService") -> None:
+                matrix_service.register_usage_provider(self)
+
+            @override
+            def get_matrix_usage(self) -> list[MatrixReference]:
+                logger.info("Getting all matrices used in datasets")
+                datasets = repo_dataset.get_all_datasets()
+
+                return [
+                    MatrixReference(matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}")
+                    for dataset in datasets
+                    for matrix in dataset.matrices
+                ]
+
+        return DatasetUsageProvider(self)
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -558,35 +576,23 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
-    def get_datasets_matrices(self) -> Set[str]:
-        # Matrix_service
-        logger.info("Getting all matrices used in datasets")
-        datasets = self.repo_dataset.get_all_datasets()
-        return {matrix.matrix_id for dataset in datasets for matrix in dataset.matrices}
-
     def create_matrix_gc(
         self,
         config: Config,
-        study_service: "StudyService",
     ) -> "MatrixGarbageCollector":
         return MatrixGarbageCollector(
             config=config,
-            study_service=study_service,
             matrix_service=self,
-            matrices_usage_providers=self.usage_providers,
         )
 
-    def get_studies_matrices(self) -> Set[str]:
-        logger.info("Getting all matrices used in raw studies")
-
+    def get_used_matrices(self) -> Set[str]:
+        """Return all matrices used in raw studies, variant studies and datasets"""
+        # renvoie toujours un set
+        # datasets_matrices = self.get_datasets_matrices()
+        # studies_matrices = self.get_studies_matrices()
+        # return studies_matrices | datasets_matrices
         return {
             matrix_reference.matrix_id
             for provider in self.usage_providers
             for matrix_reference in provider.get_matrix_usage()
         }
-
-    def get_used_matrices(self) -> Set[str]:
-        """Return all matrices used in raw studies, variant studies and datasets"""
-        datasets_matrices = self.get_datasets_matrices()
-        studies_matrices = self.get_studies_matrices()
-        return studies_matrices | datasets_matrices

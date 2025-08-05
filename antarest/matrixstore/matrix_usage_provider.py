@@ -15,6 +15,10 @@ from antarest.matrixstore.model import MatrixReference
 
 
 class IMatrixUsageProvider(ABC):
+    """
+    Provide informations about which matrices are used by a client of the matrix service
+    """
+
     @abstractmethod
     def get_matrix_usage(self) -> list[MatrixReference]:
         raise NotImplementedError()

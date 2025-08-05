@@ -74,6 +74,7 @@ from antarest.study.storage.utils import (
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
+from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
@@ -115,6 +116,9 @@ class VariantStudyService(AbstractStorageService):
         self.event_bus = event_bus
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
+        CommandMatrixUsageProvider(
+            variant_study_service=self, matrix_service=self.command_factory.command_context.matrix_service
+        )
 
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:

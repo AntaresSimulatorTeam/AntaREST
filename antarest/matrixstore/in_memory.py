@@ -17,7 +17,7 @@ from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixMetadataDTO
-from antarest.matrixstore.repository import MatrixContentRepository, compute_hash
+from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
 
@@ -26,8 +26,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
     In memory implementation of matrix service, for unit testing purposes.
     """
 
-    def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
-        super().__init__(matrix_content_repository)
+    def __init__(self) -> None:
         self._content: Dict[str, pd.DataFrame] = {}
 
     @override

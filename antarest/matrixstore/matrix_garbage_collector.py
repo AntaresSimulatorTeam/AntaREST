@@ -22,13 +22,9 @@ from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
-from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
-from antarest.matrixstore.repository import MatrixDataSetRepository
 
 if TYPE_CHECKING:
     from antarest.matrixstore.service import MatrixService
-    from antarest.study.service import StudyService
-    from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 logger = logging.getLogger(__name__)
 
@@ -37,18 +33,12 @@ class MatrixGarbageCollector(IService):
     def __init__(
         self,
         config: Config,
-        study_service: "StudyService",
         matrix_service: "MatrixService",
-        matrices_usage_providers: list[IMatrixUsageProvider],
     ):
         super(MatrixGarbageCollector, self).__init__()
         self.saved_matrices_path: Path = config.storage.matrixstore
-        self.variant_study_service: VariantStudyService = study_service.storage_service.variant_study_service
         self.matrix_service = matrix_service
-        self.matrices_usage_providers = matrices_usage_providers
-        self.dataset_repository: MatrixDataSetRepository = matrix_service.repo_dataset
         self.sleeping_time = config.storage.matrix_gc_sleeping_time
-        self.matrix_constants = self.variant_study_service.command_factory.command_context.generator_matrix_constants
         self.dry_run = config.storage.matrix_gc_dry_run
 
     def _get_saved_matrices(self) -> Set[str]:

@@ -30,10 +30,12 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, Patch, RawStudy, Study, StudyAdditionalData
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     create_new_empty_study,
     export_study_flat,
@@ -88,6 +90,12 @@ class RawStudyService(AbstractStorageService):
             daemon=True,
         )
         self.cleanup_thread.start()
+        # trouver comment inclure le matrix_service
+        RawStudyMatrixUsageProvider(
+            config,
+            StudyMetadataRepository(cache_service=cache),
+            matrix_service=self.study_factory._matrix_mapper_factory._matrix_service,
+        )
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None

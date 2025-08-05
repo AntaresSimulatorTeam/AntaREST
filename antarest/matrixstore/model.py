@@ -136,6 +136,10 @@ class MatrixDataSetRelation(Base):  # type: ignore
 
 
 class MatrixReference(AntaresBaseModel):
+    """
+    Give information about one reference to a matrix from a client
+    """
+
     matrix_id: str
     use_description: str
 

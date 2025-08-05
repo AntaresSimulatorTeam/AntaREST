@@ -15,17 +15,17 @@ from typing_extensions import override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
-from antarest.matrixstore.service import MatrixService
-from antarest.study.service import StudyService, logger
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.service import logger
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 
 
 class CommandMatrixUsageProvider(IMatrixUsageProvider):
-    def __init__(self, study_service: StudyService, matrix_service: MatrixService):
-        self.study_service = study_service
-        self.variant_study_service = self.study_service.storage_service.variant_study_service
+    def __init__(self, variant_study_service: VariantStudyService, matrix_service: ISimpleMatrixService):
+        self.variant_study_service = variant_study_service
         matrix_service.register_usage_provider(self)
 
     @override
@@ -51,7 +51,8 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
                 for matrix in command.get_inner_matrices():
                     command_id = str(matrix)
                     mat_reference = MatrixReference(
-                        matrix_id=command_id, use_description=f"Used by {command_id} from study {study_id}"
+                        matrix_id=command_id,
+                        use_description=f"Used by command {command_id} from variant study {study_id}",
                     )
                     matrices_references.append(mat_reference)
 
