@@ -58,9 +58,9 @@ class XpansionSensitivitySettings(AntaresBaseModel):
         capex: Whether to include CAPEX in the sensitivity analysis.
     """
 
-    epsilon: float = Field(default=0, ge=0, description="Max deviation from optimum (€)")
-    projection: list[str] = Field(default_factory=list, description="List of candidate names to project")
-    capex: bool = Field(default=False, description="Whether to include capex in the sensitivity analysis")
+    epsilon: float = Field(default=0, ge=0)
+    projection: list[str] = Field(default_factory=list)
+    capex: bool = Field(default=False)
 
 
 class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
@@ -90,7 +90,7 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     optimality_gap: float = Field(default=1, ge=0)
     relative_gap: float = Field(default=1e-6, ge=0)
     relaxed_optimality_gap: float = Field(default=1e-5, ge=0)
-    max_iteration: int = Field(default=1000, gt=0)
+    max_iteration: int = Field(default=int(1e12), gt=0)
     solver: Solver = Field(default=Solver.XPRESS)
     log_level: int = Field(default=0, ge=0, le=3)
     separation_parameter: float = Field(default=0.5, gt=0, le=1)

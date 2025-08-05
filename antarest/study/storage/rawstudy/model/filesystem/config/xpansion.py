@@ -12,7 +12,7 @@
 
 from typing import Any, Optional
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -88,7 +88,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
     optimality_gap: float = Field(default=1, ge=0)
     relative_gap: float = Field(default=1e-6, ge=0)
     relaxed_optimality_gap: float = Field(default=1e-5, ge=0)
-    max_iteration: int = Field(default=1000, gt=0)
+    max_iteration: int = Field(default=int(1e12), gt=0)
     solver: Solver = Field(default=Solver.XPRESS)
     log_level: int = Field(default=0, ge=0, le=3)
     separation_parameter: float = Field(default=0.5, gt=0, le=1)
@@ -96,6 +96,12 @@ class XpansionSettingsFileData(AntaresBaseModel):
     yearly_weights: str = Field("", alias="yearly-weights")
     additional_constraints: str = Field("", alias="additional-constraints")
     timelimit: int = int(1e12)
+
+    @field_validator("max_iteration", mode="before")
+    def validate_max_iteration(cls, data: Any) -> Any:
+        if isinstance(data, str) and data.lower() == "+inf":
+            data = None
+        return data
 
     def to_model(self) -> XpansionSettings:
         return XpansionSettings.model_validate(self.model_dump())
