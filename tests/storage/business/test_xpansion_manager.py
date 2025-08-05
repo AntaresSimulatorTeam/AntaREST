@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import io
-from pathlib import Path
 
 import pytest
 from fastapi import UploadFile
@@ -56,7 +55,6 @@ def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
 @pytest.mark.unit_test
 def test_create_configuration(
     xpansion_manager: XpansionManager,
-    tmp_path: Path,
     empty_study_810: FileStudy,
 ) -> None:
     """
@@ -92,9 +90,7 @@ def test_create_configuration(
 
 
 @pytest.mark.unit_test
-def test_delete_xpansion_configuration(
-    xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: FileStudy
-) -> None:
+def test_delete_xpansion_configuration(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the deletion of a configuration.
     """
@@ -113,13 +109,24 @@ def test_delete_xpansion_configuration(
 
 
 @pytest.mark.unit_test
-def test_get_xpansion_settings(xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: FileStudy) -> None:
+def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
     study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
 
+    # Write "+Inf" as the max_iteration value to ensure we're able to read it.
+    ini_path = empty_study_810.config.study_path / "user" / "expansion" / "settings.ini"
+    content = ini_path.read_text().splitlines()
+    for k, line in enumerate(content):
+        if "max_iteration" in line:
+            content[k] = "max_iteration=+Inf"
+    with open(ini_path, "w") as f:
+        for line in content:
+            f.write(f"{line}\n")
+
+    # Checks the reading method
     actual = xpansion_manager.get_xpansion_settings(study)
     assert actual.model_dump(by_alias=True) == {
         "master": Master.INTEGER,
@@ -152,7 +159,7 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "max_iteration": 123,
         "uc_type": UcType.EXPANSION_FAST,
         "master": Master.INTEGER,
-        "relaxed_optimality_gap": "1.2%",  # percentage
+        "relaxed_optimality_gap": 1.2,
         "relative_gap": 1e-12,
         "batch_size": 4,
         "separation_parameter": 0.5,
@@ -404,10 +411,7 @@ def test_update_constraints(
 
 
 @pytest.mark.unit_test
-def test_update_constraints_via_the_front(
-    xpansion_manager: XpansionManager,
-    empty_study_880: FileStudy,
-) -> None:
+def test_update_constraints_via_the_front(xpansion_manager: XpansionManager, empty_study_880: FileStudy) -> None:
     study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -437,10 +441,7 @@ def test_update_constraints_via_the_front(
 
 
 @pytest.mark.unit_test
-def test_update_weights_via_the_front(
-    xpansion_manager: XpansionManager,
-    empty_study_880: FileStudy,
-) -> None:
+def test_update_weights_via_the_front(xpansion_manager: XpansionManager, empty_study_880: FileStudy) -> None:
     study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
     # Same test as the one for constraints
@@ -470,10 +471,7 @@ def test_update_weights_via_the_front(
 
 
 @pytest.mark.unit_test
-def test_add_resources(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
@@ -524,10 +522,7 @@ def test_add_resources(
 
 
 @pytest.mark.unit_test
-def test_get_single_constraints(
-    xpansion_manager: XpansionManager,
-    empty_study_870: FileStudy,
-) -> None:
+def test_get_single_constraints(xpansion_manager: XpansionManager, empty_study_870: FileStudy) -> None:
     study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -545,10 +540,7 @@ def test_get_single_constraints(
 
 
 @pytest.mark.unit_test
-def test_get_settings_without_sensitivity(
-    xpansion_manager: XpansionManager,
-    empty_study_870: FileStudy,
-) -> None:
+def test_get_settings_without_sensitivity(xpansion_manager: XpansionManager, empty_study_870: FileStudy) -> None:
     study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -558,10 +550,7 @@ def test_get_settings_without_sensitivity(
 
 
 @pytest.mark.unit_test
-def test_get_all_constraints(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_get_all_constraints(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
@@ -582,10 +571,7 @@ def test_get_all_constraints(
 
 
 @pytest.mark.unit_test
-def test_add_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -615,10 +601,7 @@ def test_add_capa(
 
 
 @pytest.mark.unit_test
-def test_delete_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -640,10 +623,7 @@ def test_delete_capa(
 
 
 @pytest.mark.unit_test
-def test_get_single_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -666,10 +646,7 @@ def test_get_single_capa(
 
 
 @pytest.mark.unit_test
-def test_get_all_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"

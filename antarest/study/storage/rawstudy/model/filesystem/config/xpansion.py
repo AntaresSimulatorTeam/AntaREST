@@ -100,7 +100,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
     @field_validator("max_iteration", mode="before")
     def validate_max_iteration(cls, data: Any) -> Any:
         if isinstance(data, str) and data.lower() == "+inf":
-            data = None
+            data = int(1e12)
         return data
 
     def to_model(self) -> XpansionSettings:
