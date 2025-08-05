@@ -1566,12 +1566,7 @@ class StudyService:
         command = ReplaceStudyAuthor.model_validate(args)
         self.get_study_interface(study).add_commands([command])
 
-        logger.info(
-            "user %s change study %s owner to %d",
-            get_user_id(),
-            study_id,
-            owner_id,
-        )
+        logger.info("user %s change study %s owner to %d", get_user_id(), study_id, owner_id)
 
     def add_group(self, study_id: str, group_id: str) -> None:
         """
