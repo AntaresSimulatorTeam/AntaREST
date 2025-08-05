@@ -108,7 +108,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
 
     @classmethod
     def from_model(cls, settings: XpansionSettings) -> "XpansionSettingsFileData":
-        return cls.model_validate(settings.model_dump())
+        return cls.model_validate(settings.model_dump(exclude={"sensitivity_config"}))
 
 
 def parse_xpansion_settings(data: Any) -> XpansionSettings:

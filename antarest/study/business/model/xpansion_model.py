@@ -134,8 +134,8 @@ class XpansionSettingsUpdate(AntaresBaseModel, extra="ignore", validate_assignme
     log_level: int | None = Field(default=None, ge=0, le=3)
     separation_parameter: float | None = Field(default=None, gt=0, le=1)
     batch_size: int | None = Field(default=None, ge=0)
-    yearly_weights: str | None = None
-    additional_constraints: str | None = None
+    yearly_weights: str | None = Field(None, alias="yearly-weights")
+    additional_constraints: str | None = Field(None, alias="additional-constraints")
     timelimit: int | None = None
     sensitivity_config: XpansionSensitivitySettingsUpdate | None = None
 
@@ -150,8 +150,8 @@ def update_xpansion_settings(settings: XpansionSettings, data: XpansionSettingsU
         current_settings["sensitivity_config"].update(update_settings.pop("sensitivity_config"))
     current_settings.update(update_settings)
     for field in ["additional_constraints", "yearly_weights"]:
-        if not getattr(update_settings, field, None):
-            setattr(current_settings, field, None)
+        if not getattr(data, field, None):
+            current_settings.pop(field)
     return XpansionSettings.model_validate(current_settings)
 
 
