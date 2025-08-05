@@ -27,7 +27,6 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         file_study = self.get_file_study()
         nb_ts_gen_thermal = file_study.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"])
-        # todo: what happens if `nbtimeseriesthermal` is not in the file ?
         return TimeSeriesConfiguration.model_validate({"thermal": {"number": nb_ts_gen_thermal}})
 
     @override
