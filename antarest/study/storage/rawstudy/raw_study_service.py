@@ -90,7 +90,7 @@ class RawStudyService(AbstractStorageService):
             daemon=True,
         )
         self.cleanup_thread.start()
-        # trouver comment inclure le matrix_service
+
         RawStudyMatrixUsageProvider(
             config,
             StudyMetadataRepository(cache_service=cache),
