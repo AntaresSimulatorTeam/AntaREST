@@ -26,7 +26,7 @@ class TimeSeriesConfigManager:
         """
         Get Time-Series generation values
         """
-        raise NotImplementedError()
+        return study.get_study_dao().get_timeseries_config()
 
     def set_timeseries_configuration(
         self, study: StudyInterface, config: TimeSeriesConfigurationUpdate
