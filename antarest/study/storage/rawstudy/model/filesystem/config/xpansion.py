@@ -116,9 +116,9 @@ def parse_xpansion_settings(data: Any) -> XpansionSettings:
 
 
 def serialize_xpansion_settings(settings: XpansionSettings) -> dict[str, Any]:
-    data = XpansionSettingsFileData.from_model(settings).model_dump()
+    data = XpansionSettingsFileData.from_model(settings).model_dump(by_alias=True)
     # Exclude `yearly-weights` and `additional-constraints` if they are an empty str
-    for field in ["yearly_weights", "additional_constraints"]:
+    for field in ["yearly-weights", "additional-constraints"]:
         if not data[field]:
             del data[field]
     return data
@@ -148,4 +148,4 @@ def parse_xpansion_sensitivity_settings(data: Any) -> XpansionSensitivitySetting
 
 
 def serialize_xpansion_sensitivity_settings(settings: XpansionSensitivitySettings) -> dict[str, Any]:
-    return XpansionSensitivitySettingsFileData.from_model(settings).model_dump()
+    return XpansionSensitivitySettingsFileData.from_model(settings).model_dump(by_alias=True)
