@@ -221,7 +221,7 @@ class MatrixService(ISimpleMatrixService):
         self.usage_providers: List[IMatrixUsageProvider] = []
         self.usage_providers.append(self.create_dataset_usage_provider())
 
-    def create_dataset_usage_provider(self) -> IMatrixUsageProvider:
+    def create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
         repo_dataset = self.repo_dataset
 
         class DatasetUsageProvider(IMatrixUsageProvider):
