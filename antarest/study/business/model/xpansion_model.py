@@ -63,6 +63,18 @@ class XpansionSensitivitySettings(AntaresBaseModel):
     capex: bool = Field(default=False)
 
 
+class XpansionSensitivitySettingsUpdate(AntaresBaseModel):
+    """
+    Represents an update of the xpansion sensitivity settings.
+
+    Only not-None fields will be used to update the settings.
+    """
+
+    epsilon: float | None = Field(default=None, ge=0)
+    projection: list[str] | None = None
+    capex: bool | None = None
+
+
 class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=True, populate_by_name=True):
     """
     A data transfer object representing the general settings used for Xpansion.
@@ -124,7 +136,24 @@ class XpansionSettingsUpdate(AntaresBaseModel, extra="ignore", validate_assignme
     yearly_weights: str | None = None
     additional_constraints: str | None = None
     timelimit: int | None = None
-    sensitivity_config: XpansionSensitivitySettings | None = None
+    sensitivity_config: XpansionSensitivitySettingsUpdate | None = None
+
+
+def update_xpansion_settings(settings: XpansionSettings, data: XpansionSettingsUpdate) -> XpansionSettings:
+    """
+    Updates the xpansion settings according to the provided update data.
+    """
+    current_settings = settings.model_dump(mode="json")
+    update_settings = data.model_dump(mode="json", exclude_none=True)
+    if "sensitivity_config" in update_settings:
+        current_settings["sensitivity_config"].update(update_settings.pop("sensitivity_config"))
+    current_settings.update(update_settings)
+    return XpansionSettings.model_validate(current_settings)
+
+
+##########################
+# Candidates part
+##########################
 
 
 class XpansionLink(AntaresBaseModel):

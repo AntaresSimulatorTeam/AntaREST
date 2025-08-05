@@ -22,8 +22,17 @@ from antarest.core.exceptions import (
     XpansionCandidateDeletionError,
     XpansionFileNotFoundError,
 )
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionSensitivitySettings,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.dao.api.xpansion_dao import XpansionDao
+from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
+    parse_xpansion_sensitivity_settings,
+    parse_xpansion_settings,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -85,7 +94,11 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def get_xpansion_settings(self) -> XpansionSettings:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        settings = self._get_settings(file_study)
+        sensitivity_settings = self._get_sensitivity_settings(file_study)
+        settings.sensitivity_config = sensitivity_settings
+        return settings
 
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
@@ -118,6 +131,19 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                 excludes.add(field)
 
         return excludes
+
+    @staticmethod
+    def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:
+        try:
+            args = file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
+            return parse_xpansion_sensitivity_settings(args)
+        except ChildNotFoundError:
+            return XpansionSensitivitySettings()
+
+    @staticmethod
+    def _get_settings(file_study: FileStudy) -> XpansionSettings:
+        config_obj = file_study.tree.get(["user", "expansion", "settings"])
+        return parse_xpansion_settings(config_obj)
 
     def _save_candidates(self, content: dict[str, Any]) -> None:
         self.get_file_study().tree.save(content, ["user", "expansion", "candidates"])
