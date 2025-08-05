@@ -22,7 +22,7 @@ from antarest.core.exceptions import (
     XpansionCandidateDeletionError,
     XpansionFileNotFoundError,
 )
-from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -82,6 +82,14 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         # Reorder keys of the dict
         new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
         self._save_candidates(new_dict)
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        raise NotImplementedError()
+
+    @override
+    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
+        raise NotImplementedError()
 
     def _save_candidates(self, content: dict[str, Any]) -> None:
         self.get_file_study().tree.save(content, ["user", "expansion", "candidates"])
