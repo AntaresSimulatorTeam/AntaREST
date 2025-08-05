@@ -81,7 +81,7 @@ class XpansionManager:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
         # Checks settings are correct
         study_dao = study.get_study_dao()
-        study_dao.checks_settings_are_correct_and_returns_fields_to_exclude(new_xpansion_settings)
+        study_dao.checks_settings_are_correct(new_xpansion_settings)
         command = UpdateXpansionSettings(
             settings=new_xpansion_settings, command_context=self._command_context, study_version=study.version
         )

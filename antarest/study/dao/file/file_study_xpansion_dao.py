@@ -105,19 +105,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         raise NotImplementedError()
 
     @override
-    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         """
         Checks yearly_weights and additional_constraints fields.
         - If the attributes are given, it means that the user wants to select a file.
           It is therefore necessary to check that the file exists.
-        - Else, it means the user want to deselect the additional constraints file,
-         but he does not want to delete it from the expansion configuration folder.
-
-        Returns:
-            set[str] -- The fields to not save inside the ini.file
         """
         file_study = self.get_file_study()
-        excludes = {"sensitivity_config"}
         for field in ["additional_constraints", "yearly_weights"]:
             if file := getattr(settings, field, None):
                 file_type = field.split("_")[1]
@@ -127,10 +121,6 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                 except ChildNotFoundError:
                     msg = f"Additional {file_type} file '{file}' does not exist"
                     raise XpansionFileNotFoundError(msg) from None
-            else:
-                excludes.add(field)
-
-        return excludes
 
     @staticmethod
     def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:

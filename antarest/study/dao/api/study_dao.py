@@ -311,5 +311,5 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_xpansion_settings()
 
     @override
-    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
-        return self._adaptee.checks_settings_are_correct_and_returns_fields_to_exclude(settings)
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return self._adaptee.checks_settings_are_correct(settings)

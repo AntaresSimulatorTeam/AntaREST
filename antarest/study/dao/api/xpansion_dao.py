@@ -38,7 +38,7 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         raise NotImplementedError()
 
 

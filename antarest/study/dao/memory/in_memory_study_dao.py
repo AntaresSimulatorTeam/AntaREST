@@ -589,5 +589,5 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings = settings
 
     @override
-    def checks_settings_are_correct_and_returns_fields_to_exclude(self, settings: XpansionSettingsUpdate) -> set[str]:
-        return set()
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return

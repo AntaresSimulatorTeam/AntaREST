@@ -50,7 +50,7 @@ class UpdateXpansionSettings(ICommand):
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         # Checks settings are correct
-        study_data.checks_settings_are_correct_and_returns_fields_to_exclude(self.settings)
+        study_data.checks_settings_are_correct(self.settings)
 
         current_settings = study_data.get_xpansion_settings()
         new_settings = update_xpansion_settings(current_settings, self.settings)
