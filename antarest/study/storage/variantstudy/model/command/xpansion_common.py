@@ -17,8 +17,8 @@ from antarest.core.exceptions import (
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
     XpansionResourceFileType,
+    XpansionSettings,
     XpansionSettingsUpdate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -49,10 +49,10 @@ def apply_create_resource_commands(
     )
 
 
-def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
+def get_xpansion_settings(file_study: FileStudy) -> XpansionSettings:
     config_obj = file_study.tree.get(["user", "expansion", "settings"])
     config_obj["sensitivity_config"] = get_xpansion_sensitivity(file_study)
-    return GetXpansionSettings.from_config(config_obj)
+    return XpansionSettings.model_validate(config_obj)
 
 
 def get_xpansion_sensitivity(file_study: FileStudy) -> dict[str, Any]:

@@ -23,10 +23,10 @@ from antarest.core.exceptions import (
 )
 from antarest.core.model import JSON
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
+    XpansionSettings,
     XpansionSettingsUpdate,
     create_xpansion_candidate,
 )
@@ -73,14 +73,14 @@ class XpansionManager:
         command = RemoveXpansionConfiguration(command_context=self._command_context, study_version=study.version)
         study.add_commands([command])
 
-    def get_xpansion_settings(self, study: StudyInterface) -> GetXpansionSettings:
+    def get_xpansion_settings(self, study: StudyInterface) -> XpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
         file_study = study.get_files()
         return get_xpansion_settings(file_study)
 
     def update_xpansion_settings(
         self, study: StudyInterface, new_xpansion_settings: XpansionSettingsUpdate
-    ) -> GetXpansionSettings:
+    ) -> XpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
         # Checks settings are correct
         file_study = study.get_files()
@@ -139,7 +139,7 @@ class XpansionManager:
 
     def update_xpansion_constraints_settings(
         self, study: StudyInterface, constraints_file_name: str
-    ) -> GetXpansionSettings:
+    ) -> XpansionSettings:
         # Make sure filename is not `None`, because `None` values are ignored by the update.
         constraints_file_name = constraints_file_name or ""
         # noinspection PyArgumentList
