@@ -26,9 +26,12 @@ class TimeSeriesConfigurationUpdate(AntaresBaseModel, extra="forbid", validate_a
 
 
 def update_timeseries_configuration(
-    config: TimeSeriesConfiguration, new_config: TimeSeriesConfigurationUpdate
+    config: TimeSeriesConfiguration, data: TimeSeriesConfigurationUpdate
 ) -> TimeSeriesConfiguration:
     """
     Updates the timeseries configuration according to the provided update data.
     """
-    return config.model_copy(update=new_config.model_dump(exclude_none=True))
+    current_config = config.model_dump(mode="json")
+    new_config = data.model_dump(mode="json", exclude_none=True)
+    current_config.update(new_config)
+    return TimeSeriesConfiguration.model_validate(current_config)
