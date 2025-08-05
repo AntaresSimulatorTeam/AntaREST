@@ -32,6 +32,8 @@ from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     parse_xpansion_sensitivity_settings,
     parse_xpansion_settings,
+    serialize_xpansion_sensitivity_settings,
+    serialize_xpansion_settings,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -102,7 +104,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+
+        sensitivity_content = serialize_xpansion_sensitivity_settings(settings.sensitivity_config)
+        file_study.tree.save(sensitivity_content, ["user", "expansion", "sensitivity", "sensitivity_in"])
+
+        settings_content = serialize_xpansion_settings(settings)
+        file_study.tree.save(settings_content, ["user", "expansion", "settings"])
 
     @override
     def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
