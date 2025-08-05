@@ -32,4 +32,5 @@ class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        file_study.tree.save(config.thermal.number, ["settings", "general", "general", "nbtimeseriesthermal"])
