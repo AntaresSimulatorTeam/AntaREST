@@ -18,11 +18,14 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.study.business.model.config.timeseries_config_model import (
+    TimeSeriesConfiguration,
+    TimeSeriesConfigurationUpdate,
+    TimeSeriesType,
+)
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.timeseries_config_management import (
-    TimeSeriesConfigDTO,
     TimeSeriesConfigManager,
-    TimeSeriesTypeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -51,11 +54,13 @@ def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext
     config_manager = TimeSeriesConfigManager(command_context)
 
     # Asserts the get method returns the right value
-    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfigDTO(
-        thermal=TimeSeriesTypeConfig(number=1)
+    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfiguration(
+        thermal=TimeSeriesType(number=1)
     )
 
     # Modifies the value and asserts the get takes the modification into account
-    new_value = TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=2))
+    new_value = TimeSeriesConfigurationUpdate(thermal=TimeSeriesType(number=2))
     config_manager.set_timeseries_configuration(study, new_value)
-    assert config_manager.get_timeseries_configuration(study) == new_value
+    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfiguration(
+        thermal=TimeSeriesType(number=2)
+    )

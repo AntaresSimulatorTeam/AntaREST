@@ -966,6 +966,17 @@ COMMANDS = [
         None,
         id="remove_st_storage_additional_constraints",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_TIMESERIES_CONFIG.value,
+            args=[
+                {"parameters": {"thermal": {"number": 42}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_timeseries_configuration",
+    ),
 ]
 
 
