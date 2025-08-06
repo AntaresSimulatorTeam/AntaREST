@@ -22,13 +22,13 @@ import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
 import {
   updateScenarioBuilderConfig,
-  type TwoLevelHandlerReturn,
+  type ClustersHandlerReturn,
   type GenericScenarioConfig,
   type ScenarioType,
 } from "./utils";
 
 interface Props {
-  config: GenericScenarioConfig | TwoLevelHandlerReturn;
+  config: GenericScenarioConfig | ClustersHandlerReturn;
   type: ScenarioType;
   areaId?: string;
 }

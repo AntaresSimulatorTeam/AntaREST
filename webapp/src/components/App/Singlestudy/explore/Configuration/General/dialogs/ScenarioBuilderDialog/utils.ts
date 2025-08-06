@@ -83,7 +83,7 @@ export type StorageConfig = Record<string, YearlyValues>;
  *   }
  * }
  */
-export type ByAreaConfig = Record<string, ClusterConfig | StorageConfig>;
+export type ClustersConfig = Record<string, ClusterConfig | StorageConfig>;
 
 /**
  * General configuration format for scenarios using single areas as elements.
@@ -112,26 +112,26 @@ export type GenericScenarioConfig = Record<string, AreaConfig>;
  *   }
  * }
  */
-export type TwoLevelScenarioConfig = Record<string, ByAreaConfig>;
+export type ClustersScenarioConfig = Record<string, ClustersConfig>;
 
-export interface TwoLevelHandlerReturn {
+export interface ClustersHandlerReturn {
   areas: string[];
-  clusters: Record<string, ByAreaConfig>;
+  clusters: Record<string, ClustersConfig>;
 }
 
 // General structure for ruleset configurations covering all scenarios.
 export interface ScenarioConfig {
   load?: GenericScenarioConfig;
-  thermal?: TwoLevelScenarioConfig;
+  thermal?: ClustersScenarioConfig;
   hydro?: GenericScenarioConfig;
   wind?: GenericScenarioConfig;
   solar?: GenericScenarioConfig;
   ntc?: GenericScenarioConfig;
-  renewable?: TwoLevelScenarioConfig;
+  renewable?: ClustersScenarioConfig;
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints?: GenericScenarioConfig;
   hydroFinalLevels?: GenericScenarioConfig;
-  shortTermStorage?: TwoLevelScenarioConfig;
+  shortTermStorage?: ClustersScenarioConfig;
 }
 
 type NonNullableRulesetConfig = {
@@ -142,16 +142,16 @@ type ConfigHandler<T, U = T> = (config: T) => U;
 
 export interface HandlerReturnTypes {
   load: GenericScenarioConfig;
-  thermal: TwoLevelHandlerReturn;
+  thermal: ClustersHandlerReturn;
   hydro: GenericScenarioConfig;
   wind: GenericScenarioConfig;
   solar: GenericScenarioConfig;
   ntc: GenericScenarioConfig;
-  renewable: TwoLevelHandlerReturn;
+  renewable: ClustersHandlerReturn;
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints: GenericScenarioConfig;
   hydroFinalLevels: GenericScenarioConfig;
-  shortTermStorage: TwoLevelHandlerReturn;
+  shortTermStorage: ClustersHandlerReturn;
 }
 
 const handlers: {
@@ -192,8 +192,8 @@ function handleGenericConfig(config: GenericScenarioConfig): GenericScenarioConf
  * @param config - The initial clusters based scenario configuration.
  * @returns Object containing separated areas and cluster configurations.
  */
-function handleClustersConfig(config: TwoLevelScenarioConfig): TwoLevelHandlerReturn {
-  return Object.entries(config).reduce<TwoLevelHandlerReturn>(
+function handleClustersConfig(config: ClustersScenarioConfig): ClustersHandlerReturn {
+  return Object.entries(config).reduce<ClustersHandlerReturn>(
     (acc, [areaId, clusterConfig]) => {
       acc.areas.push(areaId);
       acc.clusters[areaId] = clusterConfig;

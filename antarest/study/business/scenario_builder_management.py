@@ -23,11 +23,10 @@ from antarest.study.storage.variantstudy.model.command.update_scenario_builder i
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 # Symbols used in scenario builder data
-_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp", "sts"
+_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
-_CLUSTER_RELATED_SYMBOLS = "t", "r"
-_STS_RELATED_SYMBOLS = ("sts",)
+_CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
 
 _HYDRO_LEVEL_PERCENT = 100
 
@@ -210,8 +209,6 @@ class ScenarioBuilderManager:
                     _populate_links(section, symbol, data)
                 elif symbol in _CLUSTER_RELATED_SYMBOLS:
                     _populate_clusters(section, symbol, data)
-                elif symbol in _STS_RELATED_SYMBOLS:
-                    _populate_sts(section, symbol, data)
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
 
@@ -277,10 +274,3 @@ def _populate_clusters(section: _Section, symbol: str, data: Mapping[str, Mappin
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
                 section[f"{symbol},{area},{year},{cluster}"] = value
-
-
-def _populate_sts(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
-    for area, scenario_area in data.items():
-        for storage, scenario_area_storage in scenario_area.items():
-            for year, value in scenario_area_storage.items():
-                section[f"{symbol},{area},{year},{storage}"] = value

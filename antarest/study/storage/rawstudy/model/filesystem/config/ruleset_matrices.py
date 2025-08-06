@@ -34,20 +34,19 @@ SCENARIO_TYPES = {
 
 _Value: te.TypeAlias = int | float
 _SimpleScenario: te.TypeAlias = pd.DataFrame
-_TwoLevelScenario: te.TypeAlias = MutableMapping[str, pd.DataFrame]
-_Scenario: te.TypeAlias = _SimpleScenario | _TwoLevelScenario
+_ClusterScenario: te.TypeAlias = MutableMapping[str, pd.DataFrame]
+_Scenario: te.TypeAlias = _SimpleScenario | _ClusterScenario
 _ScenarioMapping: te.TypeAlias = MutableMapping[str, _Scenario]
 
 SimpleTableForm: te.TypeAlias = Dict[str, Dict[str, int | float | str | None]]
-TwoLevelTableForm: te.TypeAlias = Dict[str, SimpleTableForm]
-TableForm: te.TypeAlias = SimpleTableForm | TwoLevelTableForm
+ClusterTableForm: te.TypeAlias = Dict[str, SimpleTableForm]
+TableForm: te.TypeAlias = SimpleTableForm | ClusterTableForm
 
 _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "hgp"
 _BINDING_CONSTRAINTS_RELATED_SYMBOLS = ("bc",)
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
-_CLUSTER_RELATED_SYMBOLS = "t", "r"
-_STS_RELATED_SYMBOLS = ("sts",)
+_CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
 
 
 # ========================================
@@ -110,7 +109,7 @@ class RulesetMatrices:
         self.storages = {
             a.lower(): {a_storage.lower(): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
         }
-        self.clusters_by_symbols = {"t": self.thermals, "r": self.renewables}  # for easier access
+        self.clusters_by_symbols = {"t": self.thermals, "r": self.renewables, "sts": self.storages}  # for easier access
         self.groups = {g.lower(): g for g in groups}
         # Dictionary used to convert symbols to scenario types
         self.scenario_types = scenario_types or SCENARIO_TYPES
@@ -167,16 +166,6 @@ class RulesetMatrices:
                 self.scenarios[scenario_type] = pd.DataFrame(index=link_index, columns=self.columns, dtype=float)
             elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
                 self.scenarios[scenario_type] = pd.DataFrame(index=area_index, columns=self.columns, dtype=float)
-            elif symbol in _STS_RELATED_SYMBOLS:
-                # We only take the areas that are defined in storages dict
-                # Keys are the names of the areas (and not the identifiers)
-                self.scenarios[scenario_type] = {
-                    self.areas[area_id]: pd.DataFrame(
-                        index=self.get_storage_index(self.areas[area_id]), columns=self.columns, dtype=float
-                    )
-                    for area_id, storage in self.storages.items()
-                    if storage
-                }
             elif symbol in _CLUSTER_RELATED_SYMBOLS:
                 # We only take the areas that are defined in the thermals and renewables dictionaries
                 # Keys are the names of the areas (and not the identifiers)
@@ -243,12 +232,6 @@ class RulesetMatrices:
                 cluster = clusters[parts[2].lower()]
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
                 scenario.at[idx_cluster(area, cluster), str(year)] = value
-            elif symbol in _STS_RELATED_SYMBOLS:
-                area = self.areas[area_id]
-                a_storages = self.storages[area_id]
-                a_storage = a_storages[parts[2].lower()]
-                scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
-                scenario.at[idx_storage(area, a_storage), str(year)] = value
             elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
                 group = self.groups[area_id]
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
@@ -333,16 +316,6 @@ class RulesetMatrices:
                 for year, value in scenario[self.areas[area_id]].loc[idx_cluster(self.areas[area_id], cluster)].items()
                 if allow_nan or not pd.isna(value)
             }
-        elif symbol in _STS_RELATED_SYMBOLS:
-            scenario_rules = {
-                f"{symbol},{area_id},{year},{a_storage_id}": to_ts_number(value)
-                for area_id, a_storages in self.storages.items()
-                for a_storage_id, a_storage in a_storages.items()
-                for year, value in scenario[self.areas[area_id]]
-                .loc[idx_storage(self.areas[area_id], a_storage)]
-                .items()
-                if allow_nan or not pd.isna(value)
-            }
         elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
             scenario_rules = {
                 f"{symbol},{group_id},{year}": to_ts_number(value)
@@ -396,9 +369,9 @@ class RulesetMatrices:
             simple_table_form = simple_scenario.to_dict(orient="index")
             return cast(SimpleTableForm, simple_table_form)
         else:
-            cluster_scenario: _TwoLevelScenario = {area: df.fillna(nan_value) for area, df in scenario.items()}
+            cluster_scenario: _ClusterScenario = {area: df.fillna(nan_value) for area, df in scenario.items()}
             cluster_table_form = {area: df.to_dict(orient="index") for area, df in cluster_scenario.items()}
-            return cast(TwoLevelTableForm, cluster_table_form)
+            return cast(ClusterTableForm, cluster_table_form)
 
     def set_table_form(
         self,
@@ -441,7 +414,7 @@ class RulesetMatrices:
             df = pd.DataFrame.from_dict(simple_table_form, orient="index").replace({None: np.nan, nan_value: np.nan})
             scenario.loc[df.index, df.columns] = df
         else:
-            two_level_table_form = cast(TwoLevelTableForm, table_form)
+            two_level_table_form = cast(ClusterTableForm, table_form)
             for area, simple_table_form in two_level_table_form.items():
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
                 df = pd.DataFrame(simple_table_form).transpose().replace({None: np.nan, nan_value: np.nan})

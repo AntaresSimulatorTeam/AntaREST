@@ -421,6 +421,7 @@
   "study.configuration.general.mcScenarioBuilder.tab.hydroInitialLevels": "Niveaux Hydro Initial",
   "study.configuration.general.mcScenarioBuilder.tab.hydroFinalLevels": "Niveaux Hydro Final",
   "study.configuration.general.mcScenarioBuilder.tab.bindingConstraints": "Contraintes Couplantes",
+  "study.configuration.general.mcScenarioBuilder.tab.shortTermStorage": "SCT - Apports",
   "study.configuration.general.mcScenarioBuilder.noConfig.error": "Il n'y a aucune configuration valide disponible.",
   "study.configuration.general.mcScenarioBuilder.update.error": "Échec de la mise à jour du scénario '{{type}}'.",
   "study.configuration.general.mcScenarioBuilder.get.error": "Échec de la récupération de la configuration pour le scénario sélectionné : '{{type}}'.",
