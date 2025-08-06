@@ -18,15 +18,15 @@ import type { PartialExceptFor } from "@/utils/tsUtils";
 // Additional Constraints
 ////////////////////////////////////////////////////////////////
 
-export type ConstraintVariable = "withdrawal" | "injection" | "netting";
+export type AdditionalConstraintVariable = "withdrawal" | "injection" | "netting";
 
-export type ConstraintOperator = "less" | "greater" | "equal";
+export type AdditionalConstraintOperator = "less" | "greater" | "equal";
 
 export interface AdditionalConstraint {
   id: string;
   name: string;
-  variable: ConstraintVariable;
-  operator: ConstraintOperator;
+  variable: AdditionalConstraintVariable;
+  operator: AdditionalConstraintOperator;
   occurrences: Array<{ hours: number[] }>;
   enabled: boolean;
 }

@@ -13,7 +13,6 @@
  */
 
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import FormDialog from "@/components/common/dialogs/FormDialog";
 import Fieldset from "@/components/common/Fieldset";
@@ -22,7 +21,10 @@ import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import { createAdditionalConstraints } from "@/services/api/studies/areas/storages";
-import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
+import type {
+  AdditionalConstraintOperator,
+  AdditionalConstraintVariable,
+} from "@/services/api/studies/areas/storages/types";
 import { validateString } from "@/utils/validation/string";
 import { CONSTRAINT_OPERATORS, CONSTRAINT_VARIABLES, DEFAULT_CONSTRAINT_VALUES } from "./constants";
 
@@ -37,40 +39,32 @@ interface Props {
 
 interface FormValues {
   name: string;
-  variable: AdditionalConstraint["variable"];
-  bounds: AdditionalConstraint["operator"];
+  variable: AdditionalConstraintVariable;
+  operator: AdditionalConstraintOperator;
   enabled: boolean;
 }
 
 function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId }: Props) {
   const { t } = useTranslation();
 
-  const variableOptions = useMemo(
-    () =>
-      CONSTRAINT_VARIABLES.map((option) => ({
-        value: option.value,
-        label: t(option.label),
-      })),
-    [t],
-  );
+  const variableOptions = CONSTRAINT_VARIABLES.map((option) => ({
+    value: option.value,
+    label: t(option.label),
+  }));
 
-  const operatorOptions = useMemo(
-    () =>
-      CONSTRAINT_OPERATORS.map((option) => ({
-        value: option.value,
-        label: option.label,
-      })),
-    [],
-  );
+  const operatorOptions = CONSTRAINT_OPERATORS.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({ values }: SubmitHandlerPlus<FormValues>) => {
-    const { name, variable, bounds, enabled } = values;
+  const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
+    const { name, variable, operator, enabled } = values;
 
-    await createAdditionalConstraints({
+    return createAdditionalConstraints({
       studyId,
       areaId,
       storageId,
@@ -78,14 +72,12 @@ function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId
         {
           name,
           variable,
-          operator: bounds,
+          operator,
           enabled,
           occurrences: [],
         },
       ],
     });
-
-    onSave();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -99,6 +91,7 @@ function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={onSave}
       maxWidth="sm"
       config={{
         defaultValues: DEFAULT_CONSTRAINT_VALUES,
@@ -112,11 +105,9 @@ function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId
               name="name"
               control={control}
               fullWidth
-              required
               rules={{
                 validate: (v) => validateString(v),
               }}
-              sx={{ m: 0 }}
             />
 
             <SelectFE
@@ -124,15 +115,13 @@ function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId
               name="variable"
               control={control}
               options={variableOptions}
-              required
             />
 
             <SelectFE
               label={t("study.modelization.storages.additionalConstraints.bounds")}
-              name="bounds"
+              name="operator"
               control={control}
               options={operatorOptions}
-              required
             />
 
             <SwitchFE label={t("global.enabled")} name="enabled" control={control} />

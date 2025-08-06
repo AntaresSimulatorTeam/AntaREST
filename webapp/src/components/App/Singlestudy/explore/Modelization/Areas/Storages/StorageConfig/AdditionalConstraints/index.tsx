@@ -20,7 +20,7 @@ import {
   ListItem,
   ListItemButton,
   ListItemText,
-  Paper,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useMemo, useState } from "react";
@@ -152,7 +152,16 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
               selected={selectedConstraintId === constraint.id}
               onClick={() => handleConstraintSelect(constraint.id)}
             >
-              <ListItemText primary={constraint.id} />
+              <Tooltip title={constraint.id}>
+                <ListItemText
+                  primary={constraint.id}
+                  sx={{
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                    textWrap: "nowrap",
+                  }}
+                />
+              </Tooltip>
             </ListItemButton>
           </ListItem>
         ))}
@@ -163,16 +172,16 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
   return (
     <Box sx={{ display: "flex", height: 1, gap: 1 }}>
       {/* Left panel - Constraints list */}
-      <Paper sx={{ width: 250 }} elevation={2}>
+      <Box sx={{ width: 250 }}>
         <PropertiesView
           onSearchFilterChange={handleSearchChange}
           onAdd={() => setAddDialogOpen(true)}
           mainContent={constraintsList}
         />
-      </Paper>
+      </Box>
 
       {/* Right panel - Constraint details */}
-      <Paper sx={{ flex: 1, p: 2 }} elevation={3}>
+      <Box sx={{ flex: 1, p: 2 }}>
         {selectedConstraint ? (
           <ConstraintDetails
             studyId={studyId}
@@ -195,7 +204,7 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
             </Typography>
           </Box>
         )}
-      </Paper>
+      </Box>
 
       {/* Dialogs */}
       <AddConstraintDialog

@@ -52,27 +52,23 @@ function StorageConfig() {
               label: t("global.timeSeries"),
               content: () => (
                 <StorageMatrices
-                  studyVersion={Number(study.version)}
+                  studyVersion={studyVersion}
                   areaId={areaId}
                   storageId={storageId}
                 />
               ),
             },
-            ...(studyVersion >= 920
-              ? [
-                  {
-                    label: t("study.modelization.storages.additionalConstraints"),
-                    content: () => (
-                      <AdditionalConstraints
-                        studyId={study.id}
-                        areaId={areaId}
-                        storageId={nameToId(storageId)}
-                      />
-                    ),
-                  },
-                ]
-              : []),
-          ]}
+            studyVersion >= 920 && {
+              label: t("study.modelization.storages.additionalConstraints"),
+              content: () => (
+                <AdditionalConstraints
+                  studyId={study.id}
+                  areaId={areaId}
+                  storageId={nameToId(storageId)}
+                />
+              ),
+            },
+          ].filter(Boolean)}
         />
       </Box>
     </>
