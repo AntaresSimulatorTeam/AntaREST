@@ -12,25 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import type { IdentityDTO, StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
-import type { O } from "ts-toolbelt";
-import type { AdditionalConstraintOperator, AdditionalConstraintVariable } from "./constants";
 
 ////////////////////////////////////////////////////////////////
 // Additional Constraints
 ////////////////////////////////////////////////////////////////
 
-export type AdditionalConstraintVariableValue = O.UnionOf<typeof AdditionalConstraintVariable>;
+export type AdditionalConstraintVariable = "withdrawal" | "injection" | "netting";
 
-export type AdditionalConstraintOperatorValue = O.UnionOf<typeof AdditionalConstraintOperator>;
+export type AdditionalConstraintOperator = "less" | "greater" | "equal";
 
-export type Hours = number[];
-
-export interface AdditionalConstraint extends IdentityDTO {
-  variable: AdditionalConstraintVariableValue;
-  operator: AdditionalConstraintOperatorValue;
-  occurrences: Array<{ hours: Hours }>;
+export interface AdditionalConstraint {
+  id: string;
+  name: string;
+  variable: AdditionalConstraintVariable;
+  operator: AdditionalConstraintOperator;
+  occurrences: Array<{ hours: number[] }>;
   enabled: boolean;
 }
 
@@ -39,34 +36,31 @@ export type AdditionalConstraintCreation = PartialExceptFor<
   "name"
 >;
 
-export type AdditionalConstraintUpdate = Partial<Omit<AdditionalConstraint, "id" | "name">>;
+export type AdditionalConstraintUpdate = Partial<AdditionalConstraint> & {
+  id?: never;
+  name?: never;
+};
 
-export interface GetAdditionalConstraintsParams {
-  studyId: StudyMetadata["id"];
+export interface BaseStorageParams {
+  studyId: string;
   areaId: string;
   storageId: string;
 }
 
-export interface GetAdditionalConstraintParams extends GetAdditionalConstraintsParams {
+export type GetAdditionalConstraintsParams = BaseStorageParams;
+
+export interface GetAdditionalConstraintParams extends BaseStorageParams {
   constraintId: AdditionalConstraint["id"];
 }
 
-export interface CreateAdditionalConstraintsParams {
-  studyId: StudyMetadata["id"];
-  areaId: string;
-  storageId: string;
+export interface CreateAdditionalConstraintsParams extends BaseStorageParams {
   constraints: AdditionalConstraintCreation[];
 }
 
-export interface UpdateAdditionalConstraintsParams {
-  studyId: StudyMetadata["id"];
-  areaId: string;
-  storageId: string;
+export interface UpdateAdditionalConstraintsParams extends BaseStorageParams {
   constraints: Record<AdditionalConstraint["id"], AdditionalConstraintUpdate>;
 }
 
-export interface DeleteAdditionalConstraintsParams {
-  studyId: StudyMetadata["id"];
-  areaId: string;
+export interface DeleteAdditionalConstraintsParams extends BaseStorageParams {
   constraintIds: Array<AdditionalConstraint["id"]>;
 }
