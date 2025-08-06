@@ -166,7 +166,7 @@ class BaseMatrixUriMapper(MatrixUriMapper):
 
         uuid = link_path.read_text()
         matrix = self.get_matrix(uuid)
-        node.dump(matrix)
+        node.write_dataframe(matrix)
         link_path.unlink()
 
     @override
