@@ -23,7 +23,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import PropertiesView from "@/components/common/PropertiesView";
@@ -32,6 +32,11 @@ import {
   deleteAdditionalConstraints,
   getAdditionalConstraints,
 } from "@/services/api/studies/areas/storages";
+import type {
+  AdditionalConstraint,
+  AdditionalConstraintCreation,
+} from "@/services/api/studies/areas/storages/types";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import AddConstraintDialog from "./AddConstraintDialog";
 import ConstraintDetails from "./ConstraintDetails";
 
@@ -48,8 +53,9 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
   const [constraintToDelete, setConstraintToDelete] = useState<string | null>(null);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [constraints, setConstraints] = useState<AdditionalConstraint[]>([]);
 
-  const { data: constraints = [], reload } = usePromiseWithSnackbarError(
+  const { data: initialConstraints = [] } = usePromiseWithSnackbarError(
     () => getAdditionalConstraints({ studyId, areaId, storageId }),
     {
       resetDataOnReload: true,
@@ -57,6 +63,10 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
       deps: [studyId, areaId, storageId],
     },
   );
+
+  useEffect(() => {
+    setConstraints(initialConstraints);
+  }, [initialConstraints]);
 
   const filteredConstraints = useMemo(() => {
     if (!searchTerm) {
@@ -82,9 +92,17 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
     setSearchTerm(value);
   };
 
-  const handleConstraintAdded = () => {
+  const handleConstraintAdded = (
+    _data: SubmitHandlerPlus<AdditionalConstraintCreation>,
+    createdConstraints: AdditionalConstraint[],
+  ) => {
+    setConstraints((prevConstraints) => [...prevConstraints, ...createdConstraints]);
+
+    if (createdConstraints.length > 0) {
+      setSelectedConstraintId(createdConstraints[0].id);
+    }
+
     setAddDialogOpen(false);
-    reload();
   };
 
   const handleDeleteClick = (constraintId: string) => {
@@ -105,11 +123,13 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
         constraintIds: [constraintToDelete],
       });
 
+      setConstraints((prevConstraints) =>
+        prevConstraints.filter((c) => c.id !== constraintToDelete),
+      );
+
       if (selectedConstraintId === constraintToDelete) {
         setSelectedConstraintId(null);
       }
-
-      reload();
     } finally {
       setDeleteDialogOpen(false);
       setConstraintToDelete(null);
@@ -120,8 +140,18 @@ function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
     setSelectedConstraintId(constraintId);
   };
 
-  const handleConstraintUpdated = () => {
-    reload();
+  const handleConstraintUpdated = (
+    _data: SubmitHandlerPlus<AdditionalConstraint>,
+    updatedConstraints: AdditionalConstraint[],
+  ) => {
+    setConstraints((prevConstraints) => {
+      const updatedMap = new Map(updatedConstraints.map((c) => [c.id, c]));
+
+      return prevConstraints.map((constraint) => {
+        const updated = updatedMap.get(constraint.id);
+        return updated ?? constraint;
+      });
+    });
   };
 
   ////////////////////////////////////////////////////////////////

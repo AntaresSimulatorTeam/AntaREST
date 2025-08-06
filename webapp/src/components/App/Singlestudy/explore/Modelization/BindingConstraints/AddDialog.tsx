@@ -84,7 +84,7 @@ function AddDialog({ open, onClose, existingConstraints, reloadConstraintsList }
   };
 
   const handleSubmitSuccessful = (
-    data: SubmitHandlerPlus<typeof defaultValues>,
+    _data: SubmitHandlerPlus<typeof defaultValues>,
     createdConstraint: BindingConstraint,
   ) => {
     /**

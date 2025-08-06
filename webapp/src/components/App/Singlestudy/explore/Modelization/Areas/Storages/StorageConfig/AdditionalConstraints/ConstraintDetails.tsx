@@ -33,7 +33,10 @@ interface Props {
   areaId: string;
   storageId: string;
   constraint: AdditionalConstraint;
-  onUpdate: () => void;
+  onUpdate: (
+    data: SubmitHandlerPlus<AdditionalConstraint>,
+    updatedConstraints: AdditionalConstraint[],
+  ) => void;
 }
 
 function ConstraintDetails({ studyId, areaId, storageId, constraint, onUpdate }: Props) {
@@ -62,7 +65,7 @@ function ConstraintDetails({ studyId, areaId, storageId, constraint, onUpdate }:
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({ values }: SubmitHandlerPlus<AdditionalConstraint>) => {
+  const handleSubmit = ({ values }: SubmitHandlerPlus<AdditionalConstraint>) => {
     const { id, name, ...updatedConstraint } = values;
 
     return updateAdditionalConstraints({
@@ -84,7 +87,6 @@ function ConstraintDetails({ studyId, areaId, storageId, constraint, onUpdate }:
       <Form
         key={`${studyId}-${areaId}-${storageId}-${constraint.id}`}
         onSubmit={handleSubmit}
-        // TODO: replace the reload()
         onSubmitSuccessful={onUpdate}
         config={{ defaultValues: getDefaultValues }}
         enableUndoRedo

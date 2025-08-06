@@ -22,8 +22,8 @@ import StringFE from "@/components/common/fieldEditors/StringFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import { createAdditionalConstraints } from "@/services/api/studies/areas/storages";
 import type {
-  AdditionalConstraintOperator,
-  AdditionalConstraintVariable,
+  AdditionalConstraint,
+  AdditionalConstraintCreation,
 } from "@/services/api/studies/areas/storages/types";
 import { validateString } from "@/utils/validation/string";
 import { CONSTRAINT_OPERATORS, CONSTRAINT_VARIABLES, DEFAULT_CONSTRAINT_VALUES } from "./constants";
@@ -31,17 +31,13 @@ import { CONSTRAINT_OPERATORS, CONSTRAINT_VARIABLES, DEFAULT_CONSTRAINT_VALUES }
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSave: () => void;
+  onSave: (
+    data: SubmitHandlerPlus<AdditionalConstraintCreation>,
+    createdConstraints: AdditionalConstraint[],
+  ) => void;
   studyId: string;
   areaId: string;
   storageId: string;
-}
-
-interface FormValues {
-  name: string;
-  variable: AdditionalConstraintVariable;
-  operator: AdditionalConstraintOperator;
-  enabled: boolean;
 }
 
 function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId }: Props) {
@@ -61,7 +57,7 @@ function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<FormValues>) => {
+  const handleSubmit = ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
     const { name, variable, operator, enabled } = values;
 
     return createAdditionalConstraints({

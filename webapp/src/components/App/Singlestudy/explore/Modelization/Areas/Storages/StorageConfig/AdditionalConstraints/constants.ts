@@ -12,11 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  AdditionalConstraintOperator,
-  AdditionalConstraintVariable,
-} from "@/services/api/studies/areas/storages/types";
-
 export const CONSTRAINT_VARIABLES = [
   { value: "withdrawal", label: "study.modelization.storages.additionalConstraints.charge" },
   { value: "injection", label: "study.modelization.storages.additionalConstraints.discharge" },
@@ -29,16 +24,12 @@ export const CONSTRAINT_OPERATORS = [
   { value: "greater", label: ">" },
 ] as const;
 
-export const DEFAULT_CONSTRAINT_VALUES = {
+import type { AdditionalConstraintCreation } from "@/services/api/studies/areas/storages/types";
+
+export const DEFAULT_CONSTRAINT_VALUES: AdditionalConstraintCreation = {
   name: "",
   variable: "withdrawal",
   operator: "less",
   enabled: true,
-} as const;
-
-export interface ConstraintFormValues {
-  name: string;
-  variable: AdditionalConstraintVariable;
-  operator: AdditionalConstraintOperator;
-  enabled: boolean;
-}
+  occurrences: [],
+};
