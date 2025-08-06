@@ -29,7 +29,7 @@ SCENARIO_TYPES = {
     "hl": "hydroInitialLevels",
     "hfl": "hydroFinalLevels",
     "hgp": "hydroGenerationPower",
-    "sts": "shortTermStorage",
+    "sts": "shortTermStorageInflows",
 }
 
 
@@ -79,7 +79,7 @@ class TestRulesetMatrices:
         assert ruleset.scenarios["hydroFinalLevels"].index.tolist() == ["France", "Germany", "Italy"]
         assert ruleset.scenarios["hydroGenerationPower"].shape == (3, 4)
         assert ruleset.scenarios["hydroGenerationPower"].index.tolist() == ["France", "Germany", "Italy"]
-        sts = ruleset.scenarios["shortTermStorage"]
+        sts = ruleset.scenarios["shortTermStorageInflows"]
         assert sts["France"].shape == (3, 4)
         assert sts["France"].index.tolist() == ["battery1", "battery2", "battery3"]
         assert sts["Germany"].shape == (2, 4)
@@ -228,7 +228,7 @@ class TestRulesetMatrices:
             "sts,germany,1,battery4": 6,
         }
         ruleset.update_rules(rules)
-        actual_map = ruleset.scenarios["shortTermStorage"]
+        actual_map = ruleset.scenarios["shortTermStorageInflows"]
 
         actual = actual_map["France"]
         actual = actual.fillna("NaN").to_dict(orient="index")
@@ -449,7 +449,7 @@ class TestRulesetMatrices:
                 "Germany": {"0": 121, "1": 122, "2": 123, "3": 124},
                 "Italy": {"0": 125, "1": 126, "2": 127, "3": 128},
             },
-            "shortTermStorage": {
+            "shortTermStorageInflows": {
                 "France": {
                     "battery1": {"0": 129, "1": 130, "2": 131, "3": 132},
                     "battery2": {"0": 133, "1": 134, "2": 135, "3": 136},
@@ -630,7 +630,7 @@ class TestRulesetMatrices:
         assert ruleset.get_table_form("hydroInitialLevels") == table_form["hydroInitialLevels"]
         assert ruleset.get_table_form("hydroFinalLevels") == table_form["hydroFinalLevels"]
         assert ruleset.get_table_form("hydroGenerationPower") == table_form["hydroGenerationPower"]
-        assert ruleset.get_table_form("shortTermStorage") == table_form["shortTermStorage"]
+        assert ruleset.get_table_form("shortTermStorageInflows") == table_form["shortTermStorageInflows"]
 
         # fmt: on
 
