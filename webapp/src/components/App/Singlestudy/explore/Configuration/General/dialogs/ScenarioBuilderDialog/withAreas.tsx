@@ -22,7 +22,7 @@ import {
   type GenericScenarioConfig,
   type HandlerReturnTypes,
   type ScenarioType,
-  type ClustersHandlerReturn,
+  type TwoLevelHandlerReturn,
   type ScenarioConfig,
 } from "./utils";
 
@@ -35,7 +35,7 @@ interface ScenarioTableProps {
 // If the configuration contains areas/clusters.
 function hasAreas(
   config: HandlerReturnTypes[keyof HandlerReturnTypes],
-): config is ClustersHandlerReturn {
+): config is TwoLevelHandlerReturn {
   return (
     config !== undefined &&
     "areas" in config &&
@@ -47,14 +47,14 @@ function hasAreas(
 function withAreas(
   Component: React.ComponentType<
     ScenarioTableProps & {
-      config: GenericScenarioConfig | ClustersHandlerReturn;
+      config: GenericScenarioConfig | TwoLevelHandlerReturn;
     }
   >,
 ) {
   return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
-    const [configByArea, setConfigByArea] = useState<GenericScenarioConfig | ClustersHandlerReturn>(
+    const [configByArea, setConfigByArea] = useState<GenericScenarioConfig | TwoLevelHandlerReturn>(
       {},
     );
 

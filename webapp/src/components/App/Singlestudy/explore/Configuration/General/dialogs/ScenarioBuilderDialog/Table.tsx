@@ -22,13 +22,13 @@ import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
 import {
   updateScenarioBuilderConfig,
-  type ClustersHandlerReturn,
+  type TwoLevelHandlerReturn,
   type GenericScenarioConfig,
   type ScenarioType,
 } from "./utils";
 
 interface Props {
-  config: GenericScenarioConfig | ClustersHandlerReturn;
+  config: GenericScenarioConfig | TwoLevelHandlerReturn;
   type: ScenarioType;
   areaId?: string;
 }
@@ -45,7 +45,7 @@ function Table({ config, type, areaId }: Props) {
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     const updatedScenario = {
       [type]:
-        (type === "thermal" || type === "renewable") && areaId
+        (type === "thermal" || type === "renewable" || type === "shortTermStorage") && areaId
           ? { [areaId]: dirtyValues }
           : dirtyValues,
     };

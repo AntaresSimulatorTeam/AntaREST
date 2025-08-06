@@ -41,6 +41,7 @@ def ruleset_fixture() -> RulesetMatrices:
         links=[("Germany", "France"), ("Italy", "France")],
         thermals={"France": ["nuclear", "coal"], "Italy": ["nuclear", "fuel"], "Germany": ["gaz", "fuel"]},
         renewables={"France": ["wind offshore", "wind onshore"], "Germany": ["wind onshore"]},
+        storages={"France": ["battery1", "battery2", "battery3"], "Germany": ["battery2", "battery4"]},
         groups=["Main", "Secondary"],
         scenario_types=SCENARIO_TYPES,
     )
@@ -78,8 +79,11 @@ class TestRulesetMatrices:
         assert ruleset.scenarios["hydroFinalLevels"].index.tolist() == ["France", "Germany", "Italy"]
         assert ruleset.scenarios["hydroGenerationPower"].shape == (3, 4)
         assert ruleset.scenarios["hydroGenerationPower"].index.tolist() == ["France", "Germany", "Italy"]
-        assert ruleset.scenarios["shortTermStorage"].shape == (3, 4)
-        assert ruleset.scenarios["shortTermStorage"].index.tolist() == ["France", "Germany", "Italy"]
+        sts = ruleset.scenarios["shortTermStorage"]
+        assert sts["France"].shape == (3, 4)
+        assert sts["France"].index.tolist() == ["battery1", "battery2", "battery3"]
+        assert sts["Germany"].shape == (2, 4)
+        assert sts["Germany"].index.tolist() == ["battery2", "battery4"]
 
     @pytest.mark.parametrize(
         "symbol, scenario_type",
@@ -89,7 +93,6 @@ class TestRulesetMatrices:
             ("w", "wind"),
             ("s", "solar"),
             ("hgp", "hydroGenerationPower"),
-            ("sts", "shortTermStorage"),
         ],
     )
     def test_update_rules__load(self, ruleset: RulesetMatrices, symbol: str, scenario_type: str) -> None:
@@ -215,6 +218,40 @@ class TestRulesetMatrices:
         for rule_id, ts_number in actual_rules.items():
             assert isinstance(ts_number, int)
 
+    def test_update_rules__storage(self, ruleset: RulesetMatrices) -> None:
+        rules = {
+            "sts,france,0,battery1": 1,
+            "sts,france,0,battery2": 2,
+            "sts,germany,0,battery2": 3,
+            "sts,france,1,battery1": 4,
+            "sts,france,1,battery3": 5,
+            "sts,germany,1,battery4": 6,
+        }
+        ruleset.update_rules(rules)
+        actual_map = ruleset.scenarios["shortTermStorage"]
+
+        actual = actual_map["France"]
+        actual = actual.fillna("NaN").to_dict(orient="index")
+        expected = {
+            "battery1": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
+            "battery2": {"0": 2, "1": "NaN", "2": "NaN", "3": "NaN"},
+            "battery3": {"0": "NaN", "1": 5, "2": "NaN", "3": "NaN"},
+        }
+        assert actual == expected
+
+        actual = actual_map["Germany"]
+        actual = actual.fillna("NaN").to_dict(orient="index")
+        expected = {
+            "battery2": {"0": 3, "1": "NaN", "2": "NaN", "3": "NaN"},
+            "battery4": {"0": "NaN", "1": 6, "2": "NaN", "3": "NaN"},
+        }
+        assert actual == expected
+
+        actual_rules = ruleset.get_rules()
+        assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
+
     def test_update_rules__hydro(self, ruleset: RulesetMatrices) -> None:
         rules = {
             "h,france,0": 1,
@@ -250,30 +287,6 @@ class TestRulesetMatrices:
         }
         ruleset.update_rules(rules)
         actual = ruleset.scenarios["hydroGenerationPower"]
-        actual = actual.fillna("NaN").to_dict(orient="index")
-        expected = {
-            "France": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
-            "Germany": {"0": 2, "1": 5, "2": "NaN", "3": "NaN"},
-            "Italy": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
-        }
-        assert actual == expected
-
-        actual_rules = ruleset.get_rules()
-        assert actual_rules == rules
-        for rule_id, ts_number in actual_rules.items():
-            assert isinstance(ts_number, int)
-
-    def test_update_rules__short_term_storage(self, ruleset: RulesetMatrices) -> None:
-        rules = {
-            "sts,france,0": 1,
-            "sts,germany,0": 2,
-            "sts,italy,0": 3,
-            "sts,france,1": 4,
-            "sts,germany,1": 5,
-            "sts,italy,1": 6,
-        }
-        ruleset.update_rules(rules)
-        actual = ruleset.scenarios["shortTermStorage"]
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
             "France": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
@@ -437,9 +450,15 @@ class TestRulesetMatrices:
                 "Italy": {"0": 125, "1": 126, "2": 127, "3": 128},
             },
             "shortTermStorage": {
-                "France": {"0": 129, "1": 130, "2": 131, "3": 132},
-                "Germany": {"0": 133, "1": 134, "2": 135, "3": 136},
-                "Italy": {"0": 137, "1": 138, "2": 139, "3": 140},
+                "France": {
+                    "battery1": {"0": 129, "1": 130, "2": 131, "3": 132},
+                    "battery2": {"0": 133, "1": 134, "2": 135, "3": 136},
+                    "battery3": {"0": 137, "1": 138, "2": 139, "3": 140},
+                },
+                "Germany": {
+                    "battery2": {"0": 141, "1": 142, "2": 143, "3": 144},
+                    "battery4": {"0": 145, "1": 146, "2": 147, "3": 148},
+                },
             },
         }
         for scenario_type, table in table_form.items():
@@ -488,18 +507,26 @@ class TestRulesetMatrices:
             "hgp,italy,1": 126,
             "hgp,italy,2": 127,
             "hgp,italy,3": 128,
-            "sts,france,0": 129,
-            "sts,france,1": 130,
-            "sts,france,2": 131,
-            "sts,france,3": 132,
-            "sts,germany,0": 133,
-            "sts,germany,1": 134,
-            "sts,germany,2": 135,
-            "sts,germany,3": 136,
-            "sts,italy,0": 137,
-            "sts,italy,1": 138,
-            "sts,italy,2": 139,
-            "sts,italy,3": 140,
+            "sts,france,0,battery1": 129,
+            "sts,france,1,battery1": 130,
+            "sts,france,2,battery1": 131,
+            "sts,france,3,battery1": 132,
+            "sts,france,0,battery2": 133,
+            "sts,france,1,battery2": 134,
+            "sts,france,2,battery2": 135,
+            "sts,france,3,battery2": 136,
+            "sts,france,0,battery3": 137,
+            "sts,france,1,battery3": 138,
+            "sts,france,2,battery3": 139,
+            "sts,france,3,battery3": 140,
+            "sts,germany,0,battery2": 141,
+            "sts,germany,1,battery2": 142,
+            "sts,germany,2,battery2": 143,
+            "sts,germany,3,battery2": 144,
+            "sts,germany,0,battery4": 145,
+            "sts,germany,1,battery4": 146,
+            "sts,germany,2,battery4": 147,
+            "sts,germany,3,battery4": 148,
             "hl,france,0": 0.93,
             "hl,france,1": 0.94,
             "hl,france,2": 0.95,

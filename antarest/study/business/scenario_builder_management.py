@@ -27,6 +27,7 @@ _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp", "sts"
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
 _CLUSTER_RELATED_SYMBOLS = "t", "r"
+_STS_RELATED_SYMBOLS = ("sts",)
 
 _HYDRO_LEVEL_PERCENT = 100
 
@@ -157,6 +158,7 @@ def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
         links=((a1, a2) for a1 in areas for a2 in file_study.config.get_links(a1)),
         thermals={a: file_study.config.get_thermal_ids(a) for a in areas},
         renewables={a: file_study.config.get_renewable_ids(a) for a in areas},
+        storages={a: file_study.config.get_st_storage_ids(a) for a in areas},
         groups=groups,
         scenario_types=scenario_types,
     )
@@ -208,6 +210,8 @@ class ScenarioBuilderManager:
                     _populate_links(section, symbol, data)
                 elif symbol in _CLUSTER_RELATED_SYMBOLS:
                     _populate_clusters(section, symbol, data)
+                elif symbol in _STS_RELATED_SYMBOLS:
+                    _populate_sts(section, symbol, data)
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
 
@@ -273,3 +277,10 @@ def _populate_clusters(section: _Section, symbol: str, data: Mapping[str, Mappin
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
                 section[f"{symbol},{area},{year},{cluster}"] = value
+
+
+def _populate_sts(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
+    for area, scenario_area in data.items():
+        for storage, scenario_area_storage in scenario_area.items():
+            for year, value in scenario_area_storage.items():
+                section[f"{symbol},{area},{year},{storage}"] = value

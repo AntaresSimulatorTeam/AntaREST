@@ -51,13 +51,14 @@ class ScenarioBuilder(IniFileNode):
     | hydro initial levels   |   hl   | `hl,<area>,<year> = <Level>`               |     8.0      |
     | hydro final levels     |  hfl   | `hfl,<area>,<year> = <Level>`              |     9.2      |
     | hydro generation power |  hgp   | `hgp,<area>,<year> = <TS number>`          |     9.1      |
-    | short term storage     |  sts   | `sts,<area>,<year> = <TS number>`          |     9.3      |
+    | short term storage     |  sts   | `sts,<area>,<year>,<storage> = <TS number>`|     9.3      |
 
     Legend:
     - `<area>`: The area ID (in lower case).
     - `<area1>`, `<area2>`: The area IDs of the two connected areas (source and target).
     - `<year>`: The year (0-based index) of the time series.
     - `<cluster>`: The ID of the thermal / renewable cluster (in lower case).
+    - `<storage>`: The ID of the storage (in lower case).
     - `<group>`: The ID of the binding constraint group (in lower case).
     - `<TS number>`: The time series number (1-based index of the matrix column).
     - `<Level>`: The level of the hydraulic reservoir (in range 0-1).
@@ -128,8 +129,9 @@ class ScenarioBuilder(IniFileNode):
             rules[f"hgp,{area_id},0"] = _TSNumber
 
     def _populate_sts_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            rules[f"sts,{area_id},0"] = _TSNumber
+        for area_id, area in self.config.areas.items():
+            for storage in area.st_storages:
+                rules[f"sts,{area_id},0,{storage.id}"] = _TSNumber
 
     @override
     def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
