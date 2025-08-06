@@ -414,8 +414,8 @@ class RulesetMatrices:
             df = pd.DataFrame.from_dict(simple_table_form, orient="index").replace({None: np.nan, nan_value: np.nan})
             scenario.loc[df.index, df.columns] = df
         else:
-            two_level_table_form = cast(ClusterTableForm, table_form)
-            for area, simple_table_form in two_level_table_form.items():
+            cluster_table_form = cast(ClusterTableForm, table_form)
+            for area, simple_table_form in cluster_table_form.items():
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
                 df = pd.DataFrame(simple_table_form).transpose().replace({None: np.nan, nan_value: np.nan})
                 scenario.loc[df.index, df.columns] = df
