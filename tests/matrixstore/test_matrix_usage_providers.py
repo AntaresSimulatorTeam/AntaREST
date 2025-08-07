@@ -14,32 +14,44 @@ import pytest
 
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.model import MatrixReference
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
 )
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from tests.helpers import with_db_context
 
 
 @pytest.fixture
-def raw_studies_matrix_usage_provider(core_config: Config, matrix_service: MatrixService):
-    return RawStudyMatrixUsageProvider(core_config, matrix_service)
+@with_db_context
+def raw_studies_matrix_usage_provider(
+    core_config: Config, raw_study_service: RawStudyService, db_session, matrix_service: ISimpleMatrixService
+):
+    return RawStudyMatrixUsageProvider(
+        core_config, StudyMetadataRepository(raw_study_service.cache, db_session), matrix_service
+    )
 
 
 @pytest.fixture
-def command_matrix_usage_provider(study_service, matrix_service):
-    command_matrix_usage_provider = CommandMatrixUsageProvider(study_service, matrix_service)
+def command_matrix_usage_provider(variant_study_repository: VariantStudyRepository, command_factory: CommandFactory):
+    command_matrix_usage_provider = CommandMatrixUsageProvider(variant_study_repository, command_factory)
 
     return command_matrix_usage_provider
 
 
 @pytest.fixture
-def constants_matrix_usage_provider(variant_study_service, matrix_service):
-    return ConstantsMatrixUsageProvider(variant_study_service, matrix_service)
+def constants_matrix_usage_provider(matrix_service: MatrixService):
+    matrix_constants = GeneratorMatrixConstants(matrix_service)
+    return ConstantsMatrixUsageProvider(matrix_constants, matrix_service)
 
 
 def test_raw_studies_matrix_usage_provider(raw_studies_matrix_usage_provider):
@@ -59,10 +71,8 @@ def test_raw_studies_matrix_usage_provider(raw_studies_matrix_usage_provider):
     matrices_references = raw_studies_matrix_usage_provider.get_matrix_usage()
     matrices_references_id = [matrix_reference.matrix_id for matrix_reference in matrices_references]
     matrices_references_id.sort()
-    assert len(matrices_references) == 3
 
-    for matrix_name, matrix_id in zip(matrices_name, matrices_references_id):
-        assert matrix_name == matrix_id
+    assert matrices_name == matrices_references_id
 
 
 def test_command_matrix_usage_provider(
@@ -74,7 +84,7 @@ def test_command_matrix_usage_provider(
         study_version = "880"
         variant_study_repository.save(VariantStudy(id=study_id, version=study_version))
         matrices_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
-        use_description = f"Used by {matrices_id} from study {study_id}"
+        use_description = f"Used by command {matrices_id} from variant study {study_id}"
 
         # TODO: add series to the command blocks
         command_block1 = CommandBlock(
@@ -100,11 +110,7 @@ def test_command_matrix_usage_provider(
 
         matrices_references = command_matrix_usage_provider.get_matrix_usage()
 
-        assert len(matrices_references) == 4
-
-        for matrix_ref in matrices_references:
-            assert matrix_ref.matrix_id == matrices_id
-            assert matrix_ref.use_description == use_description
+        assert matrices_references == [MatrixReference(matrix_id=matrices_id, use_description=use_description)] * 4
 
 
 def test_constants_matrix_usage_provider(constants_matrix_usage_provider: ConstantsMatrixUsageProvider):

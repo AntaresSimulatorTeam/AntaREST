@@ -49,7 +49,8 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
-        config=mock_config, study_service=study_service, matrix_service=Mock(), matrices_usage_providers=[Mock()]
+        config=mock_config,
+        matrix_service=Mock(),
     )
 
     return matrix_garbage_collector

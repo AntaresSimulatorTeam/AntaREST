@@ -717,19 +717,3 @@ def _create_upload_file(filename: str, file: t.IO = None, content_type: str = ""
 #         assert len(matrices) == 2
 #         assert "[[1,2,3]]" in matrices
 #         assert "[[1,2,4]]" in matrices
-
-
-@pytest.mark.unit_test
-def test_get_used_matrices(matrix_service: MatrixService):
-    with db():
-        matrix_service.get_studies_matrices = Mock(
-            return_value={"matrix1", "matrix2", "matrix3", "matrix4", "matrix6", "constant_matrix"}
-        )
-        assert matrix_service.get_used_matrices() == {
-            "matrix1",
-            "matrix2",
-            "matrix3",
-            "matrix4",
-            "matrix6",
-            "constant_matrix",
-        }

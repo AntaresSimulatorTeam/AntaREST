@@ -116,9 +116,7 @@ class VariantStudyService(AbstractStorageService):
         self.event_bus = event_bus
         self.command_factory = command_factory
         self.generator = VariantCommandGenerator(self.study_factory)
-        CommandMatrixUsageProvider(
-            variant_study_service=self, matrix_service=self.command_factory.command_context.matrix_service
-        )
+        CommandMatrixUsageProvider(variant_study_repo=repository, command_factory=command_factory)
 
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:

@@ -40,6 +40,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -55,7 +56,6 @@ from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataS
 
 if TYPE_CHECKING:
     from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-    from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -220,26 +220,6 @@ class MatrixService(ISimpleMatrixService):
         self.config = config
         self.usage_providers: List[IMatrixUsageProvider] = []
         self.usage_providers.append(self.create_dataset_usage_provider())
-
-    def create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
-        repo_dataset = self.repo_dataset
-
-        class DatasetUsageProvider(IMatrixUsageProvider):
-            def __init__(self, matrix_service: "MatrixService") -> None:
-                matrix_service.register_usage_provider(self)
-
-            @override
-            def get_matrix_usage(self) -> list[MatrixReference]:
-                logger.info("Getting all matrices used in datasets")
-                datasets = repo_dataset.get_all_datasets()
-
-                return [
-                    MatrixReference(matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}")
-                    for dataset in datasets
-                    for matrix in dataset.matrices
-                ]
-
-        return DatasetUsageProvider(self)
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -596,3 +576,23 @@ class MatrixService(ISimpleMatrixService):
             for provider in self.usage_providers
             for matrix_reference in provider.get_matrix_usage()
         }
+
+    def create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
+        repo_dataset = self.repo_dataset
+
+        class DatasetUsageProvider(IMatrixUsageProvider):
+            def __init__(self, matrix_service: "MatrixService") -> None:
+                matrix_service.register_usage_provider(self)
+
+            @override
+            def get_matrix_usage(self) -> list[MatrixReference]:
+                logger.info("Getting all matrices used in datasets")
+                datasets = repo_dataset.get_all_datasets()
+
+                return [
+                    MatrixReference(matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}")
+                    for dataset in datasets
+                    for matrix in dataset.matrices
+                ]
+
+        return DatasetUsageProvider(self)
