@@ -70,10 +70,6 @@ def idx_group(group: str, /) -> str:
     return group
 
 
-def idx_storage(_: str, storage: str, /) -> str:
-    return storage
-
-
 # ==========================
 #  Scenario Builder Ruleset
 # ==========================
@@ -142,9 +138,6 @@ class RulesetMatrices:
     def get_cluster_index(self, symbol: str, area: str) -> List[str]:
         clusters = self.clusters_by_symbols[symbol][area.lower()]
         return [idx_cluster(area, cluster) for cluster in clusters.values()]
-
-    def get_storage_index(self, area: str) -> List[str]:
-        return [idx_storage(area, storage) for storage in self.storages[area.lower()].values()]
 
     def get_group_index(self) -> List[str]:
         return [idx_group(group) for group in self.groups.values()]
