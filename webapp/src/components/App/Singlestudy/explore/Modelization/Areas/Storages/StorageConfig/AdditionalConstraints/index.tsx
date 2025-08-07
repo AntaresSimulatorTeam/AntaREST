@@ -12,33 +12,29 @@
  * This file is part of the Antares project.
  */
 
-import { Delete as DeleteIcon } from "@mui/icons-material";
-import {
-  Box,
-  IconButton,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { useMemo, useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import SimpleLoader from "@/components/common/loaders/SimpleLoader";
+import EmptyView from "@/components/common/page/EmptyView";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
 import PropertiesView from "@/components/common/PropertiesView";
+import SplitView from "@/components/common/SplitView";
+import useConfirm from "@/hooks/useConfirm";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
   deleteAdditionalConstraints,
   getAdditionalConstraints,
 } from "@/services/api/studies/areas/storages";
-import type {
-  AdditionalConstraint,
-  AdditionalConstraintCreation,
-} from "@/services/api/studies/areas/storages/types";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
+import { sortByName } from "@/services/utils";
+import { toError } from "@/utils/fnUtils";
+import { isSearchMatching } from "@/utils/stringUtils";
+import { Delete as DeleteIcon } from "@mui/icons-material";
+import { Box, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AddConstraintDialog from "./AddConstraintDialog";
-import ConstraintDetails from "./ConstraintDetails";
+import ConstraintForm from "./ConstraintForm";
 
 interface Props {
   studyId: string;
@@ -48,214 +44,172 @@ interface Props {
 
 function AdditionalConstraints({ studyId, areaId, storageId }: Props) {
   const { t } = useTranslation();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedConstraintId, setSelectedConstraintId] = useState<string | null>(null);
-  const [constraintToDelete, setConstraintToDelete] = useState<string | null>(null);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const [constraints, setConstraints] = useState<AdditionalConstraint[]>([]);
+  const [selectedConstraintId, setSelectedConstraintId] = useState<string | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const deleteAction = useConfirm<{ name: string }>();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const { data: initialConstraints = [] } = usePromiseWithSnackbarError(
+  const { isLoading, isRejected, error } = usePromiseWithSnackbarError(
     () => getAdditionalConstraints({ studyId, areaId, storageId }),
     {
-      resetDataOnReload: true,
+      onDataChange: (data = []) => setConstraints(data),
       errorMessage: t("studies.error.retrieveData"),
       deps: [studyId, areaId, storageId],
     },
   );
 
+  const filteredAndSortedConstraints = useMemo(() => {
+    const filteredConstraints = searchValue
+      ? constraints.filter(({ name }) => isSearchMatching(searchValue, name))
+      : constraints;
+
+    return sortByName(filteredConstraints);
+  }, [constraints, searchValue]);
+
+  // Reset selected constraint ID if the current one is not valid
   useEffect(() => {
-    setConstraints(initialConstraints);
-  }, [initialConstraints]);
-
-  const filteredConstraints = useMemo(() => {
-    if (!searchTerm) {
-      return constraints;
+    if (
+      selectedConstraintId === null ||
+      !constraints.find(({ id }) => id === selectedConstraintId)
+    ) {
+      const firstVisibleConstraint = filteredAndSortedConstraints[0];
+      setSelectedConstraintId(firstVisibleConstraint?.id || null);
     }
-
-    return constraints.filter((constraint) => constraint.id.includes(searchTerm.toLowerCase()));
-  }, [constraints, searchTerm]);
-
-  const selectedConstraint = useMemo(() => {
-    if (!selectedConstraintId) {
-      return null;
-    }
-
-    return constraints.find((c) => c.id === selectedConstraintId);
-  }, [constraints, selectedConstraintId]);
+  }, [constraints, filteredAndSortedConstraints, selectedConstraintId]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
+  const handleAdd = (createdConstraint: AdditionalConstraint) => {
+    setConstraints((prevConstraints) => [...prevConstraints, createdConstraint]);
+    setSelectedConstraintId(createdConstraint.id);
   };
 
-  const handleConstraintAdded = (
-    _data: SubmitHandlerPlus<AdditionalConstraintCreation>,
-    createdConstraints: AdditionalConstraint[],
-  ) => {
-    setConstraints((prevConstraints) => [...prevConstraints, ...createdConstraints]);
+  const handleDelete = async (constraintId: AdditionalConstraint["id"]) => {
+    const constraintToDelete = constraints.find(({ id }) => id === constraintId);
 
-    if (createdConstraints.length > 0) {
-      setSelectedConstraintId(createdConstraints[0].id);
-    }
-
-    setAddDialogOpen(false);
-  };
-
-  const handleDeleteClick = (constraintId: string) => {
-    setConstraintToDelete(constraintId);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
     if (!constraintToDelete) {
       return;
     }
 
+    const isConfirm = await deleteAction.showConfirm({ data: { name: constraintToDelete.name } });
+
+    if (!isConfirm) {
+      return;
+    }
+
     try {
+      setConstraints((prevConstraints) => prevConstraints.filter(({ id }) => id !== constraintId));
+
       await deleteAdditionalConstraints({
         studyId,
         areaId,
         storageId,
-        constraintIds: [constraintToDelete],
+        constraintIds: [constraintId],
       });
+    } catch (err) {
+      setConstraints((prevConstraints) => [...prevConstraints, constraintToDelete]);
 
-      setConstraints((prevConstraints) =>
-        prevConstraints.filter((c) => c.id !== constraintToDelete),
+      enqueueErrorSnackbar(
+        t("study.modelization.storages.additionalConstraints.delete.error", {
+          name: constraintToDelete.name,
+        }),
+        toError(err),
       );
-
-      if (selectedConstraintId === constraintToDelete) {
-        setSelectedConstraintId(null);
-      }
-    } finally {
-      setDeleteDialogOpen(false);
-      setConstraintToDelete(null);
     }
-  };
-
-  const handleConstraintSelect = (constraintId: string) => {
-    setSelectedConstraintId(constraintId);
-  };
-
-  const handleConstraintUpdated = (
-    _data: SubmitHandlerPlus<AdditionalConstraint>,
-    updatedConstraints: AdditionalConstraint[],
-  ) => {
-    setConstraints((prevConstraints) => {
-      const updatedMap = new Map(updatedConstraints.map((c) => [c.id, c]));
-
-      return prevConstraints.map((constraint) => {
-        const updated = updatedMap.get(constraint.id);
-        return updated ?? constraint;
-      });
-    });
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  if (isRejected) {
+    return <EmptyView title={error?.toString()} />;
+  }
+
   const constraintsList = (
-    <>
-      <List sx={{ overflow: "auto" }}>
-        {filteredConstraints.map((constraint) => (
-          <ListItem
-            key={constraint.id}
-            secondaryAction={
-              <IconButton
-                edge="end"
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteClick(constraint.id);
-                }}
-              >
-                <DeleteIcon />
-              </IconButton>
-            }
-            disablePadding
+    <List sx={{ overflow: "auto" }}>
+      {filteredAndSortedConstraints.map((constraint) => (
+        <ListItem key={constraint.id} disablePadding dense>
+          <ListItemButton
+            selected={selectedConstraintId === constraint.id}
+            onClick={() => setSelectedConstraintId(constraint.id)}
           >
-            <ListItemButton
-              selected={selectedConstraintId === constraint.id}
-              onClick={() => handleConstraintSelect(constraint.id)}
-            >
-              <Tooltip title={constraint.id}>
-                <ListItemText
-                  primary={constraint.id}
-                  sx={{
-                    textOverflow: "ellipsis",
-                    overflow: "hidden",
-                    textWrap: "nowrap",
-                  }}
-                />
-              </Tooltip>
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-    </>
+            <Tooltip title={constraint.name}>
+              <ListItemText
+                primary={constraint.name}
+                slotProps={{
+                  primary: {
+                    sx: {
+                      textWrap: "nowrap",
+                      textOverflow: "ellipsis",
+                      overflow: "hidden",
+                    },
+                  },
+                }}
+              />
+            </Tooltip>
+          </ListItemButton>
+        </ListItem>
+      ))}
+    </List>
   );
 
   return (
-    <Box sx={{ display: "flex", height: 1, gap: 1 }}>
-      {/* Left panel - Constraints list */}
-      <Box sx={{ width: 250 }}>
-        <PropertiesView
-          onSearchFilterChange={handleSearchChange}
-          onAdd={() => setAddDialogOpen(true)}
-          mainContent={constraintsList}
-        />
-      </Box>
+    <>
+      <SplitView id="storage-additionalConstraints" sizes={[15, 85]}>
+        {/* Left panel - Constraints list */}
+        <Box>
+          {isLoading ? (
+            <SimpleLoader />
+          ) : (
+            <PropertiesView
+              onSearchFilterChange={setSearchValue}
+              onAdd={() => setAddDialogOpen(true)}
+              mainContent={constraintsList}
+            />
+          )}
+        </Box>
 
-      {/* Right panel - Constraint details */}
-      <Box sx={{ flex: 1, p: 2 }}>
-        {selectedConstraint ? (
-          <ConstraintDetails
-            studyId={studyId}
-            areaId={areaId}
-            storageId={storageId}
-            constraint={selectedConstraint}
-            onUpdate={handleConstraintUpdated}
-          />
-        ) : (
-          <Box
-            sx={{
-              height: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Typography color="text.secondary">
-              {t("study.modelization.storages.additionalConstraints.selectConstraint")}
-            </Typography>
-          </Box>
-        )}
-      </Box>
-
-      {/* Dialogs */}
+        {/* Right panel - Constraint form */}
+        <ViewWrapper elevation={2}>
+          {selectedConstraintId ? (
+            <ConstraintForm
+              studyId={studyId}
+              areaId={areaId}
+              storageId={storageId}
+              constraintId={selectedConstraintId}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <EmptyView />
+          )}
+        </ViewWrapper>
+      </SplitView>
       <AddConstraintDialog
         open={addDialogOpen}
         onClose={() => setAddDialogOpen(false)}
-        onSave={handleConstraintAdded}
+        onSave={handleAdd}
         studyId={studyId}
         areaId={areaId}
         storageId={storageId}
+        existingNames={constraints.map((c) => c.name)}
       />
-
       <ConfirmationDialog
-        open={deleteDialogOpen}
-        onCancel={() => setDeleteDialogOpen(false)}
-        onConfirm={handleDeleteConfirm}
-        alert="warning"
+        open={deleteAction.isPending}
+        onConfirm={deleteAction.yes}
+        onCancel={deleteAction.no}
+        alert="error"
         titleIcon={DeleteIcon}
       >
-        {t("study.modelization.storages.additionalConstraints.confirmDelete")}
+        {t("study.modelization.storages.additionalConstraints.delete.confirm", {
+          name: deleteAction.data?.name,
+        })}
       </ConfirmationDialog>
-    </Box>
+    </>
   );
 }
 

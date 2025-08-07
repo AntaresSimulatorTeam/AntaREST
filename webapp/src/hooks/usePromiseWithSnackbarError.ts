@@ -14,15 +14,15 @@
 
 import { useEffect } from "react";
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
-import usePromise, { type UsePromiseResponse, type UsePromiseParams } from "./usePromise";
+import usePromise, { type UsePromiseParams, type UsePromiseResponse } from "./usePromise";
 
-export interface UsePromiseWithSnackbarErrorParams extends UsePromiseParams {
+export interface UsePromiseWithSnackbarErrorParams<T> extends UsePromiseParams<T> {
   errorMessage: string;
 }
 
 function usePromiseWithSnackbarError<T>(
   fn: () => Promise<T>,
-  params: UsePromiseWithSnackbarErrorParams,
+  params: UsePromiseWithSnackbarErrorParams<T>,
 ): UsePromiseResponse<T> {
   const res = usePromise(fn, params);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();

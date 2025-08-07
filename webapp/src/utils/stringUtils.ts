@@ -27,11 +27,13 @@ export const isSearchMatching = R.curry((search: string, values: string | string
  *
  * @param str - The string containing placeholders in the format `{placeholder}`.
  * @param values - An object mapping placeholders to their replacement values.
+ * Each value are stringified before replacement.
  * @returns The formatted string with all placeholders replaced by their corresponding values.
  *
  * @example
  * format("Hello {name}", { name: "John" }); // Returns: "Hello John"
  */
-export function format(str: string, values: Record<string, string>): string {
-  return str.replace(/{([a-zA-Z0-9]+)}/g, (_, key) => values[key]);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function format(str: string, values: Record<string, any>): string {
+  return str.replace(/{([a-zA-Z0-9]+)}/g, (_, key) => String(values[key]));
 }

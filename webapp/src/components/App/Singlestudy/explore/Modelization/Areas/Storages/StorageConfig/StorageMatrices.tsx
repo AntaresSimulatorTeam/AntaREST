@@ -44,7 +44,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       label: t("study.modelization.storages.modulation"),
       content: () => (
         <SplitView id="storage-injectionModulation-withdrawalModulation" sizes={[50, 50]}>
-          <Box sx={{ pr: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.injectionModulation")}
@@ -53,7 +53,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.withdrawalModulation")}
@@ -69,7 +69,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       label: t("study.modelization.storages.ruleCurves"),
       content: () => (
         <SplitView id="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
-          <Box sx={{ pr: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.lowerRuleCurve")}
@@ -78,7 +78,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.upperRuleCurve")}
@@ -107,7 +107,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       label: t("study.modelization.storages.costs"),
       content: () => (
         <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
-          <Box sx={{ pr: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.injectionCost")}
@@ -116,7 +116,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.withdrawalCost")}
@@ -132,7 +132,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
       label: t("study.modelization.storages.variationCosts"),
       content: () => (
         <SplitView id="storage-variationInjectionCost-variationWithdrawalCost" sizes={[50, 50]}>
-          <Box sx={{ pr: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.injectionVariationCost")}
@@ -141,7 +141,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 1 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.withdrawalVariationCost")}
@@ -166,12 +166,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
   ];
 
-  return (
-    <TabsView
-      disableGutters
-      items={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]}
-    />
-  );
+  return <TabsView items={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]} />;
 }
 
 export default StorageMatrices;
