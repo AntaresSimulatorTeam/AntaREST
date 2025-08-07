@@ -59,7 +59,7 @@ def ini_cleaner() -> Callable[[str], str]:
 
 @pytest.fixture(name="matrix_service")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
-    return InMemorySimpleMatrixService(matrix_content_repository=Mock())
+    return InMemorySimpleMatrixService()
 
 
 def empty_study_fixture(study_version: StudyVersion, matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
