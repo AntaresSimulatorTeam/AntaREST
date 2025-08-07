@@ -106,51 +106,30 @@ class STStorageConfigNotFound(ConfigFileNotFound):
     object_name = SHORT_TERM_STORAGE
 
 
-class ConfigSectionNotFound(HTTPException):
-    """
-    Exception raised when a configuration section is not found (404 Not Found).
-
-    Notes:
-        The study ID is not provided because it is implicit.
-
-    Attributes:
-        path: Path of the missing file(s) relative to the study directory.
-        section_id: ID of the missing section.
-    """
-
+class ClusterNotFound(HTTPException):
     object_name = ""
-    """Name of the object that is not found: thermal, renewables, etc."""
 
-    def __init__(self, path: str, section_id: str):
-        assert _match_input_path(path), f"Invalid path: '{path}'"
-        self.path = path
-        self.section_id = section_id
-        object_name = self.object_name or "section"
-        detail = f"{object_name.title()} '{section_id}' not found in '{path}'"
-        super().__init__(HTTPStatus.NOT_FOUND, detail)
-
-    @override
-    def __str__(self) -> str:
-        """Return a string representation of the exception."""
-        return self.detail
+    def __init__(self, area_id: str, cluster_id: str):
+        msg = f"{self.object_name} '{cluster_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
-class ThermalClusterNotFound(ConfigSectionNotFound):
+class ThermalClusterNotFound(ClusterNotFound):
     """Thermal cluster is not found (404 Not Found)"""
 
-    object_name = THERMAL_CLUSTER
+    object_name = "Thermal cluster"
 
 
-class RenewableClusterNotFound(ConfigSectionNotFound):
+class RenewableClusterNotFound(ClusterNotFound):
     """Renewable cluster is not found (404 Not Found)"""
 
-    object_name = RENEWABLE_CLUSTER
+    object_name = "Renewable cluster"
 
 
-class STStorageNotFound(ConfigSectionNotFound):
+class STStorageNotFound(ClusterNotFound):
     """Short-term storage is not found (404 Not Found)"""
 
-    object_name = SHORT_TERM_STORAGE
+    object_name = "Short-term storage"
 
 
 class MatrixNotFound(HTTPException):
@@ -372,8 +351,8 @@ class FolderCreationNotAllowed(HTTPException):
 
 class ReferencedObjectDeletionNotAllowed(HTTPException):
     """
-    Exception raised when a binding constraint is not allowed to be deleted because it references
-    other objects: areas, links or thermal clusters.
+    Exception raised when an object is not allowed to be deleted because it is referenced inside some binding constraints.
+    Possible objects are: areas, links or thermal clusters.
     """
 
     def __init__(self, object_id: str, binding_ids: Sequence[str], *, object_type: str) -> None:
@@ -476,15 +455,6 @@ class BadZipBinary(HTTPException):
 class IncorrectPathError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
-
-
-class FileTooLargeError(HTTPException):
-    def __init__(self, estimated_size: int, maximum_size: int) -> None:
-        message = (
-            f"Cannot aggregate output data."
-            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
-        )
-        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
 
 
 class UrlNotMatchJsonDataError(HTTPException):
@@ -834,3 +804,26 @@ class XpansionCandidateDeletionError(HTTPException):
     def __init__(self, uuid: str, name: str) -> None:
         msg = f"You cannot delete the candidate {name} in study '{uuid}'. It is referenced in the sensitivity config."
         super().__init__(HTTPStatus.BAD_REQUEST, msg)
+
+
+class DuplicateSTStorageConstraintName(HTTPException):
+    def __init__(self, area_id: str, constraint_id: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, f"The constraint '{constraint_id}' already exists in area '{area_id}'")
+
+
+class AreaReferencedInsideSTStorageAdditionalConstraints(HTTPException):
+    """
+    Exception raised when an area is not allowed to be deleted because it has inside some st-storage additional constraints.
+    """
+
+    def __init__(self, area_id: str) -> None:
+        super().__init__(
+            HTTPStatus.CONFLICT,
+            f"The Area '{area_id}' is not allowed to be deleted as it contains some short-term storage additional-constraints.",
+        )
+
+
+class STStorageAdditionalConstraintNotFound(HTTPException):
+    def __init__(self, area_id: str, constraint_id: str) -> None:
+        msg = f"The constraint '{constraint_id}' inside area {area_id} was not found."
+        super().__init__(HTTPStatus.NOT_FOUND, msg)

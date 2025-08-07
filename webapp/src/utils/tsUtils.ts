@@ -31,6 +31,11 @@ export type EmptyObject = Record<string, never>;
  */
 export type PartialExceptFor<T, K extends keyof T> = O.Required<Partial<T>, K>;
 
+/**
+ * Make specified properties in T optional.
+ */
+export type PartialBy<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
 export function tuple<T extends unknown[]>(...items: T): T {
   return items;
 }

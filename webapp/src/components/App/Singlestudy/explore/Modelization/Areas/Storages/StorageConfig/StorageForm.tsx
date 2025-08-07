@@ -12,23 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import type { Area, StudyMetadata } from "@/types/types";
-import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import * as RA from "ramda-adjunct";
 import { useTranslation } from "react-i18next";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import type { Area, StudyMetadata } from "@/types/types";
+import { validateNumber } from "@/utils/validation/number";
+import Fieldset from "../../../../../../../common/Fieldset";
+import Form from "../../../../../../../common/Form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import Form from "../../../../../../../common/Form";
 import {
   type FormalizedStorage,
   getStorage,
-  type Storage,
   STORAGE_GROUPS,
+  type Storage,
   updateStorage,
 } from "../utils";
 

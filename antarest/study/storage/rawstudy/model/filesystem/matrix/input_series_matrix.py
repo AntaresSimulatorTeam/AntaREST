@@ -99,6 +99,15 @@ class InputSeriesMatrix(MatrixNode):
             return final_matrix
 
     @override
+    def write_dataframe(self, df: pd.DataFrame) -> None:
+        # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
+        # This way, we can write the content quicker, and the file takes less place on the fs.
+        if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
+            self.config.path.touch(exist_ok=True)
+        else:
+            df.to_csv(self.config.path, sep="\t", header=False, index=False)
+
+    @override
     def check_errors(
         self,
         data: JSON,
@@ -150,4 +159,11 @@ class InputSeriesMatrix(MatrixNode):
             filename = target_path.name
         else:
             content = self.config.path.read_bytes()
+
+        if content == b"" and self.default_empty is not None:
+            # The file is empty, we should return the `default_empty` value
+            buffer = io.BytesIO()
+            dump_dataframe(pd.DataFrame(self.default_empty), buffer)
+            content = buffer.getvalue()
+
         return OriginalFile(content=content, suffix=suffix, filename=filename)

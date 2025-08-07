@@ -77,8 +77,30 @@ class TestAdvancedParametersForm:
             json=obj,
         )
         assert res.status_code == HTTPStatus.OK, res.json()
-        actual = res.json()
-        assert actual is None
+        assert res.json() == {
+            "accuracyOnCorrelation": "",
+            "accurateShavePeaksIncludeShortTermStorage": None,
+            "dayAheadReserveManagement": "global",
+            "hydroHeuristicPolicy": "accommodate rule curves",
+            "hydroPricingMode": "fast",
+            "initialReservoirLevels": "hot start",
+            "numberOfCoresMode": "maximum",
+            "powerFluctuations": "free modulations",
+            "renewableGenerationModelling": "clusters",
+            "seedHydroCosts": 9005489,
+            "seedInitialReservoirLevels": 10005489,
+            "seedSpilledEnergyCosts": 7005489,
+            "seedThermalCosts": 8005489,
+            "seedTsgenHydro": 2005489,
+            "seedTsgenLoad": 1005489,
+            "seedTsgenSolar": 4005489,
+            "seedTsgenThermal": 3005489,
+            "seedTsgenWind": 5489,
+            "seedTsnumbers": 5005489,
+            "seedUnsuppliedEnergyCosts": 6005489,
+            "sheddingPolicy": "shave peaks",
+            "unitCommitmentMode": "fast",
+        }
 
         if study_version:
             res = client.put(
@@ -121,5 +143,5 @@ class TestAdvancedParametersForm:
         else:
             assert res.status_code == 422
             response = res.json()
-            assert response["exception"] == "InvalidFieldForVersionError"
-            assert response["description"] == "Unit commitment mode `MILP` only exists in v8.8+ studies"
+            assert response["exception"] == "ValidationError"
+            assert "Unit commitment mode `MILP` only exists in v8.8+ studies" in response["description"]
