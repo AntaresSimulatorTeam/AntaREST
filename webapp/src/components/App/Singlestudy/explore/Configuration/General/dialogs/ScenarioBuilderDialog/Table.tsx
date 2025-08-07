@@ -45,7 +45,7 @@ function Table({ config, type, areaId }: Props) {
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
     const updatedScenario = {
       [type]:
-        (type === "thermal" || type === "renewable") && areaId
+        (type === "thermal" || type === "renewable" || type === "shortTermStorageInflows") && areaId
           ? { [areaId]: dirtyValues }
           : dirtyValues,
     };

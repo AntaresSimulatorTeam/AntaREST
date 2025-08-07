@@ -29,6 +29,7 @@ SCENARIO_TYPES = {
     "hl": "hydroInitialLevels",
     "hfl": "hydroFinalLevels",
     "hgp": "hydroGenerationPower",
+    "sts": "shortTermStorageInflows",
 }
 
 
@@ -40,6 +41,7 @@ def ruleset_fixture() -> RulesetMatrices:
         links=[("Germany", "France"), ("Italy", "France")],
         thermals={"France": ["nuclear", "coal"], "Italy": ["nuclear", "fuel"], "Germany": ["gaz", "fuel"]},
         renewables={"France": ["wind offshore", "wind onshore"], "Germany": ["wind onshore"]},
+        storages={"France": ["battery1", "battery2", "battery3"], "Germany": ["battery2", "battery4"]},
         groups=["Main", "Secondary"],
         scenario_types=SCENARIO_TYPES,
     )
@@ -77,6 +79,11 @@ class TestRulesetMatrices:
         assert ruleset.scenarios["hydroFinalLevels"].index.tolist() == ["France", "Germany", "Italy"]
         assert ruleset.scenarios["hydroGenerationPower"].shape == (3, 4)
         assert ruleset.scenarios["hydroGenerationPower"].index.tolist() == ["France", "Germany", "Italy"]
+        sts = ruleset.scenarios["shortTermStorageInflows"]
+        assert sts["France"].shape == (3, 4)
+        assert sts["France"].index.tolist() == ["battery1", "battery2", "battery3"]
+        assert sts["Germany"].shape == (2, 4)
+        assert sts["Germany"].index.tolist() == ["battery2", "battery4"]
 
     @pytest.mark.parametrize(
         "symbol, scenario_type",
@@ -203,6 +210,40 @@ class TestRulesetMatrices:
         actual = actual.fillna("NaN").to_dict(orient="index")
         expected = {
             "wind onshore": {"0": 3, "1": 6, "2": "NaN", "3": "NaN"},
+        }
+        assert actual == expected
+
+        actual_rules = ruleset.get_rules()
+        assert actual_rules == rules
+        for rule_id, ts_number in actual_rules.items():
+            assert isinstance(ts_number, int)
+
+    def test_update_rules__storage(self, ruleset: RulesetMatrices) -> None:
+        rules = {
+            "sts,france,0,battery1": 1,
+            "sts,france,0,battery2": 2,
+            "sts,germany,0,battery2": 3,
+            "sts,france,1,battery1": 4,
+            "sts,france,1,battery3": 5,
+            "sts,germany,1,battery4": 6,
+        }
+        ruleset.update_rules(rules)
+        actual_map = ruleset.scenarios["shortTermStorageInflows"]
+
+        actual = actual_map["France"]
+        actual = actual.fillna("NaN").to_dict(orient="index")
+        expected = {
+            "battery1": {"0": 1, "1": 4, "2": "NaN", "3": "NaN"},
+            "battery2": {"0": 2, "1": "NaN", "2": "NaN", "3": "NaN"},
+            "battery3": {"0": "NaN", "1": 5, "2": "NaN", "3": "NaN"},
+        }
+        assert actual == expected
+
+        actual = actual_map["Germany"]
+        actual = actual.fillna("NaN").to_dict(orient="index")
+        expected = {
+            "battery2": {"0": 3, "1": "NaN", "2": "NaN", "3": "NaN"},
+            "battery4": {"0": "NaN", "1": 6, "2": "NaN", "3": "NaN"},
         }
         assert actual == expected
 
@@ -340,7 +381,7 @@ class TestRulesetMatrices:
             ruleset.update_rules(rules)
         assert ruleset.get_rules() == {}
 
-    def test_set_table_form(self, ruleset: RulesetMatrices) -> None:
+    def test_update_table_from(self, ruleset: RulesetMatrices) -> None:
         table_form = {
             "load": {
                 "France": {"0": 1, "1": 2, "2": 3, "3": 4},
@@ -408,9 +449,20 @@ class TestRulesetMatrices:
                 "Germany": {"0": 121, "1": 122, "2": 123, "3": 124},
                 "Italy": {"0": 125, "1": 126, "2": 127, "3": 128},
             },
+            "shortTermStorageInflows": {
+                "France": {
+                    "battery1": {"0": 129, "1": 130, "2": 131, "3": 132},
+                    "battery2": {"0": 133, "1": 134, "2": 135, "3": 136},
+                    "battery3": {"0": 137, "1": 138, "2": 139, "3": 140},
+                },
+                "Germany": {
+                    "battery2": {"0": 141, "1": 142, "2": 143, "3": 144},
+                    "battery4": {"0": 145, "1": 146, "2": 147, "3": 148},
+                },
+            },
         }
         for scenario_type, table in table_form.items():
-            ruleset.set_table_form(table, scenario_type)
+            ruleset.update_table_form(table, scenario_type)
         actual_rules = ruleset.get_rules()
         expected = {
             "bc,main,0": 85,
@@ -455,6 +507,26 @@ class TestRulesetMatrices:
             "hgp,italy,1": 126,
             "hgp,italy,2": 127,
             "hgp,italy,3": 128,
+            "sts,france,0,battery1": 129,
+            "sts,france,1,battery1": 130,
+            "sts,france,2,battery1": 131,
+            "sts,france,3,battery1": 132,
+            "sts,france,0,battery2": 133,
+            "sts,france,1,battery2": 134,
+            "sts,france,2,battery2": 135,
+            "sts,france,3,battery2": 136,
+            "sts,france,0,battery3": 137,
+            "sts,france,1,battery3": 138,
+            "sts,france,2,battery3": 139,
+            "sts,france,3,battery3": 140,
+            "sts,germany,0,battery2": 141,
+            "sts,germany,1,battery2": 142,
+            "sts,germany,2,battery2": 143,
+            "sts,germany,3,battery2": 144,
+            "sts,germany,0,battery4": 145,
+            "sts,germany,1,battery4": 146,
+            "sts,germany,2,battery4": 147,
+            "sts,germany,3,battery4": 148,
             "hl,france,0": 0.93,
             "hl,france,1": 0.94,
             "hl,france,2": 0.95,
@@ -558,6 +630,8 @@ class TestRulesetMatrices:
         assert ruleset.get_table_form("hydroInitialLevels") == table_form["hydroInitialLevels"]
         assert ruleset.get_table_form("hydroFinalLevels") == table_form["hydroFinalLevels"]
         assert ruleset.get_table_form("hydroGenerationPower") == table_form["hydroGenerationPower"]
+        assert ruleset.get_table_form("shortTermStorageInflows") == table_form["shortTermStorageInflows"]
+
         # fmt: on
 
         with pytest.raises(KeyError):
@@ -572,7 +646,7 @@ class TestRulesetMatrices:
         ],
     )
     @pytest.mark.parametrize("old_value", [12, None, np.nan, ""], ids=["int", "None", "NaN", "empty"])
-    def test_update_table_form(
+    def test_update_table_form_partial_update(
         self,
         ruleset: RulesetMatrices,
         table_form: TableForm,
