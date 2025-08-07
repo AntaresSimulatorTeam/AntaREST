@@ -12,12 +12,25 @@
  * This file is part of the Antares project.
  */
 
+import { type GridCell, GridCellKind, type Item } from "@glideapps/glide-data-grid";
 import { useCallback, useMemo } from "react";
-import { GridCellKind, type GridCell, type Item } from "@glideapps/glide-data-grid";
-import type { EnhancedGridColumn, ColumnType, MatrixAggregates } from "../../shared/types";
+import { Column, TIME_FREQUENCY_CONFIG } from "../../shared/constants";
+import type {
+  ColumnType,
+  DateTimes,
+  EnhancedGridColumn,
+  MatrixAggregates,
+} from "../../shared/types";
 import { formatGridNumber } from "../../shared/utils";
-import { Column } from "../../shared/constants";
 import type { CellContentGenerator } from "./types";
+
+function formatDate(dateTimes: DateTimes | undefined, row: number): string {
+  if (!dateTimes) {
+    return "";
+  }
+  const format = TIME_FREQUENCY_CONFIG[dateTimes.level].format;
+  return format(dateTimes.values[row], dateTimes.first_week_size);
+}
 
 /**
  * Map of cell content generators for each column type.
@@ -34,7 +47,7 @@ const cellContentGenerators: Record<ColumnType, CellContentGenerator> = {
   [Column.DateTime]: (row, col, column, data, dateTime) => ({
     kind: GridCellKind.Text,
     data: "", // Date/time columns are not editable
-    displayData: dateTime?.[row] ?? "",
+    displayData: formatDate(dateTime, row),
     readonly: !column.editable,
     allowOverlay: false,
   }),
@@ -98,7 +111,7 @@ export function useGridCellContent(
   data: number[][],
   columns: readonly EnhancedGridColumn[],
   gridToData: (cell: Item) => Item | null,
-  dateTime?: string[],
+  dateTime?: DateTimes,
   aggregates?: Partial<MatrixAggregates>,
   rowHeaders?: string[],
   readOnly = false,

@@ -46,10 +46,10 @@ def convert_to_local(data: str) -> Optional[str]:
 
 
 def time_convert(
-    connexion: Connection,
-    table: str,
-    completion_type: bool = False,
-    to_utc: bool = False,
+        connexion: Connection,
+        table: str,
+        completion_type: bool = False,
+        to_utc: bool = False,
 ) -> None:
 
     if completion_type:
@@ -60,26 +60,25 @@ def time_convert(
         column2 = "updated_at"
 
     results = connexion.execute(
-        f"SELECT id, {column1}, {column2} FROM {table}"
+        text(f"SELECT id, {column1}, {column2} FROM {table}")
     )
     for row in results:
-        row_id = row["id"]
+        row_id = row[0]  # Accès par index pour SQLAlchemy 2.0
         d1 = (
-            convert_to_utc(data=row[column1])
+            convert_to_utc(data=row[1])
             if to_utc
-            else convert_to_local(data=row[column1])
+            else convert_to_local(data=row[1])
         )
         d2 = (
-            convert_to_utc(data=row[column2])
+            convert_to_utc(data=row[2])
             if to_utc
-            else convert_to_local(data=row[column2])
+            else convert_to_local(data=row[2])
         )
         connexion.execute(
             text(
-                f"UPDATE {table} SET {column1}= :c1, {column2}= :c2 WHERE id='{row_id}'"
+                f"UPDATE {table} SET {column1} = :c1, {column2} = :c2 WHERE id = :row_id"
             ),
-            c1=d1,
-            c2=d2,
+            {"c1": d1, "c2": d2, "row_id": row_id}
         )
 
 
@@ -103,20 +102,20 @@ def migrate_datetime(upgrade_mode: bool = True) -> None:
 
     # VARIANT STUDY SNAPSHOT
     results = connexion.execute(
-        "SELECT id, created_at FROM variant_study_snapshot"
+        text("SELECT id, created_at FROM variant_study_snapshot")
     )
     for row in results:
-        row_id = row["id"]
+        row_id = row[0]  # Accès par index pour SQLAlchemy 2.0
         dt = (
-            convert_to_utc(data=row["created_at"])
+            convert_to_utc(data=row[1])
             if upgrade_mode
-            else convert_to_local(data=row["created_at"])
+            else convert_to_local(data=row[1])
         )
         connexion.execute(
             text(
-                f"UPDATE variant_study_snapshot SET created_at= :created_at WHERE id='{row_id}'"
+                "UPDATE variant_study_snapshot SET created_at = :created_at WHERE id = :row_id"
             ),
-            created_at=dt,
+            {"created_at": dt, "row_id": row_id}
         )
 
 

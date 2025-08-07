@@ -242,10 +242,12 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
   );
 }
 
-// TODO find a clean solution to support generics
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default reactHookFormSupport({ defaultValue: [] as any })(ListFE) as <
+const ListFEWithRHF = reactHookFormSupport({ defaultValue: [] as any })(ListFE);
+
+// The HOC doesn't automatically forward component generics
+
+export default ListFEWithRHF as <
   TItem,
   TOption,
   TFieldValues extends FieldValues = FieldValues,

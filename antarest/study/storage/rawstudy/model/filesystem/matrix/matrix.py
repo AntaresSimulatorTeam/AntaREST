@@ -19,13 +19,14 @@ from typing import List, Optional, cast
 
 import numpy as np
 import pandas as pd
-from numpy import typing as npt
 from typing_extensions import override
 
 from antarest.core.model import JSON
+from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -45,20 +46,14 @@ class MatrixFrequency(StrEnum):
     HOURLY = "hourly"
 
 
-def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO, float_format: Optional[str] = "%.6f") -> None:
+def dump_dataframe(df: pd.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.empty and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        df.to_csv(
-            path_or_buf,
-            sep="\t",
-            header=False,
-            index=False,
-            float_format=float_format,
-        )
+        df.to_csv(path_or_buf, sep="\t", header=False, index=False)
 
 
-def imports_matrix_from_bytes(data: bytes) -> Optional[npt.NDArray[np.float64]]:
+def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
     """Tries to convert bytes to a numpy array when importing a matrix"""
     str_data = data.decode("utf-8")
     if not str_data:
@@ -83,6 +78,51 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         self.freq = freq
 
     @override
+    def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
+        self._assert_not_in_zipped_file()
+        self._assert_url_end(url)
+
+        if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
+            self.matrix_mapper.save_matrix(self, data)
+        else:
+            super().save(data, url)
+            self.matrix_mapper.remove_link(self)
+
+    @override
+    def get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+    ) -> str | G:
+        output = cast("str | G", self._get(url, depth, expanded, formatted, get_node=False))
+        assert not isinstance(output, INode)
+        return output
+
+    @override
+    def _get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+        get_node: bool = False,
+    ) -> str | G | INode[G, S, V]:
+        self._assert_url_end(url)
+
+        if get_node:
+            return self
+
+        if expanded:
+            link_content = self.matrix_mapper.get_link_content(self)
+            if link_content is not None:
+                return link_content
+            return self.get_lazy_content()
+
+        return cast("str | G", self.load(url, depth, expanded, formatted))
+
+    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
@@ -104,13 +144,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         Raises:
             DenormalizationException: if the original matrix retrieval fails.
         """
-        if self.get_link_path().exists() or self.config.archive_path:
-            return
-
-        matrix = self.parse_as_dataframe()
-        matrix_uri = self.matrix_mapper.create_matrix(matrix)
-        self.get_link_path().write_text(matrix_uri)
-        self.config.path.unlink()
+        self.matrix_mapper.normalize(self)
 
     @override
     def denormalize(self) -> None:
@@ -119,15 +153,8 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         and write the matrix data to the file specified by `self.config.path`
         before removing the link file.
         """
-        if self.config.path.exists() or not self.get_link_path().exists():
-            return
-
-        # noinspection SpellCheckingInspection
         logger.info(f"Denormalizing matrix {self.config.path}")
-        uuid = self.get_link_path().read_text()
-        matrix = self.matrix_mapper.get_matrix(uuid)
-        self.dump(matrix)
-        self.get_link_path().unlink()
+        self.matrix_mapper.denormalize(self)
 
     @override
     def load(
@@ -151,15 +178,14 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         if df.empty:
             return b""
         buffer = io.StringIO()
-        df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+        df.to_csv(buffer, sep="\t", header=False, index=False)
         return buffer.getvalue()  # type: ignore
 
-    @abstractmethod
-    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
-        """
-        Parse the matrix content and return it as a DataFrame object
-        """
-        raise NotImplementedError()
+    @override
+    def delete(self, url: Optional[List[str]] = None) -> None:
+        self._assert_url_end(url)
+        self.matrix_mapper.delete(self)
+        super().delete(url)
 
     @override
     def dump(
@@ -188,3 +214,10 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
             else:
                 df = data
             dump_dataframe(df, self.config.path)
+
+    @abstractmethod
+    def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
+        """
+        Parse the matrix content and return it as a DataFrame object
+        """
+        raise NotImplementedError()

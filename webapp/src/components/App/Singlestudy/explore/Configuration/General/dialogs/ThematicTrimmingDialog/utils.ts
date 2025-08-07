@@ -23,6 +23,7 @@ export const THEMATIC_TRIMMING_GROUPS = [
   "generationStStorages",
   "generationThermals",
   "links",
+  "bindingConstraints",
 ] as const;
 
 export type ThematicTrimmingGroup = (typeof THEMATIC_TRIMMING_GROUPS)[number];
@@ -138,6 +139,9 @@ const fieldLabelsByGroup: Record<
     loopFlow: "LOOP FLOW",
     margCost: "MARG. COST",
     ucapLin: "UCAP LIN.",
+  },
+  bindingConstraints: {
+    bcMargCost: "BC. MARG. COST",
   },
 };
 

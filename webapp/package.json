@@ -1,6 +1,6 @@
 {
   "name": "antares-web",
-  "version": "2.22.1",
+  "version": "2.23.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,10 +10,11 @@
     "dev": "vite",
     "lint": "tsc --noEmit && eslint . --report-unused-disable-directives",
     "preview": "vite preview",
-    "test": "vitest",
+    "test": "TZ=UTC vitest",
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@date-fns/utc": "2.1.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.0",
     "@fontsource/roboto": "5.1.1",
@@ -56,7 +57,7 @@
     "react-d3-graph": "2.6.0",
     "react-dom": "18.3.1",
     "react-dropzone": "14.2.3",
-    "react-hook-form": "7.53.0",
+    "react-hook-form": "7.60.0",
     "react-i18next": "15.0.2",
     "react-json-view": "1.21.3",
     "react-plotly.js": "2.6.0",

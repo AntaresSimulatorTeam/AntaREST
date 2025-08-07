@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
 import {
   Autocomplete,
   Checkbox,
@@ -19,8 +21,6 @@ import {
   type AutocompleteProps,
   type AutocompleteValue,
 } from "@mui/material";
-import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
-import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import type { FieldPath, FieldValues } from "react-hook-form";
 import reactHookFormSupport, {
   type ReactHookFormSupportProps,
@@ -109,9 +109,11 @@ function CheckboxesTagsFE<
   );
 }
 
-// TODO find a clean solution to support generics
+const CheckboxesTagsFEWithRHF = reactHookFormSupport()(CheckboxesTagsFE);
 
-export default reactHookFormSupport()(CheckboxesTagsFE) as <
+// The HOC doesn't automatically forward component generics
+
+export default CheckboxesTagsFEWithRHF as <
   T,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined,

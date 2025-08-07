@@ -14,13 +14,14 @@ import datetime
 import uuid
 from typing import Any, List, TypeAlias
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table  # type: ignore
-from sqlalchemy.orm import relationship  # type: ignore
+from pydantic import field_serializer
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.login.model import GroupDTO, Identity, UserInfo
+from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 
 
 class Matrix(Base):  # type: ignore
@@ -37,11 +38,11 @@ class Matrix(Base):  # type: ignore
     # noinspection SpellCheckingInspection
     __tablename__ = "matrix"
 
-    id: str = Column(String(64), primary_key=True)
-    width: int = Column(Integer)
-    height: int = Column(Integer)
-    created_at: datetime.datetime = Column(DateTime)
-    version: int = Column(Integer)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    width: Mapped[int] = mapped_column(Integer)
+    height: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    version: Mapped[int] = mapped_column(Integer)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -86,24 +87,36 @@ groups_dataset_relation = Table(
 )
 
 
+class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    id: str
+    width: int
+    height: int
+    created_at: datetime.datetime
+    version: int
+
+    @field_serializer("created_at")
+    def serialize_created_at(self, created_at: datetime.datetime) -> str:
+        return created_at.strftime("%Y-%m-%d %H:%M:%S.%f")
+
+
 class MatrixDataSetRelation(Base):  # type: ignore
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset_matrices"
 
     # noinspection SpellCheckingInspection
-    dataset_id: str = Column(
+    dataset_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("dataset.id", name="fk_matrixdatasetrelation_dataset_id"),
         primary_key=True,
     )
     # noinspection SpellCheckingInspection
-    matrix_id: str = Column(
+    matrix_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("matrix.id", name="fk_matrixdatasetrelation_matrix_id"),
         primary_key=True,
     )
-    name: str = Column(String, primary_key=True)
-    matrix: Matrix = relationship(Matrix)
+    name: Mapped[str] = mapped_column(String, primary_key=True)
+    matrix: Mapped[Matrix] = relationship(Matrix)
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
@@ -143,24 +156,24 @@ class MatrixDataSet(Base):  # type: ignore
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset"
 
-    id: str = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name: str = Column(String)
+    name: Mapped[str] = mapped_column(String)
     # noinspection SpellCheckingInspection
-    owner_id: int = Column(
+    owner_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("identities.id", name="fk_matrixdataset_identities_id"),
     )
-    public: bool = Column(Boolean, default=False)
-    created_at: datetime.datetime = Column(DateTime)
-    updated_at: datetime.datetime = Column(DateTime)
+    public: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    updated_at: Mapped[datetime.datetime] = mapped_column(DateTime)
 
-    owner: Identity = relationship(Identity)
-    groups = relationship(
+    owner: Mapped[Identity] = relationship(Identity)
+    groups: Mapped[List[Group]] = relationship(
         "Group",
         secondary=lambda: groups_dataset_relation,
     )

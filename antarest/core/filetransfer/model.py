@@ -11,11 +11,13 @@
 # This file is part of the Antares project.
 
 import uuid
+from datetime import datetime
 from http import HTTPStatus
 from http.client import HTTPException
 from typing import Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Integer, String  # type: ignore
+from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 from typing_extensions import override
 
 from antarest.core.persistence import Base
@@ -56,20 +58,20 @@ class FileDownloadTaskDTO(AntaresBaseModel):
 class FileDownload(Base):  # type: ignore
     __tablename__ = "file_download"
 
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    owner = Column(Integer)
-    name = Column(String)
-    filename = Column(String)
-    path = Column(String)
-    ready = Column(Boolean, default=False)
-    expiration_date = Column(DateTime)
-    failed = Column(Boolean, default=False)
-    error_message = Column(String)
+    owner: Mapped[int] = mapped_column(Integer)
+    name: Mapped[str] = mapped_column(String)
+    filename: Mapped[str] = mapped_column(String)
+    path: Mapped[str] = mapped_column(String)
+    ready: Mapped[bool] = mapped_column(Boolean, default=False)
+    expiration_date: Mapped[datetime] = mapped_column(DateTime)
+    failed: Mapped[bool] = mapped_column(Boolean, default=False)
+    error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     def to_dto(self) -> FileDownloadDTO:
         return FileDownloadDTO(

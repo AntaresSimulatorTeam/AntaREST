@@ -13,7 +13,9 @@
  */
 
 import OkDialog from "@/components/common/dialogs/OkDialog";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { StudyMetadata } from "@/types/types";
+import { WEEK_OPTIONS, YEAR_OPTIONS } from "@/utils/date/constants";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { Box, Button, Divider } from "@mui/material";
 import * as RA from "ramda-adjunct";
@@ -22,7 +24,6 @@ import type { Validate } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import BooleanFE from "../../../../../common/fieldEditors/BooleanFE";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../common/Fieldset";
@@ -36,8 +37,6 @@ import {
   BuildingMode,
   FIRST_JANUARY_OPTIONS,
   MODE_OPTIONS,
-  WEEK_OPTIONS,
-  YEAR_OPTIONS,
   type GeneralFormFields,
   type SetDialogStateType,
 } from "./utils";

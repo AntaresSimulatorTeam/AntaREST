@@ -37,6 +37,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.rawstudy.watcher import Watcher
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.helpers import create_study
 from tests.storage.conftest import SimpleSyncTaskService
 
 
@@ -85,6 +86,7 @@ def build_study_service(
         user_service=user_service,
         command_context=Mock(),
         repository=repository,
+        job_result_repository=Mock(),
         event_bus=Mock(),
         task_service=task_service,
         file_transfer_manager=Mock(),
@@ -199,7 +201,24 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session):
     (g / "study.antares").touch()
 
     raw_study_service = Mock(spec=RawStudyService)
-    raw_study_service.get_study_information.side_effect = study_to_dto
+
+    def update_meta(study: Study, fallback_on_default: bool = True) -> Study:
+        study.version = "860"
+        return study
+
+    raw_study_service.update_from_raw_meta.side_effect = update_meta
+
+    def get_info(path: Path) -> StudyMetadataDTO:
+        return study_to_dto(
+            create_study(
+                id=path.name,
+                name=path.name,
+                path=str(path),
+                version="860",
+            )
+        )
+
+    raw_study_service.get_study_information.side_effect = get_info
     repository = StudyMetadataRepository(session=db_session, cache_service=Mock(spec=ICache))
     repository.delete = Mock()
     config = build_config(study_tree)

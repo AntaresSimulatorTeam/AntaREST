@@ -9,14 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import re
 
 import pytest
+from checksumdir import dirhash
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.business.model.sts_model import STStorageCreation
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -116,9 +117,9 @@ class TestUpdateShortTermSorage:
             write_ini_file(de_ini, expected_de_content)
 
             # Update several properties
-            new_properties = {"fr": {"storage_1": {"efficiency": 0.8}}, "DE": {"Storage_3": {"initial_level": 0.1}}}
+            new_properties = {"fr": {"storage_1": {"efficiency": 0.3}}, "DE": {"Storage_3": {"initial_level": 0.1}}}
             if study_version >= STUDY_VERSION_9_2:
-                new_properties["fr"]["storage_1"]["efficiency_withdrawal"] = 0.3
+                new_properties["fr"]["storage_1"]["efficiency_withdrawal"] = 0.8
                 new_properties["DE"]["Storage_3"]["penalize_variation_injection"] = True
                 new_properties["DE"]["Storage_3"]["group"] = "MY DESIGN !!!"
             cmd = UpdateSTStorages(
@@ -132,14 +133,14 @@ class TestUpdateShortTermSorage:
 
             # Checks updated properties
             fr_content = read_ini(fr_ini)
-            expected_fr_content["storage_1"]["efficiency"] = 0.8
+            expected_fr_content["storage_1"]["efficiency"] = 0.3
             if study_version >= STUDY_VERSION_9_2:
-                expected_fr_content["storage_1"]["efficiencywithdrawal"] = 0.3
+                expected_fr_content["storage_1"]["efficiencywithdrawal"] = 0.8
             assert fr_content == expected_fr_content
 
             de_content = read_ini(de_ini)
             expected_de_content = {
-                "Storage_3??": {
+                "storage_3": {
                     "efficiency": 1.0,
                     "group": "other1",
                     "initiallevel": 0.1,
@@ -152,16 +153,26 @@ class TestUpdateShortTermSorage:
                 }
             }
             if study_version >= STUDY_VERSION_9_2:
-                expected_de_content["Storage_3??"]["efficiencywithdrawal"] = 1
-                expected_de_content["Storage_3??"]["penalize-variation-withdrawal"] = False
-                expected_de_content["Storage_3??"]["penalize-variation-injection"] = True
-                expected_de_content["Storage_3??"]["group"] = "my design !!!"  # allowed and written in lower case
+                expected_de_content["storage_3"]["efficiencywithdrawal"] = 1
+                expected_de_content["storage_3"]["penalize-variation-withdrawal"] = False
+                expected_de_content["storage_3"]["penalize-variation-injection"] = True
+                expected_de_content["storage_3"]["group"] = "my design !!!"  # allowed and written in lower case
             assert de_content == expected_de_content
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext):
-        study = empty_study_870
+    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
+        study = empty_study_880
         self._set_up(study, command_context)
         study_version = study.config.version
+
+        # Create a short-term storage
+        cmd = CreateSTStorage(
+            command_context=command_context,
+            area_id="fr",
+            parameters=STStorageCreation(**{"name": "sts_1"}),
+            study_version=STUDY_VERSION_8_8,
+        )
+        output = cmd.apply(study)
+        assert output.status is True
 
         # Fake area
         cmd = UpdateSTStorages(
@@ -173,20 +184,25 @@ class TestUpdateShortTermSorage:
         assert output.status is False
         assert output.message == "The area 'fake_area' is not found."
 
-        # Fake cluster
+        # Ensures updating an unexisting short-term storage raises an Exception.
+        # Also ensures the study wasn't partially modified.
+        hash_before_update = dirhash(study.config.study_path / "input" / "st-storage", "md5")
+        mapping = {"de": {"storage_3": {"enabled": False}}, "FR": {"fake_storage": {"initial_level": 0.1}}}
         cmd = UpdateSTStorages(
-            storage_properties={"FR": {"fake_storage": {"initial_level": 0.1}}},
+            storage_properties=mapping,
             command_context=command_context,
             study_version=study_version,
         )
         output = cmd.apply(study)
         assert output.status is False
         assert output.message == "The short-term storage 'fake_storage' in the area 'fr' is not found."
+        hash_after_update = dirhash(study.config.study_path / "input" / "st-storage", "md5")
+        assert hash_before_update == hash_after_update
 
         # Try to give a parameter that only exist since v9.2
         with pytest.raises(
             ValidationError,
-            match=re.escape("You provided v9.2 field(s): `efficiency_withdrawal` but your study is in version 8.7"),
+            match="Field efficiency_withdrawal is not a valid field for study version 8.8",
         ):
             UpdateSTStorages(
                 storage_properties={"fr": {"storage_1": {"efficiencyWithdrawal": 0.8}}},

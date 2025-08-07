@@ -12,39 +12,31 @@
  * This file is part of the Antares project.
  */
 
-import { IconButton, InputAdornment, type SxProps, type Theme } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import ClearIcon from "@mui/icons-material/Clear";
-import { useTranslation } from "react-i18next";
-import clsx from "clsx";
-import { useState } from "react";
-import { useUpdateEffect } from "react-use";
-import * as RA from "ramda-adjunct";
-import StringFE, { type StringFEProps } from "./StringFE";
 import { mergeSxProp } from "@/utils/muiUtils";
+import SearchIcon from "@mui/icons-material/Search";
+import { InputAdornment, TextField, type TextFieldProps } from "@mui/material";
+import clsx from "clsx";
+import * as RA from "ramda-adjunct";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
 
-export interface SearchFE extends Omit<StringFEProps, "placeholder" | "label"> {
+interface SearchFEProps
+  extends Omit<TextFieldProps, "type" | "value" | "defaultValue" | "placeholder"> {
+  value?: string;
+  defaultValue?: string;
   onSearchValueChange?: (value: string) => void;
-  useLabel?: boolean;
-  onClear?: VoidFunction;
-  sx?: SxProps<Theme>;
 }
 
 function SearchFE({
   onSearchValueChange,
   onChange,
-  onClear,
   slotProps,
-  useLabel,
   className,
   sx,
   ...rest
-}: SearchFE) {
+}: SearchFEProps) {
   const { t } = useTranslation();
-  const placeholderOrLabel = {
-    [useLabel ? "label" : "placeholder"]: t("global.search"),
-  };
-
   const [isFieldFilled, setIsFieldFilled] = useState(
     RA.isString(rest.value) ? !!rest.value : !!rest.defaultValue,
   );
@@ -53,10 +45,26 @@ function SearchFE({
     setIsFieldFilled(!!rest.value);
   }, [rest.value]);
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange: TextFieldProps["onChange"] = (event) => {
+    const newValue = event.target.value;
+    onChange?.(event);
+    onSearchValueChange?.(newValue);
+    setIsFieldFilled(!!newValue);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <StringFE
+    <TextField
       {...rest}
-      {...placeholderOrLabel}
+      type="search"
+      placeholder={t("global.search")}
       className={clsx("SearchFE", className)}
       sx={mergeSxProp(
         {
@@ -83,22 +91,9 @@ function SearchFE({
               <SearchIcon />
             </InputAdornment>
           ),
-          endAdornment:
-            onClear && isFieldFilled ? (
-              <InputAdornment position="end">
-                <IconButton onClick={() => onClear()} edge="end">
-                  <ClearIcon />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
         },
       }}
-      onChange={(event) => {
-        const newValue = event.target.value;
-        onChange?.(event);
-        onSearchValueChange?.(newValue);
-        setIsFieldFilled(!!newValue);
-      }}
+      onChange={handleChange}
     />
   );
 }

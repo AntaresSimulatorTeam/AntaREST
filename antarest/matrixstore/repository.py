@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 from filelock import FileLock
 from pandas import util
-from sqlalchemy import exists  # type: ignore
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy import exists
+from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -57,8 +57,7 @@ class MatrixDataSetRepository:
         return matrix_user_metadata
 
     def get(self, id_number: str) -> Optional[MatrixDataSet]:
-        matrix: MatrixDataSet = self.session.query(MatrixDataSet).get(id_number)
-        return matrix
+        return self.session.get(MatrixDataSet, id_number)
 
     def get_all_datasets(self) -> List[MatrixDataSet]:
         matrix_datasets: List[MatrixDataSet] = self.session.query(MatrixDataSet).all()
@@ -81,7 +80,7 @@ class MatrixDataSetRepository:
         """
         query = self.session.query(MatrixDataSet)
         if name is not None:
-            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))  # type: ignore
+            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))
         if owner is not None:
             query = query.filter(MatrixDataSet.owner_id == owner)
         datasets: List[MatrixDataSet] = query.distinct().all()
@@ -119,8 +118,11 @@ class MatrixRepository:
         return matrix
 
     def get(self, matrix_hash: str) -> Optional[Matrix]:
-        matrix: Matrix = self.session.query(Matrix).get(matrix_hash)
-        return matrix
+        return self.session.get(Matrix, matrix_hash)
+
+    def get_matrices(self) -> list[Matrix]:
+        matrices_list: list[Matrix] = self.session.query(Matrix).all()
+        return matrices_list
 
     def exists(self, matrix_hash: str) -> bool:
         res: bool = self.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
@@ -269,23 +271,30 @@ class MatrixContentRepository:
 
         matrix_hash = compute_hash(content)
         matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{self.format}")
+
+        # First check for the fast path without locking
         if matrix_path.exists():
             # Avoid having to save the matrix again (that's the whole point of using a hash).
             return MatrixCreationResult(hash=matrix_hash, new=False)
 
+        # Ensure exclusive access to the matrix file between multiple processes (or threads).
         lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
-        for internal_format in InternalMatrixFormat:
-            matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
-            if matrix_in_another_format_path.exists():
-                # We want to migrate the old matrix in the given repository format.
-                # Ensure exclusive access to the matrix file between multiple processes (or threads).
-                with FileLock(lock_file, timeout=15):
+        with FileLock(lock_file, timeout=15):
+            # we check again for the existence of the file, as it might have been created by another process or thread
+            if matrix_path.exists():
+                # Avoid having to save the matrix again (that's the whole point of using a hash).
+                return MatrixCreationResult(hash=matrix_hash, new=False)
+
+            other_formats = [f for f in InternalMatrixFormat if f != self.format]
+            for internal_format in other_formats:
+                matrix_in_another_format_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+                if matrix_in_another_format_path.exists():
+                    # We want to migrate the old matrix in the given repository format.
+                    # Ensure exclusive access to the matrix file between multiple processes (or threads).
                     save_matrix(self.format, content, matrix_path)
                     matrix_in_another_format_path.unlink()
-                return MatrixCreationResult(hash=matrix_hash, new=True)
+                    return MatrixCreationResult(hash=matrix_hash, new=True)
 
-        # Ensure exclusive access to the matrix file between multiple processes (or threads).
-        with FileLock(lock_file, timeout=15):
             save_matrix(self.format, content, matrix_path)
 
             # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
@@ -293,7 +302,7 @@ class MatrixContentRepository:
             # However, this deletion is possible when the matrix is no longer in use.
             # This is done in `MatrixGarbageCollector` when matrix files are deleted.
 
-        return MatrixCreationResult(hash=matrix_hash, new=True)
+            return MatrixCreationResult(hash=matrix_hash, new=True)
 
     def delete(self, matrix_hash: str) -> None:
         """

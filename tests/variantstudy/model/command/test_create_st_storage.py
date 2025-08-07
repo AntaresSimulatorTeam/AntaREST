@@ -18,15 +18,10 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.core.serde.ini_reader import read_ini
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
-    STStorage880Properties,
-    STStorageGroup,
-    STStorageProperties,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -42,23 +37,23 @@ GEN = np.random.default_rng(1000)
 PARAMETERS = {
     "name": "Storage1",
     "group": "Battery",
-    "injectionnominalcapacity": 1500,
-    "withdrawalnominalcapacity": 1500,
-    "reservoircapacity": 20000,
+    "injectionNominalCapacity": 1500,
+    "withdrawalNominalCapacity": 1500,
+    "reservoirCapacity": 20000,
     "efficiency": 0.94,
-    "initialleveloptim": True,
+    "initialLevelOptim": True,
 }
 
 # noinspection SpellCheckingInspection
 OTHER_PARAMETERS = {
     "name": "Storage1",
     "group": "Battery",
-    "injectionnominalcapacity": 1200,
-    "withdrawalnominalcapacity": 1300,
-    "reservoircapacity": 20500,
+    "injectionNominalCapacity": 1200,
+    "withdrawalNominalCapacity": 1300,
+    "reservoirCapacity": 20500,
     "efficiency": 0.92,
-    "initiallevel": 0,
-    "initialleveloptim": True,
+    "initialLevel": 0,
+    "initialLevelOptim": True,
 }
 
 
@@ -70,28 +65,32 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
-            study_version=STUDY_VERSION_8_8,
+            study_version=STUDY_VERSION_8_6,
         )
 
         # Check the attribues
         assert cmd.command_name == CommandName.CREATE_ST_STORAGE
-        assert cmd.study_version == STUDY_VERSION_8_8
+        assert cmd.study_version == STUDY_VERSION_8_6
         assert cmd.command_context == command_context
         assert cmd.area_id == "area_fr"
         expected_parameters = {k: str(v) for k, v in PARAMETERS.items()}
-        assert cmd.parameters == STStorage880Properties(**expected_parameters)
+        assert cmd.parameters == STStorageCreation(**expected_parameters)
 
-        # check the matrices links
+        # Ensures no matrix is filled in the command if not specified
+        assert cmd.pmax_injection is not None
+        assert cmd.inflows is not None
 
-        constants = command_context.generator_matrix_constants
-        assert cmd.pmax_injection != constants.get_st_storage_pmax_injection()
-        assert cmd.pmax_withdrawal == constants.get_st_storage_pmax_withdrawal()
-        assert cmd.lower_rule_curve == constants.get_st_storage_lower_rule_curve()
-        assert cmd.upper_rule_curve == constants.get_st_storage_upper_rule_curve()
-        assert cmd.inflows != constants.get_st_storage_inflows()
+        assert cmd.pmax_withdrawal is None
+        assert cmd.lower_rule_curve is None
+        assert cmd.upper_rule_curve is None
+        assert cmd.cost_injection is None
+        assert cmd.cost_withdrawal is None
+        assert cmd.cost_level is None
+        assert cmd.cost_variation_injection is None
+        assert cmd.cost_variation_withdrawal is None
 
     @pytest.mark.parametrize("group", ["Battery", "battery"])
     def test_init__lower_and_upper_case_groups_are_valid(self, command_context: CommandContext, group: str):
@@ -100,10 +99,10 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorage880Properties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
-        assert cmd.parameters.group == STStorageGroup.BATTERY
+        assert cmd.parameters.group == STStorageGroup.BATTERY.value
 
     def test_init__invalid_storage_name(self, empty_study_860: FileStudy, command_context: CommandContext):
         # When we apply the config for a new ST Storage with a bad name
@@ -112,7 +111,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="dummy",
-                parameters=STStorageProperties(**parameters),
+                parameters=STStorageCreation(**parameters),
                 study_version=STUDY_VERSION_8_8,
             )
         # We get 2 errors because the `storage_name` is duplicated in the `parameters`:
@@ -129,7 +128,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -146,7 +145,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -163,7 +162,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 pmax_injection=array.tolist(),  # type: ignore
                 study_version=STUDY_VERSION_8_8,
             )
@@ -178,7 +177,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 pmax_injection=[[1], [2], [3]],
                 study_version=STUDY_VERSION_8_8,
             )
@@ -193,7 +192,7 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 cost_injection=[[1], [2], [3]],
                 study_version=STUDY_VERSION_8_8,
             )
@@ -215,9 +214,10 @@ class TestCreateSTStorage:
             )
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
-        assert raised_error["type"] == "extra_forbidden"
-        assert raised_error["msg"] == "Extra inputs are not permitted"
-        assert "efficiency_withdrawal" in raised_error["loc"]
+        assert (
+            raised_error["msg"]
+            == "Value error, 422: Field efficiency_withdrawal is not a valid field for study version 8.8"
+        )
 
     def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext):
         empty_study = empty_study_720
@@ -227,13 +227,16 @@ class TestCreateSTStorage:
             CreateSTStorage(
                 command_context=command_context,
                 area_id="foo",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 study_version=empty_study.config.version,
             )
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
         assert raised_error["type"] == "value_error"
-        assert raised_error["msg"] == "Value error, Unsupported study version: 7.2"
+        assert (
+            raised_error["msg"]
+            == "Value error, 422: Short-term storages only exist since v8.6 and your study is in 7.2"
+        )
 
     def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext):
         # Given a study without "unknown area" area
@@ -241,7 +244,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             study_version=empty_study_860.config.version,
         )
         command_output = create_st_storage.apply(empty_study_860)
@@ -266,7 +269,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply(recent_study)
@@ -277,7 +280,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageProperties(**parameters),
+            parameters=STStorageCreation(**parameters),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply(recent_study)
@@ -302,7 +305,7 @@ class TestCreateSTStorage:
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             study_version=recent_study.config.version,
         )
         command_output = create_st_storage.apply(recent_study)
@@ -330,7 +333,7 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             pmax_injection=pmax_injection.tolist(),  # type: ignore
             inflows=inflows.tolist(),  # type: ignore
             study_version=recent_study.config.version,
@@ -376,55 +379,32 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area_fr",
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             study_version=STUDY_VERSION_8_8,
         )
 
         actual = cmd.to_dto()
 
         expected_parameters = PARAMETERS.copy()
-        # `initiallevel` = 0.5 (the default value) because `initialleveloptim` is True
-        expected_parameters["initiallevel"] = 0.5
-        expected_parameters["group"] = "battery"
-        expected_parameters["enabled"] = True
-        constants = command_context.generator_matrix_constants
+        expected_parameters["group"] = "battery"  # the group is now in lower case
 
         assert actual == CommandDTO(
             action=CommandName.CREATE_ST_STORAGE.value,
-            version=2,
-            args={
-                "area_id": "area_fr",
-                "parameters": expected_parameters,
-                "pmax_injection": strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-                "pmax_withdrawal": strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-                "lower_rule_curve": strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
-                "upper_rule_curve": strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
-                "inflows": strip_matrix_protocol(constants.get_st_storage_inflows()),
-            },
+            version=3,
+            args={"area_id": "area_fr", "parameters": expected_parameters},
             study_version=STUDY_VERSION_8_8,
         )
 
     def test_get_inner_matrices(self, command_context: CommandContext):
-        for study_version in (STUDY_VERSION_8_8, STUDY_VERSION_9_2):
+        for study_version in (STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2):
             cmd = CreateSTStorage(
                 command_context=command_context,
                 area_id="area_fr",
-                parameters=STStorageProperties(**PARAMETERS),
+                parameters=STStorageCreation(**PARAMETERS),
                 study_version=study_version,
             )
-            actual = cmd.get_inner_matrices()
-            constants = command_context.generator_matrix_constants
-            # Ensures with the v9.2 we don't create default matrices
-            if study_version == STUDY_VERSION_9_2:
-                assert actual == []
-            else:
-                assert actual == [
-                    strip_matrix_protocol(constants.get_st_storage_pmax_injection()),
-                    strip_matrix_protocol(constants.get_st_storage_pmax_withdrawal()),
-                    strip_matrix_protocol(constants.get_st_storage_lower_rule_curve()),
-                    strip_matrix_protocol(constants.get_st_storage_upper_rule_curve()),
-                    strip_matrix_protocol(constants.get_st_storage_inflows()),
-                ]
+            # Ensures we don't fill default matrices inside the command parameters
+            assert cmd.get_inner_matrices() == []
 
     def test_version_9_2(self, command_context: CommandContext, empty_study_920: FileStudy):
         study = empty_study_920
@@ -438,12 +418,12 @@ class TestCreateSTStorage:
         cmd = CreateSTStorage(
             command_context=command_context,
             area_id="area fr",
-            parameters=STStorageProperties(**PARAMETERS),
+            parameters=STStorageCreation(**PARAMETERS),
             study_version=study_version,
         )
         output = cmd.apply(study)
         assert output.status is True
-        assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area fr'."
+        assert output.message == "Short-term storage 'storage1' successfully added to area 'area fr'."
         # Checks ini content
         ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area fr" / "list.ini"
         ini_content = read_ini(ini_path)
@@ -469,7 +449,7 @@ class TestCreateSTStorage:
         # Create new st storage by specifying 9.2 properties
         parameters_9_2 = copy.deepcopy(PARAMETERS)
         parameters_9_2["group"] = "My Group"
-        parameters_9_2["efficiency_withdrawal"] = 0.55
+        parameters_9_2["efficiency_withdrawal"] = 0.95
         parameters_9_2["penalize_variation_injection"] = True
         cost_injection_matrix = GEN.uniform(0, 1000, size=(8760, 1)).tolist()
         cmd = CreateSTStorage(
@@ -481,12 +461,12 @@ class TestCreateSTStorage:
         )
         output = cmd.apply(study)
         assert output.status is True
-        assert output.message == "Short-term st_storage 'Storage1' successfully added to area 'area be'."
+        assert output.message == "Short-term storage 'storage1' successfully added to area 'area be'."
 
         # Checks ini content
         ini_path = study.config.study_path / "input" / "st-storage" / "clusters" / "area be" / "list.ini"
         ini_content = read_ini(ini_path)
-        expected_content["storage1"]["efficiencywithdrawal"] = 0.55
+        expected_content["storage1"]["efficiencywithdrawal"] = 0.95
         expected_content["storage1"]["penalize-variation-injection"] = True
         expected_content["storage1"]["group"] = "my group"  # the group is allowed and written in lower case
         assert ini_content == expected_content

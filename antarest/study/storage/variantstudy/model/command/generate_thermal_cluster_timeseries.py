@@ -29,7 +29,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
 from antarest.study.storage.utils import TS_GEN_PREFIX, TS_GEN_SUFFIX
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -60,7 +60,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                 raise
             else:
                 self._replace_safely_original_files(study_path, tmp_dir)
-                return CommandOutput(status=True, message="All time series were generated successfully")
+                return command_succeeded(message="All time series were generated successfully")
 
     def _build_timeseries(
         self, study_data: FileStudy, tmp_path: Path, listener: Optional[ICommandListener] = None
@@ -129,7 +129,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     df = pd.DataFrame(data=generated_matrix)
                     df = df[list(df.columns)].astype(int)
                     target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
-                    dump_dataframe(df, target_path, None)
+                    dump_dataframe(df, target_path)
                     # 10- Notify the progress to the notifier
                     generation_performed += 1
                     if listener:

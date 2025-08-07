@@ -19,10 +19,10 @@ import collections
 from typing import Dict, List, Sequence, Union
 
 import numpy as np
-import numpy.typing as npt
 from pydantic import ValidationInfo, field_validator
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.area_model import AreaInfoDTO
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
@@ -156,7 +156,7 @@ class CorrelationMatrix(FormFieldsBaseModel):
 def _config_to_array(
     area_ids: Sequence[str],
     correlation_cfg: Dict[str, str],
-) -> npt.NDArray[np.float64]:
+) -> NpArray:
     array = np.identity(len(area_ids), dtype=np.float64)
     for key, value in correlation_cfg.items():
         a1, a2 = key.split("%")
@@ -173,7 +173,7 @@ def _config_to_array(
 
 def _array_to_config(
     area_ids: Sequence[str],
-    array: npt.NDArray[np.float64],
+    array: NpArray,
 ) -> Dict[str, str]:
     correlation_cfg: Dict[str, str] = {}
     count = len(area_ids)
@@ -208,7 +208,7 @@ class CorrelationManager:
         self,
         file_study: FileStudy,
         area_ids: Sequence[str],
-    ) -> npt.NDArray[np.float64]:
+    ) -> NpArray:
         try:
             correlation_cfg = file_study.tree.get(self.url, depth=3)
         except KeyError:
@@ -222,7 +222,7 @@ class CorrelationManager:
         self,
         study: StudyInterface,
         area_ids: Sequence[str],
-        array: npt.NDArray[np.float64],
+        array: NpArray,
     ) -> None:
         correlation_cfg = _array_to_config(area_ids, array)
         command = UpdateConfig(

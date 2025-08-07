@@ -13,25 +13,19 @@
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
-
-import typing_extensions as te
+from typing import List, Optional
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_failed
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MATCH_SIGNATURE_SEPARATOR = "%"
 logger = logging.getLogger(__name__)
-
-# note: we ought to use a named tuple here ;-)
-OutputTuple: te.TypeAlias = Tuple[CommandOutput, Dict[str, Any]]
 
 
 class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=True):
@@ -91,7 +85,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
                 exc_info=e,
             )
             message = f"Unexpected exception occurred when trying to apply command {self.command_name}: {e}"
-            return CommandOutput(status=False, message=message)
+            return command_failed(message=message)
 
     @abstractmethod
     def to_dto(self) -> CommandDTO:

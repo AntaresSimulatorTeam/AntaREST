@@ -42,14 +42,14 @@ from antarest.core.exceptions import (
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
-    StudyTypeUnsupported,
     StudyVariantUpgradeError,
     TaskAlreadyRunning,
     UnsupportedOperationOnArchivedStudy,
+    UnsupportedOperationOnThisStudyType,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
-from antarest.core.interfaces.cache import ICache, study_raw_cache_key
+from antarest.core.interfaces.cache import ICache, study_raw_cache_key, update_cache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
@@ -59,6 +59,7 @@ from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifie
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
+from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
 from antarest.login.utils import get_current_user, get_user_id, require_current_user
@@ -401,33 +402,23 @@ class RawStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
+        should_invalidate_cache = False
         file_study = self.get_files()
-
         for command in commands:
-            result = command.apply(FileStudyTreeDao(self.get_files()), listener)
+            result = command.apply(FileStudyTreeDao(file_study), listener)
+            if result.should_invalidate_cache:
+                should_invalidate_cache = True
             if not result.status:
                 raise CommandApplicationError(result.message)
-        remove_from_cache(self._raw_study_service.cache, study.id)
-        self._variant_study_service.on_parent_change(study.id)
 
-        if not is_managed(study):
-            # In a previous version, de-normalization was performed asynchronously.
-            # However, this cause problems with concurrent file access,
-            # especially when de-normalizing a matrix (which can take time).
-            #
-            # async_denormalize = threading.Thread(
-            #     name=f"async_denormalize-{study.id}",
-            #     target=file_study.tree.denormalize,
-            # )
-            # async_denormalize.start()
-            #
-            # To avoid this concurrency problem, it would be necessary to implement a
-            # locking system for the entire study using a file lock (since multiple processes,
-            # not only multiple threads, could access the same content simultaneously).
-            #
-            # Currently, we use a synchronous call to address the concurrency problem
-            # within the current process (not across multiple processes)...
-            file_study.tree.denormalize()
+        # if commands that can't update the cache are applied, we need to invalidate it.
+        # Otherwise, we can update it.
+        if should_invalidate_cache:
+            remove_from_cache(self._raw_study_service.cache, study.id)
+        else:
+            data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
+            update_cache(self._raw_study_service.cache, study.id, data)
+        self._variant_study_service.on_parent_change(study.id)
 
 
 class VariantStudyInterface(StudyInterface):
@@ -479,6 +470,7 @@ class StudyService:
         command_context: CommandContext,
         user_service: LoginService,
         repository: StudyMetadataRepository,
+        job_result_repository: JobResultRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -488,6 +480,7 @@ class StudyService:
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.repository = repository
+        self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -873,7 +866,7 @@ class StudyService:
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow(),
             version=f"{version or NEW_DEFAULT_STUDY_VERSION:ddd}",
-            additional_data=StudyAdditionalData(author=author),
+            additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
         raw = self.storage_service.raw_study_service.create(raw)
@@ -993,11 +986,12 @@ class StudyService:
                     self.event_bus.push(
                         Event(
                             type=EventType.STUDY_DELETED,
-                            payload=study.to_json_summary(),
+                            payload=study.to_enhanced_json_summary(),
                             permissions=PermissionInfo.from_study(study),
                         )
                     )
-                if study.missing < clean_up_missing_studies_threshold:
+
+                if study.missing and study.missing < clean_up_missing_studies_threshold:
                     logger.info(
                         "Study %s at %s is not present in disk and will be deleted",
                         study.id,
@@ -1088,7 +1082,7 @@ class StudyService:
                 self.event_bus.push(
                     Event(
                         type=EventType.STUDY_DELETED,
-                        payload=study.to_json_summary(),
+                        payload=study.to_enhanced_json_summary(),
                         permissions=PermissionInfo.from_study(study),
                     )
                 )
@@ -1138,9 +1132,26 @@ class StudyService:
         def copy_task(notifier: ITaskNotifier) -> TaskResult:
             origin_study = self.get_study(src_uuid)
             study = self.storage_service.get_storage(origin_study).copy(
-                origin_study, dest_study_name, group_ids, destination_folder, output_ids, with_outputs
+                origin_study,
+                dest_study_name,
+                group_ids,
+                destination_folder,
+                output_ids,
+                with_outputs,
+                self.get_user_name(),
             )
+
             self._save_study(study, group_ids)
+            self.normalize_study(study)
+
+            # Copying all jobs associated with the study
+            jobs = self.job_result_repository.find_by_study_and_output_ids(origin_study.id, output_ids)
+
+            new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
+
+            if new_jobs:
+                self.job_result_repository.save_all(new_jobs)
+
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_CREATED,
@@ -1272,6 +1283,7 @@ class StudyService:
         # see https://github.com/AntaresSimulatorTeam/AntaREST/issues/606
         if isinstance(study, RawStudy):
             _ = study.workspace
+            study_info = study.to_enhanced_json_summary()
 
         if self.storage_service.variant_study_service.has_children(study):
             if children:
@@ -1334,15 +1346,15 @@ class StudyService:
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
             path=path,
-            additional_data=StudyAdditionalData(),
+            additional_data=StudyAdditionalData(editor=self.get_user_name()),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
         )
         study = self.storage_service.raw_study_service.import_study(study, stream)
-
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)
+        self.normalize_study(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1352,7 +1364,7 @@ class StudyService:
         )
 
         logger.info("study %s imported by user %s", study.id, get_user_id())
-        return str(study.id)
+        return study.id
 
     def _create_edit_study_command(
         self, tree_node: INode[JSON, SUB_JSON, JSON], url: str, data: SUB_JSON, study_version: StudyVersion
@@ -1819,7 +1831,7 @@ class StudyService:
         self.assert_study_unarchived(study)
 
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study.id, study.type)
+            raise UnsupportedOperationOnThisStudyType(study.id, "archive", "raw")
 
         if not is_managed(study):
             raise NotAManagedStudyException(study.id)
@@ -1873,7 +1885,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
 
         if not isinstance(study, RawStudy):
-            raise StudyTypeUnsupported(study.id, study.type)
+            raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
@@ -1885,8 +1897,8 @@ class StudyService:
             self.event_bus.push(
                 Event(
                     type=EventType.STUDY_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
+                    payload=study_to_archive.to_json_summary(),
+                    permissions=PermissionInfo.from_study(study_to_archive),
                 )
             )
             remove_from_cache(cache=self.cache_service, root_id=uuid)
@@ -1978,7 +1990,7 @@ class StudyService:
         """
         try:
             if not isinstance(metadata, RawStudy):
-                raise StudyTypeUnsupported(metadata.id, metadata.type)
+                raise UnsupportedOperationOnThisStudyType(metadata.id, "synchronization", "raw")
 
             if self.storage_service.raw_study_service.check_errors(metadata):
                 return StudyContentStatus.WARNING
@@ -2067,7 +2079,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.delete_candidate(study_interface, candidate_name)
+        self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
     def update_xpansion_constraints_settings(
         self,
@@ -2389,3 +2401,25 @@ class StudyService:
         cache_id = study_raw_cache_key(study.id)
         updated_tree = file_study.tree.get()
         self.storage_service.get_storage(study).cache.put(cache_id, updated_tree)  # type: ignore
+
+    def normalize_study_by_id(self, study_id: str) -> None:
+        """
+        Performs several verifications before normalizing a study.
+        """
+        study = self.get_study(study_id)
+        assert_permission(study, StudyPermissionType.READ)  # We're not really modifying the study
+
+        if not is_managed(study):
+            raise NotAManagedStudyException(study_id)
+        if isinstance(study, VariantStudy):
+            raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
+        self.assert_study_unarchived(study)
+
+        self.normalize_study(study)
+
+    def normalize_study(self, study: Study) -> None:
+        """
+        Method used to normalize a study.
+        It will put every matrix in the study in the matrix-store.
+        """
+        self.storage_service.get_storage(study).get_raw(study).tree.normalize()

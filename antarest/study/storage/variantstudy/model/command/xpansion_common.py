@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import contextlib
+from typing import Any
 
 from antarest.core.exceptions import (
     AreaNotFound,
     ChildNotFoundError,
     LinkNotFound,
+    XpansionCandidateDeletionError,
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
@@ -25,7 +26,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_succeeded
 
 
 def get_resource_dir(resource_type: XpansionResourceFileType) -> list[str]:
@@ -47,9 +48,8 @@ def apply_create_resource_commands(
         raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
     study_data.tree.save(data=data, url=url + [filename])
-    return CommandOutput(
-        status=True,
-        message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created.",
+    return command_succeeded(
+        message=f"Xpansion {resource_type.value} matrix '{filename}' has been successfully created."
     )
 
 
@@ -84,9 +84,15 @@ def assert_candidate_is_correct(file_study: FileStudy, candidate: XpansionCandid
 
 def get_xpansion_settings(file_study: FileStudy) -> GetXpansionSettings:
     config_obj = file_study.tree.get(["user", "expansion", "settings"])
-    with contextlib.suppress(ChildNotFoundError):
-        config_obj["sensitivity_config"] = file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
+    config_obj["sensitivity_config"] = get_xpansion_sensitivity(file_study)
     return GetXpansionSettings.from_config(config_obj)
+
+
+def get_xpansion_sensitivity(file_study: FileStudy) -> dict[str, Any]:
+    try:
+        return file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
+    except ChildNotFoundError:
+        return {}
 
 
 def checks_settings_are_correct_and_returns_fields_to_exclude(
@@ -116,3 +122,13 @@ def checks_settings_are_correct_and_returns_fields_to_exclude(
             excludes.add(field)
 
     return excludes
+
+
+def checks_candidate_can_be_deleted(candidate_name: str, file_study: FileStudy) -> None:
+    """
+    Ensures the candidate isn't referenced inside the sensitivity file as a projection.
+    """
+    sensitivity_config = get_xpansion_sensitivity(file_study)
+    projections = sensitivity_config.get("projection", {})
+    if candidate_name in projections:
+        raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)

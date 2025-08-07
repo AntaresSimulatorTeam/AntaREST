@@ -12,58 +12,64 @@
  * This file is part of the Antares project.
  */
 
-import type { SelectProps } from "@mui/material";
-import * as RA from "ramda-adjunct";
+import { MenuItem, TextField, type TextFieldProps } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
-import SelectFE, { type SelectFEProps } from "./SelectFE";
 
-export interface BooleanFEProps extends Omit<SelectFEProps, "options" | "multiple" | "onChange"> {
+interface BooleanFEChangeEvent {
+  target: { value: boolean; name: string | undefined };
+}
+
+interface BooleanFEFocusEvent {
+  target: { value: boolean; name: string | undefined };
+}
+
+export interface BooleanFEProps
+  extends Omit<
+    TextFieldProps,
+    "value" | "defaultValue" | "select" | "type" | "children" | "onChange" | "onBlur" | "multiline"
+  > {
   defaultValue?: boolean;
   value?: boolean;
   trueText?: string;
   falseText?: string;
-  onChange?: SelectProps<boolean>["onChange"];
+  onChange?: (event: BooleanFEChangeEvent) => void;
+  onBlur?: (event: BooleanFEFocusEvent) => void;
 }
 
-function toValidValue(value?: boolean) {
-  if (RA.isBoolean(value)) {
-    return value ? "true" : "false";
-  }
-  return value;
-}
+function BooleanFE({ trueText, falseText, onChange, onBlur, name, ...rest }: BooleanFEProps) {
+  const { t } = useTranslation();
 
-function toValidEvent<T extends { target: { value: unknown } }>(event: T) {
-  return {
-    ...event,
-    target: {
-      ...event.target,
-      value: event.target.value === "true",
-    },
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) {
+      const value = event.target.value === "true";
+      onChange({ target: { value, name } });
+    }
   };
-}
 
-function BooleanFE(props: BooleanFEProps) {
-  const { defaultValue, value, trueText, falseText, onChange, onBlur, inputRef, ...rest } = props;
+  const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    if (onBlur) {
+      const value = event.target.value === "true";
+      onBlur({ target: { value, name } });
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   return (
-    <SelectFE
-      {...rest}
-      onBlur={(event) => {
-        onBlur?.(toValidEvent(event));
-      }}
-      onChange={(event, child) => {
-        onChange?.(toValidEvent(event), child);
-      }}
-      defaultValue={toValidValue(defaultValue)}
-      value={toValidValue(value)}
-      options={[
-        // TODO i18n
-        { label: trueText || "True", value: "true" },
-        { label: falseText || "False", value: "false" },
-      ]}
-      inputRef={inputRef}
-    />
+    <TextField {...rest} name={name} onChange={handleChange} onBlur={handleBlur} select>
+      <MenuItem value="true">{trueText || t("global.enable")}</MenuItem>
+      <MenuItem value="false">{falseText || t("global.disable")}</MenuItem>
+    </TextField>
   );
 }
 
-export default reactHookFormSupport({ defaultValue: false })(BooleanFE);
+const BooleanFEWithRHF = reactHookFormSupport({ defaultValue: false })(BooleanFE);
+
+export default BooleanFEWithRHF;

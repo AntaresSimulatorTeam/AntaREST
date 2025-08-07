@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import type { StudyMetadata } from "@/types/types";
+import { useOutletContext } from "react-router-dom";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../../../common/Form";
 import { INITIALIZE_RESERVOIR_DATE_OPTIONS, type HydroFormFields } from "./utils";
-import type { StudyMetadata } from "@/types/types";
-import { useOutletContext } from "react-router-dom";
 
 function Fields() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();

@@ -26,11 +26,13 @@ from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.jwt import JWTGroup, JWTUser
-from antarest.core.model import JSON
 from antarest.core.roles import RoleType
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.main import build_study_service
 from antarest.study.service import StudyService
+from antarest.study.storage.rawstudy.model.filesystem.config.files import build
+from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.study_download_utils import BadOutputFormat
 from tests.helpers import assert_study, with_admin_user
 from tests.storage.integration.conftest import UUID
@@ -176,7 +178,7 @@ def test_sta_mini_study_antares(storage_service, url: str, expected_output: str)
 
 buffer = io.StringIO()
 df = pd.DataFrame(np.array([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760))
-df.to_csv(buffer, sep="\t", header=False, index=False, float_format="%.6f")
+df.to_csv(buffer, sep="\t", header=False, index=False)
 expected_min_gen_response = buffer.getvalue()
 
 
@@ -488,9 +490,11 @@ def test_sta_mini_expansion(storage_service, url: str, expected_output: dict):
 
 @with_admin_user
 @pytest.mark.integration_test
-def test_sta_mini_copy(storage_service) -> None:
+def test_sta_mini_copy(storage_service, tmp_path: Path, matrix_service: ISimpleMatrixService) -> None:
     source_study_name = UUID
     destination_study_name = "copy-STA-mini"
+
+    storage_service.job_result_repository.find_by_study_and_output_ids.return_value = []
 
     client = create_test_client(storage_service)
     result = client.post(f"/v1/studies/{source_study_name}/copy?study_name={destination_study_name}&use_task=false")
@@ -505,20 +509,20 @@ def test_sta_mini_copy(storage_service) -> None:
     assert "matrixfile://fr.txt" == link_url_source
 
     link_url_destination = data_destination["input"]["links"]["de"]["fr"]
-    assert "matrixfile://fr.txt" == link_url_destination
+    # The study is copied; therefore, it was normalized
+    assert "matrix://ef73d0226d966d7c085e03bf37f26986fb7bfaba0977f8f60acfa9109ded8c1f" == link_url_destination
 
-    def replace_study_name(data: JSON) -> None:
-        if isinstance(data, dict):
-            for key, value in data.items():
-                if isinstance(value, str) and value.startswith("file/"):
-                    data[key] = value.replace(uuid, source_study_name)
-                else:
-                    replace_study_name(value)
+    # We should first denormalize the copied study to ensure it's the same exact study.
+    denormalized_path = tmp_path / "denormalized_study"
+    storage_service.export_study_flat(uuid, denormalized_path)
 
-    replace_study_name(data_destination)
+    config = build(denormalized_path, "")
+    mapper_factory = MatrixUriMapperFactory(matrix_service=matrix_service)
+    matrix_mapper = mapper_factory.create(NormalizedMatrixUriMapper.NORMALIZED)
+    tree = FileStudyTree(matrix_mapper=matrix_mapper, config=config)
+    data_destination = tree.get()
+
     del data_source["output"]
-    data_source["study"] = {}
-    data_destination["study"] = {}
 
     assert_study(data_source, data_destination)
 

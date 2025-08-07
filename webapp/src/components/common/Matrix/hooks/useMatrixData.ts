@@ -28,6 +28,7 @@ import { calculateMatrixAggregates, generateDateTime } from "../shared/utils";
 import type { fetchMatrixFn } from "@/components/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
 import { toError } from "@/utils/fnUtils";
 import useUndo from "use-undo";
+import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
 
 export interface DataState {
   data: MatrixDataDTO["data"];
@@ -123,7 +124,9 @@ export function useMatrixData({
   }, [fetchMatrix]);
 
   const dateTime = useMemo(() => {
-    return index ? generateDateTime(index) : [];
+    return index
+      ? generateDateTime(index)
+      : { values: [] as Date[], first_week_size: 0, level: TimeFrequency.Annual };
   }, [index]);
 
   return {
@@ -135,6 +138,7 @@ export function useMatrixData({
     // Metadata
     dateTime,
     rowCount: rowCountSource === "matrixIndex" ? index?.steps : currentState.data.length,
+    matrixTimeFrequency: index?.level,
 
     // Status
     isDirty: updateCount !== 0,

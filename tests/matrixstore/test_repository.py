@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import datetime
+import multiprocessing.pool
 import shutil
 import typing as t
 from contextlib import contextmanager
@@ -21,7 +22,7 @@ import pandas as pd
 import pytest
 from numpy import typing as npt
 from pandas._testing import assert_frame_equal
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.login.model import Group, Password, User
@@ -43,7 +44,7 @@ class TestMatrixRepository:
     def test_db_lifecycle(self, db_session: Session) -> None:
         with db_session:
             repo = MatrixRepository(db_session)
-            m = Matrix(id="hello", created_at=datetime.datetime.now())
+            m = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m)
             assert m.id
             assert m == repo.get(m.id)
@@ -83,9 +84,9 @@ class TestMatrixRepository:
 
             dataset_repo = MatrixDataSetRepository(session=db_session)
 
-            m1 = Matrix(id="hello", created_at=datetime.datetime.now())
+            m1 = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m1)
-            m2 = Matrix(id="world", created_at=datetime.datetime.now())
+            m2 = Matrix(id="world", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m2)
 
             dataset = MatrixDataSet(
@@ -127,12 +128,12 @@ class TestMatrixRepository:
         with db_session:
             user_repo = UserRepository(session=db_session)
             user1 = user_repo.save(User(name="foo", password=Password("bar")))
-            user2 = user_repo.save(User(name="hello", password=Password("world")))
+            user2 = user_repo.save(User(name="hello", password=Password("world  ")))
 
             repo = MatrixRepository(session=db_session)
-            m1 = Matrix(id="hello", created_at=datetime.datetime.now())
+            m1 = Matrix(id="hello", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m1)
-            m2 = Matrix(id="world", created_at=datetime.datetime.now())
+            m2 = Matrix(id="world", width=0, height=0, created_at=datetime.datetime.now(), version=0)
             repo.save(m2)
 
             dataset_repo = MatrixDataSetRepository(session=db_session)
@@ -228,6 +229,27 @@ class TestMatrixContentRepository:
             matrix_hash = matrix_content_repo.save(pd.DataFrame([[]])).hash
             retrieved_matrix = matrix_content_repo.get(matrix_hash, matrix_version=NEW_MATRIX_VERSION)
             assert retrieved_matrix.empty
+
+    def test_concurrent_save(self, tmp_path: str):
+        """
+        When 2 threads (or processes), want to create the same matrix, only one of them
+        should actually create it.
+
+        Note that this test would only fail randomly otherwise, you may increase trial_count
+        for more chances to generate problems.
+        """
+        trial_count = 10
+        with matrix_repository(Path(tmp_path), matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
+            with multiprocessing.pool.ThreadPool(2) as tp:
+                for i in range(0, trial_count):
+                    matrix = pd.DataFrame(data=np.zeros(shape=(8760, 1)))
+                    results = tp.map(matrix_content_repo.save, [matrix, matrix])
+
+                    assert results[0].new or results[1].new
+                    assert not (results[0].new and results[1].new)
+
+                    assert matrix_content_repo.exists(results[0].hash), f"Failed on try {i}"
+                    matrix_content_repo.delete(results[0].hash)
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
     def test_get_exists_and_delete(self, tmp_path: str, matrix_format: str) -> None:

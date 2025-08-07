@@ -39,6 +39,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
+    MatrixMetadataDTO,
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
@@ -123,6 +124,85 @@ class TestMatrixService:
             missing_hash = "8b1a9953c4611296a827abf8c47804d7e6c49c6b"
             with pytest.raises(MatrixNotFound, match=f"Matrix {missing_hash} doesn't exist"):
                 matrix_service.get(missing_hash)
+
+    def test_get_matrices(self, matrix_service: MatrixService):
+        parent = resource_path.parent
+        matrices = [
+            parent / "test-01-all.result.tsv",
+            parent / "test-02-all.result.tsv",
+            parent / "test-03-all.result.tsv",
+            parent / "test-04-all.result.tsv",
+            parent / "test-05-all.result.tsv",
+            parent / "test-06-all.result.tsv",
+            parent / "test-07-all.result.tsv",
+            parent / "test-08-all.result.tsv",
+        ]
+        expected_matrices = [
+            MatrixMetadataDTO(
+                id="ff7589e7632c1f8304949a27fa3ac86107d8ecf198980e67ae7ca062f9036789",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="539119504d34d284af5a0d0f7d3d28976969aabcdf97cbcbf38f50246d96b6f0",
+                width=1,
+                height=9,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="87e70e8b6af459b33be2dbd65d5c814a9225ae77112c9ea791d3abe92379334c",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
+                width=1,
+                height=2,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="2d62ca219846080b38e2ddf8d0f8f46a9fdeb7854234bfc751519b7502708b93",
+                width=1,
+                height=14,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+            MatrixMetadataDTO(
+                id="63c37aca761a6eecc11fc8c6db06f720e72a7c9f7064d8ea3f553ab643468685",
+                width=1,
+                height=18,
+                created_at=datetime.datetime.now(),
+                version=2,
+            ),
+        ]
+
+        with db():
+            for matrix in matrices:
+                mat = pd.read_csv(matrix)
+                matrix_service.create(mat)
+
+            actual_matrices = matrix_service.get_matrices()
+
+            assert len(actual_matrices) == len(expected_matrices)
+
+            for i in range(len(actual_matrices)):
+                assert actual_matrices[i].version == expected_matrices[i].version
+                assert actual_matrices[i].id == expected_matrices[i].id
+                assert actual_matrices[i].height == expected_matrices[i].height
+                assert actual_matrices[i].width == expected_matrices[i].width
 
     def test_exists(self, matrix_service: MatrixService) -> None:
         """Test the exists method."""
