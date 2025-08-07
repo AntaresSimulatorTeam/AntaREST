@@ -381,7 +381,7 @@ class TestRulesetMatrices:
             ruleset.update_rules(rules)
         assert ruleset.get_rules() == {}
 
-    def test_set_table_form(self, ruleset: RulesetMatrices) -> None:
+    def test_update_table_from(self, ruleset: RulesetMatrices) -> None:
         table_form = {
             "load": {
                 "France": {"0": 1, "1": 2, "2": 3, "3": 4},
@@ -462,7 +462,7 @@ class TestRulesetMatrices:
             },
         }
         for scenario_type, table in table_form.items():
-            ruleset.set_table_form(table, scenario_type)
+            ruleset.update_table_form(table, scenario_type)
         actual_rules = ruleset.get_rules()
         expected = {
             "bc,main,0": 85,
@@ -646,7 +646,7 @@ class TestRulesetMatrices:
         ],
     )
     @pytest.mark.parametrize("old_value", [12, None, np.nan, ""], ids=["int", "None", "NaN", "empty"])
-    def test_update_table_form(
+    def test_update_table_form_partial_update(
         self,
         ruleset: RulesetMatrices,
         table_form: TableForm,

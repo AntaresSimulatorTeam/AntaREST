@@ -52,7 +52,7 @@ class ScenarioType(enum.StrEnum):
     - HYDRO_INITIAL_LEVEL: hydraulic Initial level scenario
     - HYDRO_FINAL_LEVEL: hydraulic Final level scenario
     - HYDRO_GENERATION_POWER: hydraulic Generation power scenario
-    - SHORT_TERM_STORAGE_INFLOWS: Short term storage scenario inflows
+    - SHORT_TERM_STORAGE_INFLOWS: Short term storage inflows scenario
 
     """
 

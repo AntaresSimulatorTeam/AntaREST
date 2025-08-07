@@ -29,7 +29,7 @@ SCENARIO_TYPES = {
     "hl": "hydro-initial-levels",
     "hfl": "hydro-final-levels",
     "hgp": "hydro-generation-power",
-    "sts": "short-term-storage-inflow",
+    "sts": "short-term-storage-inflows",
 }
 
 _Value: te.TypeAlias = int | float
@@ -366,32 +366,6 @@ class RulesetMatrices:
             cluster_table_form = {area: df.to_dict(orient="index") for area, df in cluster_scenario.items()}
             return cast(ClusterTableForm, cluster_table_form)
 
-    def set_table_form(
-        self,
-        table_form: TableForm,
-        scenario_type: str,
-        *,
-        nan_value: str | None = "",
-    ) -> None:
-        """
-        Set the scenario matrix from table form data, for a specific scenario type.
-
-        Args:
-            table_form: Simple or cluster table form data (see :meth:`get_table_form` for the format).
-            scenario_type: Scenario type.
-            nan_value: Value to replace NaNs.
-        """
-        actual_scenario = self.scenarios[scenario_type]
-        if isinstance(actual_scenario, pd.DataFrame):
-            scenario = pd.DataFrame.from_dict(table_form, orient="index")
-            scenario = scenario.replace({None: np.nan, nan_value: np.nan})
-            self.scenarios[scenario_type] = scenario
-        else:
-            self.scenarios[scenario_type] = {
-                area: pd.DataFrame.from_dict(df, orient="index").replace({None: np.nan, nan_value: np.nan})
-                for area, df in table_form.items()
-            }
-
     def update_table_form(self, table_form: TableForm, scenario_type: str, *, nan_value: str = "") -> None:
         """
         Update the scenario matrices from table form data (partial update).
@@ -403,10 +377,12 @@ class RulesetMatrices:
         """
         scenario = self.scenarios[scenario_type]
         if isinstance(scenario, pd.DataFrame):
+            # Simple (non-clustered) scenario: update the main DataFrame directly
             simple_table_form = cast(SimpleTableForm, table_form)
             df = pd.DataFrame.from_dict(simple_table_form, orient="index").replace({None: np.nan, nan_value: np.nan})
             scenario.loc[df.index, df.columns] = df
         else:
+            # Clustered scenario: update each area's DataFrame individually
             cluster_table_form = cast(ClusterTableForm, table_form)
             for area, simple_table_form in cluster_table_form.items():
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
