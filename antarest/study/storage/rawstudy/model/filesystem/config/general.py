@@ -87,7 +87,10 @@ def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> General
 
 def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
-    return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
+    data = file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
+    if "building_mode" in data:
+        data["building_mode"] = data["building_mode"].lower()
+    return data
 
 
 def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
