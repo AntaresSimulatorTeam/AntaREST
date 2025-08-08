@@ -23,9 +23,15 @@ export interface ViewWrapperProps {
   children: React.ReactNode;
   flex?: boolean | FlexConfig;
   disablePadding?: boolean;
+  elevation?: number;
 }
 
-function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWrapperProps) {
+function ViewWrapper({
+  children,
+  flex = false,
+  disablePadding = false,
+  elevation = 1,
+}: ViewWrapperProps) {
   const getFlexStyles = (): SxProps<Theme> | null => {
     if (!flex) {
       return null;
@@ -48,7 +54,7 @@ function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWra
     position: "relative",
     borderRadius: 0,
     // Remove padding for components that manage their own padding
-    ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
+    ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child)": {
       p: 0,
     },
   };
@@ -56,7 +62,11 @@ function ViewWrapper({ children, flex = false, disablePadding = false }: ViewWra
   const flexStyles = getFlexStyles();
 
   return (
-    <Paper className="ViewWrapper" sx={flexStyles ? { ...baseStyles, ...flexStyles } : baseStyles}>
+    <Paper
+      className="ViewWrapper"
+      elevation={Math.max(1, elevation)}
+      sx={flexStyles ? { ...baseStyles, ...flexStyles } : baseStyles}
+    >
       {children}
     </Paper>
   );

@@ -12,7 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import isMatchWith from "lodash/isMatchWith";
 import * as RA from "ramda-adjunct";
+import type { FieldValues } from "react-hook-form";
 import type { AutoSubmitConfig, FormProps } from ".";
 
 export function toAutoSubmitConfig(value: FormProps["autoSubmit"]): AutoSubmitConfig {
@@ -68,6 +70,30 @@ export function stringToPath(input: string): string[] {
     .replace(/["|']|\]/g, "")
     .split(/\.|\[/)
     .filter(Boolean);
+}
+
+/**
+ * Performs a deep comparison between `object` and `source` to determine if `source` shape
+ * is present in object.
+ *
+ * Note: The function MUST be replaced with Zod schema validation in the future.
+ *
+ * @param object - The object to inspect.
+ * @param source - The object of property values to match.
+ * @returns `true` if object is a match, else `false`.
+ */
+export function isMatch<T extends FieldValues>(object: unknown, source: T): object is T {
+  if (!RA.isPlainObj(object)) {
+    return false;
+  }
+
+  return isMatchWith(object, source, (objValue, srcValue) => {
+    if (RA.isPlainObj(objValue) && RA.isPlainObj(srcValue)) {
+      return isMatch(objValue, srcValue);
+    }
+
+    return typeof objValue === typeof srcValue;
+  });
 }
 
 export const ROOT_ERROR_KEY = "default";

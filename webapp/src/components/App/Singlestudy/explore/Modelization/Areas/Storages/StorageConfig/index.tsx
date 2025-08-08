@@ -12,10 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
-import BackButton from "@/components/common/buttons/BackButton";
 import TabsView from "@/components/common/TabsView";
 import { getCurrentAreaId } from "@/redux/selectors";
 import { nameToId } from "@/services/utils";
@@ -38,40 +36,32 @@ function StorageConfig() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <>
-      <BackButton onClick={() => navigate("../storages")} />
-      <Box sx={{ width: 1, height: "calc(100% - 45px)" }}>
-        <TabsView
-          divider
-          items={[
-            {
-              label: t("study.modelization.storages.operatingParameters"),
-              content: () => <StorageForm study={study} areaId={areaId} storageId={storageId} />,
-            },
-            {
-              label: t("global.timeSeries"),
-              content: () => (
-                <StorageMatrices
-                  studyVersion={studyVersion}
-                  areaId={areaId}
-                  storageId={storageId}
-                />
-              ),
-            },
-            studyVersion >= 920 && {
-              label: t("study.modelization.storages.additionalConstraints"),
-              content: () => (
-                <AdditionalConstraints
-                  studyId={study.id}
-                  areaId={areaId}
-                  storageId={nameToId(storageId)}
-                />
-              ),
-            },
-          ].filter(Boolean)}
-        />
-      </Box>
-    </>
+    <TabsView
+      onBack={() => navigate("../storages")}
+      divider
+      items={[
+        {
+          label: t("study.modelization.storages.operatingParameters"),
+          content: () => <StorageForm study={study} areaId={areaId} storageId={storageId} />,
+        },
+        {
+          label: t("global.timeSeries"),
+          content: () => (
+            <StorageMatrices studyVersion={studyVersion} areaId={areaId} storageId={storageId} />
+          ),
+        },
+        studyVersion >= 920 && {
+          label: t("study.modelization.storages.additionalConstraints"),
+          content: () => (
+            <AdditionalConstraints
+              studyId={study.id}
+              areaId={areaId}
+              storageId={nameToId(storageId)}
+            />
+          ),
+        },
+      ].filter(Boolean)}
+    />
   );
 }
 

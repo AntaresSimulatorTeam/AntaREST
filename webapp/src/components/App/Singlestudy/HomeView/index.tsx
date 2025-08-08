@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import SplitView from "@/components/common/SplitView";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import Split from "react-split";
 import type { StudyMetadata, VariantTree } from "../../../../types/types";
 import InformationView from "./InformationView";
-import "./Split.css";
 import StudyTreeView from "./StudyTreeView";
 
 interface Props {
@@ -29,17 +28,7 @@ function HomeView({ study, variantTree }: Props) {
   const navigate = useNavigate();
 
   return (
-    <Split
-      className="split"
-      gutterSize={4}
-      snapOffset={0}
-      sizes={[36, 64]}
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        flex: 1,
-      }}
-    >
+    <SplitView id="study-home" gutterSize={4} sizes={[36, 64]}>
       {/* Left */}
       <Box
         height="100%"
@@ -59,7 +48,7 @@ function HomeView({ study, variantTree }: Props) {
       </Box>
       {/* Right */}
       <InformationView study={study} variantTree={variantTree} />
-    </Split>
+    </SplitView>
   );
 }
 

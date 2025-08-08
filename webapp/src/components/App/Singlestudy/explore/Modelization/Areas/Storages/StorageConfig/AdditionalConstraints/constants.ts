@@ -12,19 +12,30 @@
  * This file is part of the Antares project.
  */
 
-export const CONSTRAINT_VARIABLES = [
-  { value: "withdrawal", label: "study.modelization.storages.additionalConstraints.charge" },
-  { value: "injection", label: "study.modelization.storages.additionalConstraints.discharge" },
-  { value: "netting", label: "study.modelization.storages.additionalConstraints.level" },
+import type { Options } from "@/components/common/fieldEditors/SelectFE";
+import type {
+  AdditionalConstraintCreation,
+  AdditionalConstraintOperator,
+  AdditionalConstraintVariable,
+} from "@/services/api/studies/areas/storages/types";
+
+export const VARIABLE_OPTIONS: Options<AdditionalConstraintVariable> = [
+  {
+    value: "withdrawal",
+    label: (t) => t("study.modelization.storages.additionalConstraints.charge"),
+  },
+  {
+    value: "injection",
+    label: (t) => t("study.modelization.storages.additionalConstraints.discharge"),
+  },
+  { value: "netting", label: (t) => t("study.modelization.storages.additionalConstraints.level") },
 ] as const;
 
-export const CONSTRAINT_OPERATORS = [
+export const OPERATOR_OPTIONS: Options<AdditionalConstraintOperator> = [
   { value: "less", label: "<" },
   { value: "equal", label: "=" },
   { value: "greater", label: ">" },
 ] as const;
-
-import type { AdditionalConstraintCreation } from "@/services/api/studies/areas/storages/types";
 
 export const DEFAULT_CONSTRAINT_VALUES: AdditionalConstraintCreation = {
   name: "",

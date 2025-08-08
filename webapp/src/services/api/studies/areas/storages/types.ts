@@ -13,6 +13,13 @@
  */
 
 import type { PartialExceptFor } from "@/utils/tsUtils";
+import { F } from "ts-toolbelt";
+
+export interface BaseStorageParams {
+  studyId: string;
+  areaId: string;
+  storageId: string;
+}
 
 ////////////////////////////////////////////////////////////////
 // Additional Constraints
@@ -36,29 +43,18 @@ export type AdditionalConstraintCreation = PartialExceptFor<
   "name"
 >;
 
-export type AdditionalConstraintUpdate = Partial<AdditionalConstraint> & {
-  id?: never;
-  name?: never;
-};
-
-export interface BaseStorageParams {
-  studyId: string;
-  areaId: string;
-  storageId: string;
-}
-
-export type GetAdditionalConstraintsParams = BaseStorageParams;
+export type AdditionalConstraintUpdate = Partial<Omit<AdditionalConstraint, "id" | "name">>;
 
 export interface GetAdditionalConstraintParams extends BaseStorageParams {
   constraintId: AdditionalConstraint["id"];
 }
 
-export interface CreateAdditionalConstraintsParams extends BaseStorageParams {
-  constraints: AdditionalConstraintCreation[];
+export interface CreateAdditionalConstraintsParams<T> extends BaseStorageParams {
+  constraints: Array<F.Exact<T, AdditionalConstraintCreation>>;
 }
 
-export interface UpdateAdditionalConstraintsParams extends BaseStorageParams {
-  constraints: Record<AdditionalConstraint["id"], AdditionalConstraintUpdate>;
+export interface UpdateAdditionalConstraintsParams<T> extends BaseStorageParams {
+  constraints: Record<AdditionalConstraint["id"], F.Exact<T, AdditionalConstraintUpdate>>;
 }
 
 export interface DeleteAdditionalConstraintsParams extends BaseStorageParams {

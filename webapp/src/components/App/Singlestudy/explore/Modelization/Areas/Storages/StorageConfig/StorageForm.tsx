@@ -12,23 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Tooltip } from "@mui/material";
-import * as RA from "ramda-adjunct";
-import { useTranslation } from "react-i18next";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { Area, StudyMetadata } from "@/types/types";
 import { validateNumber } from "@/utils/validation/number";
+import { Box, Tooltip } from "@mui/material";
+import { useTranslation } from "react-i18next";
 import Fieldset from "../../../../../../../common/Fieldset";
 import Form from "../../../../../../../common/Form";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
+  convertPercentageToRatio,
+  convertRatioToPercentage,
   type FormalizedStorage,
   getStorage,
-  STORAGE_GROUPS,
   type Storage,
+  STORAGE_GROUPS,
   updateStorage,
 } from "../utils";
 
@@ -47,38 +48,23 @@ function StorageForm({ study, areaId, storageId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const getDefaultValues = async () => {
-    const { efficiency, efficiencyWithdrawal, initialLevel, ...rest } = await getStorage(
-      study.id,
-      areaId,
-      storageId,
-    );
-
-    return {
-      ...rest,
-      // Convert to percentage ([0-1] -> [0-100])
-      efficiency: efficiency * 100,
-      efficiencyWithdrawal: efficiencyWithdrawal * 100,
-      initialLevel: initialLevel * 100,
-    };
+    const storage = await getStorage(study.id, areaId, storageId);
+    return convertRatioToPercentage(storage);
   };
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
-    const newValues = { ...dirtyValues };
-    // Convert to ratio ([0-100] -> [0-1])
-    if (RA.isNumber(newValues.efficiency)) {
-      newValues.efficiency /= 100;
-    }
-    if (RA.isNumber(newValues.initialLevel)) {
-      newValues.initialLevel /= 100;
-    }
-    if (RA.isNumber(newValues.efficiencyWithdrawal)) {
-      newValues.efficiencyWithdrawal /= 100;
-    }
-    return updateStorage(study.id, areaId, storageId, newValues);
+  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
+    const updatedStorage = await updateStorage(
+      study.id,
+      areaId,
+      storageId,
+      convertPercentageToRatio(dirtyValues),
+    );
+
+    return convertRatioToPercentage(updatedStorage);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -91,8 +77,6 @@ function StorageForm({ study, areaId, storageId }: Props) {
       config={{ defaultValues: getDefaultValues }}
       onSubmit={handleSubmit}
       enableUndoRedo
-      disableStickyFooter
-      hideFooterDivider
     >
       {({ control }) => (
         <>

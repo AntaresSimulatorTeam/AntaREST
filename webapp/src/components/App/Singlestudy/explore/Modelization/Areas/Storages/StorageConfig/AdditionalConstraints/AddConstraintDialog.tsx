@@ -12,68 +12,62 @@
  * This file is part of the Antares project.
  */
 
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import { useTranslation } from "react-i18next";
 import FormDialog from "@/components/common/dialogs/FormDialog";
-import Fieldset from "@/components/common/Fieldset";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import StringFE from "@/components/common/fieldEditors/StringFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
+import Fieldset from "@/components/common/Fieldset";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { createAdditionalConstraints } from "@/services/api/studies/areas/storages";
 import type {
   AdditionalConstraint,
   AdditionalConstraintCreation,
 } from "@/services/api/studies/areas/storages/types";
 import { validateString } from "@/utils/validation/string";
-import { CONSTRAINT_OPERATORS, CONSTRAINT_VARIABLES, DEFAULT_CONSTRAINT_VALUES } from "./constants";
+import AddCircleIcon from "@mui/icons-material/AddCircle";
+import { useTranslation } from "react-i18next";
+import { DEFAULT_CONSTRAINT_VALUES, OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "./constants";
 
 interface Props {
   open: boolean;
-  onClose: () => void;
-  onSave: (
-    data: SubmitHandlerPlus<AdditionalConstraintCreation>,
-    createdConstraints: AdditionalConstraint[],
-  ) => void;
+  onClose: VoidFunction;
+  onSave: (createdConstraint: AdditionalConstraint) => void;
   studyId: string;
   areaId: string;
   storageId: string;
+  existingNames: string[];
 }
 
-function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId }: Props) {
+function AddConstraintDialog({
+  open,
+  onClose,
+  onSave,
+  studyId,
+  areaId,
+  storageId,
+  existingNames,
+}: Props) {
   const { t } = useTranslation();
-
-  const variableOptions = CONSTRAINT_VARIABLES.map((option) => ({
-    value: option.value,
-    label: t(option.label),
-  }));
-
-  const operatorOptions = CONSTRAINT_OPERATORS.map((option) => ({
-    value: option.value,
-    label: option.label,
-  }));
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
-    const { name, variable, operator, enabled } = values;
-
     return createAdditionalConstraints({
       studyId,
       areaId,
       storageId,
-      constraints: [
-        {
-          name,
-          variable,
-          operator,
-          enabled,
-          occurrences: [],
-        },
-      ],
+      constraints: [values],
     });
+  };
+
+  const handleSubmitSuccessful = (
+    _: SubmitHandlerPlus<AdditionalConstraintCreation>,
+    submitResult: AdditionalConstraint[],
+  ) => {
+    onSave(submitResult[0]);
+    onClose();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -87,42 +81,31 @@ function AddConstraintDialog({ open, onClose, onSave, studyId, areaId, storageId
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={onSave}
-      maxWidth="sm"
-      config={{
-        defaultValues: DEFAULT_CONSTRAINT_VALUES,
-      }}
+      onSubmitSuccessful={handleSubmitSuccessful}
+      config={{ defaultValues: DEFAULT_CONSTRAINT_VALUES }}
     >
       {({ control }) => (
-        <>
-          <Fieldset fullFieldWidth>
-            <StringFE
-              label={t("global.name")}
-              name="name"
-              control={control}
-              fullWidth
-              rules={{
-                validate: (v) => validateString(v),
-              }}
-            />
-
-            <SelectFE
-              label={t("study.modelization.storages.additionalConstraints.variable")}
-              name="variable"
-              control={control}
-              options={variableOptions}
-            />
-
-            <SelectFE
-              label={t("study.modelization.storages.additionalConstraints.bounds")}
-              name="operator"
-              control={control}
-              options={operatorOptions}
-            />
-
-            <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
-          </Fieldset>
-        </>
+        <Fieldset fullFieldWidth>
+          <StringFE
+            label={t("global.name")}
+            name="name"
+            control={control}
+            rules={{ validate: validateString({ existingValues: existingNames }) }}
+          />
+          <SelectFE
+            label={t("study.modelization.storages.additionalConstraints.variable")}
+            name="variable"
+            control={control}
+            options={VARIABLE_OPTIONS}
+          />
+          <SelectFE
+            label={t("study.modelization.storages.additionalConstraints.bounds")}
+            name="operator"
+            control={control}
+            options={OPERATOR_OPTIONS}
+          />
+          <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
+        </Fieldset>
       )}
     </FormDialog>
   );

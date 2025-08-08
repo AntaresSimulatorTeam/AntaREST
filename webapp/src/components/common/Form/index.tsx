@@ -56,7 +56,10 @@ import FormContext from "./FormContext";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
 import useFormUndoRedo from "./useFormUndoRedo";
-import { getDirtyValues, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
+import { getDirtyValues, isMatch, ROOT_ERROR_KEY, stringToPath, toAutoSubmitConfig } from "./utils";
+
+// TODO 1: Remove auto submit support when all forms that use it are migrated to manual submit.
+// TODO 2: Replace built-in validators by Zod (https://react-hook-form.com/docs/useform#resolver).
 
 export interface AutoSubmitConfig {
   enable: boolean;
@@ -268,8 +271,13 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
       return Promise.all(toResolve)
         .then((values) => {
+          const submitRes = onSubmit ? R.last(values) : undefined;
+
+          if (isMatch(submitRes, data)) {
+            lastSubmittedData.current = submitRes;
+          }
+
           submitSuccessfulCb.current = () => {
-            const submitRes = onSubmit ? R.last(values) : undefined;
             onSubmitSuccessful?.(dataArg, submitRes);
           };
         })
@@ -406,7 +414,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
               </>
             )}
             {extraActions && (
-              <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ ml: "auto", pl: 2, display: "flex", alignItems: "center", gap: 1 }}>
                 {extraActions}
               </Box>
             )}
