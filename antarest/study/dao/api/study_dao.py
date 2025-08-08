@@ -29,7 +29,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintsMap,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
@@ -305,3 +305,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        return self._adaptee.get_xpansion_settings()
+
+    @override
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return self._adaptee.checks_settings_are_correct(settings)

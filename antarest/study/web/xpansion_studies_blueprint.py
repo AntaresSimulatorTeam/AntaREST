@@ -22,10 +22,10 @@ from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
+    XpansionSettings,
     XpansionSettingsUpdate,
 )
 from antarest.study.service import StudyService
@@ -67,7 +67,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Settings",
     )
-    def get_settings(uuid: str) -> GetXpansionSettings:
+    def get_settings(uuid: str) -> XpansionSettings:
         logger.info(f"Fetching Xpansion Settings of the study {uuid}")
         return study_service.get_xpansion_settings(uuid=uuid)
 
@@ -76,8 +76,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings",
     )
-    def update_settings(uuid: str, xpansion_settings: XpansionSettingsUpdate) -> GetXpansionSettings:
-        logger.info(f"Updating Xpansion Settings Of Study {uuid}")
+    def update_settings(uuid: str, xpansion_settings: XpansionSettingsUpdate) -> XpansionSettings:
+        logger.info(f"Updating Xpansion Settings of Study {uuid}")
         return study_service.update_xpansion_settings(uuid, xpansion_settings)
 
     @bp.put(
@@ -88,8 +88,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
     def update_additional_constraints_settings(
         uuid: str,
         filename: str = "",
-    ) -> GetXpansionSettings:
-        logger.info(f"Updating Xpansion Settings Of Study {uuid} with additional constraints {filename}")
+    ) -> XpansionSettings:
+        logger.info(f"Updating Xpansion Settings of Study {uuid} with additional constraints {filename}")
         return study_service.update_xpansion_constraints_settings(uuid, filename)
 
     @bp.post(
