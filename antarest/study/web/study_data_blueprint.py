@@ -60,6 +60,10 @@ from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )
+from antarest.study.business.model.config.timeseries_config_model import (
+    TimeSeriesConfiguration,
+    TimeSeriesConfigurationUpdate,
+)
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -90,7 +94,6 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
@@ -675,25 +678,24 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
         summary="Gets the TS Generation config",
-        response_model=TimeSeriesConfigDTO,
         response_model_exclude_none=True,
     )
-    def get_timeseries_form_values(uuid: str) -> TimeSeriesConfigDTO:
+    def get_timeseries_form_values(uuid: str) -> TimeSeriesConfiguration:
         logger.info(msg=f"Getting Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.ts_config_manager.get_values(study_interface)
+        return study_service.ts_config_manager.get_timeseries_configuration(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
         summary="Sets the TS Generation config",
     )
-    def set_ts_generation_config(uuid: str, field_values: TimeSeriesConfigDTO) -> None:
+    def set_ts_generation_config(uuid: str, field_values: TimeSeriesConfigurationUpdate) -> TimeSeriesConfiguration:
         logger.info(f"Updating Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.ts_config_manager.set_values(study_interface, field_values)
+        return study_service.ts_config_manager.set_timeseries_configuration(study_interface, field_values)
 
     @bp.get(
         path="/table-schema/{table_type}",

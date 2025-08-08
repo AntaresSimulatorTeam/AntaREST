@@ -18,11 +18,16 @@ from zipfile import ZipFile
 
 import pytest
 
+from antarest.core.serde.ini_reader import read_ini
+from antarest.core.serde.ini_writer import write_ini_file
+from antarest.study.business.model.config.timeseries_config_model import (
+    TimeSeriesConfiguration,
+    TimeSeriesConfigurationUpdate,
+    TimeSeriesType,
+)
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.timeseries_config_management import (
-    TimeSeriesConfigDTO,
     TimeSeriesConfigManager,
-    TimeSeriesTypeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -51,9 +56,37 @@ def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext
     config_manager = TimeSeriesConfigManager(command_context)
 
     # Asserts the get method returns the right value
-    assert config_manager.get_values(study) == TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=1))
+    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfiguration(
+        thermal=TimeSeriesType(number=1)
+    )
 
     # Modifies the value and asserts the get takes the modification into account
-    new_value = TimeSeriesConfigDTO(thermal=TimeSeriesTypeConfig(number=2))
-    config_manager.set_values(study, new_value)
-    assert config_manager.get_values(study) == new_value
+    new_value = TimeSeriesConfigurationUpdate(thermal=TimeSeriesType(number=2))
+    config_manager.set_timeseries_configuration(study, new_value)
+    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfiguration(
+        thermal=TimeSeriesType(number=2)
+    )
+
+
+def test_missing_value(file_study_820: FileStudy, command_context: CommandContext):
+    ini_path = file_study_820.config.study_path / "settings" / "generaldata.ini"
+    content = read_ini(ini_path)
+    assert content["general"]["nbtimeseriesthermal"] == 1
+
+    # Removes the key from the file
+    del content["general"]["nbtimeseriesthermal"]
+    write_ini_file(ini_path, content)
+
+    # The reading method should still succeed and return the right value
+    config_manager = TimeSeriesConfigManager(command_context)
+    study = FileStudyInterface(file_study_820)
+
+    assert config_manager.get_timeseries_configuration(study) == TimeSeriesConfiguration(
+        thermal=TimeSeriesType(number=1)
+    )
+
+    # Setting a new value should modify the ini file
+    new_value = TimeSeriesConfigurationUpdate(thermal=TimeSeriesType(number=2))
+    config_manager.set_timeseries_configuration(study, new_value)
+    content = read_ini(ini_path)
+    assert content["general"]["nbtimeseriesthermal"] == 2
