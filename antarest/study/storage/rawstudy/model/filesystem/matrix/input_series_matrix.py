@@ -105,7 +105,14 @@ class InputSeriesMatrix(MatrixNode):
         if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
             self.config.path.touch(exist_ok=True)
         else:
-            df.to_csv(self.config.path, sep="\t", header=False, index=False)
+            # We're checking if the dataFrame could be represented with integer values.
+            # If so, we'll write it this way as it would be quicker and the file takes less place on the fs.
+            df_as_int = df.astype(np.int32)
+            try:
+                pd.testing.assert_frame_equal(df, df_as_int, check_dtype=False)
+                df_as_int.to_csv(self.config.path, sep="\t", header=False, index=False)
+            except AssertionError:
+                df.to_csv(self.config.path, sep="\t", header=False, index=False)
 
     @override
     def check_errors(
