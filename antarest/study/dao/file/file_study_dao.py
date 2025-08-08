@@ -14,6 +14,7 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
@@ -39,6 +40,7 @@ class FileStudyTreeDao(
     FileStudyGeneralConfigDao,
     FileStudyOptimizationPreferencesDao,
     FileStudyAdvancedParametersDao,
+    FileStudyAdequacyPatchParametersDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

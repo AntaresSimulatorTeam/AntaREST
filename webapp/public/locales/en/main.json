@@ -485,6 +485,7 @@
   "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations.tooltip": "Threshold used to calculate an output indicator (“LMR VIOL.”) counting the number of situations where the application of local matching led to residual energy deviations exceeding this threshold (0: no tolerance)",
   "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation": "Relaxation factor for CSR constraints",
   "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation.tooltip": "In order to avoid solver issues, lower and upper boundaries of the ENS variable and lower bound of the spillage variable can be relaxed with this parameter.",
+  "study.configuration.adequacyPatch.redispatch": "Redispatch",
   "study.configuration.advancedParameters.seedsForRandomNumbers": "Seeds for random numbers",
   "study.configuration.advancedParameters.spatialTimeSeriesCorrelation": "Spatial time-series correlation",
   "study.configuration.advancedParameters.otherPreferences": "Other preferences",
