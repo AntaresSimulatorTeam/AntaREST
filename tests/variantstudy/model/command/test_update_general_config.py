@@ -32,7 +32,7 @@ class TestUpdateGeneralConfig:
         )
         output = command.apply(study_data=study)
         assert output.status
-        default_values.update({"horizon": 2030, "building_mode": "Automatic"})
+        default_values.update({"horizon": 2030, "building_mode": "automatic"})
 
         general_config = study.tree.get(["settings", "generaldata", "general"])
 
