@@ -40,7 +40,6 @@ class GeneralFileData(AntaresBaseModel):
     first_january: WeekDay | None = Field(default=None, alias="january.1st")
     leap_year: bool | None = Field(default=None, alias="leapyear")
     nb_years: int | None = Field(default=None, alias="nbyears")
-    building_mode: BuildingMode | None = Field(default=None)
     selection_mode: bool | None = Field(default=None, alias="user-playlist")
     year_by_year: bool | None = Field(default=None, alias="year-by-year")
     simulation_synthesis: bool | None = Field(default=None, alias="synthesis")
