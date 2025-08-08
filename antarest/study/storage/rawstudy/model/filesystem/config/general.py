@@ -64,7 +64,7 @@ class GeneralFileData(AntaresBaseModel):
 
     @classmethod
     def from_model(cls, config: GeneralConfig, study_version: StudyVersion) -> "GeneralFileData":
-        data = config.model_dump(exclude={"id"})
+        data = config.model_dump(exclude={"id", "building_mode"})
         if config.building_mode == BuildingMode.DERATED:
             data["derated"] = True
         else:
@@ -87,11 +87,7 @@ def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> General
 
 def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
-    data = file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
-    if "building_mode" in data:
-        # The simulator needs the building mode to be written in lower case.
-        data["building_mode"] = data["building_mode"].lower()
-    return data
+    return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
 
 
 def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
