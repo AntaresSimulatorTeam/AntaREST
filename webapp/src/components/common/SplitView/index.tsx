@@ -31,7 +31,7 @@ function isValidSizes(sizes: unknown): sizes is number[] {
   return (
     Array.isArray(sizes) &&
     sizes.every((size) => typeof size === "number") &&
-    sizes.reduce((sum, size) => sum + size) === 100
+    sizes.reduce((sum, size) => sum + size, 0) === 100
   );
 }
 
