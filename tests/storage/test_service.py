@@ -866,17 +866,18 @@ def test_download_output() -> None:
 
 # noinspection PyArgumentList
 @pytest.mark.unit_test
-def test_change_owner() -> None:
+def test_change_owner(empty_study_920: FileStudy) -> None:
     study_id = str(uuid.uuid4())
     alice = User(id=2)
     bob = User(id=3, name="Bob")
     jwt_user = JWTUser(id=2, impersonator=2, type="users")
 
-    file_study = Mock(spec=FileStudy, get_node=Mock(return_value=Mock(spec=IniFileNode)))
+    file_study = empty_study_920
 
     repository = Mock(spec=StudyMetadataRepository)
     user_service = Mock()
     study_service = Mock(spec=RawStudyService)
+    study_service.cache = Mock()
     study_service.get_raw.return_value = file_study
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
     variant_study_service = Mock(
@@ -897,12 +898,20 @@ def test_change_owner() -> None:
     study = create_raw_study(id=study_id, owner=alice)
     repository.get.return_value = study
     user_service.get_user.return_value = bob
-    service._edit_study_using_command = Mock()
 
     with current_user_context(jwt_user):
         service.change_owner(study_id, 2)
 
-    service._edit_study_using_command.assert_called_once_with(study=study, url="study/antares/author", data="Bob")
+    assert file_study.tree.get(["study"]) == {
+        "antares": {
+            "author": "Bob",
+            "caption": "empty_study",
+            "created": ANY,
+            "editor": "Bob",
+            "lastsave": ANY,
+            "version": 9.2,
+        }
+    }
     user_service.get_user.assert_called_once_with(2)
     repository.save.assert_called_with(create_raw_study(id=study_id, owner=bob, last_access=ANY))
     repository.save.assert_called_with(create_raw_study(id=study_id, owner=bob))

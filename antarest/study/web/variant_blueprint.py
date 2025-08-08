@@ -24,7 +24,7 @@ from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.model import StudyMetadataDTO
 from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.replace_study_author import ReplaceStudyAuthor
 from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, VariantTreeDTO
 
 logger = logging.getLogger(__name__)
@@ -76,18 +76,8 @@ def create_study_variant_routes(
             study_service.apply_commands(
                 variant_study.id,
                 [
-                    UpdateConfig(
-                        target="study",
-                        data={
-                            "antares": {
-                                "version": variant_study.version,
-                                "caption": variant_study.name,
-                                "created": variant_study.get_created_at_timestamp(),
-                                "lastsave": variant_study.get_updated_at_timestamp(),
-                                "author": author,
-                                "editor": author,
-                            }
-                        },
+                    ReplaceStudyAuthor(
+                        author=author,
                         command_context=command_context,
                         study_version=variant_study.version,
                     ).to_dto()

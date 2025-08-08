@@ -54,3 +54,11 @@ class FileStudyTreeDao(
     @override
     def get_version(self) -> StudyVersion:
         return self._file_study.config.version
+
+    @override
+    def change_study_owner(self, new_owner: str) -> None:
+        study_antares_path = ["study"]
+        content = self._file_study.tree.get(study_antares_path)
+        content["antares"]["author"] = new_owner
+        content["antares"]["editor"] = new_owner
+        self._file_study.tree.save(content, study_antares_path)
