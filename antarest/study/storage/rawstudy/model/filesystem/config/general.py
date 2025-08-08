@@ -89,6 +89,7 @@ def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersi
     file_data = GeneralFileData.from_model(config, study_version)
     data = file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
     if "building_mode" in data:
+        # The simulator needs the building mode to be written in lower case.
         data["building_mode"] = data["building_mode"].lower()
     return data
 
