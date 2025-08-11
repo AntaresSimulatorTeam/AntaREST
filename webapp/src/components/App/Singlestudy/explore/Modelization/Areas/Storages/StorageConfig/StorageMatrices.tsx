@@ -92,13 +92,12 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
     {
       label: t("study.modelization.storages.inflows"),
-      content: () => (
-        <Matrix
-          url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
-          isTimeSeries={false}
-          customColumns={["TS 1"]}
-        />
-      ),
+      content: () => {
+        const commonProps = { url: `input/st-storage/series/${areaId}/${storageId}/inflows` };
+        const extraProps =
+          studyVersion >= 930 ? {} : { isTimeSeries: false, customColumns: ["TS 1"] };
+        return <Matrix {...commonProps} {...extraProps} />;
+      },
     },
   ];
 
