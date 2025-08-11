@@ -24,7 +24,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 
 
-class Matrix(Base):  # type: ignore
+class Matrix(Base):
     """
     Represents a matrix object in the database.
 
@@ -99,7 +99,7 @@ class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True)
         return created_at.strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
-class MatrixDataSetRelation(Base):  # type: ignore
+class MatrixDataSetRelation(Base):
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset_matrices"
 
@@ -135,7 +135,7 @@ class MatrixDataSetRelation(Base):  # type: ignore
         return res
 
 
-class MatrixDataSet(Base):  # type: ignore
+class MatrixDataSet(Base):
     """
     Represents a user dataset containing matrices in the database.
 

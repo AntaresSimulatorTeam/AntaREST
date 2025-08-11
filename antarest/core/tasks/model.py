@@ -109,7 +109,7 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
     to_completion_date_utc: Optional[float] = None
 
 
-class TaskJobLog(Base):  # type: ignore
+class TaskJobLog(Base):
     __tablename__ = "taskjoblog"
 
     id: Mapped[int] = mapped_column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
@@ -138,7 +138,7 @@ class TaskJobLog(Base):  # type: ignore
         return TaskLogDTO(id=self.id, message=self.message)
 
 
-class TaskJob(Base):  # type: ignore
+class TaskJob(Base):
     __tablename__ = "taskjob"
 
     id: Mapped[str] = mapped_column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
