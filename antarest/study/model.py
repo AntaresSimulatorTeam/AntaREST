@@ -236,7 +236,6 @@ class Study(Base):  # type: ignore
               a unique identifier. May contain any type of characters.
         version: The version of the study, for example "7.0". Currently, any format accepted by StudyVersion.parse i
                  considered valid: "8.8" or "880" for example.
-        author: The author name. Note that it may be different from the owner, and even not be a user of the application.
         created_at: The timestamp when the study was created.
         updated_at: The timestamp when the study was last updated.
         last_access: The timestamp when the study was last accessed.
@@ -265,7 +264,6 @@ class Study(Base):  # type: ignore
     name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
     version: Mapped[str] = mapped_column(String(255), index=True)
-    author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)

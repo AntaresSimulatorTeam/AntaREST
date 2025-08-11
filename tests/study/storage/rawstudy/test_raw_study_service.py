@@ -95,7 +95,6 @@ class TestRawStudyService:
             id="my_raw_study",
             name=raw_study_path.name,
             version="860",
-            author="John Smith",
             created_at=datetime.datetime(2023, 7, 15, 16, 45),
             updated_at=datetime.datetime(2023, 7, 19, 8, 15),
             last_access=datetime.datetime.utcnow(),

@@ -70,7 +70,6 @@ def fixture_variant_study_id(tmp_path: Path, db_session: Session, raw_study_id: 
             id=variant_study_id,
             name="Variant Study",
             version="860",
-            author="John DOE",
             parent_id=raw_study_id,
             created_at=datetime.datetime.utcnow() - datetime.timedelta(days=1),
             updated_at=datetime.datetime.utcnow(),
@@ -195,7 +194,6 @@ class TestVariantStudy:
                 id=variant_study_id,
                 name="Variant Study",
                 version="860",
-                author="John DOE",
                 parent_id=raw_study_id,
                 created_at=now - datetime.timedelta(days=1),
                 updated_at=now,
@@ -216,7 +214,6 @@ class TestVariantStudy:
         assert obj.name == "Variant Study"
         assert obj.type == "variantstudy"
         assert obj.version == "860"
-        assert obj.author == "John DOE"
         assert obj.created_at == now - datetime.timedelta(days=1)
         assert obj.updated_at == now
         assert obj.last_access == now
@@ -292,7 +289,6 @@ class TestVariantStudy:
             variant = create_variant_study(
                 id=variant_id,
                 name="Study 3.0",
-                author="Sandrine",
                 parent_id=raw_study_id,
                 updated_at=updated_at,
                 path=str(tmp_path.joinpath("variant")),

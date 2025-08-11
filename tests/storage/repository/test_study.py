@@ -32,7 +32,6 @@ def test_lifecycle(db_session: Session) -> None:
     a = create_study(
         name="a",
         version="820",
-        author="John Smith",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         public_mode=PublicMode.FULL,
@@ -42,7 +41,6 @@ def test_lifecycle(db_session: Session) -> None:
     b = create_raw_study(
         name="b",
         version="830",
-        author="Morpheus",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         public_mode=PublicMode.FULL,
@@ -52,7 +50,6 @@ def test_lifecycle(db_session: Session) -> None:
     c = create_raw_study(
         name="c",
         version="830",
-        author="Trinity",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         public_mode=PublicMode.FULL,
@@ -63,7 +60,6 @@ def test_lifecycle(db_session: Session) -> None:
     d = create_variant_study(
         name="d",
         version="830",
-        author="Mr. Anderson",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         public_mode=PublicMode.FULL,
@@ -100,7 +96,6 @@ def test_study__additional_data(db_session: Session) -> None:
     a = create_raw_study(
         name="a",
         version="820",
-        author="John Smith",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         public_mode=PublicMode.FULL,
@@ -141,7 +136,6 @@ def test_study_inheritance(db_session: Session) -> None:
     a = create_raw_study(
         name="a",
         version="820",
-        author="John Smith",
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
         public_mode=PublicMode.FULL,

@@ -562,7 +562,6 @@ def test_create_study() -> None:
         id=str(uuid.uuid4()),
         name="new-study",
         version="700",
-        author="AUTHOR",
         created_at=datetime.utcfromtimestamp(1234),
         updated_at=datetime.utcfromtimestamp(9876),
         content_status=StudyContentStatus.VALID,

@@ -54,7 +54,6 @@ class TestAbstractStorageService:
         metadata = create_study(
             name="My Study",
             version="860",
-            author="John Smith",
             created_at=datetime.datetime(2023, 7, 19, 16, 45),
             updated_at=datetime.datetime(2023, 7, 27, 8, 15),
             last_access=datetime.datetime.utcnow(),
