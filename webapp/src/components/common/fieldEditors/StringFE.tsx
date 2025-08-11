@@ -12,16 +12,78 @@
  * This file is part of the Antares project.
  */
 
-import { TextField, type TextFieldProps } from "@mui/material";
+import { Autocomplete, TextField, type TextFieldProps } from "@mui/material";
 import reactHookFormSupport from "../../../hoc/reactHookFormSupport";
 
-export interface StringFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
+// Used when a value is selected from the datalist
+interface DatalistChangeEvent {
+  target: { value: string; name: string };
+}
+
+type TextFieldChangeEvent = Parameters<NonNullable<TextFieldProps["onChange"]>>[0];
+
+interface WithDatalist {
+  datalist: string[] | readonly string[];
+  onChange?: (event: DatalistChangeEvent | TextFieldChangeEvent) => void;
+}
+
+interface WithoutDatalist {
+  datalist?: undefined;
+  onChange?: TextFieldProps["onChange"];
+}
+
+export type StringFEProps = {
   value?: string;
   defaultValue?: string;
+} & (WithDatalist | WithoutDatalist) &
+  Omit<TextFieldProps, "type" | "value" | "defaultValue" | "onChange">;
+
+function StringFE({ value, defaultValue, datalist, onChange, name, ...restProps }: StringFEProps) {
+  const commonProps = {
+    ...restProps,
+    name,
+    onChange,
+    type: "text",
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleAutocompleteChange = (event: React.SyntheticEvent, value: string) => {
+    if (datalist && onChange) {
+      onChange({ target: { value: value, name: name || "" } });
+    }
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  if (datalist) {
+    return (
+      <Autocomplete
+        value={value}
+        defaultValue={defaultValue}
+        options={datalist}
+        freeSolo
+        disableClearable
+        onChange={handleAutocompleteChange}
+        renderInput={({ inputProps, InputProps, ...restParams }) => (
+          <TextField
+            {...restParams}
+            {...commonProps}
+            inputProps={inputProps}
+            InputProps={InputProps}
+          />
+        )}
+      />
+    );
+  }
+
+  return <TextField value={value} defaultValue={defaultValue} {...commonProps} />;
 }
 
-function StringFE(props: StringFEProps) {
-  return <TextField {...props} type="text" />;
-}
+const StringFEWithRHF = reactHookFormSupport({ defaultValue: "" })(StringFE);
 
-export default reactHookFormSupport({ defaultValue: "" })(StringFE);
+export default StringFEWithRHF;

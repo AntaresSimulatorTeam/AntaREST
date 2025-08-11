@@ -27,6 +27,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_5,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -173,6 +174,15 @@ class GeneralData(IniFileNode):
             del adequacy["enable-first-step"]
             del other_preferences["initial-reservoir-levels"]
             types["compatibility"] = {"hydro-pmax": str}
+
+        if study_version >= STUDY_VERSION_9_3:
+            general = types["general"]
+            del general["refreshtimeseries"]
+            del general["refreshintervalload"]
+            del general["refreshintervalhydro"]
+            del general["refreshintervalwind"]
+            del general["refreshintervalthermal"]
+            del general["refreshintervalsolar"]
 
         IniFileNode.__init__(
             self,

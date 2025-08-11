@@ -88,7 +88,7 @@ class LoginService:
         Returns: group
 
         """
-        if self.groups.get_by_name(group.name):
+        if group.name and self.groups.get_by_name(group.name):
             raise HTTPException(status_code=400, detail="Group name already exists")
 
         user = get_current_user()

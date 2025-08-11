@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { Column } from "../constants";
+import { Column, TIME_FREQUENCY_CONFIG, TimeFrequency } from "../constants";
 import {
   calculateMatrixAggregates,
   formatGridNumber,
@@ -22,17 +22,19 @@ import {
   getAggregateTypes,
 } from "../utils";
 import {
-  DATE_TIME_TEST_CASES,
-  COLUMN_TEST_CASES,
-  AGGREGATE_TEST_CASES,
-  FORMAT_TEST_CASES,
   AGGREGATE_CONFIG_CASES,
+  AGGREGATE_TEST_CASES,
+  COLUMN_TEST_CASES,
+  DATE_TIME_FORMAT_TEST_CASES,
+  DATE_TIME_TEST_CASES,
+  FORMAT_TEST_CASES,
 } from "./fixtures";
 
 describe("Matrix Utils", () => {
   beforeAll(() => {
     vi.mock("date-fns", async () => {
       const actual = (await vi.importActual("date-fns")) as typeof import("date-fns");
+
       return {
         ...actual,
         format: vi.fn((date: Date, formatString: string) => {
@@ -44,14 +46,44 @@ describe("Matrix Utils", () => {
         }),
       };
     });
+
     vi.useFakeTimers();
-    vi.setSystemTime(new Date("2023-01-01 00:00:00"));
+    vi.setSystemTime(new Date("2023-01-01T00:00:00.000Z"));
   });
 
   describe("DateTime Generation", () => {
     test.each(DATE_TIME_TEST_CASES)("generates correct $name", ({ config, expected }) => {
       const result = generateDateTime(config);
-      expect(result).toEqual(expected);
+      expect(result).toEqual({
+        values: expected,
+        first_week_size: config.first_week_size,
+        level: config.level,
+      });
+    });
+
+    describe("Daylight Saving Time handling", () => {
+      test("should generate consecutive hours without DST gaps or duplicates", () => {
+        // Test with a date range that crosses DST transition in Europe
+        const config = {
+          start_date: "2023-03-26 00:00:00", // DST transition date in Europe
+          steps: 24, // Full day
+          first_week_size: 7,
+          level: TimeFrequency.Hourly,
+        };
+
+        const result = generateDateTime(config);
+
+        // Extract hours from the generated strings
+        const hours = result.values.map((date) => {
+          return date.getHours();
+        });
+
+        // Verify all hours are consecutive (starting from 00 of current day in UTC)
+        expect(hours[0]).toBe(0); // Starts at 00:00 current day in UTC
+        for (let i = 1; i < 24; i++) {
+          expect(hours[i]).toBe(i);
+        }
+      });
     });
   });
 
@@ -120,5 +152,14 @@ describe("Matrix Utils", () => {
     test.each(AGGREGATE_CONFIG_CASES)("handles $name correctly", ({ aggregates, expected }) => {
       expect(getAggregateTypes(aggregates)).toEqual(expected);
     });
+  });
+});
+
+describe("DateTime formatting", () => {
+  test.each(DATE_TIME_FORMAT_TEST_CASES)("format correct $name", ({ input, expected }) => {
+    const result = input.values.map((date) =>
+      TIME_FREQUENCY_CONFIG[input.level].format(date, input.first_week_size),
+    );
+    expect(result).toEqual(expected);
   });
 });

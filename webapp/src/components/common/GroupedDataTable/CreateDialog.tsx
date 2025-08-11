@@ -67,10 +67,10 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
             sx={{ m: 0 }}
           />
           {allowNewGroups ? (
-            // Add autocomplete with `groups`
             <StringFE
               label={t("global.group")}
               name="group"
+              datalist={groups}
               control={control}
               rules={{ required: t("form.field.required") }}
             />

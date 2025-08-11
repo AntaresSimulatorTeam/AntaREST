@@ -37,10 +37,11 @@ from antarest.login.model import User
 from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.storage_dispatchers import OutputStorageDispatcher
+from tests.helpers import create_raw_study
 
 UUID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
 
@@ -89,26 +90,26 @@ def storage_service(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path)
     (path_studies / "STA-mini").rename(path_studies / UUID)
 
     # noinspection PyArgumentList
-    md = RawStudy(
+    md = create_raw_study(
         id=UUID,
         name="STA-mini",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / UUID),
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
-        version=700,
+        version="700",
         additional_data=StudyAdditionalData(author="Andrea SGATTONI", horizon=2030),
     )
     repo = Mock()
     # noinspection PyArgumentList
-    repo.get.side_effect = lambda name: RawStudy(
+    repo.get.side_effect = lambda name: create_raw_study(
         id=name,
         name=name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_studies / name),
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
-        version=700,
+        version="700",
         additional_data=StudyAdditionalData(),
     )
     repo.get_all.return_value = [md]

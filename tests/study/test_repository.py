@@ -15,12 +15,12 @@ import typing as t
 from unittest.mock import Mock
 
 import pytest
-from sqlalchemy.orm import Session  # type: ignore
+from sqlalchemy.orm import Session
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.login.model import Group, User
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Tag
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, Tag
 from antarest.study.repository import (
     AccessPermissions,
     StudyFilter,
@@ -28,8 +28,8 @@ from antarest.study.repository import (
     StudyPagination,
     StudySortBy,
 )
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.db_statement_recorder import DBStatementRecorder
+from tests.helpers import create_raw_study, create_variant_study
 
 
 @pytest.mark.parametrize(
@@ -68,14 +68,14 @@ def test_get_all__general_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(name="s1")
-    study_2 = VariantStudy(name="s2")
-    study_3 = VariantStudy(name="s3")
-    study_4 = VariantStudy(name="s4")
-    study_5 = RawStudy(name="s5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(name="s6", missing=datetime.datetime.now(), workspace=test_workspace)
-    study_7 = RawStudy(name="s7", missing=None, workspace=test_workspace)
-    study_8 = RawStudy(name="s8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = create_variant_study(name="s1")
+    study_2 = create_variant_study(name="s2")
+    study_3 = create_variant_study(name="s3")
+    study_4 = create_variant_study(name="s4")
+    study_5 = create_raw_study(name="s5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(name="s6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_7 = create_raw_study(name="s7", missing=None, workspace=test_workspace)
+    study_8 = create_raw_study(name="s8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
     my_studies = [study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8]
     db_session.add_all(my_studies)
@@ -140,14 +140,14 @@ def test_get_all__incompatible_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = VariantStudy(id=3, name="study-3")
-    study_4 = VariantStudy(id=4, name="study-4")
-    study_5 = RawStudy(id=5, name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(id=6, name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
-    study_7 = RawStudy(id=7, name="study-7", missing=None, workspace=test_workspace)
-    study_8 = RawStudy(id=8, name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = create_variant_study(id=1, name="study-1")
+    study_2 = create_variant_study(id=2, name="study-2")
+    study_3 = create_variant_study(id=3, name="study-3")
+    study_4 = create_variant_study(id=4, name="study-4")
+    study_5 = create_raw_study(id=5, name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id=6, name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_7 = create_raw_study(id=7, name="study-7", missing=None, workspace=test_workspace)
+    study_8 = create_raw_study(id=8, name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -210,14 +210,14 @@ def test_get_all__study_name_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="specie-variant")
-    study_2 = VariantStudy(id=2, name="prefix-specie-variant")
-    study_3 = VariantStudy(id=3, name="prefix-specie-variant-suffix")
-    study_4 = VariantStudy(id=4, name="specie-variant-suffix")
-    study_5 = RawStudy(id=5, name="specie-raw")
-    study_6 = RawStudy(id=6, name="prefix-specie-raw")
-    study_7 = RawStudy(id=7, name="prefix-specie-raw-suffix")
-    study_8 = RawStudy(id=8, name="specie-raw-suffix")
+    study_1 = create_variant_study(id=1, name="specie-variant")
+    study_2 = create_variant_study(id=2, name="prefix-specie-variant")
+    study_3 = create_variant_study(id=3, name="prefix-specie-variant-suffix")
+    study_4 = create_variant_study(id=4, name="specie-variant-suffix")
+    study_5 = create_raw_study(id=5, name="specie-raw")
+    study_6 = create_raw_study(id=6, name="prefix-specie-raw")
+    study_7 = create_raw_study(id=7, name="prefix-specie-raw-suffix")
+    study_8 = create_raw_study(id=8, name="specie-raw-suffix")
 
     mapping_ids_names = {
         str(s.id): s.name for s in [study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8]
@@ -272,14 +272,14 @@ def test_get_all__managed_study_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = VariantStudy(id=3, name="study-3")
-    study_4 = VariantStudy(id=4, name="study-4")
-    study_5 = RawStudy(id=5, name="study-5", workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(id=6, name="study-6", workspace=test_workspace)
-    study_7 = RawStudy(id=7, name="study-7", workspace=test_workspace)
-    study_8 = RawStudy(id=8, name="study-8", workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = create_variant_study(id=1, name="study-1")
+    study_2 = create_variant_study(id=2, name="study-2")
+    study_3 = create_variant_study(id=3, name="study-3")
+    study_4 = create_variant_study(id=4, name="study-4")
+    study_5 = create_raw_study(id=5, name="study-5", workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id=6, name="study-6", workspace=test_workspace)
+    study_7 = create_raw_study(id=7, name="study-7", workspace=test_workspace)
+    study_8 = create_raw_study(id=8, name="study-8", workspace=DEFAULT_WORKSPACE_NAME)
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -328,10 +328,10 @@ def test_get_all__archived_study_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1", archived=True)
-    study_2 = VariantStudy(id=2, name="study-2", archived=False)
-    study_3 = RawStudy(id=3, name="study-3", archived=True)
-    study_4 = RawStudy(id=4, name="study-4", archived=False)
+    study_1 = create_variant_study(id=1, name="study-1", archived=True)
+    study_2 = create_variant_study(id=2, name="study-2", archived=False)
+    study_3 = create_raw_study(id=3, name="study-3", archived=True)
+    study_4 = create_raw_study(id=4, name="study-4", archived=False)
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -378,10 +378,10 @@ def test_get_all__variant_study_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = RawStudy(id=3, name="study-3")
-    study_4 = RawStudy(id=4, name="study-4")
+    study_1 = create_variant_study(id=1, name="study-1")
+    study_2 = create_variant_study(id=2, name="study-2")
+    study_3 = create_raw_study(id=3, name="study-3")
+    study_4 = create_raw_study(id=4, name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -430,10 +430,10 @@ def test_get_all__study_version_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1", version="1")
-    study_2 = VariantStudy(id=2, name="study-2", version="2")
-    study_3 = RawStudy(id=3, name="study-3", version="1")
-    study_4 = RawStudy(id=4, name="study-4", version="2")
+    study_1 = create_variant_study(id=1, name="study-1", version="1")
+    study_2 = create_variant_study(id=2, name="study-2", version="2")
+    study_3 = create_raw_study(id=3, name="study-3", version="1")
+    study_4 = create_raw_study(id=4, name="study-4", version="2")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -485,10 +485,10 @@ def test_get_all__study_users_filter(
     test_user_1 = User(id=1000)
     test_user_2 = User(id=2000)
 
-    study_1 = VariantStudy(id=1, name="study-1", owner=test_user_1)
-    study_2 = VariantStudy(id=2, name="study-2", owner=test_user_2)
-    study_3 = RawStudy(id=3, name="study-3", owner=test_user_1)
-    study_4 = RawStudy(id=4, name="study-4", owner=test_user_2)
+    study_1 = create_variant_study(id=1, name="study-1", owner=test_user_1)
+    study_2 = create_variant_study(id=2, name="study-2", owner=test_user_2)
+    study_3 = create_raw_study(id=3, name="study-3", owner=test_user_1)
+    study_4 = create_raw_study(id=4, name="study-4", owner=test_user_2)
 
     db_session.add_all([test_user_1, test_user_2])
     db_session.commit()
@@ -545,10 +545,10 @@ def test_get_all__study_groups_filter(
     test_group_1 = Group(id=1000)
     test_group_2 = Group(id=2000)
 
-    study_1 = VariantStudy(id=1, name="study-1", groups=[test_group_1])
-    study_2 = VariantStudy(id=2, name="study-2", groups=[test_group_1, test_group_2])
-    study_3 = RawStudy(id=3, name="study-3", groups=[test_group_2])
-    study_4 = RawStudy(id=4, name="study-4", groups=[test_group_1])
+    study_1 = create_variant_study(id=1, name="study-1", groups=[test_group_1])
+    study_2 = create_variant_study(id=2, name="study-2", groups=[test_group_1, test_group_2])
+    study_3 = create_raw_study(id=3, name="study-3", groups=[test_group_2])
+    study_4 = create_raw_study(id=4, name="study-4", groups=[test_group_1])
 
     db_session.add_all([test_group_1, test_group_2])
     db_session.commit()
@@ -603,10 +603,10 @@ def test_get_all__study_ids_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = RawStudy(id=3, name="study-3")
-    study_4 = RawStudy(id=4, name="study-4")
+    study_1 = create_variant_study(id=1, name="study-1")
+    study_2 = create_variant_study(id=2, name="study-2")
+    study_3 = create_raw_study(id=3, name="study-3")
+    study_4 = create_raw_study(id=4, name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -655,10 +655,10 @@ def test_get_all__study_existence_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = RawStudy(id=3, name="study-3", missing=datetime.datetime.now())
-    study_4 = RawStudy(id=4, name="study-4")
+    study_1 = create_variant_study(id=1, name="study-1")
+    study_2 = create_variant_study(id=2, name="study-2")
+    study_3 = create_raw_study(id=3, name="study-3", missing=datetime.datetime.now())
+    study_4 = create_raw_study(id=4, name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -708,10 +708,10 @@ def test_get_all__study_workspace_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1")
-    study_2 = VariantStudy(id=2, name="study-2")
-    study_3 = RawStudy(id=3, name="study-3", workspace="workspace-1")
-    study_4 = RawStudy(id=4, name="study-4", workspace="workspace-2")
+    study_1 = create_variant_study(id=1, name="study-1")
+    study_2 = create_variant_study(id=2, name="study-2")
+    study_3 = create_raw_study(id=3, name="study-3", workspace="workspace-1")
+    study_4 = create_raw_study(id=4, name="study-4", workspace="workspace-2")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -763,10 +763,10 @@ def test_get_all__study_folder_filter(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id=1, name="study-1", folder="/home/folder-1")
-    study_2 = VariantStudy(id=2, name="study-2", folder="/home/folder-2")
-    study_3 = RawStudy(id=3, name="study-3", folder="/home/folder-1")
-    study_4 = RawStudy(id=4, name="study-4", folder="/home/folder-2")
+    study_1 = create_variant_study(id=1, name="study-1", folder="/home/folder-1")
+    study_2 = create_variant_study(id=2, name="study-2", folder="/home/folder-2")
+    study_3 = create_raw_study(id=3, name="study-3", folder="/home/folder-1")
+    study_4 = create_raw_study(id=4, name="study-4", folder="/home/folder-2")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -820,14 +820,14 @@ def test_get_all__study_tags_filter(
     test_tag_2 = Tag(label="decennial")
     test_tag_3 = Tag(label="Winter_Transition")  # note the different case
 
-    study_1 = VariantStudy(id=1, name="study-1", tags=[test_tag_1])
-    study_2 = VariantStudy(id=2, name="study-2", tags=[test_tag_2])
-    study_3 = VariantStudy(id=3, name="study-3", tags=[test_tag_3])
-    study_4 = VariantStudy(id=4, name="study-4", tags=[test_tag_2, test_tag_3])
-    study_5 = RawStudy(id=5, name="study-5", tags=[test_tag_1])
-    study_6 = RawStudy(id=6, name="study-6", tags=[test_tag_2])
-    study_7 = RawStudy(id=7, name="study-7", tags=[test_tag_3])
-    study_8 = RawStudy(id=8, name="study-8", tags=[test_tag_2, test_tag_3])
+    study_1 = create_variant_study(id=1, name="study-1", tags=[test_tag_1])
+    study_2 = create_variant_study(id=2, name="study-2", tags=[test_tag_2])
+    study_3 = create_variant_study(id=3, name="study-3", tags=[test_tag_3])
+    study_4 = create_variant_study(id=4, name="study-4", tags=[test_tag_2, test_tag_3])
+    study_5 = create_raw_study(id=5, name="study-5", tags=[test_tag_1])
+    study_6 = create_raw_study(id=6, name="study-6", tags=[test_tag_2])
+    study_7 = create_raw_study(id=7, name="study-7", tags=[test_tag_3])
+    study_8 = create_raw_study(id=8, name="study-8", tags=[test_tag_2, test_tag_3])
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -924,54 +924,54 @@ def test_get_all__non_admin_permissions_filter(
     user_groups_mapping = {101: [group_2.id], 102: [group_1.id], 103: []}
 
     # create variant studies for user_1 and user_2 that are part of some groups
-    study_1 = VariantStudy(id=1, name="study-1", owner=user_1, groups=[group_1])
-    study_2 = VariantStudy(id=2, name="study-2", owner=user_1, groups=[group_2])
-    study_3 = VariantStudy(id=3, name="study-3", groups=[group_1])
-    study_4 = VariantStudy(id=4, name="study-4", owner=user_2, groups=[group_1])
-    study_5 = VariantStudy(id=5, name="study-5", owner=user_2, groups=[group_2])
-    study_6 = VariantStudy(id=6, name="study-6", groups=[group_2])
-    study_7 = VariantStudy(id=7, name="study-7", owner=user_1, groups=[group_1, group_2])
-    study_8 = VariantStudy(id=8, name="study-8", owner=user_2, groups=[group_1, group_2])
-    study_9 = VariantStudy(id=9, name="study-9", groups=[group_1, group_2])
-    study_10 = VariantStudy(id=10, name="study-X10", owner=user_1)
-    study_11 = VariantStudy(id=11, name="study-X11", owner=user_2)
+    study_1 = create_variant_study(id=1, name="study-1", owner=user_1, groups=[group_1])
+    study_2 = create_variant_study(id=2, name="study-2", owner=user_1, groups=[group_2])
+    study_3 = create_variant_study(id=3, name="study-3", groups=[group_1])
+    study_4 = create_variant_study(id=4, name="study-4", owner=user_2, groups=[group_1])
+    study_5 = create_variant_study(id=5, name="study-5", owner=user_2, groups=[group_2])
+    study_6 = create_variant_study(id=6, name="study-6", groups=[group_2])
+    study_7 = create_variant_study(id=7, name="study-7", owner=user_1, groups=[group_1, group_2])
+    study_8 = create_variant_study(id=8, name="study-8", owner=user_2, groups=[group_1, group_2])
+    study_9 = create_variant_study(id=9, name="study-9", groups=[group_1, group_2])
+    study_10 = create_variant_study(id=10, name="study-X10", owner=user_1)
+    study_11 = create_variant_study(id=11, name="study-X11", owner=user_2)
 
     # create variant studies with neither owner nor groups
-    study_12 = VariantStudy(id=12, name="study-X12")
-    study_13 = VariantStudy(id=13, name="study-X13", public_mode=PublicMode.READ)
-    study_14 = VariantStudy(id=14, name="study-X14", public_mode=PublicMode.EDIT)
-    study_15 = VariantStudy(id=15, name="study-X15", public_mode=PublicMode.EXECUTE)
-    study_16 = VariantStudy(id=16, name="study-X16", public_mode=PublicMode.FULL)
+    study_12 = create_variant_study(id=12, name="study-X12")
+    study_13 = create_variant_study(id=13, name="study-X13", public_mode=PublicMode.READ)
+    study_14 = create_variant_study(id=14, name="study-X14", public_mode=PublicMode.EDIT)
+    study_15 = create_variant_study(id=15, name="study-X15", public_mode=PublicMode.EXECUTE)
+    study_16 = create_variant_study(id=16, name="study-X16", public_mode=PublicMode.FULL)
 
     # create raw studies for user_1 and user_2 that are part of some groups
-    study_17 = RawStudy(id=17, name="study-X17", owner=user_1, groups=[group_1])
-    study_18 = RawStudy(id=18, name="study-X18", owner=user_1, groups=[group_2])
-    study_19 = RawStudy(id=19, name="study-X19", groups=[group_1])
-    study_20 = RawStudy(id=20, name="study-X20", owner=user_2, groups=[group_1])
-    study_21 = RawStudy(id=21, name="study-X21", owner=user_2, groups=[group_2])
-    study_22 = RawStudy(id=22, name="study-X22", groups=[group_2])
-    study_23 = RawStudy(id=23, name="study-X23", owner=user_1, groups=[group_1, group_2])
-    study_24 = RawStudy(id=24, name="study-X24", owner=user_2, groups=[group_1, group_2])
-    study_25 = RawStudy(id=25, name="study-X25", groups=[group_1, group_2])
-    study_26 = RawStudy(id=26, name="study-X26", owner=user_1)
-    study_27 = RawStudy(id=27, name="study-X27", owner=user_2)
+    study_17 = create_raw_study(id=17, name="study-X17", owner=user_1, groups=[group_1])
+    study_18 = create_raw_study(id=18, name="study-X18", owner=user_1, groups=[group_2])
+    study_19 = create_raw_study(id=19, name="study-X19", groups=[group_1])
+    study_20 = create_raw_study(id=20, name="study-X20", owner=user_2, groups=[group_1])
+    study_21 = create_raw_study(id=21, name="study-X21", owner=user_2, groups=[group_2])
+    study_22 = create_raw_study(id=22, name="study-X22", groups=[group_2])
+    study_23 = create_raw_study(id=23, name="study-X23", owner=user_1, groups=[group_1, group_2])
+    study_24 = create_raw_study(id=24, name="study-X24", owner=user_2, groups=[group_1, group_2])
+    study_25 = create_raw_study(id=25, name="study-X25", groups=[group_1, group_2])
+    study_26 = create_raw_study(id=26, name="study-X26", owner=user_1)
+    study_27 = create_raw_study(id=27, name="study-X27", owner=user_2)
 
     # create raw studies with neither owner nor groups
-    study_28 = RawStudy(id=28, name="study-X28")
-    study_29 = RawStudy(id=29, name="study-X29", public_mode=PublicMode.READ)
-    study_30 = RawStudy(id=30, name="study-X30", public_mode=PublicMode.EDIT)
-    study_31 = RawStudy(id=31, name="study-X31", public_mode=PublicMode.EXECUTE)
-    study_32 = RawStudy(id=32, name="study-X32", public_mode=PublicMode.FULL)
+    study_28 = create_raw_study(id=28, name="study-X28")
+    study_29 = create_raw_study(id=29, name="study-X29", public_mode=PublicMode.READ)
+    study_30 = create_raw_study(id=30, name="study-X30", public_mode=PublicMode.EDIT)
+    study_31 = create_raw_study(id=31, name="study-X31", public_mode=PublicMode.EXECUTE)
+    study_32 = create_raw_study(id=32, name="study-X32", public_mode=PublicMode.FULL)
 
     # create studies for user_3 that is not part of any group
-    study_33 = VariantStudy(id=33, name="study-X33", owner=user_3, groups=[group_1])
-    study_34 = RawStudy(id=34, name="study-X34", owner=user_3, groups=[group_2])
-    study_35 = VariantStudy(id=35, name="study-X35", owner=user_3)
-    study_36 = RawStudy(id=36, name="study-X36", owner=user_3)
+    study_33 = create_variant_study(id=33, name="study-X33", owner=user_3, groups=[group_1])
+    study_34 = create_raw_study(id=34, name="study-X34", owner=user_3, groups=[group_2])
+    study_35 = create_variant_study(id=35, name="study-X35", owner=user_3)
+    study_36 = create_raw_study(id=36, name="study-X36", owner=user_3)
 
     # create studies for group_3 that has no user
-    study_37 = VariantStudy(id=37, name="study-X37", groups=[group_3])
-    study_38 = RawStudy(id=38, name="study-X38", groups=[group_3])
+    study_37 = create_variant_study(id=37, name="study-X37", groups=[group_3])
+    study_38 = create_raw_study(id=38, name="study-X38", groups=[group_3])
 
     db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
     # fmt: off
@@ -1059,54 +1059,54 @@ def test_get_all__admin_permissions_filter(
     group_3 = Group(id=103, name="group3")
 
     # create variant studies for user_1 and user_2 that are part of some groups
-    study_1 = VariantStudy(id=1, name="study-1", owner=user_1, groups=[group_1])
-    study_2 = VariantStudy(id=2, name="study-2", owner=user_1, groups=[group_2])
-    study_3 = VariantStudy(id=3, name="study-3", groups=[group_1])
-    study_4 = VariantStudy(id=4, name="study-4", owner=user_2, groups=[group_1])
-    study_5 = VariantStudy(id=5, name="study-5", owner=user_2, groups=[group_2])
-    study_6 = VariantStudy(id=6, name="study-6", groups=[group_2])
-    study_7 = VariantStudy(id=7, name="study-7", owner=user_1, groups=[group_1, group_2])
-    study_8 = VariantStudy(id=8, name="study-8", owner=user_2, groups=[group_1, group_2])
-    study_9 = VariantStudy(id=9, name="study-9", groups=[group_1, group_2])
-    study_10 = VariantStudy(id=10, name="study-X10", owner=user_1)
-    study_11 = VariantStudy(id=11, name="study-X11", owner=user_2)
+    study_1 = create_variant_study(id=1, name="study-1", owner=user_1, groups=[group_1])
+    study_2 = create_variant_study(id=2, name="study-2", owner=user_1, groups=[group_2])
+    study_3 = create_variant_study(id=3, name="study-3", groups=[group_1])
+    study_4 = create_variant_study(id=4, name="study-4", owner=user_2, groups=[group_1])
+    study_5 = create_variant_study(id=5, name="study-5", owner=user_2, groups=[group_2])
+    study_6 = create_variant_study(id=6, name="study-6", groups=[group_2])
+    study_7 = create_variant_study(id=7, name="study-7", owner=user_1, groups=[group_1, group_2])
+    study_8 = create_variant_study(id=8, name="study-8", owner=user_2, groups=[group_1, group_2])
+    study_9 = create_variant_study(id=9, name="study-9", groups=[group_1, group_2])
+    study_10 = create_variant_study(id=10, name="study-X10", owner=user_1)
+    study_11 = create_variant_study(id=11, name="study-X11", owner=user_2)
 
     # create variant studies with neither owner nor groups
-    study_12 = VariantStudy(id=12, name="study-X12")
-    study_13 = VariantStudy(id=13, name="study-X13", public_mode=PublicMode.READ)
-    study_14 = VariantStudy(id=14, name="study-X14", public_mode=PublicMode.EDIT)
-    study_15 = VariantStudy(id=15, name="study-X15", public_mode=PublicMode.EXECUTE)
-    study_16 = VariantStudy(id=16, name="study-X16", public_mode=PublicMode.FULL)
+    study_12 = create_variant_study(id=12, name="study-X12")
+    study_13 = create_variant_study(id=13, name="study-X13", public_mode=PublicMode.READ)
+    study_14 = create_variant_study(id=14, name="study-X14", public_mode=PublicMode.EDIT)
+    study_15 = create_variant_study(id=15, name="study-X15", public_mode=PublicMode.EXECUTE)
+    study_16 = create_variant_study(id=16, name="study-X16", public_mode=PublicMode.FULL)
 
     # create raw studies for user_1 and user_2 that are part of some groups
-    study_17 = RawStudy(id=17, name="study-X17", owner=user_1, groups=[group_1])
-    study_18 = RawStudy(id=18, name="study-X18", owner=user_1, groups=[group_2])
-    study_19 = RawStudy(id=19, name="study-X19", groups=[group_1])
-    study_20 = RawStudy(id=20, name="study-X20", owner=user_2, groups=[group_1])
-    study_21 = RawStudy(id=21, name="study-X21", owner=user_2, groups=[group_2])
-    study_22 = RawStudy(id=22, name="study-X22", groups=[group_2])
-    study_23 = RawStudy(id=23, name="study-X23", owner=user_1, groups=[group_1, group_2])
-    study_24 = RawStudy(id=24, name="study-X24", owner=user_2, groups=[group_1, group_2])
-    study_25 = RawStudy(id=25, name="study-X25", groups=[group_1, group_2])
-    study_26 = RawStudy(id=26, name="study-X26", owner=user_1)
-    study_27 = RawStudy(id=27, name="study-X27", owner=user_2)
+    study_17 = create_raw_study(id=17, name="study-X17", owner=user_1, groups=[group_1])
+    study_18 = create_raw_study(id=18, name="study-X18", owner=user_1, groups=[group_2])
+    study_19 = create_raw_study(id=19, name="study-X19", groups=[group_1])
+    study_20 = create_raw_study(id=20, name="study-X20", owner=user_2, groups=[group_1])
+    study_21 = create_raw_study(id=21, name="study-X21", owner=user_2, groups=[group_2])
+    study_22 = create_raw_study(id=22, name="study-X22", groups=[group_2])
+    study_23 = create_raw_study(id=23, name="study-X23", owner=user_1, groups=[group_1, group_2])
+    study_24 = create_raw_study(id=24, name="study-X24", owner=user_2, groups=[group_1, group_2])
+    study_25 = create_raw_study(id=25, name="study-X25", groups=[group_1, group_2])
+    study_26 = create_raw_study(id=26, name="study-X26", owner=user_1)
+    study_27 = create_raw_study(id=27, name="study-X27", owner=user_2)
 
     # create raw studies with neither owner nor groups
-    study_28 = RawStudy(id=28, name="study-X28")
-    study_29 = RawStudy(id=29, name="study-X29", public_mode=PublicMode.READ)
-    study_30 = RawStudy(id=30, name="study-X30", public_mode=PublicMode.EDIT)
-    study_31 = RawStudy(id=31, name="study-X31", public_mode=PublicMode.EXECUTE)
-    study_32 = RawStudy(id=32, name="study-X32", public_mode=PublicMode.FULL)
+    study_28 = create_raw_study(id=28, name="study-X28")
+    study_29 = create_raw_study(id=29, name="study-X29", public_mode=PublicMode.READ)
+    study_30 = create_raw_study(id=30, name="study-X30", public_mode=PublicMode.EDIT)
+    study_31 = create_raw_study(id=31, name="study-X31", public_mode=PublicMode.EXECUTE)
+    study_32 = create_raw_study(id=32, name="study-X32", public_mode=PublicMode.FULL)
 
     # create studies for user_3 that is not part of any group
-    study_33 = VariantStudy(id=33, name="study-X33", owner=user_3, groups=[group_1])
-    study_34 = RawStudy(id=34, name="study-X34", owner=user_3, groups=[group_2])
-    study_35 = VariantStudy(id=35, name="study-X35", owner=user_3)
-    study_36 = RawStudy(id=36, name="study-X36", owner=user_3)
+    study_33 = create_variant_study(id=33, name="study-X33", owner=user_3, groups=[group_1])
+    study_34 = create_raw_study(id=34, name="study-X34", owner=user_3, groups=[group_2])
+    study_35 = create_variant_study(id=35, name="study-X35", owner=user_3)
+    study_36 = create_raw_study(id=36, name="study-X36", owner=user_3)
 
     # create studies for group_3 that has no user
-    study_37 = VariantStudy(id=37, name="study-X37", groups=[group_3])
-    study_38 = RawStudy(id=38, name="study-X38", groups=[group_3])
+    study_37 = create_variant_study(id=37, name="study-X37", groups=[group_3])
+    study_38 = create_raw_study(id=38, name="study-X38", groups=[group_3])
 
     db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
     # fmt: off
@@ -1158,7 +1158,7 @@ def test_update_tags(
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
     study_id = 1
-    study = RawStudy(id=study_id, name=f"study-{study_id}", tags=[])
+    study = create_raw_study(id=study_id, name=f"study-{study_id}", tags=[])
     db_session.add(study)
     db_session.commit()
 
@@ -1220,14 +1220,14 @@ def test_count_studies__general_case(
     icache: Mock = Mock(spec=ICache)
     repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
-    study_1 = VariantStudy(id="1", name="study-1")
-    study_2 = VariantStudy(id="2", name="study-2")
-    study_3 = VariantStudy(id="3", name="study-3")
-    study_4 = VariantStudy(id="4", name="study-4")
-    study_5 = RawStudy(id="5", name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = RawStudy(id="6", name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
-    study_7 = RawStudy(id="7", name="study-7", missing=None, workspace=test_workspace)
-    study_8 = RawStudy(id="8", name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_variant_study(id="3", name="study-3")
+    study_4 = create_variant_study(id="4", name="study-4")
+    study_5 = create_raw_study(id="5", name="study-5", missing=datetime.datetime.now(), workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id="6", name="study-6", missing=datetime.datetime.now(), workspace=test_workspace)
+    study_7 = create_raw_study(id="7", name="study-7", missing=None, workspace=test_workspace)
+    study_8 = create_raw_study(id="8", name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()

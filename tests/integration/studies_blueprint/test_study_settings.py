@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 from starlette.testclient import TestClient
 
-from antarest.study.business.general_management import Mode
-from antarest.study.business.optimization_management import (
+from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 
 
 def test_study_settings(client: TestClient, admin_access_token: str) -> None:

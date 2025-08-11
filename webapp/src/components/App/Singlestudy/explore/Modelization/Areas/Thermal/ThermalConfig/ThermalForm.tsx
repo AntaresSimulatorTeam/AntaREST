@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import { validateNumber } from "@/utils/validation/number";
 import { useTranslation } from "react-i18next";
 import type { Area, Cluster, StudyMetadata } from "../../../../../../../../types/types";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
@@ -71,13 +71,25 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
           <>
             <Fieldset legend={t("global.general")}>
               <StringFE label={t("global.name")} name="name" control={control} disabled />
-              <SelectFE
-                label={t("global.group")}
-                name="group"
-                control={control}
-                options={THERMAL_GROUPS}
-                startCaseLabel={false}
-              />
+              {studyVersion < 930 ? (
+                <SelectFE
+                  label={t("global.group")}
+                  name="group"
+                  control={control}
+                  options={THERMAL_GROUPS}
+                  startCaseLabel={false}
+                  sx={{
+                    alignSelf: "center",
+                  }}
+                />
+              ) : (
+                <StringFE
+                  label={t("global.group")}
+                  name="group"
+                  datalist={THERMAL_GROUPS}
+                  control={control}
+                />
+              )}
             </Fieldset>
             <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
               <SwitchFE

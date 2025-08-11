@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { validateStudyName } from "@/utils/studiesUtils";
 import type { AxiosError } from "axios";
 import debug from "debug";
@@ -33,7 +34,6 @@ import { getGroups } from "../../../../../services/api/user";
 import type { StudyMetadata } from "../../../../../types/types";
 import FormDialog from "../../../../common/dialogs/FormDialog";
 import CheckboxesTagsFE from "../../../../common/fieldEditors/CheckboxesTagsFE";
-import SelectFE from "../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../common/fieldEditors/StringFE";
 import Fieldset from "../../../../common/Fieldset";
 import type { SubmitHandlerPlus } from "../../../../common/Form/types";

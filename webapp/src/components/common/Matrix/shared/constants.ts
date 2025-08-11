@@ -12,18 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import type { DateIncrementFunction, FormatFunction, TimeFrequencyType } from "./types";
 import {
-  addYears,
-  addMonths,
-  addWeeks,
-  startOfWeek,
   addDays,
   addHours,
-  format,
+  addMonths,
+  addWeeks,
+  addYears,
   type FirstWeekContainsDate,
+  format,
+  getWeek,
+  startOfWeek,
 } from "date-fns";
 import { t } from "i18next";
+import type { DateIncrementFunction, FormatFunction, TimeFrequencyType } from "./types";
 import { getLocale } from "./utils";
 
 ////////////////////////////////////////////////////////////////
@@ -93,11 +94,13 @@ export const TIME_FREQUENCY_CONFIG: Record<
     format: (date: Date, firstWeekSize: number) => {
       const weekStart = startOfWeek(date, { locale: getLocale() });
 
-      return format(weekStart, `'${t("global.time.weekShort")}' ww`, {
+      const weekNumber = getWeek(weekStart, {
         locale: getLocale(),
         weekStartsOn: firstWeekSize === 1 ? 0 : 1,
         firstWeekContainsDate: firstWeekSize as FirstWeekContainsDate,
       });
+
+      return `${t("global.time.weekShort")} ${weekNumber.toString().padStart(2, "0")}`;
     },
   },
   [TimeFrequency.Daily]: {

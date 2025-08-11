@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useEffect } from "react";
-import { Box, Divider, Typography, Button, TextField } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import SaveIcon from "@mui/icons-material/Save";
-import { XpansionResourceType, type XpansionSettings } from "../types";
-import { Fields, SelectFields, Title, StyledVisibilityIcon } from "../share/styles";
+import { Box, Button, Divider, TextField, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import SelectSingle from "../../../../../common/SelectSingle";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
 import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import SwitchFE from "../../../../../common/fieldEditors/SwitchFE";
+import { Fields, SelectFields, StyledVisibilityIcon, Title } from "../share/styles";
+import { XpansionResourceType, type XpansionSettings } from "../types";
 
 interface PropType {
   settings: XpansionSettings;
@@ -311,9 +311,7 @@ function SettingsForm(props: PropType) {
             label={t("xpansion.projection")}
             multiple
             value={currentSettings.sensitivity_config?.projection || []}
-            onChange={(e) =>
-              handleObjectChange("sensitivity_config", "projection", e.target.value as string[])
-            }
+            onChange={(e) => handleObjectChange("sensitivity_config", "projection", e.target.value)}
             options={candidates}
           />
         </Box>

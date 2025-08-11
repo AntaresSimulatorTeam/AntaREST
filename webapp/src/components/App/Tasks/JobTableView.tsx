@@ -12,8 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/common/CustomScrollbar";
 import CheckBoxFE from "@/components/common/fieldEditors/CheckBoxFE";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/common/fieldEditors/SelectFE";
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import { isSearchMatching } from "@/utils/stringUtils";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import {
   Box,
@@ -29,9 +33,9 @@ import {
   TableSortLabel,
   Tooltip,
   Typography,
-  type SelectChangeEvent,
   type TableSortLabelProps,
 } from "@mui/material";
+import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useInterval } from "react-use";
@@ -41,11 +45,6 @@ import { TaskType } from "../../../services/api/tasks/constants";
 import type { TaskView } from "../../../types/types";
 import LinearProgressWithLabel from "../../common/LinearProgressWithLabel";
 import UsePromiseCond from "../../common/utils/UsePromiseCond";
-import * as R from "ramda";
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import storage, { StorageKey } from "@/services/utils/localStorage";
-import { isSearchMatching } from "@/utils/stringUtils";
 
 const FILTER_LIST: Array<TaskView["type"]> = [
   "DOWNLOAD",
@@ -109,8 +108,8 @@ function JobTableView(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: SelectChangeEvent<unknown>) => {
-    setFilterType(event.target.value as FilterListType | "");
+  const handleChange = (event: SelectFEChangeEvent<FilterListType, true>) => {
+    setFilterType(event.target.value);
   };
 
   const handleFilterStatusChange = () => {
@@ -209,7 +208,7 @@ function JobTableView(props: Props) {
             <SelectFE
               label={t("tasks.typeFilter")}
               value={filterType}
-              onChange={handleChange}
+              onChange={(e) => handleChange(e)}
               emptyValue
               options={FILTER_LIST.map((item) => ({
                 value: item,

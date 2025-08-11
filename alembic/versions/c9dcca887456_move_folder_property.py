@@ -23,7 +23,7 @@ def upgrade():
 
     # data migration
     connexion: Connection = op.get_bind()
-    raw_studies = connexion.execute("SELECT id,folder FROM rawstudy")
+    raw_studies = connexion.execute(text("SELECT id,folder FROM rawstudy"))
     for raw_study in raw_studies:
         connexion.execute(text(f"UPDATE study SET folder= :folder WHERE id='{raw_study[0]}'"),
                           folder=raw_study[1])
@@ -39,7 +39,7 @@ def downgrade():
 
     # data migration
     connexion: Connection = op.get_bind()
-    raw_studies = connexion.execute("SELECT study.id,study.folder FROM study JOIN rawstudy ON study.id = rawstudy.id")
+    raw_studies = connexion.execute(text("SELECT study.id,study.folder FROM study JOIN rawstudy ON study.id = rawstudy.id"))
     for raw_study in raw_studies:
         connexion.execute(text(f"UPDATE rawstudy SET folder= :folder WHERE id='{raw_study[0]}'"),
                           folder=raw_study[1])

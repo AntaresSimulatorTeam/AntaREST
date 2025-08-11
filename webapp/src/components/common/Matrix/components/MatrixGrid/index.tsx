@@ -27,6 +27,7 @@ import { useCallback, useContext, useMemo, useState } from "react";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import type {
+  DateTimes,
   EnhancedGridColumn,
   GridUpdate,
   MatrixAggregates,
@@ -42,7 +43,7 @@ export interface MatrixGridProps {
   data: NonEmptyMatrix;
   rows: number;
   columns: readonly EnhancedGridColumn[];
-  dateTime?: string[];
+  dateTime?: DateTimes;
   aggregates?: Partial<MatrixAggregates>;
   rowHeaders?: string[];
   width?: string;

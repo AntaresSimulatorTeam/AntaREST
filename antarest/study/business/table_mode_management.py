@@ -30,7 +30,12 @@ from antarest.study.business.model.area_model import AreaOutput
 from antarest.study.business.model.binding_constraint_model import BindingConstraintUpdate
 from antarest.study.business.model.link_model import LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate, RenewableClusterUpdates
-from antarest.study.business.model.sts_model import STStorageUpdate, STStorageUpdates
+from antarest.study.business.model.sts_model import (
+    STStorageAdditionalConstraintUpdate,
+    STStorageAdditionalConstraintUpdates,
+    STStorageUpdate,
+    STStorageUpdates,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate, ThermalClusterUpdates
 from antarest.study.business.study_interface import StudyInterface
 
@@ -64,6 +69,7 @@ class TableModeType(EnumIgnoreCase):
     ST_STORAGE = "st-storages"
     # Avoid "constraints" because we may have other kinds of constraints in the future
     BINDING_CONSTRAINT = "binding-constraints"
+    ST_STORAGE_ADDITIONAL_CONSTRAINTS = "st-storages-additional-constraints"
 
     @classmethod
     @override
@@ -127,6 +133,16 @@ class TableModeManager:
                 f"{area_id} / {cluster_id}": cluster.model_dump(by_alias=True, exclude={"id", "name"})
                 for area_id, storages_by_ids in storages_by_areas.items()
                 for cluster_id, cluster in storages_by_ids.items()
+            }
+        elif table_type == TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS:
+            all_additional_constraints = self._st_storage_manager.get_all_additional_constraints(study)
+            data = {
+                f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(
+                    by_alias=True, exclude={"id", "name"}
+                )
+                for area_id, value in all_additional_constraints.items()
+                for storage_id, constraints in value.items()
+                for constraint in constraints
             }
         elif table_type == TableModeType.BINDING_CONSTRAINT:
             bc_seq = self._binding_constraint_manager.get_binding_constraints(study)
@@ -248,6 +264,24 @@ class TableModeManager:
                 )
                 for area_id, storages_by_ids in storages_map.items()
                 for cluster_id, cluster in storages_by_ids.items()
+            }
+            return data
+        elif table_type == TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS:
+            update_constraints_by_areas: STStorageAdditionalConstraintUpdates = collections.defaultdict(dict)
+            for key, values in data.items():
+                area_id, storage_id, constraint_id = key.split(" / ")
+                update_constraint = STStorageAdditionalConstraintUpdate.model_validate(values)
+                update_constraints_by_areas.setdefault(area_id, {}).setdefault(storage_id, {})[constraint_id] = (
+                    update_constraint
+                )
+            constraints_map = self._st_storage_manager.update_additional_constraints(study, update_constraints_by_areas)
+            data = {
+                f"{area_id} / {storage_id} / {constraint.id}": constraint.model_dump(
+                    by_alias=True, exclude={"id", "name"}
+                )
+                for area_id, value in constraints_map.items()
+                for storage_id, constraints in value.items()
+                for constraint in constraints
             }
             return data
         elif table_type == TableModeType.BINDING_CONSTRAINT:

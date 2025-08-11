@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import { useTranslation } from "react-i18next";
 import NumberFE from "../../../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
 import StringFE from "../../../../../../../common/fieldEditors/StringFE";
 import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import Fieldset from "../../../../../../../common/Fieldset";
@@ -37,6 +37,7 @@ interface Props {
 
 function RenewableForm({ study, areaId, clusterId }: Props) {
   const { t } = useTranslation();
+  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -63,16 +64,25 @@ function RenewableForm({ study, areaId, clusterId }: Props) {
         <>
           <Fieldset legend={t("global.general")}>
             <StringFE label={t("global.name")} name="name" control={control} disabled />
-            <SelectFE
-              label={t("global.group")}
-              name="group"
-              control={control}
-              options={RENEWABLE_GROUPS}
-              startCaseLabel={false}
-              sx={{
-                alignSelf: "center",
-              }}
-            />
+            {studyVersion < 930 ? (
+              <SelectFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                options={RENEWABLE_GROUPS}
+                startCaseLabel={false}
+                sx={{
+                  alignSelf: "center",
+                }}
+              />
+            ) : (
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                datalist={RENEWABLE_GROUPS}
+                control={control}
+              />
+            )}
             <SelectFE
               label={t("study.modelization.clusters.tsInterpretation")}
               name="tsInterpretation"

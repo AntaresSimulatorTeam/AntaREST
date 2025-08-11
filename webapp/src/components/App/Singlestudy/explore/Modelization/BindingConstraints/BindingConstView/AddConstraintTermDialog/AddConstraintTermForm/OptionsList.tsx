@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import SelectFE from "../../../../../../../../common/fieldEditors/SelectFE";
+import { useTranslation } from "react-i18next";
 import type { AllClustersAndLinks } from "../../../../../../../../../types/types";
-import { isTermExist, generateTermId, type ConstraintTerm } from "../../utils";
+import { generateTermId, isTermExist, type ConstraintTerm } from "../../utils";
 
 interface Props {
   list: AllClustersAndLinks;

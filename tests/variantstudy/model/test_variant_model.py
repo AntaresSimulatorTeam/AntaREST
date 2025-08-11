@@ -25,13 +25,13 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context
-from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.model import StudyAdditionalData
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import AnyUUID, with_admin_user, with_db_context
+from tests.helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
 
 
 class TestVariantStudyService:
@@ -70,7 +70,7 @@ class TestVariantStudyService:
         # Prepare a RAW study in the temporary folder
         study_dir = tmp_path / "my-study"
         root_study_id = str(uuid.uuid4())
-        root_study = RawStudy(
+        root_study = create_raw_study(
             id=root_study_id,
             workspace="default",
             path=str(study_dir),
@@ -165,6 +165,7 @@ class TestVariantStudyService:
         results = generator.generate_snapshot(saved_id, denormalize=False)
         assert results.model_dump() == {
             "success": True,
+            "should_invalidate_cache": False,
             "details": [
                 {
                     "id": AnyUUID(),
@@ -307,7 +308,7 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             variant_study_service.append_commands(variant_study.id, commands)
 
-        nb_queries_before = nb_queries  # store initial state
+        nb_queries = 0
         with current_user_context(jwt_user):
             variant_study_service.get_commands(variant_study.id)  # execute database query
-        assert nb_queries_before + 1 == nb_queries  # compare with initial state to make sure database was queried once
+        assert nb_queries == 2  # Ensure only two queries were made (one for study, one for user)

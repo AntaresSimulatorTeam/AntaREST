@@ -21,6 +21,8 @@ import userEvent from "@testing-library/user-event";
 import MatrixActions from ".";
 import { MatrixProvider } from "../../context/MatrixContext";
 import { vi } from "vitest";
+import { UTCDate } from "@date-fns/utc";
+import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
 
 vi.mock("../buttons/SplitButton", () => ({
   default: ({
@@ -55,7 +57,11 @@ const defaultProps = {
   disabled: false,
   isTimeSeries: true,
   canImport: true,
-  dateTime: ["2023-01-01", "2023-01-02"],
+  dateTime: {
+    values: [new UTCDate("2023-01-01"), new UTCDate("2023-01-02")],
+    first_week_size: 0,
+    level: TimeFrequency.Daily,
+  },
 };
 
 type RenderOptions = Partial<typeof defaultProps>;

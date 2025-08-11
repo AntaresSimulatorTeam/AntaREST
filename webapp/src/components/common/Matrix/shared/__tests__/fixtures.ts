@@ -14,6 +14,7 @@
 
 import { Aggregate, TimeFrequency } from "../constants";
 import type { FormatTestCase } from "./types";
+import { UTCDate } from "@date-fns/utc";
 
 export const BASE_DATA = {
   dateConfig: {
@@ -30,34 +31,122 @@ export const BASE_DATA = {
 
 export const DATE_TIME_TEST_CASES = [
   {
-    name: "annual format",
+    name: "annual generation",
     config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Annual },
-    expected: ["global.time.annual", "global.time.annual", "global.time.annual"],
+    expected: [
+      new UTCDate(Date.UTC(2023, 0, 1)),
+      new UTCDate(Date.UTC(2024, 0, 1)),
+      new UTCDate(Date.UTC(2025, 0, 1)),
+    ],
   },
   {
-    name: "monthly format",
+    name: "monthly generation",
     config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Monthly },
-    expected: ["Jan", "Feb", "Mar"],
+    expected: [
+      new UTCDate(Date.UTC(2023, 0, 1)),
+      new UTCDate(Date.UTC(2023, 1, 1)),
+      new UTCDate(Date.UTC(2023, 2, 1)),
+    ],
   },
   {
-    name: "weekly format",
+    name: "weekly generation",
     config: {
       ...BASE_DATA.dateConfig,
       level: TimeFrequency.Weekly,
       first_week_size: 1,
     },
-    expected: ["W. 01", "W. 02", "W. 03"],
+    expected: [
+      new UTCDate(Date.UTC(2023, 0, 1)),
+      new UTCDate(Date.UTC(2023, 0, 8)),
+      new UTCDate(Date.UTC(2023, 0, 15)),
+    ],
+  },
+  {
+    name: "daily generation",
+    config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Daily },
+    expected: [
+      new UTCDate(Date.UTC(2023, 0, 1)),
+      new UTCDate(Date.UTC(2023, 0, 2)),
+      new UTCDate(Date.UTC(2023, 0, 3)),
+    ],
+  },
+  {
+    name: "hourly generation",
+    config: {
+      start_date: "2039-07-01 00:00:00",
+      steps: 3,
+      first_week_size: 7,
+      level: TimeFrequency.Hourly,
+    },
+    expected: [
+      new UTCDate(Date.UTC(2039, 6, 1)),
+      new UTCDate(Date.UTC(2039, 6, 1, 1)),
+      new UTCDate(Date.UTC(2039, 6, 1, 2)),
+    ],
+  },
+];
+
+export const DATE_TIME_FORMAT_TEST_CASES = [
+  {
+    name: "annual format",
+    input: {
+      values: [
+        new UTCDate(Date.UTC(2023, 0, 1)),
+        new UTCDate(Date.UTC(2024, 0, 1)),
+        new UTCDate(Date.UTC(2025, 0, 1)),
+      ],
+      first_week_size: 7,
+      level: TimeFrequency.Annual,
+    },
+    expected: ["global.time.annual", "global.time.annual", "global.time.annual"],
+  },
+  {
+    name: "monthly format",
+    input: {
+      values: [
+        new UTCDate(Date.UTC(2023, 0, 1)),
+        new UTCDate(Date.UTC(2023, 1, 1)),
+        new UTCDate(Date.UTC(2023, 2, 1)),
+      ],
+      first_week_size: 7,
+      level: TimeFrequency.Monthly,
+    },
+    expected: ["Jan", "Feb", "Mar"],
+  },
+  {
+    name: "weekly format",
+    input: {
+      values: [
+        new UTCDate(Date.UTC(2023, 0, 1)),
+        new UTCDate(Date.UTC(2023, 0, 8)),
+        new UTCDate(Date.UTC(2023, 0, 15)),
+      ],
+      first_week_size: 1,
+      level: TimeFrequency.Weekly,
+    },
+    expected: ["global.time.weekShort 01", "global.time.weekShort 02", "global.time.weekShort 03"],
   },
   {
     name: "daily format",
-    config: { ...BASE_DATA.dateConfig, level: TimeFrequency.Daily },
+    input: {
+      values: [
+        new UTCDate(Date.UTC(2023, 0, 1)),
+        new UTCDate(Date.UTC(2023, 0, 2)),
+        new UTCDate(Date.UTC(2023, 0, 3)),
+      ],
+      first_week_size: 7,
+      level: TimeFrequency.Daily,
+    },
     expected: ["Sun 1 Jan", "Mon 2 Jan", "Tue 3 Jan"],
   },
   {
     name: "hourly format",
-    config: {
-      start_date: "2039-07-01 00:00:00",
-      steps: 3,
+    input: {
+      values: [
+        new UTCDate(Date.UTC(2039, 6, 1)),
+        new UTCDate(Date.UTC(2039, 6, 1, 1)),
+        new UTCDate(Date.UTC(2039, 6, 1, 2)),
+      ],
       first_week_size: 7,
       level: TimeFrequency.Hourly,
     },

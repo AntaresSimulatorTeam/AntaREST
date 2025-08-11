@@ -19,7 +19,12 @@ from typing_extensions import override
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -60,10 +65,7 @@ class CreateDistrict(ICommand):
         district_id = transform_name_to_id(self.name)
         if district_id in study_data.sets:
             return (
-                CommandOutput(
-                    status=False,
-                    message=f"District '{self.name}' already exists and could not be created",
-                ),
+                command_failed(message=f"District '{self.name}' already exists and could not be created"),
                 dict(),
             )
 
@@ -76,7 +78,7 @@ class CreateDistrict(ICommand):
             inverted_set=inverted_set,
         )
         item_key = "-" if inverted_set else "+"
-        return CommandOutput(status=True, message=district_id), {
+        return command_succeeded(message=district_id), {
             "district_id": district_id,
             "item_key": item_key,
         }

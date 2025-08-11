@@ -23,6 +23,7 @@ class OutputSimulationAboutStudy(IniFileNode):
                 "created": int,
                 "lastsave": int,
                 "author": str,
+                "editor": str,
             }
         }
         IniFileNode.__init__(self, config, types)

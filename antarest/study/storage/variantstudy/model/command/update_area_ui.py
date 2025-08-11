@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -54,7 +54,7 @@ class UpdateAreaUI(ICommand):
 
         study_data.tree.save(current_area, ["input", "areas", self.area_id, "ui"])
 
-        return CommandOutput(status=True, message=f"area '{self.area_id}' UI updated")
+        return command_succeeded(message=f"area '{self.area_id}' UI updated")
 
     @override
     def to_dto(self) -> CommandDTO:

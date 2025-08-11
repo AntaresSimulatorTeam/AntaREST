@@ -17,9 +17,9 @@ from pathlib import Path
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 import redis
-from sqlalchemy import create_engine  # type: ignore
-from sqlalchemy.engine.base import Engine  # type: ignore
-from sqlalchemy.pool import NullPool  # type: ignore
+from sqlalchemy import create_engine
+from sqlalchemy.engine.base import Engine
+from sqlalchemy.pool import NullPool
 
 from antarest.core.application import AppBuildContext
 from antarest.core.cache.main import build_cache
@@ -90,7 +90,7 @@ def init_db_engine(
     else:
         connect_args["connect_timeout"] = config.db.db_connect_timeout
 
-    extra = {}
+    extra: dict[str, Any] = {}
     if config.db.pool_use_null:
         extra["poolclass"] = NullPool
     elif not config.db.db_url.startswith("sqlite"):

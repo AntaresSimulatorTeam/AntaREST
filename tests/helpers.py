@@ -15,7 +15,8 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from functools import wraps
-from typing import Any, Callable, Dict, List, cast
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import numpy as np
 from numpy import typing as npt
@@ -23,6 +24,8 @@ from numpy import typing as npt
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
+from antarest.study.model import RawStudy, Study
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest_instances import create_admin_user
 
 
@@ -127,3 +130,90 @@ class AnyUUID:
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
+
+
+def create_study(
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+    path: Optional[str] = None,
+    version: str = "880",
+    **kwargs,
+) -> Study:
+    """
+    Factory to create a new Study object for testing purposes.
+
+    Args:
+        id: The study ID. If not provided, a new UUID is generated.
+        name: The study name. If not provided, it will be "My Study".
+        path: The study path. If not provided, a temporary path is created.
+        version: The study version. Default is "860".
+        **kwargs: Additional keyword arguments to pass to the Study constructor.
+
+    Returns:
+        A new Study object.
+    """
+    return Study(
+        id=id or str(uuid.uuid4()),
+        name=name or "My Study",
+        path=str(path or Path("path/to/study")),
+        version=version,
+        **kwargs,
+    )
+
+
+def create_raw_study(
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+    path: Optional[str] = None,
+    version: str = "880",
+    **kwargs,
+) -> RawStudy:
+    """
+    Factory to create a new RawStudy object for testing purposes.
+
+    Args:
+        id: The study ID. If not provided, a new UUID is generated.
+        name: The study name. If not provided, it will be "My Study".
+        path: The study path. If not provided, a temporary path is created.
+        version: The study version. Default is "860".
+        **kwargs: Additional keyword arguments to pass to the RawStudy constructor.
+
+    Returns:
+        A new RawStudy object.
+    """
+    return RawStudy(
+        id=id or str(uuid.uuid4()),
+        name=name or "My Study",
+        path=str(path or Path("path/to/raw_study")),
+        version=version,
+        **kwargs,
+    )
+
+
+def create_variant_study(
+    id: Optional[str] = None,
+    name: Optional[str] = None,
+    path: Optional[str] = None,
+    version: str = "880",
+    **kwargs,
+) -> VariantStudy:
+    """
+    Factory to create a new VariantStudy object for testing purposes.
+
+    Args:
+        id: The study ID. If not provided, a new UUID is generated.
+        name: The study name. If not provided, it will be "My Study".
+        path: The study path. If not provided, a temporary path is created.
+        version: The study version. Default is "860".
+        **kwargs: Additional keyword arguments to pass to the VariantStudy constructor.
+
+    Returns:
+        A new VariantStudy object.
+    """
+    return VariantStudy(
+        id=id or str(uuid.uuid4()),
+        name=name or "My Study",
+        path=str(path or Path("path/to/variant_study")),
+        version=version,
+        **kwargs,
+    )

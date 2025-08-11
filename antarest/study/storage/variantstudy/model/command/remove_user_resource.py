@@ -18,7 +18,13 @@ from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, is_url_writeable
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+    is_url_writeable,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -49,16 +55,14 @@ class RemoveUserResource(ICommand):
         study_tree = study_data.tree
         user_node = cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
-            return CommandOutput(
-                status=False, message=f"you are not allowed to delete this resource : {self.data.path}"
-            )
+            return command_failed(message=f"you are not allowed to delete this resource : {self.data.path}")
 
         try:
             user_node.delete(url)
         except ChildNotFoundError:
-            return CommandOutput(status=False, message="the given path doesn't exist")
+            return command_failed(message="the given path doesn't exist")
 
-        return CommandOutput(status=True, message="ok")
+        return command_succeeded(message=f"Resource {self.data.path} removed successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:

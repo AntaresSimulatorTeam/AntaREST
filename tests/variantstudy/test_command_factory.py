@@ -20,7 +20,7 @@ import pytest
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -892,6 +892,79 @@ COMMANDS = [
         ),
         None,
         id="update_xpansion_settings",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_GENERAL_CONFIG.value,
+            args={
+                "parameters": {"horizon": "2030", "first_week_day": "Monday", "year_by_year": True},
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_general_config",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value,
+            args={"parameters": {"binding_constraints": True, "unfeasible_problem_behavior": "error-verbose"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_optimization_preferences",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADVANCED_PARAMETERS.value,
+            args={"parameters": {"seed_tsgen_thermal": 2, "hydro_pricing_mode": "accurate"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_advanced_parameters",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "storage_id": "sts_2",
+                    "constraints": [
+                        {
+                            "name": "c3",
+                            "variable": "withdrawal",
+                            "operator": "greater",
+                            "occurrences": [{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
+                        }
+                    ],
+                }
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="create_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {"additional_constraint_properties": {"fr": {"sts_2": {"c1": {"enabled": False}}}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {"area_id": "fr", "storage_id": "sts", "ids": ["c1", "c2", "c3"]},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="remove_st_storage_additional_constraints",
     ),
 ]
 

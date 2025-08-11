@@ -29,6 +29,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_7,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -134,3 +135,8 @@ def empty_study_fixture_880(matrix_service: MatrixService, tmp_path: Path) -> Fi
 @pytest.fixture(name="empty_study_920")
 def empty_study_fixture_920(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
     return empty_study_fixture(STUDY_VERSION_9_2, matrix_service, tmp_path)
+
+
+@pytest.fixture(name="empty_study_930")
+def empty_study_fixture_930(matrix_service: MatrixService, tmp_path: Path) -> FileStudy:
+    return empty_study_fixture(STUDY_VERSION_9_3, matrix_service, tmp_path)

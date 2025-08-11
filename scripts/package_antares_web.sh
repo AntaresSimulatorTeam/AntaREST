@@ -9,7 +9,7 @@
 set -e
 
 ANTARES_SOLVER_VERSION="8.8"
-ANTARES_SOLVER_FULL_VERSION="8.8.14"
+ANTARES_SOLVER_FULL_VERSION="8.8.17"
 ANTARES_SOLVER_VERSION_INT="880"
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd -P)
@@ -22,7 +22,7 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   ANTARES_SOLVER_FOLDER_NAME="antares-solver_windows"
   ANTARES_SOLVER_ZIPFILE_NAME="$ANTARES_SOLVER_FOLDER_NAME.zip"
 else
-  ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu20.04.tar.gz"
+  ANTARES_SOLVER_ZIPFILE_NAME="antares-solver_ubuntu22.04.tar.gz"
 fi
 
 LINK="https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v$ANTARES_SOLVER_FULL_VERSION/$ANTARES_SOLVER_ZIPFILE_NAME"

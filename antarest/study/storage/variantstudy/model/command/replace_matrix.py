@@ -22,7 +22,12 @@ from antarest.matrixstore.model import MatrixData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -66,21 +71,12 @@ class ReplaceMatrix(ICommand):
             last_node = study_data.tree.get_node(url)
             assert_this(isinstance(last_node, MatrixNode))
         except (KeyError, ChildNotFoundError):
-            return CommandOutput(
-                status=False,
-                message=f"Path '{self.target}' does not exist.",
-            )
+            return command_failed(message=f"Path '{self.target}' does not exist.")
         except AssertionError:
-            return CommandOutput(
-                status=False,
-                message=f"Path '{self.target}' does not target a matrix.",
-            )
+            return command_failed(message=f"Path '{self.target}' does not target a matrix.")
 
         study_data.tree.save(replace_matrix_data)
-        return CommandOutput(
-            status=True,
-            message=f"Matrix '{self.target}' has been successfully replaced.",
-        )
+        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.")
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -134,6 +134,9 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     npcap_hours: bool | None = Field(default=None, alias="NPCAP HOURS")
     # Since v9.1
     sts_by_group: bool | None = Field(default=None, alias="STS by group")
+    # Since v9.3
+    dispatch_gen: bool | None = Field(default=None, alias="DISPATCH. GEN.")
+    renewable_gen: bool | None = Field(default=None, alias="RENEWABLE GEN.")
 
     def to_model(self) -> ThematicTrimming:
         return ThematicTrimming.model_validate(self.model_dump(exclude_none=True))

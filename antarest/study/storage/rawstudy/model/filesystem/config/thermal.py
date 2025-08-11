@@ -20,7 +20,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCluster,
-    ThermalClusterGroup,
     ThermalCostGeneration,
     initialize_thermal_cluster,
     validate_thermal_cluster_against_version,
@@ -38,7 +37,7 @@ class ThermalClusterFileData(AntaresBaseModel):
     unit_count: Optional[int] = Field(default=None, alias="unitcount")
     nominal_capacity: Optional[float] = Field(default=None, alias="nominalcapacity")
     enabled: Optional[bool] = None
-    group: Optional[ThermalClusterGroup] = None
+    group: Optional[str] = None
     gen_ts: Optional[LocalTSGenerationBehavior] = None
     min_stable_power: Optional[float] = None
     min_up_time: Optional[int] = None

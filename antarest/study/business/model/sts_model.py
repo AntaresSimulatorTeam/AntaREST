@@ -12,7 +12,7 @@
 from typing import Annotated, Any, Optional, TypeAlias
 
 from antares.study.version import StudyVersion
-from pydantic import ConfigDict, Field, model_validator
+from pydantic import BeforeValidator, ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStorageValuesCoherenceError
@@ -21,7 +21,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
 
 
 class STStorageGroup(EnumIgnoreCase):
@@ -250,3 +250,113 @@ def update_st_storage(storage: STStorage, data: STStorageUpdate, version: StudyV
     storage = storage.model_copy(update=data.model_dump(exclude_none=True))
     check_attributes_coherence(storage, version)
     return storage
+
+
+##########################
+# Additional constraints part
+##########################
+
+
+class AdditionalConstraintVariable(EnumIgnoreCase):
+    WITHDRAWAL = "withdrawal"
+    INJECTION = "injection"
+    NETTING = "netting"
+
+
+class AdditionalConstraintOperator(EnumIgnoreCase):
+    LESS = "less"
+    GREATER = "greater"
+    EQUAL = "equal"
+
+
+def check_hours_compliance(value: int) -> int:
+    if not isinstance(value, int) or not (1 <= value <= 168):
+        raise ValueError(f"Hours must be integers between 1 and 168, got {value}")
+    return value
+
+
+WeekHour: TypeAlias = Annotated[int, BeforeValidator(check_hours_compliance)]
+
+
+class Occurrence(AntaresBaseModel):
+    hours: list[WeekHour]
+
+
+class STStorageAdditionalConstraint(AntaresBaseModel):
+    """
+    Short-term storage additional constraints model.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_id(cls, data: dict[str, Any]) -> dict[str, Any]:
+        data["id"] = transform_name_to_id(data["name"])
+        return data
+
+    id: str
+    name: ItemName
+    variable: AdditionalConstraintVariable = AdditionalConstraintVariable.NETTING
+    operator: AdditionalConstraintOperator = AdditionalConstraintOperator.LESS
+    occurrences: list[Occurrence] = []
+    enabled: bool = True
+
+
+class STStorageAdditionalConstraintCreation(AntaresBaseModel):
+    """
+    Represents a creation request for a short-term storage additional constraint.
+
+    Most fields are optional: at creation time, default values of the constraint will be used.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    name: ItemName
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    occurrences: Optional[list[Occurrence]] = None
+    enabled: Optional[bool] = None
+
+
+class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
+    """
+    Represents an update of a short-term storage additional constraint.
+
+    Only not-None fields will be used to update the constraint.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    variable: Optional[AdditionalConstraintVariable] = None
+    operator: Optional[AdditionalConstraintOperator] = None
+    occurrences: Optional[list[Occurrence]] = None
+    enabled: Optional[bool] = None
+
+
+STStorageAdditionalConstraintsMap: TypeAlias = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]
+
+# 2nd key corresponds to a short-term storage id and 3rd to the constraint id.
+STStorageAdditionalConstraintUpdates: TypeAlias = dict[
+    AreaId, dict[LowerCaseId, dict[LowerCaseId, STStorageAdditionalConstraintUpdate]]
+]
+
+
+def create_st_storage_constraint(cluster_data: STStorageAdditionalConstraintCreation) -> STStorageAdditionalConstraint:
+    """
+    Creates a short-term storage constraint from a creation request
+    """
+    args = cluster_data.model_dump(exclude_none=True)
+    return STStorageAdditionalConstraint.model_validate(args)
+
+
+def update_st_storage_constraint(
+    constraint: STStorageAdditionalConstraint, data: STStorageAdditionalConstraintUpdate
+) -> STStorageAdditionalConstraint:
+    """
+    Updates a short-term storage constraint according to the provided update data.
+    """
+    current_constraint = constraint.model_dump(mode="json")
+    update_constraint = data.model_dump(mode="json", exclude_none=True)
+    current_constraint.update(update_constraint)
+    return STStorageAdditionalConstraint.model_validate(current_constraint)

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import sys
 from pathlib import Path
 
 import pytest
@@ -118,14 +117,11 @@ def test_explorer(client: TestClient, admin_access_token: str, study_tree: Path)
         "/v1/private/explorer/_list_workspaces",
         headers={"Authorization": f"Bearer {admin_access_token}"},
     )
-    if sys.platform == "win32":
-        expected = [WorkspaceDTO(name="ext", disk_name="Temporary Storage")]
-    else:
-        expected = [
-            WorkspaceDTO(
-                name="ext",
-            )
-        ]
+    expected = [
+        WorkspaceDTO(
+            name="ext",
+        )
+    ]
     res = res.json()
     res = [WorkspaceDTO(**e) for e in res]
     assert res == expected

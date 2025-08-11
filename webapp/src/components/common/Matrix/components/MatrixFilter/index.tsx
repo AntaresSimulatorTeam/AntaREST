@@ -29,7 +29,7 @@ import Operations from "./Operations";
 import SelectionSummary from "./SelectionSummary";
 import { COMPONENT_DIMENSIONS, DESIGN_TOKENS, DRAWER_STYLES } from "./styles";
 import type { MatrixFilterProps } from "./types";
-import { getMatrixDimensions } from "./utils";
+import { extractDatesInfo, getMatrixDimensions } from "./utils";
 
 export interface MatrixFilterHandle {
   toggle: () => void;
@@ -56,10 +56,17 @@ function MatrixFilter(
     timeFrequency,
   });
 
+  const datesInfo = useMemo(() => {
+    if (!dateTime || !isTimeSeries || dateTime.values.length === 0) {
+      return [];
+    }
+    return extractDatesInfo(dateTime.values);
+  }, [dateTime, isTimeSeries]);
+
   // Filtered data based on current filter settings
   const currentFilteredData = useFilteredData({
     filter,
-    dateTime,
+    datesInfo,
     isTimeSeries,
     timeFrequency,
     rowCount,
@@ -176,8 +183,7 @@ function MatrixFilter(
           <MultiRowFilter
             filter={filter}
             setFilter={setFilter}
-            dateTime={dateTime}
-            isTimeSeries={isTimeSeries}
+            datesInfo={datesInfo}
             timeFrequency={timeFrequency}
           />
 

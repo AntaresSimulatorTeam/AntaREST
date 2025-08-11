@@ -25,9 +25,10 @@ from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.exceptions import StudyDeletionNotAllowed, StudyNotFoundError
 from antarest.core.interfaces.cache import CacheConstants
 from antarest.core.model import PublicMode
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from tests.helpers import create_raw_study
 
 
 def build_config(
@@ -76,7 +77,7 @@ def test_get(tmp_path: str, project_path) -> None:
         study_factory=study_factory,
     )
 
-    metadata = RawStudy(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
+    metadata = create_raw_study(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
     output = study_service.get(metadata=metadata, url=sub_route, depth=2)
 
     assert output == data
@@ -105,7 +106,7 @@ def test_get_cache(tmp_path: str) -> None:
     cache = Mock()
     cache.get.return_value = None
 
-    metadata = RawStudy(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
+    metadata = create_raw_study(id="study2.py", workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study))
     study_service = RawStudyService(
         config=Mock(),
         cache=cache,
@@ -136,7 +137,7 @@ def test_check_errors():
         study_factory=factory,
     )
 
-    metadata = RawStudy(
+    metadata = create_raw_study(
         id="study",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study"),
@@ -164,7 +165,7 @@ def test_assert_study_exist(tmp_path: str, project_path) -> None:
         study_factory=Mock(),
     )
 
-    metadata = RawStudy(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
+    metadata = create_raw_study(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
     study_service._check_study_exists(metadata)
 
 
@@ -189,7 +190,7 @@ def test_assert_study_not_exist(tmp_path: str, project_path) -> None:
         study_factory=Mock(),
     )
 
-    metadata = RawStudy(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
+    metadata = create_raw_study(id=study_name, workspace=DEFAULT_WORKSPACE_NAME, path=str(path_study2))
     with pytest.raises(StudyNotFoundError):
         study_service._check_study_exists(metadata)
 
@@ -209,7 +210,7 @@ def test_create(tmp_path: Path, project_path: Path) -> None:
         study_factory=study_factory,
     )
 
-    metadata = RawStudy(
+    metadata = create_raw_study(
         id="study1",
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(config.get_workspace_path() / "study1"),
@@ -246,7 +247,7 @@ def test_create_study_versions(tmp_path: str, project_path) -> None:
     )
 
     def create_study(version: str):
-        metadata = RawStudy(
+        metadata = create_raw_study(
             id=f"study{version}",
             workspace=DEFAULT_WORKSPACE_NAME,
             path=str(config.get_workspace_path() / f"study{version}"),
@@ -417,7 +418,7 @@ def test_copy_study(tmp_path: Path) -> None:
     )
     groups = ["fake_group_1", "fake_group_2"]
 
-    src_md = RawStudy(
+    src_md = create_raw_study(
         id=source_name,
         workspace=DEFAULT_WORKSPACE_NAME,
         path=str(path_study),
@@ -425,7 +426,7 @@ def test_copy_study(tmp_path: Path) -> None:
         version="700",
         groups=groups,
     )
-    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath(), [], None)
+    md = study_service.copy(src_md, "dst_name", groups, PurePosixPath(), [], None, "")
     md_id = md.id
     assert str(md.path) == f"{tmp_path}{os.sep}{md_id}"
     assert md.public_mode == PublicMode.NONE
@@ -450,7 +451,7 @@ def test_zipped_output(tmp_path: Path) -> None:
         study_factory=Mock(),
     )
 
-    md = RawStudy(id=name, workspace="foo", path=str(study_path))
+    md = create_raw_study(id=name, workspace="foo", path=str(study_path))
 
     zipped_output = tmp_path / "output.zip"
     with ZipFile(zipped_output, "w", ZIP_DEFLATED) as output_data:
@@ -507,7 +508,7 @@ def test_delete_study(tmp_path: Path) -> None:
         study_factory=Mock(),
     )
 
-    md = RawStudy(id=name, workspace="foo", path=str(study_path))
+    md = create_raw_study(id=name, workspace="foo", path=str(study_path))
     with pytest.raises(StudyDeletionNotAllowed):
         study_service.delete(md)
 
@@ -517,7 +518,7 @@ def test_delete_study(tmp_path: Path) -> None:
         study_factory=Mock(),
     )
 
-    md = RawStudy(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
+    md = create_raw_study(id=name, workspace=DEFAULT_WORKSPACE_NAME, path=str(study_path))
     study_service.delete(md)
     cache.invalidate_all.assert_called_once_with(
         [
@@ -539,7 +540,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
 
     cache = Mock()
 
-    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path))
+    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path))
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), raw_study)
 
@@ -563,7 +564,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
     study_antares = study_path / "study.antares"
     study_antares.touch()
 
-    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="100")
+    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), version="100")
 
     file_study_tree = Mock()
     file_study_tree.get.return_value = {"version": 100}
@@ -581,7 +582,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
 
     assert raw_study.version == "100"
 
-    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="42")
+    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), version="42")
 
     file_study_tree = Mock()
     file_study_tree.get.return_value = {"version": 42}
@@ -599,7 +600,7 @@ def test_check_and_update_study_version_in_database(tmp_path: Path) -> None:
 
     assert raw_study.version == "42"
 
-    raw_study = RawStudy(id=name, workspace="foo", path=str(study_path), version="100")
+    raw_study = create_raw_study(id=name, workspace="foo", path=str(study_path), version="100")
 
     study_factory = Mock()
     study_factory.create_from_config.side_effect = FileNotFoundError()
@@ -622,7 +623,7 @@ def test_update_name_and_version_from_raw(tmp_path: Path) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    raw_study = RawStudy(
+    raw_study = create_raw_study(
         id=name,
         name=name,
         version="700",
@@ -661,7 +662,7 @@ def test_checks_study_compatibility(tmp_path: Path) -> None:
     settings_path = study_path / "settings"
     settings_path.mkdir(parents=True)
 
-    raw_study = RawStudy(id=name, name=name, version="880", workspace="foo", path=str(study_path))
+    raw_study = create_raw_study(id=name, name=name, version="880", workspace="foo", path=str(study_path))
     study_service = RawStudyService(config=Mock(), cache=Mock(), study_factory=Mock())
 
     # With a version prior to v9.2 the check should succeed

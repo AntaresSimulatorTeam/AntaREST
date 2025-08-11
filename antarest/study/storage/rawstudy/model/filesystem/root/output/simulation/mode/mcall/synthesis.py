@@ -62,11 +62,3 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
                 raise ValueError(msg)
             return [msg]
         return []
-
-    @override
-    def normalize(self) -> None:
-        pass  # shouldn't be normalized as it's an output file
-
-    @override
-    def denormalize(self) -> None:
-        pass  # shouldn't be denormalized as it's an output file

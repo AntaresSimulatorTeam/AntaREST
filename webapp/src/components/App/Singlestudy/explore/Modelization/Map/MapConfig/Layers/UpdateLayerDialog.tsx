@@ -12,27 +12,27 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { useOutletContext } from "react-router";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import { validateString } from "@/utils/validation/string";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import { Button, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
-import FormDialog from "../../../../../../../common/dialogs/FormDialog";
-import StringFE from "../../../../../../../common/fieldEditors/StringFE";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
-import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
-import SelectFE from "../../../../../../../common/fieldEditors/SelectFE";
-import Fieldset from "../../../../../../../common/Fieldset";
-import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
 import {
   deleteStudyMapLayer,
   updateStudyMapLayer,
 } from "../../../../../../../../redux/ducks/studyMaps";
 import useAppDispatch from "../../../../../../../../redux/hooks/useAppDispatch";
-import { validateString } from "@/utils/validation/string";
+import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
+import { getStudyMapLayersById } from "../../../../../../../../redux/selectors";
+import type { StudyMetadata } from "../../../../../../../../types/types";
+import ConfirmationDialog from "../../../../../../../common/dialogs/ConfirmationDialog";
+import FormDialog from "../../../../../../../common/dialogs/FormDialog";
+import StringFE from "../../../../../../../common/fieldEditors/StringFE";
+import Fieldset from "../../../../../../../common/Fieldset";
+import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 
 interface Props {
   open: boolean;

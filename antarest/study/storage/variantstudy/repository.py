@@ -10,9 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional, Sequence, cast
+from typing import List, Optional, Sequence
 
-from sqlalchemy.orm import Session, joinedload  # type: ignore
+from sqlalchemy import select
+from sqlalchemy.orm import Session, joinedload
 from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
@@ -65,7 +66,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
         q = q.order_by(Study.created_at.desc())
-        studies = cast(List[VariantStudy], q.all())
+        studies = q.all()
         return studies
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
@@ -81,16 +82,14 @@ class VariantStudyRepository(StudyMetadataRepository):
             Ordered list of study identifiers.
         """
         # see: [Recursive Queries](https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE)
-        top_q = self.session.query(Study.id, Study.parent_id)
-        top_q = top_q.filter(Study.id == variant_id)
-        top_q = top_q.cte("study_cte", recursive=True)
+        top_query = select(Study.id, Study.parent_id).where(Study.id == variant_id)
+        top_q = top_query.cte("study_cte", recursive=True)
 
-        bot_q = self.session.query(Study.id, Study.parent_id)
-        bot_q = bot_q.join(top_q, Study.id == top_q.c.parent_id)
+        bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
 
         recursive_q = top_q.union_all(bot_q)
-        q = self.session.query(recursive_q)
-        return [r[0] for r in q]
+        result = self.session.execute(select(recursive_q.c.id))
+        return [r[0] for r in result]
 
     def get_all_command_blocks(self) -> List[CommandBlock]:
         """
@@ -122,7 +121,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             .options(joinedload(VariantStudy.additional_data))
             .options(joinedload(VariantStudy.owner))
             .options(joinedload(VariantStudy.groups))
-            .filter(VariantStudy.id.in_(variant_ids))  # type: ignore
+            .filter(VariantStudy.id.in_(variant_ids))
         )
         index = {id_: i for i, id_ in enumerate(variant_ids)}
         return sorted(q, key=lambda v: index[v.id])

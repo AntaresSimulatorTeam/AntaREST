@@ -43,19 +43,10 @@ export type RenewableGroup = (typeof RENEWABLE_GROUPS)[number];
 
 type TimeSeriesInterpretation = (typeof TS_INTERPRETATION_OPTIONS)[number];
 
-export interface RenewableFormFields {
-  name: string;
-  group: string;
-  tsInterpretation: TimeSeriesInterpretation;
-  enabled: boolean;
-  unitCount: number;
-  nominalCapacity: number;
-}
-
-export interface RenewableCluster {
+export interface RenewableCluster<LegacyGroup extends boolean = false> {
   id: string;
   name: string;
-  group: RenewableGroup;
+  group: LegacyGroup extends true ? RenewableGroup : string; // Before v9.3 => RenewableGroup, since v9.3 => string
   tsInterpretation: TimeSeriesInterpretation;
   enabled: boolean;
   unitCount: number;

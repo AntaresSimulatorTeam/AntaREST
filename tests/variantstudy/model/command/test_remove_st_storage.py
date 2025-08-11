@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-
 import pytest
 from pydantic import ValidationError
 
@@ -18,6 +17,8 @@ from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
+from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -110,3 +111,30 @@ class TestRemoveSTStorage:
         )
         actual = cmd.get_inner_matrices()
         assert actual == []
+
+    def test_error_cases(self, empty_study_920: FileStudy, command_context: CommandContext):
+        # Create an area and a short-term storage inside it
+        study = empty_study_920
+        version = study.config.version
+        cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+        cmd.apply(study_data=study)
+        cmd = CreateSTStorage(
+            area_id="fr", parameters={"name": "sts_1"}, command_context=command_context, study_version=version
+        )
+        cmd.apply(study_data=study)
+
+        # Removes a storage from an unexisting area
+        cmd = RemoveSTStorage(
+            command_context=command_context, area_id="fake_area", storage_id="storage_1", study_version=version
+        )
+        output = cmd.apply(study)
+        assert not output.status
+        assert output.message == "Short-term storage 'storage_1' in area 'fake_area' does not exist"
+
+        # Removes a fake storage in a real area
+        cmd = RemoveSTStorage(
+            command_context=command_context, area_id="fr", storage_id="fake_storage", study_version=version
+        )
+        output = cmd.apply(study)
+        assert not output.status
+        assert output.message == "Short-term storage 'fake_storage' in area 'fr' does not exist"

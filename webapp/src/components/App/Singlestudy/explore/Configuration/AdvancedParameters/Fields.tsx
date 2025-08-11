@@ -12,28 +12,30 @@
  * This file is part of the Antares project.
  */
 
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import { Box } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
+import type { StudyMetadata } from "../../../../../../types/types";
 import NumberFE from "../../../../../common/fieldEditors/NumberFE";
-import SelectFE from "../../../../../common/fieldEditors/SelectFE";
 import Fieldset from "../../../../../common/Fieldset";
 import { useFormContextPlus } from "../../../../../common/Form";
 import {
   HYDRO_HEURISTIC_POLICY_OPTIONS,
-  INITIAL_RESERVOIR_OPTIONS,
   HYDRO_PRICING_MODE_OPTIONS,
+  INITIAL_RESERVOIR_OPTIONS,
   POWER_FLUCTUATIONS_OPTIONS,
-  SPATIAL_CORRELATIONS_OPTIONS,
-  SHEDDING_POLICY_OPTIONS,
-  RESERVE_MANAGEMENT_OPTIONS,
-  UNIT_COMMITMENT_MODE_OPTIONS,
-  SIMULATION_CORES_OPTIONS,
   RENEWABLE_GENERATION_OPTIONS,
+  RESERVE_MANAGEMENT_OPTIONS,
+  SHEDDING_POLICY_OPTIONS,
+  SIMULATION_CORES_OPTIONS,
+  SPATIAL_CORRELATIONS_OPTIONS,
+  UNIT_COMMITMENT_MODE_OPTIONS,
   UnitCommitmentMode,
+  SheddingPolicy,
   type AdvancedParamsFormFields,
 } from "./utils";
-import { useOutletContext } from "react-router";
-import type { StudyMetadata } from "../../../../../../types/types";
+import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 
 function Fields() {
   const [t] = useTranslation();
@@ -144,7 +146,9 @@ function Fields() {
         />
         <SelectFE
           label={t("study.configuration.advancedParameters.sheddingPolicy")}
-          options={SHEDDING_POLICY_OPTIONS}
+          options={SHEDDING_POLICY_OPTIONS.filter(
+            (v) => v !== SheddingPolicy.AccurateShavePeaks || studyVersion >= 920,
+          )}
           name="sheddingPolicy"
           control={control}
         />
@@ -173,6 +177,16 @@ function Fields() {
             label={t("study.configuration.advancedParameters.renewableGenerationModeling")}
             options={RENEWABLE_GENERATION_OPTIONS}
             name="renewableGenerationModelling"
+            control={control}
+          />
+        )}
+        {studyVersion >= 930 && (
+          <SwitchFE
+            label={t(
+              "study.configuration.advancedParameters.accurateShavePeaksIncludeShortTermStorage",
+            )}
+            name="accurateShavePeaksIncludeShortTermStorage"
+            sx={{ textWrap: "nowrap" }}
             control={control}
           />
         )}

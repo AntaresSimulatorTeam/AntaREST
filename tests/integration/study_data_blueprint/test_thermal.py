@@ -293,7 +293,13 @@ def _upload_matrix(
 @pytest.mark.unit_test
 class TestThermal:
     @pytest.mark.parametrize(
-        "version", [pytest.param(0, id="No Upgrade"), pytest.param(860, id="v8.6"), pytest.param(870, id="v8.7")]
+        "version",
+        [
+            pytest.param(0, id="No Upgrade"),
+            pytest.param(860, id="v8.6"),
+            pytest.param(870, id="v8.7"),
+            pytest.param(930, id="v9.3"),
+        ],
     )
     def test_lifecycle(self, client: TestClient, user_access_token: str, internal_study_id: str, version: int) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
@@ -321,9 +327,9 @@ class TestThermal:
             existing_cluster.update({p: pollutants_values for p in pollutants_names})
             existing_cluster.update(
                 {
-                    "costGeneration": "SetManually" if version == 870 else None,
-                    "efficiency": 100.0 if version == 870 else None,
-                    "variableOMCost": 0.0 if version == 870 else None,
+                    "costGeneration": "SetManually" if version >= 870 else None,
+                    "efficiency": 100.0 if version >= 870 else None,
+                    "variableOMCost": 0.0 if version >= 870 else None,
                 }
             )
 
@@ -419,9 +425,9 @@ class TestThermal:
         expected = {
             **expected,
             **{
-                "costGeneration": "SetManually" if version == 870 else None,
-                "efficiency": 100.0 if version == 870 else None,
-                "variableOMCost": 0.0 if version == 870 else None,
+                "costGeneration": "SetManually" if version >= 870 else None,
+                "efficiency": 100.0 if version >= 870 else None,
+                "variableOMCost": 0.0 if version >= 870 else None,
             },
         }
         assert res.json() == expected
@@ -728,8 +734,23 @@ class TestThermal:
         )
         assert res.status_code == 200, res.json()
         obj = res.json()
-        # If a group is not found, return the default group ('OTHER1' by default).
-        assert obj["group"] == "other 1"
+        if version < 930:
+            # If a group is not found, return the default group ('OTHER1' by default).
+            assert obj["group"] == "other 1"
+        else:
+            # We should write the group as it was given
+            assert obj["group"] == "groupfoo"
+
+        # Same verification on GET result
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional}")
+        assert res.status_code == 200, res.json()
+        obj = res.json()
+        if version < 930:
+            # If a group is not found, return the default group ('OTHER1' by default).
+            assert obj["group"] == "other 1"
+        else:
+            # We should write the group as it was given
+            assert obj["group"] == "groupfoo"
 
         # Check PATCH with the wrong `area_id`
         res = client.patch(

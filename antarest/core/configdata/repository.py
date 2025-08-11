@@ -13,6 +13,8 @@
 from operator import and_
 from typing import Optional
 
+from sqlalchemy import select
+
 from antarest.core.configdata.model import ConfigData
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import JSON
@@ -28,21 +30,18 @@ class ConfigDataRepository:
         return configdata
 
     def get(self, key: str, owner: Optional[int] = None) -> Optional[ConfigData]:
-        configdata: ConfigData = (
-            db.session.query(ConfigData)
-            .filter(
+        return db.session.execute(
+            select(ConfigData).where(
                 and_(
                     ConfigData.owner == (owner or DEFAULT_ADMIN_USER.id),
                     ConfigData.key == key,
                 )
             )
-            .first()
-        )
-        return configdata
+        ).scalar_one_or_none()
 
     def get_json(self, key: str, owner: Optional[int] = None) -> Optional[JSON]:
         configdata = self.get(key, owner)
-        if configdata:
+        if configdata and configdata.value is not None:
             data: JSON = from_json(configdata.value)
             return data
         return None

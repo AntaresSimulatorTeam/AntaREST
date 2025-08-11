@@ -13,8 +13,9 @@
  */
 
 import type { ColumnType, EnhancedGridColumn } from "../../../shared/types";
-import { Column } from "../../../shared/constants";
+import { Column, TimeFrequency } from "../../../shared/constants";
 import type { TestCase } from "../types";
+import { UTCDate } from "@date-fns/utc";
 
 export const createColumn = (
   id: string,
@@ -55,7 +56,11 @@ export const MIXED_DATA = {
     [100, 200],
     [150, 250],
   ],
-  dateTime: ["2024-01-01T00:00:00Z", "2024-01-02T00:00:00Z"],
+  dateTime: {
+    values: [new UTCDate("2024-01-01T00:00:00Z"), new UTCDate("2024-01-02T00:00:00Z")],
+    first_week_size: 7,
+    level: TimeFrequency.Daily,
+  },
   rowHeaders: ["Row 1", "Row 2"],
   aggregates: {
     min: [100, 200],

@@ -24,13 +24,7 @@ import RowFilter from "./RowFilter";
 import { DESIGN_TOKENS, ICON_BUTTON_STYLES } from "./styles";
 import type { RowFilterProps } from "./types";
 
-function MultiRowFilter({
-  filter,
-  setFilter,
-  dateTime,
-  isTimeSeries,
-  timeFrequency,
-}: RowFilterProps) {
+function MultiRowFilter({ filter, setFilter, datesInfo, timeFrequency }: RowFilterProps) {
   const { t } = useTranslation();
   const [expandedFilters, setExpandedFilters] = useState<string[]>(
     filter.rowsFilters.map((rf) => rf.id),
@@ -108,8 +102,7 @@ function MultiRowFilter({
           <RowFilter
             filter={filter}
             setFilter={setFilter}
-            dateTime={dateTime}
-            isTimeSeries={isTimeSeries}
+            datesInfo={datesInfo}
             timeFrequency={timeFrequency}
             filterId={rowFilter.id}
             onRemoveFilter={handleRemoveFilter}

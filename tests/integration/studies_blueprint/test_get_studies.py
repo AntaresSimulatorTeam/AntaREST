@@ -1547,13 +1547,12 @@ class TestStudiesListing:
         description = res.json()["description"]
         assert re.search(r"should be a valid boolean", description), f"{description=}"
 
-
-def test_studies_counting(client: TestClient, admin_access_token: str, user_access_token: str) -> None:
-    # test admin and non admin user studies count requests
-    for access_token in [admin_access_token, user_access_token]:
-        res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {access_token}"})
-        assert res.status_code == 200, res.json()
-        expected_studies_count = len(res.json())
-        res = client.get(STUDIES_URL + "/count", headers={"Authorization": f"Bearer {access_token}"})
-        assert res.status_code == 200, res.json()
-        assert res.json() == expected_studies_count
+    def test_studies_counting(self, client: TestClient, admin_access_token: str, user_access_token: str) -> None:
+        # test admin and non admin user studies count requests
+        for access_token in [admin_access_token, user_access_token]:
+            res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {access_token}"})
+            assert res.status_code == 200, res.json()
+            expected_studies_count = len(res.json())
+            res = client.get(STUDIES_URL + "/count", headers={"Authorization": f"Bearer {access_token}"})
+            assert res.status_code == 200, res.json()
+            assert res.json() == expected_studies_count

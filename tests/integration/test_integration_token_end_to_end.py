@@ -65,7 +65,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     res = client.put(
         f"/v1/studies/{variant_id}/config/general/form",
         headers=bot_headers,
-        json={"geographicTrimming": True},
+        json={"yearByYear": True},
     )
     assert res.status_code == 200
     commands: t.List[CommandDict]

@@ -12,20 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
+import SearchFE from "@/components/common/fieldEditors/SearchFE";
+import { createStudy, updateStudyFilters } from "@/redux/ducks/studies";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudyFilters } from "@/redux/selectors";
+import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
 import { Button, Divider } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import AddCircleOutlineOutlinedIcon from "@mui/icons-material/AddCircleOutlineOutlined";
-import UploadOutlinedIcon from "@mui/icons-material/UploadOutlined";
-import { createStudy, updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
 import UploadDialog, { type UploadDialogProps } from "../../../common/dialogs/UploadDialog";
 import CreateStudyDialog from "../CreateStudyDialog";
-import useAppDispatch from "../../../../redux/hooks/useAppDispatch";
-import SearchFE from "@/components/common/fieldEditors/SearchFE";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyFilters } from "@/redux/selectors";
-import FilterTags from "@/components/App/Studies/HeaderActions/FliterTags";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
 
 interface Props {
   onOpenFilterClick: VoidFunction;
@@ -79,7 +79,6 @@ function HeaderActions({ onOpenFilterClick }: Props) {
         size="extra-small"
         value={searchValue}
         onSearchValueChange={setSearchValue}
-        onClear={setSearchValue}
         sx={{ maxWidth: 200 }}
       />
       <Divider flexItem orientation="vertical" variant="middle" />

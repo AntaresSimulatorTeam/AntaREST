@@ -37,7 +37,6 @@ import {
   getThermalClusters,
   THERMAL_GROUPS,
   type ThermalClusterWithCapacity,
-  type ThermalGroup,
 } from "./utils";
 
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
@@ -47,6 +46,7 @@ function Thermal() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const areaId = useAppSelector(getCurrentAreaId);
+  const studyVersion = Number(study.version);
 
   const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
     ThermalClusterWithCapacity[]
@@ -119,7 +119,7 @@ function Thermal() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow<ThermalGroup>) => {
+  const handleCreate = async (values: TRow) => {
     const cluster = await createThermalCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };
@@ -148,7 +148,8 @@ function Thermal() {
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}
-      groups={[...THERMAL_GROUPS]}
+      groups={[...THERMAL_GROUPS] as string[]}
+      allowNewGroups={studyVersion >= 930}
       onCreate={handleCreate}
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}

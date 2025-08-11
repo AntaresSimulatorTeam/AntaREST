@@ -57,15 +57,15 @@ def upgrade() -> None:
     connexion: Connection = op.get_bind()
 
     # retrieve the tags and the study-tag pairs from the db
-    study_tags = connexion.execute("SELECT study_id, patch FROM study_additional_data")
+    study_tags = connexion.execute(sa.text("SELECT study_id, patch FROM study_additional_data"))
     tags_by_ids: t.MutableMapping[str, t.Set[str]] = {}
     for study_id, patch in study_tags:
         obj = _load_patch_obj(patch)
         tags_by_ids[study_id] = obj["study"]["tags"]
 
     # delete rows in tables `tag` and `study_tag`
-    connexion.execute("DELETE FROM study_tag")
-    connexion.execute("DELETE FROM tag")
+    connexion.execute(sa.text("DELETE FROM study_tag"))
+    connexion.execute(sa.text("DELETE FROM tag"))
 
     # insert the tags in the `tag` table
     all_labels = {lbl.upper(): lbl for lbl in itertools.chain.from_iterable(tags_by_ids.values())}
@@ -101,13 +101,13 @@ def downgrade() -> None:
 
     # Creating the `tags_by_ids` mapping from data in the `study_tags` table
     tags_by_ids: t.MutableMapping[str, t.Set[str]] = collections.defaultdict(set)
-    study_tags = connexion.execute("SELECT study_id, tag_label FROM study_tag")
+    study_tags = connexion.execute(sa.text("SELECT study_id, tag_label FROM study_tag"))
     for study_id, tag_label in study_tags:
         tags_by_ids[study_id].add(tag_label)
 
     # Then, we read objects from the `patch` field of the `study_additional_data` table
     objects_by_ids = {}
-    study_tags = connexion.execute("SELECT study_id, patch FROM study_additional_data")
+    study_tags = connexion.execute(sa.text("SELECT study_id, patch FROM study_additional_data"))
     for study_id, patch in study_tags:
         obj = _load_patch_obj(patch)
         obj["study"]["tags"] = _avoid_duplicates(tags_by_ids[study_id] | set(obj["study"]["tags"]))
@@ -120,5 +120,5 @@ def downgrade() -> None:
         connexion.execute(sql, *bulk_patches)
 
     # Deleting study_tags and tags
-    connexion.execute("DELETE FROM study_tag")
-    connexion.execute("DELETE FROM tag")
+    connexion.execute(sa.text("DELETE FROM study_tag"))
+    connexion.execute(sa.text("DELETE FROM tag"))
