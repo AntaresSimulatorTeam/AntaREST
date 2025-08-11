@@ -57,6 +57,7 @@ function StorageConfig() {
               studyId={study.id}
               areaId={areaId}
               storageId={nameToId(storageId)}
+              studyVersion={studyVersion}
             />
           ),
         },
