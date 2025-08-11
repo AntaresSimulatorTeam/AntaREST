@@ -392,7 +392,7 @@ class VariantStudyService(AbstractStorageService):
             raise UnsupportedOperationOnThisStudyType(study.id, "get", "variant")
 
         assert_permission(study, StudyPermissionType.READ)
-        return study
+        return cast(VariantStudy, study)
 
     def on_variant_advance(self, study: VariantStudy) -> None:
         """
@@ -446,7 +446,10 @@ class VariantStudyService(AbstractStorageService):
 
     def clear_snapshot(self, variant_study: Study) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
-        self._invalidate_snapshot(variant_study)
+        if isinstance(variant_study, VariantStudy):
+            self._invalidate_snapshot(variant_study)
+        else:
+            raise ValueError(f"Unexpected type {type(variant_study)}")
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     def has_children(self, study: VariantStudy) -> bool:
@@ -530,7 +533,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def get(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
@@ -547,7 +550,10 @@ class VariantStudyService(AbstractStorageService):
 
         Returns: study data formatted in json
         """
-        self._safe_generation(metadata, timeout=600)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata, timeout=600)
+        else:
+            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -560,7 +566,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def get_file(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         url: str = "",
         use_cache: bool = True,
     ) -> OriginalFile:
@@ -573,7 +579,10 @@ class VariantStudyService(AbstractStorageService):
 
         Returns: the file content and extension
         """
-        self._safe_generation(metadata, timeout=600)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata, timeout=600)
+        else:
+            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
         self.repository.refresh(metadata)
         return super().get_file(
             metadata=metadata,
@@ -752,7 +761,7 @@ class VariantStudyService(AbstractStorageService):
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
     @override
-    def create(self, study: VariantStudy) -> VariantStudy:
+    def create(self, study: Study) -> Study:
         """
         Create an empty new study.
         Args:
@@ -762,7 +771,7 @@ class VariantStudyService(AbstractStorageService):
         raise NotImplementedError()
 
     @override
-    def exists(self, metadata: VariantStudy) -> bool:
+    def exists(self, metadata: Study) -> bool:
         """
         Check if the study snapshot exists and is up-to-date.
 
@@ -771,6 +780,9 @@ class VariantStudyService(AbstractStorageService):
 
         Returns: `True` if the study is present on disk, `False` otherwise.
         """
+        if not isinstance(metadata, VariantStudy):
+            return False
+
         return (
             (metadata.snapshot is not None)
             and (metadata.snapshot.created_at >= metadata.updated_at)
@@ -780,7 +792,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def copy(
         self,
-        src_study: VariantStudy,
+        src_study: Study,
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
@@ -806,7 +818,10 @@ class VariantStudyService(AbstractStorageService):
 
         dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
 
-        file_study = self.get_raw(metadata=src_study)
+        if isinstance(src_study, VariantStudy):
+            file_study = self.get_raw(metadata=src_study)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(src_study)}")
 
         src_path = file_study.config.path
         dest_path = dest_study.path
@@ -865,7 +880,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def get_raw(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -877,7 +892,10 @@ class VariantStudyService(AbstractStorageService):
             output_dir: optional output dir override
         Returns: the config and study tree object
         """
-        self._safe_generation(metadata)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
 
         study_path = self.get_study_path(metadata)
         return self.study_factory.create_from_fs(
@@ -889,18 +907,21 @@ class VariantStudyService(AbstractStorageService):
         )
 
     @override
-    def get_study_sim_result(self, study: VariantStudy) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, study: Study) -> List[StudySimResultDTO]:
         """
         Get global result information
         Args:
             study: study
         Returns: study output data
         """
-        self._safe_generation(study, timeout=600)
+        if isinstance(study, VariantStudy):
+            self._safe_generation(study, timeout=600)
+        else:
+            raise TypeError(f"Expected {VariantStudy} but received {type(study)}")
         return super().get_study_sim_result(study=study)
 
     @override
-    def delete(self, metadata: VariantStudy) -> None:
+    def delete(self, metadata: Study) -> None:
         """
         Delete study
         Args:
@@ -913,7 +934,7 @@ class VariantStudyService(AbstractStorageService):
             remove_from_cache(self.cache, metadata.id)
 
     @override
-    def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
+    def delete_output(self, metadata: Study, output_id: str) -> None:
         """
         Delete a simulation output
         Args:
@@ -941,13 +962,17 @@ class VariantStudyService(AbstractStorageService):
     @override
     def export_study_flat(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
-        self._safe_generation(metadata)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
+
         path_study = Path(metadata.path)
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
@@ -964,7 +989,7 @@ class VariantStudyService(AbstractStorageService):
         )
 
     @override
-    def get_synthesis(self, metadata: VariantStudy) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
@@ -972,13 +997,16 @@ class VariantStudyService(AbstractStorageService):
         Returns: FileStudyTreeConfigDTO
 
         """
-        self._safe_generation(metadata)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
-    def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
+    def initialize_additional_data(self, variant_study: Study) -> bool:
         try:
             if self.exists(variant_study):
                 study = self.study_factory.create_from_fs(

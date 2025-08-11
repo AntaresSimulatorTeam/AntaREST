@@ -171,7 +171,7 @@ class RawStudyService(AbstractStorageService):
             return False
 
     @override
-    def exists(self, study: RawStudy) -> bool:
+    def exists(self, study: Study) -> bool:
         """
         Check if the study exists in the filesystem.
 
@@ -190,7 +190,7 @@ class RawStudyService(AbstractStorageService):
     @override
     def get_raw(
         self,
-        metadata: RawStudy,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -210,14 +210,14 @@ class RawStudyService(AbstractStorageService):
         )
 
     @override
-    def get_synthesis(self, metadata: RawStudy) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
-    def create(self, metadata: RawStudy) -> RawStudy:
+    def create(self, metadata: Study) -> Study:
         """
         Create a new empty study based on the given metadata.
 
@@ -248,7 +248,7 @@ class RawStudyService(AbstractStorageService):
     @override
     def copy(
         self,
-        src_meta: RawStudy,
+        src_meta: Study,
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
@@ -316,7 +316,7 @@ class RawStudyService(AbstractStorageService):
         return dest_study
 
     @override
-    def delete(self, metadata: RawStudy) -> None:
+    def delete(self, metadata: Study) -> None:
         """
         Delete study
         Args:
@@ -334,7 +334,7 @@ class RawStudyService(AbstractStorageService):
             raise StudyDeletionNotAllowed(metadata.id)
 
     @override
-    def delete_output(self, metadata: RawStudy, output_name: str) -> None:
+    def delete_output(self, metadata: Study, output_name: str) -> None:
         """
         Delete output folder
         Args:
@@ -391,7 +391,7 @@ class RawStudyService(AbstractStorageService):
     @override
     def export_study_flat(
         self,
-        metadata: RawStudy,
+        metadata: Study,
         dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
@@ -399,7 +399,10 @@ class RawStudyService(AbstractStorageService):
     ) -> None:
         try:
             if metadata.archived:
-                self.unarchive(metadata)  # may raise BadArchiveContent
+                if isinstance(metadata, RawStudy):
+                    self.unarchive(metadata)  # may raise BadArchiveContent
+                else:
+                    raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
             export_study_flat(
                 Path(metadata.path),
@@ -453,7 +456,7 @@ class RawStudyService(AbstractStorageService):
         with open(self.find_archive_path(study), mode="rb") as fh:
             self.import_study(study, fh)
 
-    def find_archive_path(self, study: RawStudy) -> Path:
+    def find_archive_path(self, study: Study) -> Path:
         """
         Fetch for archive path of a study if it exists else raise an incorrectly archived study.
 
@@ -485,7 +488,7 @@ class RawStudyService(AbstractStorageService):
         return Path(metadata.path)
 
     @override
-    def initialize_additional_data(self, raw_study: RawStudy) -> bool:
+    def initialize_additional_data(self, raw_study: Study) -> bool:
         try:
             study = self.study_factory.create_from_fs(
                 self.get_study_path(raw_study),
