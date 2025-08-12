@@ -18,7 +18,6 @@ from typing_extensions import override
 from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -41,10 +40,7 @@ class AbstractCreateXpansionMatrix(ICommand):
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={
-                "filename": self.filename,
-                "matrix": strip_matrix_protocol(self.matrix),
-            },
+            args={"filename": self.filename, "matrix": strip_matrix_protocol(self.matrix)},
             study_version=self.study_version,
         )
 
@@ -52,10 +48,6 @@ class AbstractCreateXpansionMatrix(ICommand):
     def get_inner_matrices(self) -> List[str]:
         assert_this(isinstance(self.matrix, str))
         return [strip_matrix_protocol(self.matrix)]
-
-    @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        raise NotImplementedError()
 
 
 class CreateXpansionWeight(AbstractCreateXpansionMatrix):
