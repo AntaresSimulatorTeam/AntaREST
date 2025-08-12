@@ -18,6 +18,7 @@ from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix
 from antarest.matrixstore.parsing import load_matrix, save_matrix
+from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def migrate_matrixstore(matrix_store_path: Path, format: InternalMatrixFormat) -
         logger.info("Matrix store migration starts")
 
         with db():
-            all_matrices = db.session.query(Matrix).all()
+            all_matrices = db.session.execute(select(Matrix)).scalars().all()
             version_mapping = {matrix.id: matrix.version for matrix in all_matrices}
 
         import multiprocessing
