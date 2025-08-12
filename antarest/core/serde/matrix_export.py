@@ -12,6 +12,7 @@
 from pathlib import Path
 from typing import Iterator, Protocol
 
+import numpy as np
 import pandas as pd
 from typing_extensions import override
 
@@ -23,6 +24,21 @@ try:
     import xlsxwriter  # type: ignore # noqa: F401
 except ImportError:
     raise ImportError("The 'xlsxwriter', 'openpyxl' and 'tables' packages are required") from None
+
+
+def write_dataframe_in_tsv_format(df: pd.DataFrame, path: Path, headers: bool = False) -> None:
+    """
+    Checks if the dataFrame could be represented with integer values.
+    If so, writes it this way as it is quicker and the file takes less place on the filesystem.
+    """
+
+    # Ignores errors if conversion fails as if it happens, `df_as_int` will simply be `df`.
+    df_as_int = df.astype(np.int64, errors="ignore")
+    try:
+        pd.testing.assert_frame_equal(df, df_as_int, check_dtype=False, check_exact=True)
+        df_as_int.to_csv(path, sep="\t", header=headers, index=False)
+    except AssertionError:
+        df.to_csv(path, sep="\t", header=headers, index=False)
 
 
 class DataframeStreamWriter(Protocol):
