@@ -288,7 +288,7 @@ class LoginService:
             logger.error("group %s not found by user %s", id, get_user_id())
             raise GroupNotFoundError()
 
-    def get_user(self, id: int) -> Optional[User]:
+    def get_user(self, id: int) -> Optional[Union[User, UserLdap]]:
         """
         Get user
         Permission: SADMIN, GADMIN (own group), USER (own user)
@@ -720,8 +720,8 @@ class LoginService:
 
             logger.info("user %s deleted by user %s", id, get_user_id())
 
-            user = self.get_user(id)
-            if isinstance(user, UserLdap):
+            user_to_delete = self.get_user(id)
+            if isinstance(user_to_delete, UserLdap):
                 return self.ldap.delete(id)
             else:
                 return self.users.delete(id)  # return for test purpose

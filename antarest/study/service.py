@@ -870,7 +870,7 @@ class StudyService:
             additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
-        raw = self.storage_service.raw_study_service.create(raw)
+        raw = cast(RawStudy, self.storage_service.raw_study_service.create(raw))
         self._save_study(raw, group_ids)
         self.event_bus.push(
             Event(
@@ -1286,7 +1286,7 @@ class StudyService:
             _ = study.workspace
             study_info = study.to_enhanced_json_summary()
 
-        if self.storage_service.variant_study_service.has_children(study):
+        if self.storage_service.variant_study_service.has_children(cast(VariantStudy, study)):
             if children:
                 self.storage_service.variant_study_service.walk_children(
                     study.id,
@@ -1351,7 +1351,7 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
         )
-        study = self.storage_service.raw_study_service.import_study(study, stream)
+        study = cast(RawStudy, self.storage_service.raw_study_service.import_study(study, stream))
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)
@@ -1660,7 +1660,7 @@ class StudyService:
     def check_errors(self, uuid: str) -> List[str]:
         study = self.get_study(uuid)
         self.assert_study_unarchived(study)
-        return self.storage_service.raw_study_service.check_errors(study)
+        return self.storage_service.raw_study_service.check_errors(cast(RawStudy, study))
 
     def get_all_areas(
         self,
@@ -1851,7 +1851,7 @@ class StudyService:
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.archive(study_to_archive)
+            self.storage_service.raw_study_service.archive(cast(RawStudy, study_to_archive))
             study_to_archive.archived = True
             self.repository.save(study_to_archive)
             self.event_bus.push(
@@ -1893,7 +1893,7 @@ class StudyService:
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.unarchive(study_to_archive)
+            self.storage_service.raw_study_service.unarchive(cast(RawStudy, study_to_archive))
             study_to_archive.archived = False
 
             os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
@@ -2145,7 +2145,7 @@ class StudyService:
 
         for study in studies:
             storage = self.storage_service.raw_study_service
-            storage.check_and_update_study_version_in_database(study)
+            storage.check_and_update_study_version_in_database(cast(RawStudy, study))
 
     def generate_timeseries(self, study: Study) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"

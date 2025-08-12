@@ -243,7 +243,7 @@ class JobResult(Base):
             for column in self.__table__.columns
             if column.key not in ["id", "study_id"]
         }
-        return JobResult(
+        return self.__class__(
             **data,
             id=str(uuid4()),
             study_id=study_id,

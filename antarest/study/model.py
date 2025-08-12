@@ -150,13 +150,13 @@ class StudyTag(Base):
     @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
-        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag}"
+        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag_label}"
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
-        tag = self.tag
+        tag = self.tag_label
         return f"{cls_name}({study_id=}, {tag=})"
 
 
