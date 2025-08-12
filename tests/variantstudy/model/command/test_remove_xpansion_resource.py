@@ -141,7 +141,7 @@ class TestRemoveXpansionResource:
 
         settings_file = empty_study.config.path / "user" / "expansion" / "candidates.ini"
         with open(settings_file, "w") as f:
-            f.write(f"[0]\n{profile} = {file_name}")
+            f.write(f"[0]\nname=cdt1\nlink=a - b\nannual-cost-per-mw=2\n{profile} = {file_name}")
 
         cmd = RemoveXpansionResource(
             resource_type=XpansionResourceFileType.CAPACITIES,
