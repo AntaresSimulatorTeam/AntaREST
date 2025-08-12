@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 from typing_extensions import override
@@ -28,6 +28,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     def __init__(self) -> None:
         self._content: Dict[str, pd.DataFrame] = {}
+        self.usage_providers : List[IMatrixUsageProvider] = []
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -49,7 +50,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     @override
     def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
-        raise NotImplementedError()
+        self.usage_providers.append(usage_provider)
 
     @override
     def get_matrices(self) -> list[MatrixMetadataDTO]:
