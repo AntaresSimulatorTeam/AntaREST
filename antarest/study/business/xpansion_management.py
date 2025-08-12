@@ -45,9 +45,6 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
-from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    get_resource_dir,
-)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -171,9 +168,8 @@ class XpansionManager:
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
         # checks the file doesn't already exist
-        keys = get_resource_dir(resource_type)
-        file_study = study.get_files()
-        if filename in file_study.tree.get(keys):
+        resources = study.get_study_dao().get_xpansion_resources(resource_type)
+        if filename in resources:
             raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
         # parses the content
