@@ -617,6 +617,10 @@ class InMemoryStudyDao(StudyDao):
         return list(self._xpansion_resources.get(resource_type, {}).keys())
 
     @override
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        return
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 

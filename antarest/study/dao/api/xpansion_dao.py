@@ -54,6 +54,10 @@ class ReadOnlyXpansionDao(ABC):
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod

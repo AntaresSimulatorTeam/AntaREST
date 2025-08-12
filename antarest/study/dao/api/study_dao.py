@@ -343,6 +343,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_xpansion_resources(resource_type)
 
     @override
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        return self._adaptee.checks_xpansion_resource_can_be_deleted(resource_type, filename)
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._adaptee.get_thematic_trimming()
 
