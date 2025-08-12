@@ -6,6 +6,8 @@ Create Date: 2025-08-12 10:50:39.475561
 
 """
 
+import sqlalchemy as sa
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -23,4 +25,8 @@ def upgrade():
 
 def downgrade():
     # Cannot restore deleted data
-    pass
+    with op.batch_alter_table("study_additional_data", schema=None) as batch_op:
+        batch_op.add_column(
+            sa.Column("patch", sa.String(), nullable=True),
+        )
+        batch_op.create_index(batch_op.f("ix_study_additional_data_patch"), ["patch"], unique=False)
