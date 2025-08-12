@@ -107,9 +107,9 @@ class InputSeriesMatrix(MatrixNode):
         else:
             # We're checking if the dataFrame could be represented with integer values.
             # If so, we'll write it this way as it would be quicker and the file takes less place on the fs.
-            df_as_int = df.astype(np.int32)
+            df_as_int = df.astype(np.int64)
             try:
-                pd.testing.assert_frame_equal(df, df_as_int, check_dtype=False)
+                pd.testing.assert_frame_equal(df, df_as_int, check_dtype=False, check_exact=True)
                 df_as_int.to_csv(self.config.path, sep="\t", header=False, index=False)
             except AssertionError:
                 df.to_csv(self.config.path, sep="\t", header=False, index=False)
