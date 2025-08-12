@@ -96,7 +96,6 @@ def test_study__additional_data(db_session: Session) -> None:
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")
 
-    patch = {"foo": "bar"}
     a = create_raw_study(
         name="a",
         version="820",
@@ -109,7 +108,7 @@ def test_study__additional_data(db_session: Session) -> None:
         workspace=DEFAULT_WORKSPACE_NAME,
         path="study",
         content_status=StudyContentStatus.WARNING,
-        additional_data=StudyAdditionalData(author="John Smith", horizon="2024-2050", patch=json.dumps(patch)),
+        additional_data=StudyAdditionalData(author="John Smith", horizon="2024-2050"),
     )
 
     repo.save(a)
@@ -119,7 +118,6 @@ def test_study__additional_data(db_session: Session) -> None:
     additional_data = repo.get_additional_data(a_id)
     assert additional_data.author == "John Smith"
     assert additional_data.horizon == "2024-2050"
-    assert json.loads(additional_data.patch) == patch
 
     # Check that the additional data is correctly updated
     new_patch = {"foo": "baz"}
