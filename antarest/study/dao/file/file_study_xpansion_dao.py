@@ -152,14 +152,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        file_study = self.get_file_study()
         file_checkers = {
             XpansionResourceFileType.CONSTRAINTS: self._is_constraints_file_used,
             XpansionResourceFileType.CAPACITIES: self._is_capa_file_used,
             XpansionResourceFileType.WEIGHTS: self._is_weights_file_used,
         }
 
-        if resource_type in file_checkers and file_checkers[resource_type](file_study, filename):
+        if resource_type in file_checkers and file_checkers[resource_type](filename):
             raise FileCurrentlyUsedInSettings(resource_type, filename)
 
     @override
@@ -255,30 +254,31 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             return ["user", "expansion", "weights"]
         raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
 
-    def _is_constraints_file_used(self, file_study: FileStudy, filename: str) -> bool:
-        settings = self._get_settings(file_study)
+    def _is_constraints_file_used(self, filename: str) -> bool:
+        settings = self._get_settings(self.get_file_study())
         if settings.additional_constraints == filename:
             return True
         return False
 
-    def _is_weights_file_used(self, file_study: FileStudy, filename: str) -> bool:
-        settings = self._get_settings(file_study)
+    def _is_weights_file_used(self, filename: str) -> bool:
+        settings = self._get_settings(self.get_file_study())
         if settings.yearly_weights == filename:
             return True
         return False
 
-    @staticmethod
-    def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        all_profiles = set()
-        for candidate in candidates.values():
-            for profile in [
-                "link-profile",
-                "already-installed-link-profile",
-                "direct-link-profile",
-                "indirect-link-profile",
-                "already-installed-direct-link-profile",
-                "already-installed-indirect-link-profile",
-            ]:
-                all_profiles.add(candidate.get(profile))
-        return filename in all_profiles
+    def _is_capa_file_used(self, filename: str) -> bool:
+        candidates = self.get_all_xpansion_candidates()
+        for candidate in candidates:
+            if candidate.link_profile == filename:
+                return True
+            if candidate.already_installed_link_profile == filename:
+                return True
+            if candidate.direct_link_profile == filename:
+                return True
+            if candidate.indirect_link_profile == filename:
+                return True
+            if candidate.already_installed_direct_link_profile == filename:
+                return True
+            if candidate.already_installed_indirect_link_profile == filename:
+                return True
+        return False
