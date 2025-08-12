@@ -655,3 +655,17 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         del self._xpansion_resources[resource_type][filename]
+
+    @override
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
+
+    @override
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        content = series.encode("utf-8")
+        self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
+
+    @override
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
+        content = series.encode("utf-8")
+        self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content

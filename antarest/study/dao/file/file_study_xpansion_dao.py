@@ -198,6 +198,18 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study = self.get_file_study()
         file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
 
+    @override
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
+
+    @override
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
+
     @staticmethod
     def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:
         try:

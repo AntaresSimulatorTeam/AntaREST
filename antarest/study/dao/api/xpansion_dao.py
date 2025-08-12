@@ -83,3 +83,15 @@ class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
