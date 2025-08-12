@@ -13,7 +13,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
 
 
 class ReadOnlyXpansionDao(ABC):
@@ -33,6 +33,14 @@ class ReadOnlyXpansionDao(ABC):
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_xpansion_settings(self) -> XpansionSettings:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
@@ -41,4 +49,8 @@ class XpansionDao(ReadOnlyXpansionDao):
 
     @abstractmethod
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
         raise NotImplementedError()
