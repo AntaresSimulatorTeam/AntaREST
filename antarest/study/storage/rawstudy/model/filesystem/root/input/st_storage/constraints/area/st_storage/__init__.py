@@ -34,6 +34,7 @@ class InputSTStorageConstraintsSTStorage(FolderNode):
                 self.matrix_mapper,
                 self.config.next_file(f"rhs_{constraint.id}.txt"),
                 default_empty=series.additional_constraints,
+                should_exist=False,
             )
 
         return children
