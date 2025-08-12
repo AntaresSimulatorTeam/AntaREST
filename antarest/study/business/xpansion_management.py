@@ -42,7 +42,6 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
-    checks_resource_deletion_is_allowed,
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
@@ -188,9 +187,8 @@ class XpansionManager:
         study.add_commands([command])
 
     def delete_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str) -> None:
-        file_study = study.get_files()
-        logger.info(f"Checking xpansion file '{filename}' is not used in study '{file_study.config.study_id}'")
-        checks_resource_deletion_is_allowed(resource_type, filename, file_study)
+        logger.info(f"Checking xpansion file '{filename}' is not used in study '{study.id}'")
+        study.get_study_dao().checks_xpansion_resource_can_be_deleted(resource_type, filename)
         logger.info(f"Deleting xpansion resource {filename} for study '{study.id}'")
         command = RemoveXpansionResource(
             resource_type=resource_type,
