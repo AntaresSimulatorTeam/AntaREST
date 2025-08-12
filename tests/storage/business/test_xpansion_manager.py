@@ -636,11 +636,10 @@ def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterfac
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
-    assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
-        "columns": [0],
-        "data": [[0.0]],
-        "index": [0],
-    }
+    assert (
+        xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1)
+        == b'{"index":[0],"columns":[0],"data":[[0.0]]}'
+    )
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 

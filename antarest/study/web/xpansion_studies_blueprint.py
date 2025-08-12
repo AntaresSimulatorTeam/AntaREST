@@ -17,7 +17,6 @@ from starlette.responses import Response
 
 from antarest.core.config import Config
 from antarest.core.model import StudyPermissionType
-from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
@@ -168,9 +167,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         study_interface = study_service.get_study_interface(study)
 
         output = study_service.xpansion_manager.get_resource_content(study_interface, resource_type, filename)
-
-        json_response = to_json(output)
-        return Response(content=json_response, media_type="application/json")
+        return Response(content=output, media_type="application/json")
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",

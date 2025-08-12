@@ -26,6 +26,7 @@ from antarest.core.exceptions import (
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
+from antarest.core.serde.json import to_json
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
@@ -139,7 +140,8 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
         file_study = self.get_file_study()
         content = file_study.tree.get(self.get_resource_dir(resource_type) + [filename])
-        assert isinstance(content, bytes)
+        if not isinstance(content, bytes):
+            return to_json(content)
         return content
 
     @override
