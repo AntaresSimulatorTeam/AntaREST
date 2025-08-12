@@ -35,20 +35,21 @@ export interface UsePromiseResponse<T> {
   reload: () => Promise<T>;
 }
 
-export interface UsePromiseParams {
+export interface UsePromiseParams<T> {
   resetDataOnReload?: boolean;
   resetErrorOnReload?: boolean;
+  onDataChange?: (data: T | undefined) => void;
   deps?: React.DependencyList;
 }
 
-type DepsOrParams = React.DependencyList | UsePromiseParams;
+type DepsOrParams<T> = React.DependencyList | UsePromiseParams<T>;
 
-function toParams(value: DepsOrParams = {}): UsePromiseParams {
+function toParams<T>(value: DepsOrParams<T> = {}): UsePromiseParams<T> {
   return isDependencyList(value) ? { deps: value } : value;
 }
 
-function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams): UsePromiseResponse<T> {
-  const { deps = [], resetDataOnReload, resetErrorOnReload } = toParams(params);
+function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams<T>): UsePromiseResponse<T> {
+  const { deps = [], resetDataOnReload, resetErrorOnReload, onDataChange } = toParams(params);
   const [data, setData] = useState<T>();
   const [status, setStatus] = useState<TPromiseStatus>(PromiseStatus.Idle);
   const [error, setError] = useState<Error | undefined>();
@@ -75,6 +76,7 @@ function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams): UsePromiseR
     // Reset
     if (resetDataOnReload) {
       setData(undefined);
+      onDataChange?.(undefined);
     }
     if (resetErrorOnReload) {
       setError(undefined);
@@ -84,6 +86,7 @@ function usePromise<T>(fn: () => Promise<T>, params?: DepsOrParams): UsePromiseR
       .then((res) => {
         if (active) {
           setData(res);
+          onDataChange?.(res);
           setStatus(PromiseStatus.Fulfilled);
           reloadPromise.current?.resolve(res);
         }

@@ -40,7 +40,6 @@ class GeneralFileData(AntaresBaseModel):
     first_january: WeekDay | None = Field(default=None, alias="january.1st")
     leap_year: bool | None = Field(default=None, alias="leapyear")
     nb_years: int | None = Field(default=None, alias="nbyears")
-    building_mode: BuildingMode | None = Field(default=None)
     selection_mode: bool | None = Field(default=None, alias="user-playlist")
     year_by_year: bool | None = Field(default=None, alias="year-by-year")
     simulation_synthesis: bool | None = Field(default=None, alias="synthesis")
@@ -64,7 +63,7 @@ class GeneralFileData(AntaresBaseModel):
 
     @classmethod
     def from_model(cls, config: GeneralConfig, study_version: StudyVersion) -> "GeneralFileData":
-        data = config.model_dump(exclude={"id"})
+        data = config.model_dump(exclude={"id", "building_mode"})
         if config.building_mode == BuildingMode.DERATED:
             data["derated"] = True
         else:
