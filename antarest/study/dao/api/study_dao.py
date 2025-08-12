@@ -29,6 +29,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
 )
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import XpansionCandidate
 from antarest.study.dao.api.adequacy_patch_parameters_dao import (
@@ -46,6 +47,7 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
+from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -62,6 +64,7 @@ class ReadOnlyStudyDao(
     ReadOnlyOptimizationPreferencesDao,
     ReadOnlyAdvancedParametersDao,
     ReadOnlyXpansionDao,
+    ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
 ):
     @abstractmethod
@@ -81,6 +84,7 @@ class StudyDao(
     OptimizationPreferencesDao,
     AdvancedParametersDao,
     XpansionDao,
+    ThematicTrimmingDao,
     AdequacyPatchParametersDao,
 ):
     """
@@ -312,6 +316,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)
+
+    @override
+    def get_thematic_trimming(self) -> ThematicTrimming:
+        return self._adaptee.get_thematic_trimming()
 
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
