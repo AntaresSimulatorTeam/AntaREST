@@ -20,7 +20,7 @@ import pytest
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -965,6 +965,37 @@ COMMANDS = [
         ),
         None,
         id="remove_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_THEMATIC_TRIMMING.value,
+            args=[
+                {"parameters": {"ov_cost": False, "sts_by_group": True, "dispatch_gen": False}},
+            ],
+            study_version=STUDY_VERSION_9_3,
+        ),
+        None,
+        id="update_thematic_trimming",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value,
+            args={"parameters": {"enable_adequacy_patch": False, "price_taking_order": "DENS"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_adequacy_patch_parameters",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_TIMESERIES_CONFIG.value,
+            args=[
+                {"parameters": {"thermal": {"number": 42}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_timeseries_configuration",
     ),
 ]
 

@@ -215,7 +215,6 @@ class StudyAdditionalData(Base):  # type:ignore
     author: Mapped[str] = mapped_column(String(255), default="Unknown")
     editor: Mapped[str] = mapped_column(String(255), default="Unknown")
     horizon: Mapped[Optional[str]] = mapped_column(String)
-    patch: Mapped[Optional[str]] = mapped_column(String(), index=True, nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:
@@ -223,7 +222,7 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         if not isinstance(other, StudyAdditionalData):
             return False
-        return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
+        return bool(other.author == self.author and other.horizon == self.horizon)
 
 
 class Study(Base):  # type: ignore
@@ -483,18 +482,6 @@ class WorkspaceDTO(AntaresBaseModel):
     name: str
     disk_name: Optional[str] = None
     model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
-
-
-class PatchStudy(AntaresBaseModel):
-    scenario: Optional[str] = None
-    doc: Optional[str] = None
-    status: Optional[str] = None
-    comments: Optional[str] = None
-    tags: List[str] = []
-
-
-class Patch(AntaresBaseModel, extra="allow"):
-    study: Optional[PatchStudy] = None
 
 
 class OwnerInfo(AntaresBaseModel):

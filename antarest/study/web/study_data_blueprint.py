@@ -25,7 +25,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
@@ -54,11 +53,19 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
 )
+from antarest.study.business.model.config.adequacy_patch_model import (
+    AdequacyPatchParameters,
+    AdequacyPatchParametersUpdate,
+)
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
 from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
+)
+from antarest.study.business.model.config.timeseries_config_model import (
+    TimeSeriesConfiguration,
+    TimeSeriesConfigurationUpdate,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -81,7 +88,7 @@ from antarest.study.business.model.sts_model import (
     STStorageCreation,
     STStorageUpdate,
 )
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, ThematicTrimmingUpdate
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
@@ -90,7 +97,6 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
@@ -397,18 +403,18 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.thematic_trimming_manager.get_field_values(study_interface)
+        return study_service.thematic_trimming_manager.get_thematic_trimming(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
-    def set_thematic_trimming(uuid: str, field_values: ThematicTrimming) -> None:
+    def set_thematic_trimming(uuid: str, field_values: ThematicTrimmingUpdate) -> ThematicTrimming:
         logger.info(f"Updating thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.thematic_trimming_manager.set_field_values(study_interface, field_values)
+        return study_service.thematic_trimming_manager.update_thematic_trimming(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/playlist/form",
@@ -651,49 +657,49 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/adequacypatch/form",
         tags=[APITag.study_data],
         summary="Get adequacy patch config values for form",
-        response_model=AdequacyPatchFormFields,
         response_model_exclude_none=True,
     )
-    def get_adequacy_patch_form_values(uuid: str) -> AdequacyPatchFormFields:
+    def get_adequacy_patch_form_values(uuid: str) -> AdequacyPatchParameters:
         logger.info(msg=f"Getting adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.adequacy_patch_manager.get_field_values(study_interface)
+        return study_service.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/adequacypatch/form",
         tags=[APITag.study_data],
         summary="Set adequacy patch config with values from form",
     )
-    def set_adequacy_patch_form_values(uuid: str, field_values: AdequacyPatchFormFields) -> None:
+    def set_adequacy_patch_form_values(
+        uuid: str, field_values: AdequacyPatchParametersUpdate
+    ) -> AdequacyPatchParameters:
         logger.info(f"Updating adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.adequacy_patch_manager.set_field_values(study_interface, field_values)
+        return study_service.adequacy_patch_manager.set_adequacy_patch_parameters(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
         summary="Gets the TS Generation config",
-        response_model=TimeSeriesConfigDTO,
         response_model_exclude_none=True,
     )
-    def get_timeseries_form_values(uuid: str) -> TimeSeriesConfigDTO:
+    def get_timeseries_form_values(uuid: str) -> TimeSeriesConfiguration:
         logger.info(msg=f"Getting Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.ts_config_manager.get_values(study_interface)
+        return study_service.ts_config_manager.get_timeseries_configuration(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
         summary="Sets the TS Generation config",
     )
-    def set_ts_generation_config(uuid: str, field_values: TimeSeriesConfigDTO) -> None:
+    def set_ts_generation_config(uuid: str, field_values: TimeSeriesConfigurationUpdate) -> TimeSeriesConfiguration:
         logger.info(f"Updating Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.ts_config_manager.set_values(study_interface, field_values)
+        return study_service.ts_config_manager.set_timeseries_configuration(study_interface, field_values)
 
     @bp.get(
         path="/table-schema/{table_type}",

@@ -536,7 +536,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    study_additional_data = StudyAdditionalData(horizon=10, author="foo", patch="bar")
+    study_additional_data = StudyAdditionalData(horizon=10, author="foo")
 
     cache = Mock()
 
