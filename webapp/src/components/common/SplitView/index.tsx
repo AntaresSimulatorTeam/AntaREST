@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useState, Children } from "react";
+import { Children, useState } from "react";
 import Split, { type SplitProps } from "react-split";
-import { Box } from "@mui/material";
+import { useUpdateEffect } from "react-use";
 import storage from "../../../services/utils/localStorage";
 import "./style.css";
 
@@ -25,6 +25,14 @@ export interface SplitViewProps {
   sizes?: SplitProps["sizes"];
   minSize?: SplitProps["minSize"];
   gutterSize?: SplitProps["gutterSize"];
+}
+
+function isValidSizes(sizes: unknown): sizes is number[] {
+  return (
+    Array.isArray(sizes) &&
+    sizes.every((size) => typeof size === "number") &&
+    sizes.reduce((sum, size) => sum + size, 0) === 100
+  );
 }
 
 /**
@@ -59,12 +67,12 @@ function SplitView({
   const localStorageKey = `splitSizes.${id}.${direction}`;
 
   const [activeSizes, setActiveSizes] = useState<SplitProps["sizes"]>(() => {
-    const savedSizes = storage.getItem(localStorageKey) as number[];
-    return savedSizes ?? (sizes || defaultSizes);
+    const savedSizes = storage.getItem(localStorageKey);
+    return isValidSizes(savedSizes) ? savedSizes : sizes || defaultSizes;
   });
 
-  useEffect(() => {
-    // Update localStorage whenever activeSizes change.
+  // Update localStorage whenever `activeSizes` change.
+  useUpdateEffect(() => {
     storage.setItem(localStorageKey, activeSizes);
   }, [activeSizes, localStorageKey]);
 
@@ -73,29 +81,23 @@ function SplitView({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box
-      sx={{
-        height: 1,
-        width: 1,
-        overflow: "auto",
+    <Split
+      key={direction} // Force re-render when direction changes.
+      className="SplitView"
+      direction={direction}
+      sizes={activeSizes ?? defaultSizes}
+      minSize={minSize}
+      onDragEnd={setActiveSizes} // Update sizes on drag end.
+      gutterSize={gutterSize}
+      style={{
+        display: "flex",
+        flexDirection: direction === "horizontal" ? "row" : "column",
+        height: "100%",
+        width: "100%",
       }}
     >
-      <Split
-        key={direction} // Force re-render when direction changes.
-        className="split"
-        direction={direction}
-        sizes={activeSizes ?? defaultSizes}
-        minSize={minSize}
-        onDragEnd={setActiveSizes} // Update sizes on drag end.
-        gutterSize={gutterSize}
-        style={{
-          display: "flex",
-          flexDirection: direction === "horizontal" ? "row" : "column",
-        }}
-      >
-        {children}
-      </Split>
-    </Box>
+      {children}
+    </Split>
   );
 }
 

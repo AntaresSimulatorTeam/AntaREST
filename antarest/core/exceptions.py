@@ -457,15 +457,6 @@ class IncorrectPathError(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
-class FileTooLargeError(HTTPException):
-    def __init__(self, estimated_size: int, maximum_size: int) -> None:
-        message = (
-            f"Cannot aggregate output data."
-            f" The expected size: {estimated_size}Mo exceeds the max supported size: {maximum_size}"
-        )
-        super().__init__(HTTPStatus.REQUEST_ENTITY_TOO_LARGE, message)
-
-
 class UrlNotMatchJsonDataError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

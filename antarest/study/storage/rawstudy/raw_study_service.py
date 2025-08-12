@@ -53,11 +53,20 @@ def copy_output_folders(
         if selected_outputs:  # if some outputs are selected, we copy only them
             for file_name in selected_outputs:
                 src_folder = src_output_path / file_name
-                dest_folder = dest_output_path / file_name
 
                 if src_folder.exists():
-                    shutil.copytree(src_folder, dest_folder)
+                    shutil.copytree(src_folder, dest_output_path / file_name)
                 else:
+                    # The src output could be archived
+                    zip_path = src_output_path / f"{file_name}.zip"
+                    seven_zip_path = src_output_path / f"{file_name}.7z"
+                    for archive_path in [zip_path, seven_zip_path]:
+                        if archive_path.exists():
+                            dest_output_path.mkdir(exist_ok=True)
+                            dest_path = dest_output_path / f"{file_name}{archive_path.suffix}"
+                            shutil.copy(archive_path, dest_path)
+                            return
+
                     raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
 
         else:  # we copy all the outputs if none is selected

@@ -32,3 +32,11 @@ class Output(FolderNode):
         if (self.config.path / "logs").exists():
             children["logs"] = BucketNode(self.matrix_mapper, self.config.next_file("logs"))
         return children
+
+    @override
+    def normalize(self) -> None:
+        pass  # no external store in this node
+
+    @override
+    def denormalize(self) -> None:
+        pass  # no external store in this node

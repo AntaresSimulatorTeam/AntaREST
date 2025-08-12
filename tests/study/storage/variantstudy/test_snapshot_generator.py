@@ -1087,10 +1087,11 @@ class TestSnapshotGenerator:
         }
 
         # Check: the matrices are denormalized (we should have TSV files).
+        # The matrices should be empty as they are default ones for the Simulator.
         snapshot_dir = variant_study.snapshot_dir
         assert (snapshot_dir / "input/links/north/south_parameters.txt").exists()
         array = np.loadtxt(snapshot_dir / "input/links/north/south_parameters.txt", delimiter="\t")
-        assert array.shape == (8760, 6)
+        assert array.size == 0
 
         assert (snapshot_dir / "input/thermal/series/south/gas_cluster/series.txt").exists()
         array = np.loadtxt(snapshot_dir / "input/thermal/series/south/gas_cluster/series.txt", delimiter="\t")

@@ -82,9 +82,10 @@ function TabWrapper({ study, tabList, divider, disablePadding = false }: Props) 
             p: 2,
             position: "relative",
             overflow: "auto",
-            ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
-              p: 0,
-            },
+            ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child)":
+              {
+                p: 0,
+              },
           },
           disablePadding && { p: 0 },
         ]}

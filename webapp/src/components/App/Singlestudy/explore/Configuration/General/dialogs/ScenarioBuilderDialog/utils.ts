@@ -31,6 +31,7 @@ export const SCENARIOS = [
   "hydroInitialLevels",
   "bindingConstraints",
   "hydroFinalLevels", // Since v9.2
+  "shortTermStorageInflows", // Since v9.3
 ] as const;
 
 export type ScenarioType = (typeof SCENARIOS)[number];
@@ -64,6 +65,14 @@ export type AreaConfig = Record<string, YearlyValues>;
 export type ClusterConfig = Record<string, YearlyValues>;
 
 /**
+ * Maps storage identifiers to their configurations within an area, similar to AreaConfig but used at the storage level.
+ *
+ * @example
+ * { "Storage1": { "0": 5, "1": "", "2": 20, "3": 30, "4": "" } }
+ */
+export type StorageConfig = Record<string, YearlyValues>;
+
+/**
  * Represents configuration for multiple clusters within each area.
  *
  * @example
@@ -74,7 +83,7 @@ export type ClusterConfig = Record<string, YearlyValues>;
  *   }
  * }
  */
-export type ClustersConfig = Record<string, ClusterConfig>;
+export type ClustersConfig = Record<string, ClusterConfig | StorageConfig>;
 
 /**
  * General configuration format for scenarios using single areas as elements.
@@ -122,6 +131,7 @@ export interface ScenarioConfig {
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints?: GenericScenarioConfig;
   hydroFinalLevels?: GenericScenarioConfig;
+  shortTermStorageInflows?: ClustersScenarioConfig;
 }
 
 type NonNullableRulesetConfig = {
@@ -141,6 +151,7 @@ export interface HandlerReturnTypes {
   hydroInitialLevels?: GenericScenarioConfig;
   bindingConstraints: GenericScenarioConfig;
   hydroFinalLevels: GenericScenarioConfig;
+  shortTermStorageInflows: ClustersHandlerReturn;
 }
 
 const handlers: {
@@ -159,6 +170,7 @@ const handlers: {
   hydroInitialLevels: handleGenericConfig,
   bindingConstraints: handleGenericConfig,
   hydroFinalLevels: handleGenericConfig,
+  shortTermStorageInflows: handleClustersConfig,
 };
 
 /**
