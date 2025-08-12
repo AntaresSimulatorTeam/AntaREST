@@ -13,7 +13,12 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 
 
 class ReadOnlyXpansionDao(ABC):
@@ -38,7 +43,11 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
         raise NotImplementedError()
 
 

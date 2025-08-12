@@ -32,7 +32,12 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.dao.api.adequacy_patch_parameters_dao import (
     AdequacyPatchParametersDao,
     ReadOnlyAdequacyPatchParametersDao,
@@ -326,8 +331,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_xpansion_settings()
 
     @override
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        return self._adaptee.checks_settings_are_correct(settings)
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return self._adaptee.checks_xpansion_settings_are_correct(settings)
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        return self._adaptee.get_xpansion_resources(resource_type)
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:

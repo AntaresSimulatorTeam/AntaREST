@@ -39,7 +39,12 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -132,6 +137,7 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
         self._xpansion_configuration_exists: bool = False
+        self._xpansion_resources: dict[XpansionResourceFileType, list[str]] = {}
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -599,8 +605,12 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings = settings
 
     @override
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         return
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        return self._xpansion_resources.get(resource_type, [])
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:

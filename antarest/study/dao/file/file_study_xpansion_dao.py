@@ -26,6 +26,7 @@ from antarest.core.exceptions import (
 )
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
+    XpansionResourceFileType,
     XpansionSensitivitySettings,
     XpansionSettings,
     XpansionSettingsUpdate,
@@ -115,7 +116,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study.tree.save(settings_content, ["user", "expansion", "settings"])
 
     @override
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         """
         Checks yearly_weights and additional_constraints fields.
         - If the attributes are given, it means that the user wants to select a file.
@@ -131,6 +132,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                 except ChildNotFoundError:
                     msg = f"Additional {file_type} file '{file}' does not exist"
                     raise XpansionFileNotFoundError(msg) from None
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        raise NotImplementedError
 
     @override
     def create_xpansion_configuration(self) -> None:
