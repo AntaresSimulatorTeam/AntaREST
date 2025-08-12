@@ -115,7 +115,7 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     )
     assert res.status_code == 422
     assert res.json()["exception"] == "RequestValidationError"
-    assert res.json()["description"] == "Input should be a valid integer"
+    assert res.json()["description"] == "Input should be a valid integer, got a number with a fractional part"
 
     # General form
 
