@@ -26,7 +26,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
-_CLUSTER_RELATED_SYMBOLS = "t", "r"
+_CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
 
 _HYDRO_LEVEL_PERCENT = 100
 
@@ -52,6 +52,8 @@ class ScenarioType(enum.StrEnum):
     - HYDRO_INITIAL_LEVEL: hydraulic Initial level scenario
     - HYDRO_FINAL_LEVEL: hydraulic Final level scenario
     - HYDRO_GENERATION_POWER: hydraulic Generation power scenario
+    - SHORT_TERM_STORAGE_INFLOWS: Short term storage inflows scenario
+
     """
 
     LOAD = "load"
@@ -65,6 +67,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_INITIAL_LEVEL = "hydroInitialLevels"
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
+    SHORT_TERM_STORAGE_INFLOWS = "shortTermStorageInflows"
 
     @override
     def __str__(self) -> str:
@@ -84,6 +87,7 @@ SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.HYDRO_INITIAL_LEVEL: "hl",
     ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
     ScenarioType.HYDRO_GENERATION_POWER: "hgp",
+    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
 }
 
 
@@ -153,6 +157,7 @@ def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
         links=((a1, a2) for a1 in areas for a2 in file_study.config.get_links(a1)),
         thermals={a: file_study.config.get_thermal_ids(a) for a in areas},
         renewables={a: file_study.config.get_renewable_ids(a) for a in areas},
+        storages={a: file_study.config.get_st_storage_ids(a) for a in areas},
         groups=groups,
         scenario_types=scenario_types,
     )

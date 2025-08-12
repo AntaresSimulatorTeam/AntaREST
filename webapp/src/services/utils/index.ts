@@ -200,7 +200,8 @@ export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
   return res;
 };
 
-export const sortByName = R.sortBy(R.compose(R.toLower, R.prop("name")));
+export const sortByName = <T extends { name: string }>(list: T[]) =>
+  R.sortBy(R.compose(R.toLower, R.prop("name")), list);
 
 /**
  * Converts a name string to an ID format.

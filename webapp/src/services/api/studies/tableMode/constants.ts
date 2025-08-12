@@ -142,7 +142,6 @@ export const TABLE_MODE_COLUMNS_BY_TYPE = {
   ],
   [ST_STORAGE_ADDITIONAL_CONSTRAINTS]: [
     // Since v9.2
-    "cluster",
     "variable",
     "operator",
     "enabled",

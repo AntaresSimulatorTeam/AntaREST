@@ -38,6 +38,123 @@ class ThematicTrimming(FormFieldsBaseModel):
     This table allows the user to enable or disable specific variables before running a simulation.
     """
 
+    ov_cost: bool = True
+    op_cost: bool = True
+    mrg_price: bool = True
+    co2_emis: bool = True
+    dtg_by_plant: bool = True
+    balance: bool = True
+    row_bal: bool = True
+    psp: bool = True
+    misc_ndg: bool = True
+    load: bool = True
+    h_ror: bool = True
+    wind: bool = True
+    h_stor: bool = True
+    h_pump: bool = True
+    h_lev: bool = True
+    h_infl: bool = True
+    h_ovfl: bool = True
+    h_val: bool = True
+    h_cost: bool = True
+    unsp_enrg: bool = True
+    spil_enrg: bool = True
+    lold: bool = True
+    lolp: bool = True
+    avl_dtg: bool = True
+    dtg_mrg: bool = True
+    max_mrg: bool = True
+    np_cost: bool = True
+    np_cost_by_plant: bool = True
+    nodu: bool = True
+    nodu_by_plant: bool = True
+    flow_lin: bool = True
+    ucap_lin: bool = True
+    loop_flow: bool = True
+    flow_quad: bool = True
+    cong_fee_alg: bool = True
+    cong_fee_abs: bool = True
+    marg_cost: bool = True
+    cong_prob_plus: bool = True
+    cong_prob_minus: bool = True
+    hurdle_cost: bool = True
+    # Since v8.1
+    res_generation_by_plant: Optional[bool] = None
+    # Since v8.3
+    dens: Optional[bool] = None
+    profit_by_plant: Optional[bool] = None
+    # Since v8.4
+    bc_marg_cost: Optional[bool] = None
+    # Since v8.6
+    sts_inj_by_plant: Optional[bool] = None
+    sts_withdrawal_by_plant: Optional[bool] = None
+    sts_lvl_by_plant: Optional[bool] = None
+    # Since v8.8
+    sts_cashflow_by_cluster: Optional[bool] = None
+    npcap_hours: Optional[bool] = None
+    # Since v9.1
+    sts_by_group: Optional[bool] = None
+    # Since v9.3
+    dispatch_gen: Optional[bool] = None
+    renewable_gen: Optional[bool] = None
+    # Introduced in v8.6 and removed in v9.1
+    psp_open_injection: Optional[bool] = None
+    psp_open_withdrawal: Optional[bool] = None
+    psp_open_level: Optional[bool] = None
+    psp_closed_injection: Optional[bool] = None
+    psp_closed_withdrawal: Optional[bool] = None
+    psp_closed_level: Optional[bool] = None
+    pondage_injection: Optional[bool] = None
+    pondage_withdrawal: Optional[bool] = None
+    pondage_level: Optional[bool] = None
+    battery_injection: Optional[bool] = None
+    battery_withdrawal: Optional[bool] = None
+    battery_level: Optional[bool] = None
+    other1_injection: Optional[bool] = None
+    other1_withdrawal: Optional[bool] = None
+    other1_level: Optional[bool] = None
+    other2_injection: Optional[bool] = None
+    other2_withdrawal: Optional[bool] = None
+    other2_level: Optional[bool] = None
+    other3_injection: Optional[bool] = None
+    other3_withdrawal: Optional[bool] = None
+    other3_level: Optional[bool] = None
+    other4_injection: Optional[bool] = None
+    other4_withdrawal: Optional[bool] = None
+    other4_level: Optional[bool] = None
+    other5_injection: Optional[bool] = None
+    other5_withdrawal: Optional[bool] = None
+    other5_level: Optional[bool] = None
+    # Introduced in v8.1 and removed in v9.3
+    misc_dtg_2: Optional[bool] = None
+    misc_dtg_3: Optional[bool] = None
+    misc_dtg_4: Optional[bool] = None
+    wind_offshore: Optional[bool] = None
+    wind_onshore: Optional[bool] = None
+    solar_concrt: Optional[bool] = None
+    solar_pv: Optional[bool] = None
+    solar_rooft: Optional[bool] = None
+    renw_1: Optional[bool] = None
+    renw_2: Optional[bool] = None
+    renw_3: Optional[bool] = None
+    renw_4: Optional[bool] = None
+    solar: Optional[bool] = None
+    nuclear: Optional[bool] = None
+    lignite: Optional[bool] = None
+    coal: Optional[bool] = None
+    gas: Optional[bool] = None
+    oil: Optional[bool] = None
+    mix_fuel: Optional[bool] = None
+    misc_dtg: Optional[bool] = None
+
+
+class ThematicTrimmingUpdate(FormFieldsBaseModel):
+    """
+    Represents an update of the thematic trimming.
+
+    Only not-None fields will be used to update the thematic trimming.
+    """
+
     ov_cost: Optional[bool] = None
     op_cost: Optional[bool] = None
     mrg_price: Optional[bool] = None
@@ -86,7 +203,6 @@ class ThematicTrimming(FormFieldsBaseModel):
     cong_prob_plus: Optional[bool] = None
     cong_prob_minus: Optional[bool] = None
     hurdle_cost: Optional[bool] = None
-    # since v8.1
     res_generation_by_plant: Optional[bool] = None
     misc_dtg_2: Optional[bool] = None
     misc_dtg_3: Optional[bool] = None
@@ -100,12 +216,9 @@ class ThematicTrimming(FormFieldsBaseModel):
     renw_2: Optional[bool] = None
     renw_3: Optional[bool] = None
     renw_4: Optional[bool] = None
-    # since v8.3
     dens: Optional[bool] = None
     profit_by_plant: Optional[bool] = None
-    # since v8.4
     bc_marg_cost: Optional[bool] = None
-    # since v8.6
     sts_inj_by_plant: Optional[bool] = None
     sts_withdrawal_by_plant: Optional[bool] = None
     sts_lvl_by_plant: Optional[bool] = None
@@ -136,12 +249,9 @@ class ThematicTrimming(FormFieldsBaseModel):
     other5_injection: Optional[bool] = None
     other5_withdrawal: Optional[bool] = None
     other5_level: Optional[bool] = None
-    # Since v8.8
     sts_cashflow_by_cluster: Optional[bool] = None
     npcap_hours: Optional[bool] = None
-    # Since v9.1
     sts_by_group: Optional[bool] = None
-    # Since v9.3
     dispatch_gen: Optional[bool] = None
     renewable_gen: Optional[bool] = None
 
@@ -330,12 +440,16 @@ def _get_v_9_1_exclude_fields() -> list[str]:
     ]
 
 
-def _check_version(thematic_trimming: ThematicTrimming, field: str, version: StudyVersion) -> None:
+def _check_version(
+    thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, field: str, version: StudyVersion
+) -> None:
     if getattr(thematic_trimming, field) is not None:
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
 
 
-def validate_against_version(thematic_trimming: ThematicTrimming, version: StudyVersion) -> None:
+def validate_thematic_trimming_against_version(
+    thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, version: StudyVersion
+) -> None:
     if version < STUDY_VERSION_8_1:
         for field in _get_v_8_1_fields():
             _check_version(thematic_trimming, field, version)
@@ -380,7 +494,9 @@ def _reset_field(thematic_trimming: ThematicTrimming, field: str) -> None:
     setattr(thematic_trimming, field, None)
 
 
-def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool) -> None:
+def initialize_thematic_trimming(
+    thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool
+) -> None:
     for field in _get_default_fields():
         _initialize_field_default(thematic_trimming, field, default_bool)
 
@@ -416,3 +532,10 @@ def initialize_with_version(thematic_trimming: ThematicTrimming, version: StudyV
             _initialize_field_default(thematic_trimming, field, default_bool)
         for field in _get_v_9_3_exclude_field():
             _reset_field(thematic_trimming, field)
+
+
+def update_thematic_trimming(trimming: ThematicTrimming, data: ThematicTrimmingUpdate) -> ThematicTrimming:
+    """
+    Updates the thematic trimming according to the provided update data.
+    """
+    return trimming.model_copy(update=data.model_dump(exclude_none=True))
