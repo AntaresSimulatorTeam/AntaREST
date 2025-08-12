@@ -105,7 +105,8 @@ class InputSeriesMatrix(MatrixNode):
         # This way, we can write the content quicker, and the file takes less place on the fs.
         if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
             self.config.path.touch(exist_ok=True)
-        write_dataframe_in_tsv_format(df, self.config.path)
+        else:
+            write_dataframe_in_tsv_format(df, self.config.path)
 
     @override
     def check_errors(
