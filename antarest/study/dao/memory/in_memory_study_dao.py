@@ -131,6 +131,7 @@ class InMemoryStudyDao(StudyDao):
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
+        self._xpansion_configuration_exists: bool = False
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -624,3 +625,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
         self._timeseries_config = config
+
+    @override
+    def create_xpansion_configuration(self) -> None:
+        self._xpansion_configuration_exists = True
+
+    @override
+    def delete_xpansion_configuration(self) -> None:
+        self._xpansion_configuration_exists = False

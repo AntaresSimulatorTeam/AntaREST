@@ -54,3 +54,11 @@ class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def create_xpansion_configuration(self) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_xpansion_configuration(self) -> None:
+        raise NotImplementedError()

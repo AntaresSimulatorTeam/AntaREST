@@ -731,6 +731,11 @@ class XpansionConfigurationAlreadyExists(Exception):
         super().__init__(HTTPStatus.CONFLICT, f"Xpansion configuration already exists for study {study_id}")
 
 
+class XpansionConfigurationDoesNotExist(Exception):
+    def __init__(self, study_id: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, f"Xpansion configuration does not exist for study {study_id}")
+
+
 class XpansionFileAlreadyExistsError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

@@ -20,6 +20,8 @@ from antarest.core.exceptions import (
     ChildNotFoundError,
     LinkNotFound,
     XpansionCandidateDeletionError,
+    XpansionConfigurationAlreadyExists,
+    XpansionConfigurationDoesNotExist,
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
@@ -129,6 +131,38 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                 except ChildNotFoundError:
                     msg = f"Additional {file_type} file '{file}' does not exist"
                     raise XpansionFileNotFoundError(msg) from None
+
+    @override
+    def create_xpansion_configuration(self) -> None:
+        file_study = self.get_file_study()
+        try:
+            file_study.tree.get(["user", "expansion"])
+        except ChildNotFoundError:
+            # We want to create the folder, so we expect this exception.
+            xpansion_configuration_data = {
+                "user": {
+                    "expansion": {
+                        "settings": serialize_xpansion_settings(XpansionSettings()),
+                        "sensitivity": {"sensitivity_in": {}},
+                        "candidates": {},
+                        "capa": {},
+                        "weights": {},
+                        "constraints": {},
+                    }
+                }
+            }
+
+            file_study.tree.save(xpansion_configuration_data)
+        else:
+            raise XpansionConfigurationAlreadyExists(file_study.config.study_id)
+
+    @override
+    def delete_xpansion_configuration(self) -> None:
+        file_study = self.get_file_study()
+        try:
+            file_study.tree.delete(["user", "expansion"])
+        except ChildNotFoundError:
+            raise XpansionConfigurationDoesNotExist(file_study.config.study_id)
 
     @staticmethod
     def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:
