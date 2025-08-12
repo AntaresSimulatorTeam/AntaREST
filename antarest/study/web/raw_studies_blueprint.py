@@ -16,6 +16,7 @@ import logging
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Any, List
 
+import numpy as np
 import pandas as pd
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
@@ -25,7 +26,7 @@ from antarest.core.config import Config
 from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
-from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
 from antarest.core.swagger import get_path_examples
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
@@ -80,6 +81,11 @@ class MatrixFormat(EnumIgnoreCase):
     PLAIN = "plain"
 
     def serialize_dataframe(self, dataframe: pd.DataFrame) -> Response:
+        np_type: type[np.int32] | type[np.int64] = np.int64
+        if self in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
+            np_type = np.int32
+        dataframe = simplify_dataframe(dataframe, np_type)
+
         if self == MatrixFormat.PLAIN:
             if dataframe.empty:
                 return Response(content=b"", media_type="application/octet-stream")
