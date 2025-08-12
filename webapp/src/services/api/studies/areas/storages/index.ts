@@ -16,73 +16,48 @@ import client from "@/services/api/client";
 import { format } from "@/utils/stringUtils";
 import type {
   AdditionalConstraint,
+  BaseStorageParams,
   CreateAdditionalConstraintsParams,
   DeleteAdditionalConstraintsParams,
   GetAdditionalConstraintParams,
-  GetAdditionalConstraintsParams,
   UpdateAdditionalConstraintsParams,
 } from "./types";
 
 const BASE_URL = "/v1/studies/{studyId}/areas/{areaId}/storages";
-const URL = `${BASE_URL}/{storageId}/additional-constraints`;
+const CONSTRAINTS_URL = `${BASE_URL}/{storageId}/additional-constraints`;
 
-////////////////////////////////////////////////////////////////
-// Additional Constraints
-////////////////////////////////////////////////////////////////
+const buildUrl = (params: BaseStorageParams & { constraintId?: string }) =>
+  format(params.constraintId ? `${CONSTRAINTS_URL}/{constraintId}` : CONSTRAINTS_URL, params);
 
-export async function getAdditionalConstraints({
-  studyId,
-  areaId,
-  storageId,
-}: GetAdditionalConstraintsParams) {
-  const url = format(URL, { studyId, areaId, storageId });
-  const { data } = await client.get<AdditionalConstraint[]>(url);
+export async function getAdditionalConstraints(params: BaseStorageParams) {
+  const { data } = await client.get<AdditionalConstraint[]>(buildUrl(params));
   return data;
 }
 
-export async function getAdditionalConstraint({
-  studyId,
-  areaId,
-  storageId,
-  constraintId,
-}: GetAdditionalConstraintParams) {
-  const url = format(`${URL}/{constraintId}`, {
-    studyId,
-    areaId,
-    storageId,
-    constraintId,
-  });
-  const { data } = await client.get<AdditionalConstraint>(url);
+export async function getAdditionalConstraint(params: GetAdditionalConstraintParams) {
+  const { data } = await client.get<AdditionalConstraint>(buildUrl(params));
   return data;
 }
 
-export async function createAdditionalConstraints({
-  studyId,
-  areaId,
-  storageId,
+export async function createAdditionalConstraints<T>({
   constraints,
-}: CreateAdditionalConstraintsParams) {
-  const url = format(URL, { studyId, areaId, storageId });
-  const { data } = await client.post<AdditionalConstraint[]>(url, constraints);
+  ...params
+}: CreateAdditionalConstraintsParams<T>) {
+  const { data } = await client.post<AdditionalConstraint[]>(buildUrl(params), constraints);
   return data;
 }
 
-export async function updateAdditionalConstraints({
-  studyId,
-  areaId,
-  storageId,
+export async function updateAdditionalConstraints<T>({
   constraints,
-}: UpdateAdditionalConstraintsParams) {
-  const url = format(URL, { studyId, areaId, storageId });
-  const { data } = await client.put<AdditionalConstraint[]>(url, constraints);
+  ...params
+}: UpdateAdditionalConstraintsParams<T>) {
+  const { data } = await client.put<AdditionalConstraint[]>(buildUrl(params), constraints);
   return data;
 }
 
 export async function deleteAdditionalConstraints({
-  studyId,
-  areaId,
   constraintIds,
+  ...params
 }: DeleteAdditionalConstraintsParams) {
-  const url = format(`${BASE_URL}/additional-constraints`, { studyId, areaId });
-  await client.delete(url, { data: constraintIds });
+  await client.delete(buildUrl(params), { data: constraintIds });
 }
