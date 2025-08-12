@@ -25,6 +25,7 @@ from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableD
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thematic_trimming_dao import FileStudyThematicTrimmingDao
 from antarest.study.dao.file.file_study_thermal_dao import FileStudyThermalDao
+from antarest.study.dao.file.file_study_timseries_config_dao import FileStudyTimeSeriesConfigDao
 from antarest.study.dao.file.file_study_xpansion_dao import FileStudyXpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -43,6 +44,7 @@ class FileStudyTreeDao(
     FileStudyAdvancedParametersDao,
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
+    FileStudyTimeSeriesConfigDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

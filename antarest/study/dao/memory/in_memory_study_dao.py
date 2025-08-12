@@ -24,6 +24,7 @@ from antarest.study.business.model.config.adequacy_patch_model import AdequacyPa
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -134,6 +135,8 @@ class InMemoryStudyDao(StudyDao):
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
+        # TimeSeries config
+        self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -613,3 +616,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
         self._adequacy_patch_parameters = parameters
+
+    @override
+    def get_timeseries_config(self) -> TimeSeriesConfiguration:
+        return self._timeseries_config
+
+    @override
+    def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
+        self._timeseries_config = config

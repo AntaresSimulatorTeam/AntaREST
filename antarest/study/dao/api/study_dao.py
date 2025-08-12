@@ -21,6 +21,7 @@ from antarest.study.business.model.config.adequacy_patch_model import AdequacyPa
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -49,6 +50,7 @@ from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, Renewable
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
+from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -66,6 +68,7 @@ class ReadOnlyStudyDao(
     ReadOnlyXpansionDao,
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
+    ReadOnlyTimeSeriesConfigDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -86,6 +89,7 @@ class StudyDao(
     XpansionDao,
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
+    TimeSeriesConfigDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -332,3 +336,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
         return self._adaptee.get_adequacy_patch_parameters()
+
+    @override
+    def get_timeseries_config(self) -> TimeSeriesConfiguration:
+        return self._adaptee.get_timeseries_config()
