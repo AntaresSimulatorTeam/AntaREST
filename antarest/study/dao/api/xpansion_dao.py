@@ -13,6 +13,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+import pandas as pd
+
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
@@ -47,7 +49,7 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
         raise NotImplementedError()
 
     @abstractmethod

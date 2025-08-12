@@ -335,7 +335,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.checks_xpansion_settings_are_correct(settings)
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
         return self._adaptee.get_xpansion_resource(resource_type, filename)
 
     @override

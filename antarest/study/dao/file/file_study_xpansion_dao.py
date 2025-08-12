@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -26,7 +27,6 @@ from antarest.core.exceptions import (
     XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
-from antarest.core.serde.json import to_json
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
@@ -42,6 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     serialize_xpansion_settings,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 
 class FileStudyXpansionDao(XpansionDao, ABC):
@@ -137,11 +138,15 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                     raise XpansionFileNotFoundError(msg) from None
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
         file_study = self.get_file_study()
-        content = file_study.tree.get(self.get_resource_dir(resource_type) + [filename])
-        if not isinstance(content, bytes):
-            return to_json(content)
+        node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
+
+        if isinstance(node, MatrixNode):
+            return node.parse_as_dataframe()
+
+        content = node.get()
+        assert isinstance(content, bytes)
         return content
 
     @override

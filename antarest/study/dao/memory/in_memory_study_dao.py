@@ -609,7 +609,7 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
         return self._xpansion_resources[resource_type][filename]
 
     @override
