@@ -15,7 +15,7 @@ import os
 from io import StringIO
 from pathlib import Path
 
-from sqlalchemy.orm import declarative_base, DeclarativeBase
+from sqlalchemy.orm import DeclarativeBase
 
 from alembic import command
 from alembic.config import Config

@@ -27,7 +27,7 @@ from antarest.core.interfaces.cache import (
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
-from antarest.study.model import RawStudy, StudyAdditionalData, Study
+from antarest.study.model import RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
