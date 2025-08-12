@@ -16,7 +16,6 @@ from typing import List
 from fastapi import UploadFile
 
 from antarest.core.exceptions import (
-    ChildNotFoundError,
     FileImportFailed,
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
@@ -225,10 +224,6 @@ class XpansionManager:
         file_study = study.get_files()
         return file_study.tree.get(get_resource_dir(resource_type) + [filename])
 
-    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> List[str]:
+    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
-        file_study = study.get_files()
-        try:
-            return sorted([filename for filename in file_study.tree.get(get_resource_dir(resource_type)).keys()])
-        except ChildNotFoundError:
-            return []
+        return study.get_study_dao().get_xpansion_resources(resource_type)
