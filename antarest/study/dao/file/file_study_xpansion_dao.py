@@ -193,6 +193,11 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         except ChildNotFoundError:
             raise XpansionConfigurationDoesNotExist(file_study.config.study_id)
 
+    @override
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
+
     @staticmethod
     def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:
         try:

@@ -651,3 +651,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_xpansion_configuration(self) -> None:
         self._xpansion_configuration_exists = False
+
+    @override
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        del self._xpansion_resources[resource_type][filename]

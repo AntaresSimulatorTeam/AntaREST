@@ -79,3 +79,7 @@ class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
     def delete_xpansion_configuration(self) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        raise NotImplementedError()
