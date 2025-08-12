@@ -12,15 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Delete as DeleteIcon } from "@mui/icons-material";
-import { Box, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
 import SimpleLoader from "@/components/common/loaders/SimpleLoader";
-import PropertiesView from "@/components/common/PropertiesView";
 import EmptyView from "@/components/common/page/EmptyView";
 import ViewWrapper from "@/components/common/page/ViewWrapper";
+import PropertiesView from "@/components/common/PropertiesView";
 import SplitView from "@/components/common/SplitView";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
@@ -33,6 +29,10 @@ import type { AdditionalConstraint } from "@/services/api/studies/areas/storages
 import { sortByName } from "@/services/utils";
 import { toError } from "@/utils/fnUtils";
 import { isSearchMatching } from "@/utils/stringUtils";
+import { Delete as DeleteIcon } from "@mui/icons-material";
+import { Box, List, ListItem, ListItemButton, ListItemText, Tooltip } from "@mui/material";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import AddConstraintDialog from "./AddConstraintDialog";
 import ConstraintForm from "./ConstraintForm";
 

@@ -12,15 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import globals from "globals";
 import eslint from "@eslint/js";
-import tseslint from "typescript-eslint";
+import jsdocPlugin from "eslint-plugin-jsdoc";
+import licenseHeaderPlugin from "eslint-plugin-license-header";
+import prettierPluginRecommended from "eslint-plugin-prettier/recommended";
 import reactPlugin from "eslint-plugin-react";
 import reactHookPlugin from "eslint-plugin-react-hooks";
-import jsdocPlugin from "eslint-plugin-jsdoc";
-import prettierPluginRecommended from "eslint-plugin-prettier/recommended";
-import licenseHeaderPlugin from "eslint-plugin-license-header";
 import reactRefreshPlugin from "eslint-plugin-react-refresh";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 export default [
   // Must be defined here to be applied to all configurations.
@@ -110,10 +110,11 @@ export default [
         {
           props: true,
           ignorePropertyModificationsForRegex: [
-            // For immer, 'acc' for
+            // For immer
             "^draft",
             // For `Array.prototype.reduce()`
             "acc",
+            "Acc$",
             "accumulator",
           ],
         },

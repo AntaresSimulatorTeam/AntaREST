@@ -12,24 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import { Tooltip } from "@mui/material";
-import * as R from "ramda";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import {
   isSelectionsValid,
   selectionsToNumbers,
   selectionsToString,
-  stringToSelection,
-} from "./utils";
+  stringToSelections,
+} from "@/utils/numberSelectionsUtils";
+import { TextField, Tooltip, type TextFieldProps } from "@mui/material";
+import * as R from "ramda";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
-interface Props {
-  maxYears: number;
-  onChange: (years: number[]) => void;
+export interface NumberSelectionsFEProps {
+  label?: TextFieldProps["label"];
+  maxNumber: number;
+  onChange?: (numbers: number[]) => void;
+  size?: TextFieldProps["size"];
+  sx?: TextFieldProps["sx"];
 }
 
-function YearsSelectionFE({ maxYears, onChange }: Props) {
+function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSelectionsFEProps) {
   const [selectionsValue, setSelectionsValue] = useState("");
   const [error, setError] = useState(false);
   const { t } = useTranslation();
@@ -43,22 +45,22 @@ function YearsSelectionFE({ maxYears, onChange }: Props) {
   };
 
   const handleBlur = () => {
-    const isValid = isSelectionsValid(selectionsValue, maxYears);
+    const isValid = isSelectionsValid(selectionsValue, maxNumber);
 
     setError(!isValid);
 
     if (!isValid) {
-      onChange([]);
+      onChange?.([]);
       return;
     }
 
-    const selections = stringToSelection(selectionsValue);
-    // If no selections, we return all years
-    const years =
-      selections.length === 0 ? R.range(1, maxYears + 1) : selectionsToNumbers(selections);
+    const selections = stringToSelections(selectionsValue);
+    // If no selections, we return all numbers
+    const numbers =
+      selections.length === 0 ? R.range(1, maxNumber + 1) : selectionsToNumbers(selections);
 
     setSelectionsValue(selectionsToString(selections));
-    onChange(years);
+    onChange?.(numbers);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -67,29 +69,24 @@ function YearsSelectionFE({ maxYears, onChange }: Props) {
 
   return (
     <Tooltip
-      title={
-        error
-          ? t("study.configuration.general.mcScenarioPlaylist.yearsSelection.error")
-          : selectionsValue.trim()
-      }
+      title={error ? t("form.field.numberSelections.invalid") : selectionsValue.trim()}
       placement="top"
       disableFocusListener
     >
       <span>
-        <StringFE
-          label={t("study.configuration.general.mcScenarioPlaylist.yearsSelection.label")}
-          placeholder={t(
-            "study.configuration.general.mcScenarioPlaylist.yearsSelection.placeholder",
-          )}
+        <TextField
+          label={label}
+          placeholder={t("form.field.numberSelections.help")}
           value={selectionsValue}
           onChange={handleChange}
           onBlur={handleBlur}
-          size="extra-small"
+          size={size}
           error={error}
+          sx={sx}
         />
       </span>
     </Tooltip>
   );
 }
 
-export default YearsSelectionFE;
+export default NumberSelectionsFE;

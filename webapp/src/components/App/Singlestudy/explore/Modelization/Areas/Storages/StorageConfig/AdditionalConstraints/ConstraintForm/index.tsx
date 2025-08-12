@@ -12,26 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import DatasetIcon from "@mui/icons-material/Dataset";
-import DeleteIcon from "@mui/icons-material/Delete";
-import { Button } from "@mui/material";
-import * as R from "ramda";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import OkDialog from "@/components/common/dialogs/OkDialog";
-import Fieldset from "@/components/common/Fieldset";
 import Form from "@/components/common/Form";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import SelectFE from "@/components/common/fieldEditors/SelectFE";
-import StringFE from "@/components/common/fieldEditors/StringFE";
-import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Matrix from "@/components/common/Matrix";
 import {
   getAdditionalConstraint,
   updateAdditionalConstraints,
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
-import { OPERATOR_OPTIONS, VARIABLE_OPTIONS } from "./constants";
+import DatasetIcon from "@mui/icons-material/Dataset";
+import DeleteIcon from "@mui/icons-material/Delete";
+import { Button } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import { useToggle } from "react-use";
+import Fields from "./Fields";
+import { pickFieldValues, type ConstraintValues } from "./utils";
 
 interface Props {
   studyId: string;
@@ -42,8 +38,6 @@ interface Props {
   onDelete: (constraintId: AdditionalConstraint["id"]) => void;
 }
 
-const pickFieldValues = R.pick(["name", "variable", "operator", "enabled"]);
-
 function ConstraintForm({
   studyId,
   areaId,
@@ -53,7 +47,7 @@ function ConstraintForm({
   onDelete,
 }: Props) {
   const { t } = useTranslation();
-  const [matrixDialogOpen, setMatrixDialogOpen] = useState(false);
+  const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
 
   ////////////////////////////////////////////////////////////////
   // Functions
@@ -74,17 +68,15 @@ function ConstraintForm({
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  type FieldValues = Awaited<ReturnType<typeof getDefaultValues>>;
-
-  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FieldValues>) => {
-    const { name, ...newValues } = dirtyValues;
+  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<ConstraintValues>) => {
+    const { name, occurrences, ...newValues } = dirtyValues;
 
     const updatedConstraints = await updateAdditionalConstraints({
       studyId,
       areaId,
       storageId,
       constraints: {
-        [constraintId]: newValues,
+        [constraintId]: { ...newValues, occurrences: occurrences?.filter(Boolean) },
       },
     });
 
@@ -107,58 +99,35 @@ function ConstraintForm({
         config={{ defaultValues: getDefaultValues }}
         enableUndoRedo
         extraActions={
-          <Button
-            variant="outlined"
-            color="error"
-            startIcon={<DeleteIcon />}
-            onClick={handleDeleteClick}
-          >
-            {t("global.delete")}
-          </Button>
-        }
-      >
-        {({ control }) => (
           <>
-            <Fieldset legend={t("study.modelization.storages.additionalConstraints.properties")}>
-              <StringFE
-                label={t("global.name")}
-                name="name"
-                control={control}
-                size="small"
-                disabled
-              />
-              <SelectFE
-                label={t("study.modelization.storages.additionalConstraints.variable")}
-                name="variable"
-                control={control}
-                options={VARIABLE_OPTIONS}
-              />
-              <SelectFE
-                label={t("study.modelization.storages.additionalConstraints.bounds")}
-                name="operator"
-                control={control}
-                options={OPERATOR_OPTIONS}
-              />
-              <SwitchFE label={t("global.enabled")} name="enabled" control={control} />
-            </Fieldset>
             <Button
               variant="contained"
               color="secondary"
               startIcon={<DatasetIcon />}
-              onClick={() => setMatrixDialogOpen(true)}
+              onClick={toggleMatrixDialogOpen}
             >
               {t("global.timeSeries")}
             </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteIcon />}
+              onClick={handleDeleteClick}
+            >
+              {t("global.delete")}
+            </Button>
           </>
-        )}
+        }
+      >
+        <Fields />
       </Form>
-
       {matrixDialogOpen && (
+        // TODO: Prevent close when is Submitting or changing values
         <OkDialog
           open={matrixDialogOpen}
-          onOk={() => setMatrixDialogOpen(false)}
+          onOk={toggleMatrixDialogOpen}
+          okButtonText={t("global.close")}
           fullScreen
-          sx={{ m: 3 }}
         >
           <Matrix
             title={t("global.timeSeries")}

@@ -52,6 +52,7 @@ import useDebounce from "../../../hooks/useDebounce";
 import useDebouncedState from "../../../hooks/useDebouncedState";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
 import { mergeSxProp } from "../../../utils/muiUtils";
+import CustomScrollbar from "../CustomScrollbar";
 import FormContext from "./FormContext";
 import type { SubmitHandlerPlus, UseFormReturnPlus } from "./types";
 import useFormApiPlus from "./useFormApiPlus";
@@ -374,51 +375,53 @@ function Form<TFieldValues extends FieldValues, TContext>({
               {rootError.message || t("form.submit.error")}
             </Box>
           )}
-          <Box className="Form__Footer__Actions" sx={{ display: "flex", alignItems: "center" }}>
-            {showSubmitButton && (
-              <>
-                <Button
-                  type="submit"
-                  disabled={!isSubmitAllowed}
-                  loading={isSubmitting}
-                  {...(miniSubmitButton
-                    ? {
-                        children: submitButtonIcon,
-                      }
-                    : {
-                        loadingPosition: "start",
-                        startIcon: submitButtonIcon,
-                        variant: "contained",
-                        children: submitButtonText || t("global.save"),
-                      })}
-                />
-                {enableUndoRedo && <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />}
-              </>
-            )}
-            {enableUndoRedo && (
-              <>
-                <Tooltip title={t("global.undo")}>
-                  <span>
-                    <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
-                      <UndoIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-                <Tooltip title={t("global.redo")}>
-                  <span>
-                    <IconButton onClick={redo} disabled={!canRedo || isSubmitting}>
-                      <RedoIcon />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </>
-            )}
-            {extraActions && (
-              <Box sx={{ ml: "auto", pl: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                {extraActions}
-              </Box>
-            )}
-          </Box>
+          <CustomScrollbar>
+            <Box className="Form__Footer__Actions" sx={{ display: "flex", alignItems: "center" }}>
+              {showSubmitButton && (
+                <>
+                  <Button
+                    type="submit"
+                    disabled={!isSubmitAllowed}
+                    loading={isSubmitting}
+                    {...(miniSubmitButton
+                      ? {
+                          children: submitButtonIcon,
+                        }
+                      : {
+                          loadingPosition: "start",
+                          startIcon: submitButtonIcon,
+                          variant: "contained",
+                          children: submitButtonText || t("global.save"),
+                        })}
+                  />
+                  {enableUndoRedo && <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />}
+                </>
+              )}
+              {enableUndoRedo && (
+                <>
+                  <Tooltip title={t("global.undo")}>
+                    <span>
+                      <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
+                        <UndoIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title={t("global.redo")}>
+                    <span>
+                      <IconButton onClick={redo} disabled={!canRedo || isSubmitting}>
+                        <RedoIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </>
+              )}
+              {extraActions && (
+                <Box sx={{ ml: "auto", pl: 2, display: "flex", alignItems: "center", gap: 1 }}>
+                  {extraActions}
+                </Box>
+              )}
+            </Box>
+          </CustomScrollbar>
         </Box>
       )}
     </Box>

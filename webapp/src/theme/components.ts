@@ -48,11 +48,6 @@ export default {
     defaultProps: {
       size: "small",
     },
-    styleOverrides: {
-      root: {
-        minWidth: 70,
-      },
-    },
   },
   MuiAutocomplete: {
     defaultProps: {
@@ -125,9 +120,8 @@ export default {
     },
   },
   MuiInputBase: {
-    defaultProps: {
-      size: "small",
-    },
+    // Setting the default size to 'small' prevents setting the size 'medium'
+    // defaultProps: { size: "small" },
     variants: [
       {
         props: { disabled: false },
@@ -255,5 +249,21 @@ export default {
         borderColor: theme.palette.divider,
       }),
     },
+  },
+  MuiDialog: {
+    variants: [
+      {
+        props: { fullScreen: true },
+        style: ({ theme }) => ({
+          top: 20,
+          bottom: 20,
+          left: 20,
+          right: 20,
+          ".MuiDialog-paperFullScreen": {
+            borderRadius: theme.spacing(1 / 2),
+          },
+        }),
+      },
+    ],
   },
 } satisfies CssVarsThemeOptions["components"];
