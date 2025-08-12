@@ -9,13 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from unittest.mock import Mock
 
 import pytest
 from pydantic import ValidationError
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.matrixstore.repository import MatrixContentRepository
 from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
