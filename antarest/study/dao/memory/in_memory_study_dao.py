@@ -38,7 +38,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -129,6 +129,7 @@ class InMemoryStudyDao(StudyDao):
         self._advanced_parameters: AdvancedParameters = AdvancedParameters()
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
+        self._xpansion_settings: XpansionSettings = XpansionSettings()
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -583,6 +584,18 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        return
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        return self._xpansion_settings
+
+    @override
+    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
+        self._xpansion_settings = settings
+
+    @override
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         return
 
     @override
