@@ -28,7 +28,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     def __init__(self) -> None:
         self._content: Dict[str, pd.DataFrame] = {}
-        self.usage_providers : List[IMatrixUsageProvider] = []
+        self.usage_providers: List[IMatrixUsageProvider] = []
 
     @override
     def create(self, data: pd.DataFrame) -> str:
