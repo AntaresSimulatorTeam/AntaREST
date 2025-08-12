@@ -101,7 +101,6 @@ class RawStudyService(AbstractStorageService):
         self.cleanup_thread.start()
 
         RawStudyMatrixUsageProvider(
-            config,
             StudyMetadataRepository(cache_service=cache),
             matrix_service=self.study_factory._matrix_mapper_factory._matrix_service,
         )

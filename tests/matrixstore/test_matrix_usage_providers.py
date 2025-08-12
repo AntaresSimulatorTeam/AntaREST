@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from datetime import datetime
+from pathlib import Path
 
 import pytest
 
-from antarest.core.config import Config
+from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
@@ -28,17 +30,13 @@ from antarest.study.storage.variantstudy.command_matrix_usage_provider import Co
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from tests.helpers import with_db_context
+from tests.helpers import create_raw_study, with_db_context
 
 
 @pytest.fixture
 @with_db_context
-def raw_studies_matrix_usage_provider(
-    core_config: Config, raw_study_service: RawStudyService, db_session, matrix_service: ISimpleMatrixService
-):
-    return RawStudyMatrixUsageProvider(
-        core_config, StudyMetadataRepository(raw_study_service.cache, db_session), matrix_service
-    )
+def raw_studies_matrix_usage_provider(raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService):
+    return RawStudyMatrixUsageProvider(StudyMetadataRepository(raw_study_service.cache), matrix_service)
 
 
 @pytest.fixture
@@ -54,35 +52,51 @@ def constants_matrix_usage_provider(matrix_service: MatrixService):
     return ConstantsMatrixUsageProvider(matrix_constants, matrix_service)
 
 
-def test_raw_studies_matrix_usage_provider(raw_studies_matrix_usage_provider):
+def test_raw_studies_matrix_usage_provider(
+    raw_studies_matrix_usage_provider: RawStudyMatrixUsageProvider, raw_study_service: RawStudyService, tmp_path
+):
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
     matrix_name3 = "matrix_name3"
     matrix_name4 = "matrix_name4"
     matrices_name = ["matrix_name1", "matrix_name2", "matrix_name3"]
 
-    raw_study_path = raw_studies_matrix_usage_provider.managed_studies_path
-    raw_study_path.mkdir()
-    (raw_study_path / f"{matrix_name1}.link").write_text(f"matrix://{matrix_name1}")
-    (raw_study_path / f"{matrix_name2}.link").write_text(f"matrix://{matrix_name2}")
-    (raw_study_path / f"{matrix_name3}.link").write_text(f"matrix://{matrix_name3}")
-    (raw_study_path / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
+    metadata_raw_study = create_raw_study(
+        id="study1",
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(tmp_path / "studies"),
+        version="720",
+        created_at=datetime.now(),
+        updated_at=datetime.now(),
+    )
 
-    matrices_references = raw_studies_matrix_usage_provider.get_matrix_usage()
-    matrices_references_id = [matrix_reference.matrix_id for matrix_reference in matrices_references]
-    matrices_references_id.sort()
+    with db():
+        raw_study = raw_study_service.create(metadata_raw_study)
 
-    assert matrices_name == matrices_references_id
+        (Path(raw_study.path) / f"{matrix_name1}.link").write_text(f"matrix://{matrix_name1}")
+        (Path(raw_study.path) / f"{matrix_name2}.link").write_text(f"matrix://{matrix_name2}")
+        (Path(raw_study.path) / f"{matrix_name3}.link").write_text(f"matrix://{matrix_name3}")
+        (Path(raw_study.path) / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
+
+        raw_studies_matrix_usage_provider.study_metadata_repo.save(metadata_raw_study)
+
+        matrices_references = raw_studies_matrix_usage_provider.get_matrix_usage()
+        matrices_references_id = [matrix_reference.matrix_id for matrix_reference in matrices_references]
+        matrices_references_id.sort()
+
+        assert matrices_name == matrices_references_id
 
 
 def test_command_matrix_usage_provider(
-    command_matrix_usage_provider: CommandMatrixUsageProvider, variant_study_repository: VariantStudyRepository
+    command_matrix_usage_provider: CommandMatrixUsageProvider,
+    variant_study_repository: VariantStudyRepository,
+    tmp_path,
 ):
     with db():
         study_id = "study_id"
 
         study_version = "880"
-        variant_study_repository.save(VariantStudy(id=study_id, version=study_version))
+        variant_study_repository.save(VariantStudy(id=study_id, version=study_version, path=tmp_path.as_posix()))
         matrices_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
         use_description = f"Used by command {matrices_id} from variant study {study_id}"
 

@@ -12,7 +12,6 @@
 
 from pathlib import Path
 from typing import Callable
-from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion

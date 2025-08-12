@@ -14,22 +14,19 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.core.config import DEFAULT_WORKSPACE_NAME, Config
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.repository import StudyFilter, StudyMetadataRepository
+from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
 
 logger = logging.getLogger(__name__)
 
 
 class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
-    def __init__(
-        self, config: Config, study_metadata_repo: StudyMetadataRepository, matrix_service: ISimpleMatrixService
-    ):
+    def __init__(self, study_metadata_repo: StudyMetadataRepository, matrix_service: ISimpleMatrixService):
         self.study_metadata_repo = study_metadata_repo
-        self.managed_studies_path: Path = config.storage.workspaces[DEFAULT_WORKSPACE_NAME].path
+        # self.managed_studies_path: Path = config.storage.workspaces[DEFAULT_WORKSPACE_NAME].path
         matrix_service.register_usage_provider(self)
 
     @override
@@ -37,7 +34,7 @@ class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
         logger.info("Getting all matrices used in raw studies")
         matrices_references = []
 
-        study_filter = StudyFilter(managed=True, variant=False)
+        study_filter = StudyFilter(managed=True, variant=False, access_permissions=AccessPermissions(is_admin=True))
 
         for study in self.study_metadata_repo.get_all(study_filter):
             study_id = study.id
