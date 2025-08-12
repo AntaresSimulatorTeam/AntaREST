@@ -149,16 +149,6 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         except ChildNotFoundError:
             return []
 
-    @staticmethod
-    def get_resource_dir(resource_type: XpansionResourceFileType) -> list[str]:
-        if resource_type == XpansionResourceFileType.CONSTRAINTS:
-            return ["user", "expansion", "constraints"]
-        elif resource_type == XpansionResourceFileType.CAPACITIES:
-            return ["user", "expansion", "capa"]
-        elif resource_type == XpansionResourceFileType.WEIGHTS:
-            return ["user", "expansion", "weights"]
-        raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
-
     @override
     def create_xpansion_configuration(self) -> None:
         file_study = self.get_file_study()
@@ -241,3 +231,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             return file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
         except ChildNotFoundError:
             return {}
+
+    @staticmethod
+    def get_resource_dir(resource_type: XpansionResourceFileType) -> list[str]:
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            return ["user", "expansion", "constraints"]
+        elif resource_type == XpansionResourceFileType.CAPACITIES:
+            return ["user", "expansion", "capa"]
+        elif resource_type == XpansionResourceFileType.WEIGHTS:
+            return ["user", "expansion", "weights"]
+        raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
