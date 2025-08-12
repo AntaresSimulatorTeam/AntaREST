@@ -93,6 +93,7 @@ class CommandName(Enum):
     UPDATE_GENERAL_CONFIG = "update_general_config"
     UPDATE_OPTIMIZATION_PREFERENCES = "update_optimization_preferences"
     UPDATE_ADVANCED_PARAMETERS = "update_advanced_parameters"
+    UPDATE_THEMATIC_TRIMMING = "update_thematic_trimming"
 
 
 def is_url_writeable(user_node: User, url: List[str]) -> bool:
