@@ -137,7 +137,7 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
         self._xpansion_configuration_exists: bool = False
-        self._xpansion_resources: dict[XpansionResourceFileType, list[str]] = {}
+        self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -609,8 +609,12 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+        return self._xpansion_resources[resource_type][filename]
+
+    @override
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
-        return self._xpansion_resources.get(resource_type, [])
+        return list(self._xpansion_resources.get(resource_type, {}).keys())
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:

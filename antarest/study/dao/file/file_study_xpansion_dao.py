@@ -134,6 +134,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                     raise XpansionFileNotFoundError(msg) from None
 
     @override
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+        file_study = self.get_file_study()
+        content = file_study.tree.get(self.get_resource_dir(resource_type) + [filename])
+        assert isinstance(content, bytes)
+        return content
+
+    @override
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
         file_study = self.get_file_study()
         try:

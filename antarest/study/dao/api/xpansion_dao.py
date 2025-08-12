@@ -47,6 +47,10 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes:
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
         raise NotImplementedError()
 

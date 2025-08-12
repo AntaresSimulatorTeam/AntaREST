@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import logging
 from typing import Any, Sequence
 
@@ -17,7 +16,7 @@ from fastapi import APIRouter, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, StudyPermissionType
+from antarest.core.model import StudyPermissionType
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
@@ -167,16 +166,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         logger.info(f"Getting xpansion {resource_type} file {filename} from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        output: JSON | bytes | str = study_service.xpansion_manager.get_resource_content(
-            study_interface, resource_type, filename
-        )
 
-        if isinstance(output, bytes):
-            try:
-                # try to decode string
-                output = output.decode("utf-8")
-            except (AttributeError, UnicodeDecodeError):
-                pass
+        output = study_service.xpansion_manager.get_resource_content(study_interface, resource_type, filename)
 
         json_response = to_json(output)
         return Response(content=json_response, media_type="application/json")

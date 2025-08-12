@@ -20,7 +20,6 @@ from antarest.core.exceptions import (
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
-from antarest.core.model import JSON
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -108,10 +107,7 @@ class XpansionManager:
         return study.get_study_dao().get_all_xpansion_candidates()
 
     def replace_candidate(
-        self,
-        study: StudyInterface,
-        candidate_name: str,
-        xpansion_candidate: XpansionCandidateCreation,
+        self, study: StudyInterface, candidate_name: str, xpansion_candidate: XpansionCandidateCreation
     ) -> XpansionCandidate:
         final_candidate = create_xpansion_candidate(xpansion_candidate)
         command = ReplaceXpansionCandidate(
@@ -169,12 +165,7 @@ class XpansionManager:
                 raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
         return command
 
-    def add_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        file: UploadFile,
-    ) -> None:
+    def add_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, file: UploadFile) -> None:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
@@ -196,12 +187,7 @@ class XpansionManager:
 
         study.add_commands([command])
 
-    def delete_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> None:
+    def delete_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str) -> None:
         file_study = study.get_files()
         logger.info(f"Checking xpansion file '{filename}' is not used in study '{file_study.config.study_id}'")
         checks_resource_deletion_is_allowed(resource_type, filename, file_study)
@@ -215,14 +201,10 @@ class XpansionManager:
         study.add_commands([command])
 
     def get_resource_content(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> JSON | bytes:
+        self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str
+    ) -> bytes:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
-        file_study = study.get_files()
-        return file_study.tree.get(get_resource_dir(resource_type) + [filename])
+        return study.get_study_dao().get_xpansion_resource(resource_type, filename)
 
     def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
