@@ -156,6 +156,14 @@ function Fields() {
                 />
               </span>
             </Tooltip>
+            {studyVersion >= 930 && (
+              <SwitchFE
+                label={t("study.configuration.adequacyPatch.redispatch")}
+                sx={{ textWrap: "nowrap" }}
+                name="redispatch"
+                control={control}
+              />
+            )}
           </Fieldset>
         </>
       )}

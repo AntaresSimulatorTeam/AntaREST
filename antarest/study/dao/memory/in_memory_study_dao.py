@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
@@ -130,6 +131,8 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
+        # AdequacyPatch parameters
+        self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -589,3 +592,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
         self._thematic_trimming = trimming
+
+    @override
+    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
+        return self._adequacy_patch_parameters
+
+    @override
+    def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
+        self._adequacy_patch_parameters = parameters
