@@ -34,7 +34,9 @@ class OptimizationManager:
         study_dao = study.get_study_dao()
         return study_dao.get_optimization_preferences()
 
-    def update_optimization_preferences(self, study: StudyInterface, config: OptimizationPreferencesUpdate) -> None:
+    def update_optimization_preferences(
+        self, study: StudyInterface, config: OptimizationPreferencesUpdate
+    ) -> OptimizationPreferences:
         """
         Set optimization preferences from the webapp form
         """
@@ -43,3 +45,4 @@ class OptimizationManager:
             parameters=config, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
+        return self.get_optimization_preferences(study)
