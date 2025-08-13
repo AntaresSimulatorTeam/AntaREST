@@ -256,61 +256,60 @@ class ThematicTrimmingUpdate(FormFieldsBaseModel):
     renewable_gen: Optional[bool] = None
 
 
-def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> list[str]:
-    if version < STUDY_VERSION_8_1:
-        fields = [
-            "ov_cost",
-            "op_cost",
-            "mrg_price",
-            "co2_emis",
-            "dtg_by_plant",
-            "balance",
-            "row_bal",
-            "psp",
-            "misc_ndg",
-            "load",
-            "h_ror",
-            "wind",
-            "solar",
-            "nuclear",
-            "lignite",
-            "coal",
-            "gas",
-            "oil",
-            "mix_fuel",
-            "misc_dtg",
-            "h_stor",
-            "h_pump",
-            "h_lev",
-            "h_infl",
-            "h_ovfl",
-            "h_val",
-            "h_cost",
-            "unsp_enrg",
-            "spil_enrg",
-            "lold",
-            "lolp",
-            "avl_dtg",
-            "dtg_mrg",
-            "max_mrg",
-            "np_cost",
-            "np_cost_by_plant",
-            "nodu",
-            "nodu_by_plant",
-            "flow_lin",
-            "ucap_lin",
-            "loop_flow",
-            "flow_quad",
-            "cong_fee_alg",
-            "cong_fee_abs",
-            "marg_cost",
-            "cong_prob_plus",
-            "cong_prob_minus",
-            "hurdle_cost",
-        ]
+def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> set[str]:
+    fields = {
+        "ov_cost",
+        "op_cost",
+        "mrg_price",
+        "co2_emis",
+        "dtg_by_plant",
+        "balance",
+        "row_bal",
+        "psp",
+        "misc_ndg",
+        "load",
+        "h_ror",
+        "wind",
+        "solar",
+        "nuclear",
+        "lignite",
+        "coal",
+        "gas",
+        "oil",
+        "mix_fuel",
+        "misc_dtg",
+        "h_stor",
+        "h_pump",
+        "h_lev",
+        "h_infl",
+        "h_ovfl",
+        "h_val",
+        "h_cost",
+        "unsp_enrg",
+        "spil_enrg",
+        "lold",
+        "lolp",
+        "avl_dtg",
+        "dtg_mrg",
+        "max_mrg",
+        "np_cost",
+        "np_cost_by_plant",
+        "nodu",
+        "nodu_by_plant",
+        "flow_lin",
+        "ucap_lin",
+        "loop_flow",
+        "flow_quad",
+        "cong_fee_alg",
+        "cong_fee_abs",
+        "marg_cost",
+        "cong_prob_plus",
+        "cong_prob_minus",
+        "hurdle_cost",
+    }
 
     if version >= STUDY_VERSION_8_1:
-        fields.extend(
+        fields.update(
             [
                 "res_generation_by_plant",
                 "misc_dtg_2",
@@ -329,13 +328,13 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
         )
 
     if version >= STUDY_VERSION_8_3:
-        fields.extend(["dens", "profit_by_plant"])
+        fields.update(["dens", "profit_by_plant"])
 
     if version >= STUDY_VERSION_8_4:
-        fields.append("bc_marg_cost")
+        fields.add("bc_marg_cost")
 
     if version >= STUDY_VERSION_8_6:
-        fields.extend(
+        fields.update(
             [
                 "sts_inj_by_plant",
                 "sts_withdrawal_by_plant",
@@ -371,10 +370,10 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
         )
 
     if version >= STUDY_VERSION_8_8:
-        fields.extend(["sts_cashflow_by_cluster", "npcap_hours"])
+        fields.update(["sts_cashflow_by_cluster", "npcap_hours"])
 
     if version >= STUDY_VERSION_9_1:
-        fields.append("sts_by_group")
+        fields.add("sts_by_group")
         for field in [
             "psp_open_injection",
             "psp_open_withdrawal",
@@ -407,7 +406,7 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
             fields.remove(field)
 
     if version >= STUDY_VERSION_9_3:
-        fields.extend(["dispatch_gen", "renewable_gen"])
+        fields.update(["dispatch_gen", "renewable_gen"])
         for field in [
             # replaces by dispatch_gen
             "nuclear",
@@ -445,9 +444,7 @@ def _check_version(
 def validate_thematic_trimming_against_version(
     thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, version: StudyVersion
 ) -> None:
-    forbidden_fields = set(thematic_trimming.model_fields) - set(
-        get_thematic_trimming_fields_according_to_version(version)
-    )
+    forbidden_fields = set(thematic_trimming.model_fields) - get_thematic_trimming_fields_according_to_version(version)
     for field in forbidden_fields:
         _check_version(thematic_trimming, field, version)
 
