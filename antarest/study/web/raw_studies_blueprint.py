@@ -82,6 +82,8 @@ class MatrixFormat(EnumIgnoreCase):
 
     def serialize_dataframe(self, dataframe: pd.DataFrame) -> Response:
         np_type: type[np.int32] | type[np.int64] = np.int64
+        # For textual formats, int64 and int32 are represented in the same way, so we use int64 to catch bigger numbers.
+        # For the arrow format, on the other hand, the size of an int32 is half the size of an int64 so we prefer int32.
         if self in {MatrixFormat.ARROW_COMPRESSED, MatrixFormat.ARROW_UNCOMPRESSED}:
             np_type = np.int32
         dataframe = simplify_dataframe(dataframe, np_type)
