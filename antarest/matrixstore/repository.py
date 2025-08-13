@@ -46,14 +46,15 @@ class MatrixDataSetRepository:
         return self._session
 
     def save(self, matrix_user_metadata: MatrixDataSet) -> MatrixDataSet:
-        res: bool = self.session.query(exists().where(MatrixDataSet.id == matrix_user_metadata.id)).scalar()
-        if res:
+        stmt = select(MatrixDataSet).where(MatrixDataSet.id == matrix_user_metadata.id)
+        existing = self.session.scalar(stmt)
+
+        if existing:
             matrix_user_metadata = self.session.merge(matrix_user_metadata)
         else:
             self.session.add(matrix_user_metadata)
-        self.session.commit()
 
-        logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
+        self.session.commit()
         return matrix_user_metadata
 
     def get(self, id_number: str) -> Optional[MatrixDataSet]:
@@ -90,7 +91,7 @@ class MatrixDataSetRepository:
         return datasets
 
     def delete(self, dataset_id: str) -> None:
-        dataset = self.session.query(MatrixDataSet).get(dataset_id)
+        dataset = self.session.get(MatrixDataSet, dataset_id)
         self.session.delete(dataset)
         self.session.commit()
 
@@ -111,33 +112,35 @@ class MatrixRepository:
         return self._session
 
     def save(self, matrix: Matrix) -> Matrix:
-        if self.session.query(exists().where(Matrix.id == matrix.id)).scalar():
-            self.session.merge(matrix)
+        existing = self.session.get(Matrix, matrix.id)
+
+        if existing:
+            merged_matrix = self.session.merge(matrix)
         else:
             self.session.add(matrix)
-        self.session.commit()
+            merged_matrix = matrix
 
-        logger.debug(f"Matrix {matrix.id} saved")
-        return matrix
+        self.session.commit()
+        return merged_matrix
 
     def get(self, matrix_hash: str) -> Optional[Matrix]:
         return self.session.get(Matrix, matrix_hash)
 
     def get_matrices(self) -> list[Matrix]:
-        matrices_list: list[Matrix] = self.session.query(Matrix).all()
-        return matrices_list
+        return list(self.session.scalars(select(Matrix)))
 
     def exists(self, matrix_hash: str) -> bool:
-        res: bool = self.session.query(exists().where(Matrix.id == matrix_hash)).scalar()
-        return res
+        result = self.session.get(Matrix, matrix_hash)
+        return result is not None
 
     def delete(self, matrix_hash: str) -> None:
-        if g := self.session.query(Matrix).get(matrix_hash):
-            self.session.delete(g)
+        matrix = self.session.get(Matrix, matrix_hash)
+        if matrix:
+            self.session.delete(matrix)
             self.session.commit()
+            logger.debug(f"Matrix {matrix_hash} deleted")
         else:
             logger.warning(f"Trying to delete matrix {matrix_hash}, but was not found in database!")
-        logger.debug(f"Matrix {matrix_hash} deleted")
 
 
 @dataclass(frozen=True)

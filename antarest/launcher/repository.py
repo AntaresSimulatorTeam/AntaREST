@@ -80,7 +80,7 @@ class JobResultRepository:
 
     def delete(self, id: str) -> None:
         logger.debug(f"Deleting JobResult {id}")
-        g = db.session.query(JobResult).get(id)
+        g = db.session.get(JobResult, id)
         db.session.delete(g)
         db.session.commit()
 
