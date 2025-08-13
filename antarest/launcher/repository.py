@@ -13,7 +13,7 @@
 import logging
 from typing import List, Optional
 
-from sqlalchemy import exists
+from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import JobResult
@@ -28,14 +28,18 @@ class JobResultRepository:
 
     def save(self, job: JobResult) -> JobResult:
         logger.debug(f"Saving JobResult {job.id}")
-        res = db.session.query(exists().where(JobResult.id == job.id)).scalar()
-        if res:
-            db.session.merge(job)
+
+        stmt = select(JobResult).where(JobResult.id == job.id)
+        existing_job = db.session.scalar(stmt)
+
+        if existing_job:
+            merged_job = db.session.merge(job)
         else:
             db.session.add(job)
+            merged_job = job
 
         db.session.commit()
-        return job
+        return merged_job
 
     def save_all(self, jobs: List[JobResult]) -> None:
         logger.debug(f"Saving {len(jobs)} new JobResults")
@@ -48,34 +52,31 @@ class JobResultRepository:
 
     def get_all(self, filter_orphan: bool = False, latest: Optional[int] = None) -> List[JobResult]:
         logger.debug("Retrieving all JobResults")
-        query = db.session.query(JobResult)
+
+        stmt = select(JobResult)
         if filter_orphan:
-            query = query.join(Study, JobResult.study_id == Study.id)
-        query = query.order_by(JobResult.creation_date.desc())
+            stmt = stmt.join(Study, JobResult.study_id == Study.id)
+
+        stmt = stmt.order_by(JobResult.creation_date.desc())
+
         if latest:
-            query = query.limit(latest)
-        job_results: List[JobResult] = query.all()
-        return job_results
+            stmt = stmt.limit(latest)
+
+        return list(db.session.scalars(stmt).all())
 
     def get_running(self) -> List[JobResult]:
-        query = db.session.query(JobResult).where(JobResult.completion_date == None)  # noqa: E711
-        job_results: List[JobResult] = query.all()
-        return job_results
+        stmt = select(JobResult).where(JobResult.completion_date.is_(None))
+        return list(db.session.scalars(stmt).all())
 
     def find_by_study(self, study_id: str) -> List[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
-        job_results: List[JobResult] = db.session.query(JobResult).filter(JobResult.study_id == study_id).all()
-        return job_results
+        stmt = select(JobResult).where(JobResult.study_id == study_id)
+        return list(db.session.scalars(stmt).all())
 
     def find_by_study_and_output_ids(self, study_id: str, output_ids: List[str]) -> List[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
-        job_results: List[JobResult] = (
-            db.session.query(JobResult)
-            .filter(JobResult.study_id == study_id)
-            .filter(JobResult.output_id.in_(output_ids))
-            .all()
-        )
-        return job_results
+        stmt = select(JobResult).where(JobResult.study_id == study_id).where(JobResult.output_id.in_(output_ids))
+        return list(db.session.scalars(stmt).all())
 
     def delete(self, id: str) -> None:
         logger.debug(f"Deleting JobResult {id}")
@@ -85,7 +86,6 @@ class JobResultRepository:
 
     def delete_by_study_id(self, study_id: str) -> None:
         logger.debug(f"Deleting JobResults from_study {study_id}")
-        jobs = db.session.query(JobResult).filter(JobResult.study_id == study_id).all()
-        for job in jobs:
-            db.session.delete(job)
+        stmt = delete(JobResult).where(JobResult.study_id == study_id)
+        db.session.execute(stmt)
         db.session.commit()
