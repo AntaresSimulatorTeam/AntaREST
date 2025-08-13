@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from filelock import FileLock
 from pandas import util
-from sqlalchemy import exists, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat

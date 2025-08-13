@@ -12,10 +12,10 @@
 
 import datetime
 import enum
-from typing import Any, List, Optional, Sequence, Tuple, cast, Union
+from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, func, not_, or_, select, sql, exists, delete, Select, false, CompoundSelect
+from sqlalchemy import and_, delete, exists, func, not_, or_, select, sql
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
@@ -232,10 +232,10 @@ class StudyMetadataRepository:
         return self.session.get(StudyAdditionalData, study_id)
 
     def get_all(
-            self,
-            study_filter: StudyFilter = StudyFilter(),
-            sort_by: Optional[StudySortBy] = None,
-            pagination: StudyPagination = StudyPagination(),
+        self,
+        study_filter: StudyFilter = StudyFilter(),
+        sort_by: Optional[StudySortBy] = None,
+        pagination: StudyPagination = StudyPagination(),
     ) -> Sequence[Study]:
         """
         Retrieve studies based on specified filters, sorting, and pagination.
@@ -298,8 +298,8 @@ class StudyMetadataRepository:
         return q.count()
 
     def _search_studies(
-            self,
-            study_filter: StudyFilter,
+        self,
+        study_filter: StudyFilter,
     ) -> Query[Study]:
         """
         Build a `SQL Query` based on specified filters.
