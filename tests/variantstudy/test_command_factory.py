@@ -18,7 +18,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.service import MatrixService, ISimpleMatrixService
+from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
