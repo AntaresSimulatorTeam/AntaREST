@@ -13,7 +13,7 @@
 import logging
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, cast
+from typing import TYPE_CHECKING, Any, Dict, List, cast
 
 import yaml
 from typing_extensions import override
@@ -23,12 +23,14 @@ from antarest.core.model import JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this
 from antarest.launcher.extensions.interface import ILauncherExtension
-from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.utils import is_managed
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    from antarest.study.service import StudyService
 
 
 def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> Dict[str, bool]:
@@ -94,7 +96,7 @@ def _prepare_study_for_adq_patch(study: FileStudy, adq_patch_config: JSON) -> Di
 class AdequacyPatchExtension(ILauncherExtension):
     EXTENSION_NAME = "adequacy_patch"
 
-    def __init__(self, study_service: StudyService, config: Config):
+    def __init__(self, study_service: "StudyService", config: Config):
         self.study_service = study_service
 
     @override

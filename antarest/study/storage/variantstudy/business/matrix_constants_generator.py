@@ -27,6 +27,9 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
     NULL_MATRIX,
     NULL_SCENARIO_MATRIX,
 )
+from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
+    ConstantsMatrixUsageProvider,
+)
 
 # TODO: put index into variable
 
@@ -72,6 +75,7 @@ class GeneratorMatrixConstants:
         self.hashes: Dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
         self._lock_dir = tempfile.gettempdir()
+        ConstantsMatrixUsageProvider(self, self.matrix_service)
 
     def init_constant_matrices(
         self,
