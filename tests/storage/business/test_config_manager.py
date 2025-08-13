@@ -15,7 +15,7 @@ from typing import Any
 import pytest
 from antares.study.version import StudyVersion
 
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, initialize_thematic_trimming
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
@@ -111,7 +111,4 @@ def test_thematic_trimming_config(
     study.file_study.tree.save(ini_content, ["settings", "generaldata"])
 
     actual = thematic_trimming_manager.get_thematic_trimming(study)
-    initialize_thematic_trimming(
-        expected, version, ini_content.get("variables selection", {}).get("selected_vars_reset", True)
-    )
     assert actual == expected
