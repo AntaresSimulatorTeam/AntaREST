@@ -11,12 +11,20 @@
 # This file is part of the Antares project.
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 
 from antarest.core.config import DEFAULT_WORKSPACE_NAME
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import MatrixReference
+from antarest.login.model import Group
+from antarest.login.repository import GroupRepository
+from antarest.login.service import LoginService
+from antarest.login.utils import current_user_context
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
+from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, MatrixReference
+from antarest.matrixstore.repository import MatrixDataSetRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
@@ -50,6 +58,30 @@ def command_matrix_usage_provider(variant_study_repository: VariantStudyReposito
 def constants_matrix_usage_provider(matrix_service: MatrixService):
     matrix_constants = GeneratorMatrixConstants(matrix_service)
     return ConstantsMatrixUsageProvider(matrix_constants, matrix_service)
+
+
+@pytest.fixture
+@with_db_context
+def dataset_usage_provider(dataset_repo: MatrixDataSetRepository, matrix_service: MatrixService):
+    def _create_dataset_usage_provider() -> "IMatrixUsageProvider":
+        repo_dataset = dataset_repo
+
+        class DatasetUsageProvider(IMatrixUsageProvider):
+            def __init__(self, data_matrix_service: MatrixService) -> None:
+                data_matrix_service.register_usage_provider(self)
+
+            def get_matrix_usage(self) -> list[MatrixReference]:
+                datasets = repo_dataset.get_all_datasets()
+
+                return [
+                    MatrixReference(matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}")
+                    for dataset in datasets
+                    for matrix in dataset.matrices
+                ]
+
+        return DatasetUsageProvider(matrix_service)
+
+    return _create_dataset_usage_provider()
 
 
 def test_raw_studies_matrix_usage_provider(
@@ -140,5 +172,44 @@ def test_constants_matrix_usage_provider(constants_matrix_usage_provider: Consta
     constants_reference = constants_matrix_usage_provider.get_matrix_usage()
     matrix_ref_ids = [ref.matrix_id for ref in constants_reference]
     matrix_ref_ids.sort()
-    for constant_id, matrix_ref_id in zip(constants, constants_reference):
-        assert constant_id, matrix_ref_id
+
+    constants_id = [valeur for dictio in constants for valeur in dictio.values()]
+
+    constants_id.sort()
+    assert constants_id == matrix_ref_ids
+
+
+def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user):
+    with db():
+        group_repo = GroupRepository()
+        group = group_repo.save(Group(name="groupA", id="groupA"))
+
+        matrix_service.user_service = Mock(spec=LoginService)
+
+        dataset_a = MatrixDataSetUpdateDTO(
+            name="datasetA",
+            public=True,
+            groups=[group.name],
+            created_at=datetime.now(),
+            updated_at=datetime.now(),
+        )
+
+        matrix_m = matrix_service.create(pd.DataFrame([[0]]))
+        matrices = [MatrixInfoDTO(id=matrix_m, name="A")]
+
+        with current_user_context(admin_user):
+            matrix_service.user_service.get_group.return_value = Group(id="foo", name="A")
+
+            dataset_id = matrix_service.create_dataset(dataset_a, matrices)
+
+            use_description = f"Used by dataset {dataset_id.id}"
+
+            matrix_service.usage_providers.append(matrix_service._create_dataset_usage_provider())
+
+            matrices_reference = [
+                reference
+                for usage_prov in matrix_service.usage_providers
+                for reference in usage_prov.get_matrix_usage()
+            ]
+
+            assert matrices_reference == [MatrixReference(matrix_id=matrix_m, use_description=use_description)] * 4

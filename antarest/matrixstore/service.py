@@ -219,7 +219,7 @@ class MatrixService(ISimpleMatrixService):
         self.task_service = task_service
         self.config = config
         self.usage_providers: List[IMatrixUsageProvider] = []
-        self.usage_providers.append(self.create_dataset_usage_provider())
+        self.usage_providers.append(self._create_dataset_usage_provider())
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -566,18 +566,14 @@ class MatrixService(ISimpleMatrixService):
         )
 
     def get_used_matrices(self) -> Set[str]:
-        """Return all matrices used in raw studies, variant studies and datasets"""
-        # renvoie toujours un set
-        # datasets_matrices = self.get_datasets_matrices()
-        # studies_matrices = self.get_studies_matrices()
-        # return studies_matrices | datasets_matrices
+        """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
         return {
             matrix_reference.matrix_id
             for provider in self.usage_providers
             for matrix_reference in provider.get_matrix_usage()
         }
 
-    def create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
+    def _create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
         repo_dataset = self.repo_dataset
 
         class DatasetUsageProvider(IMatrixUsageProvider):

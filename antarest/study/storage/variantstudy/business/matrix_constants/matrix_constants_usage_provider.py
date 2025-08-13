@@ -9,16 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing_extensions import override
+from typing_extensions import TYPE_CHECKING, override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
-from antarest.matrixstore.service import MatrixService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.matrixstore.service import ISimpleMatrixService
+
+if TYPE_CHECKING:
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class ConstantsMatrixUsageProvider(IMatrixUsageProvider):
-    def __init__(self, matrix_constants: GeneratorMatrixConstants, matrix_service: MatrixService):
+    def __init__(self, matrix_constants: "GeneratorMatrixConstants", matrix_service: ISimpleMatrixService):
         self.matrix_constants = matrix_constants
         matrix_service.register_usage_provider(self)
 

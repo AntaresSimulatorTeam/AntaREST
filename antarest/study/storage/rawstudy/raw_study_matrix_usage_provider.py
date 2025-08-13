@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
     def __init__(self, study_metadata_repo: StudyMetadataRepository, matrix_service: ISimpleMatrixService):
         self.study_metadata_repo = study_metadata_repo
-        # self.managed_studies_path: Path = config.storage.workspaces[DEFAULT_WORKSPACE_NAME].path
         matrix_service.register_usage_provider(self)
 
     @override
