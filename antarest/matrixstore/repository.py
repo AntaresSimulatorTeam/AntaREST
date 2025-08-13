@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from filelock import FileLock
 from pandas import util
-from sqlalchemy import exists
+from sqlalchemy import exists, select
 from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
@@ -60,7 +60,9 @@ class MatrixDataSetRepository:
         return self.session.get(MatrixDataSet, id_number)
 
     def get_all_datasets(self) -> List[MatrixDataSet]:
-        matrix_datasets: List[MatrixDataSet] = self.session.query(MatrixDataSet).all()
+        stmt = select(MatrixDataSet)
+        result = self.session.execute(stmt)
+        matrix_datasets: List[MatrixDataSet] = list(result.scalars().all())
         return matrix_datasets
 
     def query(
@@ -78,12 +80,13 @@ class MatrixDataSetRepository:
         Returns:
             the list of metadata per user, matching the query
         """
-        query = self.session.query(MatrixDataSet)
+        stmt = select(MatrixDataSet)
         if name is not None:
-            query = query.filter(MatrixDataSet.name.ilike(f"%{name}%"))
+            stmt = stmt.where(MatrixDataSet.name.ilike(f"%{name}%"))
         if owner is not None:
-            query = query.filter(MatrixDataSet.owner_id == owner)
-        datasets: List[MatrixDataSet] = query.distinct().all()
+            stmt = stmt.where(MatrixDataSet.owner_id == owner)
+        result = self.session.execute(stmt.distinct())
+        datasets: List[MatrixDataSet] = list(result.scalars().all())
         return datasets
 
     def delete(self, dataset_id: str) -> None:
