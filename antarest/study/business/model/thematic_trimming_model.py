@@ -256,8 +256,8 @@ class ThematicTrimmingUpdate(FormFieldsBaseModel):
     renewable_gen: Optional[bool] = None
 
 
-def _get_default_fields() -> list[str]:
-    return [
+def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> set[str]:
+    fields = {
         "ov_cost",
         "op_cost",
         "mrg_price",
@@ -306,138 +306,132 @@ def _get_default_fields() -> list[str]:
         "cong_prob_plus",
         "cong_prob_minus",
         "hurdle_cost",
-    ]
+    }
 
+    if version >= STUDY_VERSION_8_1:
+        fields.update(
+            [
+                "res_generation_by_plant",
+                "misc_dtg_2",
+                "misc_dtg_3",
+                "misc_dtg_4",
+                "wind_offshore",
+                "wind_onshore",
+                "solar_concrt",
+                "solar_pv",
+                "solar_rooft",
+                "renw_1",
+                "renw_2",
+                "renw_3",
+                "renw_4",
+            ]
+        )
 
-def _get_v_8_1_fields() -> list[str]:
-    return [
-        "res_generation_by_plant",
-        "misc_dtg_2",
-        "misc_dtg_3",
-        "misc_dtg_4",
-        "wind_offshore",
-        "wind_onshore",
-        "solar_concrt",
-        "solar_pv",
-        "solar_rooft",
-        "renw_1",
-        "renw_2",
-        "renw_3",
-        "renw_4",
-    ]
+    if version >= STUDY_VERSION_8_3:
+        fields.update(["dens", "profit_by_plant"])
 
+    if version >= STUDY_VERSION_8_4:
+        fields.add("bc_marg_cost")
 
-def _get_v_8_3_fields() -> list[str]:
-    return ["dens", "profit_by_plant"]
+    if version >= STUDY_VERSION_8_6:
+        fields.update(
+            [
+                "sts_inj_by_plant",
+                "sts_withdrawal_by_plant",
+                "sts_lvl_by_plant",
+                "psp_open_injection",
+                "psp_open_withdrawal",
+                "psp_open_level",
+                "psp_closed_injection",
+                "psp_closed_withdrawal",
+                "psp_closed_level",
+                "pondage_injection",
+                "pondage_withdrawal",
+                "pondage_level",
+                "battery_injection",
+                "battery_withdrawal",
+                "battery_level",
+                "other1_injection",
+                "other1_withdrawal",
+                "other1_level",
+                "other2_injection",
+                "other2_withdrawal",
+                "other2_level",
+                "other3_injection",
+                "other3_withdrawal",
+                "other3_level",
+                "other4_injection",
+                "other4_withdrawal",
+                "other4_level",
+                "other5_injection",
+                "other5_withdrawal",
+                "other5_level",
+            ]
+        )
 
+    if version >= STUDY_VERSION_8_8:
+        fields.update(["sts_cashflow_by_cluster", "npcap_hours"])
 
-def _get_v_8_4_fields() -> list[str]:
-    return ["bc_marg_cost"]
+    if version >= STUDY_VERSION_9_1:
+        fields.add("sts_by_group")
+        for field in [
+            "psp_open_injection",
+            "psp_open_withdrawal",
+            "psp_open_level",
+            "psp_closed_injection",
+            "psp_closed_withdrawal",
+            "psp_closed_level",
+            "pondage_injection",
+            "pondage_withdrawal",
+            "pondage_level",
+            "battery_injection",
+            "battery_withdrawal",
+            "battery_level",
+            "other1_injection",
+            "other1_withdrawal",
+            "other1_level",
+            "other2_injection",
+            "other2_withdrawal",
+            "other2_level",
+            "other3_injection",
+            "other3_withdrawal",
+            "other3_level",
+            "other4_injection",
+            "other4_withdrawal",
+            "other4_level",
+            "other5_injection",
+            "other5_withdrawal",
+            "other5_level",
+        ]:
+            fields.remove(field)
 
-
-def _get_v_8_6_fields() -> list[str]:
-    return [
-        "sts_inj_by_plant",
-        "sts_withdrawal_by_plant",
-        "sts_lvl_by_plant",
-        "psp_open_injection",
-        "psp_open_withdrawal",
-        "psp_open_level",
-        "psp_closed_injection",
-        "psp_closed_withdrawal",
-        "psp_closed_level",
-        "pondage_injection",
-        "pondage_withdrawal",
-        "pondage_level",
-        "battery_injection",
-        "battery_withdrawal",
-        "battery_level",
-        "other1_injection",
-        "other1_withdrawal",
-        "other1_level",
-        "other2_injection",
-        "other2_withdrawal",
-        "other2_level",
-        "other3_injection",
-        "other3_withdrawal",
-        "other3_level",
-        "other4_injection",
-        "other4_withdrawal",
-        "other4_level",
-        "other5_injection",
-        "other5_withdrawal",
-        "other5_level",
-    ]
-
-
-def _get_v_8_8_fields() -> list[str]:
-    return ["sts_cashflow_by_cluster", "npcap_hours"]
-
-
-def _get_v_9_1_fields() -> list[str]:
-    return ["sts_by_group"]
-
-
-def _get_v_9_3_fields() -> list[str]:
-    return ["dispatch_gen", "renewable_gen"]
-
-
-def _get_v_9_3_exclude_field() -> list[str]:
-    return [
-        # replaces by dispatch_gen
-        "nuclear",
-        "lignite",
-        "coal",
-        "gas",
-        "oil",
-        "mix_fuel",
-        "misc_dtg",
-        "misc_dtg_2",
-        "misc_dtg_3",
-        "misc_dtg_4",
-        # replaced by renewable_gen
-        "wind_offshore",
-        "wind_onshore",
-        "solar_concrt",
-        "solar_pv",
-        "solar_rooft",
-        "renw_1",
-        "renw_2",
-        "renw_3",
-        "renw_4",
-    ]
-
-
-def _get_v_9_1_exclude_fields() -> list[str]:
-    return [
-        "psp_open_injection",
-        "psp_open_withdrawal",
-        "psp_open_level",
-        "psp_closed_injection",
-        "psp_closed_withdrawal",
-        "psp_closed_level",
-        "pondage_injection",
-        "pondage_withdrawal",
-        "pondage_level",
-        "battery_injection",
-        "battery_withdrawal",
-        "battery_level",
-        "other1_injection",
-        "other1_withdrawal",
-        "other1_level",
-        "other2_injection",
-        "other2_withdrawal",
-        "other2_level",
-        "other3_injection",
-        "other3_withdrawal",
-        "other3_level",
-        "other4_injection",
-        "other4_withdrawal",
-        "other4_level",
-        "other5_injection",
-        "other5_withdrawal",
-        "other5_level",
-    ]
+    if version >= STUDY_VERSION_9_3:
+        fields.update(["dispatch_gen", "renewable_gen"])
+        for field in [
+            # replaces by dispatch_gen
+            "nuclear",
+            "lignite",
+            "coal",
+            "gas",
+            "oil",
+            "mix_fuel",
+            "misc_dtg",
+            "misc_dtg_2",
+            "misc_dtg_3",
+            "misc_dtg_4",
+            # replaced by renewable_gen
+            "wind_offshore",
+            "wind_onshore",
+            "solar_concrt",
+            "solar_pv",
+            "solar_rooft",
+            "renw_1",
+            "renw_2",
+            "renw_3",
+            "renw_4",
+        ]:
+            fields.remove(field)
+    return fields
 
 
 def _check_version(
@@ -450,88 +444,9 @@ def _check_version(
 def validate_thematic_trimming_against_version(
     thematic_trimming: ThematicTrimming | ThematicTrimmingUpdate, version: StudyVersion
 ) -> None:
-    if version < STUDY_VERSION_8_1:
-        for field in _get_v_8_1_fields():
-            _check_version(thematic_trimming, field, version)
-
-    if version < STUDY_VERSION_8_3:
-        for field in _get_v_8_3_fields():
-            _check_version(thematic_trimming, field, version)
-
-    if version < STUDY_VERSION_8_4:
-        for field in _get_v_8_4_fields():
-            _check_version(thematic_trimming, field, version)
-
-    if version < STUDY_VERSION_8_6:
-        for field in _get_v_8_6_fields():
-            _check_version(thematic_trimming, field, version)
-
-    if version < STUDY_VERSION_8_8:
-        for field in _get_v_8_8_fields():
-            _check_version(thematic_trimming, field, version)
-
-    if version < STUDY_VERSION_9_1:
-        for field in _get_v_9_1_fields():
-            _check_version(thematic_trimming, field, version)
-    else:
-        for field in _get_v_9_1_exclude_fields():
-            _check_version(thematic_trimming, field, version)
-
-    if version < STUDY_VERSION_9_3:
-        for field in _get_v_9_3_fields():
-            _check_version(thematic_trimming, field, version)
-    else:
-        for field in _get_v_9_3_exclude_field():
-            _check_version(thematic_trimming, field, version)
-
-
-def _initialize_field_default(thematic_trimming: ThematicTrimming, field: str, default_bool: bool) -> None:
-    if getattr(thematic_trimming, field) is None:
-        setattr(thematic_trimming, field, default_bool)
-
-
-def _reset_field(thematic_trimming: ThematicTrimming, field: str) -> None:
-    setattr(thematic_trimming, field, None)
-
-
-def initialize_thematic_trimming(
-    thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool
-) -> None:
-    for field in _get_default_fields():
-        _initialize_field_default(thematic_trimming, field, default_bool)
-
-    if version >= STUDY_VERSION_8_1:
-        for field in _get_v_8_1_fields():
-            _initialize_field_default(thematic_trimming, field, default_bool)
-
-    if version >= STUDY_VERSION_8_3:
-        for field in _get_v_8_3_fields():
-            _initialize_field_default(thematic_trimming, field, default_bool)
-
-    if version >= STUDY_VERSION_8_4:
-        for field in _get_v_8_4_fields():
-            _initialize_field_default(thematic_trimming, field, default_bool)
-
-    if version >= STUDY_VERSION_8_6:
-        sts_fields = _get_v_8_6_fields()
-        for field in sts_fields:
-            _initialize_field_default(thematic_trimming, field, default_bool)
-
-    if version >= STUDY_VERSION_8_8:
-        for field in _get_v_8_8_fields():
-            _initialize_field_default(thematic_trimming, field, default_bool)
-
-    if version >= STUDY_VERSION_9_1:
-        for field in _get_v_9_1_fields():
-            _initialize_field_default(thematic_trimming, field, default_bool)
-        for field in _get_v_9_1_exclude_fields():
-            _reset_field(thematic_trimming, field)
-
-    if version >= STUDY_VERSION_9_3:
-        for field in _get_v_9_3_fields():
-            _initialize_field_default(thematic_trimming, field, default_bool)
-        for field in _get_v_9_3_exclude_field():
-            _reset_field(thematic_trimming, field)
+    forbidden_fields = set(thematic_trimming.model_fields) - get_thematic_trimming_fields_according_to_version(version)
+    for field in forbidden_fields:
+        _check_version(thematic_trimming, field, version)
 
 
 def update_thematic_trimming(trimming: ThematicTrimming, data: ThematicTrimmingUpdate) -> ThematicTrimming:
