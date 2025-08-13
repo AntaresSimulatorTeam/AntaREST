@@ -12,6 +12,8 @@
 
 from typing import List, Optional
 
+from sqlalchemy import select
+
 from antarest.core.filetransfer.model import FileDownload
 from antarest.core.utils.fastapi_sqlalchemy import db
 
@@ -22,7 +24,7 @@ class FileDownloadRepository:
         db.session.commit()
 
     def get(self, download_id: str) -> Optional[FileDownload]:
-        file_download: Optional[FileDownload] = db.session.query(FileDownload).get(download_id)
+        file_download: Optional[FileDownload] = db.session.get(FileDownload, download_id)
         return file_download
 
     def save(self, download: FileDownload) -> None:
@@ -31,12 +33,12 @@ class FileDownloadRepository:
         db.session.commit()
 
     def get_all(self, owner: Optional[int] = None) -> List[FileDownload]:
-        file_download_list: List[FileDownload] = []
+        stmt = select(FileDownload)
         if owner:
-            file_download_list = db.session.query(FileDownload).filter(FileDownload.owner == owner).all()
-        else:
-            file_download_list = db.session.query(FileDownload).all()
-        return file_download_list
+            stmt = stmt.where(FileDownload.owner == owner)
+
+        result = db.session.execute(stmt)
+        return list(result.scalars().all())
 
     def delete(self, download_id: str) -> None:
         download = self.get(download_id)
