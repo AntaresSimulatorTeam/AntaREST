@@ -72,4 +72,22 @@ class TestConfigGeneralForm:
         )
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        assert actual is None
+        assert actual == {
+            "buildingMode": "Custom",
+            "filtering": True,
+            "firstDay": 1,
+            "firstJanuary": "Monday",
+            "firstMonth": "january",
+            "firstWeekDay": "Monday",
+            "geographicTrimming": None,
+            "horizon": "2020",
+            "lastDay": 7,
+            "leapYear": False,
+            "mcScenario": True,
+            "mode": "Adequacy",
+            "nbYears": 1,
+            "selectionMode": True,
+            "simulationSynthesis": True,
+            "thematicTrimming": None,
+            "yearByYear": False,
+        }
