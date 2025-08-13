@@ -147,6 +147,9 @@ function MatrixFilter(
           sx: DRAWER_STYLES.paper,
         }}
         transitionDuration={COMPONENT_DIMENSIONS.drawer.transitionDuration}
+        sx={{
+          zIndex: (theme) => DESIGN_TOKENS.zIndex.drawer(theme),
+        }}
       >
         <Box
           sx={{
