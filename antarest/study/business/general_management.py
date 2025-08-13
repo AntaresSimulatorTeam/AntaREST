@@ -27,8 +27,9 @@ class GeneralManager:
     def get_general_config(self, study: StudyInterface) -> GeneralConfig:
         return study.get_study_dao().get_general_config()
 
-    def update_general_config(self, study: StudyInterface, config: GeneralConfigUpdate) -> None:
+    def update_general_config(self, study: StudyInterface, config: GeneralConfigUpdate) -> GeneralConfig:
         commands = [
             UpdateGeneralConfig(parameters=config, command_context=self._command_context, study_version=study.version)
         ]
         study.add_commands(commands)
+        return self.get_general_config(study)
