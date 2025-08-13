@@ -19,7 +19,12 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table("study_additional_data", schema=None) as batch_op:
-        batch_op.drop_index(batch_op.f("ix_study_additional_data_patch"))
+        # Explanation:
+        # in revision 490b80a84bb5_add_cascade_delete_for_sqlite which is run for non-postgres DB
+        # (as the name does not imply ...) the table was copied without the index.
+        # Therefore we must not try to delete it in that case.
+        if op.get_context().dialect.name == "postgresql":
+            batch_op.drop_index(batch_op.f("ix_study_additional_data_patch"))
         batch_op.drop_column(batch_op.f("patch"))
 
 
