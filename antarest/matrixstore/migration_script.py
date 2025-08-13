@@ -14,11 +14,12 @@ import logging
 from functools import partial
 from pathlib import Path
 
+from sqlalchemy import select
+
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.model import Matrix
 from antarest.matrixstore.parsing import load_matrix, save_matrix
-from sqlalchemy import select
 
 logger = logging.getLogger(__name__)
 
