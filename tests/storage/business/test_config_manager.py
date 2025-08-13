@@ -15,7 +15,10 @@ from typing import Any
 import pytest
 from antares.study.version import StudyVersion
 
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, initialize_thematic_trimming
+from antarest.study.business.model.thematic_trimming_model import (
+    ThematicTrimming,
+    get_thematic_trimming_fields_according_to_version,
+)
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
@@ -56,7 +59,48 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
         ),
         pytest.param(
             STUDY_VERSION_8_4,
-            ThematicTrimming(cong_fee_alg=True),
+            ThematicTrimming(
+                ov_cost=False,
+                op_cost=False,
+                mrg_price=False,
+                co2_emis=False,
+                dtg_by_plant=False,
+                balance=False,
+                row_bal=False,
+                psp=False,
+                misc_ndg=False,
+                load=False,
+                h_ror=False,
+                wind=False,
+                h_stor=False,
+                h_pump=False,
+                h_lev=False,
+                h_infl=False,
+                h_ovfl=False,
+                h_val=False,
+                h_cost=False,
+                unsp_enrg=False,
+                spil_enrg=False,
+                lold=False,
+                lolp=False,
+                avl_dtg=False,
+                dtg_mrg=False,
+                max_mrg=False,
+                np_cost=False,
+                np_cost_by_plant=False,
+                nodu=False,
+                nodu_by_plant=False,
+                flow_lin=False,
+                ucap_lin=False,
+                loop_flow=False,
+                flow_quad=False,
+                cong_fee_abs=False,
+                marg_cost=False,
+                cong_prob_plus=False,
+                cong_prob_minus=False,
+                hurdle_cost=False,
+                cong_fee_alg=True,
+            ),
             {"variables selection": {"selected_vars_reset": False, "select_var +": ["CONG. FEE (ALG.)"]}},
             id="v8.4",
         ),
@@ -110,8 +154,11 @@ def test_thematic_trimming_config(
     study = FileStudyInterface(empty_study_920)
     study.file_study.tree.save(ini_content, ["settings", "generaldata"])
 
+    # Initalize the expected fields to avoid writing them all inside the test
+    default_bool = ini_content.get("variables selection", {}).get("selected_vars_reset", True)
+    for field in get_thematic_trimming_fields_according_to_version(version):
+        if getattr(expected, field) is None:
+            setattr(expected, field, default_bool)
+
     actual = thematic_trimming_manager.get_thematic_trimming(study)
-    initialize_thematic_trimming(
-        expected, version, ini_content.get("variables selection", {}).get("selected_vars_reset", True)
-    )
     assert actual == expected
