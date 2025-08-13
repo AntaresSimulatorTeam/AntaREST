@@ -14,6 +14,8 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimmingUpdate
+from antarest.study.business.study_interface import FileStudyInterface
+from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.model import (
     STUDY_VERSION_8,
     STUDY_VERSION_8_4,
@@ -57,6 +59,27 @@ class TestUpdateThematicTrimming:
 
         actual_content = study.tree.get(["settings", "generaldata"])
         assert actual_content["variables selection"] == {"select_var -": ["MRG. PRICE"], "selected_vars_reset": True}
+
+        # Disable all values
+        args = {}
+        for field in ThematicTrimmingUpdate.model_fields:
+            if field not in {"sts_by_group", "dispatch_gen", "renewable_gen"}:
+                args[field] = False
+        parameters = ThematicTrimmingUpdate.model_validate(args)
+
+        command = UpdateThematicTrimming(
+            parameters=parameters, command_context=command_context, study_version=study.config.version
+        )
+        output = command.apply(study_data=study)
+        assert output.status
+
+        actual_content = study.tree.get(["settings", "generaldata"])
+        assert actual_content["variables selection"] == {"selected_vars_reset": False}
+
+        manager = ThematicTrimmingManager(command_context)
+        study_interface = FileStudyInterface(study)
+        trimming = manager.get_thematic_trimming(study_interface)
+        assert trimming.model_dump(exclude_none=True) == args
 
     def test_error_cases(self, command_context: CommandContext):
         # Give fields that do not match the version

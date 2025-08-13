@@ -19,6 +19,7 @@ from pydantic import Field
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
+    get_thematic_trimming_default_fields,
     initialize_thematic_trimming,
     validate_thematic_trimming_against_version,
 )
@@ -138,8 +139,10 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     dispatch_gen: bool | None = Field(default=None, alias="DISPATCH. GEN.")
     renewable_gen: bool | None = Field(default=None, alias="RENEWABLE GEN.")
 
-    def to_model(self) -> ThematicTrimming:
-        return ThematicTrimming.model_validate(self.model_dump(exclude_none=True))
+    def to_model(self, default_bool: bool) -> ThematicTrimming:
+        args = dict.fromkeys(get_thematic_trimming_default_fields(), default_bool)
+        args.update(self.model_dump(exclude_none=True))
+        return ThematicTrimming.model_validate(args)
 
     @classmethod
     def from_model(cls, thematic_trimming: ThematicTrimming) -> Self:
@@ -154,12 +157,12 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
         if data.get("selected_vars_reset", True):
             # Means written fields are deactivated and others are activated
             unselected_vars = data.get("select_var -", [])
-            args = {var: False for var in unselected_vars}
+            args = dict.fromkeys(unselected_vars, False)
             return ThematicTrimmingFileData(**args), True
 
         # Means written fields are activated and others deactivated
         selected_vars = data.get("select_var +", [])
-        args = {var: True for var in selected_vars}
+        args = dict.fromkeys(selected_vars, True)
         file_data = ThematicTrimmingFileData(**args)
 
         return file_data, False
@@ -187,7 +190,7 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
 
 def parse_thematic_trimming(study_version: StudyVersion, data: Any) -> ThematicTrimming:
     thematic_trimming_file_data, default_value = ThematicTrimmingFileData.parse_ini_file(data, study_version)
-    thematic_trimming = thematic_trimming_file_data.to_model()
+    thematic_trimming = thematic_trimming_file_data.to_model(default_value)
     validate_thematic_trimming_against_version(thematic_trimming, study_version)
     initialize_thematic_trimming(thematic_trimming, study_version, default_value)
     return thematic_trimming

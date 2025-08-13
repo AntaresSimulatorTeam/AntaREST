@@ -256,7 +256,7 @@ class ThematicTrimmingUpdate(FormFieldsBaseModel):
     renewable_gen: Optional[bool] = None
 
 
-def _get_default_fields() -> list[str]:
+def get_thematic_trimming_default_fields() -> list[str]:
     return [
         "ov_cost",
         "op_cost",
@@ -497,7 +497,7 @@ def _reset_field(thematic_trimming: ThematicTrimming, field: str) -> None:
 def initialize_thematic_trimming(
     thematic_trimming: ThematicTrimming, version: StudyVersion, default_bool: bool
 ) -> None:
-    for field in _get_default_fields():
+    for field in get_thematic_trimming_default_fields():
         _initialize_field_default(thematic_trimming, field, default_bool)
 
     if version >= STUDY_VERSION_8_1:
