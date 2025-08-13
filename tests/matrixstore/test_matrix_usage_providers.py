@@ -190,12 +190,11 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
             name="datasetA",
             public=True,
             groups=[group.name],
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
         )
 
-        matrix_m = matrix_service.create(pd.DataFrame([[0]]))
-        matrices = [MatrixInfoDTO(id=matrix_m, name="A")]
+        matrix_a = matrix_service.create(pd.DataFrame([[0]]))
+        matrix_b = matrix_service.create(pd.DataFrame([[1]]))
+        matrices = [MatrixInfoDTO(id=matrix_a, name="A"), MatrixInfoDTO(id=matrix_b, name="B")]
 
         with current_user_context(admin_user):
             matrix_service.user_service.get_group.return_value = Group(id="foo", name="A")
@@ -204,12 +203,11 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
 
             use_description = f"Used by dataset {dataset_id.id}"
 
-            matrix_service.usage_providers.append(matrix_service._create_dataset_usage_provider())
+            assert len(matrix_service.usage_providers) == 1
+            usage_provider = matrix_service.usage_providers[0]
+            matrices_reference = usage_provider.get_matrix_usage()
 
-            matrices_reference = [
-                reference
-                for usage_prov in matrix_service.usage_providers
-                for reference in usage_prov.get_matrix_usage()
-            ]
-
-            assert matrices_reference == [MatrixReference(matrix_id=matrix_m, use_description=use_description)] * 4
+            assert set(matrices_reference) == {
+                MatrixReference(matrix_id=matrix_a, use_description=use_description),
+                MatrixReference(matrix_id=matrix_b, use_description=use_description),
+            }

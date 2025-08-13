@@ -219,7 +219,7 @@ class MatrixService(ISimpleMatrixService):
         self.task_service = task_service
         self.config = config
         self.usage_providers: List[IMatrixUsageProvider] = []
-        self.usage_providers.append(self._create_dataset_usage_provider())
+        self._create_dataset_usage_provider()
 
     @override
     def create(self, data: pd.DataFrame) -> str:
