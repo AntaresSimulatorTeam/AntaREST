@@ -17,9 +17,11 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -28,8 +30,13 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageAdditionalConstraintsMap,
 )
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+from antarest.study.dao.api.adequacy_patch_parameters_dao import (
+    AdequacyPatchParametersDao,
+    ReadOnlyAdequacyPatchParametersDao,
+)
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
@@ -41,7 +48,9 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
+from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
+from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -57,6 +66,9 @@ class ReadOnlyStudyDao(
     ReadOnlyOptimizationPreferencesDao,
     ReadOnlyAdvancedParametersDao,
     ReadOnlyXpansionDao,
+    ReadOnlyThematicTrimmingDao,
+    ReadOnlyAdequacyPatchParametersDao,
+    ReadOnlyTimeSeriesConfigDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -75,6 +87,9 @@ class StudyDao(
     OptimizationPreferencesDao,
     AdvancedParametersDao,
     XpansionDao,
+    ThematicTrimmingDao,
+    AdequacyPatchParametersDao,
+    TimeSeriesConfigDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -305,3 +320,23 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        return self._adaptee.get_xpansion_settings()
+
+    @override
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return self._adaptee.checks_settings_are_correct(settings)
+
+    @override
+    def get_thematic_trimming(self) -> ThematicTrimming:
+        return self._adaptee.get_thematic_trimming()
+
+    @override
+    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
+        return self._adaptee.get_adequacy_patch_parameters()
+
+    @override
+    def get_timeseries_config(self) -> TimeSeriesConfiguration:
+        return self._adaptee.get_timeseries_config()

@@ -626,7 +626,6 @@ class VariantStudyService(AbstractStorageService):
             additional_data = StudyAdditionalData(
                 horizon=study.additional_data.horizon,
                 author=study.additional_data.author,
-                patch=study.additional_data.patch,
             )
 
         variant_study = VariantStudy(

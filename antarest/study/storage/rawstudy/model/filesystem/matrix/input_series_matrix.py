@@ -22,6 +22,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
+from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
@@ -105,7 +106,7 @@ class InputSeriesMatrix(MatrixNode):
         if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
             self.config.path.touch(exist_ok=True)
         else:
-            df.to_csv(self.config.path, sep="\t", header=False, index=False)
+            write_dataframe_in_tsv_format(df, self.config.path)
 
     @override
     def check_errors(
