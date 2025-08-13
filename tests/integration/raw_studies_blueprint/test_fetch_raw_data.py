@@ -277,6 +277,14 @@ class TestFetchRawData:
             res = client.get(raw_url, params={"path": path, "depth": depth})
             assert res.status_code == 200, f"Error for path={path} and depth={depth}"
 
+        # asserts that the GET /raw endpoint is able to read link URLs, which don't map
+        # 1 to 1 with filesystem path (which is "output/20201014-1427eco/economy/mc-all/links/de - fr/" for
+        # example)
+        if study_type == "raw":
+            res = client.get(raw_url, params={"path": "output/20201014-1427eco/economy/mc-all/links/de/"})
+            assert res.status_code == 200
+            assert res.json() == {"fr": {}}
+
         ####### Matrices #######
 
         # We should have a JSON content if formatted is True

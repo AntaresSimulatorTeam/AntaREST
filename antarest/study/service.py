@@ -2424,9 +2424,4 @@ class StudyService:
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 
-        relative_url: Sequence[str]
-        if node.config.archive_path:
-            relative_url = node.get_relative_path_inside_archive(node.config.archive_path).split("/")
-        else:
-            relative_url = node.config.path.relative_to(node.config.study_path).parts
-        return node.get(url=url[len(relative_url) :], depth=depth, formatted=formatted)
+        return file_study.tree.get(url, depth=depth, formatted=formatted)
