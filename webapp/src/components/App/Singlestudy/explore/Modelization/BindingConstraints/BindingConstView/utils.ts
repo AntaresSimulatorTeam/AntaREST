@@ -65,8 +65,8 @@ export interface BindingConstraint {
   timeStep: TimeStep;
   operator: Operator;
   comments?: string;
-  filterSynthesis: OutputFilter[];
-  filterYearByYear: OutputFilter[];
+  filterSynthesis?: OutputFilter[];
+  filterYearByYear?: OutputFilter[];
   terms: ConstraintTerm[];
   // Since v8.7
   group?: string | null;
@@ -162,7 +162,7 @@ function adaptOutputFilterFormat(
   data: string | OutputFilter[] | undefined,
 ): string | OutputFilter[] {
   // Handle case where the fields are undefined in versions below 8.3.
-  if (data === undefined) {
+  if (!data) {
     return [];
   }
 
@@ -206,12 +206,17 @@ function adaptOutputFilterFormat(
  * @returns The transformed BindingConstraint object.
  */
 export function bindingConstraintModelAdapter(data: BindingConstraint): BindingConstraint {
-  const filterSynthesis = adaptOutputFilterFormat(data.filterSynthesis);
-  const filterYearByYear = adaptOutputFilterFormat(data.filterYearByYear);
+  const result: BindingConstraint = { ...data };
 
-  return {
-    ...data,
-    filterSynthesis: filterSynthesis as typeof data.filterSynthesis,
-    filterYearByYear: filterYearByYear as typeof data.filterYearByYear,
-  };
+  if (data.filterSynthesis !== undefined) {
+    const filterSynthesis = adaptOutputFilterFormat(data.filterSynthesis);
+    result.filterSynthesis = filterSynthesis as typeof data.filterSynthesis;
+  }
+
+  if (data.filterYearByYear !== undefined) {
+    const filterYearByYear = adaptOutputFilterFormat(data.filterYearByYear);
+    result.filterYearByYear = filterYearByYear as typeof data.filterYearByYear;
+  }
+
+  return result;
 }

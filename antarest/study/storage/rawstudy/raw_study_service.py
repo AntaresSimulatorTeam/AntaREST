@@ -29,6 +29,7 @@ from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
+
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, Patch, RawStudy, Study, StudyAdditionalData
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
@@ -142,7 +143,6 @@ class RawStudyService(AbstractStorageService):
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
-                metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
                 metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
 
@@ -304,7 +304,6 @@ class RawStudyService(AbstractStorageService):
             additional_data = StudyAdditionalData(
                 horizon=src_study.additional_data.horizon,
                 author=src_study.additional_data.author,
-                patch=src_study.additional_data.patch,
             )
         dest_id = str(uuid4())
         dest_study = RawStudy(

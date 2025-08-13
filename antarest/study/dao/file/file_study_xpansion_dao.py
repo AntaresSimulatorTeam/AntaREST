@@ -22,8 +22,19 @@ from antarest.core.exceptions import (
     XpansionCandidateDeletionError,
     XpansionFileNotFoundError,
 )
-from antarest.study.business.model.xpansion_model import XpansionCandidate
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionSensitivitySettings,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.dao.api.xpansion_dao import XpansionDao
+from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
+    parse_xpansion_sensitivity_settings,
+    parse_xpansion_settings,
+    serialize_xpansion_sensitivity_settings,
+    serialize_xpansion_settings,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -82,6 +93,55 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         # Reorder keys of the dict
         new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
         self._save_candidates(new_dict)
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        file_study = self.get_file_study()
+        settings = self._get_settings(file_study)
+        sensitivity_settings = self._get_sensitivity_settings(file_study)
+        settings.sensitivity_config = sensitivity_settings
+        return settings
+
+    @override
+    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
+        file_study = self.get_file_study()
+
+        sensitivity_content = serialize_xpansion_sensitivity_settings(settings.sensitivity_config)
+        file_study.tree.save(sensitivity_content, ["user", "expansion", "sensitivity", "sensitivity_in"])
+
+        settings_content = serialize_xpansion_settings(settings)
+        file_study.tree.save(settings_content, ["user", "expansion", "settings"])
+
+    @override
+    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        """
+        Checks yearly_weights and additional_constraints fields.
+        - If the attributes are given, it means that the user wants to select a file.
+          It is therefore necessary to check that the file exists.
+        """
+        file_study = self.get_file_study()
+        for field in ["additional_constraints", "yearly_weights"]:
+            if file := getattr(settings, field, None):
+                file_type = field.split("_")[1]
+                try:
+                    file_url = ["user", "expansion", file_type, file]
+                    file_study.tree.get(file_url)
+                except ChildNotFoundError:
+                    msg = f"Additional {file_type} file '{file}' does not exist"
+                    raise XpansionFileNotFoundError(msg) from None
+
+    @staticmethod
+    def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:
+        try:
+            args = file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
+            return parse_xpansion_sensitivity_settings(args)
+        except ChildNotFoundError:
+            return XpansionSensitivitySettings()
+
+    @staticmethod
+    def _get_settings(file_study: FileStudy) -> XpansionSettings:
+        config_obj = file_study.tree.get(["user", "expansion", "settings"])
+        return parse_xpansion_settings(config_obj)
 
     def _save_candidates(self, content: dict[str, Any]) -> None:
         self.get_file_study().tree.save(content, ["user", "expansion", "candidates"])

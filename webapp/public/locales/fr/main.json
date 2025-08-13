@@ -488,6 +488,7 @@
   "study.configuration.adequacyPatch.thresholdDisplayLocalMatchingRuleViolations.tooltip": "Seuil permettant de calculer un indicateur de sortie (« LMR VIOL. ») comptabilisant le nombre de situations où l’application du local matching a conduit à des écarts résiduels en énergie dépassant ce seuil (0 : aucune tolérance)",
   "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation": "Facteur de relaxation des contraintes CSR",
   "study.configuration.adequacyPatch.thresholdCsrVariableBoundsRelaxation.tooltip": "Facteur de relaxation des bornes inférieures et supérieures des contraintes pour l’ENS et inférieures pour le spillage dans l’application de la CSR. Ce facteur est en 10^-x. Plus x est élevé moins on relâche et plus on risque des infaisabilités.",
+  "study.configuration.adequacyPatch.redispatch": "Redispatch",
   "study.configuration.advancedParameters.seedsForRandomNumbers": "Seeds for random numbers",
   "study.configuration.advancedParameters.spatialTimeSeriesCorrelation": "Spatial time-series correlation",
   "study.configuration.advancedParameters.otherPreferences": "Autres préférences",

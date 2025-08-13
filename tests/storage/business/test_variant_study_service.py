@@ -354,7 +354,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
 
     md = create_variant_study(id=name, path=str(study_path))
 
-    additional_data = StudyAdditionalData(horizon=2050, patch="{}", author="Zoro")
+    additional_data = StudyAdditionalData(horizon=2050, author="Zoro")
 
     study_factory = Mock()
     study_factory.create_from_fs.return_value = md

@@ -977,6 +977,26 @@ COMMANDS = [
         None,
         id="update_thematic_trimming",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value,
+            args={"parameters": {"enable_adequacy_patch": False, "price_taking_order": "DENS"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_adequacy_patch_parameters",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_TIMESERIES_CONFIG.value,
+            args=[
+                {"parameters": {"thermal": {"number": 42}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_timeseries_configuration",
+    ),
 ]
 
 

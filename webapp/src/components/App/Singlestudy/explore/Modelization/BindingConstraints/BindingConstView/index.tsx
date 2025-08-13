@@ -52,6 +52,7 @@ function BindingConstView({ constraintId }: Props) {
   const dispatch = useAppDispatch();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const studyVersion = Number(study.version);
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
 
   const constraint = usePromise(
@@ -70,6 +71,12 @@ function BindingConstView({ constraintId }: Props) {
 
   const handleSubmitConstraint = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
     const { id, name, ...updatedConstraint } = values;
+
+    // Exclude filter fields for legacy versions support
+    if (studyVersion < 830) {
+      const { filterSynthesis, filterYearByYear, ...constraintWithoutFilters } = updatedConstraint;
+      return updateBindingConstraint(study.id, constraintId, constraintWithoutFilters);
+    }
 
     return updateBindingConstraint(study.id, constraintId, updatedConstraint);
   };

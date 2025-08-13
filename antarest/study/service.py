@@ -84,9 +84,9 @@ from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDT
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
     XpansionCandidate,
     XpansionCandidateCreation,
+    XpansionSettings,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.optimization_management import OptimizationManager
@@ -2026,17 +2026,13 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.delete_xpansion_configuration(study_interface)
 
-    def get_xpansion_settings(self, uuid: str) -> GetXpansionSettings:
+    def get_xpansion_settings(self, uuid: str) -> XpansionSettings:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_xpansion_settings(study_interface)
 
-    def update_xpansion_settings(
-        self,
-        uuid: str,
-        xpansion_settings_dto: XpansionSettingsUpdate,
-    ) -> GetXpansionSettings:
+    def update_xpansion_settings(self, uuid: str, xpansion_settings_dto: XpansionSettingsUpdate) -> XpansionSettings:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
@@ -2085,23 +2081,14 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
-    def update_xpansion_constraints_settings(
-        self,
-        uuid: str,
-        constraints_file_name: str,
-    ) -> GetXpansionSettings:
+    def update_xpansion_constraints_settings(self, uuid: str, constraints_file_name: str) -> XpansionSettings:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
-    def update_matrix(
-        self,
-        uuid: str,
-        path: str,
-        matrix_edit_instruction: List[MatrixEditInstruction],
-    ) -> None:
+    def update_matrix(self, uuid: str, path: str, matrix_edit_instruction: List[MatrixEditInstruction]) -> None:
         """
         Updates a matrix in a study based on the provided edit instructions.
 
@@ -2176,11 +2163,7 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def upgrade_study(
-        self,
-        study_id: str,
-        target_version: str,
-    ) -> str:
+    def upgrade_study(self, study_id: str, target_version: str) -> str:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
