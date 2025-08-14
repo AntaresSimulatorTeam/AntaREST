@@ -870,7 +870,7 @@ class StudyService:
             additional_data=StudyAdditionalData(author=author, editor=author),
         )
 
-        raw = cast(RawStudy, self.storage_service.raw_study_service.create(raw))
+        raw = self.storage_service.raw_study_service.create(raw)
         self._save_study(raw, group_ids)
         self.event_bus.push(
             Event(

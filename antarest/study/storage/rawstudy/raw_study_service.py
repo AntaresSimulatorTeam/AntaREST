@@ -16,7 +16,7 @@ import time
 from datetime import datetime
 from pathlib import Path, PurePosixPath
 from threading import Thread
-from typing import BinaryIO, List, Optional, Sequence
+from typing import BinaryIO, List, Optional, Sequence, cast
 from uuid import uuid4
 
 from antares.study.version import StudyVersion
@@ -216,7 +216,7 @@ class RawStudyService(AbstractStorageService):
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
-    def create(self, metadata: Study) -> Study:
+    def create(self, metadata: Study) -> RawStudy:
         """
         Create a new empty study based on the given metadata.
 
@@ -242,7 +242,7 @@ class RawStudyService(AbstractStorageService):
 
         metadata.path = str(path_study)
 
-        return metadata
+        return cast(RawStudy, metadata)
 
     @override
     def copy(

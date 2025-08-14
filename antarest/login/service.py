@@ -288,7 +288,7 @@ class LoginService:
             logger.error("group %s not found by user %s", id, get_user_id())
             raise GroupNotFoundError()
 
-    def get_user(self, id: int) -> Optional[Union[User, UserLdap]]:
+    def get_user(self, id: int) -> User | UserLdap | None:
         """
         Get user
         Permission: SADMIN, GADMIN (own group), USER (own user)
