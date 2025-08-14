@@ -12,8 +12,6 @@
 import logging
 import time
 from datetime import datetime
-from os import listdir
-from pathlib import Path
 from typing import Set
 
 from typing_extensions import override
@@ -27,23 +25,11 @@ logger = logging.getLogger(__name__)
 
 
 class MatrixGarbageCollector(IService):
-    def __init__(
-        self,
-        matrix_service: MatrixService,
-        matrix_dir: Path,
-        sleeping_time: float,
-        dry_run: bool,
-        retention_time: int,
-    ):
-        self.saved_matrices_path: Path = matrix_dir
+    def __init__(self, matrix_service: MatrixService, sleeping_time: float, dry_run: bool, retention_time: int):
         self.matrix_service = matrix_service
         self.sleeping_time = sleeping_time
         self.dry_run = dry_run
         self.retention_time = retention_time
-
-    def _get_saved_matrices(self) -> Set[str]:
-        logger.info("Getting all saved matrices")
-        return {f.split(".")[0] for f in listdir(self.saved_matrices_path)}
 
     def _delete_unused_saved_matrices(self, unused_matrices: Set[str]) -> None:
         """Delete all files with the name in unused_matrices"""
