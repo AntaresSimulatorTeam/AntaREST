@@ -781,14 +781,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         table_data = study_service.table_mode_manager.update_table_data(study_interface, table_type, data)
         return table_data
 
-    @bp.post(
-        "/studies/_update_version",
-        tags=[APITag.study_data],
-        summary="update database version of all studies",
-    )
-    def update_version() -> Any:
-        study_service.check_and_update_all_study_versions_in_database()
-
     @bp.get("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Get binding constraint list")
     def get_binding_constraint_list(
         uuid: str,

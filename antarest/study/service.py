@@ -62,7 +62,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id, require_current_user
+from antarest.login.utils import get_current_user, get_user_id
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -117,7 +117,6 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
 )
 from antarest.study.repository import (
-    AccessPermissions,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
@@ -203,6 +202,12 @@ def _get_path_inside_user_folder(
     if url[1] == "expansion":
         raise exception_class(f"the given path is inside the `expansion` folder: {path}")
     return "/".join(url[1:])
+
+
+def assert_raw(study: Study) -> RawStudy:
+    if not isinstance(study, RawStudy):
+        raise TypeError("Study must be a RawStudy")
+    return study
 
 
 class TaskProgressRecorder(ICommandListener):
@@ -1287,7 +1292,7 @@ class StudyService:
             _ = study.workspace
             study_info = study.to_enhanced_json_summary()
 
-        if self.storage_service.variant_study_service.has_children(cast(VariantStudy, study)):
+        if self.storage_service.variant_study_service.has_children(study):
             if children:
                 self.storage_service.variant_study_service.walk_children(
                     study.id,
@@ -1352,7 +1357,7 @@ class StudyService:
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             groups=group_ids,
         )
-        study = cast(RawStudy, self.storage_service.raw_study_service.import_study(study, stream))
+        study = self.storage_service.raw_study_service.import_study(study, stream)
         study.updated_at = datetime.utcnow()
 
         self._save_study(study, group_ids)
@@ -1661,7 +1666,9 @@ class StudyService:
     def check_errors(self, uuid: str) -> List[str]:
         study = self.get_study(uuid)
         self.assert_study_unarchived(study)
-        return self.storage_service.raw_study_service.check_errors(cast(RawStudy, study))
+        if not isinstance(study, RawStudy):
+            raise UnsupportedOperationOnThisStudyType(study.type, "check_errors", "raw")
+        return self.storage_service.raw_study_service.check_errors(study)
 
     def get_all_areas(
         self,
@@ -1852,7 +1859,8 @@ class StudyService:
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.archive(cast(RawStudy, study_to_archive))
+            study_to_archive = assert_raw(study_to_archive)
+            self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
             self.repository.save(study_to_archive)
             self.event_bus.push(
@@ -1894,7 +1902,8 @@ class StudyService:
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
-            self.storage_service.raw_study_service.unarchive(cast(RawStudy, study_to_archive))
+            study_to_archive = assert_raw(study_to_archive)
+            self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
             os.unlink(self.storage_service.raw_study_service.find_archive_path(study_to_archive))
@@ -2112,28 +2121,6 @@ class StudyService:
             self.matrix_manager.update_matrix(study_interface, path, matrix_edit_instruction)
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
-
-    def check_and_update_all_study_versions_in_database(self) -> None:
-        """
-        This function updates studies version on the db.
-
-        **Warnings: Only users with Admins rights should be able to run this function.**
-
-        Raises:
-            UserHasNotPermissionError: if params user is not admin.
-
-        """
-        user = require_current_user()
-        if not user.is_site_admin():
-            logger.error(f"User {get_user_id()} is not site admin")
-            raise UserHasNotPermissionError()
-        studies = self.repository.get_all(
-            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_current_user())
-        )
-
-        for study in studies:
-            storage = self.storage_service.raw_study_service
-            storage.check_and_update_study_version_in_database(cast(RawStudy, study))
 
     def generate_timeseries(self, study: Study) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"

@@ -34,7 +34,6 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
-    UnsupportedOperationOnThisStudyType,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -169,7 +168,7 @@ class VariantStudyService(AbstractStorageService):
         return command_list
 
     def convert_commands(self, study_id: str, api_commands: List[CommandDTOAPI]) -> List[CommandDTO]:
-        study = self._get_variant_study(study_id, raw_study_accepted=True)
+        study = self._get_study_by_id(study_id)
         return [
             CommandDTO.model_validate({"study_version": study.version, **command.model_dump(mode="json")})
             for command in api_commands
@@ -369,7 +368,6 @@ class VariantStudyService(AbstractStorageService):
     def _get_variant_study(
         self,
         study_id: str,
-        raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
         Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
@@ -390,11 +388,34 @@ class VariantStudyService(AbstractStorageService):
         if study is None:
             raise StudyNotFoundError(study_id)
 
-        if not isinstance(study, VariantStudy) and not raw_study_accepted:
-            raise UnsupportedOperationOnThisStudyType(study.id, "get", "variant")
-
         assert_permission(study, StudyPermissionType.READ)
         return cast(VariantStudy, study)
+
+    def _get_study_by_id(
+        self,
+        study_id: str,
+    ) -> Study:
+        """
+        Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
+
+        Args:
+            study_id: The study identifier.
+
+        Returns:
+            The variant study.
+
+        Raises:
+            StudyNotFoundError: If the study does not exist (HTTP status 404).
+            MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
+            StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
+        """
+        study = self.repository.get(study_id)
+
+        if study is None:
+            raise StudyNotFoundError(study_id)
+
+        assert_permission(study, StudyPermissionType.READ)
+        return study
 
     def on_variant_advance(self, study: VariantStudy) -> None:
         """
@@ -454,12 +475,11 @@ class VariantStudyService(AbstractStorageService):
             raise ValueError(f"Unexpected type {type(variant_study)}")
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
-    def has_children(self, study: VariantStudy) -> bool:
+    def has_children(self, study: Study) -> bool:
         return self.repository.has_children(study.id)
 
     def get_all_variants_children(self, parent_id: str) -> VariantTreeDTO:
-        study = self._get_variant_study(parent_id, raw_study_accepted=True)
-
+        study = self._get_study_by_id(parent_id)
         children_tree = VariantTreeDTO(
             node=self.get_study_information(study),
             children=[],
@@ -483,7 +503,6 @@ class VariantStudyService(AbstractStorageService):
     ) -> None:
         study = self._get_variant_study(
             parent_id,
-            raw_study_accepted=True,
         )
         children = self.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
@@ -501,9 +520,9 @@ class VariantStudyService(AbstractStorageService):
         return output_list
 
     def get_direct_parent(self, id: str) -> Optional[StudyMetadataDTO]:
-        study = self._get_variant_study(id, raw_study_accepted=True)
+        study = self._get_study_by_id(id)
         if study.parent_id is not None:
-            parent = self._get_variant_study(study.parent_id, raw_study_accepted=True)
+            parent = self._get_study_by_id(study.parent_id)
             return (
                 self.get_study_information(
                     parent,
@@ -516,7 +535,7 @@ class VariantStudyService(AbstractStorageService):
         return None
 
     def _get_variants_parents(self, id: str) -> List[StudyMetadataDTO]:
-        study = self._get_variant_study(id, raw_study_accepted=True)
+        study = self._get_study_by_id(id)
         metadata = (
             self.get_study_information(
                 study,
@@ -760,16 +779,6 @@ class VariantStudyService(AbstractStorageService):
         if task_id:
             return self.task_service.status_task(task_id=task_id, with_logs=True)
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
-
-    @override
-    def create(self, study: Study) -> Study:
-        """
-        Create an empty new study.
-        Args:
-            study: Study information.
-        Returns: New study information.
-        """
-        raise NotImplementedError()
 
     @override
     def exists(self, metadata: Study) -> bool:
