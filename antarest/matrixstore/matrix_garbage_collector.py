@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import time
+from datetime import datetime
 from os import listdir
 from pathlib import Path
 from typing import Set
@@ -60,7 +61,21 @@ class MatrixGarbageCollector(IService):
         saved_matrices = self._get_saved_matrices()
         used_matrices = self.matrix_service.get_used_matrices()
         unused_matrices = saved_matrices - used_matrices
-        self._delete_unused_saved_matrices(unused_matrices=unused_matrices)
+
+        if unused_matrices:
+            # Compare for each matrix, its lifetime duration to the `retention_time` value.
+            # If it's more, remove the matrix. Otherwise, pass.
+            matrices_to_remove = set()
+            current_time = datetime.utcnow()  # We use this value to fit with the one inside the database.
+            all_existing_matrices = self.matrix_service.get_matrices()
+            for matrix in all_existing_matrices:
+                if matrix.id in unused_matrices:
+                    matrix_lifetime = (current_time - matrix.created_at).total_seconds()
+                    if matrix_lifetime > self.retention_time:
+                        matrices_to_remove.add(matrix.id)
+
+            self._delete_unused_saved_matrices(unused_matrices=matrices_to_remove)
+
         stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning matrices in {x}s"))
 
     @override
