@@ -116,7 +116,7 @@ def parse_xpansion_settings(data: Any) -> XpansionSettings:
 
 
 def serialize_xpansion_settings(settings: XpansionSettings) -> dict[str, Any]:
-    data = XpansionSettingsFileData.from_model(settings).model_dump(by_alias=True)
+    data = XpansionSettingsFileData.from_model(settings).model_dump(mode="json", by_alias=True)
     # Exclude `yearly-weights` and `additional-constraints` if they are an empty str
     for field in ["yearly-weights", "additional-constraints"]:
         if not data[field]:

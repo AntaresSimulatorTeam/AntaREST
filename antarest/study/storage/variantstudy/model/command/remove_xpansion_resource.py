@@ -9,64 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import contextlib
 from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import FileCurrentlyUsedInSettings
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.xpansion_common import get_resource_dir
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-def _is_constraints_file_used(file_study: FileStudy, filename: str) -> bool:
-    with contextlib.suppress(KeyError):
-        constraints = file_study.tree.get(["user", "expansion", "settings", "additional-constraints"])
-        if str(constraints) == filename:
-            return True
-    return False
-
-
-def _is_weights_file_used(file_study: FileStudy, filename: str) -> bool:
-    with contextlib.suppress(KeyError):
-        weights = file_study.tree.get(["user", "expansion", "settings", "yearly-weights"])
-        if str(weights) == filename:
-            return True
-    return False
-
-
-def _is_capa_file_used(file_study: FileStudy, filename: str) -> bool:
-    candidates = file_study.tree.get(["user", "expansion", "candidates"])
-    all_profiles = set()
-    for candidate in candidates.values():
-        for profile in [
-            "link-profile",
-            "already-installed-link-profile",
-            "direct-link-profile",
-            "indirect-link-profile",
-            "already-installed-direct-link-profile",
-            "already-installed-indirect-link-profile",
-        ]:
-            all_profiles.add(candidate.get(profile))
-    return filename in all_profiles
-
-
-def checks_resource_deletion_is_allowed(
-    resource_type: XpansionResourceFileType, filename: str, study_data: FileStudy
-) -> None:
-    file_checkers = {
-        XpansionResourceFileType.CONSTRAINTS: _is_constraints_file_used,
-        XpansionResourceFileType.CAPACITIES: _is_capa_file_used,
-        XpansionResourceFileType.WEIGHTS: _is_weights_file_used,
-    }
-
-    if resource_type in file_checkers and file_checkers[resource_type](study_data, filename):
-        raise FileCurrentlyUsedInSettings(resource_type, filename)
 
 
 class RemoveXpansionResource(ICommand):
@@ -86,10 +38,10 @@ class RemoveXpansionResource(ICommand):
     filename: str
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        checks_resource_deletion_is_allowed(self.resource_type, self.filename, study_data)
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        study_data.checks_xpansion_resource_can_be_deleted(self.resource_type, self.filename)
 
-        study_data.tree.delete(get_resource_dir(self.resource_type) + [self.filename])
+        study_data.delete_xpansion_resource(self.resource_type, self.filename)
 
         return command_succeeded(message=f"Xpansion resource {self.filename} removed successfully")
 
