@@ -160,6 +160,7 @@ class StorageConfig:
     download_default_expiration_timeout_minutes: int = 1440
     matrix_gc_sleeping_time: int = 3600
     matrix_gc_dry_run: bool = False
+    matrix_gc_retention_time: int = 3600
     auto_archive_threshold_days: int = 60
     auto_archive_dry_run: bool = False
     auto_archive_sleeping_time: int = 3600
@@ -194,6 +195,7 @@ class StorageConfig:
             ),
             matrix_gc_sleeping_time=data.get("matrix_gc_sleeping_time", defaults.matrix_gc_sleeping_time),
             matrix_gc_dry_run=data.get("matrix_gc_dry_run", defaults.matrix_gc_dry_run),
+            matrix_gc_retention_time=data.get("matrix_gc_retention_time", defaults.matrix_gc_retention_time),
             auto_archive_threshold_days=data.get("auto_archive_threshold_days", defaults.auto_archive_threshold_days),
             auto_archive_dry_run=data.get("auto_archive_dry_run", defaults.auto_archive_dry_run),
             auto_archive_sleeping_time=data.get("auto_archive_sleeping_time", defaults.auto_archive_sleeping_time),

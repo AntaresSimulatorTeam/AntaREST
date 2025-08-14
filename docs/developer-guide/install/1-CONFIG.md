@@ -280,6 +280,12 @@ default:
 - **Default value:** false
 - **Description:** If `true`, matrices will never be removed. Else, the ones that are unused will.
 
+## **matrix_gc_retention_time**
+
+- **Type:** Integer
+- **Default value:** 3600
+- **Description:** Only unused matrices that have been created for longer than this time (in seconds) will be deleted.
+
 ## **auto_archive_sleeping_time**
 
 - **Type:** Integer
