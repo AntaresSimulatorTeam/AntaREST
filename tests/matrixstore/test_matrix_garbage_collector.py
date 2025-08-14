@@ -12,8 +12,10 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -97,6 +99,29 @@ def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
     matrix_garbage_collector.matrix_service.get_used_matrices = Mock(return_value={"matrix1"})
     matrix_garbage_collector._delete_unused_saved_matrices = Mock()
 
-    matrix_garbage_collector._clean_matrices()
+    matrix_garbage_collector.clean_matrices()
 
     matrix_garbage_collector._delete_unused_saved_matrices.assert_called_once_with(unused_matrices={"matrix2"})
+
+
+def test_clean_matrices_actual_service(matrix_service: MatrixService):
+    gc = MatrixGarbageCollector(
+        matrix_service=matrix_service,
+        matrix_dir=matrix_service.matrix_content_repository.bucket_dir,
+        sleeping_time=3600,
+        dry_run=False,
+    )
+
+    with db():
+        initial_matrices = matrix_service.get_matrices()
+        assert initial_matrices == []
+
+        matrix_id = matrix_service.create(pd.DataFrame(data=[[0]]))
+
+        updated_matrices = matrix_service.get_matrices()
+
+        assert [m.id for m in updated_matrices] == [matrix_id]
+        gc.clean_matrices()
+
+        matrices_after_clean = matrix_service.get_matrices()
+        assert matrices_after_clean == []

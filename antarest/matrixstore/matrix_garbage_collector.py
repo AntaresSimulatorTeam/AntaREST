@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING, Set
 
 from typing_extensions import override
 
-from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
@@ -32,14 +31,16 @@ logger = logging.getLogger(__name__)
 class MatrixGarbageCollector(IService):
     def __init__(
         self,
-        config: Config,
         matrix_service: "MatrixService",
+        matrix_dir: Path,
+        sleeping_time: float,
+        dry_run: bool,
     ):
         super(MatrixGarbageCollector, self).__init__()
-        self.saved_matrices_path: Path = config.storage.matrixstore
+        self.saved_matrices_path: Path = matrix_dir
         self.matrix_service = matrix_service
-        self.sleeping_time = config.storage.matrix_gc_sleeping_time
-        self.dry_run = config.storage.matrix_gc_dry_run
+        self.sleeping_time = sleeping_time
+        self.dry_run = dry_run
 
     def _get_saved_matrices(self) -> Set[str]:
         logger.info("Getting all saved matrices")
@@ -54,7 +55,7 @@ class MatrixGarbageCollector(IService):
                 logger.info(f"Deleting {unused_matrix_id}")
                 self.matrix_service.delete(unused_matrix_id)
 
-    def _clean_matrices(self) -> None:
+    def clean_matrices(self) -> None:
         """Delete all matrices that are not used anymore"""
         stopwatch = StopWatch()
         logger.info("Beginning of the cleaning process")
@@ -69,7 +70,7 @@ class MatrixGarbageCollector(IService):
         while True:
             try:
                 with db():
-                    self._clean_matrices()
+                    self.clean_matrices()
             except Exception as e:
                 logger.error("Error while cleaning matrices", exc_info=e)
             logger.info(f"Sleeping for {self.sleeping_time}s")

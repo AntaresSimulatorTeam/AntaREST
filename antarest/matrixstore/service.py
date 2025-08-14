@@ -40,7 +40,6 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
-from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
     Matrix,
@@ -553,15 +552,6 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
-
-    def create_matrix_gc(
-        self,
-        config: Config,
-    ) -> "MatrixGarbageCollector":
-        return MatrixGarbageCollector(
-            config=config,
-            matrix_service=self,
-        )
 
     def get_used_matrices(self) -> Set[str]:
         """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
