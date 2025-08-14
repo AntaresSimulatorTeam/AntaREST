@@ -9,21 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import logging
 import time
 from os import listdir
 from pathlib import Path
-from typing import TYPE_CHECKING, Set
+from typing import Set
 
 from typing_extensions import override
 
 from antarest.core.interfaces.service import IService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch
-
-if TYPE_CHECKING:
-    from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import MatrixService
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +28,7 @@ logger = logging.getLogger(__name__)
 class MatrixGarbageCollector(IService):
     def __init__(
         self,
-        matrix_service: "MatrixService",
+        matrix_service: MatrixService,
         matrix_dir: Path,
         sleeping_time: float,
         dry_run: bool,

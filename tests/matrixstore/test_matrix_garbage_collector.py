@@ -35,11 +35,6 @@ def matrix_garbage_collector(tmp_path: Path):
     mock_workspace_config = Mock()
     mock_workspace_config.path = default_workspace
 
-    mock_config = Mock()
-    mock_config.storage.matrixstore = matrix_store
-    mock_config.storage.workspaces = {"default": mock_workspace_config}
-    mock_config.storage.matrix_gc_dry_run = False
-
     matrix_constant_generator = Mock(spec=GeneratorMatrixConstants)
     matrix_constant_generator.hashes = {"test": "constant_matrix"}
     command_factory = CommandFactory(
@@ -51,8 +46,7 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
-        config=mock_config,
-        matrix_service=Mock(),
+        matrix_service=Mock(), matrix_dir=matrix_store, dry_run=False, sleeping_time=3600
     )
 
     return matrix_garbage_collector
