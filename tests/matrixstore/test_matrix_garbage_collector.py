@@ -12,8 +12,10 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+import pandas as pd
 import pytest
 
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -33,11 +35,6 @@ def matrix_garbage_collector(tmp_path: Path):
     mock_workspace_config = Mock()
     mock_workspace_config.path = default_workspace
 
-    mock_config = Mock()
-    mock_config.storage.matrixstore = matrix_store
-    mock_config.storage.workspaces = {"default": mock_workspace_config}
-    mock_config.storage.matrix_gc_dry_run = False
-
     matrix_constant_generator = Mock(spec=GeneratorMatrixConstants)
     matrix_constant_generator.hashes = {"test": "constant_matrix"}
     command_factory = CommandFactory(
@@ -49,8 +46,7 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
-        config=mock_config,
-        matrix_service=Mock(),
+        matrix_service=Mock(), matrix_dir=matrix_store, dry_run=False, sleeping_time=3600
     )
 
     return matrix_garbage_collector
@@ -97,6 +93,29 @@ def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
     matrix_garbage_collector.matrix_service.get_used_matrices = Mock(return_value={"matrix1"})
     matrix_garbage_collector._delete_unused_saved_matrices = Mock()
 
-    matrix_garbage_collector._clean_matrices()
+    matrix_garbage_collector.clean_matrices()
 
     matrix_garbage_collector._delete_unused_saved_matrices.assert_called_once_with(unused_matrices={"matrix2"})
+
+
+def test_clean_matrices_actual_service(matrix_service: MatrixService):
+    gc = MatrixGarbageCollector(
+        matrix_service=matrix_service,
+        matrix_dir=matrix_service.matrix_content_repository.bucket_dir,
+        sleeping_time=3600,
+        dry_run=False,
+    )
+
+    with db():
+        initial_matrices = matrix_service.get_matrices()
+        assert initial_matrices == []
+
+        matrix_id = matrix_service.create(pd.DataFrame(data=[[0]]))
+
+        updated_matrices = matrix_service.get_matrices()
+
+        assert [m.id for m in updated_matrices] == [matrix_id]
+        gc.clean_matrices()
+
+        matrices_after_clean = matrix_service.get_matrices()
+        assert matrices_after_clean == []

@@ -18,7 +18,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional, Sequence, Set
+from typing import List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -53,9 +53,6 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-
-if TYPE_CHECKING:
-    from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -555,15 +552,6 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
-
-    def create_matrix_gc(
-        self,
-        config: Config,
-    ) -> "MatrixGarbageCollector":
-        return MatrixGarbageCollector(
-            config=config,
-            matrix_service=self,
-        )
 
     def get_used_matrices(self) -> Set[str]:
         """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
