@@ -55,6 +55,7 @@ class MatrixDataSetRepository:
             self.session.add(matrix_user_metadata)
 
         self.session.commit()
+        logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
     def get(self, id_number: str) -> Optional[MatrixDataSet]:
