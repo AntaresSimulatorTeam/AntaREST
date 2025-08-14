@@ -66,9 +66,9 @@ class GroupRepository:
         if g:
             self.session.delete(g)
             self.session.commit()
-            logger.debug(f"Group {id} deleted")
+            logger.debug("Group deleted")
         else:
-            logger.warning(f"Group {id} not found for deletion")
+            logger.warning("Group not found for deletion")
 
 
 class IdentityRepository:

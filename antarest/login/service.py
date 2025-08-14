@@ -691,13 +691,12 @@ class LoginService:
             for role in self.roles.get_all_by_group(group=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
 
-            logger.info("group %s deleted by user %s", id, get_user_id())
+            logger.info("group deleted by user %s", get_user_id())
             return self.groups.delete(id)
         else:
             logger.error(
-                "user %s has not permission to delete group %s",
+                "user %s has not permission to delete group",
                 get_user_id(),
-                id,
             )
             raise UserHasNotPermissionError()
 
