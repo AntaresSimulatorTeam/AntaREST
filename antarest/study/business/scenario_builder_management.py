@@ -53,6 +53,7 @@ class ScenarioType(enum.StrEnum):
     - HYDRO_FINAL_LEVEL: hydraulic Final level scenario
     - HYDRO_GENERATION_POWER: hydraulic Generation power scenario
     - SHORT_TERM_STORAGE_INFLOWS: Short term storage inflows scenario
+    - SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS: Short term storage additional constraints scenario
 
     """
 
@@ -68,6 +69,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
     SHORT_TERM_STORAGE_INFLOWS = "shortTermStorageInflows"
+    SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS = "shortTermStorageAdditionalConstraints"
 
     @override
     def __str__(self) -> str:
@@ -88,6 +90,7 @@ SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
     ScenarioType.HYDRO_GENERATION_POWER: "hgp",
     ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
+    ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS: "sta",
 }
 
 
