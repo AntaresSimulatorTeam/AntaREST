@@ -32,12 +32,13 @@ class MatrixGarbageCollector(IService):
         matrix_dir: Path,
         sleeping_time: float,
         dry_run: bool,
+        retention_time: int,
     ):
-        super(MatrixGarbageCollector, self).__init__()
         self.saved_matrices_path: Path = matrix_dir
         self.matrix_service = matrix_service
         self.sleeping_time = sleeping_time
         self.dry_run = dry_run
+        self.retention_time = retention_time
 
     def _get_saved_matrices(self) -> Set[str]:
         logger.info("Getting all saved matrices")

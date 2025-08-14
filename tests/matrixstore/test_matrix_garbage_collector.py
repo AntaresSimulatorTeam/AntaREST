@@ -46,7 +46,7 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
-        matrix_service=Mock(), matrix_dir=matrix_store, dry_run=False, sleeping_time=3600
+        matrix_service=Mock(), matrix_dir=matrix_store, dry_run=False, sleeping_time=3600, retention_time=3600
     )
 
     return matrix_garbage_collector
@@ -104,6 +104,7 @@ def test_clean_matrices_actual_service(matrix_service: MatrixService):
         matrix_dir=matrix_service.matrix_content_repository.bucket_dir,
         sleeping_time=3600,
         dry_run=False,
+        retention_time=3600,
     )
 
     with db():
