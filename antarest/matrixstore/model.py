@@ -14,7 +14,7 @@ import datetime
 import uuid
 from typing import Any, List, TypeAlias
 
-from pydantic import field_serializer
+from pydantic import ConfigDict, field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -133,6 +133,17 @@ class MatrixDataSetRelation(Base):
         )
 
         return res
+
+
+class MatrixReference(AntaresBaseModel):
+    """
+    Give information about one reference to a matrix from a client
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    matrix_id: str
+    use_description: str
 
 
 class MatrixDataSet(Base):

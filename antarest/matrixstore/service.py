@@ -18,7 +18,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, Set
 
 import numpy as np
 import pandas as pd
@@ -40,6 +40,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.login.service import LoginService
 from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
     Matrix,
     MatrixDataSet,
@@ -48,9 +49,13 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixReference,
 )
 from antarest.matrixstore.parsing import save_matrix
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -77,9 +82,6 @@ Therefore, we rely on this version to know how to read the matrices
 
 
 class ISimpleMatrixService(ABC):
-    def __init__(self, matrix_content_repository: MatrixContentRepository) -> None:
-        self.matrix_content_repository = matrix_content_repository
-
     @abstractmethod
     def create(self, data: pd.DataFrame) -> str:
         """
@@ -106,6 +108,10 @@ class ISimpleMatrixService(ABC):
     def delete(self, matrix_id: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
+        raise NotImplementedError()
+
     def get_matrix_id(self, matrix: List[List[float]] | str) -> str:
         """
         Get the matrix ID from a matrix or a matrix link.
@@ -130,7 +136,8 @@ class ISimpleMatrixService(ABC):
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
-        super().__init__(matrix_content_repository=matrix_content_repository)
+        self.matrix_content_repository = matrix_content_repository
+        self.usage_providers: List[IMatrixUsageProvider] = []
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -151,6 +158,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def delete(self, matrix_id: str) -> None:
         self.matrix_content_repository.delete(matrix_id)
+
+    @override
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
+        self.usage_providers.append(usage_provider)
 
 
 def check_dataframe_compliance(df: pd.DataFrame) -> None:
@@ -200,13 +211,15 @@ class MatrixService(ISimpleMatrixService):
         config: Config,
         user_service: LoginService,
     ):
-        super().__init__(matrix_content_repository=matrix_content_repository)
+        self.matrix_content_repository = matrix_content_repository
         self.repo = repo
         self.repo_dataset = repo_dataset
         self.user_service = user_service
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.config = config
+        self.usage_providers: List[IMatrixUsageProvider] = []
+        self._create_dataset_usage_provider()
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -452,6 +465,10 @@ class MatrixService(ISimpleMatrixService):
             with contextlib.suppress(FileNotFoundError):
                 self.matrix_content_repository.delete(matrix_id)
 
+    @override
+    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
+        self.usage_providers.append(usage_provider)
+
     @staticmethod
     def check_access_permission(dataset: MatrixDataSet, write: bool = False) -> bool:
         user = require_current_user()
@@ -538,3 +555,40 @@ class MatrixService(ISimpleMatrixService):
         """
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
+
+    def create_matrix_gc(
+        self,
+        config: Config,
+    ) -> "MatrixGarbageCollector":
+        return MatrixGarbageCollector(
+            config=config,
+            matrix_service=self,
+        )
+
+    def get_used_matrices(self) -> Set[str]:
+        """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
+        return {
+            matrix_reference.matrix_id
+            for provider in self.usage_providers
+            for matrix_reference in provider.get_matrix_usage()
+        }
+
+    def _create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
+        repo_dataset = self.repo_dataset
+
+        class DatasetUsageProvider(IMatrixUsageProvider):
+            def __init__(self, matrix_service: "MatrixService") -> None:
+                matrix_service.register_usage_provider(self)
+
+            @override
+            def get_matrix_usage(self) -> list[MatrixReference]:
+                logger.info("Getting all matrices used in datasets")
+                datasets = repo_dataset.get_all_datasets()
+
+                return [
+                    MatrixReference(matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}")
+                    for dataset in datasets
+                    for matrix in dataset.matrices
+                ]
+
+        return DatasetUsageProvider(self)

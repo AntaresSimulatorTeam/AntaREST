@@ -220,27 +220,6 @@ def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Expl
     return explorer
 
 
-def create_matrix_gc(
-    config: Config,
-    app_ctxt: Optional[AppBuildContext],
-    study_service: Optional[StudyService] = None,
-    matrix_service: Optional[MatrixService] = None,
-) -> MatrixGarbageCollector:
-    if study_service and matrix_service:
-        return MatrixGarbageCollector(
-            config=config,
-            study_service=study_service,
-            matrix_service=matrix_service,
-        )
-    else:
-        core_services = create_core_services(app_ctxt, config)
-        return MatrixGarbageCollector(
-            config=config,
-            study_service=core_services.study_service,
-            matrix_service=core_services.matrix_service,
-        )
-
-
 def create_archive_worker(
     config: Config,
     workspace: str,
@@ -291,11 +270,8 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
 
     matrix_garbage_collector = None
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
-        matrix_garbage_collector = create_matrix_gc(
+        matrix_garbage_collector = core_services.matrix_service.create_matrix_gc(
             config=config,
-            app_ctxt=app_ctxt,
-            study_service=core_services.study_service,
-            matrix_service=core_services.matrix_service,
         )
 
     auto_archiver = None

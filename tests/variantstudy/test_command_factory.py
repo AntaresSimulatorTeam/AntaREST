@@ -1007,16 +1007,8 @@ def command_factory() -> CommandFactory:
 
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
 
-    class FakeGeneratorMatrixConstants(GeneratorMatrixConstants):
-        """Made to avoid having Mock objects in commands arguments"""
-
-        def __getattribute__(self, name):
-            if name in ("_return_value", "__class__"):  # Avoid infinite loop
-                return super().__getattribute__(name)
-            return lambda *args, **kwargs: "fake_matrix"
-
     return CommandFactory(
-        generator_matrix_constants=FakeGeneratorMatrixConstants(matrix_service),
+        generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
         matrix_service=matrix_service,
     )
 
