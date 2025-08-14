@@ -13,7 +13,14 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+import pandas as pd
+
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 
 
 class ReadOnlyXpansionDao(ABC):
@@ -38,7 +45,19 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         raise NotImplementedError()
 
 
@@ -53,4 +72,28 @@ class XpansionDao(ReadOnlyXpansionDao):
 
     @abstractmethod
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def create_xpansion_configuration(self) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_xpansion_configuration(self) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
         raise NotImplementedError()

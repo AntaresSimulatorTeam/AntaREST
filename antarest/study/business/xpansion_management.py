@@ -13,15 +13,14 @@
 import logging
 from typing import List
 
+import pandas as pd
 from fastapi import UploadFile
 
 from antarest.core.exceptions import (
-    ChildNotFoundError,
     FileImportFailed,
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
-from antarest.core.model import JSON
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -44,13 +43,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
-    checks_resource_deletion_is_allowed,
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
-from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    get_resource_dir,
-)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -81,7 +76,7 @@ class XpansionManager:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
         # Checks settings are correct
         study_dao = study.get_study_dao()
-        study_dao.checks_settings_are_correct(new_xpansion_settings)
+        study_dao.checks_xpansion_settings_are_correct(new_xpansion_settings)
         command = UpdateXpansionSettings(
             settings=new_xpansion_settings, command_context=self._command_context, study_version=study.version
         )
@@ -109,10 +104,7 @@ class XpansionManager:
         return study.get_study_dao().get_all_xpansion_candidates()
 
     def replace_candidate(
-        self,
-        study: StudyInterface,
-        candidate_name: str,
-        xpansion_candidate: XpansionCandidateCreation,
+        self, study: StudyInterface, candidate_name: str, xpansion_candidate: XpansionCandidateCreation
     ) -> XpansionCandidate:
         final_candidate = create_xpansion_candidate(xpansion_candidate)
         command = ReplaceXpansionCandidate(
@@ -170,21 +162,15 @@ class XpansionManager:
                 raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
         return command
 
-    def add_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        file: UploadFile,
-    ) -> None:
+    def add_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, file: UploadFile) -> None:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
         # checks the file doesn't already exist
-        keys = get_resource_dir(resource_type)
-        file_study = study.get_files()
-        if filename in file_study.tree.get(keys):
+        resources = study.get_study_dao().get_xpansion_resources(resource_type)
+        if filename in resources:
             raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
         # parses the content
@@ -197,15 +183,9 @@ class XpansionManager:
 
         study.add_commands([command])
 
-    def delete_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> None:
-        file_study = study.get_files()
-        logger.info(f"Checking xpansion file '{filename}' is not used in study '{file_study.config.study_id}'")
-        checks_resource_deletion_is_allowed(resource_type, filename, file_study)
+    def delete_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str) -> None:
+        logger.info(f"Checking xpansion file '{filename}' is not used in study '{study.id}'")
+        study.get_study_dao().checks_xpansion_resource_can_be_deleted(resource_type, filename)
         logger.info(f"Deleting xpansion resource {filename} for study '{study.id}'")
         command = RemoveXpansionResource(
             resource_type=resource_type,
@@ -216,19 +196,11 @@ class XpansionManager:
         study.add_commands([command])
 
     def get_resource_content(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> JSON | bytes:
+        self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str
+    ) -> bytes | pd.DataFrame:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
-        file_study = study.get_files()
-        return file_study.tree.get(get_resource_dir(resource_type) + [filename])
+        return study.get_study_dao().get_xpansion_resource(resource_type, filename)
 
-    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> List[str]:
+    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
-        file_study = study.get_files()
-        try:
-            return sorted([filename for filename in file_study.tree.get(get_resource_dir(resource_type)).keys()])
-        except ChildNotFoundError:
-            return []
+        return study.get_study_dao().get_xpansion_resources(resource_type)
