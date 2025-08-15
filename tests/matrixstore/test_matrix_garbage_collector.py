@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -17,6 +18,7 @@ import pytest
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.matrixstore.model import MatrixMetadataDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -28,8 +30,6 @@ def matrix_garbage_collector(tmp_path: Path):
     """
     Fixture for creating a MatrixGarbageCollector object.
     """
-    matrix_store = tmp_path / "matrix_store"
-    matrix_store.mkdir()
     default_workspace = tmp_path / "default_workspace"
     default_workspace.mkdir()
     mock_workspace_config = Mock()
@@ -46,28 +46,10 @@ def matrix_garbage_collector(tmp_path: Path):
     study_service.storage_service.variant_study_service.repository = VariantStudyRepository(cache_service=Mock())
 
     matrix_garbage_collector = MatrixGarbageCollector(
-        matrix_service=Mock(), matrix_dir=matrix_store, dry_run=False, sleeping_time=3600
+        matrix_service=Mock(), dry_run=False, sleeping_time=3600, retention_time=3600
     )
 
     return matrix_garbage_collector
-
-
-@pytest.mark.unit_test
-def test_get_saved_matrices(
-    matrix_garbage_collector: MatrixGarbageCollector,
-):
-    """
-    Test that the get_all_saved_matrices function returns a list of all saved
-    matrices.
-    """
-    matrix_name1 = "matrix_name1"
-    matrix_name2 = "matrix_name2"
-    (matrix_garbage_collector.saved_matrices_path / f"{matrix_name1}.txt").touch()
-    (matrix_garbage_collector.saved_matrices_path / f"{matrix_name2}.txt").touch()
-
-    # Get all saved matrices
-    saved_matrices = matrix_garbage_collector._get_saved_matrices()
-    assert saved_matrices == {matrix_name1, matrix_name2}
 
 
 @pytest.mark.unit_test
@@ -89,7 +71,9 @@ def test_delete_unused_saved_matrices(
 
 @pytest.mark.unit_test
 def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
-    matrix_garbage_collector._get_saved_matrices = Mock(return_value={"matrix1", "matrix2"})
+    matrix_garbage_collector.matrix_service.get_matrices.return_value = [
+        MatrixMetadataDTO(id="matrix2", width=0, height=0, version=0, created_at=datetime(2020, 1, 1, 0, 0, 0))
+    ]
     matrix_garbage_collector.matrix_service.get_used_matrices = Mock(return_value={"matrix1"})
     matrix_garbage_collector._delete_unused_saved_matrices = Mock()
 
@@ -98,12 +82,10 @@ def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
     matrix_garbage_collector._delete_unused_saved_matrices.assert_called_once_with(unused_matrices={"matrix2"})
 
 
-def test_clean_matrices_actual_service(matrix_service: MatrixService):
+@pytest.mark.parametrize("retention_time", [0, 3600])
+def test_clean_matrices_actual_service(matrix_service: MatrixService, retention_time: int):
     gc = MatrixGarbageCollector(
-        matrix_service=matrix_service,
-        matrix_dir=matrix_service.matrix_content_repository.bucket_dir,
-        sleeping_time=3600,
-        dry_run=False,
+        matrix_service=matrix_service, sleeping_time=3600, dry_run=False, retention_time=retention_time
     )
 
     with db():
@@ -118,4 +100,8 @@ def test_clean_matrices_actual_service(matrix_service: MatrixService):
         gc.clean_matrices()
 
         matrices_after_clean = matrix_service.get_matrices()
-        assert matrices_after_clean == []
+        if retention_time == 0:
+            assert matrices_after_clean == []
+        else:
+            # Ensures the matrix wasn't deleted as it was created recently
+            assert len(matrices_after_clean) == 1

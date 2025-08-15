@@ -190,9 +190,9 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
 def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
     return MatrixGarbageCollector(
         matrix_service=matrix_service,
-        matrix_dir=config.storage.matrixstore,
         sleeping_time=config.storage.matrix_gc_sleeping_time,
         dry_run=config.storage.matrix_gc_dry_run,
+        retention_time=config.storage.matrix_gc_retention_time,
     )
 
 
