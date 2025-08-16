@@ -70,6 +70,11 @@ export default [
                 'Import method directly `import [METHOD] from "lodash/[METHOD]"` (safest for bundle size).',
               allowTypeImports: true,
             },
+            {
+              name: "i18next",
+              message: 'Use `import i18n from "@/i18n"` instead.',
+              allowTypeImports: true,
+            },
           ],
           patterns: [
             {

@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import React from "react";
-import { Grid, Divider, IconButton } from "@mui/material";
-import { t } from "i18next";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
+import { Divider, Grid, IconButton } from "@mui/material";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import SelectFE from "./fieldEditors/SelectFE";
 
 interface ListOption {
@@ -42,6 +42,8 @@ function DynamicList<T extends { id: string }>({
   allowEmpty = true,
   disableDelete,
 }: DynamicListProps<T>) {
+  const { t } = useTranslation();
+
   return (
     <Grid container direction="column" spacing={2}>
       <Grid item>
