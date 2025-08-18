@@ -26,7 +26,7 @@ from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S
+from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         self.freq = freq
 
     @override
-    def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
+    def save(self, data: str | bytes | JSON, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
 
@@ -95,8 +95,8 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> str | G:
-        output = cast("str | G", self._get(url, depth, expanded, formatted))
+    ) -> str | bytes | JSON:
+        output = self._get(url, depth, expanded, formatted)
         assert not isinstance(output, INode)
         return output
 
@@ -107,14 +107,14 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> str | G:
+    ) -> str | bytes | JSON:
         if expanded:
             link_content = self.matrix_mapper.get_link_content(self)
             if link_content is not None:
                 return link_content
             return self.get_lazy_content()
 
-        return cast("str | G", self.load(url, depth, expanded, formatted))
+        return self.load(url, depth, expanded, formatted)
 
     @override
     def get_lazy_content(
