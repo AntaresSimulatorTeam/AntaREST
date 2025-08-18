@@ -12,93 +12,81 @@
  * This file is part of the Antares project.
  */
 
+import type {
+  ExportMpsOption,
+  ExportMpsOption830,
+  LegacyTransmissionCapacities,
+  OptimizationFormFields,
+  SimplexOptimizationRange,
+  TransmissionCapacities,
+  TransmissionCapacities840,
+  UnfeasibleProblemBehavior,
+} from "@/services/api/studies/config/optimization/types";
+import { booleanToString, stringToBooleanOrIdentity } from "@/utils/booleanUtils";
+import type { BooleanToStringOrIdentity } from "@/utils/tsUtils";
 import * as R from "ramda";
 
-////////////////////////////////////////////////////////////////
-// Enums
-////////////////////////////////////////////////////////////////
+export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS: UnfeasibleProblemBehavior[] = [
+  "warning-dry",
+  "warning-verbose",
+  "error-dry",
+  "error-verbose",
+] as const;
 
-import type { StudyMetadata } from "../../../../../../types/types";
-import client from "../../../../../../services/api/client";
+export const SIMPLEX_OPTIMIZATION_RANGE_OPTIONS: SimplexOptimizationRange[] = [
+  "day",
+  "week",
+] as const;
 
-enum UnfeasibleProblemBehavior {
-  WarningDry = "warning-dry",
-  WarningVerbose = "warning-verbose",
-  ErrorDry = "error-dry",
-  ErrorVerbose = "error-verbose",
+export const LEGACY_TRANSMISSION_CAPACITIES_OPTIONS: Array<
+  BooleanToStringOrIdentity<LegacyTransmissionCapacities>
+> = ["true", "false", "infinite"] as const;
+
+export const TRANSMISSION_CAPACITIES_OPTIONS: TransmissionCapacities840[] = [
+  "local-values",
+  "null-for-all-links",
+  "infinite-for-all-links",
+  "null-for-physical-links",
+  "infinite-for-physical-links",
+] as const;
+
+export const EXPORT_MPS_OPTIONS: ExportMpsOption830[] = [
+  "none",
+  "optim-1",
+  "optim-2",
+  "both-optims",
+] as const;
+
+export interface FormattedOptimizationFormFields
+  extends Omit<OptimizationFormFields, "transmissionCapacities"> {
+  transmissionCapacities: BooleanToStringOrIdentity<TransmissionCapacities>;
 }
 
-enum SimplexOptimizationRange {
-  Day = "day",
-  Week = "week",
-}
+export const formatValuesForForm = (
+  values: OptimizationFormFields,
+  studyVersion: number,
+): FormattedOptimizationFormFields =>
+  R.evolve(
+    {
+      transmissionCapacities: (value: TransmissionCapacities) =>
+        typeof value === "boolean" ? booleanToString(value) : value,
+      exportMps: (value: ExportMpsOption) => {
+        if (typeof value === "boolean" && studyVersion >= 830) {
+          return value ? "both-optims" : "none";
+        }
+        return value;
+      },
+    },
+    values,
+  );
 
-enum LegacyTransmissionCapacities {
-  True = "true",
-  False = "false",
-  Infinite = "infinite",
-}
-
-enum TransmissionCapacities {
-  LocalValues = "local-values",
-  NullForAllLinks = "null-for-all-links",
-  InfiniteForAllLinks = "infinite-for-all-links",
-  NullForPhysicalLinks = "null-for-physical-links",
-  InfiniteForPhysicalLinks = "infinite-for-physical-links",
-}
-
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
-
-export interface OptimizationFormFields {
-  bindingConstraints: boolean;
-  hurdleCosts: boolean;
-  transmissionCapacities: boolean | LegacyTransmissionCapacities.Infinite | TransmissionCapacities;
-  thermalClustersMinStablePower: boolean;
-  thermalClustersMinUdTime: boolean;
-  dayAheadReserve: boolean;
-  primaryReserve: boolean;
-  strategicReserve: boolean;
-  spinningReserve: boolean;
-  exportMps: boolean;
-  unfeasibleProblemBehavior: UnfeasibleProblemBehavior;
-  simplexOptimizationRange: SimplexOptimizationRange;
-}
-
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
-
-export const UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS = Object.values(UnfeasibleProblemBehavior);
-export const SIMPLEX_OPTIMIZATION_RANGE_OPTIONS = Object.values(SimplexOptimizationRange);
-export const LEGACY_TRANSMISSION_CAPACITIES_OPTIONS = Object.values(LegacyTransmissionCapacities);
-export const TRANSMISSION_CAPACITIES_OPTIONS = Object.values(TransmissionCapacities);
-
-////////////////////////////////////////////////////////////////
-// Functions
-////////////////////////////////////////////////////////////////
-
-function makeRequestURL(studyId: StudyMetadata["id"]): string {
-  return `v1/studies/${studyId}/config/optimization/form`;
-}
-
-export async function getOptimizationFormFields(
-  studyId: StudyMetadata["id"],
-): Promise<OptimizationFormFields> {
-  const res = await client.get(makeRequestURL(studyId));
-  return res.data;
-}
-
-export function setOptimizationFormFields(
-  studyId: StudyMetadata["id"],
-  values: Partial<OptimizationFormFields>,
-): Promise<void> {
-  return client.put(makeRequestURL(studyId), values);
-}
-
-export const toBooleanIfNeeded = R.cond([
-  [R.equals("true"), R.T],
-  [R.equals("false"), R.F],
-  [R.T, R.identity],
-]);
+export const formatValuesForApi = (
+  values: Partial<FormattedOptimizationFormFields>,
+): Partial<OptimizationFormFields> =>
+  R.evolve(
+    {
+      transmissionCapacities: (value: FormattedOptimizationFormFields["transmissionCapacities"]) =>
+        stringToBooleanOrIdentity(value),
+    },
+    values,
+  );
