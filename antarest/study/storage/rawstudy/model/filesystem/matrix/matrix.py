@@ -15,7 +15,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import List, Optional, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -66,7 +66,12 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
     return None
 
 
-class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
+MatrixId: TypeAlias = str
+# Either raw content, or dictionary representation, or dataframe.
+MatrixContent: TypeAlias = bytes | JSON | pd.DataFrame
+
+
+class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
     def __init__(
         self,
         matrix_mapper: MatrixUriMapper,
@@ -75,17 +80,6 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     ) -> None:
         LazyNode.__init__(self, matrix_mapper, config)
         self.freq = freq
-
-    @override
-    def save(self, data: str | bytes | JSON, url: Optional[List[str]] = None) -> None:
-        self._assert_not_in_zipped_file()
-        self._assert_url_end(url)
-
-        if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
-            self.matrix_mapper.save_matrix(self, data)
-        else:
-            super().save(data, url)
-            self.matrix_mapper.remove_link(self)
 
     @override
     def get(
@@ -167,7 +161,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     @override
     def dump(
         self,
-        data: bytes | JSON | pd.DataFrame,
+        data: MatrixId | MatrixContent,
         url: Optional[List[str]] = None,
     ) -> None:
         """
@@ -182,15 +176,23 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
                 otherwise it will be converted to a Pandas DataFrame and then written to file.
             url: node URL (not used here).
         """
+        if isinstance(data, MatrixId):
+            if not self.matrix_mapper.matrix_exists(data):
+                raise ValueError(f"Matrix {data} does not exist")
+            self.matrix_mapper.save_matrix(self, data)
+            return
+
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         if isinstance(data, bytes):
             self.config.path.write_bytes(data)
+            self.matrix_mapper.remove_link(self)
         else:
             if isinstance(data, dict):
                 df = pd.DataFrame(**data)
             else:
                 df = data
             self.write_dataframe(df)
+            self.matrix_mapper.remove_link(self)
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:

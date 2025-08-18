@@ -55,7 +55,7 @@ def test_get_bucket(tmp_path: Path):
     assert "fileB.txt" in bucket["fileB.txt"]
     assert "fileC.txt" in bucket["folder"]["fileC.txt"]
     for registered_file in registered_files:
-        assert isinstance(node._get([registered_file.key], get_node=True), registered_file.node)
+        assert isinstance(node.get_node([registered_file.key]), registered_file.node)
 
 
 def test_save_bucket(tmp_path: Path):

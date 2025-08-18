@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple, cast
+from typing import Any, Dict, Generic, List, Optional, Tuple
 from zipfile import ZipFile
 
 from typing_extensions import override
@@ -107,10 +107,10 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             self.config.path.unlink()
 
     @override
-    def save(self, data: Any, url: Optional[List[str]] = None) -> None:
+    def save(self, data: S, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
-        self.dump(cast(S, data), url)
+        self.dump(data, url)
 
     def get_lazy_content(
         self,
