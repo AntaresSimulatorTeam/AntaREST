@@ -13,6 +13,10 @@
  */
 
 import type { SvgIconComponent } from "@mui/icons-material";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
+import InfoIcon from "@mui/icons-material/Info";
+import WarningIcon from "@mui/icons-material/Warning";
 import {
   Dialog,
   DialogActions,
@@ -24,8 +28,8 @@ import {
   type DialogProps,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
+import React from "react";
 import { mergeSxProp } from "../../../utils/muiUtils";
-
 type AlertValue = "success" | "error" | "info" | "warning";
 
 export interface BasicDialogProps extends Omit<DialogProps, "title"> {
@@ -46,9 +50,16 @@ const AlertBorder = styled("span", {
   borderColor: theme.palette[$type].main,
 }));
 
+const titleIconByAlert: Record<AlertValue, SvgIconComponent> = {
+  success: CheckCircleIcon,
+  error: ErrorIcon,
+  info: InfoIcon,
+  warning: WarningIcon,
+};
+
 function BasicDialog(props: BasicDialogProps) {
   const { title, titleIcon, children, actions, alert, contentProps, ...dialogProps } = props;
-  const TitleIcon = titleIcon;
+  const TitleIcon = titleIcon || (alert ? titleIconByAlert[alert] : null);
 
   return (
     <Dialog {...dialogProps}>

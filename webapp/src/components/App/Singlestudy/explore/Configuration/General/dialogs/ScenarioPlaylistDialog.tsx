@@ -115,10 +115,10 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleUpdateStatus = (fn: RA.Pred) => () => {
+  const handleUpdateStatus = (updateFn: RA.Pred) => () => {
     if (dataGridApiRef.current) {
       const { data, setData } = dataGridApiRef.current;
-      setData(mapSelectedYears(R.evolve({ status: fn }), data));
+      setData(mapSelectedYears(R.evolve({ status: updateFn }), data));
     }
   };
 

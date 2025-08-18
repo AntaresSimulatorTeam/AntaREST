@@ -24,7 +24,6 @@ import NumberSelectionsFE from "@/components/common/fieldEditors/NumberSelection
 import type { ControlPlus, SubmitHandlerPlus } from "@/components/common/Form/types";
 import useConfirm from "@/hooks/useConfirm";
 import { HOURS_IN } from "@/utils/date/constants";
-import EditIcon from "@mui/icons-material/Edit";
 import { Box, Button, ButtonGroup, Divider } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useRef, useState } from "react";
@@ -110,19 +109,19 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
     onClose();
   };
 
-  const handleClose = () => {
+  const handleClose = async () => {
     if (dataGridApiRef.current?.formState.isDirty) {
-      return closeAction.showConfirm().then((confirm) => {
-        if (confirm) {
-          onClose();
-        }
-      });
+      const isConfirmed = await closeAction.showConfirm();
+
+      if (!isConfirmed) {
+        return;
+      }
     }
 
     onClose();
   };
 
-  const handleUpdateHours = (fn: RA.Pred) => () => {
+  const handleUpdateHours = (updateFn: RA.Pred) => () => {
     if (dataGridApiRef.current) {
       const { data, setData } = dataGridApiRef.current;
 
@@ -137,7 +136,9 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
 
         return R.mapObjIndexed((active, key) => {
           const occurrenceIndex = Number(key);
-          return selectedHoursByOccurrence[occurrenceIndex]?.includes(hour) ? fn(active) : active;
+          return selectedHoursByOccurrence[occurrenceIndex]?.includes(hour)
+            ? updateFn(active)
+            : active;
         }, rowData);
       }, data);
 
@@ -196,10 +197,16 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
             columns={columns}
             defaultData={defaultData}
             onSubmit={handleSubmit}
-            extraActions={<Button onClick={handleClose}>{t("global.close")}</Button>}
+            extraActions={
+              <>
+                <Button onClick={handleClose}>{t("global.close")}</Button>
+                <Button type="submit" variant="contained">
+                  {t("global.apply")}
+                </Button>
+              </>
+            }
             apiRef={dataGridApiRef}
-            submitButtonText={t("global.edit")}
-            submitButtonIcon={<EditIcon />}
+            hideSubmitButton
             disableErrorSnackbar
           />
         </Box>

@@ -74,11 +74,13 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   onSubmitSuccessful?: (data: SubmitHandlerPlus<TData>, submitResult: SubmitReturnValue) => void;
   onDataChange?: (data: TData) => void;
   onStateChange?: (state: DataGridFormState) => void;
+  id?: string;
   sx?: SxProps<Theme>;
   extraActions?: React.ReactNode;
   apiRef?: React.Ref<DataGridFormApi<TData>>;
   submitButtonText?: string;
   submitButtonIcon?: ButtonProps["startIcon"];
+  hideSubmitButton?: boolean;
   disableErrorSnackbar?: boolean;
 }
 
@@ -95,10 +97,12 @@ function DataGridForm<TData extends Data>({
   onDataChange,
   onStateChange,
   sx,
+  id,
   extraActions,
   apiRef,
   submitButtonText,
   submitButtonIcon = <SaveIcon />,
+  hideSubmitButton = false,
   disableErrorSnackbar = false,
 }: DataGridFormProps<TData>) {
   const { t } = useTranslation();
@@ -309,6 +313,7 @@ function DataGridForm<TData extends Data>({
         sx,
       )}
       component="form"
+      id={id}
       onSubmit={handleSubmit}
     >
       <DataGrid
@@ -340,17 +345,21 @@ function DataGridForm<TData extends Data>({
           </Box>
         )}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Button
-            type="submit"
-            disabled={!isDirty}
-            loading={isSubmitting}
-            loadingPosition="start"
-            variant="contained"
-            startIcon={submitButtonIcon}
-          >
-            {submitButtonText || t("global.save")}
-          </Button>
-          <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+          {!hideSubmitButton && (
+            <>
+              <Button
+                type="submit"
+                disabled={!isDirty}
+                loading={isSubmitting}
+                loadingPosition="start"
+                variant="contained"
+                startIcon={submitButtonIcon}
+              >
+                {submitButtonText || t("global.save")}
+              </Button>
+              <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+            </>
+          )}
           <Tooltip title={t("global.undo")}>
             <span>
               <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>

@@ -57,7 +57,7 @@ export interface Storage<LegacyGroup extends boolean = false> {
   penalizeVariationWithdrawal: boolean | null;
 }
 
-export type FormalizedStorage = ExcludeNullFromProps<Storage>;
+export type FormattedStorage = ExcludeNullFromProps<Storage>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -91,14 +91,14 @@ const getStorageUrl = (
 ////////////////////////////////////////////////////////////////
 
 /**
- * Formalizes a storage object by ensuring all properties are defined.
+ * Formats a storage object by ensuring all properties are defined.
  * Using condition with the study version doesn't allow TypeScript
  * to infer properties types.
  *
  * @param storage - Storage object to formalize.
  * @returns Formalized storage object with all properties defined.
  */
-function formalizeStorage(storage: Storage): FormalizedStorage {
+function formatStorage(storage: Storage): FormattedStorage {
   return {
     ...storage,
     enabled: storage.enabled ?? false,
@@ -110,7 +110,7 @@ function formalizeStorage(storage: Storage): FormalizedStorage {
 
 export async function getStorages(studyId: StudyMetadata["id"], areaId: Area["name"]) {
   const res = await client.get<Storage[]>(getStoragesUrl(studyId, areaId));
-  return res.data.map(formalizeStorage);
+  return res.data.map(formatStorage);
 }
 
 export async function getStorage(
@@ -119,7 +119,7 @@ export async function getStorage(
   storageId: Storage["id"],
 ) {
   const res = await client.get<Storage>(getStorageUrl(studyId, areaId, storageId));
-  return formalizeStorage(res.data);
+  return formatStorage(res.data);
 }
 
 export async function updateStorage(
@@ -138,7 +138,7 @@ export async function createStorage(
   data: PartialExceptFor<Storage, "name">,
 ) {
   const res = await client.post<Storage>(getStoragesUrl(studyId, areaId), data);
-  return formalizeStorage(res.data);
+  return formatStorage(res.data);
 }
 
 export async function duplicateStorage(
@@ -152,7 +152,7 @@ export async function duplicateStorage(
     null,
     { params: { newName } },
   );
-  return formalizeStorage(res.data);
+  return formatStorage(res.data);
 }
 
 export async function deleteStorages(
