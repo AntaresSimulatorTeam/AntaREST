@@ -82,7 +82,7 @@ def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
     matrix_garbage_collector._delete_unused_saved_matrices.assert_called_once_with(unused_matrices={"matrix2"})
 
 
-@pytest.mark.parametrize("retention_time", [0, 3600])
+@pytest.mark.parametrize("retention_time", [-1, 3600])
 def test_clean_matrices_actual_service(matrix_service: MatrixService, retention_time: int):
     gc = MatrixGarbageCollector(
         matrix_service=matrix_service, sleeping_time=3600, dry_run=False, retention_time=retention_time
