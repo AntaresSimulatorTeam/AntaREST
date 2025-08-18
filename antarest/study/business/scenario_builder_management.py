@@ -134,10 +134,10 @@ SYMBOLS_BY_SCENARIO_TYPES = {
 def _get_ruleset_config(
     file_study: FileStudy,
     ruleset_name: str,
-    symbol: str = "",
+    symbol: str,
 ) -> Dict[str, int | float]:
     try:
-        suffix = f"/{symbol}" if symbol else ""
+        suffix = f"/{symbol}"
         url = f"settings/scenariobuilder/{ruleset_name}{suffix}".split("/")
         ruleset_cfg = cast(Dict[str, int | float], file_study.tree.get(url))
     except KeyError:
@@ -182,7 +182,7 @@ def _get_active_ruleset_name(file_study: FileStudy, default_ruleset: str = "Defa
     return active_ruleset
 
 
-def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
+def _build_ruleset(file_study: FileStudy, symbol: str) -> RulesetMatrices:
     ruleset_name = _get_active_ruleset_name(file_study)
     nb_years = _get_nb_years(file_study)
     ruleset_config = _get_ruleset_config(file_study, ruleset_name, symbol)

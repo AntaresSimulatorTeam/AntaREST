@@ -82,6 +82,18 @@ class RulesetMatrices:
 
     This class allows to manage the conversion of data from or to rules in INI format.
     It can also convert the data to a table form (a dictionary of dictionaries) for the frontend.
+
+    TODO: kind of duplicate of the Ruleset class, should be refactored.
+
+    Contains both some metadata about the study, and actual scenario data.
+
+    Attributes:
+        areas: the list of areas of the study
+        links: the list of links of the study, as tuples of (area1, area2)
+        thermals: a mapping area -> list of clusters
+        renewables: a mapping area -> list of clusters
+        groups: the list of binding constraints groups
+        storages: a mapping area -> list of storages
     """
 
     def __init__(
