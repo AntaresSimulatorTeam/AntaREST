@@ -314,10 +314,9 @@ class StudyUpgraderTask:
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.repository.one(study_id)
-            is_variant = isinstance(study_to_upgrade, VariantStudy)
             try:
                 # sourcery skip: extract-method
-                if is_variant:
+                if isinstance(study_to_upgrade, VariantStudy):
                     self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
                 else:
                     study_path = Path(study_to_upgrade.path)
@@ -1294,12 +1293,13 @@ class StudyService:
 
         if self.storage_service.variant_study_service.has_children(study):
             if children:
-                self.storage_service.variant_study_service.walk_children(
-                    study.id,
-                    lambda v: self.delete_study(v.id, True),
-                    bottom_first=True,
-                )
-                return
+                if isinstance(study, VariantStudy):
+                    self.storage_service.variant_study_service.walk_children(
+                        study.id,
+                        lambda v: self.delete_study(v.id, True),
+                        bottom_first=True,
+                    )
+                    return
             else:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
 

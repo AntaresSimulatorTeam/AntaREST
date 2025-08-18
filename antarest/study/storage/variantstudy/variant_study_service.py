@@ -370,7 +370,7 @@ class VariantStudyService(AbstractStorageService):
         study_id: str,
     ) -> VariantStudy:
         """
-        Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
+        Get variant study, and check READ permissions.
 
         Args:
             study_id: The study identifier.
@@ -381,22 +381,18 @@ class VariantStudyService(AbstractStorageService):
         Raises:
             StudyNotFoundError: If the study does not exist (HTTP status 404).
             MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
-            StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
         """
-        study = self.repository.get(study_id)
+        study = self._get_study_by_id(study_id)
 
-        if study is None:
-            raise StudyNotFoundError(study_id)
-
-        assert_permission(study, StudyPermissionType.READ)
-        return cast(VariantStudy, study)
+        assert isinstance(study, VariantStudy)
+        return study
 
     def _get_study_by_id(
         self,
         study_id: str,
     ) -> Study:
         """
-        Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
+        Get study, and check READ permissions.
 
         Args:
             study_id: The study identifier.
@@ -407,7 +403,6 @@ class VariantStudyService(AbstractStorageService):
         Raises:
             StudyNotFoundError: If the study does not exist (HTTP status 404).
             MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
-            StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
         """
         study = self.repository.get(study_id)
 
@@ -467,12 +462,9 @@ class VariantStudyService(AbstractStorageService):
             update_modification_date=True,
         )
 
-    def clear_snapshot(self, variant_study: Study) -> None:
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
-        if isinstance(variant_study, VariantStudy):
-            self._invalidate_snapshot(variant_study)
-        else:
-            raise ValueError(f"Unexpected type {type(variant_study)}")
+        self._invalidate_snapshot(variant_study)
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
     def has_children(self, study: Study) -> bool:
@@ -1088,6 +1080,7 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
+                assert isinstance(variant, VariantStudy)
                 if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_time:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)
