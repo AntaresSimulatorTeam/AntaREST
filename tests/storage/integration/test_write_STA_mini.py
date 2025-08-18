@@ -20,6 +20,9 @@ from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
 
 
+from antarest.core.utils.fastapi_sqlalchemy import db
+
+
 def assert_with_errors(
     storage_service: StudyService,
     url: str,
@@ -28,7 +31,8 @@ def assert_with_errors(
 ) -> None:
     url = url[len("/v1/studies/") :]
     uuid, url = url.split("/raw?path=")
-    res = storage_service.edit_study(uuid=uuid, url=url, new=new)
+    with db():
+        res = storage_service.edit_study(uuid=uuid, url=url, new=new)
     assert res == new
 
     res = storage_service.get(uuid=uuid, url=url, depth=-1, formatted=True)

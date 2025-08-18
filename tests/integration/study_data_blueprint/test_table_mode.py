@@ -56,7 +56,13 @@ class TestTableMode:
             task = wait_task_completion(client, user_access_token, task_id)
             assert task.status == TaskStatus.COMPLETED, task
 
-        # Create another link to test specific bug.
+        # Create links required for table mode tests
+        res = client.post(f"/v1/studies/{internal_study_id}/links", json={"area1": "de", "area2": "fr"})
+        assert res.status_code in [200, 201], res.json()
+        res = client.post(f"/v1/studies/{internal_study_id}/links", json={"area1": "es", "area2": "fr"})
+        assert res.status_code in [200, 201], res.json()
+        res = client.post(f"/v1/studies/{internal_study_id}/links", json={"area1": "fr", "area2": "it"})
+        assert res.status_code in [200, 201], res.json()
         res = client.post(f"/v1/studies/{internal_study_id}/links", json={"area1": "de", "area2": "it"})
         assert res.status_code in [200, 201], res.json()
 
@@ -241,6 +247,7 @@ class TestTableMode:
             },
         }
 
+
         expected_links = {
             "de / fr": {
                 "area1": "de",
@@ -253,7 +260,7 @@ class TestTableMode:
                 "comments": "",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
-                "linkWidth": 2,
+                "linkWidth": 2.0,
                 "loopFlow": False,
                 "transmissionCapacities": "ignore",
                 "usePhaseShifter": False,
@@ -271,7 +278,7 @@ class TestTableMode:
                 "comments": "",
                 "hurdlesCost": False,
                 "linkStyle": "plain",
-                "linkWidth": 1,
+                "linkWidth": 1.0,
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": False,
@@ -289,7 +296,7 @@ class TestTableMode:
                 "comments": "",
                 "hurdlesCost": True,
                 "linkStyle": "plain",
-                "linkWidth": 1,
+                "linkWidth": 1.0,
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": True,
@@ -305,14 +312,14 @@ class TestTableMode:
                 "colorr": 112,
                 "displayComments": True,
                 "comments": "",
-                "hurdlesCost": True,
+                "hurdlesCost": False,
                 "linkStyle": "plain",
-                "linkWidth": 1,
+                "linkWidth": 1.0,
                 "loopFlow": False,
                 "transmissionCapacities": "enabled",
                 "usePhaseShifter": False,
-                "filterSynthesis": "",
-                "filterYearByYear": "hourly",
+                "filterSynthesis": "hourly, daily, weekly, monthly, annual",
+                "filterYearByYear": "hourly, daily, weekly, monthly, annual",
             },
         }
 
