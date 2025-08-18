@@ -306,11 +306,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         return output
 
     @override
-    def get_node(
+    def get_node_and_remainder(
         self,
         url: Optional[List[str]] = None,
-    ) -> INode[SUB_JSON, SUB_JSON, JSON]:
-        return self
+    ) -> tuple[INode[SUB_JSON, SUB_JSON, JSON], list[str]]:
+        return self, url or []
 
     @override
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:

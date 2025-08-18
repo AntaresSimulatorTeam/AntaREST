@@ -126,7 +126,6 @@ from antarest.study.repository import (
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -2420,18 +2419,9 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
-        node = file_study.tree.get_node(url)
+        node, relative_url = file_study.tree.get_node_and_remainder(url)
 
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 
-        # Minor optimization: in order to not restart the search from the root
-        # in the specific case of folders, we can assume there is no
-        # "remaining parts" in the URL.
-        # This is a technical debt because this is clearly an implicit contract.
-        # Should be solved by returning remaining parts after a search, for ex.
-        if isinstance(node, FolderNode):
-            return node.get(url=[], depth=depth)
-
-        # Else we have to restart from the root to guarantee the right behaviour
-        return file_study.tree.get(url, depth=depth, formatted=formatted)
+        return node.get(url=relative_url, depth=depth, formatted=formatted)

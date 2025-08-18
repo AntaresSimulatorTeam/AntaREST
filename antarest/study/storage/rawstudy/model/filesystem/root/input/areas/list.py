@@ -28,14 +28,14 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
         self.matrix_mapper = matrix_mapper
 
     @override
-    def get_node(
+    def get_node_and_remainder(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> INode[List[str], List[str], List[str]]:
-        return self
+    ) -> tuple[INode[List[str], List[str], List[str]], list[str]]:
+        return self, []
 
     @override
     def get(

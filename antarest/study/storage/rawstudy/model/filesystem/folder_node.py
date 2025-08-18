@@ -113,18 +113,18 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         return output
 
     @override
-    def get_node(
+    def get_node_and_remainder(
         self,
         url: Optional[List[str]] = None,
-    ) -> INode[JSON, SUB_JSON, JSON]:
+    ) -> tuple[INode[JSON, SUB_JSON, JSON], list[str]]:
         if not url:
-            return self
+            return self, []
         children = self.build()
         names, sub_url = self._extract_child(children, url)
         if len(names) != 1:
             raise ValueError("Multiple nodes requested")
         child = children[names[0]]
-        return child.get_node(sub_url)
+        return child.get_node_and_remainder(sub_url)
 
     @override
     def save(

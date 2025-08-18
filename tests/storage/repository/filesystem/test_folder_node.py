@@ -19,8 +19,10 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.exceptions import ChildNotFoundError
+from antarest.study.model import STUDY_VERSION_8
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
@@ -286,3 +288,42 @@ def test_delete(tmp_path: Path) -> None:
     assert not data_link_node.exists()
     tree_node.delete()
     assert not folder_node.exists()
+
+
+def test_get_node_and_remainder(tmp_path: Path) -> None:
+    folder_node = tmp_path / "folder_node"
+    folder_node.mkdir()
+    sub_folder = folder_node / "sub_folder"
+    sub_folder.mkdir()
+    ini_node1 = sub_folder / "ini_node.txt"
+    ini_node1.touch()
+
+    config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=STUDY_VERSION_8)
+    tree_node = TestMiddleNode(
+        matrix_mapper=Mock(),
+        config=config,
+        children={
+            "sub_folder": TestMiddleNode(
+                matrix_mapper=Mock(),
+                config=config.next_file("sub_folder"),
+                children={
+                    "ini_node": IniFileNode(
+                        config=config.next_file("sub_folder").next_file("ini_node1.txt"),
+                        types={},
+                    ),
+                },
+            ),
+        },
+    )
+
+    node, relative_url = tree_node.get_node_and_remainder(["sub_folder"])
+    assert isinstance(node, FolderNode)
+    assert relative_url == []
+
+    node, relative_url = tree_node.get_node_and_remainder(["sub_folder", "ini_node"])
+    assert isinstance(node, IniFileNode)
+    assert relative_url == []
+
+    node, relative_url = tree_node.get_node_and_remainder(["sub_folder", "ini_node", "section", "prop"])
+    assert isinstance(node, IniFileNode)
+    assert relative_url == ["section", "prop"]

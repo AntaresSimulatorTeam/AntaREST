@@ -61,19 +61,26 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    @abstractmethod
     def get_node(
         self,
         url: Optional[List[str]] = None,
     ) -> "INode[G,S,V]":
         """
-        Ask data inside tree.
+        Returns the node object corresponding to the provided URL.
+        """
+        node, _ = self.get_node_and_remainder(url)
+        return node
 
-        Args:
-            url: data path to retrieve
-
-        Returns: json
-
+    @abstractmethod
+    def get_node_and_remainder(
+        self,
+        url: Optional[List[str]] = None,
+    ) -> tuple["INode[G,S,V]", list[str]]:
+        """
+        Returns the node object corresponding to the provided URL,
+        together with possibly unconsumed parts of the URL:
+        nodes generally correspond to a folder or file, while URLs may point at
+        data inside those nodes.
         """
         raise NotImplementedError()
 

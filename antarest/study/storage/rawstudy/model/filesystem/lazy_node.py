@@ -93,12 +93,12 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         return self._get(url, depth, expanded, formatted)
 
     @override
-    def get_node(
+    def get_node_and_remainder(
         self,
         url: Optional[List[str]] = None,
-    ) -> INode[G, S, V]:
+    ) -> tuple[INode[G, S, V], list[str]]:
         self._assert_url_end(url)
-        return self
+        return self, []
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
