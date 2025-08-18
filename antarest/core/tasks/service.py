@@ -19,6 +19,7 @@ from http import HTTPStatus
 from typing import Awaitable, Callable, Dict, List, Optional, TypeAlias
 
 from fastapi import HTTPException
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -134,14 +135,15 @@ class TaskLogAndProgressRecorder(ITaskNotifier):
 
     @override
     def notify_message(self, message: str) -> None:
-        task = self.session.query(TaskJob).get(self.task_id)
+        task = self.session.get(TaskJob, self.task_id)
         if task:
             task.logs.append(TaskJobLog(message=message, task_id=self.task_id))
             self.session.commit()
 
     @override
     def notify_progress(self, progress: int) -> None:
-        self.session.query(TaskJob).filter(TaskJob.id == self.task_id).update({TaskJob.progress: progress})
+        stmt = update(TaskJob).where(TaskJob.id == self.task_id).values(progress=progress)
+        self.session.execute(stmt)
         self.session.commit()
 
         self.event_bus.push(
@@ -361,7 +363,7 @@ class TaskJobService(ITaskService):
             logger.warning(f"Task '{task_id}' not handled by this worker, will poll for task completion from db")
             end = time.time() + timeout_sec
             while time.time() < end:
-                task_status = db.session.query(TaskJob.status).filter(TaskJob.id == task_id).scalar()
+                task_status = db.session.execute(select(TaskJob.status).where(TaskJob.id == task_id)).scalar()
                 if task_status is None:
                     logger.error(f"Awaited task '{task_id}' was not found")
                     return
@@ -371,13 +373,16 @@ class TaskJobService(ITaskService):
                 time.sleep(2)
 
             logger.error(f"Timeout while awaiting task '{task_id}'")
-            db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                {
-                    TaskJob.status: TaskStatus.TIMEOUT.value,
-                    TaskJob.result_msg: f"Task '{task_id}' timeout after {timeout_sec} seconds",
-                    TaskJob.result_status: False,
-                }
+            stmt = (
+                update(TaskJob)
+                .where(TaskJob.id == task_id)
+                .values(
+                    status=TaskStatus.TIMEOUT.value,
+                    result_msg=f"Task '{task_id}' timeout after {timeout_sec} seconds",
+                    result_status=False,
+                )
             )
+            db.session.execute(stmt)
             db.session.commit()
 
     def _run_task(
@@ -419,9 +424,8 @@ class TaskJobService(ITaskService):
 
                 logger.info(f"Starting task {task_id}")
                 with db():
-                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                        {TaskJob.status: TaskStatus.RUNNING.value}
-                    )
+                    stmt = update(TaskJob).where(TaskJob.id == task_id).values(status=TaskStatus.RUNNING.value)
+                    db.session.execute(stmt)
                     db.session.commit()
                 logger.info(f"Task {task_id} set to RUNNING")
 
@@ -435,15 +439,18 @@ class TaskJobService(ITaskService):
                 with db():
                     # Do not use the `timezone.utc` timezone to preserve a naive datetime.
                     completion_date = datetime.datetime.utcnow() if status.is_final() else None
-                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                        {
-                            TaskJob.status: status.value,
-                            TaskJob.result_msg: result.message,
-                            TaskJob.result_status: result.success,
-                            TaskJob.result: result.return_value,
-                            TaskJob.completion_date: completion_date,
-                        }
+                    stmt = (
+                        update(TaskJob)
+                        .where(TaskJob.id == task_id)
+                        .values(
+                            status=status.value,
+                            result_msg=result.message,
+                            result_status=result.success,
+                            result=result.return_value,
+                            completion_date=completion_date,
+                        )
                     )
+                    db.session.execute(stmt)
                     db.session.commit()
 
                 event_type = {True: EventType.TASK_COMPLETED, False: EventType.TASK_FAILED}[result.success]
@@ -471,14 +478,17 @@ class TaskJobService(ITaskService):
 
             try:
                 with db():
-                    db.session.query(TaskJob).filter(TaskJob.id == task_id).update(
-                        {
-                            TaskJob.status: TaskStatus.FAILED.value,
-                            TaskJob.result_msg: str(exc),
-                            TaskJob.result_status: False,
-                            TaskJob.completion_date: datetime.datetime.utcnow(),
-                        }
+                    stmt = (
+                        update(TaskJob)
+                        .where(TaskJob.id == task_id)
+                        .values(
+                            status=TaskStatus.FAILED.value,
+                            result_msg=str(exc),
+                            result_status=False,
+                            completion_date=datetime.datetime.utcnow(),
+                        )
                     )
+                    db.session.execute(stmt)
                     db.session.commit()
 
                 message = err_msg if custom_event_messages is None else custom_event_messages.end

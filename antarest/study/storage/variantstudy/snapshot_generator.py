@@ -27,7 +27,7 @@ from antarest.core.interfaces.cache import (
 )
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
-from antarest.study.model import RawStudy, StudyAdditionalData
+from antarest.study.model import RawStudy, Study, StudyAdditionalData
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -148,7 +148,7 @@ class SnapshotGenerator:
 
         return results
 
-    def _retrieve_descendants(self, variant_study_id: str) -> Tuple[RawStudy, Sequence[VariantStudy]]:
+    def _retrieve_descendants(self, variant_study_id: str) -> Tuple[Study, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
@@ -157,7 +157,7 @@ class SnapshotGenerator:
         root_study = self.repository.one(descendant_ids[0])
         return root_study, descendants
 
-    def _export_ref_study(self, snapshot_dir: Path, ref_study: RawStudy | VariantStudy) -> None:
+    def _export_ref_study(self, snapshot_dir: Path, ref_study: Study) -> None:
         if isinstance(ref_study, VariantStudy):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_flat(
@@ -217,13 +217,13 @@ class RefStudySearchResult(NamedTuple):
     Result of the search for the reference study.
     """
 
-    ref_study: RawStudy | VariantStudy
+    ref_study: Study
     cmd_blocks: Sequence[CommandBlock]
     force_regenerate: bool = False
 
 
 def search_ref_study(
-    root_study: RawStudy | VariantStudy,
+    root_study: Study,
     descendants: Sequence[VariantStudy],
     *,
     from_scratch: bool = False,
@@ -244,7 +244,7 @@ def search_ref_study(
         return RefStudySearchResult(ref_study=root_study, cmd_blocks=[], force_regenerate=True)
 
     # The reference study is the root study or a variant study with a valid snapshot
-    ref_study: RawStudy | VariantStudy
+    ref_study: Study
 
     # The commands to apply on the reference study to generate the current variant
     cmd_blocks: List[CommandBlock]

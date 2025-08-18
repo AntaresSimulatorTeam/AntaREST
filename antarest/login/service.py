@@ -288,7 +288,7 @@ class LoginService:
             logger.error("group %s not found by user %s", id, get_user_id())
             raise GroupNotFoundError()
 
-    def get_user(self, id: int) -> Optional[User]:
+    def get_user(self, id: int) -> User | UserLdap | None:
         """
         Get user
         Permission: SADMIN, GADMIN (own group), USER (own user)
@@ -691,13 +691,12 @@ class LoginService:
             for role in self.roles.get_all_by_group(group=id):
                 self.roles.delete(user=role.identity_id, group=role.group_id)
 
-            logger.info("group %s deleted by user %s", id, get_user_id())
+            logger.info("group deleted by user %s", get_user_id())
             return self.groups.delete(id)
         else:
             logger.error(
-                "user %s has not permission to delete group %s",
+                "user %s has not permission to delete group",
                 get_user_id(),
-                id,
             )
             raise UserHasNotPermissionError()
 
@@ -720,8 +719,8 @@ class LoginService:
 
             logger.info("user %s deleted by user %s", id, get_user_id())
 
-            user = self.get_user(id)
-            if isinstance(user, UserLdap):
+            user_to_delete = self.get_user(id)
+            if isinstance(user_to_delete, UserLdap):
                 return self.ldap.delete(id)
             else:
                 return self.users.delete(id)  # return for test purpose

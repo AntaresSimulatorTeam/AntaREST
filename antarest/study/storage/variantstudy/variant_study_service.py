@@ -34,7 +34,6 @@ from antarest.core.exceptions import (
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
-    UnsupportedOperationOnThisStudyType,
     VariantGenerationError,
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
@@ -169,7 +168,7 @@ class VariantStudyService(AbstractStorageService):
         return command_list
 
     def convert_commands(self, study_id: str, api_commands: List[CommandDTOAPI]) -> List[CommandDTO]:
-        study = self._get_variant_study(study_id, raw_study_accepted=True)
+        study = self._get_study_by_id(study_id)
         return [
             CommandDTO.model_validate({"study_version": study.version, **command.model_dump(mode="json")})
             for command in api_commands
@@ -369,10 +368,9 @@ class VariantStudyService(AbstractStorageService):
     def _get_variant_study(
         self,
         study_id: str,
-        raw_study_accepted: bool = False,
     ) -> VariantStudy:
         """
-        Get variant study (or RAW study if `raw_study_accepted` is `True`), and check READ permissions.
+        Get variant study, and check READ permissions.
 
         Args:
             study_id: The study identifier.
@@ -383,15 +381,33 @@ class VariantStudyService(AbstractStorageService):
         Raises:
             StudyNotFoundError: If the study does not exist (HTTP status 404).
             MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
-            StudyTypeUnsupported: If the study is not a variant study (HTTP status 422).
+        """
+        study = self._get_study_by_id(study_id)
+
+        assert isinstance(study, VariantStudy)
+        return study
+
+    def _get_study_by_id(
+        self,
+        study_id: str,
+    ) -> Study:
+        """
+        Get study, and check READ permissions.
+
+        Args:
+            study_id: The study identifier.
+
+        Returns:
+            The variant study.
+
+        Raises:
+            StudyNotFoundError: If the study does not exist (HTTP status 404).
+            MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
         """
         study = self.repository.get(study_id)
 
         if study is None:
             raise StudyNotFoundError(study_id)
-
-        if not isinstance(study, VariantStudy) and not raw_study_accepted:
-            raise UnsupportedOperationOnThisStudyType(study.id, "get", "variant")
 
         assert_permission(study, StudyPermissionType.READ)
         return study
@@ -446,17 +462,16 @@ class VariantStudyService(AbstractStorageService):
             update_modification_date=True,
         )
 
-    def clear_snapshot(self, variant_study: Study) -> None:
+    def clear_snapshot(self, variant_study: VariantStudy) -> None:
         logger.info(f"Clearing snapshot for study {variant_study.id}")
         self._invalidate_snapshot(variant_study)
         shutil.rmtree(self.get_study_path(variant_study), ignore_errors=True)
 
-    def has_children(self, study: VariantStudy) -> bool:
+    def has_children(self, study: Study) -> bool:
         return self.repository.has_children(study.id)
 
     def get_all_variants_children(self, parent_id: str) -> VariantTreeDTO:
-        study = self._get_variant_study(parent_id, raw_study_accepted=True)
-
+        study = self._get_study_by_id(parent_id)
         children_tree = VariantTreeDTO(
             node=self.get_study_information(study),
             children=[],
@@ -480,7 +495,6 @@ class VariantStudyService(AbstractStorageService):
     ) -> None:
         study = self._get_variant_study(
             parent_id,
-            raw_study_accepted=True,
         )
         children = self.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
@@ -498,9 +512,9 @@ class VariantStudyService(AbstractStorageService):
         return output_list
 
     def get_direct_parent(self, id: str) -> Optional[StudyMetadataDTO]:
-        study = self._get_variant_study(id, raw_study_accepted=True)
+        study = self._get_study_by_id(id)
         if study.parent_id is not None:
-            parent = self._get_variant_study(study.parent_id, raw_study_accepted=True)
+            parent = self._get_study_by_id(study.parent_id)
             return (
                 self.get_study_information(
                     parent,
@@ -513,7 +527,7 @@ class VariantStudyService(AbstractStorageService):
         return None
 
     def _get_variants_parents(self, id: str) -> List[StudyMetadataDTO]:
-        study = self._get_variant_study(id, raw_study_accepted=True)
+        study = self._get_study_by_id(id)
         metadata = (
             self.get_study_information(
                 study,
@@ -532,7 +546,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def get(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         url: str = "",
         depth: int = 3,
         formatted: bool = True,
@@ -549,7 +563,10 @@ class VariantStudyService(AbstractStorageService):
 
         Returns: study data formatted in json
         """
-        self._safe_generation(metadata, timeout=600)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata, timeout=600)
+        else:
+            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
         self.repository.refresh(metadata)
         return super().get(
             metadata=metadata,
@@ -562,7 +579,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def get_file(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         url: str = "",
         use_cache: bool = True,
     ) -> OriginalFile:
@@ -575,7 +592,10 @@ class VariantStudyService(AbstractStorageService):
 
         Returns: the file content and extension
         """
-        self._safe_generation(metadata, timeout=600)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata, timeout=600)
+        else:
+            raise TypeError(f"Expected {VariantStudy} but received {type(metadata)}")
         self.repository.refresh(metadata)
         return super().get_file(
             metadata=metadata,
@@ -753,17 +773,7 @@ class VariantStudyService(AbstractStorageService):
         raise StudyValidationError(f"Variant study '{study_id}' has no generation task")
 
     @override
-    def create(self, study: VariantStudy) -> VariantStudy:
-        """
-        Create an empty new study.
-        Args:
-            study: Study information.
-        Returns: New study information.
-        """
-        raise NotImplementedError()
-
-    @override
-    def exists(self, metadata: VariantStudy) -> bool:
+    def exists(self, metadata: Study) -> bool:
         """
         Check if the study snapshot exists and is up-to-date.
 
@@ -772,6 +782,9 @@ class VariantStudyService(AbstractStorageService):
 
         Returns: `True` if the study is present on disk, `False` otherwise.
         """
+        if not isinstance(metadata, VariantStudy):
+            return False
+
         return (
             (metadata.snapshot is not None)
             and (metadata.snapshot.created_at >= metadata.updated_at)
@@ -781,7 +794,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def copy(
         self,
-        src_study: VariantStudy,
+        src_study: Study,
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
@@ -807,7 +820,10 @@ class VariantStudyService(AbstractStorageService):
 
         dest_study = self.raw_study_service.build_raw_study(dest_study_name, groups, src_study, destination_folder)
 
-        file_study = self.get_raw(metadata=src_study)
+        if isinstance(src_study, VariantStudy):
+            file_study = self.get_raw(metadata=src_study)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(src_study)}")
 
         src_path = file_study.config.path
         dest_path = dest_study.path
@@ -866,7 +882,7 @@ class VariantStudyService(AbstractStorageService):
     @override
     def get_raw(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -878,7 +894,10 @@ class VariantStudyService(AbstractStorageService):
             output_dir: optional output dir override
         Returns: the config and study tree object
         """
-        self._safe_generation(metadata)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
 
         study_path = self.get_study_path(metadata)
         return self.study_factory.create_from_fs(
@@ -890,18 +909,21 @@ class VariantStudyService(AbstractStorageService):
         )
 
     @override
-    def get_study_sim_result(self, study: VariantStudy) -> List[StudySimResultDTO]:
+    def get_study_sim_result(self, study: Study) -> List[StudySimResultDTO]:
         """
         Get global result information
         Args:
             study: study
         Returns: study output data
         """
-        self._safe_generation(study, timeout=600)
+        if isinstance(study, VariantStudy):
+            self._safe_generation(study, timeout=600)
+        else:
+            raise TypeError(f"Expected {VariantStudy} but received {type(study)}")
         return super().get_study_sim_result(study=study)
 
     @override
-    def delete(self, metadata: VariantStudy) -> None:
+    def delete(self, metadata: Study) -> None:
         """
         Delete study
         Args:
@@ -914,7 +936,7 @@ class VariantStudyService(AbstractStorageService):
             remove_from_cache(self.cache, metadata.id)
 
     @override
-    def delete_output(self, metadata: VariantStudy, output_id: str) -> None:
+    def delete_output(self, metadata: Study, output_id: str) -> None:
         """
         Delete a simulation output
         Args:
@@ -942,13 +964,17 @@ class VariantStudyService(AbstractStorageService):
     @override
     def export_study_flat(
         self,
-        metadata: VariantStudy,
+        metadata: Study,
         dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
         denormalize: bool = True,
     ) -> None:
-        self._safe_generation(metadata)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
+
         path_study = Path(metadata.path)
 
         snapshot_path = path_study / SNAPSHOT_RELATIVE_PATH
@@ -965,7 +991,7 @@ class VariantStudyService(AbstractStorageService):
         )
 
     @override
-    def get_synthesis(self, metadata: VariantStudy) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
         """
         Return study synthesis
         Args:
@@ -973,13 +999,16 @@ class VariantStudyService(AbstractStorageService):
         Returns: FileStudyTreeConfigDTO
 
         """
-        self._safe_generation(metadata)
+        if isinstance(metadata, VariantStudy):
+            self._safe_generation(metadata)
+        else:
+            raise TypeError(f"The type of the study must be {VariantStudy}, not {type(metadata)}")
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
     @override
-    def initialize_additional_data(self, variant_study: VariantStudy) -> bool:
+    def initialize_additional_data(self, variant_study: Study) -> bool:
         try:
             if self.exists(variant_study):
                 study = self.study_factory.create_from_fs(
@@ -1051,6 +1080,7 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
+                assert isinstance(variant, VariantStudy)
                 if variant.updated_at and variant.updated_at < datetime.utcnow() - self._retention_time:
                     if variant.last_access and variant.last_access < datetime.utcnow() - self._retention_time:
                         self._variant_study_service.clear_snapshot(variant)

@@ -25,7 +25,7 @@ from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class VariantStudySnapshot(Base):  # type: ignore
+class VariantStudySnapshot(Base):
     """
     Metadata about a variant snapshot.
 
@@ -57,7 +57,7 @@ class VariantStudySnapshot(Base):  # type: ignore
         return f"[Snapshot] id={self.id}, created_at={self.created_at}"
 
 
-class CommandBlock(Base):  # type: ignore
+class CommandBlock(Base):
     """
     Storage of commands in database.
 
