@@ -148,9 +148,9 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         # The R scripts use the flag formatted=False
         if df.empty:
             return b""
-        buffer = io.StringIO()
-        df.to_csv(buffer, sep="\t", header=False, index=False)
-        return buffer.getvalue()  # type: ignore
+        buffer = io.BytesIO()
+        df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
+        return buffer.getvalue()
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
