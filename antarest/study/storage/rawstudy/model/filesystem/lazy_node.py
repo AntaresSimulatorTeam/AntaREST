@@ -31,7 +31,8 @@ class SimpleCache:
 
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     """
-    Abstract left with implemented a lazy loading for its daughter implementation.
+    A "lazy" node does not return its full content but a summarized, short representation
+    when in the context of a tree expansion (typically getting children of a folder node).
     """
 
     ZIP_FILELIST_CACHE: Dict[str, SimpleCache] = {}
@@ -89,9 +90,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         expanded: bool = False,
         formatted: bool = True,
     ) -> str | G:
-        output = self._get(url, depth, expanded, formatted)
-        assert not isinstance(output, INode)
-        return output
+        return self._get(url, depth, expanded, formatted)
 
     @override
     def get_node(
