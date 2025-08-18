@@ -26,6 +26,7 @@ import pandas as pd
 from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from markupsafe import escape
+from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -101,6 +102,7 @@ from antarest.study.business.xpansion_management import (
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.hybrid_dao import HybridDao
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -374,12 +376,14 @@ class RawStudyInterface(StudyInterface):
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
         study: RawStudy,
+        session: Session,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
+        self.session = session
 
     @override
     @property
@@ -399,15 +403,16 @@ class RawStudyInterface(StudyInterface):
 
     @override
     def get_study_dao(self) -> ReadOnlyStudyDao:
-        return FileStudyTreeDao(self.get_files()).read_only()
+        return HybridDao(self.get_files(), self.session, self._study.id).read_only()
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         study = self._study
         should_invalidate_cache = False
         file_study = self.get_files()
+        dao = HybridDao(file_study, self.session, self._study.id)
         for command in commands:
-            result = command.apply(FileStudyTreeDao(file_study), listener)
+            result = command.apply(dao, listener)
             if result.should_invalidate_cache:
                 should_invalidate_cache = True
             if not result.status:
@@ -821,6 +826,7 @@ class StudyService:
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
                 study,
+                db.session,
             )
         else:
             raise ValueError(f"Unsupported study type '{study.type}'")
@@ -1224,6 +1230,9 @@ class StudyService:
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
 
+        if isinstance(study, RawStudy):
+            self._sync_db_to_filesystem(study)
+
         logger.info("Exporting study %s", uuid)
         export_name = f"Study {study.name} ({uuid}) export"
         export_file_download = self.file_transfer_manager.request_download(
@@ -1357,6 +1366,7 @@ class StudyService:
 
         self._save_study(study, group_ids)
         self.normalize_study(study)
+        self._sync_filesystem_to_db(study)
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_CREATED,
@@ -1955,6 +1965,53 @@ class StudyService:
             study.groups.append(Group(id=jwt_group.id, name=jwt_group.name))
 
         self.repository.save(study)
+
+    def _sync_db_to_filesystem(self, study: RawStudy) -> None:
+        """
+        Syncs study data from database to filesystem.
+        This is typically used before exporting a study, to ensure the
+        exported files are up-to-date with the database source of truth.
+        """
+        logger.info(f"Syncing database data to filesystem for study {study.id}")
+        try:
+            with db():
+                file_study = self.get_file_study(study)
+                hybrid_dao = HybridDao(file_study, db.session, study.id)
+
+                # Get all links from the database (the source of truth)
+                # Note: this may trigger an on-the-fly migration if the study is old,
+                # which is fine.
+                links_from_db = hybrid_dao.get_links()
+
+                # Write every link back to the filesystem.
+                # The underlying `save_link` in `FileStudyLinkDao` will create or update the files.
+                for link in links_from_db:
+                    super(HybridDao, hybrid_dao).save_link(link)
+
+        except Exception as e:
+            logger.error(
+                f"Failed to sync database data to filesystem for study {study.id}",
+                exc_info=e,
+            )
+
+    def _sync_filesystem_to_db(self, study: RawStudy) -> None:
+        """
+        Syncs study data from filesystem to database.
+        This is typically used after importing a study.
+        """
+        logger.info(f"Syncing filesystem data to database for study {study.id}")
+        try:
+            with db():
+                file_study = self.get_file_study(study)
+                # Use a temporary hybrid DAO to perform the sync
+                hybrid_dao = HybridDao(file_study, db.session, study.id)
+                # This call will trigger the on-the-fly migration logic
+                hybrid_dao.get_links()
+        except Exception as e:
+            logger.error(
+                f"Failed to sync filesystem data to database for study {study.id}",
+                exc_info=e,
+            )
 
     def get_study(self, uuid: str) -> Study:
         """
