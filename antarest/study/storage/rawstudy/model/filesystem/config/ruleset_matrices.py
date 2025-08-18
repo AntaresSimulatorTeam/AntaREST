@@ -30,6 +30,7 @@ SCENARIO_TYPES = {
     "hfl": "hydro-final-levels",
     "hgp": "hydro-generation-power",
     "sts": "short-term-storage-inflows",
+    "sta": "short-term-storage-additional-constraints",
 }
 
 _Value: te.TypeAlias = int | float
