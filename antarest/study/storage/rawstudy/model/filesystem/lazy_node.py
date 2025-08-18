@@ -70,7 +70,8 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         else:
             return self.config.path.exists()
 
-    def _get(
+    @override
+    def get(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
@@ -81,16 +82,6 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             return self.get_lazy_content()
 
         return self.load(url, depth, expanded, formatted)
-
-    @override
-    def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> str | G:
-        return self._get(url, depth, expanded, formatted)
 
     @override
     def get_node_and_remainder(

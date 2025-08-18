@@ -82,16 +82,6 @@ class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
         self.freq = freq
 
     @override
-    def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> str | bytes | JSON:
-        return self._get(url, depth, expanded, formatted)
-
-    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,

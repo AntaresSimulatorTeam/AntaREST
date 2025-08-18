@@ -89,17 +89,6 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             for name, node in children.items()
         }
 
-    def _get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        formatted: bool = True,
-    ) -> JSON:
-        if url and url != [""]:
-            return self._forward_get(url, depth, formatted)
-        else:
-            return self._expand_get(depth, formatted)
-
     @override
     def get(
         self,
@@ -108,9 +97,10 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> JSON:
-        output = self._get(url=url, depth=depth, formatted=formatted)
-        assert not isinstance(output, INode)
-        return output
+        if url and url != [""]:
+            return self._forward_get(url, depth, formatted)
+        else:
+            return self._expand_get(depth, formatted)
 
     @override
     def get_node_and_remainder(
