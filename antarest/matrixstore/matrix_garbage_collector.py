@@ -56,7 +56,7 @@ class MatrixGarbageCollector(IService):
             current_time = datetime.utcnow()  # We use this value to fit with the one inside the database.
             for matrix in unused_matrices:
                 matrix_lifetime = (current_time - saved_matrices[matrix]).total_seconds()
-                if matrix_lifetime > self.retention_time:
+                if matrix_lifetime >= self.retention_time:
                     matrices_to_remove.add(matrix)
 
             self._delete_unused_saved_matrices(unused_matrices=matrices_to_remove)

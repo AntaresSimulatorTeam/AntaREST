@@ -12,10 +12,11 @@
 
 import datetime
 import enum
-from typing import Any, List, Optional, Sequence, Tuple, cast
+from typing import List, Optional, Sequence, Tuple, cast
 
 from pydantic import NonNegativeInt
-from sqlalchemy import and_, func, not_, or_, select, sql
+from sqlalchemy import and_, delete, exists, func, not_, or_, select, sql
+from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
 from antarest.core.interfaces.cache import ICache
@@ -212,20 +213,20 @@ class StudyMetadataRepository:
 
     def one(self, study_id: str) -> Study:
         """Get the study by ID or raise `sqlalchemy.exc.NoResultFound` if not found in database."""
-        # todo: I think we should use a `entity = with_polymorphic(Study, "*")`
-        #  to make sure RawStudy and VariantStudy fields are also fetched.
-        #  see: antarest.study.service.StudyService.delete_study
+
         # When we fetch a study, we also need to fetch the associated owner and groups
         # to check the permissions of the current user efficiently.
-        study: Study = (
-            self.session.query(Study)
+        stmt = (
+            select(Study)
             .options(joinedload(Study.owner))
             .options(joinedload(Study.groups))
             .options(joinedload(Study.tags))
-            .filter_by(id=study_id)
-            .one()
+            .where(Study.id == study_id)
         )
-        return study
+        result = self.session.scalar(stmt.execution_options(unique=True))
+        if result is None:
+            raise NoResultFound(f"Study with ID {study_id} not found")
+        return result
 
     def get_additional_data(self, study_id: str) -> Optional[StudyAdditionalData]:
         return self.session.get(StudyAdditionalData, study_id)
@@ -276,11 +277,11 @@ class StudyMetadataRepository:
             if sort_by is None:
                 q = q.order_by(entity.name.asc())
             if study_filter.groups or study_filter.tags:
-                studies: Sequence[Study] = q.all()[offset:end]
+                studies: Sequence[Study] = list(q.all())[offset:end]
                 return studies
             q = q.offset(offset).limit(limit)
 
-        studies = q.all()
+        studies = list(q.all())
         return studies
 
     def count_studies(self, study_filter: StudyFilter = StudyFilter()) -> int:
@@ -294,15 +295,12 @@ class StudyMetadataRepository:
             Integer, corresponding to total number of studies matching with specified filters.
         """
         q = self._search_studies(study_filter)
-
-        total: int = q.count()
-
-        return total
+        return q.count()
 
     def _search_studies(
         self,
         study_filter: StudyFilter,
-    ) -> Query[Any]:
+    ) -> Query[Study]:
         """
         Build a `SQL Query` based on specified filters.
 
@@ -319,8 +317,9 @@ class StudyMetadataRepository:
         entity = with_polymorphic(Study, "*")
 
         escape_char = "\\"
-        # noinspection PyTypeChecker
-        q = self.session.query(entity)
+
+        q: Query[Study] = self.session.query(entity)
+
         if study_filter.exists is not None:
             if study_filter.exists:
                 q = q.filter(RawStudy.missing.is_(None))
@@ -386,19 +385,20 @@ class StudyMetadataRepository:
         return q
 
     def get_all_raw(self, exists: Optional[bool] = None) -> Sequence[RawStudy]:
-        query = self.session.query(RawStudy)
+        stmt = select(RawStudy)
         if exists is not None:
             if exists:
-                query = query.filter(RawStudy.missing.is_(None))
+                stmt = stmt.where(RawStudy.missing.is_(None))
             else:
-                query = query.filter(not_(RawStudy.missing.is_(None)))
-        studies: Sequence[RawStudy] = query.all()
-        return studies
+                stmt = stmt.where(not_(RawStudy.missing.is_(None)))
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
 
     def delete(self, id_: str, *ids: str) -> None:
         ids = (id_,) + ids
         session = self.session
-        session.query(Study).filter(Study.id.in_(ids)).delete(synchronize_session=False)
+        stmt = delete(Study).where(Study.id.in_(ids))
+        session.execute(stmt)
         session.commit()
 
     def update_tags(self, study: Study, new_tags: Sequence[str]) -> None:
@@ -412,16 +412,22 @@ class StudyMetadataRepository:
         """
         new_upper_tags = {tag.upper(): tag for tag in new_tags}
         session = self.session
-        existing_tags = session.query(Tag).filter(func.upper(Tag.label).in_(new_upper_tags)).all()
+
+        stmt = select(Tag).where(func.upper(Tag.label).in_(new_upper_tags))
+        existing_tags = list(session.execute(stmt).scalars().all())
+
         for tag in existing_tags:
             if tag.label.upper() in new_upper_tags:
                 new_upper_tags.pop(tag.label.upper())
+
         study.tags = [Tag(label=tag) for tag in new_upper_tags.values()] + existing_tags
         session.merge(study)
         session.commit()
+
         # Delete any tag that is not associated with any study.
         # Note: If tags are to be associated with objects other than Study, this code must be updated.
-        session.query(Tag).filter(~Tag.studies.any()).delete(synchronize_session=False)
+        delete_stmt = delete(Tag).where(~Tag.studies.any())
+        session.execute(delete_stmt)
         session.commit()
 
     def list_duplicates(self) -> List[Tuple[str, str]]:
@@ -429,9 +435,10 @@ class StudyMetadataRepository:
         Get list of duplicates as tuples (id, path).
         """
         session = self.session
-        subquery = session.query(Study.path).group_by(Study.path).having(func.count() > 1)
-        query = session.query(Study.id, Study.path).filter(Study.path.in_(subquery))
-        return cast(List[Tuple[str, str]], query.all())
+        subquery = select(Study.path).group_by(Study.path).having(func.count() > 1)
+        stmt = select(Study.id, Study.path).where(Study.path.in_(subquery))
+        result = session.execute(stmt)
+        return cast(List[Tuple[str, str]], result.all())
 
     def has_children(self, uuid: str) -> bool:
         """
@@ -444,4 +451,6 @@ class StudyMetadataRepository:
             True if the study has children, False otherwise.
         """
 
-        return self.session.query(Study).filter(Study.parent_id == uuid).first() is not None
+        stmt = select(exists(select(Study).where(Study.parent_id == uuid)))
+        result = self.session.scalar(stmt)
+        return bool(result) if result is not None else False

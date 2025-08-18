@@ -146,7 +146,7 @@ class Password:
         return self.__str__()
 
 
-class Identity(Base):  # type: ignore
+class Identity(Base):
     """
     Abstract entity which represent generic user
     """
@@ -277,7 +277,7 @@ class Bot(Identity):
     # is to compare the identity of the objects using the primary key.
 
 
-class Group(Base):  # type: ignore
+class Group(Base):
     """
     Group of users
     """
@@ -303,7 +303,7 @@ class Group(Base):  # type: ignore
         return f"Group(id={self.id}, name={self.name})"
 
 
-class Role(Base):  # type: ignore
+class Role(Base):
     """
     Enable to link a user to a group with a specific role permission
     """

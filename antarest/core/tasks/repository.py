@@ -12,10 +12,10 @@
 
 import datetime
 from http import HTTPStatus
-from operator import and_
 from typing import List, Optional
 
 from fastapi import HTTPException
+from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
 from antarest.core.tasks.model import TaskJob, TaskListFilter
@@ -58,34 +58,36 @@ class TaskJobRepository:
         return task
 
     def list(self, filter: TaskListFilter, user: Optional[int] = None) -> List[TaskJob]:
-        q = self.session.query(TaskJob)
+        stmt = select(TaskJob)
         if user:
-            q = q.filter(TaskJob.owner_id == user)
+            stmt = stmt.where(TaskJob.owner_id == user)
         if len(filter.status) > 0:
             _values = [status.value for status in filter.status]
-            q = q.filter(TaskJob.status.in_(_values))
+            stmt = stmt.where(TaskJob.status.in_(_values))
         if filter.name:
-            q = q.filter(TaskJob.name.ilike(f"%{filter.name}%"))
+            stmt = stmt.where(TaskJob.name.ilike(f"%{filter.name}%"))
         if filter.to_creation_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.to_creation_date_utc)
-            q = q.filter(TaskJob.creation_date <= _date)
+            stmt = stmt.where(TaskJob.creation_date <= _date)
         if filter.from_creation_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.from_creation_date_utc)
-            q = q.filter(TaskJob.creation_date >= _date)
+            stmt = stmt.where(TaskJob.creation_date >= _date)
         if filter.to_completion_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.to_completion_date_utc)
             _clause = and_(TaskJob.completion_date.isnot(None), TaskJob.completion_date <= _date)
-            q = q.filter(_clause)
+            stmt = stmt.where(_clause)
         if filter.from_completion_date_utc:
             _date = datetime.datetime.fromtimestamp(filter.from_completion_date_utc)
             _clause = and_(TaskJob.completion_date.isnot(None), TaskJob.completion_date >= _date)
-            q = q.filter(_clause)
+            stmt = stmt.where(_clause)
         if filter.ref_id is not None:
-            q = q.filter(TaskJob.ref_id == filter.ref_id)
+            stmt = stmt.where(TaskJob.ref_id == filter.ref_id)
         if filter.type:
             _types = [task_type.value for task_type in filter.type]
-            q = q.filter(TaskJob.type.in_(_types))
-        tasks: List[TaskJob] = q.all()
+            stmt = stmt.where(TaskJob.type.in_(_types))
+
+        result = self.session.execute(stmt)
+        tasks: List[TaskJob] = list(result.scalars().all())
         return tasks
 
     def delete(self, tid: str) -> None:

@@ -55,7 +55,7 @@ class FileDownloadTaskDTO(AntaresBaseModel):
     task: str
 
 
-class FileDownload(Base):  # type: ignore
+class FileDownload(Base):
     __tablename__ = "file_download"
 
     id: Mapped[str] = mapped_column(

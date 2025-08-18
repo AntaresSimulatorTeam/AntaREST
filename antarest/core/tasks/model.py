@@ -15,7 +15,7 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String, update
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Mapped, mapped_column, relationship, sessionmaker
 from typing_extensions import override
@@ -109,7 +109,7 @@ class TaskListFilter(AntaresBaseModel, extra="forbid"):
     to_completion_date_utc: Optional[float] = None
 
 
-class TaskJobLog(Base):  # type: ignore
+class TaskJobLog(Base):
     __tablename__ = "taskjoblog"
 
     id: Mapped[int] = mapped_column(Integer(), Sequence("tasklog_id_sequence"), primary_key=True)
@@ -138,7 +138,7 @@ class TaskJobLog(Base):  # type: ignore
         return TaskLogDTO(id=self.id, message=self.message)
 
 
-class TaskJob(Base):  # type: ignore
+class TaskJob(Base):
     __tablename__ = "taskjob"
 
     id: Mapped[str] = mapped_column(String(), default=lambda: str(uuid.uuid4()), primary_key=True)
@@ -257,6 +257,6 @@ def cancel_orphan_tasks(engine: Engine, session_args: Mapping[str, Any]) -> None
     orphan_status = [TaskStatus.RUNNING.value, TaskStatus.PENDING.value]
     make_session = sessionmaker(bind=engine, **session_args)
     with make_session() as session:
-        q = session.query(TaskJob).filter(TaskJob.status.in_(orphan_status))
-        q.update(updated_values, synchronize_session=False)
+        stmt = update(TaskJob).where(TaskJob.status.in_(orphan_status)).values(updated_values)
+        session.execute(stmt)
         session.commit()
