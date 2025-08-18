@@ -27,7 +27,8 @@ def rulesets() -> Rulesets:
     ruleset.renewable = {"ch": {"wind1": {"1": 10}, "solar2": {"1": 5}}}
     ruleset.ntc = {"be / fr": {"1": 10, "2": 20}}
     ruleset.binding_constraints = {"bc1": {"1": 10, "2": 20}}
-    ruleset.short_term_storage_inflows = {"ch": {"storage1": {"1": 10, "2": 20}, "storage2": {"1": 5, "2": 1}}}
+    ruleset.storage_inflows = {"ch": {"storage1": {"1": 10, "2": 20}, "storage2": {"1": 5, "2": 1}}}
+    ruleset.storage_constraints = {"fr": {"battery": {"constraint1": {"1": 220}, "constraint2": {"1": 55}}}}
     ruleset.solar = {"fr": {"1": 110}}
     ruleset.wind = {"fr": {"1": 220}}
     return {"rules1": ruleset}
@@ -73,6 +74,9 @@ def serialized_rulesets() -> dict[str, dict[str, int]]:
             "sts,ch,2,storage1": 20,
             "sts,ch,1,storage2": 5,
             "sts,ch,2,storage2": 1,
+            # STS constraints
+            "sta,fr,1,battery,constraint1": 220,
+            "sta,fr,1,battery,constraint2": 55,
         }
     }
 

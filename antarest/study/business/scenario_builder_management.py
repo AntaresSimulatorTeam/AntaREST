@@ -105,7 +105,8 @@ class Ruleset(AntaresBaseModel):
     ntc: AreaScenarios | None = Field(default=None, alias="ntc")
     renewable: AreaItemsScenarios | None = Field(default=None, alias="r")
     binding_constraints: AreaScenarios | None = Field(default=None, alias="bc")
-    short_term_storage_inflows: AreaItemsScenarios | None = Field(default=None, alias="sts")
+    storage_inflows: AreaItemsScenarios | None = Field(default=None, alias="sts")
+    storage_constraints: AdditionalConstraintScenarios | None = Field(default=None, alias="sta")
 
 
 # We may have multiple rulesets, each with its own name
@@ -294,6 +295,19 @@ def _serialize_clusters(section: RulesetSection, scenario_type: ScenarioType, da
                 section[f"{symbol},{area},{year},{cluster}"] = value
 
 
+def _serialize_storage_constraints(
+    section: RulesetSection, scenario_type: ScenarioType, data: AdditionalConstraintScenarios | None
+) -> None:
+    if not data:
+        return
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    for area, area_scenarios in data.items():
+        for storage, storage_scenarios in area_scenarios.items():
+            for constraint, constraint_scenarios in storage_scenarios.items():
+                for year, value in constraint_scenarios.items():
+                    section[f"{symbol},{area},{year},{storage},{constraint}"] = value
+
+
 def serialize_rulesets(rulesets: Rulesets) -> RulesetSections:
     sections: RulesetSections = {}
     for ruleset_name, ruleset in rulesets.items():
@@ -309,13 +323,16 @@ def serialize_rulesets(rulesets: Rulesets) -> RulesetSections:
         _serialize_links(section, ScenarioType.LINK, ruleset.ntc)
         _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
         _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
-        _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.short_term_storage_inflows)
+        _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
+        _serialize_storage_constraints(
+            section, ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, ruleset.storage_constraints
+        )
     return sections
 
 
-def parse_rulesets(data: RulesetSections) -> Rulesets:
+def parse_rulesets(rulesets_data: RulesetSections) -> Rulesets:
     rulesets: dict[str, Any] = {}
-    for ruleset_name, data in data.items():
+    for ruleset_name, data in rulesets_data.items():
         ruleset = rulesets.setdefault(ruleset_name, {})
         for key, value in data.items():
             symbol, *parts = key.split(",")
@@ -333,6 +350,11 @@ def parse_rulesets(data: RulesetSections) -> Rulesets:
                 scenario_area = scenario.setdefault(parts[0], {})
                 scenario_area_cluster = scenario_area.setdefault(parts[2], {})
                 scenario_area_cluster[parts[1]] = int(value)
+            elif symbol == "sta":
+                area_scenarios = scenario.setdefault(parts[0], {})
+                storage_scenarios = area_scenarios.setdefault(parts[2], {})
+                constraint_scenarios = storage_scenarios.setdefault(parts[3], {})
+                constraint_scenarios[parts[1]] = int(value)
             else:  # pragma: no cover
                 raise NotImplementedError(f"Unknown symbol {symbol}")
 
