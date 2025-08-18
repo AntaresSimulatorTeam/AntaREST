@@ -64,9 +64,9 @@ class VariantStudyRepository(StudyMetadataRepository):
         Returns:
             List of `VariantStudy` objects, ordered by creation date.
         """
-        q = self.session.query(VariantStudy).filter(Study.parent_id == parent_id)
-        q = q.order_by(Study.created_at.desc())
-        studies = q.all()
+        stmt = select(VariantStudy).where(Study.parent_id == parent_id).order_by(Study.created_at.desc())
+        result = self.session.execute(stmt)
+        studies = list(result.scalars().all())
         return studies
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
@@ -98,30 +98,29 @@ class VariantStudyRepository(StudyMetadataRepository):
         Returns:
             List of `CommandBlock` objects.
         """
-        cmd_blocks: List[CommandBlock] = self.session.query(CommandBlock).all()
-        return cmd_blocks
+        stmt = select(CommandBlock)
+        return list(self.session.execute(stmt).scalars().all())
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
         Find a list of variants by IDs
-
-        Args:
-            variant_ids: list of variant IDs.
-
-        Returns:
-            List of variants (and attached snapshot) ordered by IDs
         """
-        # When we fetch the list of variants, we also need to fetch the associated snapshots,
-        # the list of commands, the additional data, etc.
-        # We use a SQL query with joins to fetch all these data efficiently.
-        q = (
-            self.session.query(VariantStudy)
-            .options(joinedload(VariantStudy.snapshot))
-            .options(joinedload(VariantStudy.commands))
-            .options(joinedload(VariantStudy.additional_data))
-            .options(joinedload(VariantStudy.owner))
-            .options(joinedload(VariantStudy.groups))
-            .filter(VariantStudy.id.in_(variant_ids))
+        if not variant_ids:
+            return []
+
+        stmt = (
+            select(VariantStudy)
+            .options(
+                joinedload(VariantStudy.snapshot),
+                joinedload(VariantStudy.commands),
+                joinedload(VariantStudy.additional_data),
+                joinedload(VariantStudy.owner),
+                joinedload(VariantStudy.groups),
+            )
+            .where(VariantStudy.id.in_(variant_ids))
         )
+
+        result = self.session.execute(stmt).unique().scalars().all()
+
         index = {id_: i for i, id_ in enumerate(variant_ids)}
-        return sorted(q, key=lambda v: index[v.id])
+        return sorted(result, key=lambda v: index[v.id])

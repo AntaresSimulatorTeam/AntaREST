@@ -24,17 +24,6 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 
 class IStudyStorage(ABC):
     @abstractmethod
-    def create(self, metadata: Study) -> Study:
-        """
-        Create empty new study
-        Args:
-            metadata: study information
-
-        Returns: new study information
-
-        """
-
-    @abstractmethod
     def get(self, metadata: Study, url: str = "", depth: int = 3, formatted: bool = True) -> JSON:
         """
         Entry point to fetch data inside study.

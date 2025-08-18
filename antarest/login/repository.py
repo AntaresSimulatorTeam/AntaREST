@@ -41,7 +41,7 @@ class GroupRepository:
         return self._session
 
     def save(self, group: Group) -> Group:
-        res = self.session.query(exists().where(Group.id == group.id)).scalar()
+        res = self.session.execute(select(exists().where(Group.id == group.id))).scalar()
         if res:
             self.session.merge(group)
         else:
@@ -58,15 +58,17 @@ class GroupRepository:
         return self.session.execute(select(Group).where(Group.name == name)).scalar_one_or_none()
 
     def get_all(self) -> List[Group]:
-        groups: List[Group] = self.session.query(Group).all()
+        groups: List[Group] = list(self.session.execute(select(Group)).scalars().all())
         return groups
 
     def delete(self, id: str) -> None:
-        g = self.session.query(Group).get(id)
-        self.session.delete(g)
-        self.session.commit()
-
-        logger.debug(f"Group {id} deleted")
+        g = self.session.get(Group, id)
+        if g:
+            self.session.delete(g)
+            self.session.commit()
+            logger.debug("Group deleted")
+        else:
+            logger.warning("Group not found for deletion")
 
 
 class IdentityRepository:
@@ -88,7 +90,9 @@ class IdentityRepository:
         return self._session
 
     def get_all_users(self) -> list[Identity]:
-        identities: list[Identity] = self.session.query(Identity).where(Identity.type != "bots").all()
+        identities: list[Identity] = list(
+            self.session.execute(select(Identity).where(Identity.type != "bots")).scalars().all()
+        )
         return identities
 
 
@@ -111,7 +115,7 @@ class UserRepository:
         return self._session
 
     def save(self, user: User) -> User:
-        res = self.session.query(exists().where(User.id == user.id)).scalar()
+        res = self.session.execute(select(exists().where(User.id == user.id))).scalar()
         if res:
             self.session.merge(user)
         else:
@@ -156,7 +160,7 @@ class UserLdapRepository:
         return self._session
 
     def save(self, user_ldap: UserLdap) -> UserLdap:
-        res = self.session.query(exists().where(UserLdap.id == user_ldap.id)).scalar()
+        res = self.session.execute(select(exists().where(UserLdap.id == user_ldap.id))).scalar()
         if res:
             self.session.merge(user_ldap)
         else:
@@ -167,7 +171,7 @@ class UserLdapRepository:
         return user_ldap
 
     def get(self, id_number: int) -> Optional[UserLdap]:
-        user_ldap: Optional[UserLdap] = self.session.query(UserLdap).get(id_number)
+        user_ldap: Optional[UserLdap] = self.session.get(UserLdap, id_number)
         return user_ldap
 
     def get_by_name(self, name: str) -> Optional[UserLdap]:
@@ -221,7 +225,7 @@ class BotRepository:
     def get_all(
         self,
     ) -> List[Bot]:
-        bots: List[Bot] = self.session.query(Bot).all()
+        bots: List[Bot] = list(self.session.execute(select(Bot)).scalars().all())
         return bots
 
     def delete(self, id_number: int) -> None:
@@ -234,14 +238,14 @@ class BotRepository:
             logger.warning(f"Bot {id_number} not found for deletion")
 
     def get_all_by_owner(self, owner: int) -> List[Bot]:
-        bots: List[Bot] = self.session.query(Bot).filter_by(owner=owner).all()
+        bots: List[Bot] = list(self.session.execute(select(Bot).filter_by(owner=owner)).scalars().all())
         return bots
 
     def get_by_name_and_owner(self, owner: int, name: str) -> Optional[Bot]:
         return self.session.execute(select(Bot).where(Bot.owner == owner, Bot.name == name)).scalar_one_or_none()
 
     def exists(self, id_number: int) -> bool:
-        res: bool = self.session.query(exists().where(Bot.id == id_number)).scalar()
+        res: bool = self.session.execute(select(exists().where(Bot.id == id_number))).scalar() is True
         return res
 
 
@@ -277,8 +281,7 @@ class RoleRepository:
         return self.session.get(Role, (user, group))
 
     def get_all(self, details: bool, groups: Optional[list[Group]] = None) -> list[Role]:
-        q = self.session.query(Role)
-        q = q.join(Role.identity).options(joinedload(Role.identity)).where(Identity.type != "bots")
+        q = select(Role).join(Role.identity).options(joinedload(Role.identity)).where(Identity.type != "bots")
 
         if details:
             q = q.options(joinedload(Role.group))
@@ -287,7 +290,7 @@ class RoleRepository:
             group_mapping = [group.id for group in groups]
             q = q.filter(Role.group_id.in_(group_mapping))
 
-        roles: list[Role] = q.all()
+        roles: list[Role] = list(self.session.execute(q).scalars().all())
         return roles
 
     def get_all_by_user(self, /, user_id: int) -> List[Role]:
@@ -302,17 +305,18 @@ class RoleRepository:
         """
         # When we fetch the list of roles, we also need to fetch the associated groups.
         # We use a SQL query with joins to fetch all these data efficiently.
-        stm = self.session.query(Role).options(joinedload(Role.group)).filter_by(identity_id=user_id)
-        roles: List[Role] = stm.all()
+        stm = select(Role).options(joinedload(Role.group)).filter_by(identity_id=user_id)
+        roles: List[Role] = list(self.session.execute(stm).scalars().all())
         return roles
 
     def get_all_by_group(self, group: str) -> List[Role]:
-        roles: List[Role] = self.session.query(Role).filter_by(group_id=group).all()
+        roles: List[Role] = list(self.session.execute(select(Role).filter_by(group_id=group)).scalars().all())
         return roles
 
     def delete(self, user: int, group: str) -> None:
-        r = self.session.query(Role).get((user, group))
-        self.session.delete(r)
-        self.session.commit()
+        r = self.session.get(Role, (user, group))
+        if r:
+            self.session.delete(r)
+            self.session.commit()
 
         logger.debug(f"Role (user={user}, group={group} deleted")
