@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import Any, Dict, MutableMapping, TypeAlias, cast
+from typing import Any, Dict, TypeAlias, cast
 
 from pydantic import Field, TypeAdapter
 from typing_extensions import override
@@ -260,7 +260,9 @@ def _serialize_common(section: RulesetSection, scenario_type: ScenarioType, data
             section[f"{symbol},{area},{year}"] = value
 
 
-def _serialize_hydro_levels(section: RulesetSection, scenario_type: ScenarioType, data: HydroLevelsScenarios | None) -> None:
+def _serialize_hydro_levels(
+    section: RulesetSection, scenario_type: ScenarioType, data: HydroLevelsScenarios | None
+) -> None:
     if not data:
         return
     symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
