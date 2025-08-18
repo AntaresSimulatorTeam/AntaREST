@@ -474,6 +474,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
         response_model=Rulesets,
+        response_model_exclude_none=True,
     )
     def get_scenario_builder_config(uuid: str) -> Rulesets:
         logger.info(f"Getting MC Scenario builder config for study {uuid}")

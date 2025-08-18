@@ -11,11 +11,12 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import Any, Dict, Mapping, MutableMapping, cast
+from typing import Any, Dict, MutableMapping, TypeAlias, cast
 
-import typing_extensions as te
+from pydantic import Field, TypeAdapter
 from typing_extensions import override
 
+from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -30,11 +31,8 @@ _CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
 
 _HYDRO_LEVEL_PERCENT = 100
 
-_Section: te.TypeAlias = MutableMapping[str, int | float]
-_Sections: te.TypeAlias = MutableMapping[str, _Section]
-
-Ruleset: te.TypeAlias = MutableMapping[str, Any]
-Rulesets: te.TypeAlias = MutableMapping[str, Ruleset]
+_Section: TypeAlias = MutableMapping[str, int | float]
+_Sections: TypeAlias = MutableMapping[str, _Section]
 
 
 class ScenarioType(enum.StrEnum):
@@ -76,6 +74,44 @@ class ScenarioType(enum.StrEnum):
         """Return the string representation of the enum value."""
         return self.value
 
+
+AreaId: TypeAlias = str
+LinkId: TypeAlias = str
+ObjectId: TypeAlias = str
+ConstraintId: TypeAlias = str
+
+# Maps MC year to TS number
+McYearToTimeSeries: TypeAlias = dict[str, int]
+# Maps MC year to level value
+McYearToValue: TypeAlias = dict[str, int]
+
+AreaScenarios: TypeAlias = dict[AreaId, McYearToTimeSeries]
+# A link ID is "area1 / area2"
+LinkScenarios: TypeAlias = dict[LinkId, McYearToTimeSeries]
+AreaItemsScenarios: TypeAlias = dict[AreaId, dict[ObjectId, McYearToTimeSeries]]
+AdditionalConstraintScenarios: TypeAlias = dict[AreaId, dict[ObjectId, dict[ConstraintId, McYearToTimeSeries]]]
+HydroLevelsScenarios: TypeAlias = dict[AreaId, McYearToValue]
+
+
+class Ruleset(AntaresBaseModel):
+    load: AreaScenarios | None = Field(default=None, alias="l")
+    thermal: AreaItemsScenarios | None = Field(default=None, alias="t")
+    hydro: AreaScenarios | None = Field(default=None, alias="h")
+    hydro_initial_levels: HydroLevelsScenarios | None = Field(default=None, alias="hl")
+    hydro_final_levels: HydroLevelsScenarios | None = Field(default=None, alias="hfl")
+    hydro_generation_power: AreaScenarios | None = Field(default=None, alias="hgp")
+    wind: AreaScenarios | None = Field(default=None, alias="w")
+    solar: AreaScenarios | None = Field(default=None, alias="s")
+    ntc: AreaScenarios | None = Field(default=None, alias="ntc")
+    renewable: AreaItemsScenarios | None = Field(default=None, alias="r")
+    binding_constraints: AreaScenarios | None = Field(default=None, alias="bc")
+    short_term_storage_inflows: AreaItemsScenarios | None = Field(default=None, alias="sts")
+
+
+# We may have multiple rulesets, each with its own name
+Rulesets: TypeAlias = dict[str, Ruleset]
+
+_RULESETS_ADAPTER: TypeAdapter[Rulesets] = TypeAdapter(Rulesets)
 
 SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.LOAD: "l",
@@ -175,7 +211,7 @@ class ScenarioBuilderManager:
     def get_config(self, study: StudyInterface) -> Rulesets:
         sections = cast(_Sections, study.get_files().tree.get(["settings", "scenariobuilder"]))
 
-        rulesets: Rulesets = {}
+        rulesets: dict[str, Any] = {}
         for ruleset_name, data in sections.items():
             ruleset = rulesets.setdefault(ruleset_name, {})
             for key, value in data.items():
@@ -197,23 +233,24 @@ class ScenarioBuilderManager:
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
 
-        return rulesets
+        return _RULESETS_ADAPTER.validate_python(rulesets)
 
     def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
         sections: _Sections = {}
         for ruleset_name, ruleset in rulesets.items():
             section = sections[ruleset_name] = {}
-            for symbol, data in ruleset.items():
-                if symbol in _AREA_RELATED_SYMBOLS:
-                    _populate_common(section, symbol, data)
-                elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
-                    _populate_hydro_levels(section, symbol, data)
-                elif symbol in _LINK_RELATED_SYMBOLS:
-                    _populate_links(section, symbol, data)
-                elif symbol in _CLUSTER_RELATED_SYMBOLS:
-                    _populate_clusters(section, symbol, data)
-                else:  # pragma: no cover
-                    raise NotImplementedError(f"Unknown symbol {symbol}")
+            _populate_common(section, ScenarioType.LOAD, ruleset.load)
+            _populate_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
+            _populate_common(section, ScenarioType.HYDRO, ruleset.hydro)
+            _populate_hydro_levels(section, ScenarioType.HYDRO_INITIAL_LEVEL, ruleset.hydro_initial_levels)
+            _populate_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels)
+            _populate_common(section, ScenarioType.HYDRO_GENERATION_POWER, ruleset.hydro_generation_power)
+            _populate_common(section, ScenarioType.WIND, ruleset.wind)
+            _populate_common(section, ScenarioType.SOLAR, ruleset.solar)
+            _populate_links(section, ScenarioType.LINK, ruleset.ntc)
+            _populate_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
+            _populate_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
+            _populate_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.short_term_storage_inflows)
 
         command = UpdateScenarioBuilder(
             data=sections, command_context=self._command_context, study_version=study.version
@@ -251,28 +288,41 @@ class ScenarioBuilderManager:
         return table_form
 
 
-def _populate_common(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
+def _populate_common(section: _Section, scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
+    if not data:
+        return
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
             section[f"{symbol},{area},{year}"] = value
 
 
-def _populate_hydro_levels(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
+def _populate_hydro_levels(section: _Section, scenario_type: ScenarioType, data: HydroLevelsScenarios | None) -> None:
+    if not data:
+        return
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
+            val: int | float = value
             if isinstance(value, (int, float)) and value != float("nan"):
-                value /= _HYDRO_LEVEL_PERCENT
-            section[f"{symbol},{area},{year}"] = value
+                val /= _HYDRO_LEVEL_PERCENT
+            section[f"{symbol},{area},{year}"] = val
 
 
-def _populate_links(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
+def _populate_links(section: _Section, scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
+    if not data:
+        return
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
     for link, scenario_link in data.items():
         for year, value in scenario_link.items():
             area1, area2 = link.split(" / ")
             section[f"{symbol},{area1},{area2},{year}"] = value
 
 
-def _populate_clusters(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
+def _populate_clusters(section: _Section, scenario_type: ScenarioType, data: AreaItemsScenarios | None) -> None:
+    if not data:
+        return
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
     for area, scenario_area in data.items():
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
