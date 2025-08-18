@@ -65,7 +65,7 @@ from antarest.study.model import (
     TimeSeriesData,
 )
 from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetadataRepository
-from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
+from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask, VariantStudyInterface
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
@@ -1436,15 +1436,41 @@ def test_edit_study_with_command() -> None:
     raw_study.version = "880"
     raw_study.id = study_id
 
+    mock_study_interface = Mock()
+    mock_study_interface.add_commands = Mock()
+    service.get_study_interface = Mock(return_value=mock_study_interface)
+
     service._edit_study_using_command(study=raw_study, url="", data=[])
-    command.apply.assert_called()
+
+    mock_study_interface.add_commands.assert_called_once()
+    called_commands = mock_study_interface.add_commands.call_args[0][0]
+    assert len(called_commands) == 2
+    assert called_commands[0] == command
+    assert called_commands[1] == command
 
     variant_study = Mock(spec=VariantStudy)
     variant_study.version = "880"
-    study_service = Mock(spec=VariantStudyService)
-    service.storage_service.get_storage = Mock(return_value=study_service)
+    variant_study.id = study_id
+
+    mock_variant_study_service = Mock(spec=VariantStudyService)
+    mock_variant_study_service.append_commands = Mock()
+
+    service = build_study_service(
+        raw_study_service=Mock(), repository=Mock(), config=Mock(), variant_study_service=mock_variant_study_service
+    )
+    service._create_edit_study_command = Mock(return_value=command)
+
+    variant_study_service_mock = Mock(spec=VariantStudyService)
+    service.storage_service.get_storage = Mock(return_value=variant_study_service_mock)
+
+    variant_interface = VariantStudyInterface(mock_variant_study_service, variant_study)
+    service.get_study_interface = Mock(return_value=variant_interface)
+
     service._edit_study_using_command(study=variant_study, url="", data=[])
-    service.storage_service.variant_study_service.append_commands.assert_called_once()
+
+    mock_variant_study_service.append_commands.assert_called_once()
+    called_commands = mock_variant_study_service.append_commands.call_args[0][1]
+    assert len(called_commands) == 1
 
 
 @pytest.mark.unit_test

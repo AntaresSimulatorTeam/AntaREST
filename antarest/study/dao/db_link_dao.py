@@ -52,7 +52,7 @@ class DbLinkDao(LinkDao):
             self.session.query(DbLinkModel).filter_by(study_id=self.study_id, area1=area1, area2=area2).one_or_none()
         )
         if db_link is None:
-            raise LinkNotFound(f"Link between {area1} and {area2} not found in study {self.study_id}")
+            raise LinkNotFound(f"The link {area1} -> {area2} is not present in the study")
         return _db_to_business(db_link)
 
     @override

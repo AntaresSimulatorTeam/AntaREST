@@ -15,12 +15,10 @@ from typing import Optional
 import pytest
 
 from antarest.core.model import SUB_JSON
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.service import StudyService
 from tests.helpers import with_admin_user
 from tests.storage.integration.conftest import UUID
-
-
-from antarest.core.utils.fastapi_sqlalchemy import db
 
 
 def assert_with_errors(

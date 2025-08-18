@@ -247,7 +247,6 @@ class TestTableMode:
             },
         }
 
-
         expected_links = {
             "de / fr": {
                 "area1": "de",
