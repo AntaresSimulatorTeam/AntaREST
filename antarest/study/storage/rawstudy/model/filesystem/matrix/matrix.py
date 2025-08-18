@@ -26,7 +26,7 @@ from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
+from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> str | G:
-        output = cast("str | G", self._get(url, depth, expanded, formatted, get_node=False))
+        output = cast("str | G", self._get(url, depth, expanded, formatted))
         assert not isinstance(output, INode)
         return output
 
@@ -107,13 +107,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-        get_node: bool = False,
-    ) -> str | G | INode[G, S, V]:
-        self._assert_url_end(url)
-
-        if get_node:
-            return self
-
+    ) -> str | G:
         if expanded:
             link_content = self.matrix_mapper.get_link_content(self)
             if link_content is not None:

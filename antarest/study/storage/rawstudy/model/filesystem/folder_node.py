@@ -60,41 +60,26 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         url: List[str],
         depth: int = -1,
         formatted: bool = True,
-        get_node: bool = False,
-    ) -> JSON | INode[JSON, SUB_JSON, JSON]:
+    ) -> JSON:
         children = self.build()
-        names, sub_url = self.extract_child(children, url)
-
+        names, sub_url = self._extract_child(children, url)
         # item is unique in url
         if len(names) == 1:
             child = children[names[0]]
-            if not get_node:
-                return child.get(sub_url, depth=depth, expanded=False, formatted=formatted)  # type: ignore
-            else:
-                return child.get_node(
-                    sub_url,
-                )
+            return child.get(sub_url, depth=depth, expanded=False, formatted=formatted)  # type: ignore
         # many items asked or * asked
         else:
-            if not get_node:
-                return {
-                    key: children[key].get(
-                        sub_url,
-                        depth=depth,
-                        expanded=False,
-                        formatted=formatted,
-                    )
-                    for key in names
-                }
-            else:
-                raise ValueError("Multiple nodes requested")
+            return {
+                key: children[key].get(
+                    sub_url,
+                    depth=depth,
+                    expanded=False,
+                    formatted=formatted,
+                )
+                for key in names
+            }
 
-    def _expand_get(
-        self, depth: int = -1, formatted: bool = True, get_node: bool = False
-    ) -> JSON | INode[JSON, SUB_JSON, JSON]:
-        if get_node:
-            return self
-
+    def _expand_get(self, depth: int = -1, formatted: bool = True) -> JSON:
         children = self.build()
 
         if depth == 0:
@@ -109,12 +94,11 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         url: Optional[List[str]] = None,
         depth: int = -1,
         formatted: bool = True,
-        get_node: bool = False,
-    ) -> JSON | INode[JSON, SUB_JSON, JSON]:
+    ) -> JSON:
         if url and url != [""]:
-            return self._forward_get(url, depth, formatted, get_node)
+            return self._forward_get(url, depth, formatted)
         else:
-            return self._expand_get(depth, formatted, get_node)
+            return self._expand_get(depth, formatted)
 
     @override
     def get(
@@ -124,7 +108,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         expanded: bool = False,
         formatted: bool = True,
     ) -> JSON:
-        output = self._get(url=url, depth=depth, formatted=formatted, get_node=False)
+        output = self._get(url=url, depth=depth, formatted=formatted)
         assert not isinstance(output, INode)
         return output
 
@@ -133,9 +117,14 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         self,
         url: Optional[List[str]] = None,
     ) -> INode[JSON, SUB_JSON, JSON]:
-        output = self._get(url=url, get_node=True)
-        assert isinstance(output, INode)
-        return output
+        if not url:
+            return self
+        children = self.build()
+        names, sub_url = self._extract_child(children, url)
+        if len(names) != 1:
+            raise ValueError("Multiple nodes requested")
+        child = children[names[0]]
+        return child.get_node(sub_url)
 
     @override
     def save(
@@ -149,7 +138,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             self.config.path.mkdir()
 
         if url := url or []:
-            (name,), sub_url = self.extract_child(children, url)
+            (name,), sub_url = self._extract_child(children, url)
             return children[name].save(data, sub_url)
         else:
             assert isinstance(data, dict)
@@ -160,7 +149,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     def delete(self, url: Optional[List[str]] = None) -> None:
         if url and url != [""]:
             children = self.build()
-            names, sub_url = self.extract_child(children, url)
+            names, sub_url = self._extract_child(children, url)
             for key in names:
                 children[key].delete(sub_url)
         elif self.config.path.exists():
@@ -176,7 +165,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         children = self.build()
 
         if url and url != [""]:
-            (name,), sub_url = self.extract_child(children, url)
+            (name,), sub_url = self._extract_child(children, url)
             return children[name].check_errors(data, sub_url, raising)
         else:
             errors: List[str] = []
@@ -200,7 +189,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
         for child in self.build().values():
             child.denormalize()
 
-    def extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
+    def _extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
         names, sub_url = url[0].split(","), url[1:]
         names = (
             list(

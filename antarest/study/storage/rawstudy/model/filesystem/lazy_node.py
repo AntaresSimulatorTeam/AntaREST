@@ -75,13 +75,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-        get_node: bool = False,
-    ) -> str | G | INode[G, S, V]:
-        self._assert_url_end(url)
-
-        if get_node:
-            return self
-
+    ) -> str | G:
         if expanded:
             return self.get_lazy_content()
 
@@ -95,7 +89,7 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         expanded: bool = False,
         formatted: bool = True,
     ) -> str | G:
-        output = self._get(url, depth, expanded, formatted, get_node=False)
+        output = self._get(url, depth, expanded, formatted)
         assert not isinstance(output, INode)
         return output
 
@@ -104,9 +98,8 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         self,
         url: Optional[List[str]] = None,
     ) -> INode[G, S, V]:
-        output = self._get(url, get_node=True)
-        assert isinstance(output, INode)
-        return output
+        self._assert_url_end(url)
+        return self
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:

@@ -243,11 +243,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
-        get_node: bool = False,
-    ) -> SUB_JSON | INode[SUB_JSON, SUB_JSON, JSON]:
-        if get_node:
-            return self
-
+    ) -> SUB_JSON:
         if depth <= -1 and expanded:
             return f"json://{self.config.path.name}"
 
@@ -305,7 +301,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> SUB_JSON:
-        output = self._get(url, depth, expanded, get_node=False)
+        output = self._get(url, depth, expanded)
         assert not isinstance(output, INode)
         return output
 
@@ -314,9 +310,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self,
         url: Optional[List[str]] = None,
     ) -> INode[SUB_JSON, SUB_JSON, JSON]:
-        output = self._get(url, get_node=True)
-        assert isinstance(output, INode)
-        return output
+        return self
 
     @override
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
