@@ -327,3 +327,48 @@ def _populate_clusters(section: _Section, scenario_type: ScenarioType, data: Are
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
                 section[f"{symbol},{area},{year},{cluster}"] = value
+
+
+def serialize_rulesets(rulesets: Rulesets) -> _Sections:
+    sections: _Sections = {}
+    for ruleset_name, ruleset in rulesets.items():
+        section = sections[ruleset_name] = {}
+        _populate_common(section, ScenarioType.LOAD, ruleset.load)
+        _populate_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
+        _populate_common(section, ScenarioType.HYDRO, ruleset.hydro)
+        _populate_hydro_levels(section, ScenarioType.HYDRO_INITIAL_LEVEL, ruleset.hydro_initial_levels)
+        _populate_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels)
+        _populate_common(section, ScenarioType.HYDRO_GENERATION_POWER, ruleset.hydro_generation_power)
+        _populate_common(section, ScenarioType.WIND, ruleset.wind)
+        _populate_common(section, ScenarioType.SOLAR, ruleset.solar)
+        _populate_links(section, ScenarioType.LINK, ruleset.ntc)
+        _populate_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
+        _populate_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
+        _populate_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.short_term_storage_inflows)
+    return sections
+
+
+def parse_rulesets(data: _Sections) -> Rulesets:
+    rulesets: dict[str, Any] = {}
+    for ruleset_name, data in data.items():
+        ruleset = rulesets.setdefault(ruleset_name, {})
+        for key, value in data.items():
+            symbol, *parts = key.split(",")
+            scenario = ruleset.setdefault(symbol, {})
+            if symbol in _AREA_RELATED_SYMBOLS:
+                scenario_area = scenario.setdefault(parts[0], {})
+                scenario_area[parts[1]] = int(value)
+            elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
+                scenario_area = scenario.setdefault(parts[0], {})
+                scenario_area[parts[1]] = float(value) * _HYDRO_LEVEL_PERCENT
+            elif symbol in _LINK_RELATED_SYMBOLS:
+                scenario_link = scenario.setdefault(f"{parts[0]} / {parts[1]}", {})
+                scenario_link[parts[2]] = int(value)
+            elif symbol in _CLUSTER_RELATED_SYMBOLS:
+                scenario_area = scenario.setdefault(parts[0], {})
+                scenario_area_cluster = scenario_area.setdefault(parts[2], {})
+                scenario_area_cluster[parts[1]] = int(value)
+            else:  # pragma: no cover
+                raise NotImplementedError(f"Unknown symbol {symbol}")
+
+    return _RULESETS_ADAPTER.validate_python(rulesets)
