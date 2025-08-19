@@ -80,6 +80,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.scenario_builder_model import Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -95,7 +96,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id

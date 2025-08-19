@@ -10,109 +10,31 @@
 #
 # This file is part of the Antares project.
 
-import enum
-from typing import Any, Dict, TypeAlias, cast
+from typing import Dict, cast
 
-from pydantic import Field, TypeAdapter
-from typing_extensions import override
-
-from antarest.core.serde import AntaresBaseModel
+from antarest.study.business.model.scenario_builder_model import (
+    Rulesets,
+    ScenarioType,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
+from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
+    RulesetSections,
+    parse_ruleset,
+    parse_rulesets,
+    serialize_rulesets,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
-# Symbols used in scenario builder data
-_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
-_LINK_RELATED_SYMBOLS = ("ntc",)
-_HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
-_CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
-
-_HYDRO_LEVEL_PERCENT = 100
-
-RulesetSection: TypeAlias = dict[str, int | float]
-RulesetSections: TypeAlias = dict[str, RulesetSection]
-
-
-class ScenarioType(enum.StrEnum):
-    """
-    Scenario type
-
-    - LOAD: Load scenario
-    - THERMAL: Thermal cluster scenario
-    - HYDRO: Hydraulic scenario
-    - WIND: Wind scenario
-    - SOLAR: Solar scenario
-    - NTC: NTC scenario (link)
-    - RENEWABLE: Renewable scenario
-    - BINDING_CONSTRAINTS: Binding constraints scenario
-    - HYDRO_INITIAL_LEVEL: hydraulic Initial level scenario
-    - HYDRO_FINAL_LEVEL: hydraulic Final level scenario
-    - HYDRO_GENERATION_POWER: hydraulic Generation power scenario
-    - SHORT_TERM_STORAGE_INFLOWS: Short term storage inflows scenario
-    - SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS: Short term storage additional constraints scenario
-
-    """
-
-    LOAD = "load"
-    THERMAL = "thermal"
-    HYDRO = "hydro"
-    WIND = "wind"
-    SOLAR = "solar"
-    LINK = "ntc"
-    RENEWABLE = "renewable"
-    BINDING_CONSTRAINTS = "bindingConstraints"
-    HYDRO_INITIAL_LEVEL = "hydroInitialLevels"
-    HYDRO_FINAL_LEVEL = "hydroFinalLevels"
-    HYDRO_GENERATION_POWER = "hydroGenerationPower"
-    SHORT_TERM_STORAGE_INFLOWS = "shortTermStorageInflows"
-    SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS = "shortTermStorageAdditionalConstraints"
-
-    @override
-    def __str__(self) -> str:
-        """Return the string representation of the enum value."""
-        return self.value
-
-
-AreaId: TypeAlias = str
-LinkId: TypeAlias = str
-ObjectId: TypeAlias = str
-ConstraintId: TypeAlias = str
-
 # Maps MC year to TS number
-McYearToTimeSeries: TypeAlias = dict[str, int]
 # Maps MC year to level value
-McYearToValue: TypeAlias = dict[str, int]
 
-AreaScenarios: TypeAlias = dict[AreaId, McYearToTimeSeries]
 # A link ID is "area1 / area2"
-LinkScenarios: TypeAlias = dict[LinkId, McYearToTimeSeries]
-AreaItemsScenarios: TypeAlias = dict[AreaId, dict[ObjectId, McYearToTimeSeries]]
-AdditionalConstraintScenarios: TypeAlias = dict[AreaId, dict[ObjectId, dict[ConstraintId, McYearToTimeSeries]]]
-HydroLevelsScenarios: TypeAlias = dict[AreaId, McYearToValue]
-
-
-class Ruleset(AntaresBaseModel):
-    load: AreaScenarios | None = Field(default=None, alias="l")
-    thermal: AreaItemsScenarios | None = Field(default=None, alias="t")
-    hydro: AreaScenarios | None = Field(default=None, alias="h")
-    hydro_initial_levels: HydroLevelsScenarios | None = Field(default=None, alias="hl")
-    hydro_final_levels: HydroLevelsScenarios | None = Field(default=None, alias="hfl")
-    hydro_generation_power: AreaScenarios | None = Field(default=None, alias="hgp")
-    wind: AreaScenarios | None = Field(default=None, alias="w")
-    solar: AreaScenarios | None = Field(default=None, alias="s")
-    ntc: AreaScenarios | None = Field(default=None, alias="ntc")
-    renewable: AreaItemsScenarios | None = Field(default=None, alias="r")
-    binding_constraints: AreaScenarios | None = Field(default=None, alias="bc")
-    storage_inflows: AreaItemsScenarios | None = Field(default=None, alias="sts")
-    storage_constraints: AdditionalConstraintScenarios | None = Field(default=None, alias="sta")
 
 
 # We may have multiple rulesets, each with its own name
-Rulesets: TypeAlias = dict[str, Ruleset]
-
-_RULESETS_ADAPTER: TypeAdapter[Rulesets] = TypeAdapter(Rulesets)
 
 SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.LOAD: "l",
@@ -127,7 +49,6 @@ SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
     ScenarioType.HYDRO_GENERATION_POWER: "hgp",
     ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
-    ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS: "sta",
 }
 
 
@@ -191,16 +112,7 @@ def _build_ruleset(file_study: FileStudy, symbol: str) -> RulesetMatrices:
     areas = file_study.config.areas
     groups = file_study.config.get_binding_constraint_groups() if file_study.config.version >= 870 else []
     scenario_types = {s: str(st) for st, s in SYMBOLS_BY_SCENARIO_TYPES.items()}
-    ruleset = RulesetMatrices(
-        nb_years=nb_years,
-        areas=areas,
-        links=((a1, a2) for a1 in areas for a2 in file_study.config.get_links(a1)),
-        thermals={a: file_study.config.get_thermal_ids(a) for a in areas},
-        renewables={a: file_study.config.get_renewable_ids(a) for a in areas},
-        storages={a: file_study.config.get_st_storage_ids(a) for a in areas},
-        groups=groups,
-        scenario_types=scenario_types,
-    )
+    ruleset = parse_ruleset(ruleset_name)
     ruleset.update_rules(ruleset_config)
     return ruleset
 
@@ -250,112 +162,3 @@ class ScenarioBuilderManager:
         # Extract the updated table form for the given scenario type
         table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
         return table_form
-
-
-def _serialize_common(section: RulesetSection, scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
-    if not data:
-        return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
-    for area, scenario_area in data.items():
-        for year, value in scenario_area.items():
-            section[f"{symbol},{area},{year}"] = value
-
-
-def _serialize_hydro_levels(
-    section: RulesetSection, scenario_type: ScenarioType, data: HydroLevelsScenarios | None
-) -> None:
-    if not data:
-        return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
-    for area, scenario_area in data.items():
-        for year, value in scenario_area.items():
-            val: int | float = value
-            if isinstance(value, (int, float)) and value != float("nan"):
-                val /= _HYDRO_LEVEL_PERCENT
-            section[f"{symbol},{area},{year}"] = val
-
-
-def _serialize_links(section: RulesetSection, scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
-    if not data:
-        return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
-    for link, scenario_link in data.items():
-        for year, value in scenario_link.items():
-            area1, area2 = link.split(" / ")
-            section[f"{symbol},{area1},{area2},{year}"] = value
-
-
-def _serialize_clusters(section: RulesetSection, scenario_type: ScenarioType, data: AreaItemsScenarios | None) -> None:
-    if not data:
-        return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
-    for area, scenario_area in data.items():
-        for cluster, scenario_area_cluster in scenario_area.items():
-            for year, value in scenario_area_cluster.items():
-                section[f"{symbol},{area},{year},{cluster}"] = value
-
-
-def _serialize_storage_constraints(
-    section: RulesetSection, scenario_type: ScenarioType, data: AdditionalConstraintScenarios | None
-) -> None:
-    if not data:
-        return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
-    for area, area_scenarios in data.items():
-        for storage, storage_scenarios in area_scenarios.items():
-            for constraint, constraint_scenarios in storage_scenarios.items():
-                for year, value in constraint_scenarios.items():
-                    section[f"{symbol},{area},{year},{storage},{constraint}"] = value
-
-
-def serialize_rulesets(rulesets: Rulesets) -> RulesetSections:
-    sections: RulesetSections = {}
-    for ruleset_name, ruleset in rulesets.items():
-        section = sections[ruleset_name] = {}
-        _serialize_common(section, ScenarioType.LOAD, ruleset.load)
-        _serialize_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
-        _serialize_common(section, ScenarioType.HYDRO, ruleset.hydro)
-        _serialize_hydro_levels(section, ScenarioType.HYDRO_INITIAL_LEVEL, ruleset.hydro_initial_levels)
-        _serialize_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels)
-        _serialize_common(section, ScenarioType.HYDRO_GENERATION_POWER, ruleset.hydro_generation_power)
-        _serialize_common(section, ScenarioType.WIND, ruleset.wind)
-        _serialize_common(section, ScenarioType.SOLAR, ruleset.solar)
-        _serialize_links(section, ScenarioType.LINK, ruleset.ntc)
-        _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
-        _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
-        _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
-        _serialize_storage_constraints(
-            section, ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, ruleset.storage_constraints
-        )
-    return sections
-
-
-def parse_rulesets(rulesets_data: RulesetSections) -> Rulesets:
-    rulesets: dict[str, Any] = {}
-    for ruleset_name, data in rulesets_data.items():
-        ruleset = rulesets.setdefault(ruleset_name, {})
-        for key, value in data.items():
-            symbol, *parts = key.split(",")
-            scenario = ruleset.setdefault(symbol, {})
-            if symbol in _AREA_RELATED_SYMBOLS:
-                scenario_area = scenario.setdefault(parts[0], {})
-                scenario_area[parts[1]] = int(value)
-            elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
-                scenario_area = scenario.setdefault(parts[0], {})
-                scenario_area[parts[1]] = float(value) * _HYDRO_LEVEL_PERCENT
-            elif symbol in _LINK_RELATED_SYMBOLS:
-                scenario_link = scenario.setdefault(f"{parts[0]} / {parts[1]}", {})
-                scenario_link[parts[2]] = int(value)
-            elif symbol in _CLUSTER_RELATED_SYMBOLS:
-                scenario_area = scenario.setdefault(parts[0], {})
-                scenario_area_cluster = scenario_area.setdefault(parts[2], {})
-                scenario_area_cluster[parts[1]] = int(value)
-            elif symbol == "sta":
-                area_scenarios = scenario.setdefault(parts[0], {})
-                storage_scenarios = area_scenarios.setdefault(parts[2], {})
-                constraint_scenarios = storage_scenarios.setdefault(parts[3], {})
-                constraint_scenarios[parts[1]] = int(value)
-            else:  # pragma: no cover
-                raise NotImplementedError(f"Unknown symbol {symbol}")
-
-    return _RULESETS_ADAPTER.validate_python(rulesets)
