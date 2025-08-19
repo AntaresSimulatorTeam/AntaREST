@@ -18,7 +18,7 @@ import pytest
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.model import MatrixReference, MatrixMetadataDTO
+from antarest.matrixstore.model import MatrixMetadataDTO, MatrixReference
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
