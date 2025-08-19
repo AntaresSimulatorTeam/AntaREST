@@ -9,12 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional, Tuple, TypeAlias, cast
+import dataclasses
+from typing import Any, Dict, Iterable, Literal, Mapping, Optional, Tuple, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
-from typing_extensions import override
+
+from antarest.study.business.scenario_builder_management import ScenarioType
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 SCENARIO_TYPES = {
     "l": "load",
@@ -31,16 +33,19 @@ SCENARIO_TYPES = {
     "sts": "short-term-storage-inflows",
 }
 
-
-McScenarioMapping: TypeAlias = dict[str, int | Literal[""]]
-
 _Value: TypeAlias = int | float
+
+RandType: TypeAlias = Literal[""]
+RANDOM: RandType = ""
+McScenarioMapping: TypeAlias = dict[str, _Value | RandType]
+
+
 _SimpleScenario: TypeAlias = dict[str, McScenarioMapping]
 _ClusterScenario: TypeAlias = dict[str, _SimpleScenario]
 _Scenario: TypeAlias = _SimpleScenario | _ClusterScenario
 _ScenarioMapping: TypeAlias = dict[str, _Scenario]
 
-SimpleTableForm: TypeAlias = Dict[str, Dict[str, int | float | str | None]]
+SimpleTableForm: TypeAlias = Dict[str, Dict[str, _Value | RandType]]
 ClusterTableForm: TypeAlias = Dict[str, SimpleTableForm]
 TableForm: TypeAlias = SimpleTableForm | ClusterTableForm
 
@@ -77,9 +82,135 @@ def idx_group(group: str, /) -> str:
 # ==========================
 
 
-def _create_scenarios_mapping(names: list[str], years: list[str]) -> _SimpleScenario:
-    res = {n: {y: "" for y in years} for n in names}
-    return res
+def _create_scenarios_mapping(names: Iterable[str], years: list[str]) -> _SimpleScenario:
+    return {n: {y: RANDOM for y in years} for n in names}
+
+
+def _create_cluster_scenarios_mapping(names: Mapping[str, Iterable[str]], years: list[str]) -> _ClusterScenario:
+    return {n: _create_scenarios_mapping(cluster_names, years) for n, cluster_names in names.items()}
+
+
+def _is_cluster(scenario_type: ScenarioType) -> bool:
+    return scenario_type in (ScenarioType.THERMAL, ScenarioType.RENEWABLE, ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
+
+
+@dataclasses.dataclass
+class Scenarios:
+    load: _SimpleScenario
+    thermal: _ClusterScenario
+    hydro: _SimpleScenario
+    hydro_initial_levels: _SimpleScenario
+    hydro_final_levels: _SimpleScenario
+    hydro_generation_power: _SimpleScenario
+    wind: _SimpleScenario
+    solar: _SimpleScenario
+    renewable: _ClusterScenario
+    short_term_storage_inflows: _ClusterScenario
+    binding_constraints: _SimpleScenario
+    links: _SimpleScenario
+
+    def get(self, scenario_type: ScenarioType) -> _SimpleScenario | _ClusterScenario | None:
+        match scenario_type:
+            case ScenarioType.LOAD:
+                return self.load
+            case ScenarioType.HYDRO:
+                return self.hydro
+            case ScenarioType.HYDRO_INITIAL_LEVEL:
+                return self.hydro_initial_levels
+            case ScenarioType.HYDRO_FINAL_LEVEL:
+                return self.hydro_final_levels
+            case ScenarioType.HYDRO_GENERATION_POWER:
+                return self.hydro_generation_power
+            case ScenarioType.SOLAR:
+                return self.solar
+            case ScenarioType.WIND:
+                return self.wind
+            case ScenarioType.RENEWABLE:
+                return self.renewable
+            case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+                return self.short_term_storage_inflows
+            case ScenarioType.BINDING_CONSTRAINTS:
+                return self.binding_constraints
+            case ScenarioType.LINK:
+                return self.links
+            case _:
+                raise ValueError(f"Unknown scenario type {scenario_type}")
+
+    def get_cluster(self, scenario_type: ScenarioType) -> _ClusterScenario:
+        if not _is_cluster(scenario_type):
+            raise ValueError(f"Scenario type {scenario_type} is not a cluster scenario")
+        return cast(_ClusterScenario, self.get(scenario_type))
+
+    def get_simple(self, scenario_type: ScenarioType) -> _SimpleScenario:
+        if _is_cluster(scenario_type):
+            raise ValueError(f"Scenario type {scenario_type} is a cluster scenario")
+        return cast(_SimpleScenario, self.get(scenario_type))
+
+
+class StudyIndex:
+    def __init__(
+        self,
+        areas: Iterable[str],
+        links: Iterable[tuple[str, str]],
+        thermals: Mapping[str : Iterable[str]],
+        storages: Mapping[str, Iterable[str]],
+        bc_groups: Iterable[str],
+        renewables: Mapping[str, Iterable[str]],
+    ):
+        to_id = transform_name_to_id
+        # TODO: to_id
+        self._areas = {a.lower(): a for a in areas}
+        self._links = {(a1.lower(), a2.lower()): (a1, a2) for a1, a2 in links}
+        self._thermals = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in thermals.items()}
+        self._renewables = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in renewables.items()}
+        self._storages = {
+            a.lower(): {a_storage.lower(): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
+        }
+        self._bc_groups = {g.lower(): g for g in bc_groups}
+
+    @property
+    def area_ids(self) -> Iterable[str]:
+        return self._areas.keys()
+
+    def area_name(self, area_id: str) -> str:
+        return self._areas[area_id]
+
+    @property
+    def thermal_ids(self) -> Mapping[str, Iterable[str]]:
+        return self._thermals
+
+    @property
+    def renewable_ids(self) -> Mapping[str, Iterable[str]]:
+        return self._thermals
+
+    @property
+    def bc_group_ids(self) -> Iterable[str]:
+        return self._bc_groups
+
+    @property
+    def storage_ids(self) -> Mapping[str, Iterable[str]]:
+        return self._storages
+
+    @property
+    def link_ids(self) -> Iterable[str]:
+        return [f"{a1} / {a2}" for a1, a2 in self._links.keys()]
+
+
+def _create_scenarios(years: list[str], index: StudyIndex) -> Scenarios:
+    return Scenarios(
+        load=_create_scenarios_mapping(names=index.area_ids, years=years),
+        thermal=_create_cluster_scenarios_mapping(names=index.thermal_ids, years=years),
+        hydro=_create_scenarios_mapping(names=index.area_ids, years=years),
+        hydro_initial_levels=_create_scenarios_mapping(names=index.area_ids, years=years),
+        hydro_final_levels=_create_scenarios_mapping(names=index.area_ids, years=years),
+        hydro_generation_power=_create_scenarios_mapping(names=index.area_ids, years=years),
+        solar=_create_scenarios_mapping(names=index.area_ids, years=years),
+        wind=_create_scenarios_mapping(names=index.area_ids, years=years),
+        renewable=_create_cluster_scenarios_mapping(names=index.renewable_ids, years=years),
+        short_term_storage_inflows=_create_cluster_scenarios_mapping(names=index.storage_ids, years=years),
+        binding_constraints=_create_scenarios_mapping(names=index.bc_group_ids, years=years),
+        links=_create_scenarios_mapping(names=index.link_ids, years=years),
+    )
 
 
 class RulesetMatrices:
@@ -105,79 +236,13 @@ class RulesetMatrices:
         # List of Monte Carlo years
         self.columns = [str(i) for i in range(nb_years)]
         # Dictionaries used to manage case insensitivity
-        self.areas = {a.lower(): a for a in areas}
-        self.links = {(a1.lower(), a2.lower()): (a1, a2) for a1, a2 in links}
-        self.thermals = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in thermals.items()}
-        self.renewables = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in renewables.items()}
-        self.storages = {
-            a.lower(): {a_storage.lower(): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
-        }
-        self.clusters_by_symbols = {"t": self.thermals, "r": self.renewables, "sts": self.storages}  # for easier access
-        self.groups = {g.lower(): g for g in groups}
-        # Dictionary used to convert symbols to scenario types
+
         self.scenario_types = scenario_types or SCENARIO_TYPES
+        self.index = StudyIndex(
+            areas=areas, thermals=thermals, links=links, renewables=renewables, storages=storages, bc_groups=groups
+        )
         # Dictionary used to store the scenario matrices
-        self.scenarios: _ScenarioMapping = {}
-        self._setup()
-
-    @override
-    def __str__(self) -> str:
-        lines = []
-        for symbol, scenario_type in self.scenario_types.items():
-            lines.append(f"# {scenario_type}")
-            scenario = self.scenarios[scenario_type]
-            if isinstance(scenario, pd.DataFrame):
-                lines.append(scenario.to_string())
-                lines.append("")
-            else:
-                for area, scenario in scenario.items():
-                    lines.append(f"## {scenario_type} in {area}")
-                    lines.append(scenario.to_string())
-                    lines.append("")
-        return "\n".join(lines)
-
-    def get_area_index(self) -> List[str]:
-        return [idx_area(area) for area in self.areas.values()]
-
-    def get_link_index(self) -> List[str]:
-        return [idx_link(a1, a2) for a1, a2 in self.links.values()]
-
-    def get_cluster_index(self, symbol: str, area: str) -> List[str]:
-        clusters = self.clusters_by_symbols[symbol][area.lower()]
-        return [idx_cluster(area, cluster) for cluster in clusters.values()]
-
-    def get_group_index(self) -> List[str]:
-        return [idx_group(group) for group in self.groups.values()]
-
-    def _setup(self) -> None:
-        """
-        Prepare the scenario matrices for each scenario type.
-        """
-        area_index = self.get_area_index()
-        group_index = self.get_group_index()
-        link_index = self.get_link_index()
-        for symbol, scenario_type in self.scenario_types.items():
-            # Note: all DataFrames are initialized with NaN values, so the dtype is `float`.
-            if symbol in _AREA_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = _create_scenarios_mapping(names=area_index, years=self.columns)
-            elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = _create_scenarios_mapping(names=group_index, years=self.columns)
-            elif symbol in _LINK_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = _create_scenarios_mapping(names=link_index, years=self.columns)
-            elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = _create_scenarios_mapping(names=area_index, years=self.columns)
-            elif symbol in _CLUSTER_RELATED_SYMBOLS:
-                # We only take the areas that are defined in the thermals and renewables dictionaries
-                # Keys are the names of the areas (and not the identifiers)
-                self.scenarios[scenario_type] = {
-                    self.areas[area_id]: _create_scenarios_mapping(
-                        names=self.get_cluster_index(symbol, self.areas[area_id]), years=self.columns
-                    )
-                    for area_id, cluster in self.clusters_by_symbols[symbol].items()
-                    if cluster
-                }
-            else:
-                raise NotImplementedError(f"Unknown symbol {symbol}")
+        self.scenarios: Scenarios = _create_scenarios(index=self.index, years=self.columns)
 
     def update_rules(self, rules: Mapping[str, _Value]) -> None:
         """
@@ -198,34 +263,45 @@ class RulesetMatrices:
         for key, value in rules.items():
             symbol, *parts = key.split(",")
             scenario_type = self.scenario_types[symbol]
-            # Common values
-            area_id = parts[0].lower()  # or group_id for BC
-            year = parts[2] if symbol in _LINK_RELATED_SYMBOLS else parts[1]
-            if symbol in _AREA_RELATED_SYMBOLS:
-                area = self.areas[area_id]
-                scenario = cast(_SimpleScenario, self.scenarios[scenario_type])
-                scenario[idx_area(area)][str(year)] = value
-            elif symbol in _LINK_RELATED_SYMBOLS:
-                area1 = self.areas[area_id]
-                area2 = self.areas[parts[1].lower()]
-                scenario = cast(_SimpleScenario, self.scenarios[scenario_type])
-                scenario[idx_link(area1, area2)][str(year)] = value
-            elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
-                area = self.areas[area_id]
-                scenario = cast(_SimpleScenario, self.scenarios[scenario_type])
-                scenario[idx_area(area)][str(year)] = value * 100
-            elif symbol in _CLUSTER_RELATED_SYMBOLS:
-                area = self.areas[area_id]
-                clusters = self.clusters_by_symbols[symbol][area_id]
-                cluster = clusters[parts[2].lower()]
-                scenario = cast(_SimpleScenario, self.scenarios[scenario_type][area])
-                scenario[idx_cluster(area, cluster)][str(year)] = value
-            elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
-                group = self.groups[area_id]
-                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
-                scenario.at[idx_group(group), str(year)] = value
-            else:
-                raise NotImplementedError(f"Unknown symbol {symbol}")
+            match scenario_type:
+                case ScenarioType.LOAD:
+                    area_id, year = parts
+                    self.scenarios.load[area_id][year] = value
+                case ScenarioType.THERMAL:
+                    area_id, year, cluster_id = parts
+                    self.scenarios.thermal[area_id][cluster_id][year] = value
+                case ScenarioType.HYDRO:
+                    area_id, year = parts
+                    self.scenarios.hydro[area_id][year] = value
+                case ScenarioType.HYDRO_INITIAL_LEVEL:
+                    area_id, year = parts
+                    self.scenarios.hydro_initial_levels[area_id][year] = value * 100
+                case ScenarioType.HYDRO_FINAL_LEVEL:
+                    area_id, year = parts
+                    self.scenarios.hydro_initial_levels[area_id][year] = value * 100
+                case ScenarioType.HYDRO_GENERATION_POWER:
+                    area_id, year = parts
+                    self.scenarios.hydro_initial_levels[area_id][year] = value
+                case ScenarioType.LINK:
+                    area1, area2, year = parts
+                    self.scenarios.links[f"{area1} / {area2}"][year] = value
+                case ScenarioType.SOLAR:
+                    area_id, year = parts
+                    self.scenarios.solar[area_id][year] = value
+                case ScenarioType.WIND:
+                    area_id, year = parts
+                    self.scenarios.wind[area_id][year] = value
+                case ScenarioType.RENEWABLE:
+                    area_id, year, cluster_id = parts
+                    self.scenarios.renewable[area_id][cluster_id][year] = value
+                case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+                    area_id, year, storage_id = parts
+                    self.scenarios.short_term_storage_inflows[area_id][storage_id][year] = value
+                case ScenarioType.BINDING_CONSTRAINTS:
+                    group_id, year = parts
+                    self.scenarios.binding_constraints[group_id][year] = value
+                case _:
+                    raise NotImplementedError(f"Unknown symbol {symbol}")
 
     def get_rules(self, *, allow_nan: bool = False) -> Dict[str, _Value]:
         """
@@ -248,7 +324,7 @@ class RulesetMatrices:
         """
         rules: Dict[str, _Value] = {}
         for symbol, scenario_type in self.scenario_types.items():
-            scenario = self.scenarios[scenario_type]
+            scenario = self.scenarios.get(scenario_type)
             scenario_rules = self.get_scenario_rules(scenario, symbol, allow_nan=allow_nan)
             rules.update(scenario_rules)
         return rules
@@ -316,13 +392,12 @@ class RulesetMatrices:
             raise NotImplementedError(f"Unknown symbol {symbol}")
         return scenario_rules
 
-    def get_table_form(self, scenario_type: str, *, nan_value: str | None = "") -> TableForm:
+    def get_table_form(self, scenario_type: str) -> TableForm:
         """
         Get the scenario matrices in table form for the frontend.
 
         Args:
             scenario_type: Scenario type.
-            nan_value: Value to replace NaNs.
 
         Returns:
             Dictionary of dictionaries with the following format

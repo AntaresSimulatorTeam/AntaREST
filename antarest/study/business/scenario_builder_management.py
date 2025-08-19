@@ -223,7 +223,7 @@ class ScenarioBuilderManager:
         ruleset = _build_ruleset(file_study, symbol)
 
         # Extract the table form for the given scenario type
-        table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
+        table_form = ruleset.get_table_form(str(scenario_type))
         return table_form
 
     def update_scenario_by_type(
@@ -242,7 +242,7 @@ class ScenarioBuilderManager:
         study.add_commands([update_scenario])
 
         # Extract the updated table form for the given scenario type
-        table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
+        table_form = ruleset.get_table_form(str(scenario_type))
         return table_form
 
 
