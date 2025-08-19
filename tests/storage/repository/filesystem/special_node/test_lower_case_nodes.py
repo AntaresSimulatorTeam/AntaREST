@@ -71,7 +71,6 @@ def test_group_is_parsed_to_lower_case(study_dir: Path, ini_file: Path, ini_node
 
     node = ini_node_cluster_class(
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_8, "area_test"),
-        area="area_test",
     )
 
     assert node.get() == {"Cluster 1": {"group": "gas"}}
@@ -86,7 +85,6 @@ def test_cluster_ini_list(study_dir: Path, ini_file: Path, ini_node_cluster_clas
     data = {"Cluster 1": {"group": "Gas"}}
     node = ini_node_cluster_class(
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_8, "area_test"),
-        area="area_test",
     )
 
     node.save(data)
@@ -152,7 +150,6 @@ def test_st_storage_group_is_written_to_title_case_for_8_6(study_dir: Path, ini_
     )
     node = InputSTStorageAreaList(
         config=create_study_config(study_dir, ini_file, STUDY_VERSION_8_6, "area_test"),
-        area="area_test",
     )
 
     node.save({"Cluster 1": {"group": "PsP_open"}, "Cluster 2": {"group": "UnknownGroup"}})
