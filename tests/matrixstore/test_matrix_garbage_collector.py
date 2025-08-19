@@ -15,6 +15,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
+from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -94,7 +95,9 @@ def test_delete_unused_saved_matrices(
 @pytest.mark.unit_test
 def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
     matrix_garbage_collector._get_saved_matrices = Mock(return_value={"matrix1", "matrix2"})
-    matrix_garbage_collector.matrix_service.get_used_matrices = Mock(return_value={"matrix1"})
+    matrix_garbage_collector.matrix_service.get_used_matrices = Mock(
+        return_value={MatrixReference(matrix_id="matrix1", use_description="")}
+    )
     matrix_garbage_collector._delete_unused_saved_matrices = Mock()
 
     matrix_garbage_collector._clean_matrices()
