@@ -15,7 +15,7 @@ from typing import Any, Dict, Iterable, Literal, Mapping, Optional, Tuple, TypeA
 import numpy as np
 import pandas as pd
 
-from antarest.study.business.scenario_builder_management import ScenarioType
+from antarest.study.business.scenario_builder_management import SYMBOLS_BY_SCENARIO_TYPES, ScenarioType
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 SCENARIO_TYPES = {
@@ -451,3 +451,57 @@ class RulesetMatrices:
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
                 df = pd.DataFrame(simple_table_form).transpose().replace({None: np.nan, nan_value: np.nan})
                 scenario.loc[df.index, df.columns] = df
+
+
+def _serialize_common(section: dict[str, _Value], scenario_type: ScenarioType, data: _SimpleScenario) -> None:
+    if not data:
+        return
+    symbol = [scenario_type]
+    for area, scenario_area in data.items():
+        for year, value in scenario_area.items():
+            section[f"{symbol},{area},{year}"] = value
+
+
+def _serialize_hydro_levels(section: dict[str, _Value], scenario_type: ScenarioType, data: _SimpleScenario) -> None:
+    if not data:
+        return
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    for area, scenario_area in data.items():
+        for year, value in scenario_area.items():
+            val: int | float = value
+            if isinstance(value, (int, float)) and value != float("nan"):
+                val /= _HYDRO_LEVEL_PERCENT
+            section[f"{symbol},{area},{year}"] = val
+
+
+def _serialize_links(section: dict[str, _Value], scenario_type: ScenarioType, data: _SimpleScenario) -> None:
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    for link, scenario_link in data.items():
+        for year, value in scenario_link.items():
+            area1, area2 = link.split(" / ")
+            section[f"{symbol},{area1},{area2},{year}"] = value
+
+
+def _serialize_clusters(section: dict[str, _Value], scenario_type: ScenarioType, data: _ClusterScenario | None) -> None:
+    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    for area, scenario_area in data.items():
+        for cluster, scenario_area_cluster in scenario_area.items():
+            for year, value in scenario_area_cluster.items():
+                section[f"{symbol},{area},{year},{cluster}"] = value
+
+
+def serialize_scenarios(scenarios: Scenarios) -> dict[str, _Value]:
+    rules = {}
+    _serialize_common(rules, ScenarioType.LOAD, scenarios.load)
+    _serialize_clusters(rules, ScenarioType.THERMAL, scenarios.thermal)
+    _serialize_common(rules, ScenarioType.HYDRO, scenarios.hydro)
+    _serialize_hydro_levels(rules, ScenarioType.HYDRO_INITIAL_LEVEL, scenarios.hydro_initial_levels)
+    _serialize_hydro_levels(rules, ScenarioType.HYDRO_FINAL_LEVEL, scenarios.hydro_final_levels)
+    _serialize_common(rules, ScenarioType.HYDRO_GENERATION_POWER, scenarios.hydro_generation_power)
+    _serialize_common(rules, ScenarioType.WIND, scenarios.wind)
+    _serialize_common(rules, ScenarioType.SOLAR, scenarios.solar)
+    _serialize_links(rules, ScenarioType.LINK, scenarios.links)
+    _serialize_clusters(rules, ScenarioType.RENEWABLE, scenarios.renewable)
+    _serialize_common(rules, ScenarioType.BINDING_CONSTRAINTS, scenarios.binding_constraints)
+    _serialize_clusters(rules, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, scenarios.short_term_storage_inflows)
+    return rules
