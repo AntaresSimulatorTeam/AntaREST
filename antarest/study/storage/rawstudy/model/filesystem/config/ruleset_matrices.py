@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, cast, TypeAlias, Literal
+from typing import Any, Dict, Iterable, List, Literal, Mapping, Optional, Tuple, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -78,11 +78,9 @@ def idx_group(group: str, /) -> str:
 
 
 def _create_scenarios_mapping(names: list[str], years: list[str]) -> _SimpleScenario:
-    res = {
-        n: { y: "" for y in years}
-        for n in names
-    }
+    res = {n: {y: "" for y in years} for n in names}
     return res
+
 
 class RulesetMatrices:
     """
@@ -172,7 +170,9 @@ class RulesetMatrices:
                 # We only take the areas that are defined in the thermals and renewables dictionaries
                 # Keys are the names of the areas (and not the identifiers)
                 self.scenarios[scenario_type] = {
-                    self.areas[area_id]: _create_scenarios_mapping(names=self.get_cluster_index(symbol, self.areas[area_id]), years=self.columns)
+                    self.areas[area_id]: _create_scenarios_mapping(
+                        names=self.get_cluster_index(symbol, self.areas[area_id]), years=self.columns
+                    )
                     for area_id, cluster in self.clusters_by_symbols[symbol].items()
                     if cluster
                 }
@@ -353,7 +353,6 @@ class RulesetMatrices:
                 }
         """
         return self.scenarios[scenario_type]
-
 
     def update_table_form(self, table_form: TableForm, scenario_type: str, *, nan_value: str = "") -> None:
         """
