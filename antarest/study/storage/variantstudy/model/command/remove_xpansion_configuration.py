@@ -13,12 +13,10 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -37,12 +35,8 @@ class RemoveXpansionConfiguration(ICommand):
     command_name: CommandName = CommandName.REMOVE_XPANSION_CONFIGURATION
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        try:
-            study_data.tree.delete(["user", "expansion"])
-        except ChildNotFoundError:
-            return command_failed(message="Couldn't delete the xpansion configuration, it doesn't exist")
-
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        study_data.delete_xpansion_configuration()
         return command_succeeded(message="Xpansion configuration removed successfully")
 
     @override

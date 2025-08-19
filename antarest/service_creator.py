@@ -187,6 +187,15 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
 
 
+def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
+    return MatrixGarbageCollector(
+        matrix_service=matrix_service,
+        sleeping_time=config.storage.matrix_gc_sleeping_time,
+        dry_run=config.storage.matrix_gc_dry_run,
+        retention_time=config.storage.matrix_gc_retention_time,
+    )
+
+
 def create_watcher(
     config: Config,
     app_ctxt: Optional[AppBuildContext],
@@ -270,9 +279,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
 
     matrix_garbage_collector = None
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
-        matrix_garbage_collector = core_services.matrix_service.create_matrix_gc(
-            config=config,
-        )
+        matrix_garbage_collector = create_matrix_gc(config, core_services.matrix_service)
 
     auto_archiver = None
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:

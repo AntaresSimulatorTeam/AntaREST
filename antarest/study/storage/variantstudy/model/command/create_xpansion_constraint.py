@@ -14,20 +14,16 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.xpansion_model import XpansionResourceFileType
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    apply_create_resource_commands,
-)
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
 class CreateXpansionConstraint(ICommand):
     """
-    Command used to create  a matrice in an area.
+    Command used to create an xpansion constraint.
     """
 
     # Overloaded metadata
@@ -42,19 +38,15 @@ class CreateXpansionConstraint(ICommand):
     data: bytes
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        return apply_create_resource_commands(
-            self.filename, self.data, study_data, XpansionResourceFileType.CONSTRAINTS
-        )
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        study_data.save_xpansion_constraint(self.filename, self.data)
+        return command_succeeded(message=f"Xpansion constraint {self.filename} created successfully")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={
-                "filename": self.filename,
-                "data": self.data,
-            },
+            args={"filename": self.filename, "data": self.data},
             study_version=self.study_version,
         )
 

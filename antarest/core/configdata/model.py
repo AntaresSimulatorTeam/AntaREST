@@ -26,7 +26,7 @@ class ConfigDataDTO(AntaresBaseModel):
     value: Optional[str]
 
 
-class ConfigData(Base):  # type: ignore
+class ConfigData(Base):
     __tablename__ = "configdata"
     owner: Mapped[int] = mapped_column(Integer(), primary_key=True)
     key: Mapped[str] = mapped_column(String(), primary_key=True)

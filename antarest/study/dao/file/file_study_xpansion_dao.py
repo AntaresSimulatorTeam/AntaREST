@@ -12,18 +12,24 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional
 
+import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import (
     AreaNotFound,
     CandidateNotFoundError,
     ChildNotFoundError,
+    FileCurrentlyUsedInSettings,
     LinkNotFound,
     XpansionCandidateDeletionError,
+    XpansionConfigurationAlreadyExists,
+    XpansionConfigurationDoesNotExist,
+    XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
+    XpansionResourceFileType,
     XpansionSensitivitySettings,
     XpansionSettings,
     XpansionSettingsUpdate,
@@ -36,6 +42,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     serialize_xpansion_settings,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
 
 
 class FileStudyXpansionDao(XpansionDao, ABC):
@@ -113,7 +120,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study.tree.save(settings_content, ["user", "expansion", "settings"])
 
     @override
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
         """
         Checks yearly_weights and additional_constraints fields.
         - If the attributes are given, it means that the user wants to select a file.
@@ -129,6 +136,95 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                 except ChildNotFoundError:
                     msg = f"Additional {file_type} file '{file}' does not exist"
                     raise XpansionFileNotFoundError(msg) from None
+
+    @override
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+        file_study = self.get_file_study()
+        node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
+
+        if isinstance(node, MatrixNode):
+            return node.parse_as_dataframe()
+
+        content = node.get()
+        assert isinstance(content, bytes)
+        return content
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        file_study = self.get_file_study()
+        try:
+            folder_path = self.get_resource_dir(resource_type)
+            return sorted(file_study.tree.get(folder_path).keys())
+        except ChildNotFoundError:
+            return []
+
+    @override
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        file_checkers = {
+            XpansionResourceFileType.CONSTRAINTS: self._is_constraints_file_used,
+            XpansionResourceFileType.CAPACITIES: self._is_capa_file_used,
+            XpansionResourceFileType.WEIGHTS: self._is_weights_file_used,
+        }
+
+        if resource_type in file_checkers and file_checkers[resource_type](filename):
+            raise FileCurrentlyUsedInSettings(resource_type, filename)
+
+    @override
+    def create_xpansion_configuration(self) -> None:
+        file_study = self.get_file_study()
+        try:
+            file_study.tree.get(["user", "expansion"])
+        except ChildNotFoundError:
+            # We want to create the folder, so we expect this exception.
+            xpansion_configuration_data = {
+                "user": {
+                    "expansion": {
+                        "settings": serialize_xpansion_settings(XpansionSettings()),
+                        "sensitivity": {"sensitivity_in": {}},
+                        "candidates": {},
+                        "capa": {},
+                        "weights": {},
+                        "constraints": {},
+                    }
+                }
+            }
+
+            file_study.tree.save(xpansion_configuration_data)
+        else:
+            raise XpansionConfigurationAlreadyExists(file_study.config.study_id)
+
+    @override
+    def delete_xpansion_configuration(self) -> None:
+        file_study = self.get_file_study()
+        try:
+            file_study.tree.delete(["user", "expansion"])
+        except ChildNotFoundError:
+            raise XpansionConfigurationDoesNotExist(file_study.config.study_id)
+
+    @override
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        file_study = self.get_file_study()
+        file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
+
+    @override
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        self.save_resource(XpansionResourceFileType.CONSTRAINTS, filename, content)
+
+    @override
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series)
+
+    @override
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
+        self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series)
+
+    def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
+        file_study = self.get_file_study()
+        url = self.get_resource_dir(resource_type)
+        if filename in file_study.tree.get(url):
+            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
+
+        file_study.tree.save(data=data, url=url + [filename])
 
     @staticmethod
     def _get_sensitivity_settings(file_study: FileStudy) -> XpansionSensitivitySettings:
@@ -180,3 +276,42 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             return file_study.tree.get(["user", "expansion", "sensitivity", "sensitivity_in"])
         except ChildNotFoundError:
             return {}
+
+    @staticmethod
+    def get_resource_dir(resource_type: XpansionResourceFileType) -> list[str]:
+        if resource_type == XpansionResourceFileType.CONSTRAINTS:
+            return ["user", "expansion", "constraints"]
+        elif resource_type == XpansionResourceFileType.CAPACITIES:
+            return ["user", "expansion", "capa"]
+        elif resource_type == XpansionResourceFileType.WEIGHTS:
+            return ["user", "expansion", "weights"]
+        raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
+
+    def _is_constraints_file_used(self, filename: str) -> bool:
+        settings = self._get_settings(self.get_file_study())
+        if settings.additional_constraints == filename:
+            return True
+        return False
+
+    def _is_weights_file_used(self, filename: str) -> bool:
+        settings = self._get_settings(self.get_file_study())
+        if settings.yearly_weights == filename:
+            return True
+        return False
+
+    def _is_capa_file_used(self, filename: str) -> bool:
+        candidates = self.get_all_xpansion_candidates()
+        for candidate in candidates:
+            if candidate.link_profile == filename:
+                return True
+            if candidate.already_installed_link_profile == filename:
+                return True
+            if candidate.direct_link_profile == filename:
+                return True
+            if candidate.indirect_link_profile == filename:
+                return True
+            if candidate.already_installed_direct_link_profile == filename:
+                return True
+            if candidate.already_installed_indirect_link_profile == filename:
+                return True
+        return False

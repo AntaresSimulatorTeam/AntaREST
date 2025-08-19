@@ -10,13 +10,16 @@
 #
 # This file is part of the Antares project.
 from antarest.core.serde.ini_reader import read_ini
+from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
     Occurrence,
+    STStorageAdditionalConstraint,
     STStorageAdditionalConstraintCreation,
     STStorageAdditionalConstraintUpdate,
 )
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -83,7 +86,7 @@ class TestUpdateSTStorageAdditionalConstraint:
                     "sts_fr": {
                         "constraint": STStorageAdditionalConstraintUpdate(
                             variable=AdditionalConstraintVariable.WITHDRAWAL,
-                            occurrences=[Occurrence(hours=[5, 6, 7]), Occurrence(hours=[167, 168])],
+                            occurrences=[Occurrence(hours=[5, 6, 7]), Occurrence(hours=[167]), Occurrence(hours=[])],
                         )
                     }
                 },
@@ -108,7 +111,7 @@ class TestUpdateSTStorageAdditionalConstraint:
         assert ini_content == {
             "constraint": {
                 "enabled": True,
-                "hours": "[5, 6, 7], [167, 168]",
+                "hours": "[5, 6, 7], [167], []",
                 "operator": "less",
                 "variable": "withdrawal",
             },
@@ -130,6 +133,44 @@ class TestUpdateSTStorageAdditionalConstraint:
                 "operator": "equal",
                 "variable": "withdrawal",
             }
+        }
+
+        # Ensures we can read the constraints
+        manager = STStorageManager(command_context)
+        constraints = manager.get_all_additional_constraints(FileStudyInterface(study))
+        assert constraints == {
+            "de": {
+                "sts_de": [
+                    STStorageAdditionalConstraint(
+                        id="c3",
+                        name="c3",
+                        variable=AdditionalConstraintVariable.WITHDRAWAL,
+                        operator=AdditionalConstraintOperator.EQUAL,
+                        occurrences=[Occurrence(hours=[1, 2, 3, 4]), Occurrence(hours=[12, 13])],
+                        enabled=False,
+                    )
+                ]
+            },
+            "fr": {
+                "sts_fr": [
+                    STStorageAdditionalConstraint(
+                        id="constraint",
+                        name="constraint",
+                        variable=AdditionalConstraintVariable.WITHDRAWAL,
+                        operator=AdditionalConstraintOperator.LESS,
+                        occurrences=[Occurrence(hours=[5, 6, 7]), Occurrence(hours=[167]), Occurrence(hours=[])],
+                        enabled=True,
+                    ),
+                    STStorageAdditionalConstraint(
+                        id="constraint_2",
+                        name="constraint_2",
+                        variable=AdditionalConstraintVariable.NETTING,
+                        operator=AdditionalConstraintOperator.LESS,
+                        occurrences=[Occurrence(hours=[2, 4])],
+                        enabled=False,
+                    ),
+                ]
+            },
         }
 
     def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy):

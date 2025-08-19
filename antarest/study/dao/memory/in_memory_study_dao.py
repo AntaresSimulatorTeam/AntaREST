@@ -39,7 +39,12 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings, XpansionSettingsUpdate
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -131,6 +136,8 @@ class InMemoryStudyDao(StudyDao):
         # Xpansion
         self._xpansion_candidates: dict[str, XpansionCandidate] = {}
         self._xpansion_settings: XpansionSettings = XpansionSettings()
+        self._xpansion_configuration_exists: bool = False
+        self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -598,7 +605,19 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings = settings
 
     @override
-    def checks_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return
+
+    @override
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+        return self._xpansion_resources[resource_type][filename]
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        return list(self._xpansion_resources.get(resource_type, {}).keys())
+
+    @override
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         return
 
     @override
@@ -624,3 +643,29 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
         self._timeseries_config = config
+
+    @override
+    def create_xpansion_configuration(self) -> None:
+        self._xpansion_configuration_exists = True
+
+    @override
+    def delete_xpansion_configuration(self) -> None:
+        self._xpansion_configuration_exists = False
+
+    @override
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        del self._xpansion_resources[resource_type][filename]
+
+    @override
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
+
+    @override
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        content = series.encode("utf-8")
+        self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
+
+    @override
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
+        content = series.encode("utf-8")
+        self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content

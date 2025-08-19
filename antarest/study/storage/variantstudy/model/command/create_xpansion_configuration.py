@@ -13,9 +13,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationAlreadyExists
-from antarest.study.business.model.xpansion_model import XpansionSettings
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -33,33 +31,9 @@ class CreateXpansionConfiguration(ICommand):
     command_name: CommandName = CommandName.CREATE_XPANSION_CONFIGURATION
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        try:
-            study_data.tree.get(["user", "expansion"])
-        except ChildNotFoundError:
-            settings_obj = XpansionSettings().model_dump(
-                mode="json",
-                by_alias=True,
-                exclude_none=True,
-                exclude={"sensitivity_config", "yearly_weights", "additional_constraints"},
-            )
-            xpansion_configuration_data = {
-                "user": {
-                    "expansion": {
-                        "settings": settings_obj,
-                        "sensitivity": {"sensitivity_in": {}},
-                        "candidates": {},
-                        "capa": {},
-                        "weights": {},
-                        "constraints": {},
-                    }
-                }
-            }
-
-            study_data.tree.save(xpansion_configuration_data)
-            return command_succeeded(message="Xpansion configuration created successfully")
-        else:
-            raise XpansionConfigurationAlreadyExists(study_data.config.study_id)
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        study_data.create_xpansion_configuration()
+        return command_succeeded(message="Xpansion configuration created successfully")
 
     @override
     def to_dto(self) -> CommandDTO:
