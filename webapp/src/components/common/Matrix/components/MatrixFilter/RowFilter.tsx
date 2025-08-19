@@ -27,9 +27,9 @@ import {
   type SelectChangeEvent,
   Typography,
 } from "@mui/material";
+import { produce } from "immer";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { produce } from "immer";
 import TemporalFilterRenderer from "./components/TemporalFilterRenderer";
 import { FILTER_TYPES, TEMPORAL_OPTIONS, TIME_INDEXING } from "./constants";
 import { useFilterControls } from "./hooks/useFilterControls";
