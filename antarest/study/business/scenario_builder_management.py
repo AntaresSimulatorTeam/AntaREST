@@ -150,7 +150,7 @@ def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
     # Create and populate the RulesetMatrices
     areas = file_study.config.areas
     groups = file_study.config.get_binding_constraint_groups() if file_study.config.version >= 870 else []
-    scenario_types = {s: str(st) for st, s in SYMBOLS_BY_SCENARIO_TYPES.items()}
+    scenario_types = {s: str(st) for st, s in SYMBOLS_BY_SCENARIO_TYPES.items() if s == symbol}
     ruleset = RulesetMatrices(
         nb_years=nb_years,
         areas=areas,
@@ -221,7 +221,6 @@ class ScenarioBuilderManager:
         symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
         file_study = study.get_files()
         ruleset = _build_ruleset(file_study, symbol)
-        ruleset.sort_scenarios()
 
         # Extract the table form for the given scenario type
         table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
@@ -233,7 +232,6 @@ class ScenarioBuilderManager:
         file_study = study.get_files()
         ruleset = _build_ruleset(file_study)
         ruleset.update_table_form(table_form, str(scenario_type), nan_value="")
-        ruleset.sort_scenarios()
 
         # Create the UpdateScenarioBuilder command
         ruleset_name = _get_active_ruleset_name(file_study)

@@ -10,11 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Iterable, List, Mapping, MutableMapping, Optional, Tuple, cast
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple, cast, TypeAlias, Literal
 
 import numpy as np
 import pandas as pd
-import typing_extensions as te
 from typing_extensions import override
 
 SCENARIO_TYPES = {
@@ -32,15 +31,18 @@ SCENARIO_TYPES = {
     "sts": "short-term-storage-inflows",
 }
 
-_Value: te.TypeAlias = int | float
-_SimpleScenario: te.TypeAlias = pd.DataFrame
-_ClusterScenario: te.TypeAlias = MutableMapping[str, pd.DataFrame]
-_Scenario: te.TypeAlias = _SimpleScenario | _ClusterScenario
-_ScenarioMapping: te.TypeAlias = MutableMapping[str, _Scenario]
 
-SimpleTableForm: te.TypeAlias = Dict[str, Dict[str, int | float | str | None]]
-ClusterTableForm: te.TypeAlias = Dict[str, SimpleTableForm]
-TableForm: te.TypeAlias = SimpleTableForm | ClusterTableForm
+McScenarioMapping: TypeAlias = dict[str, int | Literal[""]]
+
+_Value: TypeAlias = int | float
+_SimpleScenario: TypeAlias = dict[str, McScenarioMapping]
+_ClusterScenario: TypeAlias = dict[str, _SimpleScenario]
+_Scenario: TypeAlias = _SimpleScenario | _ClusterScenario
+_ScenarioMapping: TypeAlias = dict[str, _Scenario]
+
+SimpleTableForm: TypeAlias = Dict[str, Dict[str, int | float | str | None]]
+ClusterTableForm: TypeAlias = Dict[str, SimpleTableForm]
+TableForm: TypeAlias = SimpleTableForm | ClusterTableForm
 
 _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "hgp"
 _BINDING_CONSTRAINTS_RELATED_SYMBOLS = ("bc",)
@@ -74,6 +76,13 @@ def idx_group(group: str, /) -> str:
 #  Scenario Builder Ruleset
 # ==========================
 
+
+def _create_scenarios_mapping(names: list[str], years: list[str]) -> _SimpleScenario:
+    res = {
+        n: { y: "" for y in years}
+        for n in names
+    }
+    return res
 
 class RulesetMatrices:
     """
@@ -152,37 +161,23 @@ class RulesetMatrices:
         for symbol, scenario_type in self.scenario_types.items():
             # Note: all DataFrames are initialized with NaN values, so the dtype is `float`.
             if symbol in _AREA_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=area_index, columns=self.columns, dtype=float)
+                self.scenarios[scenario_type] = _create_scenarios_mapping(names=area_index, years=self.columns)
             elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=group_index, columns=self.columns, dtype=float)
+                self.scenarios[scenario_type] = _create_scenarios_mapping(names=group_index, years=self.columns)
             elif symbol in _LINK_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=link_index, columns=self.columns, dtype=float)
+                self.scenarios[scenario_type] = _create_scenarios_mapping(names=link_index, years=self.columns)
             elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
-                self.scenarios[scenario_type] = pd.DataFrame(index=area_index, columns=self.columns, dtype=float)
+                self.scenarios[scenario_type] = _create_scenarios_mapping(names=area_index, years=self.columns)
             elif symbol in _CLUSTER_RELATED_SYMBOLS:
                 # We only take the areas that are defined in the thermals and renewables dictionaries
                 # Keys are the names of the areas (and not the identifiers)
                 self.scenarios[scenario_type] = {
-                    self.areas[area_id]: pd.DataFrame(
-                        index=self.get_cluster_index(symbol, self.areas[area_id]), columns=self.columns, dtype=float
-                    )
+                    self.areas[area_id]: _create_scenarios_mapping(names=self.get_cluster_index(symbol, self.areas[area_id]), years=self.columns)
                     for area_id, cluster in self.clusters_by_symbols[symbol].items()
                     if cluster
                 }
             else:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
-
-    def sort_scenarios(self) -> None:
-        """
-        Sort the indexes of the scenario matrices (case-insensitive).
-        """
-        for symbol, scenario_type in self.scenario_types.items():
-            scenario = self.scenarios[scenario_type]
-            if isinstance(scenario, pd.DataFrame):
-                scenario = scenario.sort_index(key=lambda x: x.str.lower())
-            else:
-                scenario = {area: df.sort_index(key=lambda x: x.str.lower()) for area, df in scenario.items()}
-            self.scenarios[scenario_type] = scenario
 
     def update_rules(self, rules: Mapping[str, _Value]) -> None:
         """
@@ -208,23 +203,23 @@ class RulesetMatrices:
             year = parts[2] if symbol in _LINK_RELATED_SYMBOLS else parts[1]
             if symbol in _AREA_RELATED_SYMBOLS:
                 area = self.areas[area_id]
-                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
-                scenario.at[idx_area(area), str(year)] = value
+                scenario = cast(_SimpleScenario, self.scenarios[scenario_type])
+                scenario[idx_area(area)][str(year)] = value
             elif symbol in _LINK_RELATED_SYMBOLS:
                 area1 = self.areas[area_id]
                 area2 = self.areas[parts[1].lower()]
-                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
-                scenario.at[idx_link(area1, area2), str(year)] = value
+                scenario = cast(_SimpleScenario, self.scenarios[scenario_type])
+                scenario[idx_link(area1, area2)][str(year)] = value
             elif symbol in _HYDRO_LEVEL_RELATED_SYMBOLS:
                 area = self.areas[area_id]
-                scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
-                scenario.at[idx_area(area), str(year)] = value * 100
+                scenario = cast(_SimpleScenario, self.scenarios[scenario_type])
+                scenario[idx_area(area)][str(year)] = value * 100
             elif symbol in _CLUSTER_RELATED_SYMBOLS:
                 area = self.areas[area_id]
                 clusters = self.clusters_by_symbols[symbol][area_id]
                 cluster = clusters[parts[2].lower()]
-                scenario = cast(pd.DataFrame, self.scenarios[scenario_type][area])
-                scenario.at[idx_cluster(area, cluster), str(year)] = value
+                scenario = cast(_SimpleScenario, self.scenarios[scenario_type][area])
+                scenario[idx_cluster(area, cluster)][str(year)] = value
             elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
                 group = self.groups[area_id]
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
@@ -302,11 +297,12 @@ class RulesetMatrices:
             }
         elif symbol in _CLUSTER_RELATED_SYMBOLS:
             clusters_mapping = self.clusters_by_symbols[symbol]
+            scenario = cast(_ClusterScenario, scenario)
             scenario_rules = {
                 f"{symbol},{area_id},{year},{cluster_id}": to_ts_number(value)
                 for area_id, clusters in clusters_mapping.items()
                 for cluster_id, cluster in clusters.items()
-                for year, value in scenario[self.areas[area_id]].loc[idx_cluster(self.areas[area_id], cluster)].items()
+                for year, value in scenario[self.areas[area_id]][idx_cluster(self.areas[area_id], cluster)].items()
                 if allow_nan or not pd.isna(value)
             }
         elif symbol in _BINDING_CONSTRAINTS_RELATED_SYMBOLS:
@@ -356,15 +352,8 @@ class RulesetMatrices:
                     ...
                 }
         """
-        scenario = self.scenarios[scenario_type]
-        if isinstance(scenario, pd.DataFrame):
-            simple_scenario: _SimpleScenario = scenario.fillna(nan_value)
-            simple_table_form = simple_scenario.to_dict(orient="index")
-            return cast(SimpleTableForm, simple_table_form)
-        else:
-            cluster_scenario: _ClusterScenario = {area: df.fillna(nan_value) for area, df in scenario.items()}
-            cluster_table_form = {area: df.to_dict(orient="index") for area, df in cluster_scenario.items()}
-            return cast(ClusterTableForm, cluster_table_form)
+        return self.scenarios[scenario_type]
+
 
     def update_table_form(self, table_form: TableForm, scenario_type: str, *, nan_value: str = "") -> None:
         """
