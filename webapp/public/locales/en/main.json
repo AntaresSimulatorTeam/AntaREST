@@ -422,6 +422,7 @@
   "study.configuration.general.mcScenarioBuilder.tab.hydroFinalLevels": "Hydro Final Levels",
   "study.configuration.general.mcScenarioBuilder.tab.bindingConstraints": "Binding Constraints",
   "study.configuration.general.mcScenarioBuilder.tab.shortTermStorageInflows": "STS - Inflows",
+  "study.configuration.general.mcScenarioBuilder.tab.shortTermStorageConstraints": "STS Constraints",
   "study.configuration.general.mcScenarioBuilder.noConfig.error": "There is no valid configuration available.",
   "study.configuration.general.mcScenarioBuilder.update.error": "Failed to update scenario '{{type}}'.",
   "study.configuration.general.mcScenarioBuilder.get.error": "Failed to fetch configuration for the selected scenario: '{{type}}'.",
