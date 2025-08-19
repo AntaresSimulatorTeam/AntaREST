@@ -12,7 +12,7 @@
 
 import datetime
 import uuid
-from typing import Any, List, TypeAlias
+from typing import Any, List, Optional, TypeAlias
 
 from pydantic import ConfigDict, field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
@@ -144,6 +144,19 @@ class MatrixReference(AntaresBaseModel):
 
     matrix_id: str
     use_description: str
+
+
+class MatrixDescriptionDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    description: str
+
+
+class MatrixReferencesDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    Pydantic translation of one list of matrix references from a client
+    """
+
+    refs: list[MatrixDescriptionDTO]
+    disk_usage: Optional[int] = None
 
 
 class MatrixDataSet(Base):  # type: ignore

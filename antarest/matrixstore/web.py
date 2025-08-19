@@ -29,8 +29,10 @@ from antarest.matrixstore.model import (
     MatrixData,
     MatrixDataSetDTO,
     MatrixDataSetUpdateDTO,
+    MatrixDescriptionDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixReferencesDTO,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -96,6 +98,36 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
             columns=list(df.columns),
             data=df.to_numpy().tolist(),
         )
+
+    @bp.get(
+        "/matrix/_references/{disk_usage}", tags=[APITag.matrix], description="Fetching a list of matrices statistics"
+    )
+    def get_matrices_references(disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        logger.info("Fetching matrices references")
+        used_matrices = service.get_used_matrices()
+
+        references_dto: dict[str, MatrixReferencesDTO] = {}
+
+        for matrix in used_matrices:
+            refs = []
+            matrix_size = None
+            matrix_id = matrix.matrix_id
+            if disk_usage:
+                matrix_size = service.get(matrix_id).__sizeof__()
+
+            description = matrix.use_description
+
+            ref_dto = MatrixDescriptionDTO.model_validate(MatrixDescriptionDTO(description=description))
+
+            refs.append(ref_dto)
+
+            if matrix_id not in references_dto:
+                refs_dto = MatrixReferencesDTO.model_validate({"refs": refs, "disk_usage": matrix_size})
+                references_dto.update({matrix_id: refs_dto})
+            else:
+                references_dto[matrix_id].refs.append(ref_dto)
+
+        return references_dto
 
     @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
     def create_dataset(metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)) -> Any:

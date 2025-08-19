@@ -565,12 +565,10 @@ class MatrixService(ISimpleMatrixService):
             matrix_service=self,
         )
 
-    def get_used_matrices(self) -> Set[str]:
+    def get_used_matrices(self) -> Set[MatrixReference]:
         """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
         return {
-            matrix_reference.matrix_id
-            for provider in self.usage_providers
-            for matrix_reference in provider.get_matrix_usage()
+            matrix_reference for provider in self.usage_providers for matrix_reference in provider.get_matrix_usage()
         }
 
     def _create_dataset_usage_provider(self) -> "IMatrixUsageProvider":

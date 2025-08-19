@@ -59,7 +59,7 @@ class MatrixGarbageCollector(IService):
         stopwatch = StopWatch()
         logger.info("Beginning of the cleaning process")
         saved_matrices = self._get_saved_matrices()
-        used_matrices = self.matrix_service.get_used_matrices()
+        used_matrices = {matrix.matrix_id for matrix in self.matrix_service.get_used_matrices()}
         unused_matrices = saved_matrices - used_matrices
         self._delete_unused_saved_matrices(unused_matrices=unused_matrices)
         stopwatch.log_elapsed(lambda x: logger.info(f"Finished cleaning matrices in {x}s"))
