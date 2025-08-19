@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { colors, type CssVarsTheme, type CssVarsThemeOptions, type Theme } from "@mui/material";
+import { type CssVarsTheme, type CssVarsThemeOptions, colors, type Theme } from "@mui/material";
 
 const TAB_MIN_HEIGHT_S = 38;
 const TAB_MIN_HEIGHT_XS = 30;
@@ -20,6 +20,8 @@ const TAB_MIN_HEIGHT_XS = 30;
 const muiPopComp = {
   styleOverrides: {
     root: ({ theme }: { theme: CssVarsTheme }) => ({
+      // Set z-index higher than modals (1300) to avoid overlapping issues.
+      zIndex: theme.zIndex.modal + 150, // 1450
       ".MuiList-root": theme.applyStyles("light", {
         backgroundColor: theme.palette.background.paper,
       }),
