@@ -99,6 +99,7 @@ class RulesetMatrices:
         renewables: Mapping[str, Iterable[str]],
         groups: Iterable[str],
         storages: Mapping[str, Iterable[str]],
+        constraints: Optional[Mapping[str, Mapping[str, Iterable[str]]]] = None,
         scenario_types: Optional[Mapping[str, str]] = None,
     ):
         # List of Monte Carlo years
@@ -110,6 +111,13 @@ class RulesetMatrices:
         self.renewables = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in renewables.items()}
         self.storages = {
             a.lower(): {a_storage.lower(): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
+        }
+        self.constraints = {
+            a.lower(): {
+                st.lower(): {c.lower(): c for c in constraints}
+                for st, constraints in st_constraints.items()
+            }
+            for a, st_constraints in (constraints or {}).items()
         }
         self.clusters_by_symbols = {"t": self.thermals, "r": self.renewables, "sts": self.storages}  # for easier access
         self.groups = {g.lower(): g for g in groups}
@@ -149,10 +157,13 @@ class RulesetMatrices:
         return [idx_group(group) for group in self.groups.values()]
 
     def get_constraint_index(self, symbol: str, area: str) -> List[str]:
-        # For STS constraints, we would need to load the constraints from the study data
-        # For now, return an empty list as constraints are dynamic
-        # TODO: Implement constraint loading from study data
-        return []
+        # For STS constraints, generate storage/constraint combinations for the area
+        area_constraints = self.constraints.get(area.lower(), {})
+        constraint_indices = []
+        for storage_id, constraints in area_constraints.items():
+            for constraint_id in constraints.values():
+                constraint_indices.append(idx_constraint(storage_id, constraint_id))
+        return constraint_indices
 
     def _setup(self) -> None:
         """

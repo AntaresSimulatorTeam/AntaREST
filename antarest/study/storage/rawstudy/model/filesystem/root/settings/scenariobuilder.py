@@ -131,14 +131,13 @@ class ScenarioBuilder(IniFileNode):
             rules[f"hgp,{area_id},0"] = _TSNumber
 
     def _populate_sts_constraints_rules(self, rules: _Rules) -> None:
-        # For each storage in each area, we need to get the constraints
-        # This is a placeholder implementation - the actual constraint IDs
-        # should be retrieved from the study configuration
+        # For each storage in each area, get the additional constraints
         for area_id, area in self.config.areas.items():
             for storage in area.st_storages:
-                # For now, create a placeholder rule
-                # In reality, constraints would be loaded from the study data
-                rules[f"stsc,{area_id},0,{storage.id},constraint_placeholder"] = _TSNumber
+                # Get constraints for this storage
+                constraints = area.st_storages_additional_constraints.get(storage.id, [])
+                for constraint in constraints:
+                    rules[f"stsc,{area_id},0,{storage.id},{constraint.id}"] = _TSNumber
 
     def _populate_sts_rules(self, rules: _Rules) -> None:
         for area_id, area in self.config.areas.items():
@@ -178,5 +177,20 @@ class ScenarioBuilder(IniFileNode):
                     area1_re = re.escape(area)
                     area2_re = re.escape(cluster)
                     return {"section": section, "option_regex": f"{symbol},{area1_re},{area2_re},.*"}
+                elif symbol == "sts":
+                    area_re = re.escape(area)
+                    storage_re = re.escape(cluster)
+                    return {"section": section, "option_regex": rf"{symbol},{area_re},\d+,{storage_re}"}
+        
+        # If the URL contains 5 elements, we can filter on STS constraints
+        elif len(url) == 5:
+            section, symbol, area, storage, constraint = url
+            if re.fullmatch(r"\w+", symbol) and symbol == "stsc":
+                # Mutate the URL to get all values matching the STS constraint type.
+                url[:] = [section]
+                area_re = re.escape(area)
+                storage_re = re.escape(storage)
+                constraint_re = re.escape(constraint)
+                return {"section": section, "option_regex": rf"{symbol},{area_re},\d+,{storage_re},{constraint_re}"}
 
         return super()._get_filtering_kwargs(url)

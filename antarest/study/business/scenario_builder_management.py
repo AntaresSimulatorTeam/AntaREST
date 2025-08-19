@@ -154,6 +154,18 @@ def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
     # Create and populate the RulesetMatrices
     areas = file_study.config.areas
     groups = file_study.config.get_binding_constraint_groups() if file_study.config.version >= 870 else []
+    
+    # Extract STS constraints data
+    constraints = {}
+    for area_id, area in areas.items():
+        area_constraints = {}
+        for storage in area.st_storages:
+            storage_constraints = area.st_storages_additional_constraints.get(storage.id, [])
+            if storage_constraints:
+                area_constraints[storage.id] = [c.id for c in storage_constraints]
+        if area_constraints:
+            constraints[area_id] = area_constraints
+    
     scenario_types = {s: str(st) for st, s in SYMBOLS_BY_SCENARIO_TYPES.items()}
     ruleset = RulesetMatrices(
         nb_years=nb_years,
@@ -163,6 +175,7 @@ def _build_ruleset(file_study: FileStudy, symbol: str = "") -> RulesetMatrices:
         renewables={a: file_study.config.get_renewable_ids(a) for a in areas},
         storages={a: file_study.config.get_st_storage_ids(a) for a in areas},
         groups=groups,
+        constraints=constraints,
         scenario_types=scenario_types,
     )
     ruleset.update_rules(ruleset_config)
