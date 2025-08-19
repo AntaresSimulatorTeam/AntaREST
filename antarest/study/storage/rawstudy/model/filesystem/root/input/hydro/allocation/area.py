@@ -23,7 +23,5 @@ class InputHydroAllocationArea(IniFileNode):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        area: str,
     ):
-        types = {"[allocation]": {area: int}}
-        super().__init__(config, types, reader=IniReader())
+        super().__init__(config, reader=IniReader())

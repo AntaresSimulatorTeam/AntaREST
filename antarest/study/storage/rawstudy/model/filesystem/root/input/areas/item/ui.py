@@ -36,17 +36,4 @@ class InputAreasUi(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "ui": {
-                "x": int,
-                "y": int,
-                "color_r": int,
-                "color_g": int,
-                "color_b": int,
-                "layers": int,
-            },
-            "layerX": {"0": int},
-            "layerY": {"0": int},
-            "layerColor": {"0": str},
-        }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)

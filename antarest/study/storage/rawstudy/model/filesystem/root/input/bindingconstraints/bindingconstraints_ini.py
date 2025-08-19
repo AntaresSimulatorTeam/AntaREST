@@ -43,7 +43,6 @@ class BindingConstraintsIni(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig):
         super().__init__(
             config,
-            types={},
             reader=IniReader(value_parsers=_VALUE_PARSERS),
             writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
         )

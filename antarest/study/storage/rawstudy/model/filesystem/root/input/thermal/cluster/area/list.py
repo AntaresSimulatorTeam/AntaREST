@@ -23,19 +23,9 @@ class InputThermalClustersAreaList(IniFileNode):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        area: str,
     ):
-        section = {
-            "name": str,
-            "group": str,
-            "unitcount": int,
-            "nominalcapacity": float,
-            "market-bid-cost": float,
-        }
-        types = {th: section for th in config.get_thermal_ids(area)}
         super().__init__(
             config,
-            types,
             reader=IniReader(value_parsers=_VALUE_PARSERS),
             writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
         )
