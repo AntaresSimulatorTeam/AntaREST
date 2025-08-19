@@ -30,6 +30,7 @@ SCENARIO_TYPES = {
     "hfl": "hydro-final-levels",
     "hgp": "hydro-generation-power",
     "sts": "short-term-storage-inflows",
+    "stsc": "short-term-storage-constraints",
 }
 
 _Value: te.TypeAlias = int | float
@@ -47,6 +48,7 @@ _BINDING_CONSTRAINTS_RELATED_SYMBOLS = ("bc",)
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
 _CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
+_CONSTRAINT_RELATED_SYMBOLS = ("stsc",)
 
 
 # ========================================
@@ -68,6 +70,10 @@ def idx_cluster(_: str, cluster: str, /) -> str:
 
 def idx_group(group: str, /) -> str:
     return group
+
+
+def idx_constraint(storage: str, constraint: str, /) -> str:
+    return f"{storage} / {constraint}"
 
 
 # ==========================
@@ -142,6 +148,12 @@ class RulesetMatrices:
     def get_group_index(self) -> List[str]:
         return [idx_group(group) for group in self.groups.values()]
 
+    def get_constraint_index(self, symbol: str, area: str) -> List[str]:
+        # For STS constraints, we would need to load the constraints from the study data
+        # For now, return an empty list as constraints are dynamic
+        # TODO: Implement constraint loading from study data
+        return []
+
     def _setup(self) -> None:
         """
         Prepare the scenario matrices for each scenario type.
@@ -168,6 +180,14 @@ class RulesetMatrices:
                     )
                     for area_id, cluster in self.clusters_by_symbols[symbol].items()
                     if cluster
+                }
+            elif symbol in _CONSTRAINT_RELATED_SYMBOLS:
+                # For STS constraints, create a nested structure: area -> storage/constraint combinations
+                self.scenarios[scenario_type] = {
+                    self.areas[area_id]: pd.DataFrame(
+                        index=self.get_constraint_index(symbol, self.areas[area_id]), columns=self.columns, dtype=float
+                    )
+                    for area_id in self.areas.keys()
                 }
             else:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
@@ -229,6 +249,16 @@ class RulesetMatrices:
                 group = self.groups[area_id]
                 scenario = cast(pd.DataFrame, self.scenarios[scenario_type])
                 scenario.at[idx_group(group), str(year)] = value
+            elif symbol in _CONSTRAINT_RELATED_SYMBOLS:
+                # Format: stsc,<area>,<year>,<storage>,<constraint>
+                area = self.areas[area_id]
+                year = parts[1]
+                storage_id = parts[2].lower()
+                constraint_id = parts[3].lower()
+                scenario = cast(_ClusterScenario, self.scenarios[scenario_type])[area]
+                # For constraints, use area/storage/constraint as the index
+                constraint_index = f"{storage_id} / {constraint_id}"
+                scenario.at[constraint_index, str(year)] = value
             else:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
 
@@ -316,6 +346,19 @@ class RulesetMatrices:
                 for year, value in scenario.loc[idx_group(group)].items()  # type: ignore
                 if allow_nan or not pd.isna(value)
             }
+        elif symbol in _CONSTRAINT_RELATED_SYMBOLS:
+            # For STS constraints: symbol,area_id,year,storage_id,constraint_id
+            scenario_rules = {}
+            for area_id, area in self.areas.items():
+                area_scenario = scenario.get(area, pd.DataFrame())
+                if not area_scenario.empty:
+                    for constraint_key in area_scenario.index:
+                        # Parse storage / constraint from the index
+                        if " / " in str(constraint_key):
+                            storage_id, constraint_id = str(constraint_key).split(" / ", 1)
+                            for year, value in area_scenario.loc[constraint_key].items():
+                                if allow_nan or not pd.isna(value):
+                                    scenario_rules[f"{symbol},{area_id},{year},{storage_id},{constraint_id}"] = to_ts_number(value)
         else:
             raise NotImplementedError(f"Unknown symbol {symbol}")
         return scenario_rules

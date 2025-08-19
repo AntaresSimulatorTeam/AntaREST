@@ -52,6 +52,7 @@ class ScenarioBuilder(IniFileNode):
     | hydro final levels     |  hfl   | `hfl,<area>,<year> = <Level>`              |     9.2      |
     | hydro generation power |  hgp   | `hgp,<area>,<year> = <TS number>`          |     9.1      |
     | short term storage     |  sts   | `sts,<area>,<year>,<cluster> = <TS number>`|     9.3      |
+    | sts constraints        | stsc   | `stsc,<area>,<year>,<cluster>,<constraint> = <TS number>`|     9.2      |
 
     Legend:
     - `<area>`: The area ID (in lower case).
@@ -59,6 +60,7 @@ class ScenarioBuilder(IniFileNode):
     - `<year>`: The year (0-based index) of the time series.
     - `<cluster>`: The ID of the thermal / renewable cluster (in lower case).
     - `<group>`: The ID of the binding constraint group (in lower case).
+    - `<constraint>`: The ID of the short-term storage constraint (in lower case).
     - `<TS number>`: The time series number (1-based index of the matrix column).
     - `<Level>`: The level of the hydraulic reservoir (in range 0-1).
     """
@@ -81,6 +83,7 @@ class ScenarioBuilder(IniFileNode):
             self._populate_hydro_initial_level_rules(rules)
         if study_version >= STUDY_VERSION_9_2:
             self._populate_hydro_final_level_rules(rules)
+            self._populate_sts_constraints_rules(rules)
         if study_version >= STUDY_VERSION_9_1:
             self._populate_hydro_generation_power_rules(rules)
         if study_version >= STUDY_VERSION_9_3:
@@ -126,6 +129,16 @@ class ScenarioBuilder(IniFileNode):
     def _populate_hydro_generation_power_rules(self, rules: _Rules) -> None:
         for area_id in self.config.areas:
             rules[f"hgp,{area_id},0"] = _TSNumber
+
+    def _populate_sts_constraints_rules(self, rules: _Rules) -> None:
+        # For each storage in each area, we need to get the constraints
+        # This is a placeholder implementation - the actual constraint IDs
+        # should be retrieved from the study configuration
+        for area_id, area in self.config.areas.items():
+            for storage in area.st_storages:
+                # For now, create a placeholder rule
+                # In reality, constraints would be loaded from the study data
+                rules[f"stsc,{area_id},0,{storage.id},constraint_placeholder"] = _TSNumber
 
     def _populate_sts_rules(self, rules: _Rules) -> None:
         for area_id, area in self.config.areas.items():

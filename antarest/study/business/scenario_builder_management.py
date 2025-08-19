@@ -27,6 +27,7 @@ _AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
 _LINK_RELATED_SYMBOLS = ("ntc",)
 _HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
 _CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
+_CONSTRAINT_RELATED_SYMBOLS = ("stsc",)
 
 _HYDRO_LEVEL_PERCENT = 100
 
@@ -53,6 +54,7 @@ class ScenarioType(enum.StrEnum):
     - HYDRO_FINAL_LEVEL: hydraulic Final level scenario
     - HYDRO_GENERATION_POWER: hydraulic Generation power scenario
     - SHORT_TERM_STORAGE_INFLOWS: Short term storage inflows scenario
+    - SHORT_TERM_STORAGE_CONSTRAINTS: Short term storage constraints scenario
 
     """
 
@@ -68,6 +70,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
     SHORT_TERM_STORAGE_INFLOWS = "shortTermStorageInflows"
+    SHORT_TERM_STORAGE_CONSTRAINTS = "shortTermStorageConstraints"
 
     @override
     def __str__(self) -> str:
@@ -88,6 +91,7 @@ SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
     ScenarioType.HYDRO_GENERATION_POWER: "hgp",
     ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
+    ScenarioType.SHORT_TERM_STORAGE_CONSTRAINTS: "stsc",
 }
 
 
@@ -191,6 +195,12 @@ class ScenarioBuilderManager:
                     scenario_area = scenario.setdefault(parts[0], {})
                     scenario_area_cluster = scenario_area.setdefault(parts[2], {})
                     scenario_area_cluster[parts[1]] = int(value)
+                elif symbol in _CONSTRAINT_RELATED_SYMBOLS:
+                    # Format: stsc,<area>,<year>,<storage>,<constraint> = <TS number>
+                    scenario_area = scenario.setdefault(parts[0], {})
+                    scenario_area_storage = scenario_area.setdefault(parts[2], {})
+                    scenario_area_storage_constraint = scenario_area_storage.setdefault(parts[3], {})
+                    scenario_area_storage_constraint[parts[1]] = int(value)
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
 
@@ -209,6 +219,8 @@ class ScenarioBuilderManager:
                     _populate_links(section, symbol, data)
                 elif symbol in _CLUSTER_RELATED_SYMBOLS:
                     _populate_clusters(section, symbol, data)
+                elif symbol in _CONSTRAINT_RELATED_SYMBOLS:
+                    _populate_constraints(section, symbol, data)
                 else:  # pragma: no cover
                     raise NotImplementedError(f"Unknown symbol {symbol}")
 
@@ -274,3 +286,11 @@ def _populate_clusters(section: _Section, symbol: str, data: Mapping[str, Mappin
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
                 section[f"{symbol},{area},{year},{cluster}"] = value
+
+
+def _populate_constraints(section: _Section, symbol: str, data: Mapping[str, Mapping[str, Any]]) -> None:
+    for area, scenario_area in data.items():
+        for storage, scenario_area_storage in scenario_area.items():
+            for constraint, scenario_area_storage_constraint in scenario_area_storage.items():
+                for year, value in scenario_area_storage_constraint.items():
+                    section[f"{symbol},{area},{year},{storage},{constraint}"] = value
