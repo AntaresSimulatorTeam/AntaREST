@@ -18,7 +18,7 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.study.business.model.link_model import Link as BusinessLink
 from antarest.study.dao.api.link_dao import LinkDao
-from antarest.study.dao.db.models import Link as DbLinkModel
+from antarest.study.dao.db.link import Link as DbLinkModel
 
 
 def _db_to_business(link: DbLinkModel) -> BusinessLink:

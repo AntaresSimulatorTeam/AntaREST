@@ -1978,8 +1978,8 @@ class StudyService:
     def _sync_db_to_filesystem(self, study: RawStudy) -> None:
         """
         Syncs study data from database to filesystem.
-        This is typically used before exporting a study, to ensure the
-        exported files are up-to-date with the database source of truth.
+        This is used before exporting a study, to ensure the
+        exported files are up-to-date with the database source of truth
         """
         logger.info(f"Syncing database data to filesystem for study {study.id}")
         try:
@@ -1987,9 +1987,8 @@ class StudyService:
                 file_study = self.get_file_study(study)
                 hybrid_dao = HybridDao(file_study, db.session, study.id)
 
-                # Get all links from the database (the source of truth)
+                # Get all links from the database
                 # Note: this may trigger an on-the-fly migration if the study is old,
-                # which is fine.
                 links_from_db = hybrid_dao.get_links()
 
                 # Write every link back to the filesystem.
@@ -2006,7 +2005,7 @@ class StudyService:
     def _sync_filesystem_to_db(self, study: RawStudy) -> None:
         """
         Syncs study data from filesystem to database.
-        This is typically used after importing a study.
+        This is used after importing a study.
         """
         logger.info(f"Syncing filesystem data to database for study {study.id}")
         try:

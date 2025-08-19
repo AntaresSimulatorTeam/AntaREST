@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -28,9 +27,7 @@ from antarest.study.business.model.link_model import (
     LinkStyle,
     TransmissionCapacity,
 )
-
-if TYPE_CHECKING:
-    from antarest.study.model import Study
+from antarest.study.model import Study
 
 
 class Link(Base):

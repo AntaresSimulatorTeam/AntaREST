@@ -13,7 +13,7 @@
 from sqlalchemy.orm import Session
 
 from antarest.study.business.model.link_model import Link
-from antarest.study.dao.db.models import Link as LinkModel
+from antarest.study.dao.db.link import Link as LinkModel
 from antarest.study.dao.db_link_dao import DbLinkDao
 from tests.helpers import create_raw_study
 

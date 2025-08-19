@@ -74,4 +74,3 @@ class HybridDao(FileStudyTreeDao):
 
     # For series methods, we don't need to do anything special.
     # The call will be passed to the parent `FileStudyTreeDao`
-    # which is the behavior we want.
