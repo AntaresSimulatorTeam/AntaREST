@@ -553,15 +553,6 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
-    def create_matrix_gc(
-        self,
-        config: Config,
-    ) -> "MatrixGarbageCollector":
-        return MatrixGarbageCollector(
-            config=config,
-            matrix_service=self,
-        )
-
     def get_used_matrices(self) -> Set[MatrixReference]:
         """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
         return {
@@ -573,7 +564,7 @@ class MatrixService(ISimpleMatrixService):
 
         class DatasetUsageProvider(IMatrixUsageProvider):
             def __init__(self, matrix_service: "MatrixService") -> None:
-                matrix_service.register_usage_provider(self)gotrek's alive
+                matrix_service.register_usage_provider(self)
 
             @override
             def get_matrix_usage(self) -> list[MatrixReference]:

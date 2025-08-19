@@ -159,7 +159,7 @@ class MatrixReferencesDTO(AntaresBaseModel, extra="forbid", populate_by_name=Tru
     disk_usage: Optional[int] = None
 
 
-class MatrixDataSet(Base):  # type: ignore
+class MatrixDataSet(Base):
     """
     Represents a user dataset containing matrices in the database.
 

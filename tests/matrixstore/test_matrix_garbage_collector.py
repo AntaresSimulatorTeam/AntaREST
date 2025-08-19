@@ -18,7 +18,7 @@ import pytest
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.matrix_garbage_collector import MatrixGarbageCollector
-from antarest.matrixstore.model import MatrixReference
+from antarest.matrixstore.model import MatrixReference, MatrixMetadataDTO
 from antarest.matrixstore.service import MatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
@@ -71,7 +71,9 @@ def test_delete_unused_saved_matrices(
 
 @pytest.mark.unit_test
 def test_clean_matrices(matrix_garbage_collector: MatrixGarbageCollector):
-    matrix_garbage_collector._get_saved_matrices = Mock(return_value={"matrix1", "matrix2"})
+    matrix_garbage_collector.matrix_service.get_matrices.return_value = [
+        MatrixMetadataDTO(id="matrix2", width=0, height=0, version=0, created_at=datetime(2020, 1, 1, 0, 0, 0))
+    ]
     matrix_garbage_collector.matrix_service.get_used_matrices = Mock(
         return_value={MatrixReference(matrix_id="matrix1", use_description="")}
     )
