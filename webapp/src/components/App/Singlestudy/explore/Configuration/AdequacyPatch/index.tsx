@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import { useOutletContext } from "react-router";
-import { useTranslation } from "react-i18next";
 import type { StudyMetadata } from "@/types/types";
+import { useTranslation } from "react-i18next";
+import { useOutletContext } from "react-router";
 import Form from "../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
+import TableMode from "../../../../../common/TableMode";
+import TabsView from "../../../../../common/TabsView";
 import Fields from "./Fields";
 import {
   getAdequacyPatchFormFields,
   setAdequacyPatchFormFields,
   type AdequacyPatchFormFields,
 } from "./utils";
-import TableMode from "../../../../../common/TableMode";
-import TabsView from "../../../../../common/TabsView";
 
 function AdequacyPatch() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -47,7 +47,7 @@ function AdequacyPatch() {
       items={[
         {
           label: t("study.configuration.adequacyPatch.tab.general"),
-          content: () => (
+          content: (
             <Form
               key={study.id}
               config={{
@@ -62,9 +62,7 @@ function AdequacyPatch() {
         },
         {
           label: t("study.configuration.adequacyPatch.tab.perimeter"),
-          content: () => (
-            <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />
-          ),
+          content: <TableMode studyId={study.id} type="areas" columns={["adequacyPatchMode"]} />,
         },
       ]}
     />

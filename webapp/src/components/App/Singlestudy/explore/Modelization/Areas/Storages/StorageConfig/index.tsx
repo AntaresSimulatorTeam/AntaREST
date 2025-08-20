@@ -16,7 +16,6 @@ import TabsView from "@/components/common/TabsView";
 import { getCurrentAreaId } from "@/redux/selectors";
 import { nameToId } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
@@ -33,13 +32,14 @@ function StorageConfig() {
   const studyId = study.id;
   const studyVersion = Number(study.version);
 
-  // Memoize items to preserve the active tab when saving a matrix
-  const items = useMemo(
-    () =>
-      [
+  return (
+    <TabsView
+      onBack={() => navigate("../storages")}
+      divider
+      items={[
         {
           label: t("study.modelization.storages.operatingParameters"),
-          content: () => (
+          content: (
             <StorageForm
               studyId={studyId}
               studyVersion={studyVersion}
@@ -50,13 +50,13 @@ function StorageConfig() {
         },
         {
           label: t("global.timeSeries"),
-          content: () => (
+          content: (
             <StorageMatrices studyVersion={studyVersion} areaId={areaId} storageId={storageId} />
           ),
         },
         studyVersion >= 920 && {
           label: t("study.modelization.storages.additionalConstraints"),
-          content: () => (
+          content: (
             <AdditionalConstraints
               studyId={studyId}
               areaId={areaId}
@@ -65,15 +65,9 @@ function StorageConfig() {
             />
           ),
         },
-      ].filter(Boolean),
-    [studyId, areaId, storageId, studyVersion, t],
+      ].filter(Boolean)}
+    />
   );
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
-  return <TabsView onBack={() => navigate("../storages")} divider items={items} />;
 }
 
 export default StorageConfig;
