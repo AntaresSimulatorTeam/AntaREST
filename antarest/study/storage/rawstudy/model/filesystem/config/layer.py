@@ -24,6 +24,4 @@ class LayerFileData(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-    id: str
-    name: str
-    areas: List[str]
+    layers: dict[int, str]

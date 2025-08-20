@@ -14,7 +14,9 @@ from typing import List
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.area_management import _get_area_layers, _get_ui_info_map, logger
 from antarest.study.business.model.area_model import LayerInfoDTO
+from antarest.study.business.model.layer_model import LayerCreation
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -47,26 +49,14 @@ class LayerManager:
         ]
 
     def create_layer(self, study: StudyInterface, layer_name: str) -> str:
-        file_study = study.get_files()
-        layers = file_study.tree.get(["layers", "layers", "layers"])
         command_context = self._command_context
-        new_id = max((int(layer) for layer in layers), default=0) + 1
-        if new_id == 1:
-            command = UpdateConfig(
-                target="layers/layers/layers",
-                data={"0": "All", "1": layer_name},
-                command_context=command_context,
-                study_version=study.version,
-            )
-        else:
-            command = UpdateConfig(
-                target=f"layers/layers/layers/{new_id}",
-                data=layer_name,
-                command_context=command_context,
-                study_version=study.version,
-            )
+        command = CreateLayer(
+            parameters=LayerCreation(name=layer_name),
+            command_context=command_context,
+            study_version=study.version,
+        )
         study.add_commands([command])
-        return str(new_id)
+        return "1"
 
     def update_layer_name(self, study: StudyInterface, layer_id: str, layer_name: str) -> None:
         file_study = study.get_files()
