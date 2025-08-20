@@ -24,12 +24,14 @@ class Layer(AntaresBaseModel):
     name: str
     areas: List[str]
 
+
 class LayerUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     id: str | None = None
     name: str | None = None
     areas: List[str] | None = None
+
 
 class LayerCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")

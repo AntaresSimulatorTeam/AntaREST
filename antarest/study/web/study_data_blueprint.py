@@ -225,7 +225,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def get_layers(uuid: str) -> List[LayerInfoDTO]:
         logger.info(f"Fetching layer list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        return study_service.area_manager.get_layers(study_service.get_study_interface(study))
+        return study_service.layer_manager.get_layers(study_service.get_study_interface(study))
 
     @bp.post(
         "/studies/{uuid}/layers",
@@ -236,7 +236,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def create_layer(uuid: str, name: str) -> str:
         logger.info(f"Create layer {name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        return study_service.area_manager.create_layer(study_service.get_study_interface(study), name)
+        return study_service.layer_manager.create_layer(study_service.get_study_interface(study), name)
 
     @bp.put(
         "/studies/{uuid}/layers/{layer_id}",
@@ -244,13 +244,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update layer",
     )
     def update_layer(uuid: str, layer_id: str, name: str = "", areas: Optional[List[str]] = None) -> None:
-        logger.info(f"Updating layer {layer_id} for study {uuid}")
+        logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         if name:
-            study_service.area_manager.update_layer_name(study_interface, layer_id, name)
+            study_service.layer_manager.update_layer_name(study_interface, layer_id, name)
         if areas:
-            study_service.area_manager.update_layer_areas(study_interface, layer_id, areas)
+            study_service.layer_manager.update_layer_areas(study_interface, layer_id, areas)
 
     @bp.delete(
         "/studies/{uuid}/layers/{layer_id}",
@@ -262,7 +262,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def remove_layer(uuid: str, layer_id: str) -> None:
         logger.info(f"Remove layer {layer_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_service.area_manager.remove_layer(study_service.get_study_interface(study), layer_id)
+        study_service.layer_manager.remove_layer(study_service.get_study_interface(study), layer_id)
 
     @bp.get(
         "/studies/{uuid}/districts",

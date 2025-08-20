@@ -19,7 +19,7 @@ from antarest.core.utils.string import to_kebab_case
 
 class LayerFileData(AntaresBaseModel):
     """
-        Layer properties for serialization in ini file.
+    Layer properties for serialization in ini file.
     """
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
