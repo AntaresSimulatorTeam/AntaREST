@@ -14,15 +14,14 @@ from typing import Dict, cast
 
 from antarest.study.business.model.scenario_builder_model import (
     Rulesets,
-    ScenarioType,
+    ScenarioType, initialize_ruleset, study_index, Ruleset, update_ruleset,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
-    RulesetSections,
     parse_ruleset,
     parse_rulesets,
-    serialize_rulesets,
+    serialize_rulesets, serialize_ruleset, RulesetsSections,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
@@ -34,9 +33,24 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 # A link ID is "area1 / area2"
 
 
+_SCENARIO_TYPE_NAMES = {
+    ScenarioType.LOAD: "load",
+    ScenarioType.HYDRO: "hydro",
+    ScenarioType.WIND: "wind",
+    ScenarioType.SOLAR: "solar",
+    ScenarioType.THERMAL: "thermal",
+    ScenarioType.RENEWABLE: "renewable",
+    ScenarioType.LINK: "link",
+    ScenarioType.BINDING_CONSTRAINTS: "binding-constraints",
+    ScenarioType.HYDRO_INITIAL_LEVEL: "hydro-initial-levels",
+    ScenarioType.HYDRO_FINAL_LEVEL: "hydro-final-levels",
+    ScenarioType.HYDRO_GENERATION_POWER: "hydro-generation-power",
+    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "short-term-storage-inflows",
+}
+
 # We may have multiple rulesets, each with its own name
 
-SYMBOLS_BY_SCENARIO_TYPES = {
+_SCENARIO_TYPE_SYMBOLS = {
     ScenarioType.LOAD: "l",
     ScenarioType.HYDRO: "h",
     ScenarioType.WIND: "w",
@@ -103,18 +117,14 @@ def _get_active_ruleset_name(file_study: FileStudy, default_ruleset: str = "Defa
     return active_ruleset
 
 
-def _build_ruleset(file_study: FileStudy, symbol: str) -> RulesetMatrices:
+def _build_ruleset(file_study: FileStudy, symbol: str) -> Ruleset:
     ruleset_name = _get_active_ruleset_name(file_study)
     nb_years = _get_nb_years(file_study)
     ruleset_config = _get_ruleset_config(file_study, ruleset_name, symbol)
-
-    # Create and populate the RulesetMatrices
-    areas = file_study.config.areas
-    groups = file_study.config.get_binding_constraint_groups() if file_study.config.version >= 870 else []
-    scenario_types = {s: str(st) for st, s in SYMBOLS_BY_SCENARIO_TYPES.items()}
-    ruleset = parse_ruleset(ruleset_name)
-    ruleset.update_rules(ruleset_config)
-    return ruleset
+    complete_ruleset = initialize_ruleset(years=[str(y) for y in range(1, nb_years + 1)], index=study_index(file_study.tree))
+    file_ruleset = parse_ruleset(ruleset_config)
+    update_ruleset(complete_ruleset, file_ruleset)
+    return complete_ruleset
 
 
 class ScenarioBuilderManager:
@@ -122,11 +132,11 @@ class ScenarioBuilderManager:
         self._command_context = command_context
 
     def get_config(self, study: StudyInterface) -> Rulesets:
-        sections = cast(RulesetSections, study.get_files().tree.get(["settings", "scenariobuilder"]))
+        sections = cast(RulesetsSections, study.get_files().tree.get(["settings", "scenariobuilder"]))
         return parse_rulesets(sections)
 
     def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
-        sections: RulesetSections = serialize_rulesets(rulesets)
+        sections: RulesetsSections = serialize_rulesets(rulesets)
 
         command = UpdateScenarioBuilder(
             data=sections, command_context=self._command_context, study_version=study.version
@@ -134,31 +144,31 @@ class ScenarioBuilderManager:
         study.add_commands([command])
 
     def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> TableForm:
-        symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+        symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
         file_study = study.get_files()
         ruleset = _build_ruleset(file_study, symbol)
-        ruleset.sort_scenarios()
 
         # Extract the table form for the given scenario type
-        table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
-        return table_form
+        return ruleset.get(scenario_type)
 
     def update_scenario_by_type(
         self, study: StudyInterface, table_form: TableForm, scenario_type: ScenarioType
     ) -> TableForm:
+
         file_study = study.get_files()
-        ruleset = _build_ruleset(file_study)
-        ruleset.update_table_form(table_form, str(scenario_type), nan_value="")
-        ruleset.sort_scenarios()
+        ruleset_update = Ruleset()
+        ruleset_update.set(scenario_type, table_form)
 
         # Create the UpdateScenarioBuilder command
         ruleset_name = _get_active_ruleset_name(file_study)
-        data = {ruleset_name: ruleset.get_rules(allow_nan=True)}
+        serialized_ruleset = serialize_ruleset(ruleset_update)
+        data = {ruleset_name: serialized_ruleset}
         update_scenario = UpdateScenarioBuilder(
             data=data, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([update_scenario])
 
         # Extract the updated table form for the given scenario type
-        table_form = ruleset.get_table_form(str(scenario_type), nan_value="")
-        return table_form
+        ruleset = self.get_config(study)[ruleset_name]
+        update_ruleset(ruleset, ruleset_update)
+        return ruleset.get(scenario_type)

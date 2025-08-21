@@ -12,7 +12,7 @@
 
 
 import enum
-from typing import Iterable, Literal, Mapping, TypeAlias
+from typing import Iterable, Literal, Mapping, TypeAlias, Callable, Any, cast
 
 from pydantic import Field
 from typing_extensions import override
@@ -85,18 +85,86 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     but for specific cases it can be an actual value, like the level of an hydro reservoir.
     """
 
-    load: AreaScenarios | None = Field(default=None, alias="l")
-    thermal: AreaItemsScenarios | None = Field(default=None, alias="t")
-    hydro: AreaScenarios | None = Field(default=None, alias="h")
-    hydro_initial_levels: HydroLevelsScenarios | None = Field(default=None, alias="hl")
-    hydro_final_levels: HydroLevelsScenarios | None = Field(default=None, alias="hfl")
-    hydro_generation_power: AreaScenarios | None = Field(default=None, alias="hgp")
-    wind: AreaScenarios | None = Field(default=None, alias="w")
-    solar: AreaScenarios | None = Field(default=None, alias="s")
-    ntc: AreaScenarios | None = Field(default=None, alias="ntc")
-    renewable: AreaItemsScenarios | None = Field(default=None, alias="r")
-    binding_constraints: AreaScenarios | None = Field(default=None, alias="bc")
-    storage_inflows: AreaItemsScenarios | None = Field(default=None, alias="sts")
+    load: AreaScenarios = Field(alias="l", default_factory=dict)
+    thermal: AreaItemsScenarios = Field(alias="t", default_factory=dict)
+    hydro: AreaScenarios = Field(alias="h", default_factory=dict)
+    hydro_initial_levels: HydroLevelsScenarios = Field(alias="hl", default_factory=dict)
+    hydro_final_levels: HydroLevelsScenarios = Field(alias="hfl", default_factory=dict)
+    hydro_generation_power: AreaScenarios = Field(alias="hgp", default_factory=dict)
+    wind: AreaScenarios = Field(alias="w", default_factory=dict)
+    solar: AreaScenarios = Field(alias="s", default_factory=dict)
+    ntc: AreaScenarios = Field(alias="ntc", default_factory=dict)
+    renewable: AreaItemsScenarios = Field(alias="r", default_factory=dict)
+    binding_constraints: AreaScenarios = Field(alias="bc", default_factory=dict)
+    storage_inflows: AreaItemsScenarios = Field(alias="sts", default_factory=dict)
+
+    def get(self, scenario_type: ScenarioType) -> AreaScenarios | AreaItemsScenarios:
+        match scenario_type:
+            case ScenarioType.LOAD:
+                return self.load
+            case ScenarioType.HYDRO:
+                return self.hydro
+            case ScenarioType.HYDRO_INITIAL_LEVEL:
+                return self.hydro_initial_levels
+            case ScenarioType.HYDRO_FINAL_LEVEL:
+                return self.hydro_final_levels
+            case ScenarioType.HYDRO_GENERATION_POWER:
+                return self.hydro_generation_power
+            case ScenarioType.SOLAR:
+                return self.solar
+            case ScenarioType.WIND:
+                return self.wind
+            case ScenarioType.RENEWABLE:
+                return self.renewable
+            case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+                return self.short_term_storage_inflows
+            case ScenarioType.BINDING_CONSTRAINTS:
+                return self.binding_constraints
+            case ScenarioType.LINK:
+                return self.links
+            case _:
+                raise ValueError(f"Unknown scenario type {scenario_type}")
+
+    def set(self, scenario_type: ScenarioType, scenarios: AreaScenarios | AreaItemsScenarios) -> None:
+        match scenario_type:
+            case ScenarioType.LOAD:
+                self.load = scenarios
+            case ScenarioType.HYDRO:
+                self.hydro = scenarios
+            case ScenarioType.HYDRO_INITIAL_LEVEL:
+                self.hydro_initial_levels = scenarios
+            case ScenarioType.HYDRO_FINAL_LEVEL:
+                self.hydro_final_levels = scenarios
+            case ScenarioType.HYDRO_GENERATION_POWER:
+                self.hydro_generation_power = scenarios
+            case ScenarioType.SOLAR:
+                self.solar = scenarios
+            case ScenarioType.WIND:
+                self.wind = scenarios
+            case ScenarioType.RENEWABLE:
+                self.renewable = scenarios
+            case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+                self.storage_inflows = scenarios
+            case ScenarioType.BINDING_CONSTRAINTS:
+                self.binding_constraints = scenarios
+            case ScenarioType.LINK:
+                self.ntc = scenarios
+            case _:
+                raise ValueError(f"Unknown scenario type {scenario_type}")
+
+    def get_cluster(self, scenario_type: ScenarioType) -> AreaItemsScenarios:
+        if not _is_cluster(scenario_type):
+            raise ValueError(f"Scenario type {scenario_type} is not a cluster scenario")
+        return cast(AreaItemsScenarios, self.get(scenario_type))
+
+    def get_simple(self, scenario_type: ScenarioType) -> AreaScenarios:
+        if _is_cluster(scenario_type):
+            raise ValueError(f"Scenario type {scenario_type} is a cluster scenario")
+        return cast(AreaScenarios, self.get(scenario_type))
+
+
+def _is_cluster(scenario_type: ScenarioType) -> bool:
+    return scenario_type in (ScenarioType.THERMAL, ScenarioType.RENEWABLE, ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
 
 
 Rulesets: TypeAlias = dict[str, Ruleset]
@@ -195,3 +263,29 @@ def initialize_ruleset(years: list[str], index: StudyIndex) -> Ruleset:
         binding_constraints=_create_scenarios_mapping(names=index.bc_group_ids, years=years),
         ntc=_create_scenarios_mapping(names=index.link_ids, years=years),
     )
+
+
+
+def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries) -> None:
+    base.update(update)
+
+def _update_simple_mapping(base: AreaScenarios, update: AreaScenarios) -> None:
+    for name, mapping in update.items():
+        _update_mapping(base.setdefault(name, {}), mapping)
+
+def _update_double_mapping(base: AreaItemsScenarios, update: AreaItemsScenarios) -> None:
+    for name, mapping in update.items():
+        _update_simple_mapping(base.setdefault(name, {}), mapping)
+
+def update_ruleset(base: Ruleset, update: Ruleset):
+    _update_simple_mapping(base.load, update.load)
+    _update_double_mapping(base.thermal, update.thermal)
+    _update_simple_mapping(base.hydro, update.hydro)
+    _update_simple_mapping(base.hydro_initial_levels, update.hydro_initial_levels)
+    _update_simple_mapping(base.hydro_final_levels, update.hydro_final_levels)
+    _update_simple_mapping(base.hydro_generation_power, update.hydro_generation_power)
+    _update_simple_mapping(base.solar, update.solar)
+    _update_simple_mapping(base.wind, update.wind)
+    _update_simple_mapping(base.binding_constraints, update.binding_constraints)
+    _update_double_mapping(base.renewable, update.renewable)
+    _update_double_mapping(base.storage_inflows, update.storage_inflows)

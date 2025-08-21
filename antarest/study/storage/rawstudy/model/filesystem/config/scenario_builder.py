@@ -14,9 +14,10 @@
 Serialization and parsing for scenariobuilder.dat file
 """
 
-from typing import TypeAlias
+from typing import TypeAlias, Mapping, MutableMapping
 
 from pydantic import TypeAdapter
+from sqlalchemy.ext.mutable import Mutable
 
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
@@ -28,10 +29,11 @@ from antarest.study.business.model.scenario_builder_model import (
     Rulesets,
     ScenarioType,
 )
-from antarest.study.business.scenario_builder_management import SYMBOLS_BY_SCENARIO_TYPES
+from antarest.study.business.scenario_builder_management import _SCENARIO_TYPE_SYMBOLS
 
-RulesetSection: TypeAlias = dict[str, int | float | RandType]  # TODO: float allowed or not ?
-RulesetSections: TypeAlias = dict[str, RulesetSection]
+RuleValue = int | float | RandType
+RulesetSection = Mapping[str, RuleValue]
+RulesetsSections = Mapping[str, RulesetSection]
 
 _RULESETS_ADAPTER: TypeAdapter[Rulesets] = TypeAdapter(Rulesets)
 
@@ -61,65 +63,70 @@ SYMBOLS_BY_SCENARIO_TYPES = {
 SCENARIO_TYPE_BY_SYMBOL = {v: k for k, v in SYMBOLS_BY_SCENARIO_TYPES.items()}
 
 
-def _serialize_common(section: RulesetSection, scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
+def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
     if not data:
         return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
             section[f"{symbol},{area},{year}"] = value
 
 
 def _serialize_hydro_levels(
-    section: RulesetSection, scenario_type: ScenarioType, data: HydroLevelsScenarios | None
+    section: dict[str, RuleValue], scenario_type: ScenarioType, data: HydroLevelsScenarios | None
 ) -> None:
     if not data:
         return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
             val = value
-            if isinstance(value, (int, float)) and value != float("nan"):
+            if isinstance(val, (int, float)) and val != float("nan"):
                 val /= _HYDRO_LEVEL_PERCENT
             section[f"{symbol},{area},{year}"] = val
 
 
-def _serialize_links(section: RulesetSection, scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
+def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
     if not data:
         return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for link, scenario_link in data.items():
         for year, value in scenario_link.items():
             area1, area2 = link.split(" / ")
             section[f"{symbol},{area1},{area2},{year}"] = value
 
 
-def _serialize_clusters(section: RulesetSection, scenario_type: ScenarioType, data: AreaItemsScenarios | None) -> None:
+def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios |
+                                                                                             None) -> None:
     if not data:
         return
-    symbol = SYMBOLS_BY_SCENARIO_TYPES[scenario_type]
+    symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
                 section[f"{symbol},{area},{year},{cluster}"] = value
 
+def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
+    section = {}
+    _serialize_common(section, ScenarioType.LOAD, ruleset.load)
+    _serialize_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
+    _serialize_common(section, ScenarioType.HYDRO, ruleset.hydro)
+    _serialize_hydro_levels(section, ScenarioType.HYDRO_INITIAL_LEVEL, ruleset.hydro_initial_levels)
+    _serialize_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels)
+    _serialize_common(section, ScenarioType.HYDRO_GENERATION_POWER, ruleset.hydro_generation_power)
+    _serialize_common(section, ScenarioType.WIND, ruleset.wind)
+    _serialize_common(section, ScenarioType.SOLAR, ruleset.solar)
+    _serialize_links(section, ScenarioType.LINK, ruleset.ntc)
+    _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
+    _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
+    _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
+    return section
 
-def serialize_rulesets(rulesets: Rulesets) -> RulesetSections:
-    sections: RulesetSections = {}
+
+def serialize_rulesets(rulesets: Rulesets) -> RulesetsSections:
+    sections = {}
     for ruleset_name, ruleset in rulesets.items():
-        section = sections[ruleset_name] = {}
-        _serialize_common(section, ScenarioType.LOAD, ruleset.load)
-        _serialize_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
-        _serialize_common(section, ScenarioType.HYDRO, ruleset.hydro)
-        _serialize_hydro_levels(section, ScenarioType.HYDRO_INITIAL_LEVEL, ruleset.hydro_initial_levels)
-        _serialize_hydro_levels(section, ScenarioType.HYDRO_FINAL_LEVEL, ruleset.hydro_final_levels)
-        _serialize_common(section, ScenarioType.HYDRO_GENERATION_POWER, ruleset.hydro_generation_power)
-        _serialize_common(section, ScenarioType.WIND, ruleset.wind)
-        _serialize_common(section, ScenarioType.SOLAR, ruleset.solar)
-        _serialize_links(section, ScenarioType.LINK, ruleset.ntc)
-        _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
-        _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
-        _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
+        sections[ruleset_name] = serialize_ruleset(ruleset)
     return sections
 
 
@@ -131,14 +138,14 @@ def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: st
     values.setdefault(key1, {}).setdefault(key2, {})[year] = value
 
 
-def parse_ruleset(ruleset_data: RulesetSection, ruleset: Ruleset | None = None) -> Ruleset:
+def parse_ruleset(ruleset_data: RulesetSection) -> Ruleset:
     """
     Parses rules data as read from INI file, and populates a Ruleset object with it.
 
     A pre-existing Ruleset object can be provided, in which case it will be updated with the new data.
     Otherwise, a new one is created.
     """
-    ruleset = ruleset or Ruleset()
+    ruleset = Ruleset()
     for key, value in ruleset_data.items():
         if value == RANDOM:
             continue
@@ -186,9 +193,8 @@ def parse_ruleset(ruleset_data: RulesetSection, ruleset: Ruleset | None = None) 
     return Ruleset.model_validate(ruleset)
 
 
-def parse_rulesets(rulesets_data: RulesetSections) -> Rulesets:
+def parse_rulesets(rulesets_data: RulesetsSections) -> Rulesets:
     rulesets: Rulesets = {}
     for ruleset_name, data in rulesets_data.items():
-        ruleset = rulesets.setdefault(ruleset_name, Ruleset())
-        parse_ruleset(data, ruleset)
+        rulesets[ruleset_name] = parse_ruleset(data)
     return rulesets
