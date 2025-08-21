@@ -27,12 +27,4 @@ class Desktop(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            ".shellclassinfo": {
-                "iconfile": str,
-                "iconindex": int,
-                "infotip": str,
-            }
-        }
-
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, config)
