@@ -285,7 +285,6 @@ def test_get_node_and_remainder(tmp_path: Path) -> None:
                 children={
                     "ini_node": IniFileNode(
                         config=config.next_file("sub_folder").next_file("ini_node1.txt"),
-                        types={},
                     ),
                 },
             ),
