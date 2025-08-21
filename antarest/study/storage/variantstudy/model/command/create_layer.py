@@ -13,9 +13,8 @@ from typing import List
 
 from typing_extensions import override
 
-from antarest.study.business.model.layer_model import LayerCreation, Layer
-from antarest.study.storage.rawstudy.model.filesystem.config.layer import LayerFileData
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.business.model.layer_model import LayerCreation, create_layer
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -37,22 +36,19 @@ class CreateLayer(ICommand):
     parameters: LayerCreation
 
     @override
-    def _apply(self, study_data: FileStudy, listener: ICommandListener | None = None) -> CommandOutput:
-        layers = study_data.tree.get(["layers", "layers", "layers"])
-
-        current_layers = LayerFileData.model_validate({"layers": layers})
-
-        new_id = max((int(layer) for layer in layers), default=0) + 1
-
-        current_layers.layers[str(new_id)] = self.parameters.name
-
-        study_data.tree.save(current_layers.model_dump(exclude_none=True), ["layers", "layers", "layers"])
-
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
+        new_layer = create_layer(self.parameters)
+        study_data.save_layers(new_layer)
         return CommandOutput(status=True, message=f"Layer {self.parameters.name} created successfully")
 
-
+    @override
     def to_dto(self) -> CommandDTO:
-        pass
+        return CommandDTO(
+            action=self.command_name.value,
+            args={"parameters": self.parameters.model_dump(exclude_none=True)},
+            study_version=self.study_version,
+        )
 
+    @override
     def get_inner_matrices(self) -> List[str]:
         return []

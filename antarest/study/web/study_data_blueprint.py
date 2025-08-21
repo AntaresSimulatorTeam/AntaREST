@@ -42,7 +42,7 @@ from antarest.study.business.correlation_management import (
     CorrelationMatrix,
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
+from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -74,6 +74,7 @@ from antarest.study.business.model.hydro_model import (
     InflowStructure,
     InflowStructureUpdate,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
@@ -220,9 +221,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
         summary="Get all layers info",
-        response_model=List[LayerInfoDTO],
+        response_model=List[Layer],
     )
-    def get_layers(uuid: str) -> List[LayerInfoDTO]:
+    def get_layers(uuid: str) -> List[Layer]:
         logger.info(f"Fetching layer list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         return study_service.layer_manager.get_layers(study_service.get_study_interface(study))
@@ -231,7 +232,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
         summary="Create new layer",
-        response_model=str,
     )
     def create_layer(uuid: str, name: str) -> str:
         logger.info(f"Create layer {name} for study {uuid}")

@@ -12,9 +12,9 @@
 from typing import List
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
-from antarest.study.business.area_management import _get_area_layers, _get_ui_info_map, logger
-from antarest.study.business.model.area_model import LayerInfoDTO
-from antarest.study.business.model.layer_model import LayerCreation
+from antarest.study.business.area_management import logger
+from antarest.study.business.areas.area_utils import _get_area_layers
+from antarest.study.business.model.layer_model import Layer, LayerCreation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -26,27 +26,8 @@ class LayerManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_layers(self, study: StudyInterface) -> List[LayerInfoDTO]:
-        file_study = study.get_files()
-        area_ids = list(file_study.config.areas)
-        ui_info_map = _get_ui_info_map(file_study, area_ids)
-        layers = file_study.tree.get(["layers", "layers", "layers"])
-        if not layers:
-            layers["0"] = "All"
-        return [
-            LayerInfoDTO(
-                id=str(layer),
-                name=layers[str(layer)],
-                areas=[
-                    area
-                    for area in ui_info_map
-                    if str(layer) in _get_area_layers(ui_info_map, area)
-                    # the layer 0 always display all areas
-                    or str(layer) == "0"
-                ],
-            )
-            for layer in layers
-        ]
+    def get_layers(self, study: StudyInterface) -> List[Layer]:
+        return list(study.get_study_dao().get_layers())
 
     def create_layer(self, study: StudyInterface, layer_name: str) -> str:
         command_context = self._command_context
@@ -56,7 +37,7 @@ class LayerManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return "1"
+        return layer_name
 
     def update_layer_name(self, study: StudyInterface, layer_id: str, layer_name: str) -> None:
         file_study = study.get_files()

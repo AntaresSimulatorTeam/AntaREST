@@ -102,6 +102,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.CREATE_LAYER.value,
+            args={"parameters": {"name": "layer_name"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_layer",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
             args={
                 "name": "id",

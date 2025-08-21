@@ -20,7 +20,9 @@ from antarest.core.utils.string import to_camel_case
 class Layer(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
-    layers: dict[int, str]
+    id: str | None = None
+    name: str
+    areas: List[str] | None = None
 
 
 class LayerCreation(AntaresBaseModel):
@@ -28,9 +30,14 @@ class LayerCreation(AntaresBaseModel):
 
     name: str
 
+
 class LayerUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
     id: str | None = None
     name: str | None = None
     areas: List[str] | None = None
+
+
+def create_layer(layer: LayerCreation) -> Layer:
+    return Layer(name=layer.name)

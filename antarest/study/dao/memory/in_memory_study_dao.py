@@ -30,6 +30,7 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -144,6 +145,8 @@ class InMemoryStudyDao(StudyDao):
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Layer
+        self._layers: list[Layer] = []
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -669,3 +672,11 @@ class InMemoryStudyDao(StudyDao):
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         content = series.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def save_layers(self, layer: Layer) -> None:
+        self._layers.append(layer)
+
+    @override
+    def get_layers(self) -> Sequence[Layer]:
+        return self._layers

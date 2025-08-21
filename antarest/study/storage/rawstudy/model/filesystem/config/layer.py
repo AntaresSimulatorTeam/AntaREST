@@ -15,6 +15,7 @@ from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.layer_model import Layer
 
 
 class LayerFileData(AntaresBaseModel):
@@ -24,4 +25,9 @@ class LayerFileData(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-    layers: dict[int, str]
+    layers: dict[str, str]
+
+
+def serialize_layers(layers: List[Layer]) -> LayerFileData:
+    layers_dict = {layer.id: layer.name for layer in layers if layer.id is not None}
+    return LayerFileData(layers=layers_dict)
