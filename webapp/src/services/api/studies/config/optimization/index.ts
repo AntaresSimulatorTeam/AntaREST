@@ -14,20 +14,37 @@
 
 import client from "@/services/api/client";
 import { format } from "@/utils/stringUtils";
+import { adaptOptimizationDtoToForm, adaptOptimizationFormToDto } from "./adapters";
 import type {
   BaseOptimizationParams,
-  OptimizationFormFields,
+  GetOptimizationFormParams,
+  OptimizationDTO,
+  SetOptimizationFormParams,
   SetOptimizationParams,
 } from "./types";
 
 const URL = "/v1/studies/{studyId}/config/optimization/form";
 
-export async function getOptimizationFormFields({ studyId }: BaseOptimizationParams) {
-  const { data } = await client.get<OptimizationFormFields>(format(URL, { studyId }));
+export async function getOptimization({ studyId }: BaseOptimizationParams) {
+  const { data } = await client.get<OptimizationDTO>(format(URL, { studyId }));
   return data;
 }
 
-export async function setOptimizationFormFields({ studyId, values }: SetOptimizationParams) {
-  const { data } = await client.put<OptimizationFormFields>(format(URL, { studyId }), values);
+export async function setOptimization({ studyId, values }: SetOptimizationParams) {
+  const { data } = await client.put<OptimizationDTO>(format(URL, { studyId }), values);
   return data;
+}
+
+export async function getOptimizationForm({ studyId, studyVersion }: GetOptimizationFormParams) {
+  const dto = await getOptimization({ studyId });
+  return adaptOptimizationDtoToForm(dto, studyVersion);
+}
+
+export async function setOptimizationForm({
+  studyId,
+  values,
+  studyVersion,
+}: SetOptimizationFormParams) {
+  const dto = await setOptimization({ studyId, values: adaptOptimizationFormToDto(values) });
+  return adaptOptimizationDtoToForm(dto, studyVersion);
 }

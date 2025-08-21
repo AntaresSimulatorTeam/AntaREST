@@ -16,9 +16,10 @@ import SelectFE from "@/components/common/fieldEditors/SelectFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import {
-  getOptimizationFormFields,
-  setOptimizationFormFields,
+  getOptimizationForm,
+  setOptimizationForm,
 } from "@/services/api/studies/config/optimization";
+import type { OptimizationForm } from "@/services/api/studies/config/optimization/types";
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import type { StudyMetadata } from "../../../../../../types/types";
@@ -26,41 +27,27 @@ import Form from "../../../../../common/Form";
 import type { SubmitHandlerPlus } from "../../../../../common/Form/types";
 import {
   EXPORT_MPS_OPTIONS,
-  formatValuesForApi,
-  formatValuesForForm,
   LEGACY_TRANSMISSION_CAPACITIES_OPTIONS,
   SIMPLEX_OPTIMIZATION_RANGE_OPTIONS,
   TRANSMISSION_CAPACITIES_OPTIONS,
   UNFEASIBLE_PROBLEM_BEHAVIOR_OPTIONS,
-  type FormattedOptimizationFormFields,
-} from "./utils";
+} from "./constants";
 
 function Optimization() {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const studyVersion = Number(study.version);
 
-  const getDefaultValues = async () => {
-    const values = await getOptimizationFormFields({
-      studyId: study.id,
-    });
-
-    return formatValuesForForm(values, studyVersion);
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({
-    dirtyValues,
-  }: SubmitHandlerPlus<FormattedOptimizationFormFields>) => {
-    const updatedValues = await setOptimizationFormFields({
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<OptimizationForm>) => {
+    return setOptimizationForm({
       studyId: study.id,
-      values: formatValuesForApi(dirtyValues),
+      values: dirtyValues,
+      studyVersion,
     });
-
-    return formatValuesForForm(updatedValues, studyVersion);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -70,7 +57,7 @@ function Optimization() {
   return (
     <Form
       key={study.id}
-      config={{ defaultValues: getDefaultValues }}
+      config={{ defaultValues: () => getOptimizationForm({ studyId: study.id, studyVersion }) }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >

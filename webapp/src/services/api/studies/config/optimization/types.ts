@@ -13,6 +13,7 @@
  */
 
 import type { StudyMetadata } from "@/types/types";
+import type { BooleanToStringOrIdentity } from "@/utils/tsUtils";
 
 export type UnfeasibleProblemBehavior =
   | "warning-dry"
@@ -44,7 +45,7 @@ export type ExportMpsOption830 = "none" | "optim-1" | "optim-2" | "both-optims";
 // `true` is equivalent to "both-optims" and `false` is equivalent to "none".
 export type ExportMpsOption = boolean | ExportMpsOption830;
 
-export interface OptimizationFormFields {
+export interface OptimizationDTO {
   bindingConstraints: boolean;
   hurdleCosts: boolean;
   transmissionCapacities: TransmissionCapacities;
@@ -59,10 +60,23 @@ export interface OptimizationFormFields {
   simplexOptimizationRange: SimplexOptimizationRange;
 }
 
+export interface OptimizationForm extends Omit<OptimizationDTO, "transmissionCapacities"> {
+  transmissionCapacities: BooleanToStringOrIdentity<TransmissionCapacities>;
+}
+
 export interface BaseOptimizationParams {
   studyId: StudyMetadata["id"];
 }
 
 export interface SetOptimizationParams extends BaseOptimizationParams {
-  values: Partial<OptimizationFormFields>;
+  values: Partial<OptimizationDTO>;
+}
+
+export interface GetOptimizationFormParams extends BaseOptimizationParams {
+  studyVersion: number;
+}
+
+export interface SetOptimizationFormParams extends BaseOptimizationParams {
+  values: Partial<OptimizationForm>;
+  studyVersion: number;
 }

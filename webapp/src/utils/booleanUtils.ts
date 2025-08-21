@@ -18,7 +18,7 @@
  * @param value - The boolean value to convert.
  * @returns `"true"` if the value is `true`, `"false"` if the value is `false`.
  */
-export function booleanToString(value: boolean): "true" | "false" {
+export function booleanToString(value: boolean) {
   return value ? "true" : "false";
 }
 
@@ -46,19 +46,11 @@ export function stringToBoolean(value: string, defaultValue = false) {
 }
 
 /**
- * Converts a string representation of a boolean (`"true"` or `"false"`)
- * to its appropriate boolean value, otherwise returns the original string.
+ * Checks if a string is a valid boolean representation (`"true"` or `"false"`).
  *
- * @param value - The string value to convert.
- * @returns `true` if the value is `"true"`, `false` if the value is `"false"`,
- * or the original string otherwise.
+ * @param value - The string value to check.
+ * @returns `true` if the value is `"true"` or `"false"`, `false` otherwise.
  */
-export function stringToBooleanOrIdentity(value: string) {
-  if (value === "true") {
-    return true;
-  }
-  if (value === "false") {
-    return false;
-  }
-  return value;
+export function isBooleanString(value: string) {
+  return value === "true" || value === "false";
 }
