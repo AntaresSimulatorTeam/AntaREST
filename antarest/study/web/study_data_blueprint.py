@@ -80,7 +80,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
-from antarest.study.business.model.scenario_builder_model import Rulesets, ScenarioType
+from antarest.study.business.model.scenario_builder_model import GenericScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -99,7 +99,6 @@ from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
 
 logger = logging.getLogger(__name__)
 
@@ -485,9 +484,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
-    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, SBTableForm]:
+    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, GenericScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -571,11 +569,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
     def update_scenario_builder_config_by_type(
-        uuid: str, scenario_type: ScenarioType, data: Dict[str, SBTableForm]
-    ) -> Dict[str, SBTableForm]:
+        uuid: str, scenario_type: ScenarioType, data: Dict[str, GenericScenarios]
+    ) -> Dict[str, GenericScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
 

@@ -12,7 +12,7 @@
 
 
 import enum
-from typing import Iterable, Literal, Mapping, TypeAlias, Callable, Any, cast
+from typing import Iterable, Literal, Mapping, TypeAlias, cast
 
 from pydantic import Field
 from typing_extensions import override
@@ -68,11 +68,11 @@ ConstraintId: TypeAlias = str
 McYearToTimeSeries: TypeAlias = dict[str, Value]
 McYearToValue: TypeAlias = dict[str, Value]
 AreaScenarios: TypeAlias = dict[AreaId, McYearToTimeSeries]
-
 LinkScenarios: TypeAlias = dict[LinkId, McYearToTimeSeries]
 AreaItemsScenarios: TypeAlias = dict[AreaId, dict[ObjectId, McYearToTimeSeries]]
-AdditionalConstraintScenarios: TypeAlias = dict[AreaId, dict[ObjectId, dict[ConstraintId, McYearToTimeSeries]]]
 HydroLevelsScenarios: TypeAlias = dict[AreaId, McYearToValue]
+
+GenericScenarios: TypeAlias = AreaScenarios | AreaItemsScenarios
 
 RANDOM: RandType = ""
 
@@ -102,6 +102,8 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
         match scenario_type:
             case ScenarioType.LOAD:
                 return self.load
+            case ScenarioType.THERMAL:
+                return self.thermal
             case ScenarioType.HYDRO:
                 return self.hydro
             case ScenarioType.HYDRO_INITIAL_LEVEL:
@@ -117,38 +119,40 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
             case ScenarioType.RENEWABLE:
                 return self.renewable
             case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
-                return self.short_term_storage_inflows
+                return self.storage_inflows
             case ScenarioType.BINDING_CONSTRAINTS:
                 return self.binding_constraints
             case ScenarioType.LINK:
-                return self.links
+                return self.ntc
             case _:
                 raise ValueError(f"Unknown scenario type {scenario_type}")
 
     def set(self, scenario_type: ScenarioType, scenarios: AreaScenarios | AreaItemsScenarios) -> None:
         match scenario_type:
             case ScenarioType.LOAD:
-                self.load = scenarios
+                self.load = cast(AreaScenarios, scenarios)
+            case ScenarioType.THERMAL:
+                self.thermal = cast(AreaItemsScenarios, scenarios)
             case ScenarioType.HYDRO:
-                self.hydro = scenarios
+                self.hydro = cast(AreaScenarios, scenarios)
             case ScenarioType.HYDRO_INITIAL_LEVEL:
-                self.hydro_initial_levels = scenarios
+                self.hydro_initial_levels = cast(AreaScenarios, scenarios)
             case ScenarioType.HYDRO_FINAL_LEVEL:
-                self.hydro_final_levels = scenarios
+                self.hydro_final_levels = cast(AreaScenarios, scenarios)
             case ScenarioType.HYDRO_GENERATION_POWER:
-                self.hydro_generation_power = scenarios
+                self.hydro_generation_power = cast(AreaScenarios, scenarios)
             case ScenarioType.SOLAR:
-                self.solar = scenarios
+                self.solar = cast(AreaScenarios, scenarios)
             case ScenarioType.WIND:
-                self.wind = scenarios
+                self.wind = cast(AreaScenarios, scenarios)
             case ScenarioType.RENEWABLE:
-                self.renewable = scenarios
+                self.renewable = cast(AreaItemsScenarios, scenarios)
             case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
-                self.storage_inflows = scenarios
+                self.storage_inflows = cast(AreaItemsScenarios, scenarios)
             case ScenarioType.BINDING_CONSTRAINTS:
-                self.binding_constraints = scenarios
+                self.binding_constraints = cast(AreaScenarios, scenarios)
             case ScenarioType.LINK:
-                self.ntc = scenarios
+                self.ntc = cast(AreaScenarios, scenarios)
             case _:
                 raise ValueError(f"Unknown scenario type {scenario_type}")
 
@@ -265,19 +269,21 @@ def initialize_ruleset(years: list[str], index: StudyIndex) -> Ruleset:
     )
 
 
-
 def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries) -> None:
     base.update(update)
+
 
 def _update_simple_mapping(base: AreaScenarios, update: AreaScenarios) -> None:
     for name, mapping in update.items():
         _update_mapping(base.setdefault(name, {}), mapping)
 
+
 def _update_double_mapping(base: AreaItemsScenarios, update: AreaItemsScenarios) -> None:
     for name, mapping in update.items():
         _update_simple_mapping(base.setdefault(name, {}), mapping)
 
-def update_ruleset(base: Ruleset, update: Ruleset):
+
+def update_ruleset(base: Ruleset, update: Ruleset) -> None:
     _update_simple_mapping(base.load, update.load)
     _update_double_mapping(base.thermal, update.thermal)
     _update_simple_mapping(base.hydro, update.hydro)

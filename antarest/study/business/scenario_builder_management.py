@@ -13,15 +13,21 @@
 from typing import Dict, cast
 
 from antarest.study.business.model.scenario_builder_model import (
+    GenericScenarios,
+    Ruleset,
     Rulesets,
-    ScenarioType, initialize_ruleset, study_index, Ruleset, update_ruleset,
+    ScenarioType,
+    initialize_ruleset,
+    study_index,
+    update_ruleset,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import RulesetMatrices, TableForm
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
+    RulesetsSections,
     parse_ruleset,
     parse_rulesets,
-    serialize_rulesets, serialize_ruleset, RulesetsSections,
+    serialize_ruleset,
+    serialize_rulesets,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
@@ -121,7 +127,9 @@ def _build_ruleset(file_study: FileStudy, symbol: str) -> Ruleset:
     ruleset_name = _get_active_ruleset_name(file_study)
     nb_years = _get_nb_years(file_study)
     ruleset_config = _get_ruleset_config(file_study, ruleset_name, symbol)
-    complete_ruleset = initialize_ruleset(years=[str(y) for y in range(1, nb_years + 1)], index=study_index(file_study.tree))
+    complete_ruleset = initialize_ruleset(
+        years=[str(y) for y in range(1, nb_years + 1)], index=study_index(file_study.tree)
+    )
     file_ruleset = parse_ruleset(ruleset_config)
     update_ruleset(complete_ruleset, file_ruleset)
     return complete_ruleset
@@ -143,7 +151,7 @@ class ScenarioBuilderManager:
         )
         study.add_commands([command])
 
-    def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> TableForm:
+    def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> GenericScenarios:
         symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
         file_study = study.get_files()
         ruleset = _build_ruleset(file_study, symbol)
@@ -152,9 +160,8 @@ class ScenarioBuilderManager:
         return ruleset.get(scenario_type)
 
     def update_scenario_by_type(
-        self, study: StudyInterface, table_form: TableForm, scenario_type: ScenarioType
-    ) -> TableForm:
-
+        self, study: StudyInterface, table_form: GenericScenarios, scenario_type: ScenarioType
+    ) -> GenericScenarios:
         file_study = study.get_files()
         ruleset_update = Ruleset()
         ruleset_update.set(scenario_type, table_form)

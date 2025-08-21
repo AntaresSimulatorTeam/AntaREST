@@ -14,10 +14,9 @@
 Serialization and parsing for scenariobuilder.dat file
 """
 
-from typing import TypeAlias, Mapping, MutableMapping
+from typing import Mapping
 
 from pydantic import TypeAdapter
-from sqlalchemy.ext.mutable import Mutable
 
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
@@ -96,8 +95,9 @@ def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType,
             section[f"{symbol},{area1},{area2},{year}"] = value
 
 
-def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios |
-                                                                                             None) -> None:
+def _serialize_clusters(
+    section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios | None
+) -> None:
     if not data:
         return
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
@@ -106,8 +106,9 @@ def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioTy
             for year, value in scenario_area_cluster.items():
                 section[f"{symbol},{area},{year},{cluster}"] = value
 
+
 def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
-    section = {}
+    section: dict[str, RuleValue] = {}
     _serialize_common(section, ScenarioType.LOAD, ruleset.load)
     _serialize_clusters(section, ScenarioType.THERMAL, ruleset.thermal)
     _serialize_common(section, ScenarioType.HYDRO, ruleset.hydro)
