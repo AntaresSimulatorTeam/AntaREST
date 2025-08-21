@@ -8,9 +8,10 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 #
-# This file is part of the Antares project.
+# This file is part of the Antares project.k
 import hashlib
 import logging
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional
@@ -336,3 +337,10 @@ class MatrixContentRepository:
         # Abandoned lock files are deleted here to maintain consistent behavior.
         lock_file = matrix_path.with_suffix(".tsv.lock")
         lock_file.unlink(missing_ok=True)
+
+    def get_matrix_disk_usage(self, matrix_hash: str) -> int:
+        for internal_format in InternalMatrixFormat:
+            matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
+            if matrix_path.exists():
+                return os.stat(matrix_path).st_size
+        raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))

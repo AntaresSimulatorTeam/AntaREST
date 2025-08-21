@@ -47,12 +47,19 @@ from antarest.matrixstore.model import (
     MatrixDataSetDTO,
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
+    MatrixDescriptionDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
     MatrixReference,
+    MatrixReferencesDTO,
 )
 from antarest.matrixstore.parsing import save_matrix
-from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+from antarest.matrixstore.repository import (
+    MatrixContentRepository,
+    MatrixDataSetRepository,
+    MatrixRepository,
+    compute_hash,
+)
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -130,6 +137,10 @@ class ISimpleMatrixService(ABC):
         else:
             raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
+    @abstractmethod
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        raise NotImplementedError
+
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
@@ -159,6 +170,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         self.usage_providers.append(usage_provider)
+
+    @override
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        raise NotImplementedError
 
 
 def check_dataframe_compliance(df: pd.DataFrame) -> None:
@@ -578,3 +593,30 @@ class MatrixService(ISimpleMatrixService):
                 ]
 
         return DatasetUsageProvider(self)
+
+    @override
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        used_matrices = self.get_used_matrices()
+        references_dto: dict[str, MatrixReferencesDTO] = {}
+        for matrix in used_matrices:
+            matrix_size = None
+            matrix_id = matrix.matrix_id
+
+            description = matrix.use_description
+
+            ref_dto = MatrixDescriptionDTO(description=description)
+
+            if matrix_id not in references_dto:
+                refs = []
+                data = self.get(matrix_id)
+                matrix_hash = compute_hash(data)
+                if disk_usage:
+                    matrix_size = self.matrix_content_repository.get_matrix_disk_usage(matrix_hash)
+
+                refs.append(ref_dto)
+                refs_dto = MatrixReferencesDTO(refs=refs, disk_usage=matrix_size)
+                references_dto.update({matrix_id: refs_dto})
+            else:
+                references_dto[matrix_id].refs.append(ref_dto)
+
+        return references_dto

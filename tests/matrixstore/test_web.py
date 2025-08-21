@@ -160,7 +160,7 @@ def test_get_matrices_references() -> None:
     service.get_matrices_references.return_value = matrix_dict
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/v1/matrix/_references/true", headers=create_auth_token(app))
+    res = client.get("/v1/matrix/_references/", headers=create_auth_token(app), params={"disk_usage": True})
 
     res_dict_test = creating_json_res_dict(res)
 
@@ -182,7 +182,7 @@ def test_get_matrices_references() -> None:
 
     service.get_matrices_references.return_value = matrix_dict
 
-    res = client.get("/v1/matrix/_references/false", headers=create_auth_token(app))
+    res = client.get("/v1/matrix/_references/", headers=create_auth_token(app), params={"disk_usage": False})
     assert res.status_code == 200
 
     res_dict_test = creating_json_res_dict(res)
