@@ -32,7 +32,9 @@ export const DESIGN_TOKENS = {
     sm: "3px",
   },
   zIndex: {
-    drawer: 1300,
+    // Use theme.zIndex.modal + 100 to ensure drawer appears above modal dialogs
+    // MUI modal/dialog default is 1300, so this becomes 1400
+    drawer: (theme: Theme) => theme.zIndex.modal + 100,
   },
 } as const;
 

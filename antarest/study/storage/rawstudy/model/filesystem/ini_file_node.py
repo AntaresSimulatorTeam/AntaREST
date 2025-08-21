@@ -228,13 +228,11 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        types: Optional[Dict[str, Any]] = None,
         reader: Optional[IReader] = None,
         writer: Optional[IniWriter] = None,
     ):
         super().__init__(config)
         self.path = config.path
-        self.types = types or {}
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 
@@ -353,42 +351,3 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         except IniFileNodeWarning as w:
             relpath = self.config.path.relative_to(self.config.study_path).as_posix()
             logger.warning(f"INI File error '{relpath}': {w}")
-
-    @override
-    def check_errors(
-        self,
-        data: JSON,
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        errors = []
-        for section, params in self.types.items():
-            if section not in data:
-                msg = f"section {section} not in {self.__class__.__name__}"
-                if raising:
-                    raise ValueError(msg)
-                errors.append(msg)
-            else:
-                self._validate_param(section, params, data[section], errors, raising)
-
-        return errors
-
-    def _validate_param(
-        self,
-        section: str,
-        params: Any,
-        data: JSON,
-        errors: List[str],
-        raising: bool,
-    ) -> None:
-        for param, typing in params.items():
-            if param not in data:
-                msg = f"param {param} of section {section} not in {self.__class__.__name__}"
-                if raising:
-                    raise ValueError(msg)
-                errors.append(msg)
-            elif not isinstance(data[param], typing):
-                msg = f"param {param} of section {section} in {self.__class__.__name__} bad type"
-                if raising:
-                    raise ValueError(msg)
-                errors.append(msg)

@@ -12,7 +12,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional, cast
+from typing import Any, cast
 
 from typing_extensions import override
 
@@ -71,6 +71,5 @@ class JsonFileNode(IniFileNode):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        types: Optional[Dict[str, Any]] = None,
     ) -> None:
-        super().__init__(config, types, JsonReader(), JsonWriter())
+        super().__init__(config, JsonReader(), JsonWriter())

@@ -13,7 +13,7 @@ import io
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,6 @@ from pandas.errors import EmptyDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.model import JSON
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
@@ -107,22 +106,6 @@ class InputSeriesMatrix(MatrixNode):
             self.config.path.touch(exist_ok=True)
         else:
             write_dataframe_in_tsv_format(df, self.config.path)
-
-    @override
-    def check_errors(
-        self,
-        data: JSON,
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        self._assert_url_end(url)
-
-        errors = []
-        if not self.config.path.exists():
-            errors.append(f"Input Series Matrix f{self.config.path} not exists")
-        if self.nb_columns and len(data) != self.nb_columns:
-            errors.append(f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}")
-        return errors
 
     def _infer_path(self) -> Path:
         link_path = self.matrix_mapper.get_link_path(self)

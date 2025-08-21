@@ -60,15 +60,3 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     def delete(self, url: Optional[List[str]] = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()
-
-    @override
-    def check_errors(
-        self,
-        data: List[str],
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        errors = []
-        if any(a not in data for a in [area.name for area in self.config.areas.values()]):
-            errors.append(f"list.txt should have {self.config.area_names()} nodes but given {data}")
-        return errors

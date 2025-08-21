@@ -16,15 +16,7 @@ from typing import Dict, List, MutableMapping, Type
 import typing_extensions as te
 from typing_extensions import override
 
-from antarest.study.model import (
-    STUDY_VERSION_8,
-    STUDY_VERSION_8_1,
-    STUDY_VERSION_8_7,
-    STUDY_VERSION_9_1,
-    STUDY_VERSION_9_2,
-    STUDY_VERSION_9_3,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 _TSNumber: te.TypeAlias = int
@@ -65,72 +57,9 @@ class ScenarioBuilder(IniFileNode):
 
     def __init__(self, config: FileStudyTreeConfig):
         self.config = config
-
-        rules: _Rules = {}
-        self._populate_load_hydro_wind_solar_rules(rules)
-        self._populate_ntc_rules(rules)
-        self._populate_thermal_rules(rules)
-
-        # Rules are defined for a specific version of the study.
-        study_version = config.version
-        if study_version >= STUDY_VERSION_8_1 and EnrModelling(self.config.enr_modelling) == EnrModelling.CLUSTERS:
-            self._populate_renewable_rules(rules)
-        if study_version >= STUDY_VERSION_8_7:
-            self._populate_binding_constraints_rules(rules)
-        if study_version >= STUDY_VERSION_8:
-            self._populate_hydro_initial_level_rules(rules)
-        if study_version >= STUDY_VERSION_9_2:
-            self._populate_hydro_final_level_rules(rules)
-        if study_version >= STUDY_VERSION_9_1:
-            self._populate_hydro_generation_power_rules(rules)
-        if study_version >= STUDY_VERSION_9_3:
-            self._populate_sts_rules(rules)
-
         super().__init__(
             config=config,
-            types={"Default Ruleset": rules},
         )
-
-    def _populate_load_hydro_wind_solar_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            for symbol in ("l", "h", "w", "s"):
-                rules[f"{symbol},{area_id},0"] = _TSNumber
-
-    def _populate_ntc_rules(self, rules: _Rules) -> None:
-        for area1_id in self.config.areas:
-            for area2_id in self.config.get_links(area1_id):
-                rules[f"ntc,{area1_id},{area2_id},0"] = _TSNumber
-
-    def _populate_thermal_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            for cl_id in (th.lower() for th in self.config.get_thermal_ids(area_id)):
-                rules[f"t,{area_id},0,{cl_id}"] = _TSNumber
-
-    def _populate_renewable_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            for cl_id in (renew.lower() for renew in self.config.get_renewable_ids(area_id)):
-                rules[f"r,{area_id},0,{cl_id}"] = _TSNumber
-
-    def _populate_binding_constraints_rules(self, rules: _Rules) -> None:
-        for group_id in (gr.lower() for gr in self.config.get_binding_constraint_groups()):
-            rules[f"bc,{group_id},0"] = _TSNumber
-
-    def _populate_hydro_initial_level_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            rules[f"hl,{area_id},0"] = _HydroLevel
-
-    def _populate_hydro_final_level_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            rules[f"hfl,{area_id},0"] = _HydroLevel
-
-    def _populate_hydro_generation_power_rules(self, rules: _Rules) -> None:
-        for area_id in self.config.areas:
-            rules[f"hgp,{area_id},0"] = _TSNumber
-
-    def _populate_sts_rules(self, rules: _Rules) -> None:
-        for area_id, area in self.config.areas.items():
-            for storage in area.st_storages:
-                rules[f"sts,{area_id},0,{storage.id}"] = _TSNumber
 
     @override
     def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:

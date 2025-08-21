@@ -146,30 +146,6 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             shutil.rmtree(self.config.path)
 
     @override
-    def check_errors(
-        self,
-        data: JSON,
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        children = self.build()
-
-        if url and url != [""]:
-            (name,), sub_url = self._extract_child(children, url)
-            return children[name].check_errors(data, sub_url, raising)
-        else:
-            errors: List[str] = []
-            for key in data:
-                if key not in children:
-                    msg = f"key={key} not in {list(children.keys())} for {self.__class__.__name__}"
-                    if raising:
-                        raise ValueError(msg)
-                    errors += [msg]
-                else:
-                    errors += children[key].check_errors(data[key], raising=raising)
-            return errors
-
-    @override
     def normalize(self) -> None:
         for child in self.build().values():
             child.normalize()
