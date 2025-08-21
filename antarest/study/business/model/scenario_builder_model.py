@@ -78,6 +78,13 @@ RANDOM: RandType = ""
 
 
 class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
+    """
+    A ruleset defines, for each item in the study, a mapping of MC year to the data to be used.
+
+    In the vast majority of cases, the data is simply a timeseries number to be used,
+    but for specific cases it can be an actual value, like the level of an hydro reservoir.
+    """
+
     load: AreaScenarios | None = Field(default=None, alias="l")
     thermal: AreaItemsScenarios | None = Field(default=None, alias="t")
     hydro: AreaScenarios | None = Field(default=None, alias="h")
@@ -171,6 +178,9 @@ def _create_cluster_scenarios_mapping(names: Mapping[str, Iterable[str]], years:
 
 
 def initialize_ruleset(years: list[str], index: StudyIndex) -> Ruleset:
+    """
+    Creates a ruleset initialized with random ("") for all items and years of a study.
+    """
     return Ruleset(
         load=_create_scenarios_mapping(names=index.area_ids, years=years),
         thermal=_create_cluster_scenarios_mapping(names=index.thermal_ids, years=years),
