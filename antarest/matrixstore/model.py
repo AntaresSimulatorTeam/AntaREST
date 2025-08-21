@@ -147,6 +147,10 @@ class MatrixReference(AntaresBaseModel):
 
 
 class MatrixDescriptionDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    Pydantic translation of one matrix reference from a client
+    """
+
     description: str
 
 

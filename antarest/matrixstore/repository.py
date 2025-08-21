@@ -8,7 +8,8 @@
 #
 # SPDX-License-Identifier: MPL-2.0
 #
-# This file is part of the Antares project.k
+# This file is part of the Antares project.
+
 import hashlib
 import logging
 import os
