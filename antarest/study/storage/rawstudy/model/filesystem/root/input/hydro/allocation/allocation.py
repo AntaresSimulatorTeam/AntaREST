@@ -20,6 +20,6 @@ class InputHydroAllocation(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputHydroAllocationArea(self.config.next_file(f"{a}.ini"), area=a) for a in self.config.area_names()
+            a: InputHydroAllocationArea(self.config.next_file(f"{a}.ini")) for a in self.config.area_names()
         }
         return children

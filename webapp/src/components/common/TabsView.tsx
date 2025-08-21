@@ -20,7 +20,7 @@ import { useState } from "react";
 interface TabsViewProps {
   items: Array<{
     label: string;
-    content: React.FunctionComponent;
+    content: React.ReactNode;
     disabled?: boolean;
   }>;
   onChange?: TabListProps["onChange"];
@@ -77,7 +77,7 @@ function TabsView({
             ))}
           </TabList>
         </Box>
-        {items.map(({ content: Content, label }, index) => (
+        {items.map(({ content, label }, index) => (
           <TabPanel
             key={label + index}
             value={index}
@@ -96,7 +96,7 @@ function TabsView({
               disableGutters && { px: 0 },
             ]}
           >
-            <Content />
+            {content}
           </TabPanel>
         ))}
       </TabContext>

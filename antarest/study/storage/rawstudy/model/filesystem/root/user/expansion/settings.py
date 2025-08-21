@@ -36,23 +36,8 @@ class ExpansionSettings(IniFileNode):
     """
 
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        types = {
-            "master": str,
-            "uc_type": str,
-            "optimality_gap": float,
-            "relative_gap": float,
-            "relaxed_optimality_gap": float,
-            "max_iteration": int,
-            "solver": str,
-            "log_level": int,
-            "separation_parameter": float,
-            "batch_size": int,
-            "yearly-weights": str,
-            "additional-constraints": str,
-        }
         super().__init__(
             config,
-            types=types,
             reader=SimpleKeyValueReader(),
             writer=SimpleKeyValueWriter(),
         )
