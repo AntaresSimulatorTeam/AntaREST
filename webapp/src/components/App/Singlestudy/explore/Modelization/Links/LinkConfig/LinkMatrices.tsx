@@ -53,7 +53,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
       items={[
         {
           label: t("study.modelization.links.matrix.parameters"),
-          content: () => (
+          content: (
             <Matrix
               url={`input/links/${area1.toLowerCase()}/${area2.toLowerCase()}_parameters`}
               title={t("study.modelization.links.matrix.parameters")}
@@ -75,7 +75,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
         },
         {
           label: t("study.modelization.links.matrix.capacities"),
-          content: () => (
+          content: (
             <SplitView id="link-transCapaDirect-transCapaIndirect" sizes={[50, 50]}>
               <Box sx={{ pr: 2 }}>
                 <Matrix

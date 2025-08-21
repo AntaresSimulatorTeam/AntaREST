@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List
 
 from typing_extensions import override
 
@@ -22,10 +21,8 @@ from antarest.study.storage.rawstudy.model.filesystem.json_file_node import Json
 class SensitivityConfig(FolderNode):
     @override
     def build(self) -> TREE:
-        types = {"epsilon": float, "capex": bool, "projection": List[str]}
         return {
             "sensitivity_in": JsonFileNode(
                 self.config.next_file("sensitivity_in.json"),
-                types,
             )
         }

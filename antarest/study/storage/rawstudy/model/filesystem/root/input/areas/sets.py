@@ -31,7 +31,6 @@ class InputAreasSets(IniFileNode):
         IniFileNode.__init__(
             self,
             config,
-            types={},
             reader=IniReader(["+", "-"]),
             writer=IniWriter(special_keys=["+", "-"]),
         )

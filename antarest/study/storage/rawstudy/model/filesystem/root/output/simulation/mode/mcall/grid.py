@@ -67,12 +67,3 @@ class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
     def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
-
-    @override
-    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
-        if not self.config.path.exists():
-            msg = f"{self.config.path} not exist"
-            if raising:
-                raise ValueError(msg)
-            return [msg]
-        return []

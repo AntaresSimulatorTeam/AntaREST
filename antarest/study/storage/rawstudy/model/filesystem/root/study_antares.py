@@ -31,14 +31,4 @@ class StudyAntares(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "antares": {
-                "version": int,
-                "caption": str,
-                "created": int,
-                "lastsave": int,
-                "author": str,
-                "editor": str,
-            }
-        }
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, config)

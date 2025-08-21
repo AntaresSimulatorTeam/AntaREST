@@ -26,5 +26,4 @@ class InputHydroPreproAreaPrepro(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {"prepro": {"intermonthly-correlation": float}}
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)

@@ -17,14 +17,13 @@ from pathlib import Path
 
 import pytest
 
-from antarest.core.model import JSON
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
 )
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
-def build_dataset(study_dir: Path) -> t.Tuple[Path, JSON]:
+def build_dataset(study_dir: Path) -> Path:
     ini_path = study_dir.joinpath("test.ini")
     ini_content = textwrap.dedent(
         """\
@@ -38,26 +37,15 @@ def build_dataset(study_dir: Path) -> t.Tuple[Path, JSON]:
         key_bool2 = False
         """
     )
-    section_types = {
-        "part1": {
-            "key_int": int,
-            "key_float": float,
-            "key_str": str,
-        },
-        "part2": {
-            "key_bool": bool,
-            "key_bool2": bool,
-        },
-    }
     ini_path.write_text(ini_content)
-    return ini_path, section_types
+    return ini_path
 
 
 @pytest.mark.unit_test
 def test_get(tmp_path: Path) -> None:
     study_dir = tmp_path.joinpath("my_study")
     study_dir.mkdir()
-    ini_path, types = build_dataset(study_dir)
+    ini_path = build_dataset(study_dir)
 
     expected_json = {
         "part1": {"key_int": 1, "key_str": "value1", "key_float": 2.1},
@@ -72,7 +60,6 @@ def test_get(tmp_path: Path) -> None:
             outputs={},
             study_id="id",
         ),
-        types=types,
     )
     assert node.get([]) == expected_json
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
@@ -97,7 +84,6 @@ def test_get(tmp_path: Path) -> None:
             study_id="id",
             archive_path=zipped_path,
         ),
-        types=types,
     )
     assert zipped_node.get([]) == expected_json
     assert zipped_node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
@@ -108,7 +94,7 @@ def test_get(tmp_path: Path) -> None:
 def test_get_depth(tmp_path: Path) -> None:
     study_dir = tmp_path.joinpath("my_study")
     study_dir.mkdir()
-    ini_path, types = build_dataset(study_dir)
+    ini_path = build_dataset(study_dir)
 
     expected_json = {
         "part1": {},
@@ -123,7 +109,6 @@ def test_get_depth(tmp_path: Path) -> None:
             outputs={},
             study_id="id",
         ),
-        types=types,
     )
     assert node.get(depth=1) == expected_json
 
@@ -146,56 +131,13 @@ def test_get_depth(tmp_path: Path) -> None:
             study_id="id",
             archive_path=zipped_path,
         ),
-        types=types,
     )
     assert zipped_node.get(depth=1) == expected_json
 
 
 @pytest.mark.unit_test
-def test_validate_section():
-    data = {"section": {"params": 42}}
-
-    node = IniFileNode(
-        config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
-        types={"wrong-section": {}},
-    )
-    assert node.check_errors(data=data) == ["section wrong-section not in IniFileNode"]
-    with pytest.raises(ValueError):
-        node.check_errors(data, raising=True)
-
-    node = IniFileNode(
-        config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
-        types={"section": {"wrong-params": 42}},
-    )
-    assert node.check_errors(data=data) == ["param wrong-params of section section not in IniFileNode"]
-    with pytest.raises(ValueError):
-        node.check_errors(data, raising=True)
-
-    node = IniFileNode(
-        config=FileStudyTreeConfig(study_path=Path(), path=Path(), version=-1, study_id="id"),
-        types={"section": {"params": str}},
-    )
-    assert node.check_errors(data=data) == ["param params of section section in IniFileNode bad type"]
-
-
-@pytest.mark.unit_test
 def test_save(tmp_path: Path) -> None:
     ini_path = tmp_path.joinpath("test.ini")
-
-    types = {
-        "part1": {
-            "key_int": int,
-            "key_float": float,
-            "key_str": str,
-            "key_bool": bool,
-        },
-        "part2": {
-            "key_int": int,
-            "key_float": float,
-            "key_str": str,
-            "key_bool": bool,
-        },
-    }
 
     node = IniFileNode(
         config=FileStudyTreeConfig(
@@ -206,7 +148,6 @@ def test_save(tmp_path: Path) -> None:
             areas={},
             outputs={},
         ),
-        types=types,
     )
 
     # The example below allows for creating an INI file from scratch by providing
@@ -317,7 +258,6 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
             areas={},
             outputs={},
         ),
-        types={},
     )
     expected_ruleset = {"key_float": 2.1, "key_int": 1, "key_str": "value1"}
     ruleset = node.get(url)
@@ -334,7 +274,6 @@ def create_ini_node(study_path: Path, ini_path: Path) -> IniFileNode:
             areas={},
             outputs={},
         ),
-        types={},
     )
 
 

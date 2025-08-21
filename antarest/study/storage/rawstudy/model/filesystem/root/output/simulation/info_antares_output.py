@@ -30,15 +30,4 @@ class OutputSimulationInfoAntaresOutput(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "general": {
-                "version": int,
-                "name": str,
-                "mode": str,
-                "date": str,
-                "title": str,
-                "timestamp": int,
-            }
-        }
-
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, config)
