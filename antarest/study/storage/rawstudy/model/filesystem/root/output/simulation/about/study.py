@@ -16,14 +16,4 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 class OutputSimulationAboutStudy(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "antares": {
-                "version": int,
-                "caption": str,
-                "created": int,
-                "lastsave": int,
-                "author": str,
-                "editor": str,
-            }
-        }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)

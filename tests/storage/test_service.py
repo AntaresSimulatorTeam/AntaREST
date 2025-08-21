@@ -977,23 +977,6 @@ def test_set_public_mode() -> None:
     repository.save.assert_called_with(create_study(id=study_id, public_mode=PublicMode.FULL))
 
 
-# noinspection PyArgumentList
-@pytest.mark.unit_test
-def test_check_errors() -> None:
-    study_service = Mock()
-    study_service.check_errors.return_value = ["Hello", "World"]
-
-    study = create_raw_study(id="hello world")
-    repo = Mock()
-    repo.get.return_value = study
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    service = build_study_service(study_service, repo, config)
-
-    assert ["Hello", "World"] == service.check_errors("hello world")
-    study_service.check_errors.assert_called_once_with(study)
-    repo.get.assert_called_once_with("hello world")
-
-
 @pytest.mark.unit_test
 def test_study_match() -> None:
     assert not study_matcher(name=None, folder="ab", workspace="hell")(

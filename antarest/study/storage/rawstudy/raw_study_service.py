@@ -422,22 +422,6 @@ class RawStudyService(AbstractStorageService):
             if metadata.archived:
                 shutil.rmtree(metadata.path, ignore_errors=True)
 
-    def check_errors(
-        self,
-        metadata: RawStudy,
-    ) -> List[str]:
-        """
-        Check study antares data integrity
-        Args:
-            metadata: study
-
-        Returns: list of non integrity inside study
-
-        """
-        path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(path, is_managed(metadata), metadata.id)
-        return study.tree.check_errors(study.tree.get())
-
     def archive(self, study: RawStudy) -> Path:
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
         new_study_path = self.export_study(study, archive_path)

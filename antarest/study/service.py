@@ -1673,13 +1673,6 @@ class StudyService:
             get_user_id(),
         )
 
-    def check_errors(self, uuid: str) -> List[str]:
-        study = self.get_study(uuid)
-        self.assert_study_unarchived(study)
-        if not isinstance(study, RawStudy):
-            raise UnsupportedOperationOnThisStudyType(study.type, "check_errors", "raw")
-        return self.storage_service.raw_study_service.check_errors(study)
-
     def get_all_areas(
         self,
         uuid: str,
@@ -2045,30 +2038,6 @@ class StudyService:
         if study.archived and raise_exception:
             raise UnsupportedOperationOnArchivedStudy(study.id)
         return not study.archived
-
-    def _analyse_study(self, metadata: Study) -> StudyContentStatus:
-        """
-        Analyzes the integrity of a study.
-
-        Args:
-            metadata: The study to analyze.
-
-        Returns:
-            - VALID if the study has no integrity issues.
-            - WARNING if the study has some issues.
-            - ERROR if the tree was unable to analyze the structure without raising an error.
-        """
-        try:
-            if not isinstance(metadata, RawStudy):
-                raise UnsupportedOperationOnThisStudyType(metadata.id, "synchronization", "raw")
-
-            if self.storage_service.raw_study_service.check_errors(metadata):
-                return StudyContentStatus.WARNING
-            else:
-                return StudyContentStatus.VALID
-        except Exception as e:
-            logger.error(e)
-            return StudyContentStatus.ERROR
 
     # noinspection PyUnusedLocal
     @staticmethod
