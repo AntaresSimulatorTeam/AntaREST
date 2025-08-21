@@ -62,3 +62,7 @@ class FileStudyLayerDao(LayerDao, ABC):
 
         file_study = self.get_file_study()
         file_study.tree.save(serialized_layers.layers, ["layers", "layers", "layers"])
+
+    @override
+    def delete_layer(self, layer: Layer) -> None:
+        pass

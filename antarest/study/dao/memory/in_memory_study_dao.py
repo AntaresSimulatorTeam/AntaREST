@@ -675,8 +675,14 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def save_layers(self, layer: Layer) -> None:
-        self._layers.append(layer)
+        new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
+        layer.id = str(new_id)
+        self._layers.insert(new_id, layer)
 
     @override
     def get_layers(self) -> Sequence[Layer]:
         return self._layers
+
+    @override
+    def delete_layer(self, layer: Layer) -> None:
+        self._layers.remove(layer)

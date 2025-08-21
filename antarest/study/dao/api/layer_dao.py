@@ -25,3 +25,7 @@ class LayerDao(ReadOnlyLayerDao):
     @abstractmethod
     def save_layers(self, layer: Layer) -> None:
         raise NotImplementedError()
+
+    @abstractmethod
+    def delete_layer(self, layer: Layer) -> None:
+        raise NotImplementedError()
