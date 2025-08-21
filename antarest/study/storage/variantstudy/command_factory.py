@@ -46,6 +46,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -102,6 +103,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
     CommandName.REMOVE_AREA.value: RemoveArea,
     CommandName.CREATE_LAYER.value: CreateLayer,
+    CommandName.REMOVE_LAYER.value: RemoveLayer,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,

@@ -34,18 +34,19 @@ class RemoveLayer(ICommand):
     # Command parameters
     # ==================
 
-    layer_id: str
+    parameters: Layer
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
-        study_data.delete_layer(Layer(id=self.layer_id))
-        return command_succeeded(f"Layer {self.layer_id} deleted successfully.")
+        layer_id = self.parameters.id
+        study_data.delete_layer(Layer(id=layer_id))
+        return command_succeeded(f"Layer {layer_id} deleted successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REMOVE_LAYER.value,
-            args={"layer_id": self.layer_id},
+            args={"parameters": {"id": self.parameters.id}},
             study_version=self.study_version,
         )
 

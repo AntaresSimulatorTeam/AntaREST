@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 from typing import List
 
-from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.core.exceptions import LayerNotFound
 from antarest.study.business.area_management import logger
 from antarest.study.business.areas.area_utils import _get_area_layers
 from antarest.study.business.model.layer_model import Layer, LayerCreation
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
+from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -124,21 +125,10 @@ class LayerManager:
             LayerNotAllowedToBeDeleted: If the layer ID is "0".
             LayerNotFound: If the layer ID is not found.
         """
-        if layer_id == "0":
-            raise LayerNotAllowedToBeDeleted
-
-        file_study = study.get_files()
-        layers = file_study.tree.get(["layers", "layers", "layers"])
-
-        if layer_id not in layers:
-            raise LayerNotFound
-
-        del layers[layer_id]
-
-        command = UpdateConfig(
-            target="layers/layers/layers",
-            data=layers,
+        command = RemoveLayer(
+            parameters=Layer(id=layer_id),
             command_context=self._command_context,
             study_version=study.version,
         )
+
         study.add_commands([command])
