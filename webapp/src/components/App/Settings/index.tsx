@@ -12,20 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import About from "@/components/App/Settings/About";
+import ViewWrapper from "@/components/common/page/ViewWrapper";
+import TabsView from "@/components/common/TabsView";
+import { useAppMode } from "@/hooks/useAppMode";
+import SettingsIcon from "@mui/icons-material/Settings";
 import { useTranslation } from "react-i18next";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
 import RootPage from "../../common/page/RootPage";
+import General from "./General";
 import Groups from "./Groups";
 import Maintenance from "./Maintenance";
 import Tokens from "./Tokens";
 import Users from "./Users";
-import General from "./General";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import { isAuthUserAdmin, isAuthUserInGroupAdmin } from "../../../redux/selectors";
-import TabsView from "@/components/common/TabsView";
-import SettingsIcon from "@mui/icons-material/Settings";
-import ViewWrapper from "@/components/common/page/ViewWrapper";
-import About from "@/components/App/Settings/About";
-import { useAppMode } from "@/hooks/useAppMode";
 
 function Settings() {
   const { t } = useTranslation();
@@ -44,27 +44,27 @@ function Settings() {
           items={[
             {
               label: t("global.general"),
-              content: General,
+              content: <General />,
             },
             isUserAdmin && {
               label: t("global.users"),
-              content: Users,
+              content: <Users />,
             },
             (isUserAdmin || isUserInGroupAdmin) && {
               label: t("global.group"),
-              content: Groups,
+              content: <Groups />,
             },
             isWebMode && {
               label: t("global.tokens"),
-              content: Tokens,
+              content: <Tokens />,
             },
             isUserAdmin && {
               label: t("global.maintenance"),
-              content: Maintenance,
+              content: <Maintenance />,
             },
             {
               label: t("global.about"),
-              content: About,
+              content: <About />,
             },
           ].filter(Boolean)}
         />
