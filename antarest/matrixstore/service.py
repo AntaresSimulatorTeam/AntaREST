@@ -58,7 +58,6 @@ from antarest.matrixstore.repository import (
     MatrixContentRepository,
     MatrixDataSetRepository,
     MatrixRepository,
-    compute_hash,
 )
 
 # List of files to exclude from ZIP archives
@@ -602,19 +601,13 @@ class MatrixService(ISimpleMatrixService):
             matrix_size = None
             matrix_id = matrix.matrix_id
 
-            description = matrix.use_description
-
-            ref_dto = MatrixDescriptionDTO(description=description)
+            ref_dto = MatrixDescriptionDTO(description=matrix.use_description)
 
             if matrix_id not in references_dto:
-                refs = []
-                data = self.get(matrix_id)
-                matrix_hash = compute_hash(data)
                 if disk_usage:
-                    matrix_size = self.matrix_content_repository.get_matrix_disk_usage(matrix_hash)
+                    matrix_size = self.matrix_content_repository.get_matrix_disk_usage(matrix_id)
 
-                refs.append(ref_dto)
-                refs_dto = MatrixReferencesDTO(refs=refs, disk_usage=matrix_size)
+                refs_dto = MatrixReferencesDTO(refs=[ref_dto], disk_usage=matrix_size)
                 references_dto.update({matrix_id: refs_dto})
             else:
                 references_dto[matrix_id].refs.append(ref_dto)

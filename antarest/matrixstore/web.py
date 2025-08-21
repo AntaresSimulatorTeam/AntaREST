@@ -102,14 +102,11 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
         "/matrix/_references/",
         tags=[APITag.matrix],
         description="Fetching a list of matrices statistics",
+        response_model_exclude_none=True,
     )
     def get_matrices_references(
         disk_usage: bool = Query(
-            ...,
-            alias="disk_usage",
-            description="Determine if the disk usage should be displayed",
-            title="Disk Usage",
-            response_model_exclude_none=True,
+            ..., alias="disk_usage", description="Determine if the disk usage should be displayed", title="Disk Usage"
         ),
     ) -> dict[str, MatrixReferencesDTO]:
         logger.info("Fetching matrices references")

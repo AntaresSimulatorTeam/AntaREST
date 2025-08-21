@@ -184,6 +184,21 @@ def test_get_matrices_references() -> None:
 
     res = client.get("/v1/matrix/_references/", headers=create_auth_token(app), params={"disk_usage": False})
     assert res.status_code == 200
+    data__ = {
+        f"{command_id}": {
+            "refs": [
+                {"description": f"Referenced by command {command_id} of study study1"},
+                {"description": "Referenced by raw study study_id"},
+            ]
+        },
+        "constant_id_1": {"refs": [{"description": "Constant matrix"}]},
+        "test": {"refs": [{"description": "Referenced by dataset data_1"}]},
+    }
+    assert res.json() == data__
+
+    assert "disk_usage" not in res.json()[command_id]
+    assert "disk_usage" not in res.json()["constant_id_1"]
+    assert "disk_usage" not in res.json()["test"]
 
     res_dict_test = creating_json_res_dict(res)
 
@@ -196,7 +211,9 @@ def creating_json_res_dict(res) -> dict[str, MatrixReferencesDTO]:
     res_dict_test = {}
     for matrix_id in res.json():
         description = res.json()[matrix_id]["refs"]
-        disk_usage = res.json()[matrix_id]["disk_usage"]
+        disk_usage = None
+        if "disk_usage" in res.json()[matrix_id]:
+            disk_usage = res.json()[matrix_id]["disk_usage"]
         descs_dto = sorted(
             [MatrixDescriptionDTO(description=desc["description"]) for desc in description],
             key=lambda x: x.description,
