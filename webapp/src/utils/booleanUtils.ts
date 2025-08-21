@@ -15,6 +15,9 @@
 /**
  * Converts a boolean value to its string representation (`"true"` or `"false"`).
  *
+ * Unlike the native `Boolean.prototype.toString()` method, this function returns the exact
+ * string literals types `"true"` or `"false"` (not just `string`), preserving strict typing.
+ *
  * @param value - The boolean value to convert.
  * @returns `"true"` if the value is `true`, `"false"` if the value is `false`.
  */
@@ -51,6 +54,6 @@ export function stringToBoolean(value: string, defaultValue = false) {
  * @param value - The string value to check.
  * @returns `true` if the value is `"true"` or `"false"`, `false` otherwise.
  */
-export function isBooleanString(value: string) {
+export function isBooleanString(value: string): value is "true" | "false" {
   return value === "true" || value === "false";
 }
