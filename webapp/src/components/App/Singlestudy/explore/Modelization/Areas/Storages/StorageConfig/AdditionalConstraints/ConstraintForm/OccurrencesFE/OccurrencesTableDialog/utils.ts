@@ -74,6 +74,11 @@ export function getSelectedHoursByOccurrence({
 
   return Array.from({ length: occurrences }, (_, occurrenceIndex) => {
     const shift = occurrenceIndex * offset;
+
+    // `hour - 1`: Converts 1-based hour to 0-based for modulo arithmetic.
+    // `+ shift`: Applies the total offset for this occurrence.
+    // `% HOURS_IN.WEEK`: Wraps around if the result exceeds the number of hours in a week.
+    // `+ 1`: Converts back to 1-based hour.
     const applyOffset = (hour: number) => ((hour - 1 + shift) % HOURS_IN.WEEK) + 1;
 
     return hours
