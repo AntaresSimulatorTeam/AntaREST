@@ -109,7 +109,11 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
             ..., alias="disk_usage", description="Determine if the disk usage should be displayed", title="Disk Usage"
         ),
     ) -> dict[str, MatrixReferencesDTO]:
+        user = require_current_user()
         logger.info("Fetching matrices references")
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError
+
         return service.get_matrices_references(disk_usage)
 
     @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)

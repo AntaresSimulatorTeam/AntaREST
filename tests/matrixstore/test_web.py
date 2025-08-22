@@ -20,6 +20,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
@@ -160,7 +161,10 @@ def test_get_matrices_references() -> None:
     service.get_matrices_references.return_value = matrix_dict
     app = create_app(service)
     client = TestClient(app)
-    res = client.get("/v1/matrix/_references/", headers=create_auth_token(app), params={"disk_usage": True})
+    user = DEFAULT_ADMIN_USER
+    res = client.get(
+        "/v1/matrix/_references/", headers=create_auth_token(app=app, user=user), params={"disk_usage": True}
+    )
 
     res_dict_test = creating_json_res_dict(res)
 
@@ -182,7 +186,9 @@ def test_get_matrices_references() -> None:
 
     service.get_matrices_references.return_value = matrix_dict
 
-    res = client.get("/v1/matrix/_references/", headers=create_auth_token(app), params={"disk_usage": False})
+    res = client.get(
+        "/v1/matrix/_references/", headers=create_auth_token(app=app, user=user), params={"disk_usage": False}
+    )
     assert res.status_code == 200
     data__ = {
         f"{command_id}": {
@@ -195,16 +201,6 @@ def test_get_matrices_references() -> None:
         "test": {"refs": [{"description": "Referenced by dataset data_1"}]},
     }
     assert res.json() == data__
-
-    assert "disk_usage" not in res.json()[command_id]
-    assert "disk_usage" not in res.json()["constant_id_1"]
-    assert "disk_usage" not in res.json()["test"]
-
-    res_dict_test = creating_json_res_dict(res)
-
-    sorted_matrix_dict = dict(sorted(matrix_dict.items()))
-    sorted_res_matrix_dict = dict(sorted(res_dict_test.items()))
-    assert sorted_res_matrix_dict == sorted_matrix_dict
 
 
 def creating_json_res_dict(res) -> dict[str, MatrixReferencesDTO]:
