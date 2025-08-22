@@ -28,7 +28,6 @@ from antarest.study.business.model.scenario_builder_model import (
     Rulesets,
     ScenarioType,
 )
-from antarest.study.business.scenario_builder_management import _SCENARIO_TYPE_SYMBOLS
 
 RuleValue = int | float | RandType
 RulesetSection = Mapping[str, RuleValue]
@@ -182,13 +181,13 @@ def parse_ruleset(ruleset_data: RulesetSection) -> Ruleset:
                 _add_value_simple(ruleset.wind, area_id, year, value)
             case ScenarioType.RENEWABLE:
                 area_id, year, cluster_id = parts
-                _add_value_double(ruleset.thermal, area_id, cluster_id, year, value)
+                _add_value_double(ruleset.renewable, area_id, cluster_id, year, value)
             case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
                 area_id, year, storage_id = parts
-                _add_value_double(ruleset.thermal, area_id, storage_id, year, value)
+                _add_value_double(ruleset.storage_inflows, area_id, storage_id, year, value)
             case ScenarioType.BINDING_CONSTRAINTS:
                 group_id, year = parts
-                _add_value_simple(ruleset.wind, group_id, year, value)
+                _add_value_simple(ruleset.binding_constraints, group_id, year, value)
             case _:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
     return Ruleset.model_validate(ruleset)
@@ -199,3 +198,19 @@ def parse_rulesets(rulesets_data: RulesetsSections) -> Rulesets:
     for ruleset_name, data in rulesets_data.items():
         rulesets[ruleset_name] = parse_ruleset(data)
     return rulesets
+
+
+_SCENARIO_TYPE_SYMBOLS = {
+    ScenarioType.LOAD: "l",
+    ScenarioType.HYDRO: "h",
+    ScenarioType.WIND: "w",
+    ScenarioType.SOLAR: "s",
+    ScenarioType.THERMAL: "t",
+    ScenarioType.RENEWABLE: "r",
+    ScenarioType.LINK: "ntc",
+    ScenarioType.BINDING_CONSTRAINTS: "bc",
+    ScenarioType.HYDRO_INITIAL_LEVEL: "hl",
+    ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
+    ScenarioType.HYDRO_GENERATION_POWER: "hgp",
+    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
+}

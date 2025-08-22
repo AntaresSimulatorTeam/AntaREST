@@ -23,6 +23,7 @@ from antarest.study.business.model.scenario_builder_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
+    _SCENARIO_TYPE_SYMBOLS,
     RulesetsSections,
     parse_ruleset,
     parse_rulesets,
@@ -32,44 +33,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-# Maps MC year to TS number
-# Maps MC year to level value
-
-# A link ID is "area1 / area2"
-
-
-_SCENARIO_TYPE_NAMES = {
-    ScenarioType.LOAD: "load",
-    ScenarioType.HYDRO: "hydro",
-    ScenarioType.WIND: "wind",
-    ScenarioType.SOLAR: "solar",
-    ScenarioType.THERMAL: "thermal",
-    ScenarioType.RENEWABLE: "renewable",
-    ScenarioType.LINK: "link",
-    ScenarioType.BINDING_CONSTRAINTS: "binding-constraints",
-    ScenarioType.HYDRO_INITIAL_LEVEL: "hydro-initial-levels",
-    ScenarioType.HYDRO_FINAL_LEVEL: "hydro-final-levels",
-    ScenarioType.HYDRO_GENERATION_POWER: "hydro-generation-power",
-    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "short-term-storage-inflows",
-}
-
-# We may have multiple rulesets, each with its own name
-
-_SCENARIO_TYPE_SYMBOLS = {
-    ScenarioType.LOAD: "l",
-    ScenarioType.HYDRO: "h",
-    ScenarioType.WIND: "w",
-    ScenarioType.SOLAR: "s",
-    ScenarioType.THERMAL: "t",
-    ScenarioType.RENEWABLE: "r",
-    ScenarioType.LINK: "ntc",
-    ScenarioType.BINDING_CONSTRAINTS: "bc",
-    ScenarioType.HYDRO_INITIAL_LEVEL: "hl",
-    ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
-    ScenarioType.HYDRO_GENERATION_POWER: "hgp",
-    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
-}
 
 
 def _get_ruleset_config(
@@ -170,6 +133,7 @@ class ScenarioBuilderManager:
         ruleset_name = _get_active_ruleset_name(file_study)
         serialized_ruleset = serialize_ruleset(ruleset_update)
         data = {ruleset_name: serialized_ruleset}
+
         update_scenario = UpdateScenarioBuilder(
             data=data, command_context=self._command_context, study_version=study.version
         )

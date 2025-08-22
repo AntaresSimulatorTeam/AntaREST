@@ -9,11 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import os
 import typing as t
 import zipfile
 from pathlib import Path
+from typing import Iterable
 
 import jinja2
 import pytest
@@ -23,6 +23,8 @@ from starlette.testclient import TestClient
 
 from antarest.dbmodel import Base
 from antarest.main import fastapi_app
+from antarest.service_creator import Services
+from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 
 HERE = Path(__file__).parent.resolve()
@@ -32,8 +34,8 @@ RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 RUN_ON_WINDOWS = os.name == "nt"
 
 
-@pytest.fixture(name="app")
-def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
+@pytest.fixture
+def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
     # Currently, it is impossible to use a SQLite database in memory (with "sqlite:///:memory:")
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
@@ -88,8 +90,23 @@ def app_fixture(tmp_path: Path) -> t.Generator[FastAPI, None, None]:
         )
 
     app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
-    yield app
+    yield app, services
     services.watcher.stop()
+
+
+@pytest.fixture(name="app")
+def app_fixture(app_and_services: tuple[FastAPI, Services]) -> FastAPI:
+    return app_and_services[0]
+
+
+@pytest.fixture
+def services(app_and_services: tuple[FastAPI, Services]) -> Services:
+    return app_and_services[1]
+
+
+@pytest.fixture
+def study_service(services: Services) -> StudyService:
+    return services.study
 
 
 @pytest.fixture(name="client")
@@ -108,6 +125,13 @@ def admin_access_token_fixture(client: TestClient) -> str:
     res.raise_for_status()
     credentials = res.json()
     return t.cast(str, credentials["access_token"])
+
+
+@pytest.fixture
+def admin_client(client: TestClient, admin_access_token: str) -> TestClient:
+    headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers.update(headers)
+    return client
 
 
 @pytest.fixture(name="user_access_token")

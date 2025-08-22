@@ -85,18 +85,18 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     but for specific cases it can be an actual value, like the level of an hydro reservoir.
     """
 
-    load: AreaScenarios = Field(alias="l", default_factory=dict)
-    thermal: AreaItemsScenarios = Field(alias="t", default_factory=dict)
-    hydro: AreaScenarios = Field(alias="h", default_factory=dict)
-    hydro_initial_levels: HydroLevelsScenarios = Field(alias="hl", default_factory=dict)
-    hydro_final_levels: HydroLevelsScenarios = Field(alias="hfl", default_factory=dict)
-    hydro_generation_power: AreaScenarios = Field(alias="hgp", default_factory=dict)
-    wind: AreaScenarios = Field(alias="w", default_factory=dict)
-    solar: AreaScenarios = Field(alias="s", default_factory=dict)
-    ntc: AreaScenarios = Field(alias="ntc", default_factory=dict)
-    renewable: AreaItemsScenarios = Field(alias="r", default_factory=dict)
-    binding_constraints: AreaScenarios = Field(alias="bc", default_factory=dict)
-    storage_inflows: AreaItemsScenarios = Field(alias="sts", default_factory=dict)
+    load: AreaScenarios = Field(default_factory=dict)
+    thermal: AreaItemsScenarios = Field(default_factory=dict)
+    hydro: AreaScenarios = Field(default_factory=dict)
+    hydro_initial_levels: HydroLevelsScenarios = Field(default_factory=dict)
+    hydro_final_levels: HydroLevelsScenarios = Field(default_factory=dict)
+    hydro_generation_power: AreaScenarios = Field(default_factory=dict)
+    wind: AreaScenarios = Field(default_factory=dict)
+    solar: AreaScenarios = Field(default_factory=dict)
+    ntc: AreaScenarios = Field(default_factory=dict)
+    renewable: AreaItemsScenarios = Field(default_factory=dict)
+    binding_constraints: AreaScenarios = Field(default_factory=dict)
+    storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
 
     def get(self, scenario_type: ScenarioType) -> AreaScenarios | AreaItemsScenarios:
         match scenario_type:
@@ -214,7 +214,7 @@ class StudyIndex:
 
     @property
     def renewable_ids(self) -> Mapping[str, Iterable[str]]:
-        return self._thermals
+        return self._renewables
 
     @property
     def bc_group_ids(self) -> Iterable[str]:
@@ -295,3 +295,4 @@ def update_ruleset(base: Ruleset, update: Ruleset) -> None:
     _update_simple_mapping(base.binding_constraints, update.binding_constraints)
     _update_double_mapping(base.renewable, update.renewable)
     _update_double_mapping(base.storage_inflows, update.storage_inflows)
+    _update_simple_mapping(base.ntc, update.ntc)
