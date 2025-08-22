@@ -68,37 +68,6 @@ def create_variant_study(study_service: StudyService) -> str:
         return variant_study.id
 
 
-def _common_checks(study_id: str, client: TestClient):
-    # Load tests
-
-    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/load")
-    assert res.status_code == 200
-    assert res.json() == {"load": {"be": {"1": ""}, "fr": {"1": ""}}}
-
-    scenarios: AreaScenarios = {"be": {"1": 2}}
-    res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/load", json={"load": scenarios})
-    assert res.status_code == 200, res.json()
-
-    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/load")
-    assert res.status_code == 200
-    assert res.json() == {"load": {"be": {"1": 2}, "fr": {"1": ""}}}
-
-    # Thermal clusters tests
-
-    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/thermal")
-    assert res.status_code == 200
-    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": ""}}}}
-
-    scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"1": 2}}}
-    res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/thermal", json={"thermal": scenarios})
-    assert res.status_code == 200
-    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": 2}}}}
-
-    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/thermal")
-    assert res.status_code == 200
-    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": 2}}}}
-
-
 @pytest.mark.parametrize("variant", [False, True])
 def test_scenario_builder_nominal_case(variant: bool, study_service: StudyService, admin_client: TestClient) -> None:
     client = admin_client
