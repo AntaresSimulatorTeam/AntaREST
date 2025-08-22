@@ -21,6 +21,7 @@ import pytest
 from checksumdir import dirhash
 from pydantic import ValidationError
 
+from antarest.study.business.model.scenario_builder_model import Ruleset
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -112,7 +113,7 @@ class TestRemoveLink:
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": {"ntc,area_x,area_y,0": 1}},
+            data={"Default Ruleset": Ruleset(ntc={"area_x / area_y": {"0": 1}})},
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)
@@ -132,7 +133,7 @@ class TestRemoveLink:
 
         # Create a ruleset in the Scenario Builder configuration for this link
         output = UpdateScenarioBuilder(
-            data={"Default Ruleset": {"ntc,area_x,area_z,0": 1}},
+            data={"Default Ruleset": Ruleset(ntc={"area_x / area_z": {"0": 1}})},
             command_context=command_context,
             study_version=study_version,
         ).apply(study_data=empty_study)

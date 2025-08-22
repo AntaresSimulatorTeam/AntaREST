@@ -27,7 +27,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
     extract_ruleset_data,
     parse_ruleset,
     parse_rulesets,
-    serialize_rulesets,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
@@ -95,10 +94,8 @@ class ScenarioBuilderManager:
         return parse_rulesets(sections)
 
     def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
-        sections: RulesetsFileData = serialize_rulesets(rulesets)
-
         command = UpdateScenarioBuilder(
-            data=sections, command_context=self._command_context, study_version=study.version
+            data=rulesets, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
 

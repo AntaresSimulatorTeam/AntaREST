@@ -21,6 +21,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_rulesets
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_weekly_daily as default_bc_weekly_daily_870,
@@ -195,7 +196,7 @@ def test_manage_binding_constraint(
         if study_version >= 870:
             # Add scenario builder data
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": {"bc,default,0": 1}},
+                data=parse_rulesets({"Default Ruleset": {"bc,default,0": 1}}),
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)
@@ -291,7 +292,7 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
 
     # Create a rule in the scenario builder for the binding constraint group:
     output = UpdateScenarioBuilder(
-        data={"Default Ruleset": {f"bc,{bc_group.lower()},0": 1}},  # group name in lowercase
+        data=parse_rulesets({"Default Ruleset": {f"bc,{bc_group.lower()},0": 1}}),  # group name in lowercase
         command_context=command_context,
         study_version=study_version,
     ).apply(study_data=empty_study)

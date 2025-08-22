@@ -9,10 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import cProfile
 import os
+import pstats
 import typing as t
 import zipfile
 from pathlib import Path
+from pstats import SortKey
 from typing import Iterable
 
 import jinja2
@@ -40,56 +43,64 @@ def app_and_services(tmp_path: Path) -> Iterable[tuple[FastAPI, Services]]:
     # because the database is created by the FastAPI application during each integration test,
     # which doesn't apply the migrations (migrations are done by Alembic).
     # An alternative is to use a SQLite database stored on disk, because migrations can be persisted.
-    db_path = tmp_path / "db.sqlite"
-    db_url = f"sqlite:///{db_path}"
 
-    # ATTENTION: when setting up integration tests, be aware that creating the database
-    # tables requires a dedicated DB engine (the `engine` below).
-    # This is crucial as the FastAPI application initializes its own engine (a global object),
-    # and the DB engine used in integration tests is not the same.
-    engine = create_engine(db_url, echo=False)
-    Base.metadata.create_all(engine)
-    del engine  # This object won't be used anymore.
+    with cProfile.Profile() as prof:
+        db_path = tmp_path / "db.sqlite"
+        db_url = f"sqlite:///{db_path}"
 
-    # Prepare the directories used by the repos
-    matrix_dir = tmp_path / "matrix_store"
-    archive_dir = tmp_path / "archive_dir"
-    tmp_dir = tmp_path / "tmp"
-    default_workspace = tmp_path / "internal_workspace"
-    ext_workspace_path = tmp_path / "ext_workspace"
+        # ATTENTION: when setting up integration tests, be aware that creating the database
+        # tables requires a dedicated DB engine (the `engine` below).
+        # This is crucial as the FastAPI application initializes its own engine (a global object),
+        # and the DB engine used in integration tests is not the same.
+        engine = create_engine(db_url, echo=False)
+        Base.metadata.create_all(engine)
+        del engine  # This object won't be used anymore.
 
-    matrix_dir.mkdir()
-    archive_dir.mkdir()
-    tmp_dir.mkdir()
-    default_workspace.mkdir()
-    ext_workspace_path.mkdir()
+        # Prepare the directories used by the repos
+        matrix_dir = tmp_path / "matrix_store"
+        archive_dir = tmp_path / "archive_dir"
+        tmp_dir = tmp_path / "tmp"
+        default_workspace = tmp_path / "internal_workspace"
+        ext_workspace_path = tmp_path / "ext_workspace"
 
-    # Extract the sample study
-    sta_mini_zip_path = ASSETS_DIR.joinpath("STA-mini.zip")
-    with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
-        zip_output.extractall(path=ext_workspace_path)
+        matrix_dir.mkdir()
+        archive_dir.mkdir()
+        tmp_dir.mkdir()
+        default_workspace.mkdir()
+        ext_workspace_path.mkdir()
 
-    # Generate a "config.yml" file for the app
-    template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
-    template_env = jinja2.Environment(loader=template_loader)
-    template = template_env.get_template("config.template.yml")
+        # Extract the sample study
+        sta_mini_zip_path = ASSETS_DIR.joinpath("STA-mini.zip")
+        with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
+            zip_output.extractall(path=ext_workspace_path)
 
-    config_path = tmp_path / "config.yml"
-    launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
-    with open(config_path, "w") as fh:
-        fh.write(
-            template.render(
-                db_url=db_url,
-                default_workspace_path=str(default_workspace),
-                ext_workspace_path=str(ext_workspace_path),
-                matrix_dir=str(matrix_dir),
-                archive_dir=str(archive_dir),
-                tmp_dir=str(tmp_dir),
-                launcher_mock=ASSETS_DIR / launcher_name,
+        # Generate a "config.yml" file for the app
+        template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
+        template_env = jinja2.Environment(loader=template_loader)
+        template = template_env.get_template("config.template.yml")
+
+        config_path = tmp_path / "config.yml"
+        launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
+        with open(config_path, "w") as fh:
+            fh.write(
+                template.render(
+                    db_url=db_url,
+                    default_workspace_path=str(default_workspace),
+                    ext_workspace_path=str(ext_workspace_path),
+                    matrix_dir=str(matrix_dir),
+                    archive_dir=str(archive_dir),
+                    tmp_dir=str(tmp_dir),
+                    launcher_mock=ASSETS_DIR / launcher_name,
+                )
             )
-        )
 
-    app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
+        app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
+
+        with open("/home/leclercsyl/tmp/integration-test.txt", "w") as fh:
+            stats = pstats.Stats(prof, stream=fh)
+            stats.sort_stats(SortKey.CUMULATIVE)
+            stats.print_stats()
+
     yield app, services
     services.watcher.stop()
 
