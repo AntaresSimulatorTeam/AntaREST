@@ -30,7 +30,7 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
-from antarest.study.business.model.layer_model import Layer, LayerUpdate
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -686,12 +686,3 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_layer(self, layer: Layer) -> None:
         self._layers.remove(layer)
-
-    @override
-    def update_layer_name(self, layer: LayerUpdate) -> None:
-        layer_id = layer.id
-        layer_name = layer.name
-        for existing_layer in self._layers:
-            if existing_layer.id == layer_id:
-                existing_layer.name = layer_name
-                break

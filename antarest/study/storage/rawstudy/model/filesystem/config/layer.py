@@ -29,5 +29,8 @@ class LayerFileData(AntaresBaseModel):
 
 
 def serialize_layers(layers: List[Layer]) -> LayerFileData:
-    layers_dict = {layer.id: layer.name for layer in layers if layer.id is not None}
+    layers_dict = {}
+    for layer in layers:
+        if layer.id is not None and layer.name is not None:
+            layers_dict[layer.id] = layer.name
     return LayerFileData(layers=layers_dict)

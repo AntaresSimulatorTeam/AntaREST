@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from antarest.study.business.model.layer_model import Layer, LayerUpdate
+from antarest.study.business.model.layer_model import Layer
 
 
 class ReadOnlyLayerDao(ABC):

@@ -20,7 +20,7 @@ from antarest.core.utils.string import to_camel_case
 class Layer(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
-    id: str | None = None
+    id: str
     name: str | None = None
     areas: List[str] | None = None
 
@@ -39,8 +39,9 @@ class LayerUpdate(AntaresBaseModel):
     areas: List[str] | None = None
 
 
-def create_layer(layer: LayerCreation) -> Layer:
-    return Layer(name=layer.name)
+def create_layer(current_layers: list[Layer], layer: LayerCreation) -> Layer:
+    new_id = max((int(layer.id) for layer in current_layers if layer.id is not None), default=0) + 1
+    return Layer(id=str(new_id), name=layer.name)
 
 
 def update_layer_name(layers: List[Layer], data: LayerUpdate) -> Layer:
@@ -48,13 +49,10 @@ def update_layer_name(layers: List[Layer], data: LayerUpdate) -> Layer:
     Updates a layer according to the provided update data.
     """
     for layer in layers:
-        if layer.name == data.id:
+        if layer.id == data.id:
             updated_layer = Layer(
-                id=layer.id,
-                name=data.name if data.name is not None else layer.name,
-                areas=layer.areas
+                id=layer.id, name=data.name if data.name is not None else layer.name, areas=layer.areas
             )
             return updated_layer
 
     raise ValueError(f"Layer with id {data.name} not found")
-

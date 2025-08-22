@@ -18,7 +18,6 @@ from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
 from antarest.study.business.model.layer_model import Layer, LayerUpdate
 from antarest.study.dao.api.layer_dao import LayerDao
-from antarest.study.storage.rawstudy.model.filesystem.config.layer import serialize_layers
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -52,17 +51,9 @@ class FileStudyLayerDao(LayerDao, ABC):
 
     @override
     def save_layers(self, layer: Layer) -> None:
-        current_layers = list(self.get_layers())
-
-        new_id = max((int(layer.id) for layer in current_layers if layer.id is not None), default=0) + 1
-        layer.id = str(new_id)
-
-        current_layers.append(layer)
-
-        serialized_layers = serialize_layers(current_layers)
-
         file_study = self.get_file_study()
-        file_study.tree.save(serialized_layers.layers, ["layers", "layers", "layers"])
+
+        file_study.tree.save(layer.name, ["layers", "layers", "layers", layer.id])
 
     @override
     def delete_layer(self, layer: Layer) -> None:
@@ -81,7 +72,6 @@ class FileStudyLayerDao(LayerDao, ABC):
         del layers[layer_id]
 
         file_study.tree.save(layers, ["layers", "layers", "layers"])
-
 
     def update_layer_name(self, layer: LayerUpdate) -> None:
         new_layer = layer
