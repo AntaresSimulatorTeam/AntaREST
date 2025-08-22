@@ -14,7 +14,7 @@ from typing import Any, Callable, List, Optional
 
 from typing_extensions import override
 
-from antarest.core.model import JSON, SUB_JSON
+from antarest.core.model import SUB_JSON
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -113,12 +113,3 @@ class BucketNode(FolderNode):
                 children[item.name] = BucketNode(self.matrix_mapper, self.config.next_file(item.name))
 
         return children
-
-    @override
-    def check_errors(
-        self,
-        data: JSON,
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        return []

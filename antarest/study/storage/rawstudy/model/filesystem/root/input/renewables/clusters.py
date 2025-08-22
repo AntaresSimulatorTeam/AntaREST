@@ -28,21 +28,10 @@ class ClusteredRenewableClusterConfig(IniFileNode):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        area: str,
     ):
-        section = {
-            "name": str,
-            "group": str,
-            "enabled": bool,
-            "unitcount": int,
-            "nominalcapacity": float,
-            "ts-interpretation": str,
-        }
-        types = {cluster_id: section for cluster_id in config.get_renewable_ids(area)}
         IniFileNode.__init__(
             self,
             config,
-            types,
             reader=IniReader(value_parsers=_VALUE_PARSERS),
             writer=IniWriter(value_serializers=_VALUE_SERIALIZERS),
         )
@@ -60,7 +49,7 @@ class ClusteredRenewableCluster(FolderNode):
 
     @override
     def build(self) -> TREE:
-        return {"list": ClusteredRenewableClusterConfig(self.config.next_file("list.ini"), self.area)}
+        return {"list": ClusteredRenewableClusterConfig(self.config.next_file("list.ini"))}
 
 
 class ClusteredRenewableAreaCluster(FolderNode):

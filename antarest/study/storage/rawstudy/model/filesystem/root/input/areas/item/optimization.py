@@ -32,14 +32,4 @@ class InputAreasOptimization(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "nodal optimization": {
-                "non-dispatchable-power": bool,
-                "dispatchable-hydro-power": bool,
-                "other-dispatchable-power": bool,
-                "spread-unsupplied-energy-cost": (int, float),
-                "spread-spilled-energy-cost": (int, float),
-            },
-            "filtering": {"filter-synthesis": str, "filter-year-by-year": str},
-        }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)

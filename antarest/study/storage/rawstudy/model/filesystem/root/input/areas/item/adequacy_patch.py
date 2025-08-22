@@ -21,5 +21,4 @@ class InputAreasAdequacyPatch(IniFileNode):
     # [adequacy-patch]
     #     adequacy-patch-mode = outside     # outside | inside | virtual
     def __init__(self, config: FileStudyTreeConfig):
-        types = {"adequacy-patch": {"adequacy-patch-mode": str}}
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)

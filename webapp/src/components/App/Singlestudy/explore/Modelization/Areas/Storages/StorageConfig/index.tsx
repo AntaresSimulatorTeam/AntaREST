@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import TabsView from "@/components/common/TabsView";
 import { getCurrentAreaId } from "@/redux/selectors";
 import { nameToId } from "@/services/utils";
 import type { StudyMetadata } from "@/types/types";
+import { useTranslation } from "react-i18next";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import useAppSelector from "../../../../../../../../redux/hooks/useAppSelector";
 import AdditionalConstraints from "./AdditionalConstraints";
 import StorageForm from "./StorageForm";
@@ -29,11 +29,8 @@ function StorageConfig() {
   const areaId = useAppSelector(getCurrentAreaId);
   const { storageId = "" } = useParams();
   const { t } = useTranslation();
+  const studyId = study.id;
   const studyVersion = Number(study.version);
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
 
   return (
     <TabsView
@@ -42,19 +39,26 @@ function StorageConfig() {
       items={[
         {
           label: t("study.modelization.storages.operatingParameters"),
-          content: () => <StorageForm study={study} areaId={areaId} storageId={storageId} />,
+          content: (
+            <StorageForm
+              studyId={studyId}
+              studyVersion={studyVersion}
+              areaId={areaId}
+              storageId={storageId}
+            />
+          ),
         },
         {
           label: t("global.timeSeries"),
-          content: () => (
+          content: (
             <StorageMatrices studyVersion={studyVersion} areaId={areaId} storageId={storageId} />
           ),
         },
         studyVersion >= 920 && {
           label: t("study.modelization.storages.additionalConstraints"),
-          content: () => (
+          content: (
             <AdditionalConstraints
-              studyId={study.id}
+              studyId={studyId}
               areaId={areaId}
               storageId={nameToId(storageId)}
               studyVersion={studyVersion}

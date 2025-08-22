@@ -34,21 +34,21 @@ import {
 } from "../utils";
 
 interface Props {
-  study: StudyMetadata;
+  studyId: StudyMetadata["id"];
+  studyVersion: number;
   areaId: Area["name"];
   storageId: Storage["id"];
 }
 
-function StorageForm({ study, areaId, storageId }: Props) {
+function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
   const { t } = useTranslation();
-  const studyVersion = Number(study.version);
 
   ////////////////////////////////////////////////////////////////
   // Config
   ////////////////////////////////////////////////////////////////
 
   const getDefaultValues = async () => {
-    const storage = await getStorage(study.id, areaId, storageId);
+    const storage = await getStorage(studyId, areaId, storageId);
     return convertRatioToPercentage(storage);
   };
 
@@ -58,7 +58,7 @@ function StorageForm({ study, areaId, storageId }: Props) {
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
     const updatedStorage = await updateStorage(
-      study.id,
+      studyId,
       areaId,
       storageId,
       convertPercentageToRatio(dirtyValues),
@@ -73,7 +73,7 @@ function StorageForm({ study, areaId, storageId }: Props) {
 
   return (
     <Form
-      key={study.id + areaId + storageId}
+      key={studyId + areaId + storageId}
       config={{ defaultValues: getDefaultValues }}
       onSubmit={handleSubmit}
       enableUndoRedo
