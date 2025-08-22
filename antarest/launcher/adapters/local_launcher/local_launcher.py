@@ -32,7 +32,7 @@ from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, Launch
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 logger = logging.getLogger(__name__)
 
@@ -187,16 +187,22 @@ class LocalLauncher(AbstractLauncher):
             simulator_args += ["--solver-logs"]
 
         # Call the right solver
-        solver = ""
+        linear_solver = ""
         if "xpress" in options:
-            solver = "xpress"
+            linear_solver = "xpress"
         elif "coin" in options:
-            solver = "coin"
-        if solver:
+            linear_solver = "coin"
+
+        if version >= STUDY_VERSION_9_3:
+            quadratic_solver = "sirius"
+            if linear_solver:
+                simulator_args += [f"--linear-solver={linear_solver}"]
+            simulator_args += [f"--quadratic-solver={quadratic_solver}"]
+        elif linear_solver:
             if version >= STUDY_VERSION_9_2:
-                simulator_args += [f"--solver={solver}"]
+                simulator_args += [f"--solver={linear_solver}"]
             else:
-                simulator_args.extend(["--use-ortools", f"--ortools-solver={solver}"])
+                simulator_args.extend(["--use-ortools", f"--ortools-solver={linear_solver}"])
 
         # 'xpress' specific part
         if "xpress" in options:
