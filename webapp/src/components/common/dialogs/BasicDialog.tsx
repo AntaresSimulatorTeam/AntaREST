@@ -58,11 +58,39 @@ const titleIconByAlert: Record<AlertValue, SvgIconComponent> = {
 };
 
 function BasicDialog(props: BasicDialogProps) {
-  const { title, titleIcon, children, actions, alert, contentProps, ...dialogProps } = props;
+  const {
+    title,
+    titleIcon,
+    children,
+    actions,
+    alert,
+    contentProps,
+    fullScreen = false,
+    sx,
+    ...dialogProps
+  } = props;
+
   const TitleIcon = titleIcon || (alert ? titleIconByAlert[alert] : null);
 
   return (
-    <Dialog {...dialogProps}>
+    <Dialog
+      {...dialogProps}
+      fullScreen={fullScreen}
+      sx={mergeSxProp(
+        [
+          fullScreen && {
+            top: 20,
+            bottom: 20,
+            left: 20,
+            right: 20,
+            ".MuiDialog-paperFullScreen": {
+              borderRadius: 1,
+            },
+          },
+        ],
+        sx,
+      )}
+    >
       {alert && <AlertBorder $type={alert} />}
       {(title || TitleIcon) && (
         <DialogTitle>
