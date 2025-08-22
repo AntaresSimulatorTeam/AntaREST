@@ -183,29 +183,23 @@ class StudyIndex:
         bc_groups: Iterable[str],
         renewables: Mapping[str, Iterable[str]],
     ):
-        # TODO: to_id
-        self._areas = {a.lower(): a for a in areas}
-        self._links = {(a1.lower(), a2.lower()): (a1, a2) for a1, a2 in links}
-        self._thermals = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in thermals.items()}
-        self._renewables = {a.lower(): {cl.lower(): cl for cl in clusters} for a, clusters in renewables.items()}
+        to_id = transform_name_to_id
+        self._areas = {to_id(a): a for a in areas}
+        self._links = {(to_id(a1), to_id(a2)): (a1, a2) for a1, a2 in links}
+        self._thermals = {to_id(a): {to_id(cl): cl for cl in clusters} for a, clusters in thermals.items()}
+        self._renewables = {to_id(a): {to_id(cl): cl for cl in clusters} for a, clusters in renewables.items()}
         self._storages = {
-            a.lower(): {a_storage.lower(): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
+            to_id(a): {to_id(a_storage): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
         }
-        self._bc_groups = {g.lower(): g for g in bc_groups}
+        self._bc_groups = {to_id(g): g for g in bc_groups}
 
     @property
     def area_ids(self) -> Iterable[str]:
         return self._areas.keys()
 
-    def area_name(self, area_id: str) -> str:
-        return self._areas[area_id]
-
     @property
     def thermal_ids(self) -> Mapping[str, Iterable[str]]:
         return self._thermals
-
-    def area_thermal_ids(self, area: str) -> Iterable[str]:
-        return self._thermals[transform_name_to_id(area)]
 
     @property
     def renewable_ids(self) -> Mapping[str, Iterable[str]]:
