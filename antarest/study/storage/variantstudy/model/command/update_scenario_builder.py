@@ -94,7 +94,7 @@ class UpdateScenarioBuilder(ICommand):
 
         # Ensure the active ruleset is present in the configuration.
         active_rules_scenario = _get_active_ruleset(study_data)
-        if active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:
+        if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:
             rulesets[active_rules_scenario] = Ruleset()
 
         study_data.tree.save(serialize_rulesets(rulesets), url)  # type: ignore
