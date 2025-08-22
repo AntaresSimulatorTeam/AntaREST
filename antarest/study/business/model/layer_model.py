@@ -34,7 +34,7 @@ class LayerCreation(AntaresBaseModel):
 class LayerUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
-    id: str | None = None
+    id: str
     name: str | None = None
     areas: List[str] | None = None
 

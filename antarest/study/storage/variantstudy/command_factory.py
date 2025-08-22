@@ -78,6 +78,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
+from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayerName
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_optimization_preferences import (
     UpdateOptimizationPreferences,
@@ -104,6 +105,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.REMOVE_AREA.value: RemoveArea,
     CommandName.CREATE_LAYER.value: CreateLayer,
     CommandName.REMOVE_LAYER.value: RemoveLayer,
+    CommandName.UPDATE_LAYER_NAME.value: UpdateLayerName,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,

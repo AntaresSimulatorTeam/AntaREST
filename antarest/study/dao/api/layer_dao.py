@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from typing import Sequence
 
-from antarest.study.business.model.layer_model import Layer
+from antarest.study.business.model.layer_model import Layer, LayerUpdate
 
 
 class ReadOnlyLayerDao(ABC):
@@ -28,4 +28,8 @@ class LayerDao(ReadOnlyLayerDao):
 
     @abstractmethod
     def delete_layer(self, layer: Layer) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update_layer_name(self, layer: LayerUpdate) -> None:
         raise NotImplementedError()

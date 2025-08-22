@@ -14,12 +14,13 @@ from typing import List
 from antarest.core.exceptions import LayerNotFound
 from antarest.study.business.area_management import logger
 from antarest.study.business.areas.area_utils import _get_area_layers
-from antarest.study.business.model.layer_model import Layer, LayerCreation
+from antarest.study.business.model.layer_model import Layer, LayerCreation, LayerUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
+from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayerName
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -31,23 +32,17 @@ class LayerManager:
         return list(study.get_study_dao().get_layers())
 
     def create_layer(self, study: StudyInterface, layer_name: str) -> str:
-        command_context = self._command_context
         command = CreateLayer(
             parameters=LayerCreation(name=layer_name),
-            command_context=command_context,
+            command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
         return layer_name
 
     def update_layer_name(self, study: StudyInterface, layer_id: str, layer_name: str) -> None:
-        file_study = study.get_files()
-        layers = file_study.tree.get(["layers", "layers", "layers"])
-        if layer_id not in [str(layer) for layer in list(layers.keys())]:
-            raise LayerNotFound
-        command = UpdateConfig(
-            target=f"layers/layers/layers/{layer_id}",
-            data=layer_name,
+        command = UpdateLayerName(
+            parameters=LayerUpdate(id=layer_id, name=layer_name),
             command_context=self._command_context,
             study_version=study.version,
         )

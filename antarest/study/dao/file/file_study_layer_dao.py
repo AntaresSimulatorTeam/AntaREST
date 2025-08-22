@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
-from antarest.study.business.model.layer_model import Layer
+from antarest.study.business.model.layer_model import Layer, LayerUpdate
 from antarest.study.dao.api.layer_dao import LayerDao
 from antarest.study.storage.rawstudy.model.filesystem.config.layer import serialize_layers
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -79,5 +79,18 @@ class FileStudyLayerDao(LayerDao, ABC):
             raise LayerNotFound
 
         del layers[layer_id]
+
+        file_study.tree.save(layers, ["layers", "layers", "layers"])
+
+    @override
+    def update_layer_name(self, layer: LayerUpdate) -> None:
+        new_layer = layer
+        file_study = self.get_file_study()
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+
+        if layer.id not in [str(layer) for layer in list(layers.keys())]:
+            raise LayerNotFound
+
+        layers[new_layer.id] = new_layer.name
 
         file_study.tree.save(layers, ["layers", "layers", "layers"])
