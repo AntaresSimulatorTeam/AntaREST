@@ -315,9 +315,9 @@ def update_ruleset(base: Ruleset, update: Ruleset) -> None:
 
 
 def update_rulesets(base: Rulesets, update: Rulesets) -> None:
-    lower_case = {k.lower(): v for k, v in update.items()}
-    for name, ruleset in lower_case.items():
-        if name.lower() not in base:
+    lower_case_base = {k.lower(): v for k, v in base.items()}
+    for name, ruleset in update.items():
+        if name.lower() not in lower_case_base:
             base[name] = ruleset
         else:
-            update_ruleset(base[name.lower()], ruleset)
+            update_ruleset(lower_case_base[name.lower()], ruleset)
