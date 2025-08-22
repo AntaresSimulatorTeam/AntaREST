@@ -28,7 +28,7 @@ from antarest.study.business.model.scenario_builder_model import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
-RuleValue = int | float | RandType
+RuleValue = int | float | RandType | None
 RulesetFileData = Mapping[str, RuleValue]
 RulesetsFileData = Mapping[str, RulesetFileData]
 
@@ -122,12 +122,22 @@ def serialize_rulesets(rulesets: Rulesets) -> RulesetsFileData:
     return sections
 
 
-def _add_value_simple(values: AreaScenarios, key: str, year: str, value: int | float) -> None:
+def _add_value_simple(values: AreaScenarios, key: str, year: str, value: RuleValue) -> None:
+    if value is None:
+        value = RANDOM
     values.setdefault(key, {})[year] = value
 
 
-def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: str, value: int | float) -> None:
+def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: str, value: RuleValue) -> None:
+    if value is None:
+        value = RANDOM
     values.setdefault(key1, {}).setdefault(key2, {})[year] = value
+
+
+def _to_percent(value: RuleValue) -> RuleValue:
+    if isinstance(value, (int, float)):
+        return 100 * value
+    return value
 
 
 def parse_ruleset(ruleset_data: RulesetFileData) -> Ruleset:
@@ -139,8 +149,6 @@ def parse_ruleset(ruleset_data: RulesetFileData) -> Ruleset:
     """
     ruleset = Ruleset()
     for key, value in ruleset_data.items():
-        if value == RANDOM:
-            continue
         symbol, *parts = key.split(",")
         scenario_type = _SCENARIO_TYPE_FOR_SYMBOL.get(symbol)
         match scenario_type:
@@ -155,10 +163,10 @@ def parse_ruleset(ruleset_data: RulesetFileData) -> Ruleset:
                 _add_value_simple(ruleset.hydro, area_id, year, value)
             case ScenarioType.HYDRO_INITIAL_LEVEL:
                 area_id, year = parts
-                _add_value_simple(ruleset.hydro_initial_levels, area_id, year, value * 100)
+                _add_value_simple(ruleset.hydro_initial_levels, area_id, year, _to_percent(value))
             case ScenarioType.HYDRO_FINAL_LEVEL:
                 area_id, year = parts
-                _add_value_simple(ruleset.hydro_final_levels, area_id, year, value * 100)
+                _add_value_simple(ruleset.hydro_final_levels, area_id, year, _to_percent(value))
             case ScenarioType.HYDRO_GENERATION_POWER:
                 area_id, year = parts
                 _add_value_simple(ruleset.hydro_generation_power, area_id, year, value)

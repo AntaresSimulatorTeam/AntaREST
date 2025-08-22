@@ -312,3 +312,12 @@ def update_ruleset(base: Ruleset, update: Ruleset) -> None:
     _update_double_mapping(base.renewable, update.renewable)
     _update_double_mapping(base.storage_inflows, update.storage_inflows)
     _update_simple_mapping(base.ntc, update.ntc)
+
+
+def update_rulesets(base: Rulesets, update: Rulesets) -> None:
+    lower_case = {k.lower(): v for k, v in update.items()}
+    for name, ruleset in lower_case.items():
+        if name.lower() not in base:
+            base[name] = ruleset
+        else:
+            update_ruleset(base[name.lower()], ruleset)

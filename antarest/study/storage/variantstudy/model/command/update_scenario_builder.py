@@ -10,12 +10,14 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Mapping, MutableMapping, Optional, cast
+from typing import Any, Dict, Final, List, Optional, cast
 
-import numpy as np
+from pydantic import TypeAdapter, model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.core.requests import CaseInsensitiveDict
+from antarest.study.business.model.scenario_builder_model import Ruleset, Rulesets, update_rulesets
+from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_rulesets, serialize_rulesets
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -38,6 +40,9 @@ def _get_active_ruleset(study_data: FileStudy) -> str:
         return ""
 
 
+_RULESETS_ADAPTER = TypeAdapter(Rulesets)
+
+
 class UpdateScenarioBuilder(ICommand):
     """
     Command used to update a scenario builder table.
@@ -48,10 +53,24 @@ class UpdateScenarioBuilder(ICommand):
 
     command_name: CommandName = CommandName.UPDATE_SCENARIO_BUILDER
 
+    # version 2: changes from dictionary representation to Ruleset class
+    _SERIALIZATION_VERSION: Final[int] = 2
+
     # Command parameters
     # ==================
 
-    data: Dict[str, Any] | Mapping[str, Any] | MutableMapping[str, Any]
+    data: Rulesets
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                data = values["data"]
+                rulesets = parse_rulesets(data)
+                values["data"] = rulesets
+        return values
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -70,35 +89,26 @@ class UpdateScenarioBuilder(ICommand):
         """
         url = ["settings", "scenariobuilder"]
 
-        # NOTE: ruleset names are case-insensitive.
-        curr_cfg = CaseInsensitiveDict(study_data.tree.get(url))
-        for section_name, section in self.data.items():
-            if section:
-                curr_section = curr_cfg.setdefault(section_name, {})
-                for key, value in section.items():
-                    if isinstance(value, (int, float)) and not np.isnan(value):
-                        curr_section[key] = value
-                    else:
-                        curr_section.pop(key, None)
-            else:
-                curr_cfg.pop(section_name, None)
+        rulesets = parse_rulesets(study_data.tree.get(url))
+        update_rulesets(rulesets, self.data)
 
         # Ensure the active ruleset is present in the configuration.
         active_rules_scenario = _get_active_ruleset(study_data)
         if active_rules_scenario:
-            curr_cfg.setdefault(active_rules_scenario, {})
+            rulesets.setdefault(active_rules_scenario, Ruleset())
 
-        # Ensure keys are sorted in each section (to improve reading performance).
-        for section_name, section in curr_cfg.items():
-            curr_cfg[section_name] = dict(sorted(section.items()))
-
-        study_data.tree.save(curr_cfg, url)  # type: ignore
+        study_data.tree.save(serialize_rulesets(rulesets), url)  # type: ignore
         return command_succeeded(message="Scenario builder updated successfully")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.UPDATE_SCENARIO_BUILDER.value, args={"data": self.data}, study_version=self.study_version
+            action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+            version=self._SERIALIZATION_VERSION,
+            args={
+                "data": _RULESETS_ADAPTER.dump_python(self.data, mode="json", by_alias=True, exclude_none=True),
+            },
+            study_version=self.study_version,
         )
 
     @override

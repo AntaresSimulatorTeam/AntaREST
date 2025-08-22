@@ -606,13 +606,23 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+            version=2,
             args={
                 "data": {
                     "ruleset test": {
-                        "l": {"area1": {"0": 1}},
+                        "binding_constraints": {},
+                        "hydro": {},
+                        "hydro_final_levels": {},
+                        "hydro_generation_power": {},
+                        "hydro_initial_levels": {},
+                        "load": {"area1": {"0": 1}},
                         "ntc": {"area1 / area2": {"1": 23}},
-                        "t": {"area1": {"thermal": {"1": 2}}},
-                    },
+                        "renewable": {},
+                        "solar": {},
+                        "storage_inflows": {},
+                        "thermal": {"area1": {"thermal": {"1": ""}}},
+                        "wind": {},
+                    }
                 }
             },
             study_version=STUDY_VERSION_8_8,
@@ -1326,3 +1336,44 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert dto.action == "remove_multiple_binding_constraints"
     assert dto.version == 1
     assert dto.args == {"ids": ["id"]}
+
+
+def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+        version=1,
+        args={
+            "data": {
+                "ruleset test": {
+                    "l,area1,0": 1,
+                    "ntc,area1,area2,1": 23,
+                    "t,area1,1,thermal": None,
+                },
+            }
+        },
+        study_version=STUDY_VERSION_8_8,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_scenario_builder"
+    assert dto.version == 2
+    assert dto.args == {
+        "data": {
+            "ruleset test": {
+                "binding_constraints": {},
+                "hydro": {},
+                "hydro_final_levels": {},
+                "hydro_generation_power": {},
+                "hydro_initial_levels": {},
+                "load": {"area1": {"0": 1}},
+                "ntc": {"area1 / area2": {"1": 23}},
+                "renewable": {},
+                "solar": {},
+                "storage_inflows": {},
+                "thermal": {"area1": {"thermal": {"1": ""}}},
+                "wind": {},
+            }
+        }
+    }
