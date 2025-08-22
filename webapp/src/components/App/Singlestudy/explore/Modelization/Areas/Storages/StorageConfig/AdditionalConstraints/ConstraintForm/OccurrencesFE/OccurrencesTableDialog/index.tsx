@@ -16,6 +16,7 @@ import CustomScrollbar from "@/components/common/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
+  type DataGridFormState,
 } from "@/components/common/DataGridForm";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
@@ -23,16 +24,20 @@ import NumberFE from "@/components/common/fieldEditors/NumberFE";
 import NumberSelectionsFE from "@/components/common/fieldEditors/NumberSelectionsFE";
 import type { ControlPlus, SubmitHandlerPlus } from "@/components/common/Form/types";
 import useConfirm from "@/hooks/useConfirm";
+import type {
+  AdditionalConstraint,
+  AdditionalConstraintOccurrences,
+} from "@/services/api/studies/areas/storages/types";
 import { HOURS_IN } from "@/utils/date/constants";
 import { Box, Button, ButtonGroup, Divider } from "@mui/material";
 import * as R from "ramda";
 import { useMemo, useRef, useState } from "react";
 import { useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { type ConstraintValues } from "../../utils";
 import { validateOccurrences } from "../utils";
 import ColumnsResize from "./ColumnsResize";
 import {
+  getOccurrencesCountFromGridData,
   getSelectedHoursByOccurrence,
   gridDataToOccurrences,
   occurrencesToGridData,
@@ -43,14 +48,15 @@ import {
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  control: ControlPlus<ConstraintValues>;
-  occurrences: ConstraintValues["occurrences"];
-  onEdit: (occurrences: ConstraintValues["occurrences"]) => void;
+  control: ControlPlus<AdditionalConstraint>;
+  occurrences: AdditionalConstraintOccurrences;
+  onEdit: (occurrences: AdditionalConstraintOccurrences) => void;
 }
 
 function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }: Props) {
   const { t } = useTranslation();
   const [columnCount, setColumnCount] = useState(occurrences.length);
+  const [isDirty, setIsDirty] = useState(false);
   const [offset, setOffset] = useState(0);
   const dataGridApiRef = useRef<DataGridFormApi<OccurrencesData>>(null);
   const [selectedHours, setSelectedHours] = useState<number[]>(R.range(1, HOURS_IN.WEEK + 1));
@@ -83,11 +89,17 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
     if (dataGridApiRef.current) {
       const { data, setData } = dataGridApiRef.current;
 
-      setColumnCount(value);
-
       const resize = resizeRow(value);
       setData(R.map(resize, data));
     }
+  };
+
+  const handleDataChange = (data: OccurrencesData) => {
+    setColumnCount(getOccurrencesCountFromGridData(data));
+  };
+
+  const handleStateChange = ({ isDirty }: DataGridFormState) => {
+    setIsDirty(isDirty);
   };
 
   const handleSubmit = (
@@ -127,7 +139,7 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
 
       const selectedHoursByOccurrence = getSelectedHoursByOccurrence({
         hours: selectedHours,
-        occurrences: columnCount,
+        occurrencesCount: columnCount,
         offset,
       });
 
@@ -189,18 +201,25 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
                   <Button onClick={handleUpdateHours(R.not)}>{t("global.reverse")}</Button>
                 </ButtonGroup>
                 <Divider flexItem orientation="vertical" />
-                <ColumnsResize columnCount={columnCount} maxColumn={1000} onResize={handleResize} />
+                <ColumnsResize
+                  key={columnCount}
+                  defaultColumnCount={columnCount}
+                  maxColumns={1000}
+                  onResize={handleResize}
+                />
               </Box>
             </CustomScrollbar>
           </Box>
           <DataGridForm
             columns={columns}
             defaultData={defaultData}
+            onDataChange={handleDataChange}
+            onStateChange={handleStateChange}
             onSubmit={handleSubmit}
             extraActions={
               <>
                 <Button onClick={handleClose}>{t("global.close")}</Button>
-                <Button type="submit" variant="contained">
+                <Button type="submit" variant="contained" disabled={!isDirty}>
                   {t("global.apply")}
                 </Button>
               </>

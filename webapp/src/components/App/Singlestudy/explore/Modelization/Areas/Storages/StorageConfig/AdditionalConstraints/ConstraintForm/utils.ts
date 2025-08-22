@@ -12,12 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
-import * as R from "ramda";
+import type { AdditionalConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
 import type { DeepPartial } from "react-hook-form";
-
-export const pickFieldValues = (constraint: AdditionalConstraint) =>
-  R.pick(["name", "variable", "operator", "enabled", "occurrences"], constraint);
 
 /**
  * Checks if the occurrences array contains at least one occurrence with non-empty hours.
@@ -26,9 +22,7 @@ export const pickFieldValues = (constraint: AdditionalConstraint) =>
  * @returns `true` if at least one occurrence has non-empty hours, `false` otherwise.
  */
 export const isOccurrencesValid = (
-  occurrences: DeepPartial<AdditionalConstraint["occurrences"]> | undefined,
+  occurrences: DeepPartial<AdditionalConstraintOccurrences> | undefined,
 ) => {
-  return occurrences?.find((occ) => occ?.hours && occ.hours.length > 0);
+  return !!occurrences?.find((occ) => occ?.hours && occ.hours.length > 0);
 };
-
-export type ConstraintValues = ReturnType<typeof pickFieldValues>;

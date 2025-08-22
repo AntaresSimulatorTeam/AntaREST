@@ -22,7 +22,7 @@ import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import {
-  deleteAdditionalConstraints,
+  deleteAdditionalConstraint,
   getAdditionalConstraints,
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
@@ -105,11 +105,11 @@ function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Pro
     try {
       setConstraints((prevConstraints) => prevConstraints.filter(({ id }) => id !== constraintId));
 
-      await deleteAdditionalConstraints({
+      await deleteAdditionalConstraint({
         studyId,
         areaId,
         storageId,
-        constraintIds: [constraintId],
+        constraintId,
       });
     } catch (err) {
       setConstraints((prevConstraints) => [...prevConstraints, constraintToDelete]);

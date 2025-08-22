@@ -14,6 +14,10 @@
 
 import FieldSkeleton from "@/components/common/fieldEditors/FieldSkeleton";
 import type { ControlPlus } from "@/components/common/Form/types";
+import type {
+  AdditionalConstraint,
+  AdditionalConstraintOccurrences,
+} from "@/services/api/studies/areas/storages/types";
 import { compactSelections, selectionToString } from "@/utils/numberSelectionsUtils";
 import EditIcon from "@mui/icons-material/Edit";
 import {
@@ -32,13 +36,12 @@ import {
 import { useController } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
-import { type ConstraintValues } from "../utils";
 import OccurrencesTableDialog from "./OccurrencesTableDialog";
 import { validateOccurrences } from "./utils";
 
 interface Props {
-  control: ControlPlus<ConstraintValues>;
-  onChange: (occurrences: ConstraintValues["occurrences"]) => void;
+  control: ControlPlus<AdditionalConstraint>;
+  onChange: (occurrences: AdditionalConstraintOccurrences) => void;
 }
 
 function OccurrencesFE({ control, onChange }: Props) {
@@ -62,7 +65,7 @@ function OccurrencesFE({ control, onChange }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (newOccurrences: ConstraintValues["occurrences"]) => {
+  const handleChange = (newOccurrences: AdditionalConstraintOccurrences) => {
     field.onChange(newOccurrences);
     onChange(newOccurrences);
   };

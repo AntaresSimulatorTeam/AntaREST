@@ -21,12 +21,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  columnCount: number;
-  maxColumn: number;
+  defaultColumnCount: number;
+  maxColumns: number;
   onResize: (value: number) => void;
 }
 
-function ColumnsResize({ columnCount, maxColumn, onResize }: Props) {
+function ColumnsResize({ defaultColumnCount: columnCount, maxColumns, onResize }: Props) {
   const { t } = useTranslation();
   const [resizeValue, setResizeValue] = useState(columnCount);
 
@@ -36,7 +36,7 @@ function ColumnsResize({ columnCount, maxColumn, onResize }: Props) {
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
-    setResizeValue(R.clamp(1, maxColumn, value));
+    setResizeValue(R.clamp(1, maxColumns, value));
   };
 
   const handleClick = () => {

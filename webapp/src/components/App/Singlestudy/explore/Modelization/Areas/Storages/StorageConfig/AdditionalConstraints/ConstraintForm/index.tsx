@@ -18,7 +18,7 @@ import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import Matrix from "@/components/common/Matrix";
 import {
   getAdditionalConstraint,
-  updateAdditionalConstraints,
+  updateAdditionalConstraint,
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
 import DatasetIcon from "@mui/icons-material/Dataset";
@@ -27,7 +27,6 @@ import { Button } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import Fields from "./Fields";
-import { pickFieldValues, type ConstraintValues } from "./utils";
 
 interface Props {
   studyId: string;
@@ -50,37 +49,19 @@ function ConstraintForm({
   const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
 
   ////////////////////////////////////////////////////////////////
-  // Functions
+  // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const getDefaultValues = async () => {
-    const constraint = await getAdditionalConstraint({
+  const handleSubmit = ({ dirtyValues, values }: SubmitHandlerPlus<AdditionalConstraint>) => {
+    const { id, name, occurrences, ...rest } = dirtyValues;
+
+    return updateAdditionalConstraint({
       studyId,
       areaId,
       storageId,
       constraintId,
+      values: occurrences ? { ...rest, occurrences: values.occurrences } : rest,
     });
-
-    return pickFieldValues(constraint);
-  };
-
-  ////////////////////////////////////////////////////////////////
-  // Event handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<ConstraintValues>) => {
-    const { name, occurrences, ...newValues } = dirtyValues;
-
-    const updatedConstraints = await updateAdditionalConstraints({
-      studyId,
-      areaId,
-      storageId,
-      constraints: {
-        [constraintId]: { ...newValues, occurrences: occurrences?.filter(Boolean) },
-      },
-    });
-
-    return pickFieldValues(updatedConstraints[0]);
   };
 
   const handleDeleteClick = () => {
@@ -96,7 +77,15 @@ function ConstraintForm({
       <Form
         key={`${studyId}-${areaId}-${storageId}-${constraintId}`}
         onSubmit={handleSubmit}
-        config={{ defaultValues: getDefaultValues }}
+        config={{
+          defaultValues: () =>
+            getAdditionalConstraint({
+              studyId,
+              areaId,
+              storageId,
+              constraintId,
+            }),
+        }}
         enableUndoRedo
         extraActions={
           <>

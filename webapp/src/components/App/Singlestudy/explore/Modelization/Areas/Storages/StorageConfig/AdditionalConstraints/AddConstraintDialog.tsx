@@ -18,7 +18,7 @@ import StringFE from "@/components/common/fieldEditors/StringFE";
 import SwitchFE from "@/components/common/fieldEditors/SwitchFE";
 import Fieldset from "@/components/common/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/common/Form/types";
-import { createAdditionalConstraints } from "@/services/api/studies/areas/storages";
+import { createAdditionalConstraint } from "@/services/api/studies/areas/storages";
 import type {
   AdditionalConstraint,
   AdditionalConstraintCreation,
@@ -53,20 +53,16 @@ function AddConstraintDialog({
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
-    return createAdditionalConstraints({
+  const handleSubmit = async ({ values }: SubmitHandlerPlus<AdditionalConstraintCreation>) => {
+    const createdConstraint = await createAdditionalConstraint({
       studyId,
       areaId,
       storageId,
-      constraints: [values],
+      values,
     });
-  };
 
-  const handleSubmitSuccessful = (
-    _: SubmitHandlerPlus<AdditionalConstraintCreation>,
-    submitResult: AdditionalConstraint[],
-  ) => {
-    onSave(submitResult[0]);
+    onSave(createdConstraint);
+
     onClose();
   };
 
@@ -81,7 +77,6 @@ function AddConstraintDialog({
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={handleSubmitSuccessful}
       config={{ defaultValues: DEFAULT_CONSTRAINT_VALUES }}
     >
       {({ control }) => (

@@ -64,10 +64,29 @@ export function compactSelections(selections: NumberOrRange[]) {
   return compacted;
 }
 
+/**
+ * Converts a number or a range into its string representation.
+ *
+ * @example
+ * selectionToString(8); // Returns: "8"
+ * selectionToString([1, 8]); // Returns: "1-8"
+ *
+ * @param selection - A number or a range.
+ * @returns A string representation of the selection.
+ */
 export function selectionToString(selection: NumberOrRange) {
-  return Array.isArray(selection) ? selection.join(RANGE_SEPARATOR) : selection;
+  return Array.isArray(selection) ? selection.join(RANGE_SEPARATOR) : selection.toString();
 }
 
+/**
+ * Converts an array of numbers and/or ranges into a string representation.
+ *
+ * @example
+ * selectionsToString([8, 1, 2, [4, 6]]); // Returns: "8, 1, 2, 4-6"
+ *
+ * @param selections - An array of numbers and/or ranges.
+ * @returns A string representation of the selections.
+ */
 export function selectionsToString(selections: NumberOrRange[]) {
   return selections.map(selectionToString).join(SELECTIONS_SEPARATOR + " ");
 }
@@ -99,6 +118,14 @@ export function stringToSelections(selectionString: string) {
 
 /**
  * Checks if a selection (number or range, or a string representation of either) is valid.
+ *
+ * @see {@link isNumericValue} For checking if a value is numeric.
+ *
+ * @example
+ * isSelectionValid("8", 10); // Returns: `true`
+ * isSelectionValid("1-10", 10); // Returns: `true`
+ * isSelectionValid("1-11", 10); // Returns: `false`
+ * isSelectionValid("foo", 10); // Returns: `false`
  *
  * @param value - A selection.
  * @param maxValue - The maximum allowed value for the selection.
@@ -132,6 +159,12 @@ export function isSelectionValid(value: string | NumberOrRange, maxValue: number
 
 /**
  * Checks if selections (numbers and/or ranges, or a string representation of them) is valid.
+ *
+ * @see {@link isSelectionValid}
+ *
+ * @example
+ * isSelectionsValid("8, 1-4, 9", 10); // Returns: `true`
+ * isSelectionsValid("1-5, 11", 10); // Returns: `false`
  *
  * @param value - The selections.
  * @param maxValue - The maximum allowed value for the selections.

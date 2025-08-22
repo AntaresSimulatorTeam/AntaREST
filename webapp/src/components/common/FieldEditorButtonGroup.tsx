@@ -21,7 +21,7 @@ export interface FieldEditorButtonGroupProps {
     React.ReactElement<Pick<ButtonProps, "variant" | "size" | "sx">>,
   ];
   size?: TextFieldProps["size"];
-  tooltip?: string;
+  tooltip?: React.ReactNode;
 }
 
 function FieldEditorButtonGroup({ children, size, tooltip }: FieldEditorButtonGroupProps) {

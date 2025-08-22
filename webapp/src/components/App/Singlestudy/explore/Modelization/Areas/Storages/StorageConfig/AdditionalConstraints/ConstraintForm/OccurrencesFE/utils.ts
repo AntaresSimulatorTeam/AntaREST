@@ -13,9 +13,10 @@
  */
 
 import i18n from "@/i18n";
-import { type ConstraintValues, isOccurrencesValid } from "../utils";
+import type { AdditionalConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
+import { isOccurrencesValid } from "../utils";
 
-export function validateOccurrences(v: ConstraintValues["occurrences"]): string | true {
+export function validateOccurrences(v: AdditionalConstraintOccurrences): string | true {
   if (!isOccurrencesValid(v)) {
     return i18n.t("study.modelization.storages.additionalConstraints.occurrences.noEmpty");
   }

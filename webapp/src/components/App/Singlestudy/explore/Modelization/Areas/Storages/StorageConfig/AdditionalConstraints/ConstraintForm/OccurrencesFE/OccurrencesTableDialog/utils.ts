@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import type { AdditionalConstraintOccurrences } from "@/services/api/studies/areas/storages/types";
 import { HOURS_IN } from "@/utils/date/constants";
 import * as R from "ramda";
-import type { ConstraintValues } from "../../utils";
 
 export type RowData = Record<string, boolean>;
 
@@ -26,7 +26,7 @@ export const resizeRow = R.curry((resizeValue: number, rowData: RowData) => {
   return R.zipObj(indexes, values);
 });
 
-export const occurrencesToGridData = (occurrences: ConstraintValues["occurrences"]) => {
+export const occurrencesToGridData = (occurrences: AdditionalConstraintOccurrences) => {
   const data: OccurrencesData = {};
 
   for (let hour = 1; hour <= HOURS_IN.WEEK; hour++) {
@@ -42,8 +42,15 @@ export const occurrencesToGridData = (occurrences: ConstraintValues["occurrences
   return data;
 };
 
-export const gridDataToOccurrences = (data: OccurrencesData): ConstraintValues["occurrences"] => {
-  return Object.entries(data).reduce<ConstraintValues["occurrences"]>(
+export const getOccurrencesCountFromGridData = (data: OccurrencesData) => {
+  const row = Object.values(data)[0] || {};
+  return Object.keys(row).length;
+};
+
+export const gridDataToOccurrences = (data: OccurrencesData): AdditionalConstraintOccurrences => {
+  // `OccurrencesData` and `RowData` use integer keys, so order is guaranteed
+  // when using `Object.entries` and `Object.values`
+  return Object.entries(data).reduce<AdditionalConstraintOccurrences>(
     (occurrencesAcc, [hour, rowData]) => {
       Object.values(rowData).forEach((active, i) => {
         occurrencesAcc[i] ??= { hours: [] };
@@ -60,19 +67,19 @@ export const gridDataToOccurrences = (data: OccurrencesData): ConstraintValues["
 
 export function getSelectedHoursByOccurrence({
   hours,
-  occurrences,
+  occurrencesCount,
   offset,
 }: {
   hours: number[];
-  occurrences: number;
+  occurrencesCount: number;
   offset: number;
 }) {
-  // Hour elections are only applied to the first occurrence
+  // Only applied to the first occurrence
   if (offset === 0) {
     return [hours];
   }
 
-  return Array.from({ length: occurrences }, (_, occurrenceIndex) => {
+  return Array.from({ length: occurrencesCount }, (_, occurrenceIndex) => {
     const shift = occurrenceIndex * offset;
 
     // `hour - 1`: Converts 1-based hour to 0-based for modulo arithmetic.
