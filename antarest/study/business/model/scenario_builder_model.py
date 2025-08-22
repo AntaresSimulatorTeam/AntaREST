@@ -79,6 +79,9 @@ HydroLevelsScenarios: TypeAlias = dict[AreaId, McYearToValue]
 
 AnyScenarios: TypeAlias = AreaScenarios | AreaItemsScenarios | LinkScenarios | HydroLevelsScenarios
 
+_OneLevelScenarios = dict[str, McYearToTimeSeries]
+_TwoLevelScenarios = dict[str, dict[str, McYearToTimeSeries]]
+
 # The unique instance of RandType
 RANDOM: RandType = ""
 
@@ -161,20 +164,6 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
                 self.ntc = cast(AreaScenarios, scenarios)
             case _:
                 raise ValueError(f"Unknown scenario type {scenario_type}")
-
-    def get_cluster(self, scenario_type: ScenarioType) -> AreaItemsScenarios:
-        if not _is_cluster(scenario_type):
-            raise ValueError(f"Scenario type {scenario_type} is not a cluster scenario")
-        return cast(AreaItemsScenarios, self.get(scenario_type))
-
-    def get_simple(self, scenario_type: ScenarioType) -> AreaScenarios:
-        if _is_cluster(scenario_type):
-            raise ValueError(f"Scenario type {scenario_type} is a cluster scenario")
-        return cast(AreaScenarios, self.get(scenario_type))
-
-
-def _is_cluster(scenario_type: ScenarioType) -> bool:
-    return scenario_type in (ScenarioType.THERMAL, ScenarioType.RENEWABLE, ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
 
 
 Rulesets: TypeAlias = dict[str, Ruleset]
@@ -306,12 +295,12 @@ def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries) -> Non
     base.update(update)
 
 
-def _update_simple_mapping(base: AreaScenarios, update: AreaScenarios) -> None:
+def _update_simple_mapping(base: _OneLevelScenarios, update: _OneLevelScenarios) -> None:
     for name, mapping in update.items():
         _update_mapping(base.setdefault(name, {}), mapping)
 
 
-def _update_double_mapping(base: AreaItemsScenarios, update: AreaItemsScenarios) -> None:
+def _update_double_mapping(base: _TwoLevelScenarios, update: _TwoLevelScenarios) -> None:
     for name, mapping in update.items():
         _update_simple_mapping(base.setdefault(name, {}), mapping)
 
