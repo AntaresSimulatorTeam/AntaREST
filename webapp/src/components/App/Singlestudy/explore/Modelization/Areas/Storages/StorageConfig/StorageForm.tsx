@@ -26,7 +26,7 @@ import SwitchFE from "../../../../../../../common/fieldEditors/SwitchFE";
 import {
   convertPercentageToRatio,
   convertRatioToPercentage,
-  type FormattedStorage,
+  type FormalizedStorage,
   getStorage,
   type Storage,
   STORAGE_GROUPS,
@@ -56,7 +56,7 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormattedStorage>) => {
+  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
     const updatedStorage = await updateStorage(
       studyId,
       areaId,

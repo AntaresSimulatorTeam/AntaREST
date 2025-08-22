@@ -57,7 +57,7 @@ export interface Storage<LegacyGroup extends boolean = false> {
   penalizeVariationWithdrawal: boolean | null;
 }
 
-export type FormattedStorage = ExcludeNullFromProps<Storage>;
+export type FormalizedStorage = ExcludeNullFromProps<Storage>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -91,14 +91,14 @@ const getStorageUrl = (
 ////////////////////////////////////////////////////////////////
 
 /**
- * Formats a storage object by ensuring all properties are defined.
+ * Formalizes a storage object by ensuring all properties are defined.
  * Using condition with the study version doesn't allow TypeScript
  * to infer properties types.
  *
  * @param storage - Storage object to formalize.
  * @returns Formalized storage object with all properties defined.
  */
-function formatStorage(storage: Storage): FormattedStorage {
+function formalizeStorage(storage: Storage): FormalizedStorage {
   return {
     ...storage,
     enabled: storage.enabled ?? false,
@@ -110,7 +110,7 @@ function formatStorage(storage: Storage): FormattedStorage {
 
 export async function getStorages(studyId: StudyMetadata["id"], areaId: Area["name"]) {
   const res = await client.get<Storage[]>(getStoragesUrl(studyId, areaId));
-  return res.data.map(formatStorage);
+  return res.data.map(formalizeStorage);
 }
 
 export async function getStorage(
@@ -119,7 +119,7 @@ export async function getStorage(
   storageId: Storage["id"],
 ) {
   const res = await client.get<Storage>(getStorageUrl(studyId, areaId, storageId));
-  return formatStorage(res.data);
+  return formalizeStorage(res.data);
 }
 
 export async function updateStorage(
@@ -138,7 +138,7 @@ export async function createStorage(
   data: PartialExceptFor<Storage, "name">,
 ) {
   const res = await client.post<Storage>(getStoragesUrl(studyId, areaId), data);
-  return formatStorage(res.data);
+  return formalizeStorage(res.data);
 }
 
 export async function duplicateStorage(
@@ -152,7 +152,7 @@ export async function duplicateStorage(
     null,
     { params: { newName } },
   );
-  return formatStorage(res.data);
+  return formalizeStorage(res.data);
 }
 
 export async function deleteStorages(

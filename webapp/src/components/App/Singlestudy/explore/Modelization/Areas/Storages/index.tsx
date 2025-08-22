@@ -31,10 +31,10 @@ import {
   getStorages,
   getStoragesTotals,
   STORAGE_GROUPS,
-  type FormattedStorage,
+  type FormalizedStorage,
 } from "./utils";
 
-const columnHelper = createMRTColumnHelper<FormattedStorage>();
+const columnHelper = createMRTColumnHelper<FormalizedStorage>();
 
 function Storages() {
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -148,16 +148,16 @@ function Storages() {
     return createStorage(study.id, areaId, values);
   };
 
-  const handleDuplicate = (row: FormattedStorage, newName: string) => {
+  const handleDuplicate = (row: FormalizedStorage, newName: string) => {
     return duplicateStorage(study.id, areaId, row.id, newName);
   };
 
-  const handleDelete = (rows: FormattedStorage[]) => {
+  const handleDelete = (rows: FormalizedStorage[]) => {
     const ids = rows.map((row) => row.id);
     return deleteStorages(study.id, areaId, ids);
   };
 
-  const handleNameClick = (row: FormattedStorage) => {
+  const handleNameClick = (row: FormalizedStorage) => {
     navigate(row.id);
   };
 
