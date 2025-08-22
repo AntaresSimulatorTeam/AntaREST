@@ -227,10 +227,6 @@ class MatrixContentRepository:
         Returns:
             The matrix content or `None` if the file is not found.
         """
-        # for internal_format in InternalMatrixFormat:
-        #     matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
-        #     if matrix_path.exists():
-        #         return load_matrix(internal_format, matrix_path, matrix_version)
         matrix_path, internal_format = self._get_matrix_path_n_format(matrix_hash)
         if matrix_path:
             return load_matrix(internal_format, matrix_path, matrix_version)
