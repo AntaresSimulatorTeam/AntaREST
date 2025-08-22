@@ -16,8 +16,6 @@ Serialization and parsing for scenariobuilder.dat file
 
 from typing import Mapping, cast
 
-from pydantic import TypeAdapter
-
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
     AreaItemsScenarios,
@@ -33,14 +31,6 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 RuleValue = int | float | RandType
 RulesetFileData = Mapping[str, RuleValue]
 RulesetsFileData = Mapping[str, RulesetFileData]
-
-_RULESETS_ADAPTER: TypeAdapter[Rulesets] = TypeAdapter(Rulesets)
-
-# Symbols used in scenario builder data
-_AREA_RELATED_SYMBOLS = "l", "h", "w", "s", "bc", "hgp"
-_LINK_RELATED_SYMBOLS = ("ntc",)
-_HYDRO_LEVEL_RELATED_SYMBOLS = "hl", "hfl"
-_CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
 
 _HYDRO_LEVEL_PERCENT = 100
 
@@ -121,7 +111,8 @@ def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
     _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
     _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
     _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
-    return section
+
+    return dict(sorted(section.items()))
 
 
 def serialize_rulesets(rulesets: Rulesets) -> RulesetsFileData:
