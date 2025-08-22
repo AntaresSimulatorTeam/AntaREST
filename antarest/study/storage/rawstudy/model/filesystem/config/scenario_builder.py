@@ -136,7 +136,7 @@ def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: st
 
 def _to_percent(value: RuleValue) -> RuleValue:
     if isinstance(value, (int, float)):
-        return 100 * value
+        return int(100 * value)
     return value
 
 
