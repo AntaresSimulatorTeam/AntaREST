@@ -14,7 +14,7 @@
 Serialization and parsing for scenariobuilder.dat file
 """
 
-from typing import Mapping
+from typing import Mapping, cast
 
 from pydantic import TypeAdapter
 
@@ -28,10 +28,11 @@ from antarest.study.business.model.scenario_builder_model import (
     Rulesets,
     ScenarioType,
 )
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 RuleValue = int | float | RandType
-RulesetSection = Mapping[str, RuleValue]
-RulesetsSections = Mapping[str, RulesetSection]
+RulesetFileData = Mapping[str, RuleValue]
+RulesetsFileData = Mapping[str, RulesetFileData]
 
 _RULESETS_ADAPTER: TypeAdapter[Rulesets] = TypeAdapter(Rulesets)
 
@@ -43,7 +44,7 @@ _CLUSTER_RELATED_SYMBOLS = "t", "r", "sts"
 
 _HYDRO_LEVEL_PERCENT = 100
 
-SYMBOLS_BY_SCENARIO_TYPES = {
+_SCENARIO_TYPE_SYMBOLS = {
     ScenarioType.LOAD: "l",
     ScenarioType.HYDRO: "h",
     ScenarioType.WIND: "w",
@@ -58,7 +59,7 @@ SYMBOLS_BY_SCENARIO_TYPES = {
     ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
 }
 
-SCENARIO_TYPE_BY_SYMBOL = {v: k for k, v in SYMBOLS_BY_SCENARIO_TYPES.items()}
+_SCENARIO_TYPE_FOR_SYMBOL = {v: k for k, v in _SCENARIO_TYPE_SYMBOLS.items()}
 
 
 def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
@@ -123,7 +124,7 @@ def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
     return section
 
 
-def serialize_rulesets(rulesets: Rulesets) -> RulesetsSections:
+def serialize_rulesets(rulesets: Rulesets) -> RulesetsFileData:
     sections = {}
     for ruleset_name, ruleset in rulesets.items():
         sections[ruleset_name] = serialize_ruleset(ruleset)
@@ -138,7 +139,7 @@ def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: st
     values.setdefault(key1, {}).setdefault(key2, {})[year] = value
 
 
-def parse_ruleset(ruleset_data: RulesetSection) -> Ruleset:
+def parse_ruleset(ruleset_data: RulesetFileData) -> Ruleset:
     """
     Parses rules data as read from INI file, and populates a Ruleset object with it.
 
@@ -150,7 +151,7 @@ def parse_ruleset(ruleset_data: RulesetSection) -> Ruleset:
         if value == RANDOM:
             continue
         symbol, *parts = key.split(",")
-        scenario_type = SCENARIO_TYPE_BY_SYMBOL.get(symbol)
+        scenario_type = _SCENARIO_TYPE_FOR_SYMBOL.get(symbol)
         match scenario_type:
             case ScenarioType.LOAD:
                 area_id, year = parts
@@ -193,24 +194,24 @@ def parse_ruleset(ruleset_data: RulesetSection) -> Ruleset:
     return Ruleset.model_validate(ruleset)
 
 
-def parse_rulesets(rulesets_data: RulesetsSections) -> Rulesets:
+def parse_rulesets(rulesets_data: RulesetsFileData) -> Rulesets:
     rulesets: Rulesets = {}
     for ruleset_name, data in rulesets_data.items():
         rulesets[ruleset_name] = parse_ruleset(data)
     return rulesets
 
 
-_SCENARIO_TYPE_SYMBOLS = {
-    ScenarioType.LOAD: "l",
-    ScenarioType.HYDRO: "h",
-    ScenarioType.WIND: "w",
-    ScenarioType.SOLAR: "s",
-    ScenarioType.THERMAL: "t",
-    ScenarioType.RENEWABLE: "r",
-    ScenarioType.LINK: "ntc",
-    ScenarioType.BINDING_CONSTRAINTS: "bc",
-    ScenarioType.HYDRO_INITIAL_LEVEL: "hl",
-    ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
-    ScenarioType.HYDRO_GENERATION_POWER: "hgp",
-    ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
-}
+def extract_ruleset_data(
+    file_study: FileStudy,
+    ruleset_name: str,
+    scenario_type: ScenarioType,
+) -> RulesetFileData:
+    """
+    Extracts from file study only the relevant data for the provided ruleset name and scenario type.
+    """
+    try:
+        suffix = _SCENARIO_TYPE_SYMBOLS[scenario_type]
+        url = ["settings", "scenariobuilder", ruleset_name, suffix]
+        return cast(RulesetFileData, file_study.tree.get(url))
+    except KeyError:
+        return {}

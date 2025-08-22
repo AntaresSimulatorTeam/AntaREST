@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, cast
+from typing import cast
 
 from antarest.study.business.model.scenario_builder_model import (
     GenericScenarios,
@@ -23,8 +23,8 @@ from antarest.study.business.model.scenario_builder_model import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
-    _SCENARIO_TYPE_SYMBOLS,
-    RulesetsSections,
+    RulesetsFileData,
+    extract_ruleset_data,
     parse_ruleset,
     parse_rulesets,
     serialize_ruleset,
@@ -33,20 +33,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-def _get_ruleset_config(
-    file_study: FileStudy,
-    ruleset_name: str,
-    symbol: str,
-) -> Dict[str, int | float]:
-    try:
-        suffix = f"/{symbol}"
-        url = f"settings/scenariobuilder/{ruleset_name}{suffix}".split("/")
-        ruleset_cfg = cast(Dict[str, int | float], file_study.tree.get(url))
-    except KeyError:
-        ruleset_cfg = {}
-    return ruleset_cfg
 
 
 def _get_nb_years(file_study: FileStudy) -> int:
@@ -86,12 +72,15 @@ def _get_active_ruleset_name(file_study: FileStudy, default_ruleset: str = "Defa
     return active_ruleset
 
 
-def _build_ruleset(file_study: FileStudy, symbol: str) -> Ruleset:
+def _read_ruleset(file_study: FileStudy, scenario_type: ScenarioType) -> Ruleset:
     ruleset_name = _get_active_ruleset_name(file_study)
     nb_years = _get_nb_years(file_study)
-    ruleset_config = _get_ruleset_config(file_study, ruleset_name, symbol)
+    ruleset_config = extract_ruleset_data(file_study, ruleset_name, scenario_type)
+
     complete_ruleset = initialize_ruleset(
-        years=[str(y) for y in range(1, nb_years + 1)], index=study_index(file_study.tree)
+        years=[str(y) for y in range(1, nb_years + 1)],
+        index=study_index(file_study.tree),
+        scenario_types={scenario_type},
     )
     file_ruleset = parse_ruleset(ruleset_config)
     update_ruleset(complete_ruleset, file_ruleset)
@@ -103,11 +92,11 @@ class ScenarioBuilderManager:
         self._command_context = command_context
 
     def get_config(self, study: StudyInterface) -> Rulesets:
-        sections = cast(RulesetsSections, study.get_files().tree.get(["settings", "scenariobuilder"]))
+        sections = cast(RulesetsFileData, study.get_files().tree.get(["settings", "scenariobuilder"]))
         return parse_rulesets(sections)
 
     def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
-        sections: RulesetsSections = serialize_rulesets(rulesets)
+        sections: RulesetsFileData = serialize_rulesets(rulesets)
 
         command = UpdateScenarioBuilder(
             data=sections, command_context=self._command_context, study_version=study.version
@@ -115,9 +104,8 @@ class ScenarioBuilderManager:
         study.add_commands([command])
 
     def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> GenericScenarios:
-        symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
         file_study = study.get_files()
-        ruleset = _build_ruleset(file_study, symbol)
+        ruleset = _read_ruleset(file_study, scenario_type)
 
         # Extract the table form for the given scenario type
         return ruleset.get(scenario_type)

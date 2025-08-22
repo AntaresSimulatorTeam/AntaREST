@@ -249,23 +249,50 @@ def _create_cluster_scenarios_mapping(names: Mapping[str, Iterable[str]], years:
     return {n: _create_scenarios_mapping(cluster_names, years) for n, cluster_names in names.items()}
 
 
-def initialize_ruleset(years: list[str], index: StudyIndex) -> Ruleset:
+def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[ScenarioType] | None = None) -> Ruleset:
     """
     Creates a ruleset initialized with random ("") for all items and years of a study.
+
+    Optionally, you may choose to initialize only certain scenario types.
     """
+    if scenario_types is None:
+        scenario_types = set(ScenarioType)
+
     return Ruleset(
-        load=_create_scenarios_mapping(names=index.area_ids, years=years),
-        thermal=_create_cluster_scenarios_mapping(names=index.thermal_ids, years=years),
-        hydro=_create_scenarios_mapping(names=index.area_ids, years=years),
-        hydro_initial_levels=_create_scenarios_mapping(names=index.area_ids, years=years),
-        hydro_final_levels=_create_scenarios_mapping(names=index.area_ids, years=years),
-        hydro_generation_power=_create_scenarios_mapping(names=index.area_ids, years=years),
-        solar=_create_scenarios_mapping(names=index.area_ids, years=years),
-        wind=_create_scenarios_mapping(names=index.area_ids, years=years),
-        renewable=_create_cluster_scenarios_mapping(names=index.renewable_ids, years=years),
-        storage_inflows=_create_cluster_scenarios_mapping(names=index.storage_ids, years=years),
-        binding_constraints=_create_scenarios_mapping(names=index.bc_group_ids, years=years),
-        ntc=_create_scenarios_mapping(names=index.link_ids, years=years),
+        load=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.LOAD in scenario_types
+        else {},
+        thermal=_create_cluster_scenarios_mapping(names=index.thermal_ids, years=years)
+        if ScenarioType.THERMAL in scenario_types
+        else {},
+        hydro=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO in scenario_types
+        else {},
+        hydro_initial_levels=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO_INITIAL_LEVEL in scenario_types
+        else {},
+        hydro_final_levels=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO_FINAL_LEVEL in scenario_types
+        else {},
+        hydro_generation_power=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.HYDRO_GENERATION_POWER in scenario_types
+        else {},
+        solar=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.SOLAR in scenario_types
+        else {},
+        wind=_create_scenarios_mapping(names=index.area_ids, years=years)
+        if ScenarioType.WIND in scenario_types
+        else {},
+        renewable=_create_cluster_scenarios_mapping(names=index.renewable_ids, years=years)
+        if ScenarioType.RENEWABLE in scenario_types
+        else {},
+        storage_inflows=_create_cluster_scenarios_mapping(names=index.storage_ids, years=years)
+        if ScenarioType.SHORT_TERM_STORAGE_INFLOWS in scenario_types
+        else {},
+        binding_constraints=_create_scenarios_mapping(names=index.bc_group_ids, years=years)
+        if ScenarioType.BINDING_CONSTRAINTS in scenario_types
+        else {},
+        ntc=_create_scenarios_mapping(names=index.link_ids, years=years) if ScenarioType.LINK in scenario_types else {},
     )
 
 
