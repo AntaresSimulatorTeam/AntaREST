@@ -13,7 +13,7 @@
 from typing import cast
 
 from antarest.study.business.model.scenario_builder_model import (
-    GenericScenarios,
+    AnyScenarios,
     Ruleset,
     Rulesets,
     ScenarioType,
@@ -103,7 +103,7 @@ class ScenarioBuilderManager:
         )
         study.add_commands([command])
 
-    def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> GenericScenarios:
+    def get_scenario_by_type(self, study: StudyInterface, scenario_type: ScenarioType) -> AnyScenarios:
         file_study = study.get_files()
         ruleset = _read_ruleset(file_study, scenario_type)
 
@@ -111,8 +111,8 @@ class ScenarioBuilderManager:
         return ruleset.get(scenario_type)
 
     def update_scenario_by_type(
-        self, study: StudyInterface, table_form: GenericScenarios, scenario_type: ScenarioType
-    ) -> GenericScenarios:
+        self, study: StudyInterface, table_form: AnyScenarios, scenario_type: ScenarioType
+    ) -> AnyScenarios:
         file_study = study.get_files()
         ruleset_update = Ruleset()
         ruleset_update.set(scenario_type, table_form)

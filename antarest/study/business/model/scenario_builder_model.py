@@ -59,21 +59,27 @@ class ScenarioType(enum.StrEnum):
         return self.value
 
 
+# Random is represented as ""
 RandType: TypeAlias = Literal[""]
 Value: TypeAlias = float | int | RandType
+
 AreaId: TypeAlias = str
 LinkId: TypeAlias = str
-ObjectId: TypeAlias = str
-ConstraintId: TypeAlias = str
+BcGroupId: TypeAlias = str
+ItemId: TypeAlias = str
+
 McYearToTimeSeries: TypeAlias = dict[str, Value]
 McYearToValue: TypeAlias = dict[str, Value]
+
 AreaScenarios: TypeAlias = dict[AreaId, McYearToTimeSeries]
 LinkScenarios: TypeAlias = dict[LinkId, McYearToTimeSeries]
-AreaItemsScenarios: TypeAlias = dict[AreaId, dict[ObjectId, McYearToTimeSeries]]
+BcGroupScenarios: TypeAlias = dict[BcGroupId, McYearToTimeSeries]
+AreaItemsScenarios: TypeAlias = dict[AreaId, dict[ItemId, McYearToTimeSeries]]
 HydroLevelsScenarios: TypeAlias = dict[AreaId, McYearToValue]
 
-GenericScenarios: TypeAlias = AreaScenarios | AreaItemsScenarios
+AnyScenarios: TypeAlias = AreaScenarios | AreaItemsScenarios | LinkScenarios | HydroLevelsScenarios
 
+# The unique instance of RandType
 RANDOM: RandType = ""
 
 
@@ -93,9 +99,9 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     hydro_generation_power: AreaScenarios = Field(default_factory=dict)
     wind: AreaScenarios = Field(default_factory=dict)
     solar: AreaScenarios = Field(default_factory=dict)
-    ntc: AreaScenarios = Field(default_factory=dict)
+    ntc: LinkScenarios = Field(default_factory=dict)
     renewable: AreaItemsScenarios = Field(default_factory=dict)
-    binding_constraints: AreaScenarios = Field(default_factory=dict)
+    binding_constraints: BcGroupScenarios = Field(default_factory=dict)
     storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
 
     def get(self, scenario_type: ScenarioType) -> AreaScenarios | AreaItemsScenarios:

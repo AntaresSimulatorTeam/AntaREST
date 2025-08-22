@@ -80,7 +80,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
-from antarest.study.business.model.scenario_builder_model import GenericScenarios, ScenarioType
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -487,7 +487,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
     )
-    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, GenericScenarios]:
+    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, AnyScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -573,8 +573,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Set MC Scenario builder config",
     )
     def update_scenario_builder_config_by_type(
-        uuid: str, scenario_type: ScenarioType, data: Dict[ScenarioType, GenericScenarios]
-    ) -> Dict[ScenarioType, GenericScenarios]:
+        uuid: str, scenario_type: ScenarioType, data: Dict[ScenarioType, AnyScenarios]
+    ) -> Dict[ScenarioType, AnyScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
 
