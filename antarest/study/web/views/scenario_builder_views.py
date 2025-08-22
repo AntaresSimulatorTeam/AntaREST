@@ -55,7 +55,10 @@ class RulesetView(AntaresBaseModel, populate_by_name=True, extra="forbid"):
         return RulesetView.model_construct(**non_empty)
 
     def to_model(self) -> Ruleset:
-        field_values = {f: getattr(self, f) or {} for f in RulesetView.model_fields.keys()}
+        field_values = {f: getattr(self, f) for f in RulesetView.model_fields.keys()}
+        for k, v in field_values.items():
+            if v is None:
+                field_values[k] = {}
         return Ruleset.model_construct(**field_values)
 
 
