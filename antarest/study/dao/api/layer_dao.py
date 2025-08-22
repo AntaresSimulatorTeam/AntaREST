@@ -29,7 +29,3 @@ class LayerDao(ReadOnlyLayerDao):
     @abstractmethod
     def delete_layer(self, layer: Layer) -> None:
         raise NotImplementedError()
-
-    @abstractmethod
-    def update_layer_name(self, layer: LayerUpdate) -> None:
-        raise NotImplementedError()

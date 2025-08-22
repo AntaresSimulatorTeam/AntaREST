@@ -41,3 +41,20 @@ class LayerUpdate(AntaresBaseModel):
 
 def create_layer(layer: LayerCreation) -> Layer:
     return Layer(name=layer.name)
+
+
+def update_layer_name(layers: List[Layer], data: LayerUpdate) -> Layer:
+    """
+    Updates a layer according to the provided update data.
+    """
+    for layer in layers:
+        if layer.name == data.id:
+            updated_layer = Layer(
+                id=layer.id,
+                name=data.name if data.name is not None else layer.name,
+                areas=layer.areas
+            )
+            return updated_layer
+
+    raise ValueError(f"Layer with id {data.name} not found")
+

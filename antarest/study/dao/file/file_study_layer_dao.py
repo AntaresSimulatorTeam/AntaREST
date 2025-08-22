@@ -82,7 +82,7 @@ class FileStudyLayerDao(LayerDao, ABC):
 
         file_study.tree.save(layers, ["layers", "layers", "layers"])
 
-    @override
+
     def update_layer_name(self, layer: LayerUpdate) -> None:
         new_layer = layer
         file_study = self.get_file_study()
