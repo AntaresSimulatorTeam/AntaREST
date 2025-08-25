@@ -250,7 +250,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         if name:
             study_service.layer_manager.update_layer_name(study_interface, layer_id, name)
         if areas:
-            study_service.layer_manager.update_layer_areas(study_interface, layer_id, areas)
+            study_service.area_manager.update_layer_areas(study_interface, layer_id, areas)
 
     @bp.delete(
         "/studies/{uuid}/layers/{layer_id}",

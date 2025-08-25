@@ -37,12 +37,9 @@ class UpdateLayerName(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
-        if self.parameters.name:
-            current_layers = list(study_data.get_layers())
-            new_layer = update_layer_name(current_layers, self.parameters)
-            study_data.save_layers(new_layer)
-        if self.parameters.areas:
-            pass
+        current_layers = list(study_data.get_layers())
+        new_layer = update_layer_name(current_layers, self.parameters)
+        study_data.save_layers(new_layer)
         return CommandOutput(status=True, message=f"Layer {self.parameters.name} updated successfully")
 
     @override
