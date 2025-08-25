@@ -18,7 +18,6 @@ from antarest.study.business.model.scenario_builder_model import (
     Rulesets,
     ScenarioType,
     initialize_ruleset,
-    study_index,
     update_ruleset,
 )
 from antarest.study.business.study_interface import StudyInterface
@@ -77,7 +76,7 @@ def _read_ruleset(file_study: FileStudy, scenario_type: ScenarioType) -> Ruleset
 
     complete_ruleset = initialize_ruleset(
         years=[str(y) for y in range(1, nb_years + 1)],
-        index=study_index(file_study.tree),
+        index=file_study.tree.config.to_study_index(),
         scenario_types={scenario_type},
     )
     file_ruleset = parse_ruleset(ruleset_config)

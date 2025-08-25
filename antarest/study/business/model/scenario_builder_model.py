@@ -15,11 +15,9 @@ import enum
 from typing import Iterable, Literal, Mapping, TypeAlias, cast
 
 from pydantic import Field
-from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 
 
 class ScenarioType(enum.StrEnum):
@@ -52,11 +50,6 @@ class ScenarioType(enum.StrEnum):
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
     SHORT_TERM_STORAGE_INFLOWS = "shortTermStorageInflows"
-
-    @override
-    def __str__(self) -> str:
-        """Return the string representation of the enum value."""
-        return self.value
 
 
 # Random is represented as ""
@@ -216,18 +209,6 @@ class StudyIndex:
     @property
     def link_ids(self) -> Iterable[str]:
         return [f"{a1} / {a2}" for a1, a2 in self._links.keys()]
-
-
-def study_index(file_study: FileStudyTree) -> StudyIndex:
-    areas = file_study.config.areas
-    return StudyIndex(
-        areas=file_study.config.areas,
-        links=((a1, a2) for a1 in areas for a2 in file_study.config.get_links(a1)),
-        bc_groups=file_study.config.get_binding_constraint_groups(),
-        thermals={a: file_study.config.get_thermal_ids(a) for a in areas},
-        renewables={a: file_study.config.get_renewable_ids(a) for a in areas},
-        storages={a: file_study.config.get_st_storage_ids(a) for a in areas},
-    )
 
 
 def _create_scenarios_mapping(names: Iterable[str], years: list[str]) -> AreaScenarios:
