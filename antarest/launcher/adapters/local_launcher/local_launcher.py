@@ -187,16 +187,17 @@ class LocalLauncher(AbstractLauncher):
             simulator_args += ["--solver-logs"]
 
         # Call the right solver
-        solver = ""
+        linear_solver = ""
         if "xpress" in options:
-            solver = "xpress"
+            linear_solver = "xpress"
         elif "coin" in options:
-            solver = "coin"
-        if solver:
+            linear_solver = "coin"
+
+        if linear_solver:
             if version >= STUDY_VERSION_9_2:
-                simulator_args += [f"--solver={solver}"]
+                simulator_args += [f"--linear-solver={linear_solver}"]
             else:
-                simulator_args.extend(["--use-ortools", f"--ortools-solver={solver}"])
+                simulator_args.extend(["--use-ortools", f"--ortools-solver={linear_solver}"])
 
         # 'xpress' specific part
         if "xpress" in options:
