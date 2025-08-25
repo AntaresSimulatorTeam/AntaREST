@@ -50,6 +50,7 @@ class ScenarioType(enum.StrEnum):
     HYDRO_FINAL_LEVEL = "hydroFinalLevels"
     HYDRO_GENERATION_POWER = "hydroGenerationPower"
     SHORT_TERM_STORAGE_INFLOWS = "shortTermStorageInflows"
+    SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS = "shortTermStorageAdditionalConstraints"
 
 
 # Random is represented as ""
@@ -60,6 +61,7 @@ AreaId: TypeAlias = str
 LinkId: TypeAlias = str
 BcGroupId: TypeAlias = str
 ItemId: TypeAlias = str
+ConstraintId: TypeAlias = str
 
 McYearToTimeSeries: TypeAlias = dict[str, Value]
 McYearToValue: TypeAlias = dict[str, Value]
@@ -69,11 +71,15 @@ LinkScenarios: TypeAlias = dict[LinkId, McYearToTimeSeries]
 BcGroupScenarios: TypeAlias = dict[BcGroupId, McYearToTimeSeries]
 AreaItemsScenarios: TypeAlias = dict[AreaId, dict[ItemId, McYearToTimeSeries]]
 HydroLevelsScenarios: TypeAlias = dict[AreaId, McYearToValue]
+StorageConstraintsScenarios: TypeAlias = dict[AreaId, dict[ItemId, dict[ConstraintId, McYearToTimeSeries]]]
 
-AnyScenarios: TypeAlias = AreaScenarios | AreaItemsScenarios | LinkScenarios | HydroLevelsScenarios
+AnyScenarios: TypeAlias = (
+    AreaScenarios | AreaItemsScenarios | LinkScenarios | HydroLevelsScenarios | StorageConstraintsScenarios
+)
 
 _OneLevelScenarios = dict[str, McYearToTimeSeries]
-_TwoLevelScenarios = dict[str, dict[str, McYearToTimeSeries]]
+_TwoLevelScenarios = dict[str, _OneLevelScenarios]
+_ThreeLevelScenarios = dict[str, _TwoLevelScenarios]
 
 # The unique instance of RandType
 RANDOM: RandType = ""
@@ -99,6 +105,7 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     renewable: AreaItemsScenarios = Field(default_factory=dict)
     binding_constraints: BcGroupScenarios = Field(default_factory=dict)
     storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
+    storage_constraints: StorageConstraintsScenarios = Field(default_factory=dict)
 
     def get(self, scenario_type: ScenarioType) -> AnyScenarios:
         res = _get_by_type(self, scenario_type)
@@ -130,6 +137,7 @@ class RulesetUpdate(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     renewable: AreaItemsScenarios | None = None
     binding_constraints: BcGroupScenarios | None = None
     storage_inflows: AreaItemsScenarios | None = None
+    storage_constraints: StorageConstraintsScenarios | None = None
 
     def get(self, scenario_type: ScenarioType) -> AnyScenarios | None:
         return _get_by_type(self, scenario_type)
@@ -164,6 +172,8 @@ def _get_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType) -> 
             return self.binding_constraints
         case ScenarioType.LINK:
             return self.ntc
+        case ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
+            return self.storage_constraints
         case _:
             raise ValueError(f"Unknown scenario type {scenario_type}")
 
@@ -194,6 +204,8 @@ def _set_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType, sce
             self.binding_constraints = cast(AreaScenarios, scenarios)
         case ScenarioType.LINK:
             self.ntc = cast(AreaScenarios, scenarios)
+        case ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
+            self.storage_constraints = cast(StorageConstraintsScenarios, scenarios)
         case _:
             raise ValueError(f"Unknown scenario type {scenario_type}")
 
@@ -201,12 +213,27 @@ def _set_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType, sce
 RulesetsUpdate: TypeAlias = dict[str, RulesetUpdate]
 
 
-def _create_scenarios_mapping(names: Iterable[str], years: list[str]) -> AreaScenarios:
+def _create_1_level_scenarios_mapping(names: Iterable[str], years: list[str]) -> _OneLevelScenarios:
+    """
+    Initializes a scenario mapping filled with random.
+    """
     return {n: dict.fromkeys(years, RANDOM) for n in names}
 
 
-def _create_cluster_scenarios_mapping(names: Mapping[str, Iterable[str]], years: list[str]) -> AreaItemsScenarios:
-    return {n: _create_scenarios_mapping(cluster_names, years) for n, cluster_names in names.items()}
+def _create_2_levels_scenarios_mapping(names: Mapping[str, Iterable[str]], years: list[str]) -> _TwoLevelScenarios:
+    """
+    Initializes a scenario mapping filled with random.
+    """
+    return {n: _create_1_level_scenarios_mapping(item_names, years) for n, item_names in names.items()}
+
+
+def _create_3_levels_scenarios_mapping(
+    names: Mapping[str, Mapping[str, Iterable[str]]], years: list[str]
+) -> _ThreeLevelScenarios:
+    """
+    Initializes a scenario mapping filled with random.
+    """
+    return {n: _create_2_levels_scenarios_mapping(item_names, years) for n, item_names in names.items()}
 
 
 def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[ScenarioType] | None = None) -> Ruleset:
@@ -219,40 +246,45 @@ def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[
         scenario_types = set(ScenarioType)
 
     return Ruleset(
-        load=_create_scenarios_mapping(names=index.area_ids, years=years)
+        load=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.LOAD in scenario_types
         else {},
-        thermal=_create_cluster_scenarios_mapping(names=index.thermal_ids, years=years)
+        thermal=_create_2_levels_scenarios_mapping(names=index.thermal_ids, years=years)
         if ScenarioType.THERMAL in scenario_types
         else {},
-        hydro=_create_scenarios_mapping(names=index.area_ids, years=years)
+        hydro=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.HYDRO in scenario_types
         else {},
-        hydro_initial_levels=_create_scenarios_mapping(names=index.area_ids, years=years)
+        hydro_initial_levels=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.HYDRO_INITIAL_LEVEL in scenario_types
         else {},
-        hydro_final_levels=_create_scenarios_mapping(names=index.area_ids, years=years)
+        hydro_final_levels=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.HYDRO_FINAL_LEVEL in scenario_types
         else {},
-        hydro_generation_power=_create_scenarios_mapping(names=index.area_ids, years=years)
+        hydro_generation_power=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.HYDRO_GENERATION_POWER in scenario_types
         else {},
-        solar=_create_scenarios_mapping(names=index.area_ids, years=years)
+        solar=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.SOLAR in scenario_types
         else {},
-        wind=_create_scenarios_mapping(names=index.area_ids, years=years)
+        wind=_create_1_level_scenarios_mapping(names=index.area_ids, years=years)
         if ScenarioType.WIND in scenario_types
         else {},
-        renewable=_create_cluster_scenarios_mapping(names=index.renewable_ids, years=years)
+        renewable=_create_2_levels_scenarios_mapping(names=index.renewable_ids, years=years)
         if ScenarioType.RENEWABLE in scenario_types
         else {},
-        storage_inflows=_create_cluster_scenarios_mapping(names=index.storage_ids, years=years)
+        storage_inflows=_create_2_levels_scenarios_mapping(names=index.storage_ids, years=years)
         if ScenarioType.SHORT_TERM_STORAGE_INFLOWS in scenario_types
         else {},
-        binding_constraints=_create_scenarios_mapping(names=index.bc_group_ids, years=years)
+        binding_constraints=_create_1_level_scenarios_mapping(names=index.bc_group_ids, years=years)
         if ScenarioType.BINDING_CONSTRAINTS in scenario_types
         else {},
-        ntc=_create_scenarios_mapping(names=index.link_ids, years=years) if ScenarioType.LINK in scenario_types else {},
+        ntc=_create_1_level_scenarios_mapping(names=index.link_ids, years=years)
+        if ScenarioType.LINK in scenario_types
+        else {},
+        storage_constraints=_create_3_levels_scenarios_mapping(names=index.sts_constraint_ids, years=years)
+        if ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS in scenario_types
+        else {},
     )
 
 
@@ -262,33 +294,41 @@ def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries | None)
     base.update(update)
 
 
-def _update_simple_mapping(base: _OneLevelScenarios, update: _OneLevelScenarios | None) -> None:
+def _update_1_level_mapping(base: _OneLevelScenarios, update: _OneLevelScenarios | None) -> None:
     if update is None:
         return
     for name, mapping in update.items():
         _update_mapping(base.setdefault(name, {}), mapping)
 
 
-def _update_double_mapping(base: _TwoLevelScenarios, update: _TwoLevelScenarios | None) -> None:
+def _update_2_levels_mapping(base: _TwoLevelScenarios, update: _TwoLevelScenarios | None) -> None:
     if update is None:
         return
     for name, mapping in update.items():
-        _update_simple_mapping(base.setdefault(name, {}), mapping)
+        _update_1_level_mapping(base.setdefault(name, {}), mapping)
+
+
+def _update_3_levels_mapping(base: _ThreeLevelScenarios, update: _ThreeLevelScenarios | None) -> None:
+    if update is None:
+        return
+    for name, mapping in update.items():
+        _update_2_levels_mapping(base.setdefault(name, {}), mapping)
 
 
 def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
-    _update_simple_mapping(base.load, update.load)
-    _update_double_mapping(base.thermal, update.thermal)
-    _update_simple_mapping(base.hydro, update.hydro)
-    _update_simple_mapping(base.hydro_initial_levels, update.hydro_initial_levels)
-    _update_simple_mapping(base.hydro_final_levels, update.hydro_final_levels)
-    _update_simple_mapping(base.hydro_generation_power, update.hydro_generation_power)
-    _update_simple_mapping(base.solar, update.solar)
-    _update_simple_mapping(base.wind, update.wind)
-    _update_simple_mapping(base.binding_constraints, update.binding_constraints)
-    _update_double_mapping(base.renewable, update.renewable)
-    _update_double_mapping(base.storage_inflows, update.storage_inflows)
-    _update_simple_mapping(base.ntc, update.ntc)
+    _update_1_level_mapping(base.load, update.load)
+    _update_2_levels_mapping(base.thermal, update.thermal)
+    _update_1_level_mapping(base.hydro, update.hydro)
+    _update_1_level_mapping(base.hydro_initial_levels, update.hydro_initial_levels)
+    _update_1_level_mapping(base.hydro_final_levels, update.hydro_final_levels)
+    _update_1_level_mapping(base.hydro_generation_power, update.hydro_generation_power)
+    _update_1_level_mapping(base.solar, update.solar)
+    _update_1_level_mapping(base.wind, update.wind)
+    _update_1_level_mapping(base.binding_constraints, update.binding_constraints)
+    _update_2_levels_mapping(base.renewable, update.renewable)
+    _update_2_levels_mapping(base.storage_inflows, update.storage_inflows)
+    _update_1_level_mapping(base.ntc, update.ntc)
+    _update_3_levels_mapping(base.storage_constraints, update.storage_constraints)
 
 
 def update_rulesets(base: Rulesets, update: RulesetsUpdate) -> None:

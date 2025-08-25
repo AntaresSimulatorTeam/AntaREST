@@ -16,6 +16,7 @@ Serialization and parsing for scenariobuilder.dat file
 
 from typing import TypeVar, cast, overload
 
+from antarest.core.utils.dict_utils import iter_nested_3, iter_nested_2, iter_nested
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
     AreaItemsScenarios,
@@ -28,6 +29,7 @@ from antarest.study.business.model.scenario_builder_model import (
     RulesetsUpdate,
     RulesetUpdate,
     ScenarioType,
+    StorageConstraintsScenarios,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -50,6 +52,7 @@ _SCENARIO_TYPE_SYMBOLS = {
     ScenarioType.HYDRO_FINAL_LEVEL: "hfl",
     ScenarioType.HYDRO_GENERATION_POWER: "hgp",
     ScenarioType.SHORT_TERM_STORAGE_INFLOWS: "sts",
+    ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS: "sta",
 }
 
 _SCENARIO_TYPE_FOR_SYMBOL = {v: k for k, v in _SCENARIO_TYPE_SYMBOLS.items()}
@@ -86,20 +89,24 @@ def _serialize_hydro_levels(
 
 def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType, data: LinkScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-    for link, scenario_link in data.items():
-        for year, value in scenario_link.items():
-            if _should_write(value):
-                area1, area2 = link.split(" / ")
-                section[f"{symbol},{area1},{area2},{year}"] = value
+    for link, year, value in iter_nested(data):
+        if _should_write(value):
+            area1, area2 = link.split(" / ")
+            section[f"{symbol},{area1},{area2},{year}"] = value
 
 
 def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-    for area, scenario_area in data.items():
-        for cluster, scenario_area_cluster in scenario_area.items():
-            for year, value in scenario_area_cluster.items():
-                if _should_write(value):
-                    section[f"{symbol},{area},{year},{cluster}"] = value
+    for area, cluster, year, value in iter_nested_2(data):
+        if _should_write(value):
+            section[f"{symbol},{area},{year},{cluster}"] = value
+
+
+def _serialize_sts_constraints(section: dict[str, RuleValue], data: StorageConstraintsScenarios) -> None:
+    symbol = _SCENARIO_TYPE_SYMBOLS[ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS]
+    for area, storage, constraint, year, value in iter_nested_3(data):
+        if _should_write(value):
+            section[f"{symbol},{area},{year},{storage},{constraint}"] = value
 
 
 def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
@@ -116,6 +123,7 @@ def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
     _serialize_clusters(section, ScenarioType.RENEWABLE, ruleset.renewable)
     _serialize_common(section, ScenarioType.BINDING_CONSTRAINTS, ruleset.binding_constraints)
     _serialize_clusters(section, ScenarioType.SHORT_TERM_STORAGE_INFLOWS, ruleset.storage_inflows)
+    _serialize_sts_constraints(section, ruleset.storage_constraints)
 
     return dict(sorted(section.items()))
 
@@ -146,6 +154,14 @@ def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: st
     if value is None:
         value = RANDOM
     values.setdefault(key1, {}).setdefault(key2, {})[year] = value
+
+
+def _add_value_triple(
+    values: StorageConstraintsScenarios, key1: str, key2: str, key3: str, year: str, value: RuleValue
+) -> None:
+    if value is None:
+        value = RANDOM
+    values.setdefault(key1, {}).setdefault(key2, {}).setdefault(key3, {})[year] = value
 
 
 def _to_percent(value: RuleValue) -> RuleValue:
@@ -207,6 +223,9 @@ def _parse_ruleset(ruleset_data: RulesetFileData, cls: type[Ruleset] | type[Rule
             case ScenarioType.BINDING_CONSTRAINTS:
                 group_id, year = parts
                 _add_value_simple(_check_not_none(ruleset.binding_constraints), group_id, year, value)
+            case ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
+                area, year, storage, constraint = parts
+                _add_value_triple(_check_not_none(ruleset.storage_constraints), area, storage, constraint, year, value)
             case _:
                 raise NotImplementedError(f"Unknown symbol {symbol}")
     return ruleset

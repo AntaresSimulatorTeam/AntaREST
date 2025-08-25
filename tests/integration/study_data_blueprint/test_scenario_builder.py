@@ -19,6 +19,7 @@ from antarest.login.utils import current_user_context
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.scenario_builder_model import AreaItemsScenarios, AreaScenarios
+from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.service import StudyService
@@ -32,6 +33,10 @@ def _initialize_study(study_service: StudyService, study_id: str):
     study_interface = study_service.get_study_interface(study)
     study_service.thermal_manager.create_cluster(
         study_interface, "fr", ThermalClusterCreation(name="Nuclear", unit_count=10, nominal_capacity=1000)
+    )
+    study_service.st_storage_manager.create_storage(study_interface, "fr", STStorageCreation(name="Battery"))
+    study_service.st_storage_manager.create_additional_constraints(
+        study_interface, "fr", "battery", [STStorageAdditionalConstraintCreation(name="C1")]
     )
 
 
@@ -101,3 +106,21 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/thermal")
     assert res.status_code == 200
     assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": 2}}}}
+
+    # Storages additional constraints
+
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints")
+    assert res.status_code == 200
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": ""}}}}}
+
+    sts_ac_scenarios = {"fr": {"battery": {"c1": {"1": 2}}}}
+    res = client.put(
+        f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints",
+        json={"shortTermStorageAdditionalConstraints": sts_ac_scenarios},
+    )
+    assert res.status_code == 200
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": 2}}}}}
+
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints")
+    assert res.status_code == 200
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": 2}}}}}

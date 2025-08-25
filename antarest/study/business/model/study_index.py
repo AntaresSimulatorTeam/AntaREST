@@ -28,6 +28,7 @@ class StudyIndex:
         storages: Mapping[str, Iterable[str]],
         bc_groups: Iterable[str],
         renewables: Mapping[str, Iterable[str]],
+        sts_additional_constraints: Mapping[str, Mapping[str, Iterable[str]]],
     ):
         to_id = transform_name_to_id
         self._areas = {to_id(a): a for a in areas}
@@ -38,6 +39,10 @@ class StudyIndex:
             to_id(a): {to_id(a_storage): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
         }
         self._bc_groups = {to_id(g): g for g in bc_groups}
+        self._sts_additional_constraints = {
+            to_id(a): {to_id(s): {to_id(c) for c in s_constraints} for s, s_constraints in a_storages.items()}
+            for a, a_storages in sts_additional_constraints.items()
+        }
 
     @property
     def area_ids(self) -> Iterable[str]:
@@ -62,3 +67,7 @@ class StudyIndex:
     @property
     def link_ids(self) -> Iterable[str]:
         return [f"{a1} / {a2}" for a1, a2 in self._links.keys()]
+
+    @property
+    def sts_constraint_ids(self) -> Mapping[str, Mapping[str, Iterable[str]]]:
+        return self._sts_additional_constraints
