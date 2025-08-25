@@ -16,10 +16,10 @@ import pytest
 from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
     ScenarioType,
-    StudyIndex,
     initialize_ruleset,
     update_ruleset,
 )
+from antarest.study.business.model.study_index import StudyIndex
 
 
 def test_ruleset__initialization_from_study() -> None:

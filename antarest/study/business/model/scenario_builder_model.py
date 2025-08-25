@@ -17,7 +17,7 @@ from typing import Iterable, Literal, Mapping, TypeAlias, cast
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.business.model.study_index import StudyIndex
 
 
 class ScenarioType(enum.StrEnum):
@@ -160,55 +160,6 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
 
 
 Rulesets: TypeAlias = dict[str, Ruleset]
-
-
-class StudyIndex:
-    """
-    A class containing information about all identifiable objects IDs and names of a study.
-    """
-
-    def __init__(
-        self,
-        areas: Iterable[str],
-        links: Iterable[tuple[str, str]],
-        thermals: Mapping[str, Iterable[str]],
-        storages: Mapping[str, Iterable[str]],
-        bc_groups: Iterable[str],
-        renewables: Mapping[str, Iterable[str]],
-    ):
-        to_id = transform_name_to_id
-        self._areas = {to_id(a): a for a in areas}
-        self._links = {(to_id(a1), to_id(a2)): (a1, a2) for a1, a2 in links}
-        self._thermals = {to_id(a): {to_id(cl): cl for cl in clusters} for a, clusters in thermals.items()}
-        self._renewables = {to_id(a): {to_id(cl): cl for cl in clusters} for a, clusters in renewables.items()}
-        self._storages = {
-            to_id(a): {to_id(a_storage): a_storage for a_storage in a_storages} for a, a_storages in storages.items()
-        }
-        self._bc_groups = {to_id(g): g for g in bc_groups}
-
-    @property
-    def area_ids(self) -> Iterable[str]:
-        return self._areas.keys()
-
-    @property
-    def thermal_ids(self) -> Mapping[str, Iterable[str]]:
-        return self._thermals
-
-    @property
-    def renewable_ids(self) -> Mapping[str, Iterable[str]]:
-        return self._renewables
-
-    @property
-    def bc_group_ids(self) -> Iterable[str]:
-        return self._bc_groups
-
-    @property
-    def storage_ids(self) -> Mapping[str, Iterable[str]]:
-        return self._storages
-
-    @property
-    def link_ids(self) -> Iterable[str]:
-        return [f"{a1} / {a2}" for a1, a2 in self._links.keys()]
 
 
 def _create_scenarios_mapping(names: Iterable[str], years: list[str]) -> AreaScenarios:
