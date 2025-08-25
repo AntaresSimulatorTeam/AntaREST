@@ -44,7 +44,7 @@ class MatrixGarbageCollector(IService):
         """Delete all matrices that are not used anymore"""
         stopwatch = StopWatch()
         logger.info("Beginning of the cleaning process")
-        used_matrices = self.matrix_service.get_used_matrices()
+        used_matrices = {matrix.matrix_id for matrix in self.matrix_service.get_used_matrices()}
         all_existing_matrices = self.matrix_service.get_matrices()
         saved_matrices = {matrix.id: matrix.created_at for matrix in all_existing_matrices}
         unused_matrices = set(saved_matrices) - used_matrices
