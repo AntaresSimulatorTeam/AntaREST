@@ -48,7 +48,7 @@ class CommandName(Enum):
     REMOVE_AREA = "remove_area"
     CREATE_LAYER = "create_layer"
     REMOVE_LAYER = "remove_layer"
-    UPDATE_LAYER_NAME = "update_layer_name"
+    UPDATE_LAYER = "update_layer_name"
     CREATE_DISTRICT = "create_district"
     REMOVE_DISTRICT = "remove_district"
     CREATE_LINK = "create_link"

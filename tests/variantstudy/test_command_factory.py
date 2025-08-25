@@ -112,7 +112,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REMOVE_LAYER.value,
-            args=[{"parameters": {"id": "layer_id"}}],
+            args={"layer_id": "layer_id"},
             study_version=STUDY_VERSION_8_8,
         ),
         None,

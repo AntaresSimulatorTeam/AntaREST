@@ -41,7 +41,7 @@ class CreateLayer(ICommand):
 
         new_layer = create_layer(current_layers, self.parameters)
 
-        study_data.save_layers(new_layer)
+        study_data.save_layer(new_layer)
 
         return CommandOutput(status=True, message=f"Layer {self.parameters.name} created successfully")
 

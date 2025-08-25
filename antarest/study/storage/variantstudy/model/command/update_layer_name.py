@@ -21,7 +21,7 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateLayerName(ICommand):
+class UpdateLayer(ICommand):
     """
     Command used to update a layer.
     """
@@ -29,7 +29,7 @@ class UpdateLayerName(ICommand):
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_LAYER_NAME
+    command_name: CommandName = CommandName.UPDATE_LAYER
 
     # Command parameters
     # ==================
@@ -39,7 +39,7 @@ class UpdateLayerName(ICommand):
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput:
         current_layers = list(study_data.get_layers())
         new_layer = update_layer_name(current_layers, self.parameters)
-        study_data.save_layers(new_layer)
+        study_data.save_layer(new_layer)
         return CommandOutput(status=True, message=f"Layer {self.parameters.name} updated successfully")
 
     @override

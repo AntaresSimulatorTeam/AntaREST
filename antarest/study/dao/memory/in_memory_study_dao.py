@@ -674,7 +674,7 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
 
     @override
-    def save_layers(self, layer: Layer) -> None:
+    def save_layer(self, layer: Layer) -> None:
         new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
         layer.id = str(new_id)
         self._layers.insert(new_id, layer)

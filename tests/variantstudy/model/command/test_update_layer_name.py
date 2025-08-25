@@ -15,7 +15,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.layer_model import LayerCreation, LayerUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
-from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayerName
+from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -36,7 +36,7 @@ class TestUpdateLayerName:
         layers = link.read(empty_study.config.study_path / "layers/layers.ini")["layers"]
         assert layers == {"0": "All", "1": "Original Layer Name"}
 
-        update_command = UpdateLayerName(
+        update_command = UpdateLayer(
             parameters=LayerUpdate(id="1", name="Updated Layer Name"),
             command_context=command_context,
             study_version=empty_study.config.version,
@@ -72,7 +72,7 @@ class TestUpdateLayerName:
         layers = link.read(empty_study.config.study_path / "layers/layers.ini")["layers"]
         assert layers == {"0": "All", "1": "Layer One", "2": "Layer Two"}
 
-        update_command1 = UpdateLayerName(
+        update_command1 = UpdateLayer(
             parameters=LayerUpdate(id="1", name="Modified Layer One"),
             command_context=command_context,
             study_version=empty_study.config.version,
@@ -80,7 +80,7 @@ class TestUpdateLayerName:
         output = update_command1.apply(study_data=empty_study)
         assert output.status
 
-        update_command2 = UpdateLayerName(
+        update_command2 = UpdateLayer(
             parameters=LayerUpdate(id="2", name="Modified Layer Two"),
             command_context=command_context,
             study_version=empty_study.config.version,
@@ -95,7 +95,7 @@ class TestUpdateLayerName:
     def test_update_layer_not_found(self, empty_study_880: FileStudy, command_context: CommandContext):
         empty_study = empty_study_880
 
-        update_command = UpdateLayerName(
+        update_command = UpdateLayer(
             parameters=LayerUpdate(id="999", name="Non-existent Layer"),
             command_context=command_context,
             study_version=empty_study.config.version,
@@ -108,7 +108,7 @@ class TestUpdateLayerName:
     def test_update_layer_zero_name(self, empty_study_880: FileStudy, command_context: CommandContext):
         empty_study = empty_study_880
 
-        update_command = UpdateLayerName(
+        update_command = UpdateLayer(
             parameters=LayerUpdate(id="0", name="All Areas Updated"),
             command_context=command_context,
             study_version=empty_study.config.version,

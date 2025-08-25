@@ -12,7 +12,7 @@
 import pytest
 
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.business.model.layer_model import Layer, LayerCreation
+from antarest.study.business.model.layer_model import LayerCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
@@ -45,7 +45,7 @@ class TestRemoveLayer:
         assert layers == {"0": "All", "1": "Test Layer1", "2": "Test Layer2"}
 
         remove_command = RemoveLayer(
-            parameters=Layer(id="1"),
+            layer_id="1",
             command_context=command_context,
             study_version=empty_study.config.version,
         )
@@ -57,7 +57,7 @@ class TestRemoveLayer:
         assert layers == {"0": "All", "2": "Test Layer2"}
 
         remove_command2 = RemoveLayer(
-            parameters=Layer(id="2"),
+            layer_id="2",
             command_context=command_context,
             study_version=empty_study.config.version,
         )
@@ -73,7 +73,7 @@ class TestRemoveLayer:
         empty_study = empty_study_880
 
         remove_command = RemoveLayer(
-            parameters=Layer(id="999"),
+            layer_id="999",
             command_context=command_context,
             study_version=empty_study.config.version,
         )
@@ -86,7 +86,7 @@ class TestRemoveLayer:
         empty_study = empty_study_880
 
         remove_command = RemoveLayer(
-            parameters=Layer(id="0"),
+            layer_id="0",
             command_context=command_context,
             study_version=empty_study.config.version,
         )

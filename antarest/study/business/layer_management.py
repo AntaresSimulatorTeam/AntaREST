@@ -15,7 +15,7 @@ from antarest.study.business.model.layer_model import Layer, LayerCreation, Laye
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
-from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayerName
+from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -36,7 +36,7 @@ class LayerManager:
         return layer_name
 
     def update_layer_name(self, study: StudyInterface, layer_id: str, layer_name: str) -> None:
-        command = UpdateLayerName(
+        command = UpdateLayer(
             parameters=LayerUpdate(id=layer_id, name=layer_name),
             command_context=self._command_context,
             study_version=study.version,
@@ -52,7 +52,7 @@ class LayerManager:
             LayerNotFound: If the layer ID is not found.
         """
         command = RemoveLayer(
-            parameters=Layer(id=layer_id),
+            layer_id=layer_id,
             command_context=self._command_context,
             study_version=study.version,
         )

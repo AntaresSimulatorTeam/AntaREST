@@ -23,7 +23,7 @@ class ReadOnlyLayerDao(ABC):
 
 class LayerDao(ReadOnlyLayerDao):
     @abstractmethod
-    def save_layers(self, layer: Layer) -> None:
+    def save_layer(self, layer: Layer) -> None:
         raise NotImplementedError()
 
     @abstractmethod
