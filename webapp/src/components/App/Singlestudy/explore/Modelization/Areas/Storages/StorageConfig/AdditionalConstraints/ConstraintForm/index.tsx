@@ -21,6 +21,7 @@ import {
   updateAdditionalConstraint,
 } from "@/services/api/studies/areas/storages";
 import type { AdditionalConstraint } from "@/services/api/studies/areas/storages/types";
+import { buildKey } from "@/utils/reactUtils";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Button } from "@mui/material";
@@ -75,7 +76,7 @@ function ConstraintForm({
   return (
     <>
       <Form
-        key={`${studyId}-${areaId}-${storageId}-${constraintId}`}
+        key={buildKey(studyId, areaId, storageId, constraintId)}
         onSubmit={handleSubmit}
         config={{
           defaultValues: () =>

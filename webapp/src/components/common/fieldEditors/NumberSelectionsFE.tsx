@@ -12,55 +12,73 @@
  * This file is part of the Antares project.
  */
 
+import useFieldEditorValidation from "@/hooks/useFieldEditorValidation";
 import {
   isSelectionsValid,
   selectionsToNumbers,
   selectionsToString,
   stringToSelections,
+  type NumberOrRange,
 } from "@/utils/numberSelectionsUtils";
 import { TextField, Tooltip, type TextFieldProps } from "@mui/material";
-import * as R from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export interface NumberSelectionsFEProps {
   label?: TextFieldProps["label"];
   maxNumber: number;
-  onChange?: (numbers: number[]) => void;
+  onChange?: (numbers: number[] | null) => void;
   size?: TextFieldProps["size"];
   sx?: TextFieldProps["sx"];
 }
 
 function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSelectionsFEProps) {
-  const [selectionsValue, setSelectionsValue] = useState("");
-  const [error, setError] = useState(false);
+  const [value, setValue] = useState("");
+  const [selections, setSelections] = useState<NumberOrRange[] | null>([]);
   const { t } = useTranslation();
+
+  const {
+    validateOnChange,
+    validateOnBlur,
+    validationState: { isValid, validationMessage },
+  } = useFieldEditorValidation({
+    customValidation: (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!isSelectionsValid(event.target.value, maxNumber)) {
+        return t("form.field.numberSelections.invalid");
+      }
+      return true;
+    },
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectionsValue(event.target.value);
-  };
+    const { value, validity } = event.target;
 
-  const handleBlur = () => {
-    const isValid = isSelectionsValid(selectionsValue, maxNumber);
+    setValue(value);
 
-    setError(!isValid);
-
-    if (!isValid) {
-      onChange?.([]);
+    if (!validity.valid) {
+      setSelections(null);
+      onChange?.(null);
       return;
     }
 
-    const selections = stringToSelections(selectionsValue);
-    // If no selections, we return all numbers
-    const numbers =
-      selections.length === 0 ? R.range(1, maxNumber + 1) : selectionsToNumbers(selections);
+    const selections = stringToSelections(value);
 
-    setSelectionsValue(selectionsToString(selections));
-    onChange?.(numbers);
+    setSelections(selections);
+
+    if (onChange) {
+      onChange(selectionsToNumbers(selections));
+    }
+  };
+
+  const handleBlur = () => {
+    // Format current value with a consistent string representation
+    if (selections !== null) {
+      setValue(selectionsToString(selections));
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -69,7 +87,7 @@ function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSele
 
   return (
     <Tooltip
-      title={error ? t("form.field.numberSelections.invalid") : selectionsValue.trim()}
+      title={!isValid ? validationMessage : value.trim()}
       placement="top"
       disableFocusListener
     >
@@ -77,11 +95,11 @@ function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSele
         <TextField
           label={label}
           placeholder={t("form.field.numberSelections.help")}
-          value={selectionsValue}
-          onChange={handleChange}
-          onBlur={handleBlur}
+          value={value}
+          onChange={validateOnChange(handleChange)}
+          onBlur={validateOnBlur(handleBlur)}
           size={size}
-          error={error}
+          error={!isValid}
           sx={sx}
         />
       </span>

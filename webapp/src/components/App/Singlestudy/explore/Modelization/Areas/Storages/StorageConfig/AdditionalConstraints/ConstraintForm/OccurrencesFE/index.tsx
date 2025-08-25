@@ -19,6 +19,7 @@ import type {
   AdditionalConstraintOccurrences,
 } from "@/services/api/studies/areas/storages/types";
 import { compactSelections, selectionToString } from "@/utils/numberSelectionsUtils";
+import { buildKey } from "@/utils/reactUtils";
 import EditIcon from "@mui/icons-material/Edit";
 import {
   Box,
@@ -90,7 +91,7 @@ function OccurrencesFE({ control, onChange }: Props) {
             <Table>
               <TableBody sx={{ "tr:last-child > *": { border: "none" } }}>
                 {occurrences.map(({ hours }, index) => (
-                  <TableRow key={hours.join(",") + index}>
+                  <TableRow key={buildKey(hours, index)}>
                     <TableCell
                       sx={{
                         fontWeight: "bold",

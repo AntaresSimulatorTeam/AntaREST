@@ -97,7 +97,7 @@ export interface FormProps<
   sx?: SxProps<Theme>;
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
   disableStickyFooter?: boolean;
-  extraActions?: React.ReactNode;
+  extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
@@ -117,7 +117,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
   hideFooterDivider,
   onStateChange,
   autoSubmit,
-  allowSubmitOnPristine,
+  allowSubmitOnPristine = false,
   enableUndoRedo,
   className,
   sx,
@@ -174,7 +174,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   // Don't add `isValid` because we need to trigger fields validation.
   // In case we have invalid default value for example.
-  const isSubmitAllowed = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
+  const canSubmit = (isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled;
   const rootError = errors.root?.[ROOT_ERROR_KEY];
   const showSubmitButton = !hideSubmitButton && !autoSubmitConfig.enable;
   const showFooter = showSubmitButton || enableUndoRedo || extraActions || rootError;
@@ -381,7 +381,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
                 <>
                   <Button
                     type="submit"
-                    disabled={!isSubmitAllowed}
+                    disabled={!canSubmit}
                     loading={isSubmitting}
                     {...(miniSubmitButton
                       ? {
@@ -417,7 +417,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
               )}
               {extraActions && (
                 <Box sx={{ ml: "auto", pl: 2, display: "flex", alignItems: "center", gap: 1 }}>
-                  {extraActions}
+                  {typeof extraActions === "function" ? extraActions({ canSubmit }) : extraActions}
                 </Box>
               )}
             </Box>

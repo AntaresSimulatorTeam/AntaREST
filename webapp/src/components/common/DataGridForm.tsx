@@ -76,7 +76,7 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   onStateChange?: (state: DataGridFormState) => void;
   id?: string;
   sx?: SxProps<Theme>;
-  extraActions?: React.ReactNode;
+  extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
   apiRef?: React.Ref<DataGridFormApi<TData>>;
   submitButtonText?: string;
   submitButtonIcon?: ButtonProps["startIcon"];
@@ -116,6 +116,7 @@ function DataGridForm<TData extends Data>({
   // So even if the content are the same, we consider it as dirty.
   // Deep comparison fix the issue but with big data it can be slow.
   const isDirty = savedData !== data;
+  const canSubmit = isDirty && !isSubmitting;
 
   const formState = useMemo<DataGridFormState>(
     () => ({
@@ -349,7 +350,7 @@ function DataGridForm<TData extends Data>({
             <>
               <Button
                 type="submit"
-                disabled={!isDirty}
+                disabled={!canSubmit}
                 loading={isSubmitting}
                 loadingPosition="start"
                 variant="contained"
@@ -376,7 +377,7 @@ function DataGridForm<TData extends Data>({
           </Tooltip>
           {extraActions && (
             <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-              {extraActions}
+              {typeof extraActions === "function" ? extraActions({ canSubmit }) : extraActions}
             </Box>
           )}
         </Box>

@@ -16,7 +16,6 @@ import CustomScrollbar from "@/components/common/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
-  type DataGridFormState,
 } from "@/components/common/DataGridForm";
 import BasicDialog from "@/components/common/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
@@ -56,11 +55,11 @@ interface Props {
 function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }: Props) {
   const { t } = useTranslation();
   const [columnCount, setColumnCount] = useState(occurrences.length);
-  const [isDirty, setIsDirty] = useState(false);
   const [offset, setOffset] = useState(0);
   const dataGridApiRef = useRef<DataGridFormApi<OccurrencesData>>(null);
-  const [selectedHours, setSelectedHours] = useState<number[]>(R.range(1, HOURS_IN.WEEK + 1));
+  const [selectedHours, setSelectedHours] = useState<number[]>([]);
   const closeAction = useConfirm();
+  const hasSelectedHours = selectedHours.length > 0;
 
   const name = useWatch({
     name: "name",
@@ -80,6 +79,10 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
+  const handleHoursChange = (hours: number[] | null) => {
+    setSelectedHours(hours || []);
+  };
+
   const handleOffsetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
     setOffset(R.clamp(0, HOURS_IN.WEEK - 1, value));
@@ -96,10 +99,6 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
 
   const handleDataChange = (data: OccurrencesData) => {
     setColumnCount(getOccurrencesCountFromGridData(data));
-  };
-
-  const handleStateChange = ({ isDirty }: DataGridFormState) => {
-    setIsDirty(isDirty);
   };
 
   const handleSubmit = (
@@ -180,7 +179,7 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
                   label={t(
                     "study.modelization.storages.additionalConstraints.occurrences.dialog.hours",
                   )}
-                  onChange={setSelectedHours}
+                  onChange={handleHoursChange}
                   maxNumber={HOURS_IN.WEEK}
                   size="extra-small"
                   sx={{ minWidth: 135 }}
@@ -189,13 +188,11 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
                   label={t("global.offset")}
                   value={offset}
                   onChange={handleOffsetChange}
+                  disabled={!hasSelectedHours}
                   size="extra-small"
                   sx={{ width: 80, minWidth: 80 }}
                 />
-                <ButtonGroup
-                  disabled={selectedHours !== null && selectedHours.length === 0}
-                  color="secondary"
-                >
+                <ButtonGroup disabled={!hasSelectedHours} color="secondary">
                   <Button onClick={handleUpdateHours(R.T)}>{t("global.enable")}</Button>
                   <Button onClick={handleUpdateHours(R.F)}>{t("global.disable")}</Button>
                   <Button onClick={handleUpdateHours(R.not)}>{t("global.reverse")}</Button>
@@ -214,16 +211,15 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
             columns={columns}
             defaultData={defaultData}
             onDataChange={handleDataChange}
-            onStateChange={handleStateChange}
             onSubmit={handleSubmit}
-            extraActions={
+            extraActions={({ canSubmit }) => (
               <>
                 <Button onClick={handleClose}>{t("global.close")}</Button>
-                <Button type="submit" variant="contained" disabled={!isDirty}>
+                <Button type="submit" variant="contained" disabled={!canSubmit}>
                   {t("global.apply")}
                 </Button>
               </>
-            }
+            )}
             apiRef={dataGridApiRef}
             hideSubmitButton
             disableErrorSnackbar

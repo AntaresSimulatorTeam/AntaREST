@@ -34,7 +34,7 @@ export interface TableModeProps<T extends TableModeType = TableModeType> {
   studyId: StudyMetadata["id"];
   type: T;
   columns: TableModeColumnsForType<T>;
-  extraActions?: React.ReactNode;
+  extraActions?: DataGridFormProps["extraActions"];
 }
 
 function TableMode<T extends TableModeType>({
@@ -105,7 +105,9 @@ function TableMode<T extends TableModeType>({
           <EmptyView
             icon={GridOffIcon}
             title={t("study.results.noData")}
-            extraActions={extraActions}
+            extraActions={
+              typeof extraActions === "function" ? extraActions({ canSubmit: false }) : extraActions
+            }
           />
         )
       }

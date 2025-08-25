@@ -47,13 +47,13 @@ interface Props {
 function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const dataGridApiRef = useRef<DataGridFormApi<PlaylistData>>(null);
-  const [selectedYears, setSelectedYears] = useState<number[] | null>(null);
+  const [selectedYears, setSelectedYears] = useState<number[] | null>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [totals, setTotals] = useState({ selected: 0, sumWeights: 0 });
   const closeAction = useConfirm();
   const res = usePromise(() => getPlaylistData({ studyId: study.id }), [study.id]);
-  const disableBtnGroup = isSubmitting || (selectedYears !== null && selectedYears.length === 0);
+  const disableActions = selectedYears === null || isSubmitting;
 
   const columns = useMemo<DataGridFormProps<PlaylistData>["columns"]>(() => {
     return [
@@ -87,8 +87,13 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const mapSelectedYears = (fn: (item: Playlist) => Playlist, data: PlaylistData): PlaylistData => {
+    if (selectedYears === null) {
+      return data;
+    }
+
     return RA.mapIndexed((item, index) => {
-      if (selectedYears === null || selectedYears.includes(index + 1)) {
+      // Empty selection means all years are selected
+      if (selectedYears.length === 0 || selectedYears.includes(index + 1)) {
         return fn(item);
       }
       return item;
@@ -186,7 +191,7 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
                       size="extra-small"
                       sx={{ minWidth: 135 }}
                     />
-                    <ButtonGroup disabled={disableBtnGroup} color="secondary">
+                    <ButtonGroup disabled={disableActions} color="secondary">
                       <Button onClick={handleUpdateStatus(R.T)}>{t("global.enable")}</Button>
                       <Button onClick={handleUpdateStatus(R.F)}>{t("global.disable")}</Button>
                       <Button onClick={handleUpdateStatus(R.not)}>{t("global.reverse")}</Button>
