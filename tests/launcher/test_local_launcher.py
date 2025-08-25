@@ -145,7 +145,7 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
             if version == solver_version_8_8:
                 assert sim_args == ["--use-ortools", f"--ortools-solver={solver}"]
             elif version == solver_version_9_2:
-                assert sim_args == [f"--solver={solver}"]
+                assert sim_args == [f"--linear-solver={solver}"]
             else:
                 assert sim_args == [f"--linear-solver={solver}", "--quadratic-solver=sirius"]
 

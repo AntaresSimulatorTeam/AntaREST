@@ -193,16 +193,14 @@ class LocalLauncher(AbstractLauncher):
         elif "coin" in options:
             linear_solver = "coin"
 
-        if version >= STUDY_VERSION_9_3:
-            quadratic_solver = "sirius"
-            if linear_solver:
-                simulator_args += [f"--linear-solver={linear_solver}"]
-            simulator_args += [f"--quadratic-solver={quadratic_solver}"]
-        elif linear_solver:
+        if linear_solver:
             if version >= STUDY_VERSION_9_2:
-                simulator_args += [f"--solver={linear_solver}"]
+                simulator_args += [f"--linear-solver={linear_solver}"]
             else:
                 simulator_args.extend(["--use-ortools", f"--ortools-solver={linear_solver}"])
+
+        if version >= STUDY_VERSION_9_3:
+            simulator_args += ["--quadratic-solver=sirius"]
 
         # 'xpress' specific part
         if "xpress" in options:
