@@ -40,7 +40,14 @@ import {
   TYPOGRAPHY_STYLES,
 } from "../styles";
 import type { FilterOperatorType } from "../types";
-import { parseRangeInput } from "../utils";
+import {
+  compactSelections,
+  selectionsToNumbers,
+  selectionToString,
+  stringToSelections,
+  type NumberOrRange,
+} from "../../../../../../utils/numberSelectionsUtils";
+import { buildKey } from "@/utils/reactUtils";
 
 const isValidFilterOperator = (value: string): value is FilterOperatorType => {
   return Object.values(FILTER_OPERATORS).includes(value as FilterOperatorType);
@@ -54,7 +61,7 @@ interface ListFilterControlProps {
   onKeyPress: (event: React.KeyboardEvent) => void;
   onAddValue: () => void;
   onAddValues?: (values: number[]) => void;
-  onRemoveValue: (value: number) => void;
+  onRemoveValues: (values: number[]) => void;
   onOperatorChange?: (operator: FilterOperatorType) => void;
   onClearAll?: () => void;
   placeholder?: string;
@@ -69,6 +76,7 @@ function ListFilterControl({
   onKeyPress,
   onAddValue,
   onAddValues,
+  onRemoveValues,
   onOperatorChange,
   onClearAll,
   placeholder,
@@ -76,46 +84,25 @@ function ListFilterControl({
 }: ListFilterControlProps) {
   const { t } = useTranslation();
 
-  // Format selected values as ranges (e.g., "1-5, 7, 10-15")
-  const formattedValues = useMemo(() => {
+  // Format selected values as separate ranges with their values
+  const formattedRanges = useMemo(() => {
     if (selectedValues.length === 0) {
-      return "";
+      return [];
     }
 
-    const sorted = [...selectedValues].sort((a, b) => a - b);
+    const compacted = compactSelections(selectedValues);
 
-    const formatRange = (start: number, end: number): string => {
-      if (start === end) {
-        return start.toString();
-      }
+    return compacted.map((selection: NumberOrRange) => {
+      const label = selectionToString(selection);
+      const values = Array.isArray(selection)
+        ? Array.from({ length: selection[1] - selection[0] + 1 }, (_, i) => selection[0] + i)
+        : [selection];
 
-      if (end === start + 1) {
-        return `${start}, ${end}`;
-      }
-
-      return `${start}-${end}`;
-    };
-
-    const ranges = sorted.reduce<Array<[number, number]>>((acc, curr, idx) => {
-      if (idx === 0) {
-        return [[curr, curr]];
-      }
-
-      const lastRange = acc[acc.length - 1];
-      const [, lastEnd] = lastRange;
-
-      if (curr === lastEnd + 1) {
-        // Extend the current range
-        lastRange[1] = curr;
-      } else {
-        // Start a new range
-        acc.push([curr, curr]);
-      }
-
-      return acc;
-    }, []);
-
-    return ranges.map(([start, end]) => formatRange(start, end)).join(", ");
+      return {
+        label,
+        values,
+      };
+    });
   }, [selectedValues]);
 
   ////////////////////////////////////////////////////////////////
@@ -133,7 +120,8 @@ function ListFilterControl({
   };
 
   const handleAddValue = () => {
-    const values = parseRangeInput(inputValue);
+    const selections = stringToSelections(inputValue);
+    const values = selectionsToNumbers(selections);
 
     if (values.length > 1 && onAddValues) {
       // Use onAddValues for multiple values (ranges)
@@ -156,6 +144,10 @@ function ListFilterControl({
     } else {
       onKeyPress(event);
     }
+  };
+
+  const handleRemoveRange = (values: number[]) => {
+    onRemoveValues(values);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -263,13 +255,19 @@ function ListFilterControl({
               </Button>
             )}
           </Box>
-          <Chip
-            label={formattedValues}
-            size="small"
-            color="primary"
-            disabled={disabled}
-            sx={CHIP_SELECTOR_STYLES.dense}
-          />
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: DESIGN_TOKENS.spacing.xs }}>
+            {formattedRanges.map((range, index) => (
+              <Chip
+                key={buildKey(range.label, index)}
+                label={range.label}
+                size="small"
+                color="primary"
+                disabled={disabled}
+                onDelete={disabled ? undefined : () => handleRemoveRange(range.values)}
+                sx={CHIP_SELECTOR_STYLES.dense}
+              />
+            ))}
+          </Box>
         </Box>
       )}
     </>

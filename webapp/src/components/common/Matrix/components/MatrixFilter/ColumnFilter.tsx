@@ -25,8 +25,8 @@ import {
   type SelectChangeEvent,
   Typography,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
 import { produce } from "immer";
+import { useTranslation } from "react-i18next";
 import ListFilterControl from "./components/ListFilterControl";
 import RangeFilterControl from "./components/RangeFilterControl";
 import { FILTER_TYPES } from "./constants";
@@ -42,7 +42,7 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
     handleListChange,
     addValueToColumnFilter,
     addValuesToColumnFilter,
-    removeValueFromColumnFilter,
+    removeValuesFromColumnFilter,
     clearColumnFilterValues,
     handleKeyPress,
     handleTypeChange,
@@ -129,7 +129,7 @@ function ColumnFilter({ filter, setFilter, columnCount }: ColumnFilterProps) {
             onKeyPress={handleKeyPress}
             onAddValue={addValueToColumnFilter}
             onAddValues={addValuesToColumnFilter}
-            onRemoveValue={removeValueFromColumnFilter}
+            onRemoveValues={removeValuesFromColumnFilter}
             onOperatorChange={handleOperatorChangeEvent}
             onClearAll={clearColumnFilterValues}
           />

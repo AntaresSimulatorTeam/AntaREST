@@ -277,8 +277,8 @@ function RowFilter({
           selectedValues={state.rowFilter.list || []}
           onAddValue={() => filterControls.addValueToRowFilter(state.rowFilter.id)}
           onAddValues={(values) => filterControls.addValuesToRowFilter(values, state.rowFilter.id)}
-          onRemoveValue={(value) =>
-            filterControls.removeValueFromRowFilter(value, state.rowFilter.id)
+          onRemoveValues={(values) =>
+            filterControls.removeValuesFromRowFilter(values, state.rowFilter.id)
           }
           onCheckboxChange={(value) => filterControls.handleCheckboxChange(value, filterId)}
           inputValue={filterControls.inputValue}
