@@ -199,9 +199,6 @@ class LocalLauncher(AbstractLauncher):
             else:
                 simulator_args.extend(["--use-ortools", f"--ortools-solver={linear_solver}"])
 
-        if version >= STUDY_VERSION_9_3:
-            simulator_args += ["--quadratic-solver=sirius"]
-
         # 'xpress' specific part
         if "xpress" in options:
             # Load environment variables

@@ -144,10 +144,8 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
             sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, version)
             if version == solver_version_8_8:
                 assert sim_args == ["--use-ortools", f"--ortools-solver={solver}"]
-            elif version == solver_version_9_2:
+            elif version == solver_version_9_2 or version == solver_version_9_3:
                 assert sim_args == [f"--linear-solver={solver}"]
-            else:
-                assert sim_args == [f"--linear-solver={solver}", "--quadratic-solver=sirius"]
 
     # Xpress cases
     os.environ["XPRESSDIR"] = "fake_path_for_test"
@@ -156,7 +154,6 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
     assert env_variables["XPRESSDIR"] == "fake_path_for_test"
     assert sim_args == [
         "--linear-solver=xpress",
-        "--quadratic-solver=sirius",
         '--lp-solver-param-optim-1="PRESOLVE 1"',
         '--lp-solver-param-optim-2="PRESOLVE 1"',
     ]
@@ -165,7 +162,6 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_3)
     assert sim_args == [
         "--linear-solver=xpress",
-        "--quadratic-solver=sirius",
         "--use-optim-1-basis-next-week=false",
         "--use-optim-1-basis-optim-2=false",
         '--lp-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
