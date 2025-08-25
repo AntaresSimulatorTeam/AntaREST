@@ -245,10 +245,8 @@ class ThermalClusterTimeSeriesGeneratorTask:
         listener = TaskProgressRecorder(notifier=notifier)
         with db():
             study = self.repository.one(self._study_id)
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            command = GenerateThermalClusterTimeSeries(
-                command_context=command_context, study_version=file_study.config.version
-            )
+            study_version = StudyVersion.parse(study.version)
+            command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=study_version)
             self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):

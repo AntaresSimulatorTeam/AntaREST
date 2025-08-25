@@ -47,12 +47,18 @@ from antarest.matrixstore.model import (
     MatrixDataSetDTO,
     MatrixDataSetRelation,
     MatrixDataSetUpdateDTO,
+    MatrixDescriptionDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
     MatrixReference,
+    MatrixReferencesDTO,
 )
 from antarest.matrixstore.parsing import save_matrix
-from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
+from antarest.matrixstore.repository import (
+    MatrixContentRepository,
+    MatrixDataSetRepository,
+    MatrixRepository,
+)
 
 # List of files to exclude from ZIP archives
 EXCLUDED_FILES = {
@@ -130,6 +136,10 @@ class ISimpleMatrixService(ABC):
         else:
             raise TypeError(f"Invalid type for matrix: {type(matrix)}")
 
+    @abstractmethod
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        raise NotImplementedError
+
 
 class SimpleMatrixService(ISimpleMatrixService):
     def __init__(self, matrix_content_repository: MatrixContentRepository):
@@ -159,6 +169,10 @@ class SimpleMatrixService(ISimpleMatrixService):
     @override
     def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
         self.usage_providers.append(usage_provider)
+
+    @override
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        raise NotImplementedError
 
 
 def check_dataframe_compliance(df: pd.DataFrame) -> None:
@@ -553,12 +567,10 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
-    def get_used_matrices(self) -> Set[str]:
+    def get_used_matrices(self) -> Set[MatrixReference]:
         """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
         return {
-            matrix_reference.matrix_id
-            for provider in self.usage_providers
-            for matrix_reference in provider.get_matrix_usage()
+            matrix_reference for provider in self.usage_providers for matrix_reference in provider.get_matrix_usage()
         }
 
     def _create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
@@ -580,3 +592,24 @@ class MatrixService(ISimpleMatrixService):
                 ]
 
         return DatasetUsageProvider(self)
+
+    @override
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
+        used_matrices = self.get_used_matrices()
+        references_dto: dict[str, MatrixReferencesDTO] = {}
+        for matrix in used_matrices:
+            matrix_size = None
+            matrix_id = matrix.matrix_id
+
+            ref_dto = MatrixDescriptionDTO(description=matrix.use_description)
+
+            if matrix_id not in references_dto:
+                if disk_usage:
+                    matrix_size = self.matrix_content_repository.get_matrix_disk_usage(matrix_id)
+
+                refs_dto = MatrixReferencesDTO(refs=[ref_dto], disk_usage=matrix_size)
+                references_dto.update({matrix_id: refs_dto})
+            else:
+                references_dto[matrix_id].refs.append(ref_dto)
+
+        return references_dto

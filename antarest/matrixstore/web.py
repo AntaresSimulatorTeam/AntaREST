@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 import pandas as pd
-from fastapi import APIRouter, Body, Depends, File, UploadFile
+from fastapi import APIRouter, Body, Depends, File, Query, UploadFile
 from starlette.responses import FileResponse
 
 from antarest.core.config import Config
@@ -31,6 +31,7 @@ from antarest.matrixstore.model import (
     MatrixDataSetUpdateDTO,
     MatrixInfoDTO,
     MatrixMetadataDTO,
+    MatrixReferencesDTO,
 )
 from antarest.matrixstore.service import MatrixService
 
@@ -96,6 +97,24 @@ def create_matrix_api(service: MatrixService, ftm: FileTransferManager, config: 
             columns=list(df.columns),
             data=df.to_numpy().tolist(),
         )
+
+    @bp.get(
+        "/matrix/_references/",
+        tags=[APITag.matrix],
+        description="Fetching a list of matrices statistics",
+        response_model_exclude_none=True,
+    )
+    def get_matrices_references(
+        disk_usage: bool = Query(
+            ..., alias="disk_usage", description="Determine if the disk usage should be displayed", title="Disk Usage"
+        ),
+    ) -> dict[str, MatrixReferencesDTO]:
+        user = require_current_user()
+        logger.info("Fetching matrices references")
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError
+
+        return service.get_matrices_references(disk_usage)
 
     @bp.post("/matrixdataset", tags=[APITag.matrix], response_model=MatrixDataSetDTO)
     def create_dataset(metadata: MatrixDataSetUpdateDTO = Body(...), matrices: List[MatrixInfoDTO] = Body(...)) -> Any:
