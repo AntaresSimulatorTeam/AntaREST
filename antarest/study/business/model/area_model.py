@@ -13,9 +13,10 @@
 import enum
 from typing import List, Mapping, Optional, Sequence
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -41,19 +42,26 @@ class AreaInfoDTO(AreaCreationDTO):
     thermals: Optional[List[ThermalCluster]] = None
 
 
-class LayerInfoDTO(AntaresBaseModel):
-    id: str
-    name: str
-    areas: List[str]
+class AreaUi(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    x: int
+    y: int
+    color_rgb: Sequence[int]
+    layer_x: Mapping[int, int]
+    layer_y: Mapping[int, int]
+    layer_color: Mapping[int, str]
 
 
-class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    x: int = Field(title="X position")
-    y: int = Field(title="Y position")
-    color_rgb: Sequence[int] = Field(title="RGB color", alias="colorRgb")
-    layer_x: Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
-    layer_y: Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
-    layer_color: Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
+class UpdateAreaUi(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
+
+    x: int | None = None
+    y: int | None = None
+    color_rgb: Sequence[int] | None = None
+    layer_x: Mapping[int, int] | None = None
+    layer_y: Mapping[int, int] | None = None
+    layer_color: Mapping[int, str] | None = None
 
 
 # noinspection SpellCheckingInspection

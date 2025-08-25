@@ -23,7 +23,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
-from antarest.study.business.model.area_model import LayerInfoDTO
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -591,15 +591,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     res.raise_for_status()
-    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
+    assert res.json() == [Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
     assert res.json() == "test"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
-        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(mode="json"),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        Layer(id="1", name="test", areas=[]).model_dump(mode="json"),
     ]
 
     res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
@@ -610,8 +610,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code in {200, 201}, res.json()
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
-        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(mode="json"),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        Layer(id="1", name="test2", areas=["area 2"]).model_dump(mode="json"),
     ]
 
     # Delete the layer '1' that has 1 area
@@ -621,7 +621,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Ensure the layer is deleted
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
     ]
 
     # Create the layer again without areas
@@ -635,7 +635,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Ensure the layer is deleted
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
     ]
 
     # Try to delete a non-existing layer
