@@ -72,3 +72,15 @@ export type NonEmptyArray<T> = [T, ...T[]];
  * type NonNullMyType = ExcludeNullFromProps<MyType>; // { a: string; b: number }
  */
 export type ExcludeNullFromProps<T> = { [K in keyof T]: Exclude<T[K], null> };
+
+/**
+ * Converts a boolean type to its string representation.
+ * If T is not a boolean, it returns T unchanged.
+ *
+ * @template T - The type to convert.
+ * @example
+ * type Type1 = BooleanToStringOrIdentity<boolean>; // "false" | "true"
+ * type Type2 = BooleanToStringOrIdentity<"foo" | true>; // "foo" | "true"
+ * type Type3 = BooleanToStringOrIdentity<"baz">; // "baz"
+ */
+export type BooleanToStringOrIdentity<T> = T extends true ? "true" : T extends false ? "false" : T;

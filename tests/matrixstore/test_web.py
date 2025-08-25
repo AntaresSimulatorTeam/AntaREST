@@ -20,10 +20,11 @@ from starlette.testclient import TestClient
 
 from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.fastapi_jwt_auth import AuthJWT
 from antarest.main import JwtSettings
 from antarest.matrixstore.main import build_matrix_service
-from antarest.matrixstore.model import MatrixInfoDTO
+from antarest.matrixstore.model import MatrixDescriptionDTO, MatrixInfoDTO, MatrixReference, MatrixReferencesDTO
 from antarest.matrixstore.web import MatrixDTO
 from tests.helpers import with_admin_user
 from tests.login.test_web import create_auth_token
@@ -123,3 +124,98 @@ def test_import() -> None:
     )
     assert res.status_code == 200
     assert [MatrixInfoDTO.model_validate(res.json()[0])] == matrix_info
+
+
+@with_admin_user
+@pytest.mark.unit_test
+def test_get_matrices_references() -> None:
+    command_id = "a68de4b5e96a60c8ceb3c7b7ef93461725bdbbff3516b136585a743b5c0ec664"
+    dataset_id = "data_1"
+    study_id = "study_id"
+    ref_one = MatrixDescriptionDTO(description=f"Referenced by command {command_id} of study study1")
+    ref_two = MatrixDescriptionDTO(description=f"Referenced by raw study {study_id}")
+    ref_three = MatrixDescriptionDTO(description="Constant matrix")
+    ref_four = MatrixDescriptionDTO(description=f"Referenced by dataset {dataset_id}")
+    refs_one = [ref_one, ref_two]
+    refs_two = [ref_three]
+    refs_three = [ref_four]
+
+    disk_usage = 24
+    matrix_reference_one = MatrixReferencesDTO(refs=refs_one, disk_usage=disk_usage)
+    matrix_reference_two = MatrixReferencesDTO(refs=refs_two, disk_usage=disk_usage)
+    matrix_reference_three = MatrixReferencesDTO(refs=refs_three, disk_usage=disk_usage)
+    matrix_dict = {
+        command_id: matrix_reference_one,
+        "constant_id_1": matrix_reference_two,
+        "test": matrix_reference_three,
+    }
+    service = Mock()
+    matrix_references = {
+        MatrixReference(matrix_id=command_id, use_description=f"Referenced by command {command_id} of study study1"),
+        MatrixReference(matrix_id=command_id, use_description=f"Referenced by raw study {study_id}"),
+        MatrixReference(matrix_id="constant_id_1", use_description="Constant matrix"),
+        MatrixReference(matrix_id="test", use_description=f"Referenced by dataset {dataset_id}"),
+    }
+    service.get_used_matrices.return_value = matrix_references
+
+    service.get_matrices_references.return_value = matrix_dict
+    app = create_app(service)
+    client = TestClient(app)
+    user = DEFAULT_ADMIN_USER
+    res = client.get(
+        "/v1/matrix/_references/", headers=create_auth_token(app=app, user=user), params={"disk_usage": True}
+    )
+
+    res_dict_test = creating_json_res_dict(res)
+
+    sorted_matrix_dict = dict(sorted(matrix_dict.items()))
+    sorted_res_matrix_dict = dict(sorted(res_dict_test.items()))
+    assert res.status_code == 200
+    assert sorted_res_matrix_dict == sorted_matrix_dict
+
+    matrix_reference_one = MatrixReferencesDTO(refs=refs_one, disk_usage=None)
+    matrix_reference_two = MatrixReferencesDTO(refs=refs_two, disk_usage=None)
+    matrix_reference_three = MatrixReferencesDTO(refs=refs_three, disk_usage=None)
+    matrix_dict = {
+        command_id: matrix_reference_one,
+        "constant_id_1": matrix_reference_two,
+        "test": matrix_reference_three,
+    }
+
+    service.get_used_matrices.return_value = matrix_references
+
+    service.get_matrices_references.return_value = matrix_dict
+
+    res = client.get(
+        "/v1/matrix/_references/", headers=create_auth_token(app=app, user=user), params={"disk_usage": False}
+    )
+    assert res.status_code == 200
+    data__ = {
+        f"{command_id}": {
+            "refs": [
+                {"description": f"Referenced by command {command_id} of study study1"},
+                {"description": "Referenced by raw study study_id"},
+            ]
+        },
+        "constant_id_1": {"refs": [{"description": "Constant matrix"}]},
+        "test": {"refs": [{"description": "Referenced by dataset data_1"}]},
+    }
+    assert res.json() == data__
+
+
+def creating_json_res_dict(res) -> dict[str, MatrixReferencesDTO]:
+    res_dict_test = {}
+    for matrix_id in res.json():
+        description = res.json()[matrix_id]["refs"]
+        disk_usage = None
+        if "disk_usage" in res.json()[matrix_id]:
+            disk_usage = res.json()[matrix_id]["disk_usage"]
+        descs_dto = sorted(
+            [MatrixDescriptionDTO(description=desc["description"]) for desc in description],
+            key=lambda x: x.description,
+            reverse=False,
+        )
+        refs_dto = MatrixReferencesDTO(refs=descs_dto, disk_usage=disk_usage)
+        res_dict_test.update({matrix_id: refs_dto})
+
+    return res_dict_test
