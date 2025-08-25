@@ -2368,6 +2368,13 @@ class StudyService:
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
         Returns the content of a node based on the provided arguments.
+
+        Depending on the type of node, it may return the following types of data:
+          - an arbitrary dictionary (ini files ...)
+          - a dataframe (input matrices ...)
+          - raw file content (arbitrary user files ...)
+
+        This allows callers to handle the result as most appropriate.
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
@@ -2375,6 +2382,7 @@ class StudyService:
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)
 
+        # Return a datframe when possible instead of less memory & computation - efficient python objects
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 

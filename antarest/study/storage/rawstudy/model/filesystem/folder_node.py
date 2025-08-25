@@ -58,8 +58,8 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     def _forward_get(
         self,
         url: List[str],
-        depth: int = -1,
-        formatted: bool = True,
+        depth: int,
+        formatted: bool,
     ) -> JSON:
         children = self.build()
         names, sub_url = self._extract_child(children, url)
@@ -79,7 +79,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                 for key in names
             }
 
-    def _expand_get(self, depth: int = -1, formatted: bool = True) -> JSON:
+    def _expand_get(self, depth: int, formatted: bool) -> JSON:
         children = self.build()
 
         if depth == 0:
