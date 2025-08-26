@@ -9,13 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TypeVar, Iterable
+from typing import Iterable, TypeVar
 
 T = TypeVar("T")
 U = TypeVar("U")
 V = TypeVar("V")
 W = TypeVar("W")
 X = TypeVar("X")
+
 
 def iter_nested(data: dict[T, dict[U, V]]) -> Iterable[tuple[T, U, V]]:
     """
@@ -25,6 +26,7 @@ def iter_nested(data: dict[T, dict[U, V]]) -> Iterable[tuple[T, U, V]]:
         for k2, v2 in v1.items():
             yield k1, k2, v2
 
+
 def iter_nested_2(data: dict[T, dict[U, dict[V, W]]]) -> Iterable[tuple[T, U, V, W]]:
     """
     Allows to flatten iterations on a double-nested dictionary.
@@ -33,6 +35,7 @@ def iter_nested_2(data: dict[T, dict[U, dict[V, W]]]) -> Iterable[tuple[T, U, V,
         for k2, v2 in v1.items():
             for k3, v3 in v2.items():
                 yield k1, k2, k3, v3
+
 
 def iter_nested_3(data: dict[T, dict[U, dict[V, dict[W, X]]]]) -> Iterable[tuple[T, U, V, W, X]]:
     """

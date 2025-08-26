@@ -290,7 +290,6 @@ class FileStudyTreeConfig(DTO):
         )
 
 
-
 class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_path: Path
     path: Path

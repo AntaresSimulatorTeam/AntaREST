@@ -16,7 +16,7 @@ Serialization and parsing for scenariobuilder.dat file
 
 from typing import TypeVar, cast, overload
 
-from antarest.core.utils.dict_utils import iter_nested_3, iter_nested_2, iter_nested
+from antarest.core.utils.dict_utils import iter_nested, iter_nested_2, iter_nested_3
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
     AreaItemsScenarios,

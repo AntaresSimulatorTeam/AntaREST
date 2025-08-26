@@ -150,7 +150,6 @@ def test_update_ruleset_3_levels_scenarios() -> None:
     assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": ""}}}}
 
 
-
 @pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
 @pytest.mark.parametrize(
     "scenario_type,getter",
@@ -172,7 +171,6 @@ def test_get_set_by_type(ruleset_cls, scenario_type: ScenarioType, getter) -> No
     ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})
     assert getter(ruleset) == {"be": {"1": 2, "2": 1}}
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
-
 
 
 @pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
