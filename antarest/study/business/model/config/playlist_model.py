@@ -14,8 +14,8 @@ from antarest.core.serde import AntaresBaseModel
 
 
 class PlaylistValues(AntaresBaseModel):
-    status: bool  # True if the year is to be simulated by the solver, False otherwise
-    weight: float | int
+    status: bool = True  # True if the year is to be simulated by the solver, False otherwise
+    weight: float | int = 1
 
 
 class PlaylistValuesUpdate(AntaresBaseModel):
