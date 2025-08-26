@@ -21,6 +21,7 @@ from antarest.study.business.model.scenario_builder_model import (
     AreaItemsScenarios,
     AreaScenarios,
     HydroLevelsScenarios,
+    LinkScenarios,
     RandType,
     Ruleset,
     Rulesets,
@@ -52,9 +53,7 @@ _SCENARIO_TYPE_SYMBOLS = {
 _SCENARIO_TYPE_FOR_SYMBOL = {v: k for k, v in _SCENARIO_TYPE_SYMBOLS.items()}
 
 
-def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
-    if not data:
-        return
+def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
@@ -62,10 +61,8 @@ def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType
 
 
 def _serialize_hydro_levels(
-    section: dict[str, RuleValue], scenario_type: ScenarioType, data: HydroLevelsScenarios | None
+    section: dict[str, RuleValue], scenario_type: ScenarioType, data: HydroLevelsScenarios
 ) -> None:
-    if not data:
-        return
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
@@ -75,9 +72,7 @@ def _serialize_hydro_levels(
             section[f"{symbol},{area},{year}"] = val
 
 
-def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios | None) -> None:
-    if not data:
-        return
+def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType, data: LinkScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for link, scenario_link in data.items():
         for year, value in scenario_link.items():
@@ -85,11 +80,7 @@ def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType,
             section[f"{symbol},{area1},{area2},{year}"] = value
 
 
-def _serialize_clusters(
-    section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios | None
-) -> None:
-    if not data:
-        return
+def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for cluster, scenario_area_cluster in scenario_area.items():
