@@ -152,10 +152,7 @@ def _parse_ruleset(ruleset_data: RulesetFileData, cls: type[RulesetUpdate]) -> R
 
 def _parse_ruleset(ruleset_data: RulesetFileData, cls: type[Ruleset] | type[RulesetUpdate]) -> Ruleset | RulesetUpdate:
     """
-    Parses rules data as read from INI file, and populates a Ruleset object with it.
-
-    A pre-existing Ruleset object can be provided, in which case it will be updated with the new data.
-    Otherwise, a new one is created.
+    Parses rules data as read from INI file format, and populates a Ruleset or RulesetUpdate object with it.
     """
     ruleset = cls()
     for key, value in ruleset_data.items():
