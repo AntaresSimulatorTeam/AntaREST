@@ -128,7 +128,7 @@ function ThematicTrimmingDialog(props: Props) {
                 {t("study.configuration.general.thematicTrimming.action.disableAll")}
               </Button>
               <Button {...commonBtnProps} onClick={handleUpdateConfig(api, R.not)}>
-                {t("study.configuration.general.thematicTrimming.action.reverse")}
+                {t("global.reverse")}
               </Button>
               <Divider orientation="vertical" flexItem />
               <Button {...commonBtnProps} onClick={() => setExpanded({})}>

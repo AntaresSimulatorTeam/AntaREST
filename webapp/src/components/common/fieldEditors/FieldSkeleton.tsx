@@ -18,10 +18,11 @@ import clsx from "clsx";
 interface Props {
   children?: React.ReactNode;
   className?: string;
+  isLoading?: boolean;
 }
 
-function FieldSkeleton({ className, children }: Props) {
-  return (
+function FieldSkeleton({ className, children, isLoading = true }: Props) {
+  return isLoading ? (
     <Skeleton
       className={clsx(className, "FieldSkeleton")}
       variant="rectangular"
@@ -29,6 +30,8 @@ function FieldSkeleton({ className, children }: Props) {
     >
       {children}
     </Skeleton>
+  ) : (
+    children
   );
 }
 

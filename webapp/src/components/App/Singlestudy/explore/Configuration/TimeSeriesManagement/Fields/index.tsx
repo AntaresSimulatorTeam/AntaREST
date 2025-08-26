@@ -40,10 +40,10 @@ function Fields() {
             </TableCell>
           </TableRow>
         </TableHead>
-        <TableBody sx={{ "tr:last-child td": { border: "none" } }}>
+        <TableBody sx={{ "tr:last-child > *": { border: "none" } }}>
           {Object.values(TimeSeriesType).map((type) => (
             <TableRow key={type}>
-              <TableCell sx={{ fontWeight: "bold" }}>
+              <TableCell sx={{ fontWeight: "bold" }} component="th" scope="row">
                 {t(`timeSeries.type.${type}`, type)}
               </TableCell>
               <TableCell align="center">

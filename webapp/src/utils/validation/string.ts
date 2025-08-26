@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import i18n from "@/i18n";
 import type { ValidationReturn } from "@/types/types";
-import { t } from "i18next";
 
 interface StringValidationOptions {
   existingValues?: string[];
@@ -92,21 +92,21 @@ export function validateString(
   } = options;
 
   if (!value) {
-    return allowEmpty ? true : t("form.field.required");
+    return allowEmpty ? true : i18n.t("form.field.required");
   }
 
   const trimmedValue = value.trim();
 
   if (!trimmedValue) {
-    return t("form.field.invalidValue");
+    return i18n.t("form.field.invalidValue");
   }
 
   if (trimmedValue.length < minLength) {
-    return t("form.field.minLength", { length: minLength });
+    return i18n.t("form.field.minLength", { length: minLength });
   }
 
   if (trimmedValue.length > maxLength) {
-    return t("form.field.maxLength", { length: maxLength });
+    return i18n.t("form.field.maxLength", { length: maxLength });
   }
 
   const specialCharsObj =
@@ -118,7 +118,7 @@ export function validateString(
     }
 
     if (char === " ") {
-      return allowSpaces ? true : t("form.field.spacesNotAllowed");
+      return allowSpaces ? true : i18n.t("form.field.spacesNotAllowed");
     }
 
     if (allowSpecialChars) {
@@ -126,15 +126,15 @@ export function validateString(
       const isIncluded = chars.includes(char);
 
       if (mode === "allow") {
-        return isIncluded ? true : t("form.field.specialCharsAllowedList", { chars });
+        return isIncluded ? true : i18n.t("form.field.specialCharsAllowedList", { chars });
       }
 
       if (mode === "deny") {
-        return isIncluded ? t("form.field.specialCharsNotAllowedList", { chars }) : true;
+        return isIncluded ? i18n.t("form.field.specialCharsNotAllowedList", { chars }) : true;
       }
     }
 
-    return t("form.field.specialCharsNotAllowed");
+    return i18n.t("form.field.specialCharsNotAllowed");
   }
 
   for (const char of trimmedValue) {
@@ -157,12 +157,12 @@ export function validateString(
 
   // Check for duplication against existing values.
   if (existingValues.map(normalize).includes(comparisonValue)) {
-    return t("form.field.duplicate");
+    return i18n.t("form.field.duplicate");
   }
 
   // Check for inclusion in the list of excluded values.
   if (excludedValues.map(normalize).includes(comparisonValue)) {
-    return t("form.field.notAllowedValue", { 0: value });
+    return i18n.t("form.field.notAllowedValue", { 0: value });
   }
 
   return true;
@@ -178,31 +178,31 @@ export function validatePassword(password: string): ValidationReturn {
   const trimmedPassword = password.trim();
 
   if (!trimmedPassword) {
-    return t("form.field.required");
+    return i18n.t("form.field.required");
   }
 
   if (trimmedPassword.length < 8) {
-    return t("form.field.minLength", { length: 8 });
+    return i18n.t("form.field.minLength", { length: 8 });
   }
 
   if (trimmedPassword.length > 50) {
-    return t("form.field.maxLength", { length: 50 });
+    return i18n.t("form.field.maxLength", { length: 50 });
   }
 
   if (!/[a-z]/.test(trimmedPassword)) {
-    return t("form.field.requireLowercase");
+    return i18n.t("form.field.requireLowercase");
   }
 
   if (!/[A-Z]/.test(trimmedPassword)) {
-    return t("form.field.requireUppercase");
+    return i18n.t("form.field.requireUppercase");
   }
 
   if (!/\d/.test(trimmedPassword)) {
-    return t("form.field.requireDigit");
+    return i18n.t("form.field.requireDigit");
   }
 
   if (!/[^\w\s]/.test(trimmedPassword)) {
-    return t("form.field.requireSpecialChars");
+    return i18n.t("form.field.requireSpecialChars");
   }
 
   return true;
@@ -250,15 +250,15 @@ export function validatePath(
   const { allowToStartWithSlash = true, allowToEndWithSlash = true, allowEmpty = false } = options;
 
   if (!path) {
-    return allowEmpty ? true : t("form.field.required");
+    return allowEmpty ? true : i18n.t("form.field.required");
   }
 
   if (!allowToStartWithSlash && path.startsWith("/")) {
-    return t("form.field.path.startWithSlashNotAllowed");
+    return i18n.t("form.field.path.startWithSlashNotAllowed");
   }
 
   if (!allowToEndWithSlash && path.endsWith("/")) {
-    return t("form.field.path.endWithSlashNotAllowed");
+    return i18n.t("form.field.path.endWithSlashNotAllowed");
   }
 
   if (
@@ -269,7 +269,7 @@ export function validatePath(
       .map((v) => v.trim())
       .includes("")
   ) {
-    return t("form.field.path.invalid");
+    return i18n.t("form.field.path.invalid");
   }
 
   return true;

@@ -14,13 +14,15 @@
 
 import { validatePassword, validateString } from "../string";
 
-vi.mock("i18next", () => ({
-  t: vi.fn((key, options) => {
-    if (options) {
-      return `${key}: ${JSON.stringify(options)}`;
-    }
-    return key;
-  }),
+vi.mock("@/i18n", () => ({
+  default: {
+    t: vi.fn((key, options) => {
+      if (options) {
+        return `${key}: ${JSON.stringify(options)}`;
+      }
+      return key;
+    }),
+  },
 }));
 
 describe("validateString", () => {
