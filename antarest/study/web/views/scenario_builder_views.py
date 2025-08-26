@@ -20,6 +20,7 @@ from typing import TypeAlias
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.pydantic import get_model_field_values
 from antarest.study.business.model.scenario_builder_model import (
     AreaItemsScenarios,
     AreaScenarios,
@@ -52,12 +53,14 @@ class RulesetView(AntaresBaseModel, populate_by_name=True, extra="forbid"):
 
     @classmethod
     def from_model(cls, model: Ruleset) -> "RulesetView":
-        field_values = {f: getattr(model, f) for f in Ruleset.model_fields.keys()}
+        field_values = get_model_field_values(model)
         non_empty = {k: v for k, v in field_values.items() if v}
+        # model_construct to not perform validation again, ruleset has already been validated
         return RulesetView.model_construct(**non_empty)
 
     def to_model(self) -> RulesetUpdate:
-        field_values = {f: getattr(self, f) for f in RulesetView.model_fields.keys()}
+        field_values = get_model_field_values(self)
+        # model_construct to not perform validation again, self has already been validated
         return RulesetUpdate.model_construct(**field_values)
 
 
