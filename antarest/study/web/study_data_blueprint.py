@@ -63,7 +63,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )
-from antarest.study.business.model.config.playlist_model import PlaylistValues, PlaylistValuesUpdate
+from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
@@ -425,7 +425,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.playlist_manager.get_playlist(study_interface)
+        return study_service.playlist_manager.get_playlist(study_interface).years
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
@@ -436,7 +436,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.playlist_manager.update_playlist(study_interface, data)
+        playlist_update = PlaylistUpdate.model_validate({"years": data})
+        return study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",

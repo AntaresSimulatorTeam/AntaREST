@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
+from antarest.study.business.model.config.playlist_model import Playlist, PlaylistUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -21,15 +21,12 @@ class PlaylistManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_playlist(self, study: StudyInterface) -> dict[int, PlaylistValues]:
-        return study.get_study_dao().get_playlist_config().years
+    def get_playlist(self, study: StudyInterface) -> Playlist:
+        return study.get_study_dao().get_playlist_config()
 
-    def update_playlist(
-        self, study: StudyInterface, playlist: dict[int, PlaylistValuesUpdate]
-    ) -> dict[int, PlaylistValues]:
-        playlist_update = PlaylistUpdate.model_validate({"years": playlist})
+    def update_playlist(self, study: StudyInterface, playlist: PlaylistUpdate) -> Playlist:
         command = UpdatePlaylist(
-            playlist=playlist_update,
+            playlist=playlist,
             command_context=self._command_context,
             study_version=study.version,
         )

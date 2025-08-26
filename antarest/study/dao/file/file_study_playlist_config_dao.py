@@ -60,7 +60,7 @@ class FileStudyPlaylistConfigDao(PlaylistConfigDao, ABC):
                 playlist[year] = {"status": playlist_reset, "weight": weights.get(year, 1)}
 
         # Build the object
-        return Playlist(**playlist)
+        return Playlist.model_validate({"years": playlist})
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
