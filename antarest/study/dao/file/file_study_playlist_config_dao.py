@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import override
 
@@ -64,4 +64,27 @@ class FileStudyPlaylistConfigDao(PlaylistConfigDao, ABC):
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
-        raise NotImplementedError()
+        activated_years = []
+        deactivated_years = []
+        weights = []
+        for year, model in playlist.years.items():
+            if model.status:
+                activated_years.append(year - 1)
+            else:
+                deactivated_years.append(year - 1)
+            weights.append(f"{year},{model.weight}")
+
+        content: dict[str, Any] = {"playlist_year_weight": weights}
+
+        all_years = len(playlist.years)
+        # Determine what's lighter to write inside the file
+        if len(activated_years) > all_years // 2:
+            # Means we'll write only deactivated years
+            content["playlist_reset"] = True
+            content["playlist_year -"] = deactivated_years
+        else:
+            # Means we'll write only activated years
+            content["playlist_reset"] = False
+            content["playlist_year +"] = activated_years
+
+        self.get_file_study().tree.save(content, ["settings", "generaldata", "playlist"])
