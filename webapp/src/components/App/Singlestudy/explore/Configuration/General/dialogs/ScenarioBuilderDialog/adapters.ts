@@ -13,13 +13,15 @@
  */
 
 import {
+  type EntityYearlyValues,
+  isLevel1Scenario,
+  isLevel2Scenario,
+  isLevel3Scenario,
+  type Level1Data,
+  type Level3Data,
+  type ScenarioData,
+  type ScenarioDataStructure,
   type ScenarioType,
-  type ScenarioConfig,
-  type GenericScenarioConfig,
-  type StorageConstraintsConfig,
-  isSimpleScenario,
-  isClusterScenario,
-  isConstraintScenario,
 } from "./types";
 
 ////////////////////////////////////////////////////////////////
@@ -27,76 +29,76 @@ import {
 ////////////////////////////////////////////////////////////////
 
 /**
- * Adapts the flattened UI representation of storage constraints back to the nested DTO structure
+ * Converts flattened Level 1 representation back to nested Level 3 structure
  *
- * @param flatConfig - Flattened configuration with "storageId - constraintId" keys
- * @returns Nested configuration for the API
+ * @param flatConfig - Flattened configuration with "entityId - subEntityId" keys
+ * @returns Nested entity-subentity structure for the API
  *
  * @example
  * Input:  { "storage1 - constraint1": { "1": 10, "2": 20 } }
  * Output: { "storage1": { "constraint1": { "1": 10, "2": 20 } } }
  */
-function adaptFlattenedConstraintsToDto(
-  flatConfig: GenericScenarioConfig,
-): StorageConstraintsConfig {
-  const nestedStructure: StorageConstraintsConfig = {};
+function flattenedToNestedStructure(
+  flatConfig: Level1Data,
+): Record<string, Record<string, EntityYearlyValues>> {
+  const nestedStructure: Record<string, Record<string, EntityYearlyValues>> = {};
 
   Object.entries(flatConfig).forEach(([compositeKey, yearlyValues]) => {
-    const [storageId, constraintId] = compositeKey.split(" - ");
+    const [entityId, subEntityId] = compositeKey.split(" - ");
 
-    if (!storageId || !constraintId) {
+    if (!entityId || !subEntityId) {
       throw new Error(
-        `Invalid composite key format: ${compositeKey}. Expected format: "storageId - constraintId"`,
+        `Invalid composite key format: ${compositeKey}. Expected format: "entityId - subEntityId"`,
       );
     }
 
-    if (!nestedStructure[storageId]) {
-      nestedStructure[storageId] = {};
+    if (!nestedStructure[entityId]) {
+      nestedStructure[entityId] = {};
     }
 
-    nestedStructure[storageId][constraintId] = yearlyValues;
+    nestedStructure[entityId][subEntityId] = yearlyValues;
   });
 
   return nestedStructure;
 }
 
 /**
- * Adapts UI form data to the API DTO format based on the scenario type
+ * Converts UI form data to API data structure based on scenario type
  *
- * @param scenarioType - The type of scenario being processed
- * @param formData - The form data from the UI
- * @param areaId - The selected area ID (required for cluster and constraint scenarios)
- * @returns Properly formatted DTO for the API
+ * @param scenarioType - Type of scenario being processed
+ * @param formData - Form data from the UI
+ * @param areaId - Selected area ID (required for Level 2 and 3 scenarios)
+ * @returns Properly formatted data for the API
  *
  * @throws {Error} If area ID is required but not provided
  */
 export function adaptScenarioFormToDto(
   scenarioType: ScenarioType,
-  formData: Record<string, any>,
+  formData: Level1Data,
   areaId?: string,
-): Partial<ScenarioConfig> {
-  // Simple scenarios: direct mapping
-  if (isSimpleScenario(scenarioType)) {
+): Partial<ScenarioData> {
+  // Level 1 scenarios: direct mapping
+  if (isLevel1Scenario(scenarioType)) {
     return { [scenarioType]: formData };
   }
 
-  // Complex scenarios require area ID
+  // Level 2 and 3 scenarios require area ID
   if (!areaId) {
     throw new Error(`Area ID is required for ${scenarioType} scenario`);
   }
 
-  // Constraint scenarios: transform flattened structure to nested
-  if (isConstraintScenario(scenarioType)) {
-    const nestedConstraints = adaptFlattenedConstraintsToDto(formData);
-    return { [scenarioType]: { [areaId]: nestedConstraints } };
+  // Level 3 scenarios: transform flattened structure to nested
+  if (isLevel3Scenario(scenarioType)) {
+    const nestedStructure = flattenedToNestedStructure(formData);
+    return { [scenarioType]: { [areaId]: nestedStructure } };
   }
 
-  // Cluster scenarios: wrap in area structure
-  if (isClusterScenario(scenarioType)) {
+  // Level 2 scenarios: wrap in area structure
+  if (isLevel2Scenario(scenarioType)) {
     return { [scenarioType]: { [areaId]: formData } };
   }
 
-  // Should never reach here with proper types
+  // Should never reach here
   throw new Error(`Unknown scenario type: ${scenarioType}`);
 }
 
@@ -105,54 +107,55 @@ export function adaptScenarioFormToDto(
 ////////////////////////////////////////////////////////////////
 
 /**
- * Adapts nested storage constraints from DTO to flattened UI representation
+ * Converts nested entity-subentity structure to flattened representation
  *
- * @param nestedConfig - Nested configuration from the API
- * @returns Flattened configuration for the UI with composite keys
+ * @param nestedStructure - Nested configuration from the API
+ * @returns Flattened configuration with composite keys
  *
  * @example
  * Input:  { "storage1": { "constraint1": { "1": 10, "2": 20 } } }
  * Output: { "storage1 - constraint1": { "1": 10, "2": 20 } }
  */
-export function adaptConstraintsDtoToFlattened(
-  nestedConfig: StorageConstraintsConfig,
-): GenericScenarioConfig {
-  const flattenedConfig: GenericScenarioConfig = {};
+export function nestedStructureToFlattened(
+  nestedStructure: Record<string, Record<string, EntityYearlyValues>>,
+): Level1Data {
+  const flattenedData: Level1Data = {};
 
-  Object.entries(nestedConfig).forEach(([storageId, constraints]) => {
-    Object.entries(constraints).forEach(([constraintId, yearlyValues]) => {
-      const compositeKey = `${storageId} - ${constraintId}`;
-      flattenedConfig[compositeKey] = yearlyValues;
+  Object.entries(nestedStructure).forEach(([entityId, subEntities]) => {
+    Object.entries(subEntities).forEach(([subEntityId, yearlyValues]) => {
+      const compositeKey = `${entityId} - ${subEntityId}`;
+      flattenedData[compositeKey] = yearlyValues;
     });
   });
 
-  return flattenedConfig;
+  return flattenedData;
 }
 
 /**
- * Adapts API DTO to UI representation based on the scenario type
- * This is primarily used for transforming constraint scenarios
+ * Converts API data to UI representation based on scenario type
+ * Primarily transforms Level 3 scenarios to flattened representation
  *
- * @param scenarioType - The type of scenario being processed
- * @param dtoData - The data from the API
- * @param areaId - The selected area ID (for constraint scenarios)
+ * @param scenarioType - Type of scenario being processed
+ * @param apiData - Data from the API
+ * @param areaId - Selected area ID (for Level 2 and 3 scenarios)
  * @returns UI-ready data structure
  */
-export function adaptScenarioDtoToForm(
-  scenarioType: ScenarioType,
-  dtoData: any,
+export function adaptScenarioDtoToForm<T extends ScenarioType>(
+  scenarioType: T,
+  apiData: ScenarioDataStructure<T>,
   areaId?: string,
-): GenericScenarioConfig {
-  // For constraint scenarios with area selection, flatten the structure
-  if (isConstraintScenario(scenarioType) && areaId && dtoData) {
-    const areaData = dtoData[areaId];
+): Level1Data {
+  // For Level 3 scenarios with area selection, flatten the structure
+  if (isLevel3Scenario(scenarioType) && areaId && apiData) {
+    const areaData = (apiData as Level3Data)[areaId];
+
     if (areaData) {
-      return adaptConstraintsDtoToFlattened(areaData);
+      return nestedStructureToFlattened(areaData);
     }
   }
 
   // For other scenarios, return as-is
-  return dtoData || {};
+  return (apiData as Level1Data) || {};
 }
 
 ////////////////////////////////////////////////////////////////

@@ -12,111 +12,110 @@
  * This file is part of the Antares project.
  */
 
-import { adaptConstraintsDtoToFlattened } from "./adapters";
+import { nestedStructureToFlattened } from "./adapters";
 import type {
-  ClustersHandlerReturn,
-  ClustersScenarioConfig,
-  GenericScenarioConfig,
-  HandlerReturnTypes,
-  NonNullableRulesetConfig,
-  ScenarioConfig,
-  StorageConstraintsHandlerReturn,
-  StorageConstraintsScenarioConfig,
+  Level1Data,
+  Level2Data,
+  Level2Display,
+  Level3Data,
+  Level3Display,
+  NonNullableScenarioData,
+  ScenarioData,
+  ScenarioDisplayMap,
 } from "./types";
 
 ////////////////////////////////////////////////////////////////
-// Handlers
+// Data Processors
 ////////////////////////////////////////////////////////////////
 
-type ConfigHandler<T, U = T> = (config: T) => U;
+type DataProcessor<T, U = T> = (data: T) => U;
 
-const handlers: {
-  [K in keyof NonNullableRulesetConfig]: ConfigHandler<
-    NonNullableRulesetConfig[K],
-    HandlerReturnTypes[K]
+const processors: {
+  [K in keyof NonNullableScenarioData]: DataProcessor<
+    NonNullableScenarioData[K],
+    ScenarioDisplayMap[K]
   >;
 } = {
-  load: handleGenericConfig,
-  thermal: handleClustersConfig,
-  hydro: handleGenericConfig,
-  wind: handleGenericConfig,
-  solar: handleGenericConfig,
-  ntc: handleGenericConfig,
-  renewable: handleClustersConfig,
-  hydroInitialLevels: handleGenericConfig,
-  bindingConstraints: handleGenericConfig,
-  hydroFinalLevels: handleGenericConfig,
-  shortTermStorageInflows: handleClustersConfig,
-  shortTermStorageAdditionalConstraints: handleStorageConstraintsConfig,
+  load: processLevel1Data,
+  thermal: processLevel2Data,
+  hydro: processLevel1Data,
+  wind: processLevel1Data,
+  solar: processLevel1Data,
+  ntc: processLevel1Data,
+  renewable: processLevel2Data,
+  hydroInitialLevels: processLevel1Data,
+  bindingConstraints: processLevel1Data,
+  hydroFinalLevels: processLevel1Data,
+  shortTermStorageInflows: processLevel2Data,
+  shortTermStorageAdditionalConstraints: processLevel3Data,
 };
 
 /**
- * Handles generic scenario configurations by reducing key-value pairs into a single object.
+ * Processes Level 1 data (direct area to yearly values)
  *
- * @param config - The initial scenario configuration object.
- * @returns The processed configuration object.
+ * @param data - The Level 1 data from API
+ * @returns The processed Level 1 display data
  */
-function handleGenericConfig(config: GenericScenarioConfig): GenericScenarioConfig {
-  return Object.entries(config).reduce<GenericScenarioConfig>((acc, [areaId, yearlyValue]) => {
+function processLevel1Data(data: Level1Data): Level1Data {
+  return Object.entries(data).reduce<Level1Data>((acc, [areaId, yearlyValue]) => {
     acc[areaId] = yearlyValue;
     return acc;
   }, {});
 }
 
 /**
- * Processes clusters based configurations to separate areas and clusters.
+ * Processes Level 2 data (area → entity → yearly values)
+ * Extracts areas and organizes entities by area
  *
- * @param config - The initial clusters based scenario configuration.
- * @returns Object containing separated areas and cluster configurations.
+ * @param data - The Level 2 data from API
+ * @returns Object with areas list and entity configurations
  */
-function handleClustersConfig(config: ClustersScenarioConfig): ClustersHandlerReturn {
-  return Object.entries(config).reduce<ClustersHandlerReturn>(
-    (acc, [areaId, clusterConfig]) => {
+function processLevel2Data(data: Level2Data): Level2Display {
+  return Object.entries(data).reduce<Level2Display>(
+    (acc, [areaId, entityConfig]) => {
       acc.areas.push(areaId);
-      acc.clusters[areaId] = clusterConfig;
+      acc.entities[areaId] = entityConfig;
       return acc;
     },
-    { areas: [], clusters: {} },
+    { areas: [], entities: {} },
   );
 }
 
 /**
- * Processes storage constraints configurations to flatten the structure.
- * Transforms the nested structure into a flat structure with "storageId - constraintId" keys.
+ * Processes Level 3 data (area → entity → subentity → yearly values)
+ * Extracts areas and flattens the nested structure for UI display
  *
- * @param config - The initial storage constraints scenario configuration.
- * @returns Object containing separated areas and flattened constraints configurations.
+ * @param data - The Level 3 data from API
+ * @returns Object with areas list and flattened entity configurations
  */
-function handleStorageConstraintsConfig(
-  config: StorageConstraintsScenarioConfig,
-): StorageConstraintsHandlerReturn {
-  return Object.entries(config).reduce<StorageConstraintsHandlerReturn>(
-    (acc, [areaId, storageConfig]) => {
+function processLevel3Data(data: Level3Data): Level3Display {
+  return Object.entries(data).reduce<Level3Display>(
+    (acc, [areaId, entityConfig]) => {
       acc.areas.push(areaId);
-      // Use the adapter to flatten the nested structure
-      acc.constraints[areaId] = adaptConstraintsDtoToFlattened(storageConfig);
+      // Flatten the nested structure for UI display
+      acc.flattenedEntities[areaId] = nestedStructureToFlattened(entityConfig);
       return acc;
     },
-    { areas: [], constraints: {} },
+    { areas: [], flattenedEntities: {} },
   );
 }
 
 /**
- * Retrieves and processes the configuration for a specific scenario within a ruleset.
+ * Retrieves and processes the configuration for a specific scenario type
  *
- * @param config - Full configuration mapping by ruleset.
- * @param scenario - The specific scenario type to retrieve.
- * @returns The processed configuration or undefined if not found.
+ * @param data - Full scenario data from API
+ * @param scenario - The specific scenario type to process
+ * @returns The processed display data or undefined if not found
  */
-export function getConfigByScenario<K extends keyof ScenarioConfig>(
-  config: ScenarioConfig,
+export function getConfigByScenario<K extends keyof ScenarioData>(
+  data: ScenarioData,
   scenario: K,
-): HandlerReturnTypes[K] | undefined {
-  const scenarioConfig = config[scenario];
+): ScenarioDisplayMap[K] | undefined {
+  const scenarioData = data[scenario];
 
-  if (!scenarioConfig) {
+  if (!scenarioData) {
     return undefined;
   }
 
-  return handlers[scenario](scenarioConfig);
+  return processors[scenario](scenarioData);
 }

@@ -12,44 +12,44 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Skeleton } from "@mui/material";
+import { Box } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import PropertiesView from "../../../../../../../common/PropertiesView";
 import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
 import {
-  hasAreaStructure,
-  hasAreas,
-  hasClusters,
-  hasConstraints,
-  type ScenarioConfig,
+  requiresAreaSelection,
+  hasAreaSelection,
+  isLevel2Display,
+  isLevel3Display,
+  type ScenarioData,
   type ScenarioType,
-  type TableConfigType,
+  type ScenarioDisplay,
 } from "./types";
 import { getConfigByScenario } from "./utils";
 
 interface ScenarioTableProps {
   type: ScenarioType;
-  config: ScenarioConfig;
+  config: ScenarioData;
   areaId?: string;
 }
 
 function withAreas(
   Component: React.ComponentType<
     ScenarioTableProps & {
-      config: TableConfigType;
+      config: ScenarioDisplay;
     }
   >,
 ) {
   return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
-    const [configByArea, setConfigByArea] = useState<TableConfigType>({});
+    const [configByArea, setConfigByArea] = useState<ScenarioDisplay>({});
 
     const scenarioConfig = useMemo(() => getConfigByScenario(config, type), [config, type]);
 
     useEffect(() => {
-      if (scenarioConfig && hasAreas(scenarioConfig)) {
+      if (scenarioConfig && hasAreaSelection(scenarioConfig)) {
         setAreas(scenarioConfig.areas);
 
         // Set selected area ID only if it hasn't been selected yet or current selection is not valid anymore.
@@ -61,11 +61,11 @@ function withAreas(
     }, [scenarioConfig]);
 
     useEffect(() => {
-      if (scenarioConfig && hasAreas(scenarioConfig) && selectedAreaId) {
-        if (hasClusters(scenarioConfig)) {
-          setConfigByArea(scenarioConfig.clusters[selectedAreaId]);
-        } else if (hasConstraints(scenarioConfig)) {
-          setConfigByArea(scenarioConfig.constraints[selectedAreaId]);
+      if (scenarioConfig && hasAreaSelection(scenarioConfig) && selectedAreaId) {
+        if (isLevel2Display(scenarioConfig)) {
+          setConfigByArea(scenarioConfig.entities[selectedAreaId]);
+        } else if (isLevel3Display(scenarioConfig)) {
+          setConfigByArea(scenarioConfig.flattenedEntities[selectedAreaId]);
         }
       }
     }, [selectedAreaId, scenarioConfig]);
@@ -74,14 +74,9 @@ function withAreas(
     // JSX
     ////////////////////////////////////////////////////////////////
 
-    // Handle simple scenarios without area structure
-    if (!hasAreaStructure(type) && scenarioConfig) {
+    // Handle Level 1 scenarios (no area selection needed)
+    if (!requiresAreaSelection(type) && scenarioConfig) {
       return <Component {...props} config={scenarioConfig} type={type} />;
-    }
-
-    // If areas aren't loaded yet but should be, show loading or empty
-    if (!areas.length) {
-      return <Skeleton />;
     }
 
     return (

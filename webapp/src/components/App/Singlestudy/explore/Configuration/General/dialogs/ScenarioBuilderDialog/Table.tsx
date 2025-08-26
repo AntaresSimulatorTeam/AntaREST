@@ -20,12 +20,12 @@ import { toError } from "../../../../../../../../utils/fnUtils";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
-import { updateScenarioBuilderConfig } from "./services";
 import { adaptScenarioFormToDto } from "./adapters";
-import type { ScenarioType, TableConfigType } from "./types";
+import { updateScenarioBuilderConfig } from "./services";
+import type { ScenarioDisplay, ScenarioType } from "./types";
 
 interface Props {
-  config: TableConfigType;
+  config: ScenarioDisplay;
   type: ScenarioType;
   areaId?: string;
 }
