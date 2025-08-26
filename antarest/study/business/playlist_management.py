@@ -32,10 +32,7 @@ class PlaylistManager:
     def get_playlist(self, study: StudyInterface) -> dict[int, PlaylistColumns]:
         playlist = study.get_study_dao().get_playlist_config()
         args = playlist.model_dump()["years"]
-        response = {}
-        for key, value in args.items():
-            response[key] = PlaylistColumns.model_validate(value)
-        return response
+        return {k: PlaylistColumns.model_validate(v) for k, v in args.items()}
 
     def update_playlist(self, study: StudyInterface, data: dict[int, PlaylistColumns]) -> None:
         years_by_bool: dict[bool, list[int]] = {True: [], False: []}
