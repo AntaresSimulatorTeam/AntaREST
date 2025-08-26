@@ -49,9 +49,8 @@ class UpdatePlaylist(ICommand):
             version = info.context.version
             if version == 1:
                 playlist = {}
-
-                years = values["items"]
-                weights = values["weights"]
+                years = values.pop("items")
+                weights = values.pop("weights")
                 for year in years:
                     playlist[year] = {"status": True, "weight": weights.get(year)}
                 for year, weight in weights.items():
@@ -59,8 +58,10 @@ class UpdatePlaylist(ICommand):
                         playlist[year]["weight"] = weight
                     else:
                         playlist[year] = {"weight": weight}
-
+                values.pop("active")
+                values.pop("reverse")
                 values["playlist"] = {"years": playlist}
+
         return values
 
     @override

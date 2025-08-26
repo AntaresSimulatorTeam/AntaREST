@@ -583,8 +583,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
-            args=[{"active": True, "items": [1, 3], "reverse": False}],
+            args=[{"playlist": {"years": {2: {"status": True, "weight": 0.9}}}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_playlist_list",
@@ -592,13 +593,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
-            args={
-                "active": True,
-                "items": [1, 3],
-                "weights": {1: 5.0},
-                "reverse": False,
-            },
+            args={"playlist": {"years": {2: {"status": False, "weight": 4}}}},
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_playlist",
@@ -1326,3 +1323,24 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert dto.action == "remove_multiple_binding_constraints"
     assert dto.version == 1
     assert dto.args == {"ids": ["id"]}
+
+
+def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_PLAYLIST.value,
+        args={
+            "active": True,
+            "items": [1, 3],
+            "weights": {1: 5.0},
+            "reverse": False,
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_playlist"
+    assert dto.version == 2
+    assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
