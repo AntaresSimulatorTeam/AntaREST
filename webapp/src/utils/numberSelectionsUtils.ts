@@ -95,10 +95,8 @@ export function selectionsToString(selections: NumberOrRange[]) {
  * Converts a string representation of selections of numbers and/or ranges
  * into an array of numbers and/or ranges.
  *
- * @see {@link compactSelections} The output is sorted and merged.
- *
  * @example
- * stringToSelections("8, 1, 2, 4-6, 3"); // Returns: [[1, 6], 8]
+ * stringToSelections("8, 1, 2, 4-6, 3"); // Returns: [8, 1, 2, [4, 6], 3]
  *
  * @param selectionString - A string representation of selections.
  * @returns An array of numbers and/or ranges.
@@ -113,7 +111,7 @@ export function stringToSelections(selectionString: string) {
       return end ? [Number(start), Number(end)] : Number(start);
     });
 
-  return compactSelections(selections);
+  return selections;
 }
 
 /**

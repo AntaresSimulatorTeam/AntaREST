@@ -14,6 +14,7 @@
 
 import useFieldEditorValidation from "@/hooks/useFieldEditorValidation";
 import {
+  compactSelections,
   isSelectionsValid,
   selectionsToNumbers,
   selectionsToString,
@@ -65,12 +66,12 @@ function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSele
       return;
     }
 
-    const selections = stringToSelections(value);
+    const compactedSelections = compactSelections(stringToSelections(value));
 
-    setSelections(selections);
+    setSelections(compactedSelections);
 
     if (onChange) {
-      onChange(selectionsToNumbers(selections));
+      onChange(selectionsToNumbers(compactedSelections));
     }
   };
 
