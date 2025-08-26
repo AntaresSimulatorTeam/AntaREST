@@ -55,7 +55,7 @@ def test_ruleset_parsing_solar():
     assert serialize_ruleset(ruleset) == rules
 
 
-def test_ruleset_parsing_wing():
+def test_ruleset_parsing_wind():
     rules = {
         "w,be,1": 2,
         "w,be,2": 1,

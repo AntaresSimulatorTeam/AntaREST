@@ -163,7 +163,7 @@ Rulesets: TypeAlias = dict[str, Ruleset]
 
 
 def _create_scenarios_mapping(names: Iterable[str], years: list[str]) -> AreaScenarios:
-    return {n: {y: RANDOM for y in years} for n in names}
+    return {n: dict.fromkeys(years, RANDOM) for n in names}
 
 
 def _create_cluster_scenarios_mapping(names: Mapping[str, Iterable[str]], years: list[str]) -> AreaItemsScenarios:
