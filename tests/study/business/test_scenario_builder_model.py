@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Callable
 
 import pytest
 
@@ -125,6 +124,7 @@ def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": ""}, "item2": {"1": 2, "2": 1}}}
 
 
+@pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
 @pytest.mark.parametrize(
     "scenario_type,getter",
     [
@@ -139,8 +139,8 @@ def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
         (ScenarioType.LINK, lambda r: r.ntc),
     ],
 )
-def test_get_set_by_type(scenario_type: ScenarioType, getter: Callable[[Ruleset], Any]) -> None:
-    ruleset = Ruleset()
+def test_get_set_by_type(ruleset_cls, scenario_type: ScenarioType, getter) -> None:
+    ruleset = ruleset_cls()
     ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})
     assert getter(ruleset) == {"be": {"1": 2, "2": 1}}
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
