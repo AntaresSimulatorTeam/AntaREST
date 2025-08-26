@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Self
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -56,6 +57,10 @@ class FileStudyTreeDao(
     @override
     def get_file_study(self) -> FileStudy:
         return self._file_study
+
+    @override
+    def get_impl(self) -> Self:
+        return self
 
     @override
     def get_version(self) -> StudyVersion:
