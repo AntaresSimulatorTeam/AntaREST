@@ -441,35 +441,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.playlist_manager.set_table_data(study_interface, data)
 
     @bp.get(
-        "/studies/{uuid}/config/playlist",
-        tags=[APITag.study_data],
-        summary="Get playlist config",
-        response_model=Optional[Dict[int, float]],
-    )
-    def get_playlist_config(uuid: str) -> Optional[Dict[int, float]]:
-        logger.info(f"Fetching playlist config for study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.config_manager.get_playlist(study_interface)
-
-    @bp.put(
-        path="/studies/{uuid}/config/playlist",
-        tags=[APITag.study_data],
-        summary="Set playlist config",
-    )
-    def set_playlist_config(
-        uuid: str,
-        active: bool = True,
-        reverse: bool = False,
-        playlist: Optional[List[int]] = Body(default=None),
-        weights: Optional[Dict[int, int]] = Body(default=None),
-    ) -> Any:
-        logger.info(f"Updating playlist config for study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.config_manager.set_playlist(study_interface, playlist, weights, reverse, active)
-
-    @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",

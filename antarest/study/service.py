@@ -74,7 +74,6 @@ from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
-from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
@@ -490,7 +489,6 @@ class StudyService:
         self.area_manager = AreaManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
-        self.config_manager = ConfigManager(command_context)
         self.general_manager = GeneralManager(command_context)
         self.thematic_trimming_manager = ThematicTrimmingManager(command_context)
         self.optimization_manager = OptimizationManager(command_context)
