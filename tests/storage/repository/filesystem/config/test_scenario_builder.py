@@ -225,3 +225,13 @@ def test_ruleset_update_parsing_links():
     }
     ruleset = parse_ruleset_update(rules)
     assert ruleset == RulesetUpdate(ntc={"be / fr": {"1": 2, "2": 1}})
+
+
+def test_random_is_not_serialized():
+    ruleset = Ruleset(
+        load={"fr": {"1": 2, "2": ""}},
+        thermal={"fr": {"nuclear": {"1": 2, "2": ""}}},
+        ntc={"be / fr": {"1": 2, "2": ""}},
+    )
+
+    assert serialize_ruleset(ruleset) == {"l,fr,1": 2, "ntc,be,fr,1": 2, "t,fr,1,nuclear": 2}

@@ -81,3 +81,47 @@ def test_update_scenario_builder(empty_study_880: FileStudy, command_context: Co
             storage_inflows={},
         ),
     }
+
+    # Check rand values are removed from file
+    rulesets_update = {
+        "default ruleset": RulesetUpdate(load={"fr": {"2": ""}}),
+        "other ruleset": RulesetUpdate(thermal={"fr": {"cluster": {"2": ""}}}),
+    }
+    command = UpdateScenarioBuilder(
+        data=rulesets_update, command_context=command_context, study_version=study.config.version
+    )
+    output = command.apply(study)
+    assert output.status
+
+    final_rulesets = parse_rulesets(study.tree.get(["settings", "scenariobuilder"]))
+    assert final_rulesets == {
+        # Case is unchanged
+        "Default Ruleset": Ruleset(
+            load={"fr": {"1": 2}},
+            thermal={},
+            hydro={},
+            hydro_initial_levels={},
+            hydro_final_levels={},
+            hydro_generation_power={},
+            wind={},
+            solar={},
+            ntc={},
+            renewable={},
+            binding_constraints={},
+            storage_inflows={},
+        ),
+        "other ruleset": Ruleset(
+            load={},
+            thermal={"fr": {"cluster": {"1": 2}}},
+            hydro={},
+            hydro_initial_levels={},
+            hydro_final_levels={},
+            hydro_generation_power={},
+            wind={},
+            solar={},
+            ntc={},
+            renewable={},
+            binding_constraints={},
+            storage_inflows={},
+        ),
+    }

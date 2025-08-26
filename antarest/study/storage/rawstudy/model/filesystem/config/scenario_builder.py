@@ -55,11 +55,19 @@ _SCENARIO_TYPE_SYMBOLS = {
 _SCENARIO_TYPE_FOR_SYMBOL = {v: k for k, v in _SCENARIO_TYPE_SYMBOLS.items()}
 
 
+def _should_write(value: RuleValue) -> bool:
+    """
+    "random" values must not be written to INI file.
+    """
+    return value is not None and value != RANDOM
+
+
 def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
-            section[f"{symbol},{area},{year}"] = value
+            if _should_write(value):
+                section[f"{symbol},{area},{year}"] = value
 
 
 def _serialize_hydro_levels(
@@ -68,6 +76,8 @@ def _serialize_hydro_levels(
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for area, scenario_area in data.items():
         for year, value in scenario_area.items():
+            if not _should_write(value):
+                continue
             val = value
             if isinstance(val, (int, float)) and val != float("nan"):
                 val /= _HYDRO_LEVEL_PERCENT
@@ -78,8 +88,9 @@ def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType,
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
     for link, scenario_link in data.items():
         for year, value in scenario_link.items():
-            area1, area2 = link.split(" / ")
-            section[f"{symbol},{area1},{area2},{year}"] = value
+            if _should_write(value):
+                area1, area2 = link.split(" / ")
+                section[f"{symbol},{area1},{area2},{year}"] = value
 
 
 def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios) -> None:
@@ -87,7 +98,8 @@ def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioTy
     for area, scenario_area in data.items():
         for cluster, scenario_area_cluster in scenario_area.items():
             for year, value in scenario_area_cluster.items():
-                section[f"{symbol},{area},{year},{cluster}"] = value
+                if _should_write(value):
+                    section[f"{symbol},{area},{year},{cluster}"] = value
 
 
 def serialize_ruleset(ruleset: Ruleset) -> dict[str, RuleValue]:
