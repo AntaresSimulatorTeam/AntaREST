@@ -19,6 +19,7 @@ import DataGridForm, {
   type DataGridFormState,
 } from "@/components/common/DataGridForm";
 import ConfirmationDialog from "@/components/common/dialogs/ConfirmationDialog";
+import NumberSelectionsFE from "@/components/common/fieldEditors/NumberSelectionsFE";
 import useConfirm from "@/hooks/useConfirm";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
@@ -31,12 +32,11 @@ import * as RA from "ramda-adjunct";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import usePromise from "../../../../../../../../hooks/usePromise";
-import type { StudyMetadata } from "../../../../../../../../types/types";
-import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
-import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
-import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
-import YearsSelectionFE from "./YearsSelectionFE";
+import usePromise from "../../../../../../../hooks/usePromise";
+import type { StudyMetadata } from "../../../../../../../types/types";
+import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import UsePromiseCond from "../../../../../../common/utils/UsePromiseCond";
 
 interface Props {
   study: StudyMetadata;
@@ -47,13 +47,13 @@ interface Props {
 function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const dataGridApiRef = useRef<DataGridFormApi<PlaylistData>>(null);
-  const [yearsSelection, setYearsSelection] = useState<number[] | null>(null);
+  const [selectedYears, setSelectedYears] = useState<number[] | null>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [totals, setTotals] = useState({ selected: 0, sumWeights: 0 });
   const closeAction = useConfirm();
   const res = usePromise(() => getPlaylistData({ studyId: study.id }), [study.id]);
-  const disableBtnGroup = isSubmitting || (yearsSelection !== null && yearsSelection.length === 0);
+  const disableActions = selectedYears === null || isSubmitting;
 
   const columns = useMemo<DataGridFormProps<PlaylistData>["columns"]>(() => {
     return [
@@ -87,8 +87,13 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const mapSelectedYears = (fn: (item: Playlist) => Playlist, data: PlaylistData): PlaylistData => {
+    if (selectedYears === null) {
+      return data;
+    }
+
     return RA.mapIndexed((item, index) => {
-      if (yearsSelection === null || yearsSelection.includes(index + 1)) {
+      // Empty selection means all years are selected
+      if (selectedYears.length === 0 || selectedYears.includes(index + 1)) {
         return fn(item);
       }
       return item;
@@ -115,10 +120,10 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleUpdateStatus = (fn: RA.Pred) => () => {
+  const handleUpdateStatus = (updateFn: RA.Pred) => () => {
     if (dataGridApiRef.current) {
       const { data, setData } = dataGridApiRef.current;
-      setData(mapSelectedYears(R.evolve({ status: fn }), data));
+      setData(mapSelectedYears(R.evolve({ status: updateFn }), data));
     }
   };
 
@@ -178,23 +183,18 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1, overflow: "auto" }}>
               <Box>
                 <CustomScrollbar>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 1,
-                      pt: 1,
-                    }}
-                  >
-                    <YearsSelectionFE
-                      onChange={setYearsSelection}
-                      maxYears={Object.keys(defaultData).length}
+                  <Box sx={{ display: "flex", gap: 1, pt: 1 }}>
+                    <NumberSelectionsFE
+                      label={t("study.configuration.general.mcScenarioPlaylist.scenarios")}
+                      onChange={setSelectedYears}
+                      maxNumber={Object.keys(defaultData).length}
+                      size="extra-small"
+                      sx={{ minWidth: 135 }}
                     />
-                    <ButtonGroup disabled={disableBtnGroup} color="secondary">
+                    <ButtonGroup disabled={disableActions} color="secondary">
                       <Button onClick={handleUpdateStatus(R.T)}>{t("global.enable")}</Button>
                       <Button onClick={handleUpdateStatus(R.F)}>{t("global.disable")}</Button>
-                      <Button onClick={handleUpdateStatus(R.not)}>
-                        {t("study.configuration.general.mcScenarioPlaylist.action.reverse")}
-                      </Button>
+                      <Button onClick={handleUpdateStatus(R.not)}>{t("global.reverse")}</Button>
                       <Button onClick={handleResetWeights}>
                         {t("study.configuration.general.mcScenarioPlaylist.action.resetWeights")}
                       </Button>

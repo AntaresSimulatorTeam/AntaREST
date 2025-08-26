@@ -12,16 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { useState } from "react";
-import { Box, Button, TextField, Tooltip } from "@mui/material";
-import { useUpdateEffect } from "react-use";
-import Transform from "@mui/icons-material/Transform";
-import { calculateMatrixAggregates, resizeMatrix } from "../shared/utils";
-import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { toError } from "@/utils/fnUtils";
+import TransformIcon from "@mui/icons-material/Transform";
+import { Button } from "@mui/material";
+import * as R from "ramda";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { useUpdateEffect } from "react-use";
+import FieldEditorButtonGroup from "../../FieldEditorButtonGroup";
+import NumberFE from "../../fieldEditors/NumberFE";
 import { useMatrixContext } from "../context/MatrixContext";
-import { clamp } from "ramda";
+import { calculateMatrixAggregates, resizeMatrix } from "../shared/utils";
 
 function MatrixResize() {
   const {
@@ -69,7 +71,7 @@ function MatrixResize() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    setTargetColumnCount(clamp(1, 1000, value));
+    setTargetColumnCount(R.clamp(1, 1000, value));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -77,40 +79,20 @@ function MatrixResize() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <TextField
-        type="number"
-        size="extra-small"
+    <FieldEditorButtonGroup size="extra-small" tooltip={t("global.resize")}>
+      <NumberFE
         value={targetColumnCount}
         onChange={handleChange}
         disabled={isMatrixSubmitting}
-        variant="outlined"
-        sx={{
-          width: 75,
-          margin: 0,
-        }}
-        slotProps={{
-          input: {
-            inputProps: {
-              min: 1,
-              max: 1000,
-            },
-          },
-        }}
+        sx={{ width: 75 }}
       />
-      <Tooltip title={t("matrix.resize")}>
-        <span>
-          <Button
-            color="primary"
-            variant="contained"
-            onClick={handleMatrixResize}
-            disabled={targetColumnCount === currentColumnCount || isMatrixSubmitting}
-          >
-            <Transform />
-          </Button>
-        </span>
-      </Tooltip>
-    </Box>
+      <Button
+        onClick={handleMatrixResize}
+        disabled={targetColumnCount === currentColumnCount || isMatrixSubmitting}
+      >
+        <TransformIcon />
+      </Button>
+    </FieldEditorButtonGroup>
   );
 }
 

@@ -11,10 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-import shutil
-import tempfile
-from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -24,12 +21,13 @@ from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluste
 from typing_extensions import override
 
 from antarest.study.business.model.thermal_cluster_model import LocalTSGenerationBehavior
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import dump_dataframe
-from antarest.study.storage.utils import TS_GEN_PREFIX, TS_GEN_SUFFIX
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -48,62 +46,42 @@ class GenerateThermalClusterTimeSeries(ICommand):
     command_name: CommandName = CommandName.GENERATE_THERMAL_CLUSTER_TIMESERIES
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        study_path = study_data.config.study_path
-        with tempfile.TemporaryDirectory(suffix=TS_GEN_SUFFIX, prefix=TS_GEN_PREFIX, dir=study_path.parent) as path:
-            tmp_dir = Path(path)
-            try:
-                shutil.copytree(study_path / "input" / "thermal" / "series", tmp_dir, dirs_exist_ok=True)
-                self._build_timeseries(study_data, tmp_dir, listener)
-            except Exception as e:
-                logger.error(f"Unhandled exception when trying to generate thermal timeseries: {e}", exc_info=True)
-                raise
-            else:
-                self._replace_safely_original_files(study_path, tmp_dir)
-                return command_succeeded(message="All time series were generated successfully")
-
-    def _build_timeseries(
-        self, study_data: FileStudy, tmp_path: Path, listener: Optional[ICommandListener] = None
-    ) -> None:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        series_mapping: dict[str, dict[str, str]] = {}
         # 1- Get the seed and nb_years to generate
         # NB: Default seed in IHM Legacy: 5489, default seed in web: 3005489.
-        general_data = study_data.tree.get(["settings", "generaldata"], depth=3)
-        thermal_seed = general_data["seeds - Mersenne Twister"]["seed-tsgen-thermal"]
-        nb_years = general_data["general"]["nbtimeseriesthermal"]
+        nb_years = study_data.get_timeseries_config().thermal.number
+        thermal_seed = study_data.get_advanced_parameters().seed_tsgen_thermal
         # 2 - Build the generator
         rng = MersenneTwisterRNG(seed=thermal_seed)
         generator = TimeseriesGenerator(rng=rng, days=365)
         # 3- Do a first loop to know how many operations will be performed
-        total_generations = sum(len(area.thermals) for area in study_data.config.areas.values())
+        all_thermals = study_data.get_all_thermals()
+        total_generations = sum(len(values) for values in all_thermals.values())
         # 4- Loop through areas in alphabetical order
-        areas: Dict[str, Area] = study_data.config.areas
-        sorted_areas = {k: areas[k] for k in sorted(areas)}
+        sorted_areas = sorted(set(all_thermals))
         generation_performed = 0
-        for area_id, area in sorted_areas.items():
+        for area_id in sorted_areas:
             # 5- Loop through thermal clusters in alphabetical order
-            sorted_thermals = sorted(area.thermals, key=lambda x: x.id)
-            for thermal in sorted_thermals:
+            sorted_thermal_ids = sorted(set(all_thermals[area_id]))
+            for thermal_id in sorted_thermal_ids:
+                thermal = all_thermals[area_id][thermal_id]
+
                 try:
                     # 6 - Filters out clusters with no generation
                     if thermal.gen_ts == LocalTSGenerationBehavior.FORCE_NO_GENERATION:
                         generation_performed += 1
                         continue
                     # 7- Build the cluster
-                    url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "modulation"]
-                    matrix = study_data.tree.get_node(url)
-                    assert isinstance(matrix, InputSeriesMatrix)
-                    matrix_df = matrix.parse_as_dataframe()
-                    modulation_capacity = matrix_df[MODULATION_CAPACITY_COLUMN].to_numpy()
-                    url = ["input", "thermal", "prepro", area_id, thermal.id.lower(), "data"]
-                    matrix = study_data.tree.get_node(url)
-                    assert isinstance(matrix, InputSeriesMatrix)
-                    matrix_df = matrix.parse_as_dataframe()
-                    fo_duration = np.array(matrix_df[0], dtype=int)
-                    po_duration = np.array(matrix_df[1], dtype=int)
-                    fo_rate = np.array(matrix_df[2], dtype=float)
-                    po_rate = np.array(matrix_df[3], dtype=float)
-                    npo_min = np.array(matrix_df[4], dtype=int)
-                    npo_max = np.array(matrix_df[5], dtype=int)
+                    modulation_matrix = study_data.get_thermal_modulation(area_id, thermal_id)
+                    modulation_capacity = modulation_matrix[MODULATION_CAPACITY_COLUMN].to_numpy()
+                    prepro_matrix = study_data.get_thermal_prepro(area_id, thermal_id)
+                    fo_duration = np.array(prepro_matrix[0], dtype=int)
+                    po_duration = np.array(prepro_matrix[1], dtype=int)
+                    fo_rate = np.array(prepro_matrix[2], dtype=float)
+                    po_rate = np.array(prepro_matrix[3], dtype=float)
+                    npo_min = np.array(prepro_matrix[4], dtype=int)
+                    npo_max = np.array(prepro_matrix[5], dtype=int)
                     generation_params = OutageGenerationParameters(
                         unit_count=thermal.unit_count,
                         fo_law=ProbabilityLaw(thermal.law_forced.value.upper()),
@@ -125,19 +103,26 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     # 8- Generate the time-series
                     results = generator.generate_time_series_for_clusters(cluster, nb_years)
                     generated_matrix = results.available_power
-                    # 9- Write the matrix inside the input folder.
+                    # 9- Write the matrix inside the matrix-store and store the id in memory
                     df = pd.DataFrame(data=generated_matrix)
                     df = df[list(df.columns)].astype(int)
-                    target_path = self._build_matrix_path(tmp_path / area_id / thermal.id.lower())
-                    dump_dataframe(df, target_path)
+                    matrix_id = self.command_context.matrix_service.create(df)
+                    series_mapping.setdefault(area_id, {})[thermal_id] = matrix_id
                     # 10- Notify the progress to the notifier
                     generation_performed += 1
                     if listener:
                         progress = int(100 * generation_performed / total_generations)
                         listener.notify_progress(progress)
+
                 except Exception as e:
-                    e.args = (f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0],)
-                    raise
+                    return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
+
+        # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
+        for area_id, values in series_mapping.items():
+            for thermal_id, series in values.items():
+                study_data.save_thermal_series(area_id, thermal_id, series)
+
+        return command_succeeded(message="All time series were generated successfully")
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -147,16 +132,3 @@ class GenerateThermalClusterTimeSeries(ICommand):
     def get_inner_matrices(self) -> List[str]:
         # This is used to get used matrices and not remove them inside the garbage collector loop.
         return []
-
-    @staticmethod
-    def _replace_safely_original_files(study_path: Path, tmp_path: Path) -> None:
-        original_path = study_path / "input" / "thermal" / "series"
-        shutil.rmtree(original_path)
-        tmp_path.rename(original_path)
-
-    @staticmethod
-    def _build_matrix_path(matrix_path: Path) -> Path:
-        real_path = matrix_path / "series.txt"
-        if not real_path.exists():
-            (matrix_path / "series.txt.link").rename(real_path)
-        return real_path

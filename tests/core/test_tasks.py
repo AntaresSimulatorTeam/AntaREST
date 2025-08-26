@@ -51,7 +51,6 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import ThermalClusterTimeSeriesGeneratorTask
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
-from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from antarest.worker.worker import AbstractWorker, WorkerTaskCommand
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
@@ -437,6 +436,7 @@ def test_ts_generation_task(
     tmp_path: Path,
     core_config: Config,
     raw_study_service: RawStudyService,
+    command_factory: CommandFactory,
 ) -> None:
     # =======================
     #  SET UP
@@ -518,9 +518,7 @@ nominalcapacity = 14.0
 
     # Set up the mocks
     variant_study_service = Mock(spec=VariantStudyService)
-    command_factory = Mock(spec=CommandFactory)
     variant_study_service.command_factory = command_factory
-    command_factory.command_context = Mock(spec=CommandContext)
     config = Mock(spec=Config)
 
     study_service = build_study_service(

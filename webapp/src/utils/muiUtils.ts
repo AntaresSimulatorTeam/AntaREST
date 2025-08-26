@@ -14,10 +14,24 @@
 
 import type { SxProps, Theme } from "@mui/material";
 
+/**
+ * Merges two `sx` props.
+ *
+ * This is useful when a custom component needs to accept an `sx` prop
+ * and forward it to a MUI System component while applying its own base styles.
+ *
+ * @see {@link https://mui.com/system/getting-started/the-sx-prop/#passing-the-sx-prop}
+ *
+ * @param target - Base styles.
+ * @param source - Styles that override the base styles.
+ * @returns A merged `sx` prop with `source` overriding `target`.
+ */
 export function mergeSxProp(
-  target: SxProps<Theme> = {},
-  source: SxProps<Theme> = [],
+  target: SxProps<Theme>,
+  source: SxProps<Theme> | undefined,
 ): SxProps<Theme> {
-  // https://mui.com/system/getting-started/the-sx-prop/#passing-the-sx-prop
-  return [target, ...(Array.isArray(source) ? source : [source])];
+  if (!source) {
+    return target;
+  }
+  return [target, source].flatMap((sx) => (Array.isArray(sx) ? sx : [sx]));
 }
