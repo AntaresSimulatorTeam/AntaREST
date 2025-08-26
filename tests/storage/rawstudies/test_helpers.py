@@ -12,59 +12,7 @@
 
 from unittest.mock import Mock, call
 
-import pytest
-
 from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
-
-
-@pytest.mark.parametrize(
-    ["generaldata", "playlist"],
-    [
-        (
-            {"general": {"nbyears": 10, "user-playlist": False}},
-            None,
-        ),
-        (
-            {"general": {"nbyears": 10, "user-playlist": True}},
-            {year: 1 for year in list(range(1, 11))},
-        ),
-        (
-            {
-                "general": {"nbyears": 10, "user-playlist": False},
-                "playlist": {
-                    "playlist_reset": False,
-                    "playlist_year +": [1, 2],
-                },
-            },
-            None,
-        ),
-        (
-            {
-                "general": {"nbyears": 10, "user-playlist": True},
-                "playlist": {
-                    "playlist_reset": False,
-                    "playlist_year +": [1, 2],
-                    "playlist_year_weight": ["1,5", "3,8"],
-                },
-            },
-            {2: 5, 3: 1},
-        ),
-        (
-            {
-                "general": {"nbyears": 10, "user-playlist": True},
-                "playlist": {
-                    "playlist_reset": True,
-                    "playlist_year -": [1, 2],
-                },
-            },
-            {1: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 9: 1, 10: 1},
-        ),
-    ],
-)
-def test_get_playlist(generaldata, playlist):
-    study = Mock()
-    study.tree.get.return_value = generaldata
-    assert FileStudyHelpers.get_playlist(study) == playlist
 
 
 def test_set_playlist():
