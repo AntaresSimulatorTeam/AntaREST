@@ -640,17 +640,11 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     # Try to delete a non-existing layer
     res = client.delete(f"/v1/studies/{study_id}/layers/1")
-    assert res.json() == {
-        "description": "Unexpected exception occurred when trying to apply command CommandName.REMOVE_LAYER: 404: Layer not found",
-        "exception": "CommandApplicationError",
-    }
+    assert res.status_code == HTTPStatus.NOT_FOUND
 
     # Try to delete the layer 'All'
     res = client.delete(f"/v1/studies/{study_id}/layers/0")
-    assert res.json() == {
-        "description": "Unexpected exception occurred when trying to apply command CommandName.REMOVE_LAYER: 400: You cannot delete the layer: 'You can not delete the layer 0, it is used to display all areas'",
-        "exception": "CommandApplicationError",
-    }
+    assert res.status_code == HTTPStatus.BAD_REQUEST
 
     # -- `district` integration tests
 

@@ -20,6 +20,10 @@ class ReadOnlyLayerDao(ABC):
     def get_layers(self) -> Sequence[Layer]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def layer_exists(self, layer_id: str) -> bool:
+        raise NotImplementedError()
+
 
 class LayerDao(ReadOnlyLayerDao):
     @abstractmethod

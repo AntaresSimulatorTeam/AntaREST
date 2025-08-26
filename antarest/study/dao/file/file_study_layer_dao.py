@@ -14,7 +14,6 @@ from typing import Sequence
 
 from typing_extensions import override
 
-from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
@@ -59,16 +58,16 @@ class FileStudyLayerDao(LayerDao, ABC):
     def delete_layer(self, layer: Layer) -> None:
         layer_id = layer.id
 
-        if layer_id == "0":
-            raise LayerNotAllowedToBeDeleted("You can not delete the layer 0, it is used to display all areas")
-
         file_study = self.get_file_study()
 
         layers = file_study.tree.get(["layers", "layers", "layers"])
 
-        if layer_id not in layers:
-            raise LayerNotFound
-
         del layers[layer_id]
 
         file_study.tree.save(layers, ["layers", "layers", "layers"])
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        file_study = self.get_file_study()
+        layers = file_study.tree.get(["layers", "layers", "layers"])
+        return layer_id in layers

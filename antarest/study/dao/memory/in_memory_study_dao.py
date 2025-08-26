@@ -686,3 +686,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_layer(self, layer: Layer) -> None:
         self._layers.remove(layer)
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return any(layer.id == layer_id for layer in self._layers)

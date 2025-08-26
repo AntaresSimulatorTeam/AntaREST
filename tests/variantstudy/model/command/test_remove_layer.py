@@ -67,29 +67,3 @@ class TestRemoveLayer:
 
         layers = link.read(empty_study.config.study_path / "layers/layers.ini")["layers"]
         assert layers == {"0": "All"}
-
-    @pytest.mark.unit_test
-    def test_remove_layer_not_found(self, empty_study_880: FileStudy, command_context: CommandContext):
-        empty_study = empty_study_880
-
-        remove_command = RemoveLayer(
-            layer_id="999",
-            command_context=command_context,
-            study_version=empty_study.config.version,
-        )
-        output = remove_command.apply(study_data=empty_study)
-
-        assert not output.status
-
-    @pytest.mark.unit_test
-    def test_remove_layer_zero_not_allowed(self, empty_study_880: FileStudy, command_context: CommandContext):
-        empty_study = empty_study_880
-
-        remove_command = RemoveLayer(
-            layer_id="0",
-            command_context=command_context,
-            study_version=empty_study.config.version,
-        )
-        output = remove_command.apply(study_data=empty_study)
-
-        assert not output.status

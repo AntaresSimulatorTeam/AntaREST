@@ -365,3 +365,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_layers(self) -> Sequence[Layer]:
         return self._adaptee.get_layers()
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return self._adaptee.layer_exists(layer_id)

@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import List
 
+from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.layer_model import Layer, LayerCreation, LayerUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
@@ -51,6 +52,13 @@ class LayerManager:
             LayerNotAllowedToBeDeleted: If the layer ID is "0".
             LayerNotFound: If the layer ID is not found.
         """
+
+        if layer_id == "0":
+            raise LayerNotAllowedToBeDeleted(layer_id)
+
+        if not self.layer_exists(study, layer_id):
+            raise LayerNotFound
+
         command = RemoveLayer(
             layer_id=layer_id,
             command_context=self._command_context,
@@ -58,3 +66,6 @@ class LayerManager:
         )
 
         study.add_commands([command])
+
+    def layer_exists(self, study: StudyInterface, layer_id: str) -> bool:
+        return study.get_study_dao().layer_exists(layer_id)
