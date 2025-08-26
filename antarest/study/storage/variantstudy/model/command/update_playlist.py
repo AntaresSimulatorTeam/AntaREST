@@ -48,8 +48,19 @@ class UpdatePlaylist(ICommand):
         if info.context:
             version = info.context.version
             if version == 1:
-                # todo: do the migration
-                print("ok")
+                playlist = {}
+
+                years = values["items"]
+                weights = values["weights"]
+                for year in years:
+                    playlist[year] = {"status": True, "weight": weights.get(year)}
+                for year, weight in weights.items():
+                    if year in playlist:
+                        playlist[year]["weight"] = weight
+                    else:
+                        playlist[year] = {"weight": weight}
+
+                values["playlist"] = {"years": playlist}
         return values
 
     @override
