@@ -64,14 +64,10 @@ class FileStudyPlaylistConfigDao(PlaylistConfigDao, ABC):
 
     @override
     def save_playlist_config(self, playlist: Playlist) -> None:
-        nb_years = self.get_impl().get_general_config().nb_years
-
         activated_years = []
         deactivated_years = []
         weights = []
         for year, model in playlist.years.items():
-            if year > nb_years:
-                raise ValueError(f"You cannot set the year '{year}' as the study only has '{nb_years}'.")
             ini_year = year - 1
             if model.status:
                 activated_years.append(ini_year)

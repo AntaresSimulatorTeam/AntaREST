@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+
 from antarest.study.business.model.config.playlist_model import PlaylistUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
@@ -43,5 +45,19 @@ class TestUpdatePlaylist:
         }
 
     def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext):
-        pass
-        # study = empty_study_880
+        study = empty_study_880
+
+        # Try to give a negative value for the year
+        args = {"years": {-1: {"status": False, "weight": 3.2}}}
+        with pytest.raises(ValueError, match="Input should be greater than 0"):
+            UpdatePlaylist(playlist=args, command_context=command_context, study_version=study.config.version)
+
+        # Try to give a value higher than `nbyears`
+        args = {"years": {3: {"status": False, "weight": 3.2}}}
+        properties = PlaylistUpdate.model_validate(args)
+
+        command = UpdatePlaylist(
+            playlist=properties, command_context=command_context, study_version=study.config.version
+        )
+        output = command.apply(study_data=study)
+        assert not output.status
