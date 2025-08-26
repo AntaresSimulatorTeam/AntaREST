@@ -10,12 +10,14 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, Final, List, Optional
 
+from pydantic import model_validator
+from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.business.model.config.playlist_model import PlaylistUpdate, update_playlist
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -32,35 +34,37 @@ class UpdatePlaylist(ICommand):
 
     command_name: CommandName = CommandName.UPDATE_PLAYLIST
 
+    # version 2: changes from legacy representation to PlaylistUpdate class
+    _SERIALIZATION_VERSION: Final[int] = 2
+
     # Command parameters
     # ==================
 
-    active: bool
-    items: Optional[List[int]] = None
-    weights: Optional[Dict[int, float]] = None
-    reverse: bool = False
+    playlist: PlaylistUpdate
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v1_to_v2(cls, values: dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                # todo: do the migration
+                print("ok")
+        return values
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        FileStudyHelpers.set_playlist(
-            study_data,
-            self.items or [],
-            self.weights,
-            reverse=self.reverse,
-            active=self.active,
-        )
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        current_config = study_data.get_playlist_config()
+        new_playlist = update_playlist(current_config, self.playlist)
+        study_data.save_playlist_config(new_playlist)
         return command_succeeded("Playlist has been updated successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
-            args={
-                "active": self.active,
-                "items": self.items,
-                "weights": self.weights,
-                "reverse": self.reverse,
-            },
+            version=self._SERIALIZATION_VERSION,
+            args={"playlist": self.playlist.model_dump(exclude_none=True)},
             study_version=self.study_version,
         )
 
