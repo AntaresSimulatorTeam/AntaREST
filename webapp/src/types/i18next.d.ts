@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import "i18next";
 
 declare module "i18next" {

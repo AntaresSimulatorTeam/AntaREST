@@ -214,7 +214,7 @@ function JSONEditor({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={mergeSxProp(sx, { position: "relative" })}>
+    <Box sx={mergeSxProp({ position: "relative" }, sx)}>
       <Box
         ref={ref}
         sx={{

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { type CssVarsTheme, type CssVarsThemeOptions, colors, type Theme } from "@mui/material";
+import { colors, type CssVarsTheme, type CssVarsThemeOptions, type Theme } from "@mui/material";
 
 const TAB_MIN_HEIGHT_S = 38;
 const TAB_MIN_HEIGHT_XS = 30;
@@ -47,11 +47,6 @@ export default {
   MuiFormControl: {
     defaultProps: {
       size: "small",
-    },
-    styleOverrides: {
-      root: {
-        minWidth: 70,
-      },
     },
   },
   MuiAutocomplete: {
@@ -125,9 +120,8 @@ export default {
     },
   },
   MuiInputBase: {
-    defaultProps: {
-      size: "small",
-    },
+    // Setting the default size to 'small' prevents setting the size 'medium'
+    // defaultProps: { size: "small" },
     variants: [
       {
         props: { disabled: false },

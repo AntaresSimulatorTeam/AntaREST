@@ -18,7 +18,7 @@ import useDebounce, { type UseDebounceParams } from "./useDebounce";
 
 type WaitOrParams = number | UseDebounceParams;
 
-type DebounceFn<S> = (state: S) => void;
+type DebounceFn<S> = React.Dispatch<React.SetStateAction<S>>;
 
 type UseDebouncedStateReturn<S, U extends WaitOrParams> = [
   S,
@@ -32,10 +32,7 @@ function useDebouncedState<S, U extends WaitOrParams = WaitOrParams>(
   params?: U,
 ): UseDebouncedStateReturn<S, U> {
   const [state, setState] = useState(initialValue);
-
-  const debounceFn = useDebounce((newState) => {
-    setState(newState);
-  }, params);
+  const debounceFn = useDebounce(setState, params);
 
   return [state, debounceFn];
 }

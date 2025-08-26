@@ -12,11 +12,12 @@
  * This file is part of the Antares project.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import i18n from "i18next";
-import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
-import { initReactI18next } from "react-i18next";
+import Backend from "i18next-http-backend";
 import moment from "moment";
+import { initReactI18next } from "react-i18next";
 
 export const SUPPORTED_LANGUAGES = ["en", "fr"] as const;
 

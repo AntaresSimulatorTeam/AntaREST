@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import i18n from "@/i18n";
 import type { ValidationReturn } from "@/types/types";
-import { t } from "i18next";
 
 interface NumberValidationOptions {
   min?: number;
@@ -57,21 +57,21 @@ export function validateNumber(
   const value = valueOrOpts;
 
   if (!Number.isFinite(value)) {
-    return t("form.field.invalidValue", { value });
+    return i18n.t("form.field.invalidValue", { value });
   }
 
   const { min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER, integer = false } = options;
 
   if (integer && !Number.isInteger(valueOrOpts)) {
-    return t("form.field.mustBeInteger");
+    return i18n.t("form.field.mustBeInteger");
   }
 
   if (value < min) {
-    return t("form.field.minValue", { 0: min });
+    return i18n.t("form.field.minValue", { 0: min });
   }
 
   if (value > max) {
-    return t("form.field.maxValue", { 0: max });
+    return i18n.t("form.field.maxValue", { 0: max });
   }
 
   return true;
