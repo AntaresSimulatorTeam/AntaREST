@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import { Box, Skeleton } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import { Box } from "@mui/material";
-import SplitView from "../../../../../../../common/SplitView";
 import PropertiesView from "../../../../../../../common/PropertiesView";
+import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
 import {
-  getConfigByScenario,
-  type GenericScenarioConfig,
-  type HandlerReturnTypes,
-  type ScenarioType,
-  type ClustersHandlerReturn,
+  hasAreaStructure,
+  hasAreas,
+  hasClusters,
+  hasConstraints,
   type ScenarioConfig,
-} from "./utils";
+  type ScenarioType,
+  type TableConfigType,
+} from "./types";
+import { getConfigByScenario } from "./utils";
 
 interface ScenarioTableProps {
   type: ScenarioType;
@@ -32,31 +34,17 @@ interface ScenarioTableProps {
   areaId?: string;
 }
 
-// If the configuration contains areas/clusters.
-function hasAreas(
-  config: HandlerReturnTypes[keyof HandlerReturnTypes],
-): config is ClustersHandlerReturn {
-  return (
-    config !== undefined &&
-    "areas" in config &&
-    Array.isArray(config.areas) &&
-    config.areas.every((area) => typeof area === "string")
-  );
-}
-
 function withAreas(
   Component: React.ComponentType<
     ScenarioTableProps & {
-      config: GenericScenarioConfig | ClustersHandlerReturn;
+      config: TableConfigType;
     }
   >,
 ) {
   return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
-    const [configByArea, setConfigByArea] = useState<GenericScenarioConfig | ClustersHandlerReturn>(
-      {},
-    );
+    const [configByArea, setConfigByArea] = useState<TableConfigType>({});
 
     const scenarioConfig = useMemo(() => getConfigByScenario(config, type), [config, type]);
 
@@ -74,7 +62,11 @@ function withAreas(
 
     useEffect(() => {
       if (scenarioConfig && hasAreas(scenarioConfig) && selectedAreaId) {
-        setConfigByArea(scenarioConfig.clusters[selectedAreaId]);
+        if (hasClusters(scenarioConfig)) {
+          setConfigByArea(scenarioConfig.clusters[selectedAreaId]);
+        } else if (hasConstraints(scenarioConfig)) {
+          setConfigByArea(scenarioConfig.constraints[selectedAreaId]);
+        }
       }
     }, [selectedAreaId, scenarioConfig]);
 
@@ -82,9 +74,14 @@ function withAreas(
     // JSX
     ////////////////////////////////////////////////////////////////
 
-    // The regular case where no clusters nested data.
-    if (!areas.length && scenarioConfig) {
-      return <Component {...props} config={scenarioConfig} type={type} areaId={selectedAreaId} />;
+    // Handle simple scenarios without area structure
+    if (!hasAreaStructure(type) && scenarioConfig) {
+      return <Component {...props} config={scenarioConfig} type={type} />;
+    }
+
+    // If areas aren't loaded yet but should be, show loading or empty
+    if (!areas.length) {
+      return <Skeleton />;
     }
 
     return (
