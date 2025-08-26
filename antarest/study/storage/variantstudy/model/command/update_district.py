@@ -10,19 +10,19 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.core.exceptions import AreaNotFound
+from antarest.study.business.model.district_model import DistrictBaseFilter
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
     command_failed,
     command_succeeded,
 )
-from antarest.study.storage.variantstudy.model.command.create_district import DistrictBaseFilter
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -47,46 +47,68 @@ class UpdateDistrict(ICommand):
     output: Optional[bool] = None
     comments: Optional[str] = None
 
-    def update_in_config(self, study_data: FileStudyTreeConfig) -> Dict[str, Any]:
-        base_set = study_data.sets[self.id]
+    # def update_in_config(self, study_data: FileStudyTreeConfig) -> Dict[str, Any]:
+    #     base_set = study_data.sets[self.id]
 
-        if self.base_filter:
-            inverted_set = self.base_filter == DistrictBaseFilter.add_all
-        else:
-            inverted_set = base_set.inverted_set
-        study_data.sets[self.id].areas = self.filter_items or base_set.areas
-        study_data.sets[self.id].output = self.output if self.output is not None else base_set.output
-        study_data.sets[self.id].inverted_set = inverted_set
+    #     if self.base_filter:
+    #         inverted_set = self.base_filter == DistrictBaseFilter.add_all
+    #     else:
+    #         inverted_set = base_set.inverted_set
+    #     study_data.sets[self.id].areas = self.filter_items or base_set.areas
+    #     study_data.sets[self.id].output = self.output if self.output is not None else base_set.output
+    #     study_data.sets[self.id].inverted_set = inverted_set
 
-        item_key = "-" if inverted_set else "+"
-        return {
-            "district_id": self.id,
-            "item_key": item_key,
-        }
+    #     item_key = "-" if inverted_set else "+"
+    #     return {
+    #         "district_id": self.id,
+    #         "item_key": item_key,
+    #     }
+
+    # @override
+    # def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    #     if self.id not in study_data.config.sets:
+    #         return command_failed(message=f"District '{self.id}' does not exist and should be created")
+
+    #     data = self.update_in_config(study_data.config)
+
+    #     sets = study_data.tree.get(["input", "areas", "sets"])
+    #     district_id = data["district_id"]
+    #     item_key = data["item_key"]
+    #     apply_filter = (
+    #         self.base_filter.value if self.base_filter else sets.get("apply-filter", DistrictBaseFilter.remove_all)
+    #     )
+    #     study_data.tree.save(
+    #         {
+    #             "caption": sets[district_id]["caption"],
+    #             "apply-filter": apply_filter,
+    #             item_key: self.filter_items,
+    #             "output": study_data.config.sets[district_id].output,
+    #             "comments": self.comments,
+    #         },
+    #         ["input", "areas", "sets", district_id],
+    #     )
+
+    #     return command_succeeded(message=self.id)
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        if self.id not in study_data.config.sets:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        if not study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.id}' does not exist and should be created")
 
-        data = self.update_in_config(study_data.config)
+        district = study_data.get_district(self.id)  # to check if district exists
 
-        sets = study_data.tree.get(["input", "areas", "sets"])
-        district_id = data["district_id"]
-        item_key = data["item_key"]
-        apply_filter = (
-            self.base_filter.value if self.base_filter else sets.get("apply-filter", DistrictBaseFilter.remove_all)
-        )
-        study_data.tree.save(
-            {
-                "caption": sets[district_id]["caption"],
-                "apply-filter": apply_filter,
-                item_key: self.filter_items,
-                "output": study_data.config.sets[district_id].output,
+        updated_district = district.model_copy(
+            update={
+                "areas": self.filter_items,
+                "output": self.output,
                 "comments": self.comments,
-            },
-            ["input", "areas", "sets", district_id],
+            }
         )
+
+        try:
+            study_data.save_district(updated_district, self.base_filter)
+        except AreaNotFound as e:
+            return command_failed(message=f"Area not found {e}")
 
         return command_succeeded(message=self.id)
 

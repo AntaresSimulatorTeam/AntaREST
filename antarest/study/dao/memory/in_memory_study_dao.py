@@ -25,6 +25,7 @@ from antarest.study.business.model.config.advanced_parameters_model import Advan
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District, DistrictBaseFilter
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -144,6 +145,8 @@ class InMemoryStudyDao(StudyDao):
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Districts
+        self._districts: dict[str, District] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -669,3 +672,23 @@ class InMemoryStudyDao(StudyDao):
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         content = series.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return list(self._districts.values())
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._districts[district_id]
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return district_id in self._districts
+
+    @override
+    def save_district(self, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> None:
+        self._districts[district.id] = district
+
+    @override
+    def remove_district(self, district_id: str) -> None:
+        del self._districts[district_id]

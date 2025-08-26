@@ -41,7 +41,6 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
@@ -66,6 +65,12 @@ from antarest.study.business.model.config.optimization_config_model import (
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
+)
+from antarest.study.business.model.district_model import (
+    District,
+    DistrictCreationDTO,
+    DistrictInfoDTO,
+    DistrictUpdateDTO,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -268,13 +273,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Get the list of districts defined in this study",
-        response_model=List[DistrictInfoDTO],
+        response_model=List[District],
     )
-    def get_districts(uuid: str) -> List[DistrictInfoDTO]:
+    def get_districts(uuid: str) -> List[District]:
         logger.info(f"Fetching districts list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.district_manager.get_districts(study_interface)
+        return list(study_service.district_manager.get_districts(study_interface))
 
     @bp.post(
         "/studies/{uuid}/districts",

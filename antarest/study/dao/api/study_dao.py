@@ -22,6 +22,7 @@ from antarest.study.business.model.config.advanced_parameters_model import Advan
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -44,6 +45,7 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
 )
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
@@ -74,6 +76,7 @@ class ReadOnlyStudyDao(
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyDistrictDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -95,6 +98,7 @@ class StudyDao(
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    DistrictDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -357,3 +361,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         return self._adaptee.get_timeseries_config()
+
+    @override
+    def get_district(self, district_id: str) -> District:
+        return self._adaptee.get_district(district_id)
+
+    @override
+    def get_districts(self) -> Sequence[District]:
+        return self._adaptee.get_districts()
+
+    @override
+    def district_exists(self, district_id: str) -> bool:
+        return self._adaptee.district_exists(district_id)

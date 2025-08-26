@@ -10,36 +10,22 @@
 #
 # This file is part of the Antares project.
 
-from typing import List
+from typing import Sequence
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
-from antarest.core.serde import AntaresBaseModel
+from antarest.study.business.model.district_model import (
+    District,
+    DistrictBaseFilter,
+    DistrictCreationDTO,
+    DistrictInfoDTO,
+    DistrictUpdateDTO,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-
-class DistrictUpdateDTO(AntaresBaseModel):
-    #: Indicates whether this district is used in the output (usually all
-    #: districts are visible, but the user can decide to hide some of them).
-    output: bool
-    #: User-defined comments.
-    comments: str = ""
-    #: List of areas that will be grouped in the district.
-    areas: List[str]
-
-
-class DistrictCreationDTO(DistrictUpdateDTO):
-    #: Name of the district (this name is also used as a unique identifier).
-    name: str
-
-
-class DistrictInfoDTO(DistrictCreationDTO):
-    #: District identifier (based on the district name)
-    id: str
 
 
 class DistrictManager:
@@ -55,31 +41,32 @@ class DistrictManager:
     def __init__(self, command_context: CommandContext):
         self._command_context = command_context
 
-    def get_districts(self, study: StudyInterface) -> List[DistrictInfoDTO]:
+    def get_districts(self, study: StudyInterface) -> Sequence[District]:
         """
         Get the list of districts defined in this study.
 
         Args:
-            study: Study selected from the database.
+            study: Study selectinter_daily_breakdowned from the database.
 
         Returns:
             The (unordered) list of Data Transfer Objects (DTO) representing districts.
         """
-        file_study = study.get_files()
-        all_areas = list(file_study.config.areas)
-        districts = []
-        for district_id, district in file_study.config.sets.items():
-            assert district.name is not None
-            districts.append(
-                DistrictInfoDTO(
-                    id=district_id,
-                    name=district.name,
-                    areas=district.get_areas(all_areas),
-                    output=district.output,
-                    comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
-                )
-            )
-        return districts
+        # file_study = study.get_files()
+        # all_areas = list(file_study.config.areas)
+        # districts = []
+        # for district_id, district in file_study.config.sets.items():
+        #     assert district.name is not None
+        #     districts.append(
+        #         DistrictInfoDTO(
+        #             id=district_id,
+        #             name=district.name,
+        #             areas=district.get_areas(all_areas),
+        #             output=district.output,
+        #             comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
+        #         )
+        #     )
+        # return districts
+        return study.get_study_dao().get_districts()
 
     def create_district(
         self,
@@ -100,20 +87,20 @@ class DistrictManager:
             DistrictAlreadyExist: exception raised when district already exists (duplicate).
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
-        file_study = study.get_files()
+        study_dao = study.get_study_dao()
         district_id = transform_name_to_id(dto.name)
-        if district_id in file_study.config.sets:
+        if study_dao.district_exists(district_id):
             raise DistrictAlreadyExist(district_id)
-        areas = frozenset(dto.areas or [])
-        all_areas = frozenset(file_study.config.areas)
-        if invalid_areas := areas - all_areas:
-            raise AreaNotFound(*invalid_areas)
+
+        # all_areas = frozenset(file_study.config.areas)
+        # if invalid_areas := areas - all_areas:
+        #     raise AreaNotFound(*invalid_areas)
         command = CreateDistrict(
             name=dto.name,
             output=dto.output,
             comments=dto.comments,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=list(areas),
+            filter_items=dto.areas,
             command_context=self._command_context,
             study_version=study.version,
         )
@@ -121,7 +108,7 @@ class DistrictManager:
         return DistrictInfoDTO(
             id=district_id,
             name=dto.name,
-            areas=list(areas),
+            areas=dto.areas,
             output=dto.output,
             comments=dto.comments,
         )
@@ -157,7 +144,7 @@ class DistrictManager:
         command = UpdateDistrict(
             id=district_id,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=dto.areas or [],
+            filter_items=dto.areas,
             output=dto.output,
             comments=dto.comments,
             command_context=self._command_context,
@@ -180,8 +167,8 @@ class DistrictManager:
         Raises:
             DistrictNotFound: exception raised when district is not found in the study.
         """
-        file_study = study.get_files()
-        if district_id not in file_study.config.sets:
+        study_dao = study.get_study_dao()
+        if study_dao.district_exists(district_id):
             raise DistrictNotFound(district_id)
         command = RemoveDistrict(
             id=district_id,

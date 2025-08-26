@@ -45,6 +45,7 @@ class MustNotModifyOutputException(Exception):
 THERMAL_CLUSTER = "thermal cluster"
 RENEWABLE_CLUSTER = "renewable cluster"
 SHORT_TERM_STORAGE = "short-term storage"
+DISTRICT = "district"
 
 # ============================================================
 # NotFound (404)
@@ -98,6 +99,12 @@ class RenewableClusterConfigNotFound(ConfigFileNotFound):
     """Configuration for renewable cluster is not found (404 Not Found)"""
 
     object_name = RENEWABLE_CLUSTER
+
+
+class DistrictConfigNotFound(ConfigFileNotFound):
+    """Configuration for district is not found (404 Not Found)"""
+
+    object_name = DISTRICT
 
 
 class STStorageConfigNotFound(ConfigFileNotFound):

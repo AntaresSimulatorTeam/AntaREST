@@ -17,6 +17,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_adequacy_patch_parameters_dao import FileStudyAdequacyPatchParametersDao
 from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdvancedParametersDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
+from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
@@ -45,6 +46,7 @@ class FileStudyTreeDao(
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
+    FileStudyDistrictDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

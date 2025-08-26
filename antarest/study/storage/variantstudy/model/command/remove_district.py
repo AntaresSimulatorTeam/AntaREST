@@ -14,9 +14,15 @@ from typing import List, Optional
 
 from typing_extensions import override
 
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_failed,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -45,6 +51,13 @@ class RemoveDistrict(ICommand):
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
         study_data.tree.delete(["input", "areas", "sets", self.id])
         return self.remove_from_config(study_data.config)
+
+    @override
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        if not study_data.district_exists(self.id):
+            return command_failed(message=f"District '{self.id}' does not exist and should be created")
+        study_data.remove_district(self.id)
+        return command_succeeded(message=self.id)
 
     @override
     def to_dto(self) -> CommandDTO:
