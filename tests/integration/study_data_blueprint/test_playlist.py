@@ -26,23 +26,23 @@ class TestConfigPlaylist:
 
         res = client.get(f"/v1/studies/{study_id}/config/playlist/form")
         assert res.status_code == 200
-        assert res.json() == {"1": {"status": False, "weight": 1}}
+        assert res.json() == {"1": {"status": True, "weight": 1}}
 
         res = client.post(f"/v1/studies/{study_id}/raw?path=settings/generaldata/general/nbyears", json=5)
         assert res.status_code == 200
 
         res = client.put(
             f"/v1/studies/{study_id}/config/playlist/form",
-            json={"1": {"status": True, "weight": 8}, "2": {"status": True, "weight": 9.0}},
+            json={"1": {"status": False, "weight": 8.4}, "2": {"status": False}, "4": {"weight": 2.1}},
         )
         assert res.status_code == 200
 
         res = client.get(f"/v1/studies/{study_id}/config/playlist/form")
         assert res.status_code == 200
         assert res.json() == {
-            "1": {"status": True, "weight": 8},
-            "2": {"status": True, "weight": 9},
-            "3": {"status": False, "weight": 1},
-            "4": {"status": False, "weight": 1},
-            "5": {"status": False, "weight": 1},
+            "1": {"status": False, "weight": 8.4},
+            "2": {"status": False, "weight": 1},
+            "3": {"status": True, "weight": 1},
+            "4": {"status": True, "weight": 2.1},
+            "5": {"status": True, "weight": 1},
         }

@@ -56,8 +56,8 @@ class FileStudyPlaylistConfigDao(PlaylistConfigDao, ABC):
         playlist_reset = playlist_config.get("playlist_reset", True)
         nb_years = self.get_impl().get_general_config().nb_years
         for year in range(nb_years):
-            if year not in playlist:
-                playlist[year] = {"status": playlist_reset, "weight": weights.get(year, 1)}
+            if year + 1 not in playlist:
+                playlist[year + 1] = {"status": playlist_reset, "weight": weights.get(year, 1)}
 
         # Build the object
         return Playlist.model_validate({"years": playlist})

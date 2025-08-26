@@ -35,8 +35,8 @@ def update_playlist(current: Playlist, new: PlaylistUpdate) -> Playlist:
     """
     Updates the playlist according to the provided update data.
     """
-    current_playlist = current.model_dump(mode="json")
+    current_playlist = current.model_dump()
     for year in new.years:
-        new_properties = new.years[year].model_dump(mode="json", exclude_none=True)
+        new_properties = new.years[year].model_dump(exclude_none=True)
         current_playlist["years"][year].update(new_properties)
     return Playlist.model_validate(current_playlist)
