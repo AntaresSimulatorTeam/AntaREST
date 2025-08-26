@@ -97,7 +97,7 @@ class UpdateScenarioBuilder(ICommand):
         if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:
             rulesets[active_rules_scenario] = Ruleset()
 
-        study_data.tree.save(serialize_rulesets(rulesets), url)  # type: ignore
+        study_data.tree.save(serialize_rulesets(rulesets), url)
         return command_succeeded(message="Scenario builder updated successfully")
 
     @override

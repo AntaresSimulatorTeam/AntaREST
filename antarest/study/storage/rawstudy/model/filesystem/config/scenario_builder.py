@@ -14,7 +14,7 @@
 Serialization and parsing for scenariobuilder.dat file
 """
 
-from typing import Mapping, cast
+from typing import cast
 
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
@@ -30,8 +30,8 @@ from antarest.study.business.model.scenario_builder_model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 RuleValue = int | float | RandType | None
-RulesetFileData = Mapping[str, RuleValue]
-RulesetsFileData = Mapping[str, RulesetFileData]
+RulesetFileData = dict[str, RuleValue]
+RulesetsFileData = dict[str, RulesetFileData]
 
 _HYDRO_LEVEL_PERCENT = 100
 
