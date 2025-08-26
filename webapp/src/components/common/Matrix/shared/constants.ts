@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import i18n from "@/i18n";
 import {
   addDays,
   addHours,
@@ -23,7 +24,6 @@ import {
   getWeek,
   startOfWeek,
 } from "date-fns";
-import { t } from "i18next";
 import type { DateIncrementFunction, FormatFunction, TimeFrequencyType } from "./types";
 import { getLocale } from "./utils";
 
@@ -83,7 +83,7 @@ export const TIME_FREQUENCY_CONFIG: Record<
 > = {
   [TimeFrequency.Annual]: {
     increment: addYears,
-    format: () => t("global.time.annual"),
+    format: () => i18n.t("global.time.annual"),
   },
   [TimeFrequency.Monthly]: {
     increment: addMonths,
@@ -100,7 +100,7 @@ export const TIME_FREQUENCY_CONFIG: Record<
         firstWeekContainsDate: firstWeekSize as FirstWeekContainsDate,
       });
 
-      return `${t("global.time.weekShort")} ${weekNumber.toString().padStart(2, "0")}`;
+      return `${i18n.t("global.time.weekShort")} ${weekNumber.toString().padStart(2, "0")}`;
     },
   },
   [TimeFrequency.Daily]: {

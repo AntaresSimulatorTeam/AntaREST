@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import i18n, { type TFunction } from "i18next";
+import i18n from "@/i18n";
+import { type TFunction } from "i18next";
 import moment from "moment";
 import * as R from "ramda";
 import {
