@@ -12,7 +12,7 @@
 
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
-from antarest.study.business.model.config.playlist_model import PlaylistValues, PlaylistValuesUpdate
+from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
@@ -36,18 +36,9 @@ class PlaylistManager:
     def update_playlist(
         self, study: StudyInterface, playlist: dict[int, PlaylistValuesUpdate]
     ) -> dict[int, PlaylistValues]:
-        years_by_bool: dict[bool, list[int]] = {True: [], False: []}
-        for year, col in playlist.items():
-            years_by_bool[col.status].append(year - 1)
-
-        active_playlists = [year for year, col in playlist.items() if col.status is True]
-
-        weights = {year: col.weight for year, col in playlist.items() if col.weight != DEFAULT_WEIGHT}
-
+        playlist_update = PlaylistUpdate.model_validate({"years": playlist})
         command = UpdatePlaylist(
-            items=active_playlists,
-            weights=weights,
-            active=True,
+            playlist=playlist_update,
             command_context=self._command_context,
             study_version=study.version,
         )
