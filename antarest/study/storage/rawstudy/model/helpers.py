@@ -14,7 +14,6 @@ from typing import Dict, List, Optional, cast
 
 from antarest.core.model import JSON
 from antarest.core.utils.utils import assert_this
-from antarest.study.storage.rawstudy.model.filesystem.config.files import get_playlist
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -36,11 +35,6 @@ class FileStudyHelpers:
     def save_config(study: FileStudy, config: JSON) -> None:
         config_path = ["settings", "generaldata"]
         return study.tree.save(config, config_path)
-
-    @staticmethod
-    def get_playlist(study: FileStudy, output_id: Optional[str] = None) -> Optional[Dict[int, float]]:
-        config = FileStudyHelpers.get_config(study, output_id)
-        return get_playlist(config)
 
     @staticmethod
     def set_playlist(
