@@ -12,7 +12,7 @@
 
 
 import enum
-from typing import Iterable, Literal, Mapping, TypeAlias, cast
+from typing import Iterable, Literal, Mapping, TypeAlias, TypeVar, cast
 
 from pydantic import Field
 
@@ -100,66 +100,111 @@ class Ruleset(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     binding_constraints: BcGroupScenarios = Field(default_factory=dict)
     storage_inflows: AreaItemsScenarios = Field(default_factory=dict)
 
-    def get(self, scenario_type: ScenarioType) -> AreaScenarios | AreaItemsScenarios:
-        match scenario_type:
-            case ScenarioType.LOAD:
-                return self.load
-            case ScenarioType.THERMAL:
-                return self.thermal
-            case ScenarioType.HYDRO:
-                return self.hydro
-            case ScenarioType.HYDRO_INITIAL_LEVEL:
-                return self.hydro_initial_levels
-            case ScenarioType.HYDRO_FINAL_LEVEL:
-                return self.hydro_final_levels
-            case ScenarioType.HYDRO_GENERATION_POWER:
-                return self.hydro_generation_power
-            case ScenarioType.SOLAR:
-                return self.solar
-            case ScenarioType.WIND:
-                return self.wind
-            case ScenarioType.RENEWABLE:
-                return self.renewable
-            case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
-                return self.storage_inflows
-            case ScenarioType.BINDING_CONSTRAINTS:
-                return self.binding_constraints
-            case ScenarioType.LINK:
-                return self.ntc
-            case _:
-                raise ValueError(f"Unknown scenario type {scenario_type}")
+    def get(self, scenario_type: ScenarioType) -> AnyScenarios:
+        res = _get_by_type(self, scenario_type)
+        if res is None:
+            raise ValueError("Should not have a None scenario mapping in Ruleset")
+        return res
 
-    def set(self, scenario_type: ScenarioType, scenarios: AreaScenarios | AreaItemsScenarios) -> None:
-        match scenario_type:
-            case ScenarioType.LOAD:
-                self.load = cast(AreaScenarios, scenarios)
-            case ScenarioType.THERMAL:
-                self.thermal = cast(AreaItemsScenarios, scenarios)
-            case ScenarioType.HYDRO:
-                self.hydro = cast(AreaScenarios, scenarios)
-            case ScenarioType.HYDRO_INITIAL_LEVEL:
-                self.hydro_initial_levels = cast(AreaScenarios, scenarios)
-            case ScenarioType.HYDRO_FINAL_LEVEL:
-                self.hydro_final_levels = cast(AreaScenarios, scenarios)
-            case ScenarioType.HYDRO_GENERATION_POWER:
-                self.hydro_generation_power = cast(AreaScenarios, scenarios)
-            case ScenarioType.SOLAR:
-                self.solar = cast(AreaScenarios, scenarios)
-            case ScenarioType.WIND:
-                self.wind = cast(AreaScenarios, scenarios)
-            case ScenarioType.RENEWABLE:
-                self.renewable = cast(AreaItemsScenarios, scenarios)
-            case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
-                self.storage_inflows = cast(AreaItemsScenarios, scenarios)
-            case ScenarioType.BINDING_CONSTRAINTS:
-                self.binding_constraints = cast(AreaScenarios, scenarios)
-            case ScenarioType.LINK:
-                self.ntc = cast(AreaScenarios, scenarios)
-            case _:
-                raise ValueError(f"Unknown scenario type {scenario_type}")
+    def set(self, scenario_type: ScenarioType, scenarios: AnyScenarios) -> None:
+        _set_by_type(self, scenario_type, scenarios)
 
 
 Rulesets: TypeAlias = dict[str, Ruleset]
+
+
+class RulesetUpdate(AntaresBaseModel, populate_by_name=True, extra="forbid"):
+    """
+    A ruleset defines, for each item in the study, a mapping of MC year to the data to be used.
+
+    In the vast majority of cases, the data is simply a timeseries number to be used,
+    but for specific cases it can be an actual value, like the level of an hydro reservoir.
+    """
+
+    load: AreaScenarios | None = None
+    thermal: AreaItemsScenarios | None = None
+    hydro: AreaScenarios | None = None
+    hydro_initial_levels: HydroLevelsScenarios | None = None
+    hydro_final_levels: HydroLevelsScenarios | None = None
+    hydro_generation_power: AreaScenarios | None = None
+    wind: AreaScenarios | None = None
+    solar: AreaScenarios | None = None
+    ntc: LinkScenarios | None = None
+    renewable: AreaItemsScenarios | None = None
+    binding_constraints: BcGroupScenarios | None = None
+    storage_inflows: AreaItemsScenarios | None = None
+
+    def get(self, scenario_type: ScenarioType) -> AnyScenarios | None:
+        return _get_by_type(self, scenario_type)
+
+    def set(self, scenario_type: ScenarioType, scenarios: AnyScenarios | None) -> None:
+        _set_by_type(self, scenario_type, scenarios)
+
+
+R = TypeVar("R", bound=Ruleset | RulesetUpdate)
+
+
+def _get_by_type(self: R, scenario_type: ScenarioType) -> AnyScenarios | None:
+    match scenario_type:
+        case ScenarioType.LOAD:
+            return self.load
+        case ScenarioType.THERMAL:
+            return self.thermal
+        case ScenarioType.HYDRO:
+            return self.hydro
+        case ScenarioType.HYDRO_INITIAL_LEVEL:
+            return self.hydro_initial_levels
+        case ScenarioType.HYDRO_FINAL_LEVEL:
+            return self.hydro_final_levels
+        case ScenarioType.HYDRO_GENERATION_POWER:
+            return self.hydro_generation_power
+        case ScenarioType.SOLAR:
+            return self.solar
+        case ScenarioType.WIND:
+            return self.wind
+        case ScenarioType.RENEWABLE:
+            return self.renewable
+        case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+            return self.storage_inflows
+        case ScenarioType.BINDING_CONSTRAINTS:
+            return self.binding_constraints
+        case ScenarioType.LINK:
+            return self.ntc
+        case _:
+            raise ValueError(f"Unknown scenario type {scenario_type}")
+
+
+def _set_by_type(self: R, scenario_type: ScenarioType, scenarios: AnyScenarios | None) -> None:
+    match scenario_type:
+        case ScenarioType.LOAD:
+            self.load = cast(AreaScenarios, scenarios)
+        case ScenarioType.THERMAL:
+            self.thermal = cast(AreaItemsScenarios, scenarios)
+        case ScenarioType.HYDRO:
+            self.hydro = cast(AreaScenarios, scenarios)
+        case ScenarioType.HYDRO_INITIAL_LEVEL:
+            self.hydro_initial_levels = cast(AreaScenarios, scenarios)
+        case ScenarioType.HYDRO_FINAL_LEVEL:
+            self.hydro_final_levels = cast(AreaScenarios, scenarios)
+        case ScenarioType.HYDRO_GENERATION_POWER:
+            self.hydro_generation_power = cast(AreaScenarios, scenarios)
+        case ScenarioType.SOLAR:
+            self.solar = cast(AreaScenarios, scenarios)
+        case ScenarioType.WIND:
+            self.wind = cast(AreaScenarios, scenarios)
+        case ScenarioType.RENEWABLE:
+            self.renewable = cast(AreaItemsScenarios, scenarios)
+        case ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
+            self.storage_inflows = cast(AreaItemsScenarios, scenarios)
+        case ScenarioType.BINDING_CONSTRAINTS:
+            self.binding_constraints = cast(AreaScenarios, scenarios)
+        case ScenarioType.LINK:
+            self.ntc = cast(AreaScenarios, scenarios)
+        case _:
+            raise ValueError(f"Unknown scenario type {scenario_type}")
+
+
+RulesetsUpdate: TypeAlias = dict[str, RulesetUpdate]
 
 
 def _create_scenarios_mapping(names: Iterable[str], years: list[str]) -> AreaScenarios:
@@ -217,21 +262,27 @@ def initialize_ruleset(years: list[str], index: StudyIndex, scenario_types: set[
     )
 
 
-def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries) -> None:
+def _update_mapping(base: McYearToTimeSeries, update: McYearToTimeSeries | None) -> None:
+    if update is None:
+        return
     base.update(update)
 
 
-def _update_simple_mapping(base: _OneLevelScenarios, update: _OneLevelScenarios) -> None:
+def _update_simple_mapping(base: _OneLevelScenarios, update: _OneLevelScenarios | None) -> None:
+    if update is None:
+        return
     for name, mapping in update.items():
         _update_mapping(base.setdefault(name, {}), mapping)
 
 
-def _update_double_mapping(base: _TwoLevelScenarios, update: _TwoLevelScenarios) -> None:
+def _update_double_mapping(base: _TwoLevelScenarios, update: _TwoLevelScenarios | None) -> None:
+    if update is None:
+        return
     for name, mapping in update.items():
         _update_simple_mapping(base.setdefault(name, {}), mapping)
 
 
-def update_ruleset(base: Ruleset, update: Ruleset) -> None:
+def update_ruleset(base: Ruleset, update: RulesetUpdate) -> None:
     _update_simple_mapping(base.load, update.load)
     _update_double_mapping(base.thermal, update.thermal)
     _update_simple_mapping(base.hydro, update.hydro)
@@ -246,10 +297,12 @@ def update_ruleset(base: Ruleset, update: Ruleset) -> None:
     _update_simple_mapping(base.ntc, update.ntc)
 
 
-def update_rulesets(base: Rulesets, update: Rulesets) -> None:
+def update_rulesets(base: Rulesets, update: RulesetsUpdate) -> None:
     lower_case_base = {k.lower(): v for k, v in base.items()}
-    for name, ruleset in update.items():
+    for name, ruleset_update in update.items():
         if name.lower() not in lower_case_base:
+            ruleset = Ruleset()
+            update_ruleset(ruleset, ruleset_update)
             base[name] = ruleset
         else:
-            update_ruleset(lower_case_base[name.lower()], ruleset)
+            update_ruleset(lower_case_base[name.lower()], ruleset_update)

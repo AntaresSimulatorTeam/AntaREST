@@ -14,7 +14,7 @@ import numpy as np
 from checksumdir import dirhash
 
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm
-from antarest.study.business.model.scenario_builder_model import Ruleset
+from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     BindingConstraintFrequency,
@@ -104,7 +104,7 @@ class TestRemoveCluster:
 
             # Add scenario builder data
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": Ruleset(thermal={area_id: {cluster_name.lower(): {"0": 1}}})},
+                data={"Default Ruleset": RulesetUpdate(thermal={area_id: {cluster_name.lower(): {"0": 1}}})},
                 command_context=command_context,
                 study_version=study_version,
             ).apply(study_data=empty_study)

@@ -16,8 +16,12 @@ from pydantic import TypeAdapter, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.scenario_builder_model import Ruleset, Rulesets, update_rulesets
-from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_rulesets, serialize_rulesets
+from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetsUpdate, update_rulesets
+from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
+    parse_rulesets,
+    parse_rulesets_update,
+    serialize_rulesets,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -40,7 +44,7 @@ def _get_active_ruleset(study_data: FileStudy) -> str:
         return ""
 
 
-_RULESETS_ADAPTER = TypeAdapter(Rulesets)
+_RULESETS_ADAPTER = TypeAdapter(RulesetsUpdate)
 
 
 class UpdateScenarioBuilder(ICommand):
@@ -59,7 +63,7 @@ class UpdateScenarioBuilder(ICommand):
     # Command parameters
     # ==================
 
-    data: Rulesets
+    data: RulesetsUpdate
 
     @model_validator(mode="before")
     @classmethod
@@ -68,7 +72,7 @@ class UpdateScenarioBuilder(ICommand):
             version = info.context.version
             if version == 1:
                 data = values["data"]
-                rulesets = parse_rulesets(data)
+                rulesets = parse_rulesets_update(data)
                 values["data"] = rulesets
         return values
 

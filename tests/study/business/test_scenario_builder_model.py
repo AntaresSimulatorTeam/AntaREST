@@ -15,6 +15,7 @@ import pytest
 
 from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
+    RulesetUpdate,
     ScenarioType,
     initialize_ruleset,
     update_ruleset,
@@ -80,18 +81,18 @@ def test_ruleset__initialization_from_study() -> None:
 )
 def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
-    update = Ruleset()
+    update = RulesetUpdate()
     update.set(scenario_type, {"be": {"1": 2, "2": 1}})
     update_ruleset(ruleset, update)
 
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 
-    update = Ruleset()
+    update = RulesetUpdate()
     update.set(scenario_type, {"be": {"2": 3}})
     update_ruleset(ruleset, update)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 3}}
 
-    update = Ruleset()
+    update = RulesetUpdate()
     update.set(scenario_type, {"be": {"2": ""}})
     update_ruleset(ruleset, update)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": ""}}
@@ -107,18 +108,18 @@ def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
 )
 def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
-    update = Ruleset()
+    update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"1": 2, "2": 1}}})
     update_ruleset(ruleset, update)
 
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 1}}}
 
-    update = Ruleset()
+    update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"2": 3}, "item2": {"1": 2, "2": 1}}})
     update_ruleset(ruleset, update)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 3}, "item2": {"1": 2, "2": 1}}}
 
-    update = Ruleset()
+    update = RulesetUpdate()
     update.set(scenario_type, {"be": {"item1": {"2": ""}}})
     update_ruleset(ruleset, update)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": ""}, "item2": {"1": 2, "2": 1}}}

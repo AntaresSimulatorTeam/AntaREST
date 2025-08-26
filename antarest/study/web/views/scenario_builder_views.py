@@ -26,6 +26,8 @@ from antarest.study.business.model.scenario_builder_model import (
     HydroLevelsScenarios,
     Ruleset,
     Rulesets,
+    RulesetsUpdate,
+    RulesetUpdate,
 )
 
 
@@ -54,12 +56,9 @@ class RulesetView(AntaresBaseModel, populate_by_name=True, extra="forbid"):
         non_empty = {k: v for k, v in field_values.items() if v}
         return RulesetView.model_construct(**non_empty)
 
-    def to_model(self) -> Ruleset:
+    def to_model(self) -> RulesetUpdate:
         field_values = {f: getattr(self, f) for f in RulesetView.model_fields.keys()}
-        for k, v in field_values.items():
-            if v is None:
-                field_values[k] = {}
-        return Ruleset.model_construct(**field_values)
+        return RulesetUpdate.model_construct(**field_values)
 
 
 RulesetsView: TypeAlias = dict[str, RulesetView]
@@ -69,5 +68,5 @@ def rulesets_model_to_view(model: Rulesets) -> RulesetsView:
     return {name: RulesetView.from_model(m) for name, m in model.items()}
 
 
-def rulesets_view_to_model(view: RulesetsView) -> Rulesets:
+def rulesets_view_to_model(view: RulesetsView) -> RulesetsUpdate:
     return {name: v.to_model() for name, v in view.items()}

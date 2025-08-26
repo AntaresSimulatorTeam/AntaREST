@@ -1362,18 +1362,9 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
     assert dto.args == {
         "data": {
             "ruleset test": {
-                "binding_constraints": {},
-                "hydro": {},
-                "hydro_final_levels": {},
-                "hydro_generation_power": {},
-                "hydro_initial_levels": {},
                 "load": {"area1": {"0": 1}},
                 "ntc": {"area1 / area2": {"1": 23}},
-                "renewable": {},
-                "solar": {},
-                "storage_inflows": {},
                 "thermal": {"area1": {"thermal": {"1": ""}}},
-                "wind": {},
             }
         }
     }

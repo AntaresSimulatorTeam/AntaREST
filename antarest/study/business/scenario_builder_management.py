@@ -16,6 +16,8 @@ from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
     Ruleset,
     Rulesets,
+    RulesetsUpdate,
+    RulesetUpdate,
     ScenarioType,
     initialize_ruleset,
     update_ruleset,
@@ -24,7 +26,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     RulesetsFileData,
     extract_ruleset_data,
-    parse_ruleset,
+    parse_ruleset_update,
     parse_rulesets,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -79,7 +81,7 @@ def _read_ruleset(file_study: FileStudy, scenario_type: ScenarioType) -> Ruleset
         index=file_study.tree.config.to_study_index(),
         scenario_types={scenario_type},
     )
-    file_ruleset = parse_ruleset(ruleset_config)
+    file_ruleset = parse_ruleset_update(ruleset_config)
     update_ruleset(complete_ruleset, file_ruleset)
     return complete_ruleset
 
@@ -92,7 +94,7 @@ class ScenarioBuilderManager:
         sections = cast(RulesetsFileData, study.get_files().tree.get(["settings", "scenariobuilder"]))
         return parse_rulesets(sections)
 
-    def update_config(self, study: StudyInterface, rulesets: Rulesets) -> None:
+    def update_config(self, study: StudyInterface, rulesets: RulesetsUpdate) -> None:
         command = UpdateScenarioBuilder(
             data=rulesets, command_context=self._command_context, study_version=study.version
         )
@@ -109,7 +111,7 @@ class ScenarioBuilderManager:
         self, study: StudyInterface, table_form: AnyScenarios, scenario_type: ScenarioType
     ) -> AnyScenarios:
         file_study = study.get_files()
-        ruleset_update = Ruleset()
+        ruleset_update = RulesetUpdate()
         ruleset_update.set(scenario_type, table_form)
 
         # Create the UpdateScenarioBuilder command
