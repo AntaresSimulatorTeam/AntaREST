@@ -16,7 +16,7 @@ from antarest.study.business.model.layer_model import Layer, LayerCreation, Laye
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
-from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayer
+from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 

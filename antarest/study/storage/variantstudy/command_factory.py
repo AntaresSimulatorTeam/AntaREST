@@ -78,7 +78,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
-from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayer
+from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_optimization_preferences import (
     UpdateOptimizationPreferences,

@@ -15,7 +15,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.layer_model import LayerCreation, LayerUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
-from antarest.study.storage.variantstudy.model.command.update_layer_name import UpdateLayer
+from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
