@@ -131,8 +131,6 @@ def _add_value_simple(values: AreaScenarios, key: str, year: str, value: RuleVal
 
 
 def _add_value_double(values: AreaItemsScenarios, key1: str, key2: str, year: str, value: RuleValue) -> None:
-    if values is None:
-        raise ValueError("Scenario mapping should be initialized.")
     if value is None:
         value = RANDOM
     values.setdefault(key1, {}).setdefault(key2, {})[year] = value
