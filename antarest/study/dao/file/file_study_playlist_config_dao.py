@@ -68,11 +68,12 @@ class FileStudyPlaylistConfigDao(PlaylistConfigDao, ABC):
         deactivated_years = []
         weights = []
         for year, model in playlist.years.items():
+            ini_year = year - 1
             if model.status:
-                activated_years.append(year - 1)
+                activated_years.append(ini_year)
             else:
-                deactivated_years.append(year - 1)
-            weights.append(f"{year},{model.weight}")
+                deactivated_years.append(ini_year)
+            weights.append(f"{ini_year},{model.weight}")
 
         content: dict[str, Any] = {"playlist_year_weight": weights}
 
