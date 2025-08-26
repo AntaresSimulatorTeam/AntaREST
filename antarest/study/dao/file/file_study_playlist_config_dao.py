@@ -73,7 +73,9 @@ class FileStudyPlaylistConfigDao(PlaylistConfigDao, ABC):
                 activated_years.append(ini_year)
             else:
                 deactivated_years.append(ini_year)
-            weights.append(f"{ini_year},{model.weight}")
+            if model.weight != 1:
+                # Only write weights if they differ from the default value
+                weights.append(f"{ini_year},{model.weight}")
 
         content: dict[str, Any] = {"playlist_year_weight": weights}
 
