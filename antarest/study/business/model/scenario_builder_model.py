@@ -12,7 +12,7 @@
 
 
 import enum
-from typing import Iterable, Literal, Mapping, TypeAlias, TypeVar, cast
+from typing import Iterable, Literal, Mapping, TypeAlias, cast
 
 from pydantic import Field
 
@@ -115,10 +115,7 @@ Rulesets: TypeAlias = dict[str, Ruleset]
 
 class RulesetUpdate(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     """
-    A ruleset defines, for each item in the study, a mapping of MC year to the data to be used.
-
-    In the vast majority of cases, the data is simply a timeseries number to be used,
-    but for specific cases it can be an actual value, like the level of an hydro reservoir.
+    An update to a Ruleset object.
     """
 
     load: AreaScenarios | None = None
@@ -141,10 +138,7 @@ class RulesetUpdate(AntaresBaseModel, populate_by_name=True, extra="forbid"):
         _set_by_type(self, scenario_type, scenarios)
 
 
-R = TypeVar("R", bound=Ruleset | RulesetUpdate)
-
-
-def _get_by_type(self: R, scenario_type: ScenarioType) -> AnyScenarios | None:
+def _get_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType) -> AnyScenarios | None:
     match scenario_type:
         case ScenarioType.LOAD:
             return self.load
@@ -174,7 +168,7 @@ def _get_by_type(self: R, scenario_type: ScenarioType) -> AnyScenarios | None:
             raise ValueError(f"Unknown scenario type {scenario_type}")
 
 
-def _set_by_type(self: R, scenario_type: ScenarioType, scenarios: AnyScenarios | None) -> None:
+def _set_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType, scenarios: AnyScenarios | None) -> None:
     match scenario_type:
         case ScenarioType.LOAD:
             self.load = cast(AreaScenarios, scenarios)
