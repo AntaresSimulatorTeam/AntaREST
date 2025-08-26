@@ -225,7 +225,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
             shouldUnregister={shouldUnregister}
             render={({
               field: { ref, onChange, onBlur, ...fieldProps },
-              fieldState: { error },
+              fieldState: { invalid, error },
             }) => (
               <FieldEditor
                 {...(feProps as TProps)}
@@ -233,7 +233,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
                 onChange={handleChange(onChange)}
                 onBlur={handleBlur(onBlur)}
                 inputRef={composeRefs(ref, feProps.inputRef)}
-                error={!!error}
+                error={invalid}
                 helperText={error?.message || feProps.helperText}
                 disabled={
                   (control._formState.isSubmitting && !isAutoSubmitEnabled) ||

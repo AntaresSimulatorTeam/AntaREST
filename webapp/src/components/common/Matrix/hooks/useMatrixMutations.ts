@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useCallback } from "react";
-import { t } from "i18next";
+import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { updateMatrix } from "@/services/api/matrix";
 import { uploadFile } from "@/services/api/studies/raw";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import type { GridUpdate, AggregateType } from "../shared/types";
-import { calculateMatrixAggregates } from "../shared/utils";
 import { toError } from "@/utils/fnUtils";
+import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { AggregateType, GridUpdate } from "../shared/types";
+import { calculateMatrixAggregates } from "../shared/utils";
 import type { DataState, SetMatrixDataFunction } from "./useMatrixData";
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 
 interface UseMatrixMutationsProps {
   studyId: string;
@@ -52,6 +52,7 @@ export function useMatrixMutations({
 }: UseMatrixMutationsProps): MatrixMutationsResult {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { t } = useTranslation();
 
   // Prevents accidental navigation when matrix has unsaved changes or during submission
   useFormCloseProtection({ isSubmitting, isDirty });
@@ -102,10 +103,10 @@ export function useMatrixMutations({
         await uploadFile({ file, studyId, path: path });
         reload();
       } catch (error) {
-        enqueueErrorSnackbar(t("matrix.error.import"), toError(error));
+        enqueueErrorSnackbar(t("matrix.error.matrixUpdate"), toError(error));
       }
     },
-    [studyId, path, reload, enqueueErrorSnackbar],
+    [studyId, path, reload, enqueueErrorSnackbar, t],
   );
 
   const handleSaveUpdates = useCallback(async () => {
@@ -127,7 +128,7 @@ export function useMatrixMutations({
     } finally {
       setIsSubmitting(false);
     }
-  }, [isDirty, studyId, path, currentState, setMatrixData, enqueueErrorSnackbar]);
+  }, [isDirty, studyId, path, currentState, setMatrixData, enqueueErrorSnackbar, t]);
 
   return {
     isSubmitting,

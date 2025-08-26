@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import i18n from "@/i18n";
 import type { ValidationReturn } from "@/types/types";
-import { t } from "i18next";
 import * as R from "ramda";
 
 interface ArrayValidationOptions {
@@ -58,11 +58,11 @@ export function validateArray<T>(
   const { allowEmpty, allowDuplicate } = options;
 
   if (!value.length && !allowEmpty) {
-    return t("form.field.required");
+    return i18n.t("form.field.required");
   }
 
   if (!allowDuplicate && R.uniq(value).length !== value.length) {
-    return t("form.field.duplicateNotAllowed");
+    return i18n.t("form.field.duplicateNotAllowed");
   }
 
   return true;

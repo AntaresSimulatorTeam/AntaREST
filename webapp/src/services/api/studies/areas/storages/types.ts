@@ -29,12 +29,14 @@ export type AdditionalConstraintVariable = "withdrawal" | "injection" | "netting
 
 export type AdditionalConstraintOperator = "less" | "greater" | "equal";
 
+export type AdditionalConstraintOccurrences = Array<{ hours: number[] }>;
+
 export interface AdditionalConstraint {
   id: string;
   name: string;
   variable: AdditionalConstraintVariable;
   operator: AdditionalConstraintOperator;
-  occurrences: Array<{ hours: number[] }>;
+  occurrences: AdditionalConstraintOccurrences;
   enabled: boolean;
 }
 
@@ -53,10 +55,23 @@ export interface CreateAdditionalConstraintsParams<T> extends BaseStorageParams 
   constraints: Array<F.Exact<T, AdditionalConstraintCreation>>;
 }
 
+export interface CreateAdditionalConstraintParams<T> extends BaseStorageParams {
+  values: F.Exact<T, AdditionalConstraintCreation>;
+}
+
 export interface UpdateAdditionalConstraintsParams<T> extends BaseStorageParams {
   constraints: Record<AdditionalConstraint["id"], F.Exact<T, AdditionalConstraintUpdate>>;
 }
 
+export interface UpdateAdditionalConstraintParams<T> extends BaseStorageParams {
+  constraintId: AdditionalConstraint["id"];
+  values: F.Exact<T, AdditionalConstraintUpdate>;
+}
+
 export interface DeleteAdditionalConstraintsParams extends BaseStorageParams {
   constraintIds: Array<AdditionalConstraint["id"]>;
+}
+
+export interface DeleteAdditionalConstraintParams extends BaseStorageParams {
+  constraintId: AdditionalConstraint["id"];
 }

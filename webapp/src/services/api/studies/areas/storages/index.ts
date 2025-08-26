@@ -17,9 +17,12 @@ import { format } from "@/utils/stringUtils";
 import type {
   AdditionalConstraint,
   BaseStorageParams,
+  CreateAdditionalConstraintParams,
   CreateAdditionalConstraintsParams,
+  DeleteAdditionalConstraintParams,
   DeleteAdditionalConstraintsParams,
   GetAdditionalConstraintParams,
+  UpdateAdditionalConstraintParams,
   UpdateAdditionalConstraintsParams,
 } from "./types";
 
@@ -47,6 +50,18 @@ export async function createAdditionalConstraints<T>({
   return data;
 }
 
+export async function createAdditionalConstraint<T>({
+  values,
+  ...params
+}: CreateAdditionalConstraintParams<T>) {
+  const createdConstraints = await createAdditionalConstraints({
+    ...params,
+    constraints: [values],
+  });
+
+  return createdConstraints[0];
+}
+
 export async function updateAdditionalConstraints<T>({
   constraints,
   ...params
@@ -55,9 +70,29 @@ export async function updateAdditionalConstraints<T>({
   return data;
 }
 
+export async function updateAdditionalConstraint<T>({
+  constraintId,
+  values,
+  ...params
+}: UpdateAdditionalConstraintParams<T>) {
+  const updatedConstraints = await updateAdditionalConstraints({
+    ...params,
+    constraints: { [constraintId]: values },
+  });
+
+  return updatedConstraints[0];
+}
+
 export async function deleteAdditionalConstraints({
   constraintIds,
   ...params
 }: DeleteAdditionalConstraintsParams) {
   await client.delete(buildUrl(params), { data: constraintIds });
+}
+
+export async function deleteAdditionalConstraint({
+  constraintId,
+  ...params
+}: DeleteAdditionalConstraintParams) {
+  await deleteAdditionalConstraints({ ...params, constraintIds: [constraintId] });
 }
