@@ -24,7 +24,7 @@ class PlaylistValuesUpdate(AntaresBaseModel):
 
 
 class Playlist(AntaresBaseModel, extra="forbid"):
-    years: dict[int, PlaylistValues]
+    years: dict[int, PlaylistValues] = {}
 
 
 class PlaylistUpdate(AntaresBaseModel, extra="forbid"):
