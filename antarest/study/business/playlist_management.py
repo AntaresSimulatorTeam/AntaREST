@@ -10,14 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict, List, Union
-
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
-from antarest.study.business.model.config.general_model import GENERAL_PATH
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -26,36 +22,23 @@ DEFAULT_WEIGHT = 1
 
 class PlaylistColumns(FormFieldsBaseModel):
     status: StrictBool
-    weight: Union[StrictFloat, StrictInt]
+    weight: StrictFloat | StrictInt
 
 
 class PlaylistManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_table_data(
-        self,
-        study: StudyInterface,
-    ) -> Dict[int, PlaylistColumns]:
-        file_study = study.get_files()
-        playlist = FileStudyHelpers.get_playlist(file_study) or {}
-        nb_years = file_study.tree.get(f"{GENERAL_PATH}/nbyears".split("/")) or len(playlist)
+    def get_playlist(self, study: StudyInterface) -> dict[int, PlaylistColumns]:
+        playlist = study.get_study_dao().get_playlist_config()
+        args = playlist.model_dump()["years"]
+        response = {}
+        for key, value in args.items():
+            response[key] = PlaylistColumns.model_validate(value)
+        return response
 
-        return {
-            year: PlaylistColumns.model_construct(
-                status=year in playlist,
-                # TODO the real value for disable year
-                weight=playlist.get(year, DEFAULT_WEIGHT),
-            )
-            for year in range(1, int(nb_years) + 1)  # type: ignore
-        }
-
-    def set_table_data(
-        self,
-        study: StudyInterface,
-        data: Dict[int, PlaylistColumns],
-    ) -> None:
-        years_by_bool: Dict[bool, List[int]] = {True: [], False: []}
+    def update_playlist(self, study: StudyInterface, data: dict[int, PlaylistColumns]) -> None:
+        years_by_bool: dict[bool, list[int]] = {True: [], False: []}
         for year, col in data.items():
             years_by_bool[col.status].append(year - 1)
 

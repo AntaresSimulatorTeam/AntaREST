@@ -427,7 +427,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.playlist_manager.get_table_data(study_interface)
+        return study_service.playlist_manager.get_playlist(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
@@ -438,7 +438,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.playlist_manager.set_table_data(study_interface, data)
+        study_service.playlist_manager.update_playlist(study_interface, data)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
