@@ -24,6 +24,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -45,6 +46,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -76,6 +78,7 @@ from antarest.study.storage.variantstudy.model.command.update_district import Up
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
+from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_optimization_preferences import (
     UpdateOptimizationPreferences,
@@ -100,6 +103,9 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_AREAS_PROPERTIES.value: UpdateAreasProperties,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
     CommandName.REMOVE_AREA.value: RemoveArea,
+    CommandName.CREATE_LAYER.value: CreateLayer,
+    CommandName.REMOVE_LAYER.value: RemoveLayer,
+    CommandName.UPDATE_LAYER.value: UpdateLayer,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,

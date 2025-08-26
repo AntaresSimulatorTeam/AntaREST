@@ -31,6 +31,7 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -145,6 +146,8 @@ class InMemoryStudyDao(StudyDao):
         self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Layer
+        self._layers: list[Layer] = []
         # Playlist config
         self._playlist_config = Playlist()
 
@@ -672,6 +675,24 @@ class InMemoryStudyDao(StudyDao):
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         content = series.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def save_layer(self, layer: Layer) -> None:
+        new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
+        layer.id = str(new_id)
+        self._layers.insert(new_id, layer)
+
+    @override
+    def get_layers(self) -> Sequence[Layer]:
+        return self._layers
+
+    @override
+    def delete_layer(self, layer: Layer) -> None:
+        self._layers.remove(layer)
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return any(layer.id == layer_id for layer in self._layers)
 
     @override
     def get_playlist_config(self) -> Playlist:

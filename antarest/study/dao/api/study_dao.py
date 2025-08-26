@@ -24,6 +24,7 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -47,6 +48,7 @@ from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
+from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
 from antarest.study.dao.api.optimization_preferences_dao import (
     OptimizationPreferencesDao,
@@ -76,6 +78,7 @@ class ReadOnlyStudyDao(
     ReadOnlyThematicTrimmingDao,
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
 ):
     @abstractmethod
@@ -98,6 +101,7 @@ class StudyDao(
     ThematicTrimmingDao,
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
+    LayerDao,
     PlaylistConfigDao,
 ):
     """
@@ -361,6 +365,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         return self._adaptee.get_timeseries_config()
+
+    @override
+    def get_layers(self) -> Sequence[Layer]:
+        return self._adaptee.get_layers()
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return self._adaptee.layer_exists(layer_id)
 
     @override
     def get_playlist_config(self) -> Playlist:

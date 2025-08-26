@@ -20,6 +20,7 @@ from antarest.study.dao.file.file_study_advanced_parameters import FileStudyAdva
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
+from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_playlist_config_dao import FileStudyPlaylistConfigDao
@@ -47,6 +48,7 @@ class FileStudyTreeDao(
     FileStudyThematicTrimmingDao,
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
+    FileStudyLayerDao,
     FileStudyPlaylistConfigDao,
 ):
     """
