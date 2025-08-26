@@ -12,6 +12,7 @@
 
 from pydantic.types import StrictBool, StrictFloat, StrictInt
 
+from antarest.study.business.model.config.playlist_model import PlaylistValues, PlaylistValuesUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
@@ -29,19 +30,19 @@ class PlaylistManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_playlist(self, study: StudyInterface) -> dict[int, PlaylistColumns]:
-        playlist = study.get_study_dao().get_playlist_config()
-        args = playlist.model_dump()["years"]
-        return {k: PlaylistColumns.model_validate(v) for k, v in args.items()}
+    def get_playlist(self, study: StudyInterface) -> dict[int, PlaylistValues]:
+        return study.get_study_dao().get_playlist_config().years
 
-    def update_playlist(self, study: StudyInterface, data: dict[int, PlaylistColumns]) -> None:
+    def update_playlist(
+        self, study: StudyInterface, playlist: dict[int, PlaylistValuesUpdate]
+    ) -> dict[int, PlaylistValues]:
         years_by_bool: dict[bool, list[int]] = {True: [], False: []}
-        for year, col in data.items():
+        for year, col in playlist.items():
             years_by_bool[col.status].append(year - 1)
 
-        active_playlists = [year for year, col in data.items() if col.status is True]
+        active_playlists = [year for year, col in playlist.items() if col.status is True]
 
-        weights = {year: col.weight for year, col in data.items() if col.weight != DEFAULT_WEIGHT}
+        weights = {year: col.weight for year, col in playlist.items() if col.weight != DEFAULT_WEIGHT}
 
         command = UpdatePlaylist(
             items=active_playlists,
@@ -51,3 +52,4 @@ class PlaylistManager:
             study_version=study.version,
         )
         study.add_commands([command])
+        return self.get_playlist(study)

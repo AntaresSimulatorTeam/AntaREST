@@ -63,6 +63,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )
+from antarest.study.business.model.config.playlist_model import PlaylistValues, PlaylistValuesUpdate
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
@@ -94,7 +95,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
-from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.service import StudyService
@@ -420,10 +420,8 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
         summary="Get MC Scenario playlist data for table form",
-        response_model=Dict[int, PlaylistColumns],
-        response_model_exclude_none=True,
     )
-    def get_playlist(uuid: str) -> Dict[int, PlaylistColumns]:
+    def get_playlist(uuid: str) -> dict[int, PlaylistValues]:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -432,13 +430,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
-        summary="Set MC Scenario playlist data with values from table form",
+        summary="Update MC Scenario playlist data with values from table form",
     )
-    def set_playlist(uuid: str, data: Dict[int, PlaylistColumns]) -> None:
+    def update_playlist(uuid: str, data: dict[int, PlaylistValuesUpdate]) -> dict[int, PlaylistValues]:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.playlist_manager.update_playlist(study_interface, data)
+        return study_service.playlist_manager.update_playlist(study_interface, data)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
