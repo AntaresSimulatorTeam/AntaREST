@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pydantic import PositiveInt
 
 from antarest.core.serde import AntaresBaseModel
 
@@ -24,11 +25,11 @@ class PlaylistValuesUpdate(AntaresBaseModel):
 
 
 class Playlist(AntaresBaseModel, extra="forbid"):
-    years: dict[int, PlaylistValues] = {}
+    years: dict[PositiveInt, PlaylistValues] = {}
 
 
 class PlaylistUpdate(AntaresBaseModel, extra="forbid"):
-    years: dict[int, PlaylistValuesUpdate] = {}
+    years: dict[PositiveInt, PlaylistValuesUpdate] = {}
 
 
 def update_playlist(current: Playlist, new: PlaylistUpdate) -> Playlist:
