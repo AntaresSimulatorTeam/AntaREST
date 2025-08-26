@@ -102,6 +102,33 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.CREATE_LAYER.value,
+            args={"parameters": {"name": "layer_name"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="create_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_LAYER.value,
+            args={"layer_id": "layer_id"},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="remove_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_LAYER.value,
+            args={"parameters": {"id": "layer_id", "name": "layer_name"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_layer",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
             args={
                 "name": "id",
