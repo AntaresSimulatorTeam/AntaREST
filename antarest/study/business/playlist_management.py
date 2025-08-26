@@ -10,20 +10,11 @@
 #
 # This file is part of the Antares project.
 
-from pydantic.types import StrictBool, StrictFloat, StrictInt
 
 from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
-DEFAULT_WEIGHT = 1
-
-
-class PlaylistColumns(FormFieldsBaseModel):
-    status: StrictBool
-    weight: StrictFloat | StrictInt
 
 
 class PlaylistManager:
