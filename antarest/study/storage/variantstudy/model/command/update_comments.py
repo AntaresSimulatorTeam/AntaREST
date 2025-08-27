@@ -14,8 +14,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.model import JSON
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -38,11 +37,8 @@ class UpdateComments(ICommand):
     comments: str
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        replace_comment_data: JSON = {"settings": {"comments": self.comments.encode("utf-8")}}
-
-        study_data.tree.save(replace_comment_data)
-
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        study_data.save_comments(self.comments)
         return command_succeeded(message=f"Comment '{self.comments}' has been successfully replaced.")
 
     @override

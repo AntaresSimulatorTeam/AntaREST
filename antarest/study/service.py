@@ -658,19 +658,14 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        if isinstance(study, RawStudy):
-            self.edit_study(uuid=uuid, url="settings/comments", new=bytes(data.comments, "utf-8"))
-        else:
-            variant_study_service = self.storage_service.variant_study_service
-            command = [
-                UpdateRawFile(
-                    target="settings/comments",
-                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
-                    command_context=variant_study_service.command_factory.command_context,
-                    study_version=study.version,
-                )
-            ]
-            variant_study_service.append_commands(study.id, transform_command_to_dto(command, force_aggregate=True))
+        study_interface = self.get_study_interface(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = UpdateComments(
+            comments=data.comments,
+            study_version=study_interface.version,
+            command_context=command_context,
+        )
+        study_interface.add_commands([command])
 
     def get_studies_information(
         self,

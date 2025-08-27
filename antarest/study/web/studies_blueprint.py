@@ -16,7 +16,7 @@ from http import HTTPStatus
 from pathlib import PurePosixPath
 from typing import Annotated, Any, Dict, List, Optional, Sequence
 
-from fastapi import APIRouter, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Query, UploadFile
 from markupsafe import escape
 from pydantic import NonNegativeInt
 
@@ -235,15 +235,11 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         status_code=HTTPStatus.NO_CONTENT,
         tags=[APITag.study_raw_data],
         summary="Update comments",
-        response_model=None,
     )
-    def edit_comments(uuid: str, data: CommentsDto) -> Any:
+    def edit_comments(uuid: str, data: CommentsDto) -> None:
         logger.info(f"Editing comments for study {uuid}")
-        new = data
-        if not new:
-            raise HTTPException(status_code=400, detail="empty body not authorized")
         study_id = sanitize_uuid(uuid)
-        study_service.edit_comments(study_id, new)
+        study_service.edit_comments(study_id, data)
 
     @bp.post(
         "/studies/_import",

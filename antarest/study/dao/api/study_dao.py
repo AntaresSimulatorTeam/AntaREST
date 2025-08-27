@@ -119,6 +119,14 @@ class StudyDao(
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_comments(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_comments(self, comments: str) -> None:
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
