@@ -29,6 +29,7 @@ from antarest.study.business.model.scenario_builder_model import (
     Rulesets,
     RulesetsUpdate,
     RulesetUpdate,
+    StorageConstraintsScenarios,
 )
 
 
@@ -50,6 +51,7 @@ class RulesetView(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     renewable: AreaItemsScenarios | None = Field(alias="r", default=None)
     binding_constraints: AreaScenarios | None = Field(alias="bc", default=None)
     storage_inflows: AreaItemsScenarios | None = Field(alias="sts", default=None)
+    storage_constraints: StorageConstraintsScenarios | None = Field(alias="sta", default=None)
 
     @classmethod
     def from_model(cls, model: Ruleset) -> "RulesetView":
