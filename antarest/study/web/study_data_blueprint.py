@@ -81,6 +81,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -96,11 +97,10 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
+from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
 
 logger = logging.getLogger(__name__)
 
@@ -473,21 +473,21 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Rulesets,
+        response_model=RulesetsView,
+        response_model_exclude_none=True,
     )
-    def get_scenario_builder_config(uuid: str) -> Rulesets:
+    def get_scenario_builder_config(uuid: str) -> RulesetsView:
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.scenario_builder_manager.get_config(study_interface)
+        return rulesets_model_to_view(study_service.scenario_builder_manager.get_config(study_interface))
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
-    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, SBTableForm]:
+    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, AnyScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -561,21 +561,20 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
     )
-    def update_scenario_builder_config(uuid: str, data: Rulesets) -> None:
+    def update_scenario_builder_config(uuid: str, data: RulesetsView) -> None:
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.scenario_builder_manager.update_config(study_interface, data)
+        study_service.scenario_builder_manager.update_config(study_interface, rulesets_view_to_model(data))
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
     def update_scenario_builder_config_by_type(
-        uuid: str, scenario_type: ScenarioType, data: Dict[str, SBTableForm]
-    ) -> Dict[str, SBTableForm]:
+        uuid: str, scenario_type: ScenarioType, data: Dict[ScenarioType, AnyScenarios]
+    ) -> Dict[ScenarioType, AnyScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
 
@@ -602,7 +601,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        table_form = data[scenario_type]
+        table_form = data.get(scenario_type, {})
         table_form = study_service.scenario_builder_manager.update_scenario_by_type(
             study_interface, table_form, scenario_type
         )
