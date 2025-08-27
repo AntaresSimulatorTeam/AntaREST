@@ -124,8 +124,6 @@ class ScenarioBuilderManager:
         study.add_commands([update_scenario])
 
         # Extract the updated table form for the given scenario type
-        base_scenarios = self.get_scenario_by_type(study, scenario_type)
-        base_ruleset = Ruleset()
-        base_ruleset.set(scenario_type, base_scenarios)
-        update_ruleset(base_ruleset, ruleset_update)
-        return base_ruleset.get(scenario_type)
+        ruleset = self.get_config(study)[ruleset_name]
+        update_ruleset(ruleset, ruleset_update)
+        return ruleset.get(scenario_type)

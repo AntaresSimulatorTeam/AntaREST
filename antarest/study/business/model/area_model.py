@@ -41,12 +41,6 @@ class AreaInfoDTO(AreaCreationDTO):
     thermals: Optional[List[ThermalCluster]] = None
 
 
-class LayerInfoDTO(AntaresBaseModel):
-    id: str
-    name: str
-    areas: List[str]
-
-
 class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
     x: int = Field(title="X position")
     y: int = Field(title="Y position")

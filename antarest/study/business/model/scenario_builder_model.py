@@ -142,7 +142,7 @@ class RulesetUpdate(AntaresBaseModel, populate_by_name=True, extra="forbid"):
     def get(self, scenario_type: ScenarioType) -> AnyScenarios | None:
         return _get_by_type(self, scenario_type)
 
-    def set(self, scenario_type: ScenarioType, scenarios: AnyScenarios | None) -> None:
+    def set(self, scenario_type: ScenarioType, scenarios: AnyScenarios) -> None:
         _set_by_type(self, scenario_type, scenarios)
 
 
@@ -178,7 +178,7 @@ def _get_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType) -> 
             raise ValueError(f"Unknown scenario type {scenario_type}")
 
 
-def _set_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType, scenarios: AnyScenarios | None) -> None:
+def _set_by_type(self: Ruleset | RulesetUpdate, scenario_type: ScenarioType, scenarios: AnyScenarios) -> None:
     match scenario_type:
         case ScenarioType.LOAD:
             self.load = cast(AreaScenarios, scenarios)
