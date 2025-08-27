@@ -465,7 +465,7 @@ export async function updateStudyDistrict(
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
     comments,
-    areas: areas,
+    areas,
   });
 }
 
