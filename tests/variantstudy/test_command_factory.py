@@ -646,6 +646,7 @@ COMMANDS = [
                         "ntc": {"area1 / area2": {"1": 23}},
                         "renewable": {},
                         "solar": {},
+                        "storage_constraints": {},
                         "storage_inflows": {},
                         "thermal": {"area1": {"thermal": {"1": ""}}},
                         "wind": {},

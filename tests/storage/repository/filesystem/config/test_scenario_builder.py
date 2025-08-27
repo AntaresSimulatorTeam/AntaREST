@@ -127,6 +127,16 @@ def test_ruleset_parsing_links():
     assert serialize_ruleset(ruleset) == rules
 
 
+def test_ruleset_parsing_storage_constraints():
+    rules = {
+        "sta,fr,1,battery1,constraint1": 2,
+        "sta,fr,2,battery1,constraint1": 1,
+    }
+    ruleset = parse_ruleset(rules)
+    assert ruleset == Ruleset(storage_constraints={"fr": {"battery1": {"constraint1": {"1": 2, "2": 1}}}})
+    assert serialize_ruleset(ruleset) == rules
+
+
 def test_ruleset_update_parsing_load() -> None:
     rules = {
         "l,be,1": 2,
@@ -227,11 +237,26 @@ def test_ruleset_update_parsing_links():
     assert ruleset == RulesetUpdate(ntc={"be / fr": {"1": 2, "2": 1}})
 
 
+def test_ruleset_update_parsing_storage_constraints():
+    rules = {
+        "sta,fr,1,battery1,constraint1": 2,
+        "sta,fr,2,battery1,constraint1": 1,
+    }
+    ruleset = parse_ruleset_update(rules)
+    assert ruleset == RulesetUpdate(storage_constraints={"fr": {"battery1": {"constraint1": {"1": 2, "2": 1}}}})
+
+
 def test_random_is_not_serialized():
     ruleset = Ruleset(
         load={"fr": {"1": 2, "2": ""}},
         thermal={"fr": {"nuclear": {"1": 2, "2": ""}}},
         ntc={"be / fr": {"1": 2, "2": ""}},
+        storage_constraints={"fr": {"battery1": {"constraint1": {"1": 2, "2": ""}}}},
     )
 
-    assert serialize_ruleset(ruleset) == {"l,fr,1": 2, "ntc,be,fr,1": 2, "t,fr,1,nuclear": 2}
+    assert serialize_ruleset(ruleset) == {
+        "l,fr,1": 2,
+        "ntc,be,fr,1": 2,
+        "sta,fr,1,battery1,constraint1": 2,
+        "t,fr,1,nuclear": 2,
+    }

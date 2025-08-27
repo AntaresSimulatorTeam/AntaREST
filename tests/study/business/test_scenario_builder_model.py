@@ -30,6 +30,7 @@ def test_ruleset__initialization_from_study() -> None:
         bc_groups=["bc1", "bc2"],
         links=[("be", "fr")],
         storages={"be": [], "fr": ["fr_storage_1", "fr_storage_2"]},
+        sts_additional_constraints={"be": {}, "fr": {"fr_storage_1": ["c1", "c2"], "fr_storage_2": []}},
     )
 
     ruleset = initialize_ruleset(["1", "2"], index)
@@ -61,6 +62,11 @@ def test_ruleset__initialization_from_study() -> None:
     assert ruleset.storage_inflows == {
         "be": {},
         "fr": {"fr_storage_1": expected_mappings, "fr_storage_2": expected_mappings},
+    }
+
+    assert ruleset.storage_constraints == {
+        "be": {},
+        "fr": {"fr_storage_1": {"c1": expected_mappings, "c2": expected_mappings}, "fr_storage_2": {}},
     }
 
 
@@ -124,6 +130,26 @@ def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": ""}, "item2": {"1": 2, "2": 1}}}
 
 
+def test_update_ruleset_3_levels_scenarios() -> None:
+    mapping = {"1": 2, "2": 1}
+    ruleset = Ruleset()
+    update = Ruleset()
+    update.storage_constraints = {"be": {"storage1": {"c1": mapping}}}
+    update_ruleset(ruleset, update)
+
+    assert update.storage_constraints == {"be": {"storage1": {"c1": mapping}}}
+
+    update = Ruleset()
+    update.storage_constraints = {"be": {"storage1": {"c1": {"2": 3}}}}
+    update_ruleset(ruleset, update)
+    assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": 3}}}}
+
+    update = Ruleset()
+    update.storage_constraints = {"be": {"storage1": {"c1": {"2": ""}}}}
+    update_ruleset(ruleset, update)
+    assert ruleset.storage_constraints == {"be": {"storage1": {"c1": {"1": 2, "2": ""}}}}
+
+
 @pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
 @pytest.mark.parametrize(
     "scenario_type,getter",
@@ -137,6 +163,7 @@ def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
         (ScenarioType.WIND, lambda r: r.wind),
         (ScenarioType.BINDING_CONSTRAINTS, lambda r: r.binding_constraints),
         (ScenarioType.LINK, lambda r: r.ntc),
+        (ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, lambda r: r.storage_constraints),
     ],
 )
 def test_get_set_by_type(ruleset_cls, scenario_type: ScenarioType, getter) -> None:
@@ -144,3 +171,28 @@ def test_get_set_by_type(ruleset_cls, scenario_type: ScenarioType, getter) -> No
     ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})
     assert getter(ruleset) == {"be": {"1": 2, "2": 1}}
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
+
+
+@pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
+@pytest.mark.parametrize(
+    "scenario_type,getter",
+    [
+        (ScenarioType.RENEWABLE, lambda r: r.renewable),
+        (ScenarioType.THERMAL, lambda r: r.thermal),
+        (ScenarioType.SHORT_TERM_STORAGE_INFLOWS, lambda r: r.storage_inflows),
+    ],
+)
+def test_get_set_by_type_2_levels(ruleset_cls, scenario_type: ScenarioType, getter) -> None:
+    ruleset = ruleset_cls()
+    ruleset.set(scenario_type, {"be": {"cluster": {"1": 2, "2": 1}}})
+    assert getter(ruleset) == {"be": {"cluster": {"1": 2, "2": 1}}}
+    assert ruleset.get(scenario_type) == {"be": {"cluster": {"1": 2, "2": 1}}}
+
+
+@pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
+def test_get_set_by_type_storage_constraints(ruleset_cls) -> None:
+    mapping = {"be": {"storage": {"c1": {"1": 2, "2": 1}}}}
+    ruleset = ruleset_cls()
+    ruleset.set(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, mapping)
+    assert ruleset.storage_constraints == mapping
+    assert ruleset.get(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS) == mapping

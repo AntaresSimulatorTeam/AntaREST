@@ -108,11 +108,11 @@ class ScenarioBuilderManager:
         return ruleset.get(scenario_type)
 
     def update_scenario_by_type(
-        self, study: StudyInterface, table_form: AnyScenarios, scenario_type: ScenarioType
+        self, study: StudyInterface, scenarios: AnyScenarios, scenario_type: ScenarioType
     ) -> AnyScenarios:
         file_study = study.get_files()
         ruleset_update = RulesetUpdate()
-        ruleset_update.set(scenario_type, table_form)
+        ruleset_update.set(scenario_type, scenarios)
 
         # Create the UpdateScenarioBuilder command
         ruleset_name = _get_active_ruleset_name(file_study)
