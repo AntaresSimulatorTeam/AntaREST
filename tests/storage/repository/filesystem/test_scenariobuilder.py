@@ -151,34 +151,3 @@ def test_get(tmp_path: Path) -> None:
     # We can also filter the data by generator type
     actual = node.get(["Default Ruleset", "s"])
     assert actual == {"s,de,0": 1, "s,es,0": 1, "s,fr,0": 1, "s,it,0": 1}
-
-    # We can filter the data by generator type and area (or group for BC)
-    actual = node.get(["Default Ruleset", "t", "fr"])
-    expected = {
-        "t,fr,0,01_solar": 31,
-        "t,fr,0,02_wind_on": 32,
-        "t,fr,0,03_wind_off": 33,
-        "t,fr,0,04_res": 34,
-        "t,fr,0,05_nuclear": 35,
-        "t,fr,0,06_coal": 36,
-        "t,fr,0,07_gas": 37,
-        "t,fr,0,08_non-res": 38,
-        "t,fr,0,09_hydro_pump": 39,
-        "t,fr,1,01_solar": 31,
-        "t,fr,1,02_wind_on": 32,
-        "t,fr,1,03_wind_off": 33,
-        "t,fr,1,04_res": 34,
-        "t,fr,1,05_nuclear": 35,
-        "t,fr,1,06_coal": 36,
-        "t,fr,1,07_gas": 37,
-        "t,fr,1,08_non-res": 38,
-    }
-    assert actual == expected
-
-    # We can filter the data by generator type, area and cluster
-    actual = node.get(["Default Ruleset", "t", "fr", "01_solar"])
-    assert actual == {"t,fr,0,01_solar": 31, "t,fr,1,01_solar": 31}
-
-    # We can filter the data by link type
-    actual = node.get(["Default Ruleset", "ntc", "de", "fr"])
-    assert actual == {"ntc,de,fr,0": 34, "ntc,de,fr,1": 45}

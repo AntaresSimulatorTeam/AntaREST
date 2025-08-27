@@ -25,6 +25,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint 
     BindingConstraintOperator,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_ruleset_update
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
@@ -243,7 +244,9 @@ class TestRemoveArea:
                 default_ruleset[f"hgp,{area_id2},0"] = 1
 
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": default_ruleset}, command_context=command_context, study_version=study_version
+                data={"Default Ruleset": parse_ruleset_update(default_ruleset)},
+                command_context=command_context,
+                study_version=study_version,
             ).apply(study_data=empty_study)
             assert output.status, output.message
 
