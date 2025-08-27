@@ -1,7 +1,3 @@
-# Documentation about this file can be found in this file: `docs/install/1-CONFIG.md`
-
-desktop_mode: true
-
 security:
   disabled: true
   jwt:
@@ -10,13 +6,16 @@ security:
 db:
   url: "sqlite:///database.db"
 
+#pathovi do putanja koje mu trebaju
 storage:
-  tmp_dir: ./tmp
-  matrixstore: ./matrices
-  archive_dir: ./archives
+  tmp_dir: /home/rtei-beg-see-dp/Antares-Development/cr23-backend/Anta_REST/resources/antares-desktop-fs/tmp
+  matrixstore: /home/rtei-beg-see-dp/Antares-Development/cr23-backend/Anta_REST/resources/antares-desktop-fs/matrices
+  archive_dir: /home/rtei-beg-see-dp/Antares-Development/cr23-backend/Anta_REST/resources/antares-desktop-fs/archives
   workspaces:
     default:
-      path: ./internal_studies/
+      path: /home/rtei-beg-see-dp/Antares-Development/cr23-backend/Anta_REST/resources/antares-desktop-fs/internal_studies
+    studies:
+      path: /home/rtei-beg-see-dp/Antares-Development/cr23-backend/Anta_REST/resources/antares-desktop-fs/studies
 
 launcher:
   launchers:
@@ -24,8 +23,11 @@ launcher:
       name: my_local
       type: local
       binaries:
-        VER: ANTARES_SOLVER_PATH
+        920: /home/rtei-beg-see-dp/Antares-Development/solver/antares-solver_ubuntu22.04/antares-solver
       local_workspace: ./local_workspace
+
+      #
+
 
 #  slurm:
 #    local_workspace: /path/to/slurm_workspace  # Path to the local SLURM workspace
@@ -53,8 +55,12 @@ debug: false
 # Serve the API at /api
 api_prefix: "/api"
 
+# api_prefix: Typically used in the FastAPI app code to define the actual base path of your routes (e.g., /api).
+
 server:
   worker_threadpool_size: 12
+  services:
+    - watcher
 
 logging:
-  logfile: ./logs/antarest.log
+  logfile: /home/rtei-beg-see-dp/Antares-Development/cr23-backend/Anta_REST/resources/antares-desktop-fs/logs/antarest.log

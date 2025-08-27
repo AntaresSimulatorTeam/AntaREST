@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Ignore everything in internal_studies and matrices inside antares-desktop-fs
+resources/antares-desktop-fs/internal_studies/
+resources/antares-desktop-fs/matrices/
 # C extensions
 *.so
 

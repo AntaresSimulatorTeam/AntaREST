@@ -25,7 +25,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
     FIXED_4_COLUMNS,
     FIXED_8_COLUMNS,
     NULL_MATRIX,
-    NULL_SCENARIO_MATRIX,
+    NULL_SCENARIO_MATRIX_DAILY,
+    NULL_SCENARIO_MATRIX_HOURLY
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
@@ -51,6 +52,10 @@ LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
 EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
 ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
+HYDRO_MAX_HOURLY_GEN_POWER = "max_hourly_gen_power"
+HYDRO_MAX_HOURLY_PUMP_POWER = "max_hourly_pump_power"
+MAX_DAILY_RESERVOIR_LEVELS = "max_daily_reservoir_levels"
+MIN_DAILY_RESERVOIR_LEVELS = "min_daily_reservoir_levels"
 
 # Binding constraint aliases
 BINDING_CONSTRAINT_HOURLY_v86 = "empty_2nd_member_hourly_v86"
@@ -109,9 +114,13 @@ class GeneratorMatrixConstants:
             self.hashes[LINK_INDIRECT] = self.matrix_service.create(matrix_constants.link.v8.indirect)
 
             self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
-            self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(NULL_SCENARIO_MATRIX)
+            self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(NULL_SCENARIO_MATRIX_HOURLY)
             self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
             self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
+            self.hashes[HYDRO_MAX_HOURLY_GEN_POWER] = self.matrix_service.create(NULL_SCENARIO_MATRIX_HOURLY)
+            self.hashes[HYDRO_MAX_HOURLY_PUMP_POWER] = self.matrix_service.create(NULL_SCENARIO_MATRIX_HOURLY)
+            self.hashes[MAX_DAILY_RESERVOIR_LEVELS] = self.matrix_service.create(NULL_SCENARIO_MATRIX_DAILY)
+            self.hashes[MIN_DAILY_RESERVOIR_LEVELS] = self.matrix_service.create(NULL_SCENARIO_MATRIX_DAILY)
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
@@ -222,3 +231,19 @@ class GeneratorMatrixConstants:
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+
+    def get_hydro_max_hourly_gen_power(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_MAX_HOURLY_GEN_POWER] 
+
+    def get_hydro_max_hourly_pump_power(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_MAX_HOURLY_PUMP_POWER]
+    
+    def get_max_daily_reservoir_levels(self) -> str:
+        """2D-matrix of shape (365, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[MAX_DAILY_RESERVOIR_LEVELS]
+
+    def get_min_daily_reservoir_levels(self) -> str:
+        """2D-matrix of shape (365, 1), filled-in with zeros."""
+        return MATRIX_PROTOCOL_PREFIX + self.hashes[MIN_DAILY_RESERVOIR_LEVELS]
