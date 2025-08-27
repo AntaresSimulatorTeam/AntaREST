@@ -17,7 +17,6 @@ from antarest.study.business.model.district_model import (
     District,
     DistrictBaseFilter,
     DistrictCreationDTO,
-    DistrictInfoDTO,
     DistrictUpdateDTO,
 )
 from antarest.study.business.study_interface import StudyInterface
@@ -72,7 +71,7 @@ class DistrictManager:
         self,
         study: StudyInterface,
         dto: DistrictCreationDTO,
-    ) -> DistrictInfoDTO:
+    ) -> District:
         """
         Create a new district in the study and possibly attach areas to it.
 
@@ -105,12 +104,14 @@ class DistrictManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return DistrictInfoDTO(
-            id=district_id,
-            name=dto.name,
-            areas=dto.areas,
-            output=dto.output,
-            comments=dto.comments,
+        return District.model_validate(
+            {
+                "id": district_id,
+                "name": dto.name,
+                "areas": dto.areas,
+                "output": dto.output,
+                "comments": dto.comments,
+            }
         )
 
     def update_district(
