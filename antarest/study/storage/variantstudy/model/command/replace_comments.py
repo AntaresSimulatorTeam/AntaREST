@@ -21,15 +21,15 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateComments(ICommand):
+class ReplaceComments(ICommand):
     """
-    Command used to update the comments of the study located in `settings/comments.txt`.
+    Command used to set the comments of the study.
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_COMMENTS
+    command_name: CommandName = CommandName.REPLACE_COMMENTS
 
     # Command parameters
     # ==================
@@ -44,7 +44,7 @@ class UpdateComments(ICommand):
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
-            action=CommandName.UPDATE_COMMENTS.value,
+            action=CommandName.REPLACE_COMMENTS.value,
             args={
                 "comments": self.comments,
             },

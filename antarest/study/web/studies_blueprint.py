@@ -239,7 +239,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
     def edit_comments(uuid: str, data: CommentsDto) -> None:
         logger.info(f"Editing comments for study {uuid}")
         study_id = sanitize_uuid(uuid)
-        study_service.edit_comments(study_id, data)
+        study_service.set_comments(study_id, data.comments)
 
     @bp.post(
         "/studies/_import",

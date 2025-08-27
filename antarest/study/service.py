@@ -106,7 +106,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
-    CommentsDto,
     MatrixIndex,
     RawStudy,
     Study,
@@ -156,8 +155,8 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
     RemoveUserResourceData,
 )
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -638,13 +637,13 @@ class StudyService:
 
         return self.get_study_interface(study).get_study_dao().get_comments()
 
-    def edit_comments(self, uuid: str, data: CommentsDto) -> None:
+    def set_comments(self, uuid: str, comments: str) -> None:
         """
         Replace data inside study.
 
         Args:
             uuid: study id
-            data: new data to replace
+            comments: new comments to replace
 
         Returns: new data replaced
 
@@ -655,8 +654,8 @@ class StudyService:
 
         study_interface = self.get_study_interface(study)
         command_context = self.storage_service.variant_study_service.command_factory.command_context
-        command = UpdateComments(
-            comments=data.comments,
+        command = ReplaceComments(
+            comments=comments,
             study_version=study_interface.version,
             command_context=command_context,
         )
@@ -1398,7 +1397,7 @@ class StudyService:
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(comments=data, command_context=context, study_version=study_version)
+                return ReplaceComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
