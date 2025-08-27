@@ -624,7 +624,7 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str) -> str | JSON:
+    def get_comments(self, study_id: str) -> str:
         """
         Get the comments of a study.
 
@@ -636,12 +636,7 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
-
-        with contextlib.suppress(AttributeError, UnicodeDecodeError):
-            output = output.decode("utf-8")  # type: ignore
-
-        return output
+        return self.get_study_interface(study).get_study_dao().get_comments()
 
     def edit_comments(self, uuid: str, data: CommentsDto) -> None:
         """

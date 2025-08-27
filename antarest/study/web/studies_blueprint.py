@@ -225,7 +225,7 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         tags=[APITag.study_management],
         summary="Get comments",
     )
-    def get_comments(uuid: str) -> Any:
+    def get_comments(uuid: str) -> str:
         logger.info(f"Get comments of study {uuid}")
         study_id = sanitize_uuid(uuid)
         return study_service.get_comments(study_id)
