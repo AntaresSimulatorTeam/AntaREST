@@ -20,7 +20,9 @@ export function isDependencyList(value: unknown): value is React.DependencyList 
 
 export function composeRefs(...refs: Array<React.Ref<unknown> | undefined | null>) {
   return function refCallback(instance: unknown): void {
-    refs.forEach((ref) => setRef(ref, instance));
+    refs.forEach((ref) => {
+      setRef(ref, instance);
+    });
   };
 }
 

@@ -31,6 +31,15 @@ import {
 } from "@mui/material";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { buildKey } from "@/utils/reactUtils";
+import {
+  compactSelections,
+  type NumberOrRange,
+  selectionsToNumbers,
+  selectionToString,
+  stringToSelections,
+  selectionToNumbers,
+} from "../../../../../../utils/numberSelectionsUtils";
 import { FILTER_OPERATORS } from "../constants";
 import {
   CHIP_SELECTOR_STYLES,
@@ -40,14 +49,6 @@ import {
   TYPOGRAPHY_STYLES,
 } from "../styles";
 import type { FilterOperatorType } from "../types";
-import {
-  compactSelections,
-  selectionsToNumbers,
-  selectionToString,
-  stringToSelections,
-  type NumberOrRange,
-} from "../../../../../../utils/numberSelectionsUtils";
-import { buildKey } from "@/utils/reactUtils";
 
 const isValidFilterOperator = (value: string): value is FilterOperatorType => {
   return Object.values(FILTER_OPERATORS).includes(value as FilterOperatorType);
@@ -94,9 +95,7 @@ function ListFilterControl({
 
     return compacted.map((selection: NumberOrRange) => {
       const label = selectionToString(selection);
-      const values = Array.isArray(selection)
-        ? Array.from({ length: selection[1] - selection[0] + 1 }, (_, i) => selection[0] + i)
-        : [selection];
+      const values = selectionToNumbers(selection);
 
       return {
         label,
@@ -144,10 +143,6 @@ function ListFilterControl({
     } else {
       onKeyPress(event);
     }
-  };
-
-  const handleRemoveRange = (values: number[]) => {
-    onRemoveValues(values);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -256,14 +251,14 @@ function ListFilterControl({
             )}
           </Box>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: DESIGN_TOKENS.spacing.xs }}>
-            {formattedRanges.map((range, index) => (
+            {formattedRanges.map((range) => (
               <Chip
-                key={buildKey(range.label, index)}
+                key={buildKey(range.label)}
                 label={range.label}
                 size="small"
                 color="primary"
                 disabled={disabled}
-                onDelete={disabled ? undefined : () => handleRemoveRange(range.values)}
+                onDelete={disabled ? undefined : () => onRemoveValues(range.values)}
                 sx={CHIP_SELECTOR_STYLES.dense}
               />
             ))}
