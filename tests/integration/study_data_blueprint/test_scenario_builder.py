@@ -119,7 +119,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
         json={"shortTermStorageAdditionalConstraints": sts_ac_scenarios},
     )
     assert res.status_code == 200
-    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": 2}}}}}
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"fr": {"battery": {"c1": {"1": 2}}}}}
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints")
     assert res.status_code == 200
