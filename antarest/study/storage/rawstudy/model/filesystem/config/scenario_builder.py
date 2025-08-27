@@ -16,7 +16,7 @@ Serialization and parsing for scenariobuilder.dat file
 
 from typing import TypeVar, cast, overload
 
-from antarest.core.utils.dict_utils import iter_nested_3
+from antarest.core.utils.dict_utils import iter_nested, iter_nested_2, iter_nested_3
 from antarest.study.business.model.scenario_builder_model import (
     RANDOM,
     AreaItemsScenarios,
@@ -67,20 +67,17 @@ def _should_write(value: RuleValue) -> bool:
 
 def _serialize_common(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-    for area, scenario_area in data.items():
-        for year, value in scenario_area.items():
-            if _should_write(value):
-                section[f"{symbol},{area},{year}"] = value
+    for area, year, value in iter_nested(data):
+        if _should_write(value):
+            section[f"{symbol},{area},{year}"] = value
 
 
 def _serialize_hydro_levels(
     section: dict[str, RuleValue], scenario_type: ScenarioType, data: HydroLevelsScenarios
 ) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-    for area, scenario_area in data.items():
-        for year, value in scenario_area.items():
-            if not _should_write(value):
-                continue
+    for area, year, value in iter_nested(data):
+        if _should_write(value):
             val = value
             if isinstance(val, (int, float)) and val != float("nan"):
                 val /= _HYDRO_LEVEL_PERCENT
@@ -89,20 +86,17 @@ def _serialize_hydro_levels(
 
 def _serialize_links(section: dict[str, RuleValue], scenario_type: ScenarioType, data: LinkScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-    for link, scenario_link in data.items():
-        for year, value in scenario_link.items():
-            if _should_write(value):
-                area1, area2 = link.split(" / ")
-                section[f"{symbol},{area1},{area2},{year}"] = value
+    for link, year, value in iter_nested(data):
+        if _should_write(value):
+            area1, area2 = link.split(" / ")
+            section[f"{symbol},{area1},{area2},{year}"] = value
 
 
 def _serialize_clusters(section: dict[str, RuleValue], scenario_type: ScenarioType, data: AreaItemsScenarios) -> None:
     symbol = _SCENARIO_TYPE_SYMBOLS[scenario_type]
-    for area, scenario_area in data.items():
-        for cluster, scenario_area_cluster in scenario_area.items():
-            for year, value in scenario_area_cluster.items():
-                if _should_write(value):
-                    section[f"{symbol},{area},{year},{cluster}"] = value
+    for area, cluster, year, value in iter_nested_2(data):
+        if _should_write(value):
+            section[f"{symbol},{area},{year},{cluster}"] = value
 
 
 def _serialize_sts_constraints(section: dict[str, RuleValue], data: StorageConstraintsScenarios) -> None:
