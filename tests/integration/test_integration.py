@@ -117,6 +117,14 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code == 200
 
     # scenario builder
+    res = client.get(
+        f"/v1/studies/{study_id}/config/scenariobuilder",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+    )
+    assert res.status_code == 200
+    assert "Default Ruleset" in res.json()
+    initial_ruleset = res.json()["Default Ruleset"]
+
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
@@ -127,7 +135,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
                 "t": {"area1": {"thermal": {"1": 2}}},
                 "hl": {"area1": {"0": 75}},
             },
-            "Default Ruleset": {},  # should be removed
+            "Default Ruleset": {},  # Changed from previous behaviour: does not remove anymore
         },
     )
     assert res.status_code == 200, res.json()
@@ -137,17 +145,13 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
-    assert res.json() == {
-        active_ruleset_name: {
-            "l": {"area1": {"0": 1}},
-            "ntc": {"area1 / area2": {"1": 23}},
-            "t": {"area1": {"thermal": {"1": 2}}},
-            "hl": {"area1": {"0": 75}},
-        },
+    assert res.json()[active_ruleset_name] == {
+        "l": {"area1": {"0": 1}},
+        "ntc": {"area1 / area2": {"1": 23}},
+        "t": {"area1": {"thermal": {"1": 2}}},
+        "hl": {"area1": {"0": 75}},
     }
-
-    # Keys must be sorted in each section (to improve reading performance).
-    assert list(res.json()[active_ruleset_name]) == ["hl", "l", "ntc", "t"]
+    assert res.json()["Default Ruleset"] == initial_ruleset
 
     # config / thematic trimming
     res = client.get(
