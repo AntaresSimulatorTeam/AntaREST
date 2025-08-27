@@ -46,3 +46,17 @@ class TestConfigPlaylist:
             "4": {"status": True, "weight": 2.1},
             "5": {"status": True, "weight": 1},
         }
+
+        # Ensures we're able to modify the weight of an unactive year
+        res = client.put(f"/v1/studies/{study_id}/config/playlist/form", json={"1": {"weight": 3}})
+        assert res.status_code == 200
+
+        res = client.get(f"/v1/studies/{study_id}/config/playlist/form")
+        assert res.status_code == 200
+        assert res.json() == {
+            "1": {"status": False, "weight": 3},
+            "2": {"status": False, "weight": 1},
+            "3": {"status": True, "weight": 1},
+            "4": {"status": True, "weight": 2.1},
+            "5": {"status": True, "weight": 1},
+        }
