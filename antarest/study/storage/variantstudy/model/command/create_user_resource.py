@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import PurePosixPath
 from typing import List, Optional
 
 from typing_extensions import override
@@ -43,10 +42,8 @@ class CreateUserResource(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        resource_type = self.data.resource_type
-        resource_path = PurePosixPath(self.data.path)
         study_data.save_user_resource(self.data)
-        return command_succeeded(message=f"{resource_type} {resource_path} has been successfully created. ")
+        return command_succeeded(message=f"{self.data.resource_type} {self.data.path} has been successfully created.")
 
     @override
     def to_dto(self) -> CommandDTO:
