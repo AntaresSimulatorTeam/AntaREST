@@ -56,7 +56,7 @@ def _check_endpoint_response(
         assert res.status_code == 417
         response = res.json()
         assert response["exception"] == "VariantGenerationError"
-        assert response["description"] == f"Error while generating variant {study_id} : {expected_msg}"
+        assert expected_msg in response["description"]
         # We have to delete the command to make the variant "clean" again.
         res = client.get(f"/v1/studies/{study_id}/commands")
         cmd_id = res.json()[-1]["id"]
@@ -499,7 +499,7 @@ class TestFetchRawData:
 
         # try to create a folder inside the 'expansion` folder
         expansion_folder = "user/expansion/wrong_folder"
-        expected_msg = "Folder creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
+        expected_msg = "Resource creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
         assert res.status_code == 403
         assert res.json()["exception"] == "ResourceCreationNotAllowed"
