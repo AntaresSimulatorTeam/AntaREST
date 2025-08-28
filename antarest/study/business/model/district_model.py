@@ -29,7 +29,9 @@ class DistrictUpdate(AntaresBaseModel):
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = District(comments="", areas=["z1", "z2", "z3"], output=True).model_dump(mode="json")
+            schema["example"] = DistrictUpdate(
+                comments="Some comment", areas=["z1", "z2", "z3"], output=True
+            ).model_dump(mode="json")
 
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
