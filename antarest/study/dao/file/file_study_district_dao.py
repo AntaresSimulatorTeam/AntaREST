@@ -19,7 +19,6 @@ from antarest.study.business.model.district_model import District, DistrictBaseF
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     DistrictSet,
-    parse_district,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -38,18 +37,8 @@ class FileStudyDistrictDao(DistrictDao):
         Returns all districts of the study.
         """
         file_study = self.get_file_study()
-        path = DISTRICTS_PATH
-        try:
-            # may raise KeyError if the path is missing
-            districts = file_study.tree.get(path)
-            # may raise KeyError if "list" is missing
-        except KeyError:
-            raise DistrictConfigNotFound(str(path))
 
-        all_areas = list(file_study.config.areas)
-        return [
-            parse_district(district_id, district_data, all_areas) for district_id, district_data in districts.items()
-        ]
+        return [district_set.to_model() for district_set in file_study.config.sets.values()]
 
     @override
     def get_district(self, district_id: str) -> District:
@@ -57,15 +46,10 @@ class FileStudyDistrictDao(DistrictDao):
         Returns the district with the given district id.
         """
         study_data = self.get_file_study()
-        path = DISTRICTS_PATH + [district_id]
         try:
-            # may raise KeyError if the path is missing
-            district_data = study_data.tree.get(path)
+            return study_data.config.sets[district_id].to_model()
         except KeyError:
-            raise DistrictConfigNotFound(str(path))
-
-        all_areas = list(study_data.config.areas)
-        return parse_district(district_id, district_data, all_areas)
+            raise DistrictConfigNotFound(district_id)
 
     @override
     def district_exists(self, district_id: str) -> bool:

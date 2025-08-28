@@ -230,6 +230,7 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
             name=item.get("caption"),
             inverted_set=district_set_sign(item) == "-",
             output=item.get("output", True),
+            comments=item.get("comments", ""),
         )
         for name, item in obj.items()
     }

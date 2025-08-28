@@ -29,10 +29,14 @@ class DistrictSet(AntaresBaseModel):
     output: bool = True
     filters_synthesis: List[str] = ALL
     filters_year: List[str] = ALL
+    comments: str = ""
 
     def get_areas(self, all_areas: List[str]) -> List[str]:
         areas = self.areas or []
         return get_areas(self.inverted_set, all_areas, areas)
+
+    def to_model(self) -> District:
+        return District.model_validate(self.model_dump(exclude={"inverted_set", "filters_synthesis", "filters_year"}))
 
 
 def district_set_sign(item: dict[str, Any]) -> str:
