@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from typing import Iterable
 
 from antarest.matrixstore.model import MatrixReference
 
@@ -20,5 +21,5 @@ class IMatrixUsageProvider(ABC):
     """
 
     @abstractmethod
-    def get_matrix_usage(self) -> list[MatrixReference]:
+    def get_matrix_usage(self) -> Iterable[MatrixReference]:
         raise NotImplementedError()
