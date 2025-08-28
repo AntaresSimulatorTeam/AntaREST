@@ -113,7 +113,7 @@ class FileStudyDistrictDao(DistrictDao):
         inverted_set = base_filter == DistrictBaseFilter.add_all
         study_data.config.sets[district_id] = DistrictSet(
             name=district.name,
-            areas=district.areas or [],
+            areas=district.areas,
             output=district.output,
             inverted_set=inverted_set,
         )
