@@ -23,6 +23,24 @@ export const SELECTIONS_SEPARATOR = "," as const;
 export const RANGE_SEPARATOR = "-" as const;
 
 /**
+ * Converts a number or a range into an array of numbers.
+ *
+ * @example
+ * selectionToNumbers(8); // Returns: [8]
+ * selectionToNumbers([4, 6]); // Returns: [4, 5, 6]
+ *
+ * @param selection - A number or a range.
+ * @returns An array of numbers.
+ */
+export function selectionToNumbers(selection: NumberOrRange) {
+  if (Array.isArray(selection)) {
+    const [start, end] = selection;
+    return R.range(start, end + 1);
+  }
+  return [selection];
+}
+
+/**
  * Converts an array of numbers and/or ranges into a sorted array of unique numbers.
  *
  * @example
@@ -35,12 +53,9 @@ export function selectionsToNumbers(selections: NumberOrRange[]) {
   const numbersSet = new Set<number>();
 
   selections.forEach((selection) => {
-    if (Array.isArray(selection)) {
-      const [start, end] = selection;
-      R.range(start, end + 1).forEach((num) => numbersSet.add(num));
-    } else {
-      numbersSet.add(selection);
-    }
+    selectionToNumbers(selection).forEach((num) => {
+      numbersSet.add(num);
+    });
   });
 
   return Array.from(numbersSet).sort((a, b) => a - b);
