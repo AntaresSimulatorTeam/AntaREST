@@ -35,9 +35,17 @@ class DistrictSet(AntaresBaseModel):
         return get_areas(self.inverted_set, all_areas, areas)
 
 
+def district_set_sign(item: dict[str, Any]) -> str:
+    if "apply-filter" not in item:
+        return "+"
+    if item["apply-filter"] == "remove-all":
+        return "+"
+    return "-"  # "add-all"
+
+
 def parse_district(district_id: str, data: Any, all_areas: List[str]) -> District:
-    inverted_set = "-" in data
-    areas = data["-"] if inverted_set else data.get("+", [])
+    inverted_set = district_set_sign(data) == "-"
+    areas = data.get("-", []) if inverted_set else data.get("+", [])
     return District.model_validate(
         {
             "id": district_id,

@@ -152,6 +152,8 @@ class InMemoryStudyDao(StudyDao):
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # Area names
+        self._area_names: list[str] = []
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -708,8 +710,8 @@ class InMemoryStudyDao(StudyDao):
 
     @override
     def get_invalid_areas(self, areas: list[str]) -> list[str]:
-        # TODO implement this when we implement area DAO
-        raise NotImplementedError()
+        # TODO make this actually work once we implement area DAO
+        return list(set(areas) - set(self._area_names))
 
     @override
     def save_layer(self, layer: Layer) -> None:
