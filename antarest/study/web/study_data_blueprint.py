@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
+from pydantic import ConfigDict, RootModel
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -124,6 +125,14 @@ class ClusterType(enum.StrEnum):
     ST_STORAGES = "storages"
     RENEWABLES = "renewables"
     THERMALS = "thermals"
+
+
+class PlaylistRootModel(RootModel[dict[int, PlaylistValues]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
+
+
+class PlaylistUpdateRootModel(RootModel[dict[int, PlaylistValuesUpdate]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
 
 
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
@@ -421,23 +430,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Get MC Scenario playlist data for table form",
     )
-    def get_playlist(uuid: str) -> dict[int, PlaylistValues]:
+    def get_playlist(uuid: str) -> PlaylistRootModel:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.playlist_manager.get_playlist(study_interface).years
+        playlist_as_dict = study_service.playlist_manager.get_playlist(study_interface).years
+        return PlaylistRootModel.model_validate(playlist_as_dict)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
         summary="Update MC Scenario playlist data with values from table form",
     )
-    def update_playlist(uuid: str, data: dict[int, PlaylistValuesUpdate]) -> dict[int, PlaylistValues]:
+    def update_playlist(uuid: str, data: PlaylistUpdateRootModel) -> PlaylistRootModel:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        playlist_update = PlaylistUpdate.model_validate({"years": data})
-        return study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
+        playlist_update = PlaylistUpdate.model_validate({"years": data.model_dump()})
+        playlist_as_dict = study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
+        return PlaylistRootModel.model_validate(playlist_as_dict)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
