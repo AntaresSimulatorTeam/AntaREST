@@ -129,6 +129,7 @@ COMMANDS = [
                     "name": "id",
                     "base_filter": "add-all",
                     "output": True,
+                    "areas": [],
                     "comments": "",
                 }
             ],

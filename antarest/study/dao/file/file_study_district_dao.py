@@ -18,12 +18,10 @@ from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District, DistrictBaseFilter
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
+    DistrictSet,
     parse_district,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    DistrictSet,
-)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 DISTRICTS_PATH = ["input", "areas", "sets"]

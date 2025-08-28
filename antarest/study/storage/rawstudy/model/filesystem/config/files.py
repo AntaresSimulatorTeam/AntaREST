@@ -36,6 +36,7 @@ from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VER
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -43,7 +44,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,

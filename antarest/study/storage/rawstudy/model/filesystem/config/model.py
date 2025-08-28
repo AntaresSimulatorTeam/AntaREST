@@ -28,6 +28,7 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_7, StudyVersionInt
+from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet
 
 from .validation import extract_filtering, study_version_context
 
@@ -88,26 +89,6 @@ class Area(AntaresBaseModel, extra="forbid"):
     st_storages: List[STStorage] = []
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
-
-
-class DistrictSet(AntaresBaseModel):
-    """
-    Object linked to /inputs/sets.ini information
-    """
-
-    ALL: List[str] = ["hourly", "daily", "weekly", "monthly", "annual"]
-    name: Optional[str] = None
-    inverted_set: bool = False
-    areas: Optional[List[str]] = None
-    output: bool = True
-    filters_synthesis: List[str] = ALL
-    filters_year: List[str] = ALL
-
-    def get_areas(self, all_areas: List[str]) -> List[str]:
-        areas = self.areas or []
-        if self.inverted_set:
-            areas = list(set(all_areas).difference(set(areas)))
-        return sorted(areas)
 
 
 class Mode(EnumIgnoreCase):
