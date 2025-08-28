@@ -25,13 +25,13 @@ import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/
 import { DEFAULT_WEIGHT } from "@/services/api/studies/config/playlist/constants";
 import type { Playlist, PlaylistData } from "@/services/api/studies/config/playlist/types";
 import { appendColon } from "@/utils/i18nUtils";
+import { selectionToNumbers } from "@/utils/numberSelectionsUtils";
 import { Box, Button, ButtonGroup } from "@mui/material";
 import { Decimal } from "decimal.js-light";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useUpdateEffect } from "react-use";
 import usePromise from "../../../../../../../hooks/usePromise";
 import type { StudyMetadata } from "../../../../../../../types/types";
 import BasicDialog from "../../../../../../common/dialogs/BasicDialog";
@@ -44,16 +44,21 @@ interface Props {
   onClose: VoidFunction;
 }
 
+const getMaxYear = (data: PlaylistData) => Object.keys(data).length;
+
 function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const dataGridApiRef = useRef<DataGridFormApi<PlaylistData>>(null);
-  const [selectedYears, setSelectedYears] = useState<number[] | null>([]);
+  const [selectedYears, setSelectedYears] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [totals, setTotals] = useState({ selected: 0, sumWeights: 0 });
   const closeAction = useConfirm();
-  const res = usePromise(() => getPlaylistData({ studyId: study.id }), [study.id]);
-  const disableActions = selectedYears === null || isSubmitting;
+  const res = usePromise(() => getPlaylistData({ studyId: study.id }), {
+    deps: [study.id],
+    onDataChange: handleFetchDataChange,
+  });
+  const disableActions = selectedYears.length === 0 || isSubmitting;
 
   const columns = useMemo<DataGridFormProps<PlaylistData>["columns"]>(() => {
     return [
@@ -76,24 +81,17 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
     ];
   }, [t, totals]);
 
-  useUpdateEffect(() => {
-    if (res.data) {
-      updateTotals(res.data);
-    }
-  }, [res.data]);
-
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
   const mapSelectedYears = (fn: (item: Playlist) => Playlist, data: PlaylistData): PlaylistData => {
-    if (selectedYears === null) {
+    if (selectedYears.length === 0) {
       return data;
     }
 
     return RA.mapIndexed((item, index) => {
-      // Empty selection means all years are selected
-      if (selectedYears.length === 0 || selectedYears.includes(index + 1)) {
+      if (selectedYears.includes(index + 1)) {
         return fn(item);
       }
       return item;
@@ -119,6 +117,17 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  function handleFetchDataChange(data?: PlaylistData) {
+    if (!data) {
+      return;
+    }
+
+    updateTotals(data);
+
+    const maxYear = getMaxYear(data);
+    setSelectedYears(maxYear > 0 ? selectionToNumbers([1, maxYear]) : []);
+  }
 
   const handleUpdateStatus = (updateFn: RA.Pred) => () => {
     if (dataGridApiRef.current) {
@@ -185,9 +194,10 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
                 <CustomScrollbar>
                   <Box sx={{ display: "flex", gap: 1, pt: 1 }}>
                     <NumberSelectionsFE
+                      defaultValue={selectedYears}
                       label={t("study.configuration.general.mcScenarioPlaylist.scenarios")}
                       onChange={setSelectedYears}
-                      maxNumber={Object.keys(defaultData).length}
+                      maxNumber={getMaxYear(defaultData)}
                       size="extra-small"
                       sx={{ minWidth: 135 }}
                     />
