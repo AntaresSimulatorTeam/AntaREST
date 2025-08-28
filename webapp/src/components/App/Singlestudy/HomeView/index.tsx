@@ -28,7 +28,7 @@ function HomeView({ study, variantTree }: Props) {
   const navigate = useNavigate();
 
   return (
-    <SplitView id="study-home" gutterSize={4} sizes={[36, 64]}>
+    <SplitView storageId="study-home" gutterSize={4} sizes={[36, 64]}>
       {/* Left */}
       <Box
         height="100%"

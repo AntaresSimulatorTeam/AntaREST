@@ -110,7 +110,7 @@ function TableModeList() {
 
   return (
     <>
-      <SplitView id="tablemode" sizes={[10, 90]}>
+      <SplitView splitId="tablemode" sizes={[10, 90]}>
         {/* Left */}
         <PropertiesView
           mainContent={

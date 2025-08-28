@@ -19,7 +19,7 @@ import storage from "../../../services/utils/localStorage";
 import "./style.css";
 
 export interface SplitViewProps {
-  id: string;
+  splitId: string;
   children: React.ReactNode[];
   direction?: SplitProps["direction"];
   sizes?: SplitProps["sizes"];
@@ -46,7 +46,7 @@ function isValidSizes(sizes: unknown): sizes is number[] {
  * </SplitView>
  *
  * @param props - The component props.
- * @param props.id - Identifier to uniquely store the sizes of the panes.
+ * @param props.splitId - Identifier to uniquely store the sizes of the panes.
  * @param props.children - Child components to be rendered within the split views.
  * @param [props.direction=horizontal] - The orientation of the split view ("horizontal" or "vertical").
  * @param [props.sizes] - Initial sizes of each view in percentages. The array must sum to 100 and match the number of children.
@@ -55,7 +55,7 @@ function isValidSizes(sizes: unknown): sizes is number[] {
  * @returns A React component displaying a split layout view with resizable panes.
  */
 function SplitView({
-  id,
+  splitId,
   children,
   direction = "horizontal",
   sizes,
@@ -64,7 +64,7 @@ function SplitView({
 }: SplitViewProps) {
   const numberOfChildren = Children.count(children);
   const defaultSizes = Array(numberOfChildren).fill(100 / numberOfChildren);
-  const localStorageKey = `splitSizes.${id}.${direction}`;
+  const localStorageKey = `splitSizes.${splitId}.${direction}`;
 
   const [activeSizes, setActiveSizes] = useState<SplitProps["sizes"]>(() => {
     const savedSizes = storage.getItem(localStorageKey);

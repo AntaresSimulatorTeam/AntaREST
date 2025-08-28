@@ -153,7 +153,7 @@ function Data() {
   return (
     <RootPage title={t("data.title")} titleIcon={StorageIcon}>
       {loaded && (
-        <SplitView id="data" sizes={[15, 85]}>
+        <SplitView splitId="data" sizes={[15, 85]}>
           <DataPropsView
             dataset={dataList}
             onAdd={handleCreation}

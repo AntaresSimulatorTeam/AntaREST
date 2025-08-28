@@ -71,7 +71,7 @@ function BindingConstraints() {
     <UsePromiseCond
       response={constraintsRes}
       ifFulfilled={(data) => (
-        <SplitView id="binding-constraints" sizes={[10, 90]}>
+        <SplitView splitId="binding-constraints" sizes={[10, 90]}>
           {/* Left */}
           <BindingConstPropsView // TODO rename ConstraintsList
             list={data}

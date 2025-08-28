@@ -30,7 +30,7 @@ function SplitHydroMatrix({ types, direction, sizes, form: Form, sx }: Props) {
   return (
     <Box sx={mergeSxProp({ width: 1, height: 1 }, sx)}>
       {Form && <Form />}
-      <SplitView id={`hydro-${types[0]}-${types[1]}`} direction={direction} sizes={sizes}>
+      <SplitView storageId={`hydro-${types[0]}-${types[1]}`} direction={direction} sizes={sizes}>
         <HydroMatrix type={types[0]} />
         <HydroMatrix type={types[1]} />
       </SplitView>

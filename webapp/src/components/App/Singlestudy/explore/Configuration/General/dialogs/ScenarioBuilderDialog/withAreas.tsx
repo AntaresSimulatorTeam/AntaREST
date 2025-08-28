@@ -80,7 +80,7 @@ function withAreas(
     }
 
     return (
-      <SplitView id="scenario-builder" sizes={[15, 85]}>
+      <SplitView storageId="scenario-builder" sizes={[15, 85]}>
         <PropertiesView
           sx={{ p: 1, ".SearchFE": { mx: 0 } }}
           mainContent={

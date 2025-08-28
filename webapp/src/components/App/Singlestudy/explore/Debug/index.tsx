@@ -104,7 +104,7 @@ function Debug() {
 
   return (
     <DebugContext.Provider value={contextValue}>
-      <SplitView id="debug" sizes={[20, 80]} minSize={150}>
+      <SplitView storageId="debug" sizes={[20, 80]} minSize={150}>
         <Box sx={{ p: 1, overflow: "auto", position: "relative" }}>
           <UsePromiseCond
             keepLastResolvedOnReload
