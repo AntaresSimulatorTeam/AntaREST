@@ -82,56 +82,56 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/load")
     assert res.status_code == 200
-    assert res.json() == {"load": {"be": {"1": ""}, "fr": {"1": ""}}}
+    assert res.json() == {"load": {"be": {"0": ""}, "fr": {"0": ""}}}
 
-    scenarios: AreaScenarios = {"be": {"1": 2}}
+    scenarios: AreaScenarios = {"be": {"0": 2}}
     res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/load", json={"load": scenarios})
     assert res.status_code == 200, res.json()
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/load")
     assert res.status_code == 200
-    assert res.json() == {"load": {"be": {"1": 2}, "fr": {"1": ""}}}
+    assert res.json() == {"load": {"be": {"0": 2}, "fr": {"0": ""}}}
 
     # Thermal clusters tests
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/thermal")
     assert res.status_code == 200
-    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": ""}}}}
+    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": ""}}}}
 
-    scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"1": 2}}}
+    scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"0": 2}}}
     res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/thermal", json={"thermal": scenarios})
     assert res.status_code == 200
-    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": 2}}}}
+    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": 2}}}}
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/thermal")
     assert res.status_code == 200
-    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"1": 2}}}}
+    assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": 2}}}}
 
     # Storages additional constraints
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints")
     assert res.status_code == 200
-    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": ""}}}}}
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"0": ""}}}}}
 
-    sts_ac_scenarios = {"fr": {"battery": {"c1": {"1": 2}}}}
+    sts_ac_scenarios = {"fr": {"battery": {"c1": {"0": 2}}}}
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints",
         json={"shortTermStorageAdditionalConstraints": sts_ac_scenarios},
     )
     assert res.status_code == 200
-    assert res.json() == {"shortTermStorageAdditionalConstraints": {"fr": {"battery": {"c1": {"1": 2}}}}}
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"fr": {"battery": {"c1": {"0": 2}}}}}
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints")
     assert res.status_code == 200
-    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": 2}}}}}
+    assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"0": 2}}}}}
 
     # Hydro tests
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels")
     assert res.status_code == 200
-    assert res.json() == {"hydroInitialLevels": {"be": {"1": ""}, "fr": {"1": ""}}}
+    assert res.json() == {"hydroInitialLevels": {"be": {"0": ""}, "fr": {"0": ""}}}
 
-    hydro_scenarios = {"be": {"1": 0.5}}
+    hydro_scenarios = {"be": {"0": 0.5}}
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels",
         json={"hydroInitialLevels": hydro_scenarios},
@@ -140,4 +140,4 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels")
     assert res.status_code == 200
-    assert res.json() == {"hydroInitialLevels": {"be": {"1": 0.5}, "fr": {"1": ""}}}
+    assert res.json() == {"hydroInitialLevels": {"be": {"0": 0.5}, "fr": {"0": ""}}}
