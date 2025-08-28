@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
+from pathlib import PurePosixPath
 from typing import Dict, Optional, Sequence
 
 import pandas as pd
@@ -40,6 +41,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.user_model import ResourceType
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
@@ -149,6 +151,8 @@ class InMemoryStudyDao(StudyDao):
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # User resources
+        self._user_resources: set[PurePosixPath] = set()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -700,3 +704,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def layer_exists(self, layer_id: str) -> bool:
         return any(layer.id == layer_id for layer in self._layers)
+
+    @override
+    def save_user_resource(self, resource_type: ResourceType, resource_path: PurePosixPath) -> None:
+        self._user_resources.add(resource_path)
+
+    @override
+    def delete_user_resource(self, resource_path: PurePosixPath) -> None:
+        self._user_resources.remove(resource_path)

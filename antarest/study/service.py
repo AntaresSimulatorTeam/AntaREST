@@ -84,6 +84,7 @@ from antarest.study.business.matrix_management import MatrixManager, MatrixManag
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.user_model import CreateUserResourceData, RemoveUserResourceData, ResourceType
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -144,8 +145,6 @@ from antarest.study.storage.utils import (
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_user_resource import (
     CreateUserResource,
-    CreateUserResourceData,
-    ResourceType,
 )
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -153,7 +152,6 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import (
     RemoveUserResource,
-    RemoveUserResourceData,
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix

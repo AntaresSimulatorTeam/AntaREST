@@ -9,14 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from enum import StrEnum
 from typing import List, Optional, cast
 
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
-from antarest.core.serde import AntaresBaseModel
+from antarest.study.business.model.user_model import CreateUserResourceData, ResourceType
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -29,16 +28,6 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-class ResourceType(StrEnum):
-    FILE = "file"
-    FOLDER = "folder"
-
-
-class CreateUserResourceData(AntaresBaseModel):
-    path: str
-    resource_type: ResourceType
 
 
 class CreateUserResource(ICommand):

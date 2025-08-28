@@ -58,6 +58,7 @@ from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorag
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
+from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -77,6 +78,7 @@ class ReadOnlyStudyDao(
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
     ReadOnlyLayerDao,
+    ReadOnlyUserResourcesDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -103,6 +105,7 @@ class StudyDao(
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
     LayerDao,
+    UserResourcesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
