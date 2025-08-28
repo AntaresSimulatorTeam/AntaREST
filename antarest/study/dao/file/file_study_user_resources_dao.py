@@ -52,4 +52,13 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
-        raise NotImplementedError
+        url = [item for item in resource_path.parts if item]
+        study_tree = self.get_file_study().tree
+        user_node = cast(User, study_tree.get_node(["user"]))
+        if not is_url_writeable(user_node, url):
+            raise ResourceDeletionNotAllowed(f"you are not allowed to delete this resource : {resource_path}")
+
+        try:
+            user_node.delete(url)
+        except ChildNotFoundError:
+            raise ResourceDeletionNotAllowed(f"the given path doesn't exist : {resource_path}")

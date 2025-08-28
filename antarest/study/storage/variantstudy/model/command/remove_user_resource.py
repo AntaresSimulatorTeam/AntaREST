@@ -9,21 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import List, Optional, cast
+from pathlib import PurePosixPath
+from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.business.model.user_model import RemoveUserResourceData
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
-    is_url_writeable,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
@@ -46,19 +42,10 @@ class RemoveUserResource(ICommand):
     data: RemoveUserResourceData
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        url = [item for item in self.data.path.split("/") if item]
-        study_tree = study_data.tree
-        user_node = cast(User, study_tree.get_node(["user"]))
-        if not is_url_writeable(user_node, url):
-            return command_failed(message=f"you are not allowed to delete this resource : {self.data.path}")
-
-        try:
-            user_node.delete(url)
-        except ChildNotFoundError:
-            return command_failed(message="the given path doesn't exist")
-
-        return command_succeeded(message=f"Resource {self.data.path} removed successfully.")
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+        resource_path = PurePosixPath(self.data.path)
+        study_data.delete_user_resource(resource_path)
+        return command_succeeded(message=f"Resource {resource_path} removed successfully.")
 
     @override
     def to_dto(self) -> CommandDTO:
