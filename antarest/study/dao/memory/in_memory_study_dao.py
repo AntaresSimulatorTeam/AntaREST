@@ -31,6 +31,7 @@ from antarest.study.business.model.hydro_model import (
     HydroProperties,
     InflowStructure,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -147,6 +148,10 @@ class InMemoryStudyDao(StudyDao):
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
         # Districts
         self._districts: dict[str, District] = {}
+        # Layer
+        self._layers: list[Layer] = []
+        # Comments
+        self._comments = ""
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -154,6 +159,14 @@ class InMemoryStudyDao(StudyDao):
         To ease transition, to be removed when all goes through other methods
         """
         raise NotImplementedError()
+
+    @override
+    def get_comments(self) -> str:
+        return self._comments
+
+    @override
+    def save_comments(self, comments: str) -> None:
+        self._comments = comments
 
     @override
     def get_version(self) -> StudyVersion:
@@ -697,3 +710,21 @@ class InMemoryStudyDao(StudyDao):
     def get_invalid_areas(self, areas: list[str]) -> list[str]:
         # TODO implement this when we implement area DAO
         raise NotImplementedError()
+
+    @override
+    def save_layer(self, layer: Layer) -> None:
+        new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
+        layer.id = str(new_id)
+        self._layers.insert(new_id, layer)
+
+    @override
+    def get_layers(self) -> Sequence[Layer]:
+        return self._layers
+
+    @override
+    def delete_layer(self, layer: Layer) -> None:
+        self._layers.remove(layer)
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return any(layer.id == layer_id for layer in self._layers)

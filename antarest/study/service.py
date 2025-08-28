@@ -78,6 +78,7 @@ from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
+from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
@@ -105,7 +106,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
-    CommentsDto,
     MatrixIndex,
     RawStudy,
     Study,
@@ -125,7 +125,6 @@ from antarest.study.repository import (
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -156,8 +155,8 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
     RemoveUserResourceData,
 )
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -244,10 +243,8 @@ class ThermalClusterTimeSeriesGeneratorTask:
         listener = TaskProgressRecorder(notifier=notifier)
         with db():
             study = self.repository.one(self._study_id)
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            command = GenerateThermalClusterTimeSeries(
-                command_context=command_context, study_version=file_study.config.version
-            )
+            study_version = StudyVersion.parse(study.version)
+            command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=study_version)
             self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
@@ -491,6 +488,7 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
+        self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
         self.config_manager = ConfigManager(command_context)
@@ -625,7 +623,7 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str) -> str | JSON:
+    def get_comments(self, study_id: str) -> str:
         """
         Get the comments of a study.
 
@@ -637,20 +635,15 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
+        return self.get_study_interface(study).get_study_dao().get_comments()
 
-        with contextlib.suppress(AttributeError, UnicodeDecodeError):
-            output = output.decode("utf-8")  # type: ignore
-
-        return output
-
-    def edit_comments(self, uuid: str, data: CommentsDto) -> None:
+    def set_comments(self, uuid: str, comments: str) -> None:
         """
         Replace data inside study.
 
         Args:
             uuid: study id
-            data: new data to replace
+            comments: new comments to replace
 
         Returns: new data replaced
 
@@ -659,19 +652,14 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        if isinstance(study, RawStudy):
-            self.edit_study(uuid=uuid, url="settings/comments", new=bytes(data.comments, "utf-8"))
-        else:
-            variant_study_service = self.storage_service.variant_study_service
-            command = [
-                UpdateRawFile(
-                    target="settings/comments",
-                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
-                    command_context=variant_study_service.command_factory.command_context,
-                    study_version=study.version,
-                )
-            ]
-            variant_study_service.append_commands(study.id, transform_command_to_dto(command, force_aggregate=True))
+        study_interface = self.get_study_interface(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = ReplaceComments(
+            comments=comments,
+            study_version=study_interface.version,
+            command_context=command_context,
+        )
+        study_interface.add_commands([command])
 
     def get_studies_information(
         self,
@@ -1409,7 +1397,7 @@ class StudyService:
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(comments=data, command_context=context, study_version=study_version)
+                return ReplaceComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
@@ -2371,23 +2359,22 @@ class StudyService:
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """
         Returns the content of a node based on the provided arguments.
+
+        Depending on the type of node, it may return the following types of data:
+          - an arbitrary dictionary (ini files ...)
+          - a dataframe (input matrices ...)
+          - raw file content (arbitrary user files ...)
+
+        This allows callers to handle the result as most appropriate.
         """
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         file_study = self.get_file_study(study)
         url = [item for item in path.split("/") if item]
-        node = file_study.tree.get_node(url)
+        node, relative_url = file_study.tree.get_node_and_remainder(url)
 
+        # Return a datframe when possible instead of less memory & computation - efficient python objects
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 
-        # Minor optimization: in order to not restart the search from the root
-        # in the specific case of folders, we can assume there is no
-        # "remaining parts" in the URL.
-        # This is a technical debt because this is clearly an implicit contract.
-        # Should be solved by returning remaining parts after a search, for ex.
-        if isinstance(node, FolderNode):
-            return node.get(url=[], depth=depth)
-
-        # Else we have to restart from the root to guarantee the right behaviour
-        return file_study.tree.get(url, depth=depth, formatted=formatted)
+        return node.get(url=relative_url, depth=depth, formatted=formatted)

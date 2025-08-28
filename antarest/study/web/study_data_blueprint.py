@@ -41,7 +41,7 @@ from antarest.study.business.correlation_management import (
     CorrelationFormFields,
     CorrelationMatrix,
 )
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
+from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -78,12 +78,14 @@ from antarest.study.business.model.hydro_model import (
     InflowStructure,
     InflowStructureUpdate,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -99,11 +101,10 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
+from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
 
 logger = logging.getLogger(__name__)
 
@@ -224,23 +225,22 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
         summary="Get all layers info",
-        response_model=List[LayerInfoDTO],
+        response_model=List[Layer],
     )
-    def get_layers(uuid: str) -> List[LayerInfoDTO]:
+    def get_layers(uuid: str) -> List[Layer]:
         logger.info(f"Fetching layer list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        return study_service.area_manager.get_layers(study_service.get_study_interface(study))
+        return study_service.layer_manager.get_layers(study_service.get_study_interface(study))
 
     @bp.post(
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
         summary="Create new layer",
-        response_model=str,
     )
     def create_layer(uuid: str, name: str) -> str:
         logger.info(f"Create layer {name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        return study_service.area_manager.create_layer(study_service.get_study_interface(study), name)
+        return study_service.layer_manager.create_layer(study_service.get_study_interface(study), name)
 
     @bp.put(
         "/studies/{uuid}/layers/{layer_id}",
@@ -248,11 +248,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update layer",
     )
     def update_layer(uuid: str, layer_id: str, name: str = "", areas: Optional[List[str]] = None) -> None:
-        logger.info(f"Updating layer {layer_id} for study {uuid}")
+        logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         if name:
-            study_service.area_manager.update_layer_name(study_interface, layer_id, name)
+            study_service.layer_manager.update_layer_name(study_interface, layer_id, name)
         if areas:
             study_service.area_manager.update_layer_areas(study_interface, layer_id, areas)
 
@@ -266,7 +266,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def remove_layer(uuid: str, layer_id: str) -> None:
         logger.info(f"Remove layer {layer_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_service.area_manager.remove_layer(study_service.get_study_interface(study), layer_id)
+        study_service.layer_manager.remove_layer(study_service.get_study_interface(study), layer_id)
 
     @bp.get(
         "/studies/{uuid}/districts",
@@ -477,21 +477,21 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Rulesets,
+        response_model=RulesetsView,
+        response_model_exclude_none=True,
     )
-    def get_scenario_builder_config(uuid: str) -> Rulesets:
+    def get_scenario_builder_config(uuid: str) -> RulesetsView:
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.scenario_builder_manager.get_config(study_interface)
+        return rulesets_model_to_view(study_service.scenario_builder_manager.get_config(study_interface))
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
-    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, SBTableForm]:
+    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, AnyScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -565,21 +565,20 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
     )
-    def update_scenario_builder_config(uuid: str, data: Rulesets) -> None:
+    def update_scenario_builder_config(uuid: str, data: RulesetsView) -> None:
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.scenario_builder_manager.update_config(study_interface, data)
+        study_service.scenario_builder_manager.update_config(study_interface, rulesets_view_to_model(data))
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
     def update_scenario_builder_config_by_type(
-        uuid: str, scenario_type: ScenarioType, data: Dict[str, SBTableForm]
-    ) -> Dict[str, SBTableForm]:
+        uuid: str, scenario_type: ScenarioType, data: Dict[ScenarioType, AnyScenarios]
+    ) -> Dict[ScenarioType, AnyScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
 
@@ -606,7 +605,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        table_form = data[scenario_type]
+        table_form = data.get(scenario_type, {})
         table_form = study_service.scenario_builder_manager.update_scenario_by_type(
             study_interface, table_form, scenario_type
         )

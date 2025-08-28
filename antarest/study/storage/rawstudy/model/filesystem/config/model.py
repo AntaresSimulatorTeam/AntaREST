@@ -25,6 +25,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
+from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_8_7, StudyVersionInt
 
@@ -85,7 +86,7 @@ class Area(AntaresBaseModel, extra="forbid"):
     filters_year: List[str]
     # since v8.6
     st_storages: List[STStorage] = []
-    # Since v9.2
+    # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
 
 
@@ -270,6 +271,23 @@ class FileStudyTreeConfig(DTO):
             return []
         lower_groups = {bc.group: bc.group for bc in self.bindings}
         return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
+
+    def get_sts_constraint_ids(self, area: str, storage: str) -> List[str]:
+        return [c.id for c in self.areas[area].st_storages_additional_constraints[storage]]
+
+    def to_study_index(self) -> StudyIndex:
+        areas = self.areas
+        return StudyIndex(
+            areas=areas,
+            links=((a1, a2) for a1 in areas for a2 in self.get_links(a1)),
+            bc_groups=self.get_binding_constraint_groups(),
+            thermals={a: self.get_thermal_ids(a) for a in areas},
+            renewables={a: self.get_renewable_ids(a) for a in areas},
+            storages={a: self.get_st_storage_ids(a) for a in areas},
+            sts_additional_constraints={
+                a: {s: self.get_sts_constraint_ids(a, s) for s in self.get_st_storage_ids(a)} for a in areas
+            },
+        )
 
 
 class FileStudyTreeConfigDTO(AntaresBaseModel):

@@ -24,6 +24,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -45,6 +46,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
     RemoveMultipleBindingConstraints,
@@ -58,6 +60,7 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
     ReplaceXpansionCandidate,
@@ -70,12 +73,12 @@ from antarest.study.storage.variantstudy.model.command.update_area_ui import Upd
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
+from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command.update_link import UpdateLink
 from antarest.study.storage.variantstudy.model.command.update_optimization_preferences import (
     UpdateOptimizationPreferences,
@@ -100,6 +103,9 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_AREAS_PROPERTIES.value: UpdateAreasProperties,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
     CommandName.REMOVE_AREA.value: RemoveArea,
+    CommandName.CREATE_LAYER.value: CreateLayer,
+    CommandName.REMOVE_LAYER.value: RemoveLayer,
+    CommandName.UPDATE_LAYER.value: UpdateLayer,
     CommandName.CREATE_DISTRICT.value: CreateDistrict,
     CommandName.REMOVE_DISTRICT.value: RemoveDistrict,
     CommandName.CREATE_LINK.value: CreateLink,
@@ -124,7 +130,8 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_INFLOW_STRUCTURE.value: UpdateInflowStructure,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
-    CommandName.UPDATE_COMMENTS.value: UpdateComments,
+    CommandName.UPDATE_COMMENTS.value: ReplaceComments,
+    CommandName.REPLACE_COMMENTS.value: ReplaceComments,
     CommandName.UPDATE_FILE.value: UpdateRawFile,
     CommandName.UPDATE_DISTRICT.value: UpdateDistrict,
     CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,

@@ -20,6 +20,7 @@ from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstrain
 from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
+from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
@@ -47,6 +48,7 @@ class FileStudyTreeDao(
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
     FileStudyDistrictDao,
+    FileStudyLayerDao,
 ):
     """
     Implementation of study DAO over the simulator input format.
@@ -62,3 +64,13 @@ class FileStudyTreeDao(
     @override
     def get_version(self) -> StudyVersion:
         return self._file_study.config.version
+
+    @override
+    def get_comments(self) -> str:
+        content = self._file_study.tree.get(["settings", "comments"])
+        assert isinstance(content, bytes)
+        return content.decode("utf-8")
+
+    @override
+    def save_comments(self, comments: str) -> None:
+        self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})

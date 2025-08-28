@@ -42,5 +42,5 @@ export function toError(error: unknown) {
   if (typeof error === "string") {
     return new Error(error);
   }
-  return new Error("An unknown error occurred");
+  return new Error();
 }

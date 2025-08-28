@@ -12,23 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { t } from "i18next";
-import type { MatrixIndex } from "@/types/types";
+import type { fetchMatrixFn } from "@/components/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
+import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { getStudyMatrixIndex } from "@/services/api/matrix";
 import { getStudyData } from "@/services/api/study";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import type { MatrixIndex } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import useUndo from "use-undo";
 import type {
-  MatrixDataDTO,
   AggregateType,
   MatrixAggregates,
+  MatrixDataDTO,
   RowCountSource,
 } from "../shared/types";
 import { calculateMatrixAggregates, generateDateTime } from "../shared/utils";
-import type { fetchMatrixFn } from "@/components/App/Singlestudy/explore/Modelization/Areas/Hydro/utils";
-import { toError } from "@/utils/fnUtils";
-import useUndo from "use-undo";
-import { TimeFrequency } from "@/components/common/Matrix/shared/constants";
 
 export interface DataState {
   data: MatrixDataDTO["data"];
@@ -61,6 +61,7 @@ export function useMatrixData({
       { useCheckpoints: true },
     );
 
+  const { t } = useTranslation();
   const [index, setIndex] = useState<MatrixIndex>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error>();
@@ -117,7 +118,7 @@ export function useMatrixData({
     } finally {
       setIsLoading(false);
     }
-  }, [fetchFn, studyId, path, reset, aggregateTypes, enqueueErrorSnackbar]);
+  }, [fetchFn, studyId, path, aggregateTypes, reset, t, enqueueErrorSnackbar]);
 
   useEffect(() => {
     fetchMatrix();

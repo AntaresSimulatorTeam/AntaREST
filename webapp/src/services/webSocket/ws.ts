@@ -56,7 +56,6 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
 
   const config = getConfig();
 
-  console.log(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
   webSocket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
 
   if (!globalListenerAdded) {

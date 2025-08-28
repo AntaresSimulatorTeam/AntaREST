@@ -14,7 +14,6 @@
 
 import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useSafeMemo from "@/hooks/useSafeMemo";
 import { getColumnWidth } from "@/utils/dataGridUtils";
 import { toError } from "@/utils/fnUtils";
 import { mergeSxProp } from "@/utils/muiUtils";
@@ -34,6 +33,7 @@ import {
   IconButton,
   setRef,
   Tooltip,
+  type ButtonProps,
   type SxProps,
   type Theme,
 } from "@mui/material";
@@ -69,14 +69,19 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   enableColumnResize?: boolean;
   onSubmit: (
     data: SubmitHandlerPlus<TData>,
-    event?: React.BaseSyntheticEvent,
+    event: React.FormEvent<HTMLFormElement>,
   ) => void | Promise<SubmitReturnValue>;
   onSubmitSuccessful?: (data: SubmitHandlerPlus<TData>, submitResult: SubmitReturnValue) => void;
   onDataChange?: (data: TData) => void;
   onStateChange?: (state: DataGridFormState) => void;
+  id?: string;
   sx?: SxProps<Theme>;
-  extraActions?: React.ReactNode;
+  extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
   apiRef?: React.Ref<DataGridFormApi<TData>>;
+  submitButtonText?: string;
+  submitButtonIcon?: ButtonProps["startIcon"];
+  hideSubmitButton?: boolean;
+  disableErrorSnackbar?: boolean;
 }
 
 function DataGridForm<TData extends Data>({
@@ -92,19 +97,26 @@ function DataGridForm<TData extends Data>({
   onDataChange,
   onStateChange,
   sx,
+  id,
   extraActions,
   apiRef,
+  submitButtonText,
+  submitButtonIcon = <SaveIcon />,
+  hideSubmitButton = false,
+  disableErrorSnackbar = false,
 }: DataGridFormProps<TData>) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedData, setSavedData] = useState(defaultData);
+  const [error, setError] = useState<string | null>(null);
   const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] = useUndo(defaultData);
 
   // Reference comparison to check if the data has changed.
   // So even if the content are the same, we consider it as dirty.
   // Deep comparison fix the issue but with big data it can be slow.
   const isDirty = savedData !== data;
+  const canSubmit = isDirty && !isSubmitting;
 
   const formState = useMemo<DataGridFormState>(
     () => ({
@@ -122,18 +134,17 @@ function DataGridForm<TData extends Data>({
 
   useEffect(() => setRef(apiRef, { data, setData, formState }), [apiRef, data, setData, formState]);
 
-  // Rows cannot be added or removed, so no dependencies are needed
-  const rowNames = useSafeMemo(() => Object.keys(defaultData), []);
+  const rowNames = useMemo(() => Object.keys(data), [data]);
 
   const columnsWithAdjustedSize = useMemo(
     () =>
       columns.map((column) => ({
         ...column,
         width: getColumnWidth(column, () =>
-          rowNames.map((rowName) => defaultData[rowName][column.id].toString()),
+          rowNames.map((rowName) => data[rowName][column.id]?.toString()),
         ),
       })),
-    [columns, defaultData, rowNames],
+    [columns, data, rowNames],
   );
 
   const columnIds = useMemo(() => columns.map((column) => column.id), [columns]);
@@ -194,7 +205,7 @@ function DataGridForm<TData extends Data>({
     (location) => {
       const [rowName, columnName] = getRowAndColumnNames(location);
       const dataRow = data[rowName];
-      const cellData = dataRow?.[columnName];
+      const cellData = dataRow[columnName];
 
       if (typeof cellData === "string") {
         return {
@@ -266,6 +277,7 @@ function DataGridForm<TData extends Data>({
     event.preventDefault();
 
     setIsSubmitting(true);
+    setError(null);
 
     const dataArg = {
       values: data,
@@ -277,7 +289,10 @@ function DataGridForm<TData extends Data>({
       setSavedData(data);
       onSubmitSuccessful?.(dataArg, submitRes);
     } catch (err) {
-      enqueueErrorSnackbar(t("form.submit.error"), toError(err));
+      if (!disableErrorSnackbar) {
+        enqueueErrorSnackbar(t("form.submit.error"), toError(err));
+      }
+      setError(toError(err).message);
     } finally {
       setIsSubmitting(false);
     }
@@ -299,6 +314,7 @@ function DataGridForm<TData extends Data>({
         sx,
       )}
       component="form"
+      id={id}
       onSubmit={handleSubmit}
     >
       <DataGrid
@@ -316,6 +332,7 @@ function DataGridForm<TData extends Data>({
         onPaste
       />
       <Box
+        className="DataGridForm__Footer"
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -323,18 +340,27 @@ function DataGridForm<TData extends Data>({
           mt: 1.5,
         }}
       >
+        {error !== null && (
+          <Box color="error.main" sx={{ fontSize: "0.9rem" }}>
+            {error || t("form.submit.error")}
+          </Box>
+        )}
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Button
-            type="submit"
-            disabled={!isDirty}
-            loading={isSubmitting}
-            loadingPosition="start"
-            variant="contained"
-            startIcon={<SaveIcon />}
-          >
-            {t("global.save")}
-          </Button>
-          <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+          {!hideSubmitButton && (
+            <>
+              <Button
+                type="submit"
+                disabled={!canSubmit}
+                loading={isSubmitting}
+                loadingPosition="start"
+                variant="contained"
+                startIcon={submitButtonIcon}
+              >
+                {submitButtonText || t("global.save")}
+              </Button>
+              <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+            </>
+          )}
           <Tooltip title={t("global.undo")}>
             <span>
               <IconButton onClick={undo} disabled={!canUndo || isSubmitting}>
@@ -351,7 +377,7 @@ function DataGridForm<TData extends Data>({
           </Tooltip>
           {extraActions && (
             <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
-              {extraActions}
+              {typeof extraActions === "function" ? extraActions({ canSubmit }) : extraActions}
             </Box>
           )}
         </Box>

@@ -236,44 +236,6 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 
-    def _get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        get_node: bool = False,
-    ) -> SUB_JSON | INode[SUB_JSON, SUB_JSON, JSON]:
-        if get_node:
-            return self
-
-        if depth <= -1 and expanded:
-            return f"json://{self.config.path.name}"
-
-        if depth == 0:
-            return {}
-
-        url = url or []
-        kwargs = self._get_filtering_kwargs(url)
-
-        if self.config.archive_path:
-            inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
-            if self.config.archive_path.suffix == ".zip":
-                with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
-                    with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
-                        data = self.reader.read(f, **kwargs)
-            elif self.config.archive_path.suffix == ".7z":
-                with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
-                    with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
-                        data = self.reader.read(f, **kwargs)
-            else:
-                raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
-        else:
-            data = self.reader.read(self.path, **kwargs)
-
-        return _match_url(data, url, depth).get_part()
-
-        # noinspection PyMethodMayBeStatic
-
     def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
         """
         Extracts the filtering arguments from the URL components.
@@ -303,18 +265,38 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> SUB_JSON:
-        output = self._get(url, depth, expanded, get_node=False)
-        assert not isinstance(output, INode)
-        return output
+        if depth <= -1 and expanded:
+            return f"json://{self.config.path.name}"
+
+        if depth == 0:
+            return {}
+
+        url = url or []
+        kwargs = self._get_filtering_kwargs(url)
+
+        if self.config.archive_path:
+            inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
+            if self.config.archive_path.suffix == ".zip":
+                with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
+                    with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
+                        data = self.reader.read(f, **kwargs)
+            elif self.config.archive_path.suffix == ".7z":
+                with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
+                    with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
+                        data = self.reader.read(f, **kwargs)
+            else:
+                raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
+        else:
+            data = self.reader.read(self.path, **kwargs)
+
+        return _match_url(data, url, depth).get_part()
 
     @override
-    def get_node(
+    def get_node_and_remainder(
         self,
         url: Optional[List[str]] = None,
-    ) -> INode[SUB_JSON, SUB_JSON, JSON]:
-        output = self._get(url, get_node=True)
-        assert isinstance(output, INode)
-        return output
+    ) -> tuple[INode[SUB_JSON, SUB_JSON, JSON], list[str]]:
+        return self, url or []
 
     @override
     def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:

@@ -14,14 +14,16 @@
 
 import { validateNumber } from "../number";
 
-// Mock i18next
-vi.mock("i18next", () => ({
-  t: vi.fn((key, options) => {
-    if (options) {
-      return `${key}: ${JSON.stringify(options)}`;
-    }
-    return key;
-  }),
+// Mock @/i18n
+vi.mock("@/i18n", () => ({
+  default: {
+    t: vi.fn((key, options) => {
+      if (options) {
+        return `${key}: ${JSON.stringify(options)}`;
+      }
+      return key;
+    }),
+  },
 }));
 
 describe("validateNumber", () => {

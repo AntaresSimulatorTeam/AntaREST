@@ -75,17 +75,18 @@ def create_auth_token(
     app: FastAPI,
     expires_delta: Union[int, timedelta] = timedelta(days=2),
     type: TokenType = TokenType.ACCESS,
+    user: JWTUser = JWTUser(
+        id=0,
+        impersonator=0,
+        type="users",
+        groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
+    ),
 ) -> Dict[str, str]:
     jwt_manager = AuthJWT()
     create_token = jwt_manager.create_access_token if type == TokenType.ACCESS else jwt_manager.create_refresh_token
     token = create_token(
         expires_time=expires_delta,
-        subject=JWTUser(
-            id=0,
-            impersonator=0,
-            type="users",
-            groups=[JWTGroup(id="group", name="group", role=RoleType.ADMIN)],
-        ).model_dump_json(),
+        subject=user.model_dump_json(),
     )
     return {"Authorization": f"Bearer {token if isinstance(token, str) else token.decode()}"}
 

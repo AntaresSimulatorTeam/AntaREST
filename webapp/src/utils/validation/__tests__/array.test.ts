@@ -14,8 +14,10 @@
 
 import { validateArray } from "../array";
 
-vi.mock("i18next", () => ({
-  t: vi.fn((key) => key),
+vi.mock("@/i18n", () => ({
+  default: {
+    t: vi.fn((key) => key),
+  },
 }));
 
 describe("validateArray", () => {

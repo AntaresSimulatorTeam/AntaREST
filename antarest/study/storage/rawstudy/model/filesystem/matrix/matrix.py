@@ -15,7 +15,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import StrEnum
 from pathlib import Path
-from typing import List, Optional, cast
+from typing import List, Optional, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,6 @@ from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.utils import StopWatch
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.inode import G, INode, S, V
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 logger = logging.getLogger(__name__)
@@ -67,7 +66,12 @@ def imports_matrix_from_bytes(data: bytes) -> Optional[NpArray]:
     return None
 
 
-class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
+MatrixId: TypeAlias = str
+# Either raw content, or dictionary representation, or dataframe.
+MatrixContent: TypeAlias = bytes | JSON | pd.DataFrame
+
+
+class MatrixNode(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON], ABC):
     def __init__(
         self,
         matrix_mapper: MatrixUriMapper,
@@ -78,57 +82,15 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         self.freq = freq
 
     @override
-    def save(self, data: str | bytes | S, url: Optional[List[str]] = None) -> None:
-        self._assert_not_in_zipped_file()
-        self._assert_url_end(url)
-
-        if isinstance(data, str) and self.matrix_mapper.matrix_exists(data):
-            self.matrix_mapper.save_matrix(self, data)
-        else:
-            super().save(data, url)
-            self.matrix_mapper.remove_link(self)
-
-    @override
-    def get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-    ) -> str | G:
-        output = cast("str | G", self._get(url, depth, expanded, formatted, get_node=False))
-        assert not isinstance(output, INode)
-        return output
-
-    @override
-    def _get(
-        self,
-        url: Optional[List[str]] = None,
-        depth: int = -1,
-        expanded: bool = False,
-        formatted: bool = True,
-        get_node: bool = False,
-    ) -> str | G | INode[G, S, V]:
-        self._assert_url_end(url)
-
-        if get_node:
-            return self
-
-        if expanded:
-            link_content = self.matrix_mapper.get_link_content(self)
-            if link_content is not None:
-                return link_content
-            return self.get_lazy_content()
-
-        return cast("str | G", self.load(url, depth, expanded, formatted))
-
-    @override
     def get_lazy_content(
         self,
         url: Optional[List[str]] = None,
         depth: int = -1,
         expanded: bool = False,
     ) -> str:
+        link_content = self.matrix_mapper.get_link_content(self)
+        if link_content is not None:
+            return link_content
         return f"matrixfile://{self.config.path.name}"
 
     @override
@@ -176,9 +138,9 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
         # The R scripts use the flag formatted=False
         if df.empty:
             return b""
-        buffer = io.StringIO()
-        df.to_csv(buffer, sep="\t", header=False, index=False)
-        return buffer.getvalue()  # type: ignore
+        buffer = io.BytesIO()
+        df.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
+        return buffer.getvalue()
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
@@ -189,7 +151,7 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
     @override
     def dump(
         self,
-        data: bytes | JSON | pd.DataFrame,
+        data: MatrixId | MatrixContent,
         url: Optional[List[str]] = None,
     ) -> None:
         """
@@ -204,15 +166,23 @@ class MatrixNode(LazyNode[bytes | JSON, bytes | JSON, JSON], ABC):
                 otherwise it will be converted to a Pandas DataFrame and then written to file.
             url: node URL (not used here).
         """
+        if isinstance(data, MatrixId):
+            if not self.matrix_mapper.matrix_exists(data):
+                raise ValueError(f"Matrix {data} does not exist")
+            self.matrix_mapper.save_matrix(self, data)
+            return
+
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         if isinstance(data, bytes):
             self.config.path.write_bytes(data)
+            self.matrix_mapper.remove_link(self)
         else:
             if isinstance(data, dict):
                 df = pd.DataFrame(**data)
             else:
                 df = data
             self.write_dataframe(df)
+            self.matrix_mapper.remove_link(self)
 
     @abstractmethod
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:

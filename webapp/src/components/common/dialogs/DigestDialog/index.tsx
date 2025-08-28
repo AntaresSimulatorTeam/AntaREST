@@ -43,13 +43,7 @@ function DigestDialog({ studyId, outputId, ...dialogProps }: DigestDialogProps) 
   ////////////////////////////////////////////////////////////////
 
   return (
-    <OkDialog
-      {...dialogProps}
-      title="Digest"
-      okButtonText={t("global.close")}
-      fullScreen
-      sx={{ m: 5 }}
-    >
+    <OkDialog {...dialogProps} title="Digest" okButtonText={t("global.close")} fullScreen>
       <UsePromiseCond
         response={digestRes}
         ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
