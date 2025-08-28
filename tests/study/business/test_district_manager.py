@@ -60,9 +60,6 @@ def study_with_sets(empty_study_880: FileStudy):
     district_ini_content = {
         "input": {
             "areas": {
-                # "n1": dummy_area(),
-                # "n2": dummy_area(),
-                # "n3": dummy_area(),
                 "list": ["n1", "n2", "n3"],
                 "sets": {
                     "d1": {"caption": "D1", "apply-filter": "remove-all", "output": True, "comments": "dummy"},
