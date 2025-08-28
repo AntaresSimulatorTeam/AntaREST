@@ -54,7 +54,7 @@ class DistrictCreation(AntaresBaseModel):
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = District(
+            schema["example"] = DistrictCreation(
                 name="My District", comments="", areas=["z1", "z2", "z3"], output=True
             ).model_dump(mode="json")
 
