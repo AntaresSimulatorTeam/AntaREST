@@ -1436,17 +1436,10 @@ class StudyService:
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
             user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
-            args = {"path": user_path, "resource_type": ResourceType.FILE}
+            args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
             command_data = CreateUserResourceData.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
-            assert isinstance(data, bytes)
-            cmd_2 = UpdateRawFile(
-                target=url,
-                b64Data=base64.b64encode(data).decode("utf-8"),
-                command_context=context,
-                study_version=version,
-            )
-            commands.extend([cmd_1, cmd_2])
+            commands.append(cmd_1)
         else:
             # A 404 Not Found error is raised if the file does not exist.
             tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
