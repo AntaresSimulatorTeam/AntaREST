@@ -124,3 +124,20 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/shortTermStorageAdditionalConstraints")
     assert res.status_code == 200
     assert res.json() == {"shortTermStorageAdditionalConstraints": {"be": {}, "fr": {"battery": {"c1": {"1": 2}}}}}
+
+    # Hydro tests
+
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels")
+    assert res.status_code == 200
+    assert res.json() == {"hydroInitialLevels": {"be": {"1": ""}, "fr": {"1": ""}}}
+
+    hydro_scenarios = {"be": {"1": 0.5}}
+    res = client.put(
+        f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels",
+        json={"hydroInitialLevels": hydro_scenarios},
+    )
+    assert res.status_code == 200, res.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/scenariobuilder/hydroInitialLevels")
+    assert res.status_code == 200
+    assert res.json() == {"hydroInitialLevels": {"be": {"1": 0.5}, "fr": {"1": ""}}}
