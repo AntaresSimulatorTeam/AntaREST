@@ -18,7 +18,7 @@ import zipfile
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Sequence, Set
+from typing import Iterable, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -567,11 +567,10 @@ class MatrixService(ISimpleMatrixService):
         matrix = self.get(matrix_id)
         save_matrix(InternalMatrixFormat.TSV, matrix, filepath)
 
-    def get_used_matrices(self) -> Set[MatrixReference]:
+    def get_used_matrices(self) -> Iterable[MatrixReference]:
         """Return all matrices used in raw studies, variant studies, constants hashes and datasets"""
-        return {
-            matrix_reference for provider in self.usage_providers for matrix_reference in provider.get_matrix_usage()
-        }
+        for provider in self.usage_providers:
+            yield from provider.get_matrix_usage()
 
     def _create_dataset_usage_provider(self) -> "IMatrixUsageProvider":
         repo_dataset = self.repo_dataset
@@ -581,15 +580,15 @@ class MatrixService(ISimpleMatrixService):
                 matrix_service.register_usage_provider(self)
 
             @override
-            def get_matrix_usage(self) -> list[MatrixReference]:
+            def get_matrix_usage(self) -> Iterable[MatrixReference]:
                 logger.info("Getting all matrices used in datasets")
                 datasets = repo_dataset.get_all_datasets()
 
-                return [
-                    MatrixReference(matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}")
-                    for dataset in datasets
-                    for matrix in dataset.matrices
-                ]
+                for dataset in datasets:
+                    for matrix in dataset.matrices:
+                        yield MatrixReference(
+                            matrix_id=matrix.matrix_id, use_description=f"Used by dataset {dataset.id}"
+                        )
 
         return DatasetUsageProvider(self)
 
