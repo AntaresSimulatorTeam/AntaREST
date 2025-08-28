@@ -29,7 +29,7 @@ class DistrictUpdate(AntaresBaseModel):
     areas: List[str]
 
 
-class DistrictCreation(DistrictUpdate):
+class DistrictCreation(AntaresBaseModel):
     """
     Represents a creation of a district.
     """
@@ -42,7 +42,7 @@ class DistrictCreation(DistrictUpdate):
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
             schema["example"] = District(
-                name="My Cluster", comments="", areas=["z1", "z2", "z3"], output=True
+                name="My District", comments="", areas=["z1", "z2", "z3"], output=True
             ).model_dump(mode="json")
 
     #: Name of the district (this name is also used as a unique identifier).

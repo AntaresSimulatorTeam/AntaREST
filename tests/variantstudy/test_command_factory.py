@@ -112,7 +112,7 @@ COMMANDS = [
             action=CommandName.CREATE_DISTRICT.value,
             args={
                 "name": "id",
-                "filter_items": ["a"],
+                "areas": ["a"],
                 "output": True,
                 "comments": "",
             },
@@ -529,7 +529,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args={"id": "id", "filter_items": ["a"]},
+            args={"id": "id", "areas": ["a"]},
             study_version=STUDY_VERSION_8_8,
         ),
         None,

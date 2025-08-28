@@ -12,7 +12,7 @@
 
 from typing import List, Optional
 
-from pydantic import field_validator
+from pydantic import computed_field, field_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
@@ -45,7 +45,7 @@ class CreateDistrict(ICommand):
 
     name: str
     base_filter: Optional[DistrictBaseFilter] = None
-    filter_items: Optional[List[str]] = None
+    areas: List[str] = []
     output: bool = True
     comments: str = ""
 
@@ -56,29 +56,24 @@ class CreateDistrict(ICommand):
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def id(self) -> str:
+        return transform_name_to_id(self.name)
+
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        district_id = transform_name_to_id(self.name)
-
-        if study_data.district_exists(district_id):
+        if study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.name}' already exists and could not be created")
 
-        new_district = District.model_validate(
-            {
-                "id": district_id,
-                "name": self.name,
-                "areas": self.filter_items,
-                "output": self.output,
-                "comments": self.comments,
-            }
-        )
+        new_district = District.model_validate(self.model_dump(include={"id", "name", "areas", "output", "comments"}))
 
         try:
             study_data.save_district(new_district, self.base_filter)
         except AreaNotFound as e:
             return command_failed(message=f"Area not found {e}")
 
-        return command_succeeded(message=district_id)
+        return command_succeeded(message=self.id)
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -87,7 +82,7 @@ class CreateDistrict(ICommand):
             args={
                 "name": self.name,
                 "base_filter": self.base_filter.value if self.base_filter else None,
-                "filter_items": self.filter_items,
+                "areas": self.areas,
                 "output": self.output,
                 "comments": self.comments,
             },

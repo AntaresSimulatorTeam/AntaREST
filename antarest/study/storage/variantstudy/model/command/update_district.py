@@ -43,9 +43,12 @@ class UpdateDistrict(ICommand):
 
     id: str
     base_filter: Optional[DistrictBaseFilter] = None
-    filter_items: Optional[List[str]] = None
+    areas: Optional[List[str]] = None
     output: Optional[bool] = None
     comments: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
@@ -55,11 +58,7 @@ class UpdateDistrict(ICommand):
         district = study_data.get_district(self.id)
 
         updated_district = district.model_copy(
-            update={
-                "areas": self.filter_items,
-                "output": self.output,
-                "comments": self.comments,
-            }
+            update=self.model_dump(exclude_none=True, by_alias=True, include={"areas", "output", "comments"})
         )
 
         try:
@@ -76,7 +75,7 @@ class UpdateDistrict(ICommand):
             args={
                 "id": self.id,
                 "base_filter": self.base_filter.value if self.base_filter else None,
-                "filter_items": self.filter_items,
+                "areas": self.areas,
                 "output": self.output,
                 "comments": self.comments,
             },

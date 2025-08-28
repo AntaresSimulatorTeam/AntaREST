@@ -87,7 +87,7 @@ class DistrictManager:
             output=district_creation.output,
             comments=district_creation.comments,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=areas,
+            areas=areas,
             command_context=self._command_context,
             study_version=study.version,
         )
@@ -134,7 +134,7 @@ class DistrictManager:
         command = UpdateDistrict(
             id=district_id,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=district_update.areas,
+            areas=district_update.areas,
             output=district_update.output,
             comments=district_update.comments,
             command_context=self._command_context,

@@ -95,7 +95,7 @@ class TestRemoveArea:
             create_district_command = CreateDistrict(
                 name="foo",
                 base_filter=DistrictBaseFilter.add_all,
-                filter_items=[area_id],
+                areas=[area_id],
                 command_context=command_context,
                 study_version=study_version,
             )
@@ -216,7 +216,7 @@ class TestRemoveArea:
             create_district_command = CreateDistrict(
                 name="foo",
                 base_filter=DistrictBaseFilter.add_all,
-                filter_items=[area_id, area_id2],
+                areas=[area_id, area_id2],
                 command_context=command_context,
                 study_version=study_version,
             )
