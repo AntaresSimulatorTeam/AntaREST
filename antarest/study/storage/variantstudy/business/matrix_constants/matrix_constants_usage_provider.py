@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Iterable
+
 from typing_extensions import TYPE_CHECKING, override
 
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
@@ -25,10 +27,6 @@ class ConstantsMatrixUsageProvider(IMatrixUsageProvider):
         matrix_service.register_usage_provider(self)
 
     @override
-    def get_matrix_usage(self) -> list[MatrixReference]:
-        matrices_references = []
+    def get_matrix_usage(self) -> Iterable[MatrixReference]:
         for value in self.matrix_constants.hashes.values():
-            matrix_reference = MatrixReference(matrix_id=value, use_description="Constant matrix")
-            matrices_references.append(matrix_reference)
-
-        return matrices_references
+            yield MatrixReference(matrix_id=value, use_description="Constant matrix")
