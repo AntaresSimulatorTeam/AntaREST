@@ -12,56 +12,44 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect, useMemo, useState } from "react";
 import { Box } from "@mui/material";
-import SplitView from "../../../../../../../common/SplitView";
+import { useEffect, useMemo, useState } from "react";
 import PropertiesView from "../../../../../../../common/PropertiesView";
+import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
 import {
-  getConfigByScenario,
-  type GenericScenarioConfig,
-  type HandlerReturnTypes,
+  requiresAreaSelection,
+  hasAreaSelection,
+  isLevel2Display,
+  isLevel3Display,
+  type ScenarioData,
   type ScenarioType,
-  type ClustersHandlerReturn,
-  type ScenarioConfig,
-} from "./utils";
+  type ScenarioDisplay,
+} from "./types";
+import { getConfigByScenario } from "./utils";
 
 interface ScenarioTableProps {
   type: ScenarioType;
-  config: ScenarioConfig;
+  config: ScenarioData;
   areaId?: string;
-}
-
-// If the configuration contains areas/clusters.
-function hasAreas(
-  config: HandlerReturnTypes[keyof HandlerReturnTypes],
-): config is ClustersHandlerReturn {
-  return (
-    config !== undefined &&
-    "areas" in config &&
-    Array.isArray(config.areas) &&
-    config.areas.every((area) => typeof area === "string")
-  );
 }
 
 function withAreas(
   Component: React.ComponentType<
     ScenarioTableProps & {
-      config: GenericScenarioConfig | ClustersHandlerReturn;
+      config: ScenarioDisplay;
     }
   >,
 ) {
   return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
-    const [configByArea, setConfigByArea] = useState<GenericScenarioConfig | ClustersHandlerReturn>(
-      {},
-    );
+    const [configByArea, setConfigByArea] = useState<ScenarioDisplay>({});
 
     const scenarioConfig = useMemo(() => getConfigByScenario(config, type), [config, type]);
 
     useEffect(() => {
-      if (scenarioConfig && hasAreas(scenarioConfig)) {
+      if (scenarioConfig && hasAreaSelection(scenarioConfig)) {
         setAreas(scenarioConfig.areas);
 
         // Set selected area ID only if it hasn't been selected yet or current selection is not valid anymore.
@@ -73,8 +61,12 @@ function withAreas(
     }, [scenarioConfig]);
 
     useEffect(() => {
-      if (scenarioConfig && hasAreas(scenarioConfig) && selectedAreaId) {
-        setConfigByArea(scenarioConfig.clusters[selectedAreaId]);
+      if (scenarioConfig && hasAreaSelection(scenarioConfig) && selectedAreaId) {
+        if (isLevel2Display(scenarioConfig)) {
+          setConfigByArea(scenarioConfig.entities[selectedAreaId]);
+        } else if (isLevel3Display(scenarioConfig)) {
+          setConfigByArea(scenarioConfig.flattenedEntities[selectedAreaId]);
+        }
       }
     }, [selectedAreaId, scenarioConfig]);
 
@@ -82,9 +74,9 @@ function withAreas(
     // JSX
     ////////////////////////////////////////////////////////////////
 
-    // The regular case where no clusters nested data.
-    if (!areas.length && scenarioConfig) {
-      return <Component {...props} config={scenarioConfig} type={type} areaId={selectedAreaId} />;
+    // Handle Level 1 scenarios (no area selection needed)
+    if (!requiresAreaSelection(type) && scenarioConfig) {
+      return <Component {...props} config={scenarioConfig} type={type} />;
     }
 
     return (
