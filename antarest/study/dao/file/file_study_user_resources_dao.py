@@ -16,7 +16,7 @@ from typing import Any, cast
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
-from antarest.study.business.model.user_model import ResourceType
+from antarest.study.business.model.user_model import CreateUserResourceData, ResourceType
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
@@ -32,23 +32,23 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         pass
 
     @override
-    def save_user_resource(self, resource_type: ResourceType, resource_path: PurePosixPath) -> None:
-        url = [item for item in resource_path.parts if item]
+    def save_user_resource(self, resource_data: CreateUserResourceData) -> None:
+        url = [item for item in resource_data.path.parts if item]
         study_tree = self.get_file_study().tree
         user_node = cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
-            raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource_path}")
+            raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource_data.path}")
         try:
             study_tree.get_node(["user"] + url)
         except ChildNotFoundError:
             # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-            last_value = b"" if resource_type == ResourceType.FILE else {}
+            last_value = resource_data.content or b"" if resource_data.resource_type == ResourceType.FILE else {}
             nested_dict: dict[str, Any] = {url[-1]: last_value}
             for key in reversed(url[:-1]):
                 nested_dict = {key: nested_dict}
             study_tree.save({"user": nested_dict})
         else:
-            raise ResourceCreationNotAllowed(f"the given resource already exists: {resource_path}")
+            raise ResourceCreationNotAllowed(f"the given resource already exists: {resource_data.path}")
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:

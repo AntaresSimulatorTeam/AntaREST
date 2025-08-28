@@ -10,6 +10,10 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
+from pathlib import PurePosixPath
+from typing import Self
+
+from pydantic import model_validator
 
 from antarest.core.serde import AntaresBaseModel
 
@@ -20,8 +24,15 @@ class ResourceType(StrEnum):
 
 
 class CreateUserResourceData(AntaresBaseModel):
-    path: str
+    path: PurePosixPath
     resource_type: ResourceType
+    content: bytes | None = None
+
+    @model_validator(mode="after")
+    def _validate_coherence(self) -> Self:
+        if self.resource_type == ResourceType.FOLDER and self.content is not None:
+            raise ValueError("You cannot provide a content for a folder")
+        return self
 
 
 class RemoveUserResourceData(AntaresBaseModel):

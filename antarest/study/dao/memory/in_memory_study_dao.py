@@ -41,7 +41,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.user_model import ResourceType
+from antarest.study.business.model.user_model import CreateUserResourceData
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
@@ -152,7 +152,7 @@ class InMemoryStudyDao(StudyDao):
         # Comments
         self._comments = ""
         # User resources
-        self._user_resources: set[PurePosixPath] = set()
+        self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -706,9 +706,9 @@ class InMemoryStudyDao(StudyDao):
         return any(layer.id == layer_id for layer in self._layers)
 
     @override
-    def save_user_resource(self, resource_type: ResourceType, resource_path: PurePosixPath) -> None:
-        self._user_resources.add(resource_path)
+    def save_user_resource(self, resource_data: CreateUserResourceData) -> None:
+        self._user_resources[resource_data.path] = resource_data.content
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
-        self._user_resources.remove(resource_path)
+        del self._user_resources[resource_path]

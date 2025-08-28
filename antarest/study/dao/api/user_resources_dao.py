@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
 
-from antarest.study.business.model.user_model import ResourceType
+from antarest.study.business.model.user_model import CreateUserResourceData
 
 
 class ReadOnlyUserResourcesDao(ABC):
@@ -21,7 +21,7 @@ class ReadOnlyUserResourcesDao(ABC):
 
 class UserResourcesDao(ReadOnlyUserResourcesDao):
     @abstractmethod
-    def save_user_resource(self, resource_type: ResourceType, resource_path: PurePosixPath) -> None:
+    def save_user_resource(self, resource_data: CreateUserResourceData) -> None:
         raise NotImplementedError()
 
     @abstractmethod

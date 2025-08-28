@@ -45,7 +45,7 @@ class CreateUserResource(ICommand):
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         resource_type = self.data.resource_type
         resource_path = PurePosixPath(self.data.path)
-        study_data.save_user_resource(resource_type, resource_path)
+        study_data.save_user_resource(self.data)
         return command_succeeded(message=f"{resource_type} {resource_path} has been successfully created. ")
 
     @override
