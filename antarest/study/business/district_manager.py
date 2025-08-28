@@ -16,8 +16,8 @@ from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, Distric
 from antarest.study.business.model.district_model import (
     District,
     DistrictBaseFilter,
-    DistrictCreationDTO,
-    DistrictUpdateDTO,
+    DistrictCreation,
+    DistrictUpdate,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -45,61 +45,49 @@ class DistrictManager:
         Get the list of districts defined in this study.
 
         Args:
-            study: Study selectinter_daily_breakdowned from the database.
+            study: Study from the database.
 
         Returns:
-            The (unordered) list of Data Transfer Objects (DTO) representing districts.
+            The (unordered) list of districts.
         """
-        # file_study = study.get_files()
-        # all_areas = list(file_study.config.areas)
-        # districts = []
-        # for district_id, district in file_study.config.sets.items():
-        #     assert district.name is not None
-        #     districts.append(
-        #         DistrictInfoDTO(
-        #             id=district_id,
-        #             name=district.name,
-        #             areas=district.get_areas(all_areas),
-        #             output=district.output,
-        #             comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
-        #         )
-        #     )
-        # return districts
         return study.get_study_dao().get_districts()
 
     def create_district(
         self,
         study: StudyInterface,
-        dto: DistrictCreationDTO,
+        district_creation: DistrictCreation,
     ) -> District:
         """
         Create a new district in the study and possibly attach areas to it.
 
         Args:
             study: Study selected from the database.
-            dto: Data Transfer Objects (DTO) used for creation.
+            district_creation: Content of the creation.
 
         Returns:
-            the Data Transfer Objects (DTO) representing the newly created district.
+            The newly created district.
 
         Raises:
             DistrictAlreadyExist: exception raised when district already exists (duplicate).
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
         study_dao = study.get_study_dao()
-        district_id = transform_name_to_id(dto.name)
+        district_id = transform_name_to_id(district_creation.name)
         if study_dao.district_exists(district_id):
             raise DistrictAlreadyExist(district_id)
 
-        # all_areas = frozenset(file_study.config.areas)
-        # if invalid_areas := areas - all_areas:
-        #     raise AreaNotFound(*invalid_areas)
+        areas = list(set(district_creation.areas))  # remove duplicates if any
+
+        invalid_areas = study_dao.get_invalid_areas(areas)
+        if invalid_areas:
+            raise AreaNotFound(*invalid_areas)
+
         command = CreateDistrict(
-            name=dto.name,
-            output=dto.output,
-            comments=dto.comments,
+            name=district_creation.name,
+            output=district_creation.output,
+            comments=district_creation.comments,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=dto.areas,
+            filter_items=areas,
             command_context=self._command_context,
             study_version=study.version,
         )
@@ -107,10 +95,10 @@ class DistrictManager:
         return District.model_validate(
             {
                 "id": district_id,
-                "name": dto.name,
-                "areas": dto.areas,
-                "output": dto.output,
-                "comments": dto.comments,
+                "name": district_creation.name,
+                "areas": areas,
+                "output": district_creation.output,
+                "comments": district_creation.comments,
             }
         )
 
@@ -118,7 +106,7 @@ class DistrictManager:
         self,
         study: StudyInterface,
         district_id: str,
-        dto: DistrictUpdateDTO,
+        district_update: DistrictUpdate,
     ) -> None:
         """
         Update the properties of a district and/or the areas list.
@@ -129,25 +117,26 @@ class DistrictManager:
         Args:
             study: Study selected from the database.
             district_id: district identifier
-            dto: Data Transfer Objects (DTO) used for update.
+            district_update: content of the update.
 
         Raises:
             DistrictNotFound: exception raised when district is not found in the study.
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
-        file_study = study.get_files()
-        if district_id not in file_study.config.sets:
+        study_dao = study.get_study_dao()
+        if not study_dao.district_exists(district_id):
             raise DistrictNotFound(district_id)
-        areas = set(dto.areas or [])
-        all_areas = set(file_study.config.areas)
-        if invalid_areas := areas - all_areas:
+
+        invalid_areas = study_dao.get_invalid_areas(district_update.areas)
+        if invalid_areas:
             raise AreaNotFound(*invalid_areas)
+
         command = UpdateDistrict(
             id=district_id,
             base_filter=DistrictBaseFilter.remove_all,
-            filter_items=dto.areas,
-            output=dto.output,
-            comments=dto.comments,
+            filter_items=district_update.areas,
+            output=district_update.output,
+            comments=district_update.comments,
             command_context=self._command_context,
             study_version=study.version,
         )
@@ -169,7 +158,7 @@ class DistrictManager:
             DistrictNotFound: exception raised when district is not found in the study.
         """
         study_dao = study.get_study_dao()
-        if study_dao.district_exists(district_id):
+        if not study_dao.district_exists(district_id):
             raise DistrictNotFound(district_id)
         command = RemoveDistrict(
             id=district_id,

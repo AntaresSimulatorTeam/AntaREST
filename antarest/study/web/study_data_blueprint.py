@@ -68,8 +68,8 @@ from antarest.study.business.model.config.timeseries_config_model import (
 )
 from antarest.study.business.model.district_model import (
     District,
-    DistrictCreationDTO,
-    DistrictUpdateDTO,
+    DistrictCreation,
+    DistrictUpdate,
 )
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -286,7 +286,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Create a new district in the study",
         response_model=District,
     )
-    def create_district(uuid: str, dto: DistrictCreationDTO) -> District:
+    def create_district(uuid: str, dto: DistrictCreation) -> District:
         logger.info(f"Create district {dto.name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -297,7 +297,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Update the properties of a district",
     )
-    def update_district(uuid: str, district_id: str, dto: DistrictUpdateDTO) -> None:
+    def update_district(uuid: str, district_id: str, dto: DistrictUpdate) -> None:
         logger.info(f"Updating district {district_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

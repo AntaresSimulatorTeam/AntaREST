@@ -9,23 +9,22 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.district_manager import (
-    DistrictCreationDTO,
-    DistrictInfoDTO,
+    DistrictCreation,
     DistrictManager,
-    DistrictUpdateDTO,
+    DistrictUpdate,
 )
-from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet
+from antarest.study.business.model.district_model import District
+from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
+from antarest.study.model import STUDY_VERSION_8_6
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
@@ -44,6 +43,58 @@ def manager(command_context: CommandContext) -> DistrictManager:
     return DistrictManager(command_context)
 
 
+@pytest.fixture
+def study_with_sets(empty_study_880: FileStudy):
+    def dummy_area(name: str):
+        return Area(
+            name=name,
+            links={},
+            thermals=[],
+            renewables=[],
+            filters_synthesis=[],
+            filters_year=[],
+            st_storages=[],
+            st_storages_additional_constraints={},
+        )
+
+    district_ini_content = {
+        "input": {
+            "areas": {
+                # "n1": dummy_area(),
+                # "n2": dummy_area(),
+                # "n3": dummy_area(),
+                "list": ["n1", "n2", "n3"],
+                "sets": {
+                    "d1": {"caption": "D1", "apply-filter": "remove-all", "output": True, "comments": "dummy"},
+                    "d2": {
+                        "caption": "D2",
+                        "apply-filter": "remove-all",
+                        "output": True,
+                        "comments": "dummy",
+                        "+": ["n1", "n2"],
+                    },
+                    "d3": {
+                        "caption": "D2",
+                        "apply-filter": "remove-all",
+                        "output": False,
+                        "comments": "dummy",
+                        "+": ["n1", "n2", "n3"],
+                    },
+                },
+            }
+        }
+    }
+    study = FileStudyInterface(empty_study_880)
+    study.file_study.tree.save(district_ini_content)
+    study.file_study.config.sets = {
+        "d1": DistrictSet(name="D1", areas=[], output=True),
+        "d2": DistrictSet(name="D2", areas=["n1", "n2"], output=True),
+        "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False),
+    }
+    study.file_study.config.areas = {"n1": dummy_area("n1"), "n2": dummy_area("n2"), "n3": dummy_area("n3")}
+    return study
+
+
 def create_study_interface(file_study: FileStudy, version: StudyVersion = STUDY_VERSION_8_6) -> StudyInterface:
     """
     Creates a mock study interface which returns the provided study tree.
@@ -56,43 +107,24 @@ def create_study_interface(file_study: FileStudy, version: StudyVersion = STUDY_
 
 
 class TestDistrictManager:
-    def test_get_districts(self, manager: DistrictManager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {
-            "d1": DistrictSet(name="D1", areas=[], output=True),
-            "d2": DistrictSet(name="D2", areas=["n1", "n2"], output=True),
-            "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False),
-        }
-
-        # mocks
-        file_study_tree = Mock(spec=FileStudyTree)
-        file_study_tree.get.return_value = {"comments": "dummy"}  # same comment for all nodes
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=file_study_tree,
-        )
-        study = create_study_interface(file_study)
-
-        # run
-        actual = manager.get_districts(study)
+    def test_get_districts(self, manager: DistrictManager, study_with_sets: FileStudy):
+        actual = manager.get_districts(study_with_sets)
         expected = [
-            DistrictInfoDTO(
+            District(
                 id="d1",
                 name="D1",
                 areas=[],
                 output=True,
                 comments="dummy",
             ),
-            DistrictInfoDTO(
+            District(
                 id="d2",
                 name="D2",
                 areas=["n1", "n2"],
                 output=True,
                 comments="dummy",
             ),
-            DistrictInfoDTO(
+            District(
                 id="d3",
                 name="D2",
                 areas=["n1", "n2", "n3"],
@@ -102,182 +134,70 @@ class TestDistrictManager:
         ]
         assert actual == expected
 
-    def test_create_district__district_already_exist(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {
-            "d1": DistrictSet(name="D1", areas=[], output=True),
-        }
-
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study)
-
-        # run
-        dto = DistrictCreationDTO(name="d1", output=True, comments="", areas=[])
+    def test_create_district__district_already_exist(self, manager: DistrictManager, study_with_sets: FileStudy):
+        district_creation = DistrictCreation(name="d1", output=True, comments="", areas=[])
         with pytest.raises(DistrictAlreadyExist):
-            manager.create_district(study, dto)
+            manager.create_district(study_with_sets, district_creation)
 
-    def test_create_district__area_not_found(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {}
-
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study)
-
-        # run
-        dto = DistrictCreationDTO(
-            name="d1",
+    def test_create_district__area_not_found(self, manager: DistrictManager, study_with_sets: FileStudy):
+        district_creation = DistrictCreation(
+            name="d4",
             output=True,
             comments="",
             areas=["n2", "MISSING"],
         )
         with pytest.raises(AreaNotFound, match=r"MISSING"):
-            manager.create_district(study, dto)
+            manager.create_district(study_with_sets, district_creation)
 
-    def test_create_district__nominal(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {
-            "all areas": DistrictSet(name="All areas", areas=["n1", "n2", "n3"], output=False),
-        }
+    def test_create_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudy):
+        with patch.object(study_with_sets, "add_commands", wraps=study_with_sets.add_commands) as add_commands_mock:
+            dto = DistrictCreation(
+                name="D4",
+                output=True,
+                comments="hello",
+                areas=["n1", "n2", "n2"],  # areas can have duplicates
+            )
+            actual = manager.create_district(study_with_sets, dto)
+            expected = District(
+                id="d4",
+                name="D4",
+                areas=["n1", "n2"],
+                output=True,
+                comments="hello",
+            )
+            actual.areas.sort()
+            assert actual == expected
+            _check_add_commands(add_commands_mock, CreateDistrict)
 
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        file_study.config.version = STUDY_VERSION_8_8
-        study = create_study_interface(file_study, version=STUDY_VERSION_8_8)
-
-        # run
-        dto = DistrictCreationDTO(
-            name="D1",
-            output=True,
-            comments="hello",
-            areas=["n1", "n2", "n2"],  # areas can have duplicates
-        )
-        actual = manager.create_district(study, dto)
-        expected = DistrictInfoDTO(
-            id="d1",
-            name="D1",
-            areas=["n1", "n2"],
-            output=True,
-            comments="hello",
-        )
-        actual.areas.sort()
-        assert actual == expected
-        _check_add_commands(study.add_commands, CreateDistrict)
-
-    def test_update_district__district_not_found(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {}
-
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study, version=STUDY_VERSION_8_8)
-
-        # run
-        dto = DistrictUpdateDTO(output=True, comments="", areas=[])
+    def test_update_district__district_not_found(self, manager: DistrictManager, study_with_sets: FileStudy):
+        dto = DistrictUpdate(output=True, comments="", areas=[])
         with pytest.raises(DistrictNotFound, match="MISSING"):
-            manager.update_district(study, "MISSING", dto)
+            manager.update_district(study_with_sets, "MISSING", dto)
 
-    def test_update_district__area_not_found(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {
-            "d1": DistrictSet(name="D1", areas=["n1", "n2", "n3"], output=False),
-        }
-
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study, version=STUDY_VERSION_8_8)
-
-        # run
-        dto = DistrictUpdateDTO(
+    def test_update_district__area_not_found(self, manager: DistrictManager, study_with_sets: FileStudy):
+        dto = DistrictUpdate(
             output=True,
             comments="",
             areas=["n2", "MISSING"],
         )
         with pytest.raises(AreaNotFound, match=r"MISSING"):
-            manager.update_district(study, "d1", dto)
+            manager.update_district(study_with_sets, "d1", dto)
 
-    def test_update_district__nominal(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {
-            "d1": DistrictSet(name="D1", areas=["n1", "n2", "n3"], output=False),
-        }
+    def test_update_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudy):
+        with patch.object(study_with_sets, "add_commands", wraps=study_with_sets.add_commands) as add_commands_mock:
+            dto = DistrictUpdate(
+                output=True,
+                comments="",
+                areas=["n2", "n3"],
+            )
+            manager.update_district(study_with_sets, "d1", dto)
+            _check_add_commands(add_commands_mock, UpdateDistrict)
 
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study, version=STUDY_VERSION_8_8)
-
-        # run
-        dto = DistrictUpdateDTO(
-            output=True,
-            comments="",
-            areas=["n2", "n3"],
-        )
-        manager.update_district(study, "d1", dto)
-        _check_add_commands(study.add_commands, UpdateDistrict)
-
-    def test_remove_district__district_not_found(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {}
-
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study, version=STUDY_VERSION_8_8)
-
-        # run
+    def test_remove_district__district_not_found(self, manager: DistrictManager, study_with_sets: FileStudy):
         with pytest.raises(DistrictNotFound, match="MISSING"):
-            manager.remove_district(study, district_id="MISSING")
+            manager.remove_district(study_with_sets, district_id="MISSING")
 
-    def test_remove_district__nominal(self, manager):
-        # prepare data
-        areas = dict.fromkeys(["n1", "n2", "n3"])
-        sets = {
-            "d1": DistrictSet(name="D1", areas=["n1", "n2", "n3"], output=False),
-        }
-
-        # mocks
-        file_study = Mock(
-            spec=FileStudy,
-            config=Mock(areas=areas, sets=sets),
-            tree=Mock(spec=FileStudyTree),
-        )
-        study = create_study_interface(file_study, version=STUDY_VERSION_8_8)
-
-        # run
-        manager.remove_district(study, district_id="d1")
-        _check_add_commands(study.add_commands, RemoveDistrict)
+    def test_remove_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudy):
+        with patch.object(study_with_sets, "add_commands", wraps=study_with_sets.add_commands) as add_commands_mock:
+            manager.remove_district(study_with_sets, district_id="d1")
+            _check_add_commands(add_commands_mock, RemoveDistrict)

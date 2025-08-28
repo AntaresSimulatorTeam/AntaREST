@@ -37,7 +37,7 @@ class FileStudyDistrictDao(DistrictDao):
     @override
     def get_districts(self) -> Sequence[District]:
         """
-        Returns for each area id, a mapping of a cluster id (in lower case) towards the corresponding cluster object.
+        Returns all districts of the study.
         """
         file_study = self.get_file_study()
         path = DISTRICTS_PATH
@@ -56,7 +56,7 @@ class FileStudyDistrictDao(DistrictDao):
     @override
     def get_district(self, district_id: str) -> District:
         """
-        Returns for each area id, a mapping of a cluster id (in lower case) towards the corresponding cluster object.
+        Returns the district with the given district id.
         """
         study_data = self.get_file_study()
         path = DISTRICTS_PATH + [district_id]
@@ -71,15 +71,24 @@ class FileStudyDistrictDao(DistrictDao):
 
     @override
     def district_exists(self, district_id: str) -> bool:
+        """
+        Returns whether a district with the given id exists in the study.
+        """
         study_data = self.get_file_study()
         return district_id in study_data.config.sets
 
     @override
     def save_district(self, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> None:
+        """
+        Save a new district to a study.
+
+        If the district already exists, it will be overwritten.
+
+        Depending on the `district_base_filter`, the areas in the district will be stored under the key "+" or "-".
+        """
         study_data = self.get_file_study()
-        areas = set(district.areas or [])
-        all_areas = set(study_data.config.areas)
-        if invalid_areas := areas - all_areas:
+        invalid_areas = self.get_invalid_areas(district.areas)
+        if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
         district_id = transform_name_to_id(district.name)
@@ -100,13 +109,6 @@ class FileStudyDistrictDao(DistrictDao):
         self, district_id: str, district: District, district_base_filter: Optional[DistrictBaseFilter]
     ) -> Literal["+", "-"]:
         study_data = self.get_file_study()
-
-        # if district_id in study_data.config.sets:
-        #     return (
-        #         command_failed(message=f"District '{self.name}' already exists and could not be created"),
-        #         dict(),
-        #     )
-
         base_filter = district_base_filter or DistrictBaseFilter.remove_all
         inverted_set = base_filter == DistrictBaseFilter.add_all
         study_data.config.sets[district_id] = DistrictSet(
@@ -115,11 +117,6 @@ class FileStudyDistrictDao(DistrictDao):
             output=district.output,
             inverted_set=inverted_set,
         )
-        # return command_succeeded(message=district_id), {
-        #     "district_id": district_id,
-        #     "item_key": item_key,
-        # }
-
         return "-" if inverted_set else "+"
 
     @override
@@ -129,13 +126,20 @@ class FileStudyDistrictDao(DistrictDao):
     ) -> None:
         """
         Remove a district from a study.
-
-        Args:
-            district_id: district identifier
-
-        Raises:
-            DistrictNotFound: exception raised when district is not found in the study.
         """
         study_data = self.get_file_study()
         study_data.tree.delete(["input", "areas", "sets", district_id])
         del study_data.config.sets[district_id]
+
+    @override
+    def get_invalid_areas(self, areas: list[str]) -> list[str]:
+        """
+        Check all areas exists in the study.
+
+        TODO this method should be moved to the area DAO when we'll implement it
+        """
+        areas_set = set(areas)
+        study_data = self.get_file_study()
+        all_areas = set(study_data.config.areas)
+        invalid_areas = areas_set - all_areas
+        return list(invalid_areas)

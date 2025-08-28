@@ -692,3 +692,8 @@ class InMemoryStudyDao(StudyDao):
     @override
     def remove_district(self, district_id: str) -> None:
         del self._districts[district_id]
+
+    @override
+    def get_invalid_areas(self, areas: list[str]) -> list[str]:
+        # TODO implement this when we implement area DAO
+        raise NotImplementedError()

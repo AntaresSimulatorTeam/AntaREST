@@ -373,3 +373,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def district_exists(self, district_id: str) -> bool:
         return self._adaptee.district_exists(district_id)
+
+    @override
+    def get_invalid_areas(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_areas(areas)

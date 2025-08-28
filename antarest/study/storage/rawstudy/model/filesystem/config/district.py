@@ -44,7 +44,7 @@ def parse_district(district_id: str, data: Any, all_areas: List[str]) -> Distric
             "name": data["caption"],
             "areas": get_areas(inverted_set, all_areas, areas),
             "output": data["output"],
-            "comments": data.get("comment", ""),
+            "comments": data.get("comments", ""),
         }
     )
 

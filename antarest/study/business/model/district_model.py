@@ -1,13 +1,25 @@
 from enum import Enum
-from typing import List
+from typing import Any, List, MutableMapping
 
-from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 
 
-class DistrictUpdateDTO(AntaresBaseModel):
+class DistrictUpdate(AntaresBaseModel):
+    """
+    Represents an update of a district.
+    """
+
+    class Config:
+        alias_generator = to_camel
+        extra = "forbid"
+        populate_by_name = True
+
+        @staticmethod
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = District(comments="", areas=["z1", "z2", "z3"], output=True).model_dump(mode="json")
+
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
     output: bool
@@ -17,14 +29,31 @@ class DistrictUpdateDTO(AntaresBaseModel):
     areas: List[str]
 
 
-class DistrictCreationDTO(DistrictUpdateDTO):
+class DistrictCreation(DistrictUpdate):
+    """
+    Represents a creation of a district.
+    """
+
+    class Config:
+        alias_generator = to_camel
+        extra = "forbid"
+        populate_by_name = True
+
+        @staticmethod
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = District(
+                name="My Cluster", comments="", areas=["z1", "z2", "z3"], output=True
+            ).model_dump(mode="json")
+
     #: Name of the district (this name is also used as a unique identifier).
     name: str
-
-
-class DistrictInfoDTO(DistrictCreationDTO):
-    #: District identifier (based on the district name)
-    id: str
+    #: Indicates whether this district is used in the output (usually all
+    #: districts are visible, but the user can decide to hide some of them).
+    output: bool
+    #: User-defined comments.
+    comments: str = ""
+    #: List of areas that will be grouped in the district.
+    areas: List[str]
 
 
 class DistrictBaseFilter(Enum):
@@ -32,11 +61,21 @@ class DistrictBaseFilter(Enum):
     remove_all = "remove-all"
 
 
-# classe DistrictCreate
-
-
 class District(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+    """
+    District model.
+    """
+
+    class Config:
+        alias_generator = to_camel
+        extra = "forbid"
+        populate_by_name = True
+
+        @staticmethod
+        def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
+            schema["example"] = District(
+                id="my-cluster", name="My Cluster", comments="", areas=["z1", "z2", "z3"], output=True
+            ).model_dump(mode="json")
 
     #: District identifier (based on the district name)
     id: str
