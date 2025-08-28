@@ -339,13 +339,13 @@ class ResourceDeletionNotAllowed(HTTPException):
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 
-class FolderCreationNotAllowed(HTTPException):
+class ResourceCreationNotAllowed(HTTPException):
     """
-    Exception raised when creating a folder which isn't inside the 'User' folder.
+    Exception raised when creating a resource which isn't inside the 'User' folder.
     """
 
     def __init__(self, message: str) -> None:
-        msg = f"Folder creation failed because {message}"
+        msg = f"Resource creation failed because {message}"
         super().__init__(HTTPStatus.FORBIDDEN, msg)
 
 

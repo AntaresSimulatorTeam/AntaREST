@@ -494,7 +494,7 @@ class TestFetchRawData:
         expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
         res = client.put(raw_url, params={"path": wrong_folder, **additional_params})
         assert res.status_code == 403
-        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
         # try to create a folder inside the 'expansion` folder
@@ -502,14 +502,14 @@ class TestFetchRawData:
         expected_msg = "Folder creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
         assert res.status_code == 403
-        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
         # try to create an already existing folder
         existing_folder = "user/folder_1"
         expected_msg = "the given resource already exists: folder_1"
         res = client.put(raw_url, params={"path": existing_folder, **additional_params})
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
+        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceCreationNotAllowed")
 
     def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
         # client headers

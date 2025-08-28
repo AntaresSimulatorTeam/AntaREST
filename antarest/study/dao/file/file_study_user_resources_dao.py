@@ -15,7 +15,7 @@ from typing import Any, cast
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ResourceDeletionNotAllowed
+from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
 from antarest.study.business.model.user_model import ResourceType
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -37,7 +37,7 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         study_tree = self.get_file_study().tree
         user_node = cast(User, study_tree.get_node(["user"]))
         if not is_url_writeable(user_node, url):
-            raise ResourceDeletionNotAllowed(f"you are not allowed to create a resource here: {resource_path}")
+            raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource_path}")
         try:
             study_tree.get_node(["user"] + url)
         except ChildNotFoundError:
@@ -48,7 +48,7 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
                 nested_dict = {key: nested_dict}
             study_tree.save({"user": nested_dict})
         else:
-            raise ResourceDeletionNotAllowed(f"the given resource already exists: {resource_path}")
+            raise ResourceCreationNotAllowed(f"the given resource already exists: {resource_path}")
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:

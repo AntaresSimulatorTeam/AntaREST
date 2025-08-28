@@ -33,12 +33,12 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    FolderCreationNotAllowed,
     IncorrectArgumentsForCopy,
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
     ReferencedObjectDeletionNotAllowed,
+    ResourceCreationNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -186,7 +186,7 @@ def get_disk_usage(path: str | Path) -> int:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed]
+    path: str, exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -1435,7 +1435,7 @@ class StudyService:
         create_missing &= not file_path.exists()
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
-            user_path = _get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
+            user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
             args = {"path": user_path, "resource_type": ResourceType.FILE}
             command_data = CreateUserResourceData.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
@@ -2296,21 +2296,21 @@ class StudyService:
             path: Path corresponding to the resource to be deleted
 
         Raises:
-            FolderCreationNotAllowed: if the path does not comply with the above rules
+            ResourceCreationNotAllowed: if the path does not comply with the above rules
         """
         args = {
-            "path": _get_path_inside_user_folder(path, FolderCreationNotAllowed),
+            "path": _get_path_inside_user_folder(path, ResourceCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
         }
         command_data = CreateUserResourceData.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
         command_data: CreateUserResourceData | RemoveUserResourceData,
         command_class: Type[CreateUserResource | RemoveUserResource],
-        exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
+        exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
