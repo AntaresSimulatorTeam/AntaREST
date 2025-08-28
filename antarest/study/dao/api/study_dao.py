@@ -22,6 +22,7 @@ from antarest.study.business.model.config.advanced_parameters_model import Advan
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -45,6 +46,7 @@ from antarest.study.dao.api.adequacy_patch_parameters_dao import (
 )
 from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -77,6 +79,7 @@ class ReadOnlyStudyDao(
     ReadOnlyAdequacyPatchParametersDao,
     ReadOnlyTimeSeriesConfigDao,
     ReadOnlyLayerDao,
+    ReadOnlyDistrictDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -103,6 +106,7 @@ class StudyDao(
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
     LayerDao,
+    DistrictDao,
 ):
     """
     Abstraction for access to study data. Handles all reading

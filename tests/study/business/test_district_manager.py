@@ -48,10 +48,43 @@ def create_study_interface(file_study: FileStudy, version: StudyVersion = STUDY_
     """
     Creates a mock study interface which returns the provided study tree.
     """
+    from antarest.study.business.model.district_model import District
+    
     study = Mock(StudyInterface)
     study.get_files.return_value = file_study
     study.version = version
     file_study.config.version = version
+    
+    # Mock the DAO
+    mock_dao = Mock()
+    # Convert sets from file_study to districts for DAO
+    districts = []
+    for district_id, district_set in file_study.config.sets.items():
+        all_areas = list(file_study.config.areas.keys())
+        # Safely get comments, defaulting to empty string for mocked tree
+        try:
+            if hasattr(file_study.tree, 'get') and callable(file_study.tree.get):
+                comments_dict = file_study.tree.get(["input", "areas", "sets", district_id])
+                comments = comments_dict.get("comments", "") if isinstance(comments_dict, dict) else ""
+            else:
+                comments = ""
+        except:
+            comments = ""
+            
+        districts.append(
+            District(
+                id=district_id,
+                name=district_set.name,
+                areas=district_set.get_areas(all_areas),
+                output=district_set.output,
+                comments=comments,
+            )
+        )
+    
+    mock_dao.get_districts.return_value = districts
+    mock_dao.district_exists = lambda district_id: district_id in file_study.config.sets
+    study.get_study_dao.return_value = mock_dao
+    
     return study
 
 

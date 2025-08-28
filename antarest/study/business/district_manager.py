@@ -45,21 +45,17 @@ class DistrictManager:
         Returns:
             The (unordered) list of Data Transfer Objects (DTO) representing districts.
         """
-        file_study = study.get_files()
-        all_areas = list(file_study.config.areas)
-        districts = []
-        for district_id, district in file_study.config.sets.items():
-            assert district.name is not None
-            districts.append(
-                DistrictInfoDTO(
-                    id=district_id,
-                    name=district.name,
-                    areas=district.get_areas(all_areas),
-                    output=district.output,
-                    comments=file_study.tree.get(["input", "areas", "sets", district_id]).get("comments", ""),
-                )
+        districts = study.get_study_dao().get_districts()
+        return [
+            DistrictInfoDTO(
+                id=district.id,
+                name=district.name,
+                areas=district.areas,
+                output=district.output,
+                comments=district.comments,
             )
-        return districts
+            for district in districts
+        ]
 
     def create_district(
         self,
@@ -80,10 +76,11 @@ class DistrictManager:
             DistrictAlreadyExist: exception raised when district already exists (duplicate).
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
-        file_study = study.get_files()
         district_id = transform_name_to_id(dto.name)
-        if district_id in file_study.config.sets:
+        if study.get_study_dao().district_exists(district_id):
             raise DistrictAlreadyExist(district_id)
+        
+        file_study = study.get_files()
         areas = frozenset(dto.areas or [])
         all_areas = frozenset(file_study.config.areas)
         if invalid_areas := areas - all_areas:
@@ -127,9 +124,10 @@ class DistrictManager:
             DistrictNotFound: exception raised when district is not found in the study.
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
-        file_study = study.get_files()
-        if district_id not in file_study.config.sets:
+        if not study.get_study_dao().district_exists(district_id):
             raise DistrictNotFound(district_id)
+        
+        file_study = study.get_files()
         areas = set(dto.areas or [])
         all_areas = set(file_study.config.areas)
         if invalid_areas := areas - all_areas:
@@ -160,8 +158,7 @@ class DistrictManager:
         Raises:
             DistrictNotFound: exception raised when district is not found in the study.
         """
-        file_study = study.get_files()
-        if district_id not in file_study.config.sets:
+        if not study.get_study_dao().district_exists(district_id):
             raise DistrictNotFound(district_id)
         command = RemoveDistrict(
             id=district_id,
