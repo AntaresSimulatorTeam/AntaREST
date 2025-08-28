@@ -56,47 +56,6 @@ class CreateDistrict(ICommand):
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    # def update_in_config(self, study_data: FileStudyTreeConfig) -> Tuple[CommandOutput, Dict[str, Any]]:
-    #     district_id = transform_name_to_id(self.name)
-    #     if district_id in study_data.sets:
-    #         return (
-    #             command_failed(message=f"District '{self.name}' already exists and could not be created"),
-    #             dict(),
-    #         )
-
-    #     base_filter = self.base_filter or DistrictBaseFilter.remove_all
-    #     inverted_set = base_filter == DistrictBaseFilter.add_all
-    #     study_data.sets[district_id] = DistrictSet(
-    #         name=self.name,
-    #         areas=self.filter_items or [],
-    #         output=self.output,
-    #         inverted_set=inverted_set,
-    #     )
-    #     item_key = "-" if inverted_set else "+"
-    #     return command_succeeded(message=district_id), {
-    #         "district_id": district_id,
-    #         "item_key": item_key,
-    #     }
-
-    # @override
-    # def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-    #     output, data = self.update_in_config(study_data.config)
-    #     if not output.status:
-    #         return output
-    #     district_id = data["district_id"]
-    #     item_key = data["item_key"]
-    #     study_data.tree.save(
-    #         {
-    #             "caption": self.name,
-    #             "apply-filter": (self.base_filter or DistrictBaseFilter.remove_all).value,
-    #             item_key: self.filter_items or [],
-    #             "output": study_data.config.sets[district_id].output,
-    #             "comments": self.comments,
-    #         },
-    #         ["input", "areas", "sets", district_id],
-    #     )
-    #     return command_succeeded(message=district_id)
-
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         district_id = transform_name_to_id(self.name)

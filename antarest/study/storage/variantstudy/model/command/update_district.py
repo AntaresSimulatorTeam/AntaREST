@@ -47,49 +47,6 @@ class UpdateDistrict(ICommand):
     output: Optional[bool] = None
     comments: Optional[str] = None
 
-    # def update_in_config(self, study_data: FileStudyTreeConfig) -> Dict[str, Any]:
-    #     base_set = study_data.sets[self.id]
-
-    #     if self.base_filter:
-    #         inverted_set = self.base_filter == DistrictBaseFilter.add_all
-    #     else:
-    #         inverted_set = base_set.inverted_set
-    #     study_data.sets[self.id].areas = self.filter_items or base_set.areas
-    #     study_data.sets[self.id].output = self.output if self.output is not None else base_set.output
-    #     study_data.sets[self.id].inverted_set = inverted_set
-
-    #     item_key = "-" if inverted_set else "+"
-    #     return {
-    #         "district_id": self.id,
-    #         "item_key": item_key,
-    #     }
-
-    # @override
-    # def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-    #     if self.id not in study_data.config.sets:
-    #         return command_failed(message=f"District '{self.id}' does not exist and should be created")
-
-    #     data = self.update_in_config(study_data.config)
-
-    #     sets = study_data.tree.get(["input", "areas", "sets"])
-    #     district_id = data["district_id"]
-    #     item_key = data["item_key"]
-    #     apply_filter = (
-    #         self.base_filter.value if self.base_filter else sets.get("apply-filter", DistrictBaseFilter.remove_all)
-    #     )
-    #     study_data.tree.save(
-    #         {
-    #             "caption": sets[district_id]["caption"],
-    #             "apply-filter": apply_filter,
-    #             item_key: self.filter_items,
-    #             "output": study_data.config.sets[district_id].output,
-    #             "comments": self.comments,
-    #         },
-    #         ["input", "areas", "sets", district_id],
-    #     )
-
-    #     return command_succeeded(message=self.id)
-
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         if not study_data.district_exists(self.id):
