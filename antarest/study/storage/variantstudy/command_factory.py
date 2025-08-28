@@ -60,6 +60,7 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
     ReplaceXpansionCandidate,
@@ -72,7 +73,6 @@ from antarest.study.storage.variantstudy.model.command.update_area_ui import Upd
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command.update_binding_constraint import UpdateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
@@ -130,7 +130,8 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.UPDATE_INFLOW_STRUCTURE.value: UpdateInflowStructure,
     CommandName.REPLACE_MATRIX.value: ReplaceMatrix,
     CommandName.UPDATE_CONFIG.value: UpdateConfig,
-    CommandName.UPDATE_COMMENTS.value: UpdateComments,
+    CommandName.UPDATE_COMMENTS.value: ReplaceComments,
+    CommandName.REPLACE_COMMENTS.value: ReplaceComments,
     CommandName.UPDATE_FILE.value: UpdateRawFile,
     CommandName.UPDATE_DISTRICT.value: UpdateDistrict,
     CommandName.UPDATE_PLAYLIST.value: UpdatePlaylist,

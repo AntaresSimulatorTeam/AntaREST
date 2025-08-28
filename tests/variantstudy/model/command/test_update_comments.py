@@ -13,7 +13,7 @@
 import pytest
 
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -23,7 +23,7 @@ def test_update_comments(empty_study_870: FileStudy, command_context: CommandCon
     study_version = empty_study_870.config.version
     comments = "comments"
 
-    update_comments_command = UpdateComments(
+    update_comments_command = ReplaceComments(
         comments=comments, command_context=command_context, study_version=study_version
     )
     output = update_comments_command.apply(empty_study_870)

@@ -85,6 +85,10 @@ class ReadOnlyStudyDao(
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_comments(self) -> str:
+        raise NotImplementedError()
+
 
 class StudyDao(
     ReadOnlyStudyDao,
@@ -123,6 +127,10 @@ class StudyDao(
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def save_comments(self, comments: str) -> None:
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
@@ -135,6 +143,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_version(self) -> StudyVersion:
         return self._adaptee.get_version()
+
+    @override
+    def get_comments(self) -> str:
+        return self._adaptee.get_comments()
 
     @override
     def get_links(self) -> Sequence[Link]:

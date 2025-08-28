@@ -148,6 +148,8 @@ class InMemoryStudyDao(StudyDao):
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
         # Layer
         self._layers: list[Layer] = []
+        # Comments
+        self._comments = ""
         # Playlist config
         self._playlist_config = Playlist()
 
@@ -157,6 +159,14 @@ class InMemoryStudyDao(StudyDao):
         To ease transition, to be removed when all goes through other methods
         """
         raise NotImplementedError()
+
+    @override
+    def get_comments(self) -> str:
+        return self._comments
+
+    @override
+    def save_comments(self, comments: str) -> None:
+        self._comments = comments
 
     @override
     def get_version(self) -> StudyVersion:

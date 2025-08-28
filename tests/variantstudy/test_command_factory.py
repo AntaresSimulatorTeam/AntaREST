@@ -34,9 +34,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_AREA.value,
-            args={"area_name": "area_name"},
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
         ),
         None,
         id="create_area",
@@ -44,10 +42,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_AREA.value,
-            args=[
-                {"area_name": "area_name"},
-                {"area_name": "area2"},
-            ],
+            args=[{"area_name": "area_name"}, {"area_name": "area2"}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -68,12 +63,7 @@ COMMANDS = [
             args={
                 "area_id": "id",
                 "area_ui": UpdateAreaUi(
-                    x=100,
-                    y=100,
-                    color_rgb=(100, 100, 100),
-                    layer_x={},
-                    layer_y={},
-                    layer_color={},
+                    x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}
                 ),
                 "layer": "0",
             },
@@ -83,20 +73,12 @@ COMMANDS = [
         id="update_area_ui",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_AREA.value,
-            args={"id": "id"},
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
         None,
         id="remove_area",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_AREA.value,
-            args=[{"id": "id"}],
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
         None,
         id="remove_area2",
     ),
@@ -111,9 +93,7 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.REMOVE_LAYER.value,
-            args={"layer_id": "layer_id"},
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.REMOVE_LAYER.value, args={"layer_id": "layer_id"}, study_version=STUDY_VERSION_8_8
         ),
         None,
         id="remove_layer",
@@ -158,20 +138,12 @@ COMMANDS = [
         id="create_district_list",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_DISTRICT.value,
-            args={"id": "id"},
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
         None,
         id="remove_district",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_DISTRICT.value,
-            args=[{"id": "id"}],
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
         None,
         id="remove_district_list",
     ),
@@ -227,10 +199,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args={
-                "area1": "area1",
-                "area2": "area2",
-            },
+            args={"area1": "area1", "area2": "area2"},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -239,12 +208,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args=[
-                {
-                    "area1": "area1",
-                    "area2": "area2",
-                }
-            ],
+            args=[{"area1": "area1", "area2": "area2"}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -327,17 +291,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
-            args=[
-                {
-                    "bc_props_by_id": {
-                        "id": {
-                            "enabled": True,
-                            "time_step": "hourly",
-                            "operator": "equal",
-                        }
-                    }
-                }
-            ],
+            args=[{"bc_props_by_id": {"id": {"enabled": True, "time_step": "hourly", "operator": "equal"}}}],
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
@@ -414,11 +368,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
-            args=[
-                {
-                    "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
-                }
-            ],
+            args=[{"cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}}}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -476,22 +426,13 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
             version=3,
-            args=[
-                {
-                    "area_id": "area_name",
-                    "parameters": {"name": "cluster_name", "enabled": False, "unitCount": 4},
-                }
-            ],
+            args=[{"area_id": "area_name", "parameters": {"name": "cluster_name", "enabled": False, "unitCount": 4}}],
             study_version=STUDY_VERSION_8_8,
         ),
         [
             {
                 "area_id": "area_name",
-                "parameters": {
-                    "enabled": False,
-                    "name": "cluster_name",
-                    "unitCount": 4,
-                },
+                "parameters": {"enabled": False, "name": "cluster_name", "unitCount": 4},
             }
         ],
         id="create_renewables_cluster_list",
@@ -561,21 +502,17 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_COMMENTS.value,
-            args={"comments": "comments"},
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.REPLACE_COMMENTS.value, args={"comments": "comments"}, study_version=STUDY_VERSION_8_8
         ),
         None,
-        id="update_comments",
+        id="replace_comments",
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_COMMENTS.value,
-            args=[{"comments": "comments"}],
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.REPLACE_COMMENTS.value, args=[{"comments": "comments"}], study_version=STUDY_VERSION_8_8
         ),
         None,
-        id="update_comments_list",
+        id="replace_comments_list",
     ),
     pytest.param(
         CommandDTO(
@@ -1393,6 +1330,21 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
             }
         }
     }
+
+
+def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_COMMENTS.value,
+        args={"comments": "new comment"},
+        study_version=STUDY_VERSION_8_6,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "replace_comments"
+    assert dto.version == 1
+    assert dto.args == {"comments": "new comment"}
 
 
 def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):

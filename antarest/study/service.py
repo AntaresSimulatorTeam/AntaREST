@@ -105,7 +105,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
-    CommentsDto,
     MatrixIndex,
     RawStudy,
     Study,
@@ -155,8 +154,8 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
     RemoveUserResourceData,
 )
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -622,7 +621,7 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str) -> str | JSON:
+    def get_comments(self, study_id: str) -> str:
         """
         Get the comments of a study.
 
@@ -634,20 +633,15 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
+        return self.get_study_interface(study).get_study_dao().get_comments()
 
-        with contextlib.suppress(AttributeError, UnicodeDecodeError):
-            output = output.decode("utf-8")  # type: ignore
-
-        return output
-
-    def edit_comments(self, uuid: str, data: CommentsDto) -> None:
+    def set_comments(self, uuid: str, comments: str) -> None:
         """
         Replace data inside study.
 
         Args:
             uuid: study id
-            data: new data to replace
+            comments: new comments to replace
 
         Returns: new data replaced
 
@@ -656,19 +650,14 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        if isinstance(study, RawStudy):
-            self.edit_study(uuid=uuid, url="settings/comments", new=bytes(data.comments, "utf-8"))
-        else:
-            variant_study_service = self.storage_service.variant_study_service
-            command = [
-                UpdateRawFile(
-                    target="settings/comments",
-                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
-                    command_context=variant_study_service.command_factory.command_context,
-                    study_version=study.version,
-                )
-            ]
-            variant_study_service.append_commands(study.id, transform_command_to_dto(command, force_aggregate=True))
+        study_interface = self.get_study_interface(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = ReplaceComments(
+            comments=comments,
+            study_version=study_interface.version,
+            command_context=command_context,
+        )
+        study_interface.add_commands([command])
 
     def get_studies_information(
         self,
@@ -1406,7 +1395,7 @@ class StudyService:
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(comments=data, command_context=context, study_version=study_version)
+                return ReplaceComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,

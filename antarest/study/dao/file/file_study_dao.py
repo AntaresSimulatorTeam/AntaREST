@@ -69,3 +69,13 @@ class FileStudyTreeDao(
     @override
     def get_version(self) -> StudyVersion:
         return self._file_study.config.version
+
+    @override
+    def get_comments(self) -> str:
+        content = self._file_study.tree.get(["settings", "comments"])
+        assert isinstance(content, bytes)
+        return content.decode("utf-8")
+
+    @override
+    def save_comments(self, comments: str) -> None:
+        self._file_study.tree.save({"settings": {"comments": comments.encode("utf-8")}})
