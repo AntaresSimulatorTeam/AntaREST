@@ -181,8 +181,8 @@ _SPECIFIC_MATRICES_9_2 = copy.deepcopy(_SPECIFIC_MATRICES_8_7)
 
 _SPECIFIC_MATRICES_9_2["input/hydro/series/*/maxHourlyGenPower"] = _MatrixProfile(cols=[], rows=[])
 _SPECIFIC_MATRICES_9_2["input/hydro/series/*/maxHourlyPumpPower"] = _MatrixProfile(cols=[], rows=[])
-_SPECIFIC_MATRICES_9_2["input/hydro/series/*/maxDailyReservoirLevels"] = _MatrixProfile(cols=[], rows=[])
-_SPECIFIC_MATRICES_9_2["input/hydro/series/*/minDailyReservoirLevels"] = _MatrixProfile(cols=[], rows=[])
+_SPECIFIC_MATRICES_9_2["input/hydro/common/capacity/maxDailyGenEnergy_*"] = _MatrixProfile(cols=[], rows=[])
+_SPECIFIC_MATRICES_9_2["input/hydro/common/capacity/maxDailyPumpEnergy_*"] = _MatrixProfile(cols=[], rows=[])
 
 
 def adjust_matrix_columns_index(

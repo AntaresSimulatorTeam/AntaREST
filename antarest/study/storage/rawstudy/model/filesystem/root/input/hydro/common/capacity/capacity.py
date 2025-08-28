@@ -92,19 +92,18 @@ MATRICES_INFO: List[MatrixInfo] = [
         "freq": MatrixFrequency.HOURLY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_scenario_hourly,
-    },
-    {
-        "name": "maxDailyReservoirLevels",
+    },{
+        "name" : "maxDailyPumpEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_scenario_daily,
-    },
-    {
-        "name": "minDailyReservoirLevels",
+    },{
+        "name" : "maxDailyGenEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,
         "default_empty": default_scenario_daily,
     }
+
 ]
 
 

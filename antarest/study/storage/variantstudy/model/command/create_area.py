@@ -262,17 +262,31 @@ class CreateArea(ICommand):
             new_area_data["input"]["hydro"]["series"][area_id]["mingen"] = null_matrix
 
         if version >= STUDY_VERSION_9_2:
+
+            maxHourlyGenPower = self.command_context.generator_matrix_constants.get_hydro_max_hourly_gen_power()
+            maxHourlyPumpPower = self.command_context.generator_matrix_constants.get_hydro_max_hourly_pump_power()
             new_area_data["input"]["hydro"]["series"][area_id]["maxHourlyGenPower"] = (
-                self.command_context.generator_matrix_constants.get_hydro_max_hourly_gen_power()
+                maxHourlyGenPower
             )
+
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"maxHourlyGenPower_{area_id}"] = (
+                maxHourlyGenPower
+            )
+
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"maxDailyGenEnergy_{area_id}"] = (
+                self.command_context.generator_matrix_constants.get_max_daily_gen_energy()
+            )
+                               
             new_area_data["input"]["hydro"]["series"][area_id]["maxHourlyPumpPower"] = (
-                self.command_context.generator_matrix_constants.get_hydro_max_hourly_pump_power()
+                maxHourlyPumpPower
             )
-            new_area_data["input"]["hydro"]["series"][area_id]["maxDailyReservoirLevels"] = (
-                self.command_context.generator_matrix_constants.get_max_daily_reservoir_levels()
+
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"maxHourlyPumpPower_{area_id}"] = (
+                maxHourlyPumpPower
             )
-            new_area_data["input"]["hydro"]["series"][area_id]["minDailyReservoirLevels"] = (
-                self.command_context.generator_matrix_constants.get_min_daily_reservoir_levels()
+
+            new_area_data["input"]["hydro"]["common"]["capacity"][f"maxDailyPumpEnergy_{area_id}"] = (
+                self.command_context.generator_matrix_constants.get_max_daily_pump_energy()
             )
 
         new_area_data["input"]["hydro"]["hydro"] = hydro_config
