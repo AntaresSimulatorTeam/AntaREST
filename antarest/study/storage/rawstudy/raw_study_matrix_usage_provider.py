@@ -12,7 +12,7 @@
 import logging
 from pathlib import Path
 
-from typing_extensions import override
+from typing_extensions import Iterable, override
 
 from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
@@ -29,9 +29,8 @@ class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
         matrix_service.register_usage_provider(self)
 
     @override
-    def get_matrix_usage(self) -> list[MatrixReference]:
+    def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in raw studies")
-        matrices_references = []
 
         study_filter = StudyFilter(managed=True, variant=False, access_permissions=AccessPermissions(is_admin=True))
 
@@ -43,6 +42,4 @@ class RawStudyMatrixUsageProvider(IMatrixUsageProvider):
                 matrix_reference = MatrixReference(
                     matrix_id=f"{matrix_id}", use_description=f"Used by raw study {study_id}"
                 )
-                matrices_references.append(matrix_reference)
-
-        return matrices_references
+                yield matrix_reference
