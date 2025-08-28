@@ -109,7 +109,7 @@ function DynamicDataTable({
     // Add items without group to rows
     items
       .filter((item) => !item.group)
-      .forEach((item) =>
+      .forEach((item) => {
         rowsArr.push(
           <TableRowItem
             key={item.id}
@@ -118,8 +118,8 @@ function DynamicDataTable({
             selected={selected}
             onClick={handleSelect}
           />,
-        ),
-      );
+        );
+      });
 
     return rowsArr;
   }, [items, itemsByGroup, columns, selected, handleSelect]);

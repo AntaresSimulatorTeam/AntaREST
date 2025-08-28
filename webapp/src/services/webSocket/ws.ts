@@ -72,7 +72,9 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
   webSocket.onmessage = (event: MessageEvent): void => {
     const message = JSON.parse(event.data) as WsEvent;
     logInfo("WebSocket message received", message);
-    eventListeners.forEach((listener) => listener(message));
+    eventListeners.forEach((listener) => {
+      listener(message);
+    });
   };
 
   webSocket.onerror = (event): void => {

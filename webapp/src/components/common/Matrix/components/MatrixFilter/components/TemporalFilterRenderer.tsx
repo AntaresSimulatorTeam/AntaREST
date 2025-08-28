@@ -37,7 +37,7 @@ interface TemporalFilterRendererProps {
   selectedValues: number[];
   onAddValue: () => void;
   onAddValues?: (values: number[]) => void;
-  onRemoveValue: (value: number) => void;
+  onRemoveValues: (values: number[]) => void;
   onCheckboxChange: (value: number) => void;
   onClearAll: () => void;
   inputValue: string;
@@ -58,7 +58,7 @@ function TemporalFilterRenderer({
   selectedValues,
   onAddValue,
   onAddValues,
-  onRemoveValue,
+  onRemoveValues,
   onCheckboxChange,
   onClearAll,
   inputValue,
@@ -253,7 +253,7 @@ function TemporalFilterRenderer({
         onKeyPress={onKeyPress}
         onAddValue={onAddValue}
         onAddValues={onAddValues}
-        onRemoveValue={onRemoveValue}
+        onRemoveValues={onRemoveValues}
         onOperatorChange={onOperatorChange}
         onClearAll={onClearAll}
         disabled={disabled}
