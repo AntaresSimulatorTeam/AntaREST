@@ -76,6 +76,7 @@ class CommandName(Enum):
     REPLACE_MATRIX = "replace_matrix"
     UPDATE_CONFIG = "update_config"
     UPDATE_COMMENTS = "update_comments"
+    REPLACE_COMMENTS = "replace_comments"
     UPDATE_FILE = "update_file"
     UPDATE_DISTRICT = "update_district"
     UPDATE_PLAYLIST = "update_playlist"

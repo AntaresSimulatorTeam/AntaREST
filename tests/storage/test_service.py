@@ -1462,7 +1462,7 @@ def test_edit_study_with_command() -> None:
     [
         (Mock(spec=IniFileNode), "url", 0, "update_config"),
         (Mock(spec=InputSeriesMatrix), "url", [[0]], "replace_matrix"),
-        (Mock(spec=RawFileNode), "comments", "0", "update_comments"),
+        (Mock(spec=RawFileNode), "comments", "0", "replace_comments"),
     ],
 )
 def test_create_command(
