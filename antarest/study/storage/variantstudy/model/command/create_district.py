@@ -50,7 +50,7 @@ class CreateDistrict(ICommand):
 
     name: str
     base_filter: Optional[DistrictBaseFilter] = None
-    filter_items: Optional[List[str]] = None
+    areas: Optional[List[str]] = None
     output: bool = True
     comments: str = ""
 
@@ -73,7 +73,7 @@ class CreateDistrict(ICommand):
         inverted_set = base_filter == DistrictBaseFilter.add_all
         study_data.sets[district_id] = DistrictSet(
             name=self.name,
-            areas=self.filter_items or [],
+            areas=self.areas or [],
             output=self.output,
             inverted_set=inverted_set,
         )
@@ -94,7 +94,7 @@ class CreateDistrict(ICommand):
             {
                 "caption": self.name,
                 "apply-filter": (self.base_filter or DistrictBaseFilter.remove_all).value,
-                item_key: self.filter_items or [],
+                item_key: self.areas or [],
                 "output": study_data.config.sets[district_id].output,
                 "comments": self.comments,
             },
@@ -110,7 +110,7 @@ class CreateDistrict(ICommand):
             args={
                 "name": self.name,
                 "base_filter": self.base_filter.value if self.base_filter else None,
-                "filter_items": self.filter_items,
+                "areas": self.areas,
                 "output": self.output,
                 "comments": self.comments,
             },

@@ -50,7 +50,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
 
     create_district1_command: ICommand = CreateDistrict(
         name="Two added zone",
-        filter_items=[area1_id, area2_id],
+        areas=[area1_id, area2_id],
         comments="First district",
         command_context=command_context,
         study_version=study_version,
@@ -68,7 +68,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     create_district2_command: ICommand = CreateDistrict(
         name="One subtracted zone",
         base_filter=DistrictBaseFilter.add_all,
-        filter_items=[area1_id],
+        areas=[area1_id],
         command_context=command_context,
         study_version=study_version,
     )
@@ -84,7 +84,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     update_district2_command: ICommand = UpdateDistrict(
         id="one subtracted zone",
         base_filter=DistrictBaseFilter.remove_all,
-        filter_items=[area2_id],
+        areas=[area2_id],
         command_context=command_context,
         study_version=study_version,
     )

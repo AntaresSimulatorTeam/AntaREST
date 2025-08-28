@@ -43,7 +43,7 @@ class UpdateDistrict(ICommand):
 
     id: str
     base_filter: Optional[DistrictBaseFilter] = None
-    filter_items: Optional[List[str]] = None
+    areas: Optional[List[str]] = None
     output: Optional[bool] = None
     comments: Optional[str] = None
 
@@ -54,7 +54,7 @@ class UpdateDistrict(ICommand):
             inverted_set = self.base_filter == DistrictBaseFilter.add_all
         else:
             inverted_set = base_set.inverted_set
-        study_data.sets[self.id].areas = self.filter_items or base_set.areas
+        study_data.sets[self.id].areas = self.areas or base_set.areas
         study_data.sets[self.id].output = self.output if self.output is not None else base_set.output
         study_data.sets[self.id].inverted_set = inverted_set
 
@@ -81,7 +81,7 @@ class UpdateDistrict(ICommand):
             {
                 "caption": sets[district_id]["caption"],
                 "apply-filter": apply_filter,
-                item_key: self.filter_items,
+                item_key: self.areas,
                 "output": study_data.config.sets[district_id].output,
                 "comments": self.comments,
             },
@@ -97,7 +97,7 @@ class UpdateDistrict(ICommand):
             args={
                 "id": self.id,
                 "base_filter": self.base_filter.value if self.base_filter else None,
-                "filter_items": self.filter_items,
+                "areas": self.areas,
                 "output": self.output,
                 "comments": self.comments,
             },

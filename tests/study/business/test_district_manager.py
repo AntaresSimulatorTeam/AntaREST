@@ -15,10 +15,10 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
-from antarest.study.business.district_manager import (
+from antarest.study.business.district_manager import DistrictManager
+from antarest.study.business.model.district_model import (
     DistrictCreationDTO,
     DistrictInfoDTO,
-    DistrictManager,
     DistrictUpdateDTO,
 )
 from antarest.study.business.study_interface import StudyInterface
