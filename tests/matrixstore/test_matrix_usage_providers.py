@@ -154,7 +154,7 @@ def test_command_matrix_usage_provider(
         db.session.add(command_block2)
         db.session.commit()
 
-        matrices_references = command_matrix_usage_provider.get_matrix_usage()
+        matrices_references = list(command_matrix_usage_provider.get_matrix_usage())
 
         assert matrices_references == [MatrixReference(matrix_id=matrices_id, use_description=use_description)] * 4
 

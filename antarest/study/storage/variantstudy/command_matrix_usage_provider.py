@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from typing import List
+from typing import Iterable, List
 
 from typing_extensions import override
 
@@ -37,10 +37,9 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         self.matrix_service.register_usage_provider(self)
 
     @override
-    def get_matrix_usage(self) -> list[MatrixReference]:
+    def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in variant studies")
         command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
-        matrices_references = []
 
         def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
             try:
@@ -62,6 +61,4 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
                         matrix_id=command_id,
                         use_description=f"Used by command {command_id} from variant study {study_id}",
                     )
-                    matrices_references.append(mat_reference)
-
-        return matrices_references
+                    yield mat_reference
