@@ -9,10 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
-from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.district_manager import (
@@ -21,8 +20,7 @@ from antarest.study.business.district_manager import (
     DistrictUpdate,
 )
 from antarest.study.business.model.district_model import District
-from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
-from antarest.study.model import STUDY_VERSION_8_6
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
@@ -89,17 +87,6 @@ def study_with_sets(empty_study_880: FileStudy):
         "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False),
     }
     study.file_study.config.areas = {"n1": dummy_area("n1"), "n2": dummy_area("n2"), "n3": dummy_area("n3")}
-    return study
-
-
-def create_study_interface(file_study: FileStudy, version: StudyVersion = STUDY_VERSION_8_6) -> StudyInterface:
-    """
-    Creates a mock study interface which returns the provided study tree.
-    """
-    study = Mock(StudyInterface)
-    study.get_files.return_value = file_study
-    study.version = version
-    file_study.config.version = version
     return study
 
 

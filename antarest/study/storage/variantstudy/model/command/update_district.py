@@ -52,7 +52,7 @@ class UpdateDistrict(ICommand):
         if not study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.id}' does not exist and should be created")
 
-        district = study_data.get_district(self.id)  # to check if district exists
+        district = study_data.get_district(self.id)
 
         updated_district = district.model_copy(
             update={
