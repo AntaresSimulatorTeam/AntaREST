@@ -79,10 +79,6 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleHoursChange = (hours: number[] | null) => {
-    setSelectedHours(hours || []);
-  };
-
   const handleOffsetChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.target.value);
     setOffset(R.clamp(0, HOURS_IN.WEEK - 1, value));
@@ -179,7 +175,7 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
                   label={t(
                     "study.modelization.storages.additionalConstraints.occurrences.dialog.hours",
                   )}
-                  onChange={handleHoursChange}
+                  onChange={setSelectedHours}
                   maxNumber={HOURS_IN.WEEK}
                   size="extra-small"
                   sx={{ minWidth: 135 }}

@@ -26,17 +26,27 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 export interface NumberSelectionsFEProps {
+  defaultValue?: NumberOrRange[];
   label?: TextFieldProps["label"];
   maxNumber: number;
-  onChange?: (numbers: number[] | null) => void;
+  onChange?: (numbers: number[]) => void;
   size?: TextFieldProps["size"];
   sx?: TextFieldProps["sx"];
 }
 
-function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSelectionsFEProps) {
-  const [value, setValue] = useState("");
-  const [selections, setSelections] = useState<NumberOrRange[] | null>([]);
+function NumberSelectionsFE({
+  defaultValue = [],
+  label,
+  maxNumber,
+  onChange,
+  size,
+  sx,
+}: NumberSelectionsFEProps) {
   const { t } = useTranslation();
+  const [selections, setSelections] = useState<NumberOrRange[]>(() =>
+    compactSelections(defaultValue),
+  );
+  const [value, setValue] = useState(() => selectionsToString(selections));
 
   const {
     validateOnChange,
@@ -61,8 +71,8 @@ function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSele
     setValue(value);
 
     if (!validity.valid) {
-      setSelections(null);
-      onChange?.(null);
+      setSelections([]);
+      onChange?.([]);
       return;
     }
 
@@ -77,7 +87,7 @@ function NumberSelectionsFE({ label, maxNumber, onChange, size, sx }: NumberSele
 
   const handleBlur = () => {
     // Format current value with a consistent string representation
-    if (selections !== null) {
+    if (selections.length > 0) {
       setValue(selectionsToString(selections));
     }
   };
