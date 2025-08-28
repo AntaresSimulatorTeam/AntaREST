@@ -30,8 +30,8 @@ interface UseFilterControlsReturn {
   addValueToColumnFilter: () => void;
   addValuesToRowFilter: (values: number[], filterId: string) => void;
   addValuesToColumnFilter: (values: number[]) => void;
-  removeValueFromRowFilter: (valueToRemove: number, filterId: string) => void;
-  removeValueFromColumnFilter: (valueToRemove: number) => void;
+  removeValuesFromRowFilter: (valuesToRemove: number[], filterId: string) => void;
+  removeValuesFromColumnFilter: (valuesToRemove: number[]) => void;
   clearRowFilterValues: (filterId: string) => void;
   clearColumnFilterValues: () => void;
   handleKeyPress: (event: React.KeyboardEvent) => void;
@@ -168,14 +168,14 @@ export function useFilterControls({
     [setFilter],
   );
 
-  const removeValueFromRowFilter = useCallback(
-    (valueToRemove: number, filterId: string) => {
+  const removeValuesFromRowFilter = useCallback(
+    (valuesToRemove: number[], filterId: string) => {
       setFilter(
         produce((draft) => {
           const rowFilter = draft.rowsFilters.find((rf) => rf.id === filterId);
 
           if (rowFilter?.list) {
-            rowFilter.list = rowFilter.list.filter((value) => value !== valueToRemove);
+            rowFilter.list = rowFilter.list.filter((value) => !valuesToRemove.includes(value));
           }
         }),
       );
@@ -183,13 +183,13 @@ export function useFilterControls({
     [setFilter],
   );
 
-  const removeValueFromColumnFilter = useCallback(
-    (valueToRemove: number) => {
+  const removeValuesFromColumnFilter = useCallback(
+    (valuesToRemove: number[]) => {
       setFilter(
         produce((draft) => {
           if (draft.columnsFilter.list) {
             draft.columnsFilter.list = draft.columnsFilter.list.filter(
-              (value) => value !== valueToRemove,
+              (value) => !valuesToRemove.includes(value),
             );
           }
         }),
@@ -371,8 +371,8 @@ export function useFilterControls({
     addValueToColumnFilter,
     addValuesToRowFilter,
     addValuesToColumnFilter,
-    removeValueFromRowFilter,
-    removeValueFromColumnFilter,
+    removeValuesFromRowFilter,
+    removeValuesFromColumnFilter,
     clearRowFilterValues,
     clearColumnFilterValues,
     handleKeyPress,

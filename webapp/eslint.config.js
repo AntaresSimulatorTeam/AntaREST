@@ -145,6 +145,7 @@ export default [
       ],
       "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low
       eqeqeq: ["error"],
+      "array-callback-return": ["error", { checkForEach: true }],
     },
   },
 ];
