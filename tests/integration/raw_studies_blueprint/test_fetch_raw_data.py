@@ -191,10 +191,11 @@ class TestFetchRawData:
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
             # First command is created automatically to respect owners, we ignore it.
+            assert len(commands) == 2
             assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == [{"data": {"path": "somewhere/something.txt", "resource_type": "file"}}]
-            assert commands[2]["action"] == "update_file"
-            assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
+            assert commands[1]["args"] == {
+                "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
+            }
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
