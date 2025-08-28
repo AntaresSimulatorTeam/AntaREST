@@ -27,7 +27,7 @@ from antarest.study.business.model.renewable_cluster_model import RenewableClust
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_7, StudyVersionInt
+from antarest.study.model import STUDY_VERSION_9_2, StudyVersionInt
 
 from .validation import extract_filtering, study_version_context
 
@@ -267,8 +267,7 @@ class FileStudyTreeConfig(DTO):
         sorted alphabetically (case-insensitive).
         Note that groups are stored in lower case in the binding constraints file.
         """
-        if self.version < STUDY_VERSION_8_7:
-            return []
+
         lower_groups = {bc.group: bc.group for bc in self.bindings}
         return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
 
@@ -277,6 +276,11 @@ class FileStudyTreeConfig(DTO):
 
     def to_study_index(self) -> StudyIndex:
         areas = self.areas
+        sts_additional_constraints = {}
+        if self.version >= STUDY_VERSION_9_2:
+            sts_additional_constraints = {
+                a: {s: self.get_sts_constraint_ids(a, s) for s in self.get_st_storage_ids(a)} for a in areas
+            }
         return StudyIndex(
             areas=areas,
             links=((a1, a2) for a1 in areas for a2 in self.get_links(a1)),
@@ -284,9 +288,7 @@ class FileStudyTreeConfig(DTO):
             thermals={a: self.get_thermal_ids(a) for a in areas},
             renewables={a: self.get_renewable_ids(a) for a in areas},
             storages={a: self.get_st_storage_ids(a) for a in areas},
-            sts_additional_constraints={
-                a: {s: self.get_sts_constraint_ids(a, s) for s in self.get_st_storage_ids(a)} for a in areas
-            },
+            sts_additional_constraints=sts_additional_constraints,
         )
 
 
