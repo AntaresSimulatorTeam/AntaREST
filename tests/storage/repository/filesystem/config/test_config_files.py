@@ -784,16 +784,6 @@ def test_config_to_study_index_9_2_additional_constraints():
                 st_storages=[STStorage(name="Battery")],
                 st_storages_additional_constraints={"battery": [STStorageAdditionalConstraint(name="STSConstraint")]},
             ),
-            "fr": Area(
-                name="FR",
-                links={},
-                thermals=[],
-                renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
-                st_storages=[STStorage(name="Battery")],
-                st_storages_additional_constraints={"battery": [STStorageAdditionalConstraint(name="STSConstraint")]},
-            ),
         },
     )
 
@@ -804,6 +794,7 @@ def test_config_to_study_index_9_2_additional_constraints():
     _assert_mapping_equals(index.renewable_ids, {"be": ["wind"]})
     _assert_mapping_equals(index.storage_ids, {"be": ["battery"]})
     assert list(index.bc_group_ids) == []
+
     assert list(index.sts_constraint_ids) == ["be"]
     assert list(index.sts_constraint_ids["be"]) == ["battery"]
     assert list(index.sts_constraint_ids["be"]["battery"]) == ["stsconstraint"]
