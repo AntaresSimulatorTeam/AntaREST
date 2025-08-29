@@ -628,8 +628,9 @@ def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
     config_dir.joinpath("additional-constraints.ini").write_text(ADDITIONAL_CONSTRAINTS_INI)
 
     storage = STStorage(**{"name": "sts_test"})
+    storage2 = STStorage(**{"name": "sts_test_2"})
     # Check values
-    assert _parse_st_storage_additional_constraints(study_path, "fr", [storage]) == {
+    assert _parse_st_storage_additional_constraints(study_path, "fr", [storage, storage2]) == {
         "sts_test": [
             STStorageAdditionalConstraint(
                 id="withdrawal-1",
@@ -650,7 +651,8 @@ def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
                 occurrences=[Occurrence(hours=[1, 168])],
                 enabled=True,
             ),
-        ]
+        ],
+        "sts_test_2": [],
     }
 
     # With a study version anterior to 9.2, it should always return an empty list
@@ -777,6 +779,16 @@ def test_config_to_study_index_9_2_additional_constraints():
                 links={},
                 thermals=[ThermalCluster(name="Nuclear")],
                 renewables=[RenewableCluster(name="Wind")],
+                filters_synthesis=[],
+                filters_year=[],
+                st_storages=[STStorage(name="Battery")],
+                st_storages_additional_constraints={"battery": [STStorageAdditionalConstraint(name="STSConstraint")]},
+            ),
+            "fr": Area(
+                name="FR",
+                links={},
+                thermals=[],
+                renewables=[],
                 filters_synthesis=[],
                 filters_year=[],
                 st_storages=[STStorage(name="Battery")],

@@ -272,7 +272,10 @@ class FileStudyTreeConfig(DTO):
         return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
 
     def get_sts_constraint_ids(self, area: str, storage: str) -> List[str]:
-        return [c.id for c in self.areas[area].st_storages_additional_constraints[storage]]
+        if self.version >= STUDY_VERSION_9_2:
+            return [c.id for c in self.areas[area].st_storages_additional_constraints[storage]]
+        else:
+            return []
 
     def to_study_index(self) -> StudyIndex:
         areas = self.areas
