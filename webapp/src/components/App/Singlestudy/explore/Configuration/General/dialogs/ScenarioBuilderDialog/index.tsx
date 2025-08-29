@@ -12,17 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
-import { Box, Button, Tab, Skeleton } from "@mui/material";
+import { TabContext, TabList, type TabListProps, TabPanel } from "@mui/lab";
+import { Box, Button, Skeleton, Tab } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
-import Table from "./Table";
-import { getScenarioConfigByType, SCENARIOS, type ScenarioType } from "./utils";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
+import { getScenarioConfigByType } from "./services";
+import Table from "./Table";
+import { SCENARIOS, type ScenarioType } from "./types";
 import withAreas from "./withAreas";
-import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 
 interface Props {
   study: StudyMetadata;
@@ -30,14 +31,14 @@ interface Props {
   onClose: VoidFunction;
 }
 
-// HOC that provides areas menu, for particular cases. (e.g thermals)
+// HOC that provides area selection menu for multi-level scenarios
 const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(SCENARIOS[0]);
 
-  const config = usePromiseWithSnackbarError(
+  const scenarioData = usePromiseWithSnackbarError(
     () => getScenarioConfigByType(study.id, selectedScenario),
     {
       errorMessage: t("study.configuration.general.mcScenarioBuilder.noConfig.error"),
@@ -50,7 +51,7 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
 
   const handleScenarioChange: TabListProps["onChange"] = (_, type) => {
     setSelectedScenario(type);
-    config.reload();
+    scenarioData.reload();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -84,7 +85,7 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
         {SCENARIOS.map((type) => (
           <TabPanel key={type} value={type} sx={{ px: 1, height: 1, overflow: "auto" }}>
             <UsePromiseCond
-              response={config}
+              response={scenarioData}
               ifFulfilled={(data) => <EnhancedTable type={type} config={data} />}
               ifPending={() => <Skeleton sx={{ height: 1, transform: "none" }} />}
             />
