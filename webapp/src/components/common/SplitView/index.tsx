@@ -87,7 +87,11 @@ function SplitView({
       direction={direction}
       sizes={activeSizes ?? defaultSizes}
       minSize={minSize}
-      onDragEnd={setActiveSizes} // Update sizes on drag end.
+      onDragEnd={(sizes) => {
+        // Round to whole numbers to avoid excessive precision
+        const roundedSizes = sizes.map((size) => Math.round(size));
+        setActiveSizes(roundedSizes);
+      }}
       gutterSize={gutterSize}
       style={{
         display: "flex",
