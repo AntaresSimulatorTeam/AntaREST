@@ -24,6 +24,7 @@ from antarest.study.business.model.config.adequacy_patch_model import AdequacyPa
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District, DistrictBaseFilter
 from antarest.study.business.model.hydro_model import (
@@ -154,6 +155,8 @@ class InMemoryStudyDao(StudyDao):
         self._comments = ""
         # Area names
         self._area_names: list[str] = []
+        # Playlist config
+        self._playlist_config = Playlist()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -730,3 +733,11 @@ class InMemoryStudyDao(StudyDao):
     @override
     def layer_exists(self, layer_id: str) -> bool:
         return any(layer.id == layer_id for layer in self._layers)
+
+    @override
+    def get_playlist_config(self) -> Playlist:
+        return self._playlist_config
+
+    @override
+    def save_playlist_config(self, playlist: Playlist) -> None:
+        self._playlist_config = playlist

@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
+from pydantic import ConfigDict, RootModel
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -62,6 +63,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
     OptimizationPreferencesUpdate,
 )
+from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
 from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfiguration,
     TimeSeriesConfigurationUpdate,
@@ -100,7 +102,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
-from antarest.study.business.playlist_management import PlaylistColumns
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -128,6 +129,14 @@ class ClusterType(enum.StrEnum):
     ST_STORAGES = "storages"
     RENEWABLES = "renewables"
     THERMALS = "thermals"
+
+
+class PlaylistRootModel(RootModel[dict[int, PlaylistValues]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
+
+
+class PlaylistUpdateRootModel(RootModel[dict[int, PlaylistValuesUpdate]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
 
 
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
@@ -424,54 +433,26 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
         summary="Get MC Scenario playlist data for table form",
-        response_model=Dict[int, PlaylistColumns],
-        response_model_exclude_none=True,
     )
-    def get_playlist(uuid: str) -> Dict[int, PlaylistColumns]:
+    def get_playlist(uuid: str) -> PlaylistRootModel:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.playlist_manager.get_table_data(study_interface)
+        playlist_as_dict = study_service.playlist_manager.get_playlist(study_interface).years
+        return PlaylistRootModel.model_validate(playlist_as_dict)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
-        summary="Set MC Scenario playlist data with values from table form",
+        summary="Update MC Scenario playlist data with values from table form",
     )
-    def set_playlist(uuid: str, data: Dict[int, PlaylistColumns]) -> None:
+    def update_playlist(uuid: str, data: PlaylistUpdateRootModel) -> PlaylistRootModel:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.playlist_manager.set_table_data(study_interface, data)
-
-    @bp.get(
-        "/studies/{uuid}/config/playlist",
-        tags=[APITag.study_data],
-        summary="Get playlist config",
-        response_model=Optional[Dict[int, float]],
-    )
-    def get_playlist_config(uuid: str) -> Optional[Dict[int, float]]:
-        logger.info(f"Fetching playlist config for study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.config_manager.get_playlist(study_interface)
-
-    @bp.put(
-        path="/studies/{uuid}/config/playlist",
-        tags=[APITag.study_data],
-        summary="Set playlist config",
-    )
-    def set_playlist_config(
-        uuid: str,
-        active: bool = True,
-        reverse: bool = False,
-        playlist: Optional[List[int]] = Body(default=None),
-        weights: Optional[Dict[int, int]] = Body(default=None),
-    ) -> Any:
-        logger.info(f"Updating playlist config for study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.config_manager.set_playlist(study_interface, playlist, weights, reverse, active)
+        playlist_update = PlaylistUpdate.model_validate({"years": data.model_dump()})
+        playlist_as_dict = study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
+        return PlaylistRootModel.model_validate(playlist_as_dict)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",

@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -21,12 +22,20 @@ from antarest.study.storage.rawstudy.model.filesystem.config.adequacy_patch_para
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+
 ADEQUACY_PATCH_PATH = ["settings", "generaldata", "adequacy patch"]
 
 
 class FileStudyAdequacyPatchParametersDao(AdequacyPatchParametersDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override

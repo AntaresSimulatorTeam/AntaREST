@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import operator
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -33,6 +33,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
@@ -41,6 +44,10 @@ _ALL_STORAGE_PATH = "input/st-storage/clusters"
 class FileStudySTStorageDao(STStorageDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
@@ -261,6 +268,9 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             ["input", "st-storage", "clusters", area_id, "list", storage_id],
             ["input", "st-storage", "series", area_id, storage_id],
         ]
+        if study_data.config.version >= STUDY_VERSION_9_2:
+            paths.append(["input", "st-storage", "constraints", area_id, storage_id])
+
         if len(study_data.config.areas[area_id].st_storages) == 1:
             paths.append(["input", "st-storage", "series", area_id])
 
@@ -269,6 +279,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
 
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         study_data.config.areas[area_id].st_storages.remove(storage)
+        if study_data.config.version >= STUDY_VERSION_9_2:
+            study_data.config.areas[area_id].st_storages_additional_constraints.pop(storage.id)
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
@@ -388,6 +400,8 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                 study_data.areas[area_id].st_storages[k] = storage
                 return
         study_data.areas[area_id].st_storages.append(storage)
+        if study_data.version >= STUDY_VERSION_9_2:
+            study_data.areas[area_id].st_storages_additional_constraints[storage.id] = []
 
     def _update_st_storage_additional_constraints_config(
         self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]

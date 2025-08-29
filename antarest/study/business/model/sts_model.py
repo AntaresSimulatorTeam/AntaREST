@@ -292,7 +292,8 @@ class STStorageAdditionalConstraint(AntaresBaseModel):
     @model_validator(mode="before")
     @classmethod
     def set_id(cls, data: dict[str, Any]) -> dict[str, Any]:
-        data["id"] = transform_name_to_id(data["name"])
+        if isinstance(data, dict) and "id" not in data and "name" in data:
+            data["id"] = transform_name_to_id(data["name"])
         return data
 
     id: str

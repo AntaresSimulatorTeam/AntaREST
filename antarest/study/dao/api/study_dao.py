@@ -21,6 +21,7 @@ from antarest.study.business.model.config.adequacy_patch_model import AdequacyPa
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -55,6 +56,7 @@ from antarest.study.dao.api.optimization_preferences_dao import (
     OptimizationPreferencesDao,
     ReadOnlyOptimizationPreferencesDao,
 )
+from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
@@ -80,6 +82,7 @@ class ReadOnlyStudyDao(
     ReadOnlyTimeSeriesConfigDao,
     ReadOnlyDistrictDao,
     ReadOnlyLayerDao,
+    ReadOnlyPlaylistConfigDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -107,6 +110,7 @@ class StudyDao(
     TimeSeriesConfigDao,
     DistrictDao,
     LayerDao,
+    PlaylistConfigDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -401,3 +405,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def layer_exists(self, layer_id: str) -> bool:
         return self._adaptee.layer_exists(layer_id)
+
+    @override
+    def get_playlist_config(self) -> Playlist:
+        return self._adaptee.get_playlist_config()
