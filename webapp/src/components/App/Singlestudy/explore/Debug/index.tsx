@@ -18,6 +18,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOutletContext, useSearchParams } from "react-router-dom";
 import { useUpdateEffect } from "react-use";
+import { buildKey } from "@/utils/reactUtils";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../types/types";
 import SplitView from "../../../../common/SplitView";
@@ -25,7 +26,7 @@ import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 import Data from "./Data";
 import DebugContext from "./DebugContext";
 import Tree from "./Tree";
-import { getFileType, getTreeData, type FileInfo, type TreeData } from "./utils";
+import { type FileInfo, getFileType, getTreeData, type TreeData } from "./utils";
 
 function Debug() {
   const { t } = useTranslation();
@@ -104,13 +105,15 @@ function Debug() {
 
   return (
     <DebugContext.Provider value={contextValue}>
-      <SplitView storageId="debug" sizes={[20, 80]} minSize={150}>
+      <SplitView splitId="debug">
         <Box sx={{ p: 1, overflow: "auto", position: "relative" }}>
           <UsePromiseCond
             keepLastResolvedOnReload
             response={treeDataResponse}
             ifPending={() =>
-              Array.from({ length: 3 }).map((_, index) => <Skeleton key={index} height={32} />)
+              Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={buildKey(index)} height={32} />
+              ))
             }
             ifFulfilled={(data) => (
               <Tree

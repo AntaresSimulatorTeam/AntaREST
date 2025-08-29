@@ -58,7 +58,7 @@ function SplitView({
   splitId,
   children,
   direction = "horizontal",
-  sizes,
+  sizes = [10, 90], // Most common split ratio: small sidebar (10%) + main content area (90%)
   minSize = [150, 150],
   gutterSize = 3,
 }: SplitViewProps) {

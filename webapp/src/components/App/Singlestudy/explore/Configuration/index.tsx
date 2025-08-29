@@ -53,7 +53,7 @@ function Configuration() {
   );
 
   return (
-    <SplitView storageId="configuration" sizes={[15, 85]}>
+    <SplitView splitId="configuration">
       {/* Left */}
       <PropertiesView
         mainContent={

@@ -62,7 +62,7 @@ function Links() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView splitId="links" sizes={[10, 90]}>
+    <SplitView splitId="links">
       {/* Left */}
       <LinkPropsView studyId={study.id} onClick={handleLinkClick} />
       {/* Right */}

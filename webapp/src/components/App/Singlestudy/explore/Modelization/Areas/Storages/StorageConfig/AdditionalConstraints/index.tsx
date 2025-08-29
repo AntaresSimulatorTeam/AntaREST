@@ -161,7 +161,7 @@ function AdditionalConstraints({ studyId, areaId, storageId, studyVersion }: Pro
 
   return (
     <>
-      <SplitView storageId="storage-additionalConstraints" sizes={[15, 85]}>
+      <SplitView splitId="storage-additionalConstraints">
         {/* Left panel - Constraints list */}
         <Box>
           {isLoading ? (

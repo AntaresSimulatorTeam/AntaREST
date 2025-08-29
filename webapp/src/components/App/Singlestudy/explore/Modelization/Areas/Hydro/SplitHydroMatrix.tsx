@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { mergeSxProp } from "@/utils/muiUtils";
 import { Box, type SxProps, type Theme } from "@mui/material";
+import { mergeSxProp } from "@/utils/muiUtils";
 import SplitView, { type SplitViewProps } from "../../../../../../common/SplitView";
 import HydroMatrix from "./HydroMatrix";
 import type { HydroMatrixType } from "./utils";
@@ -30,7 +30,7 @@ function SplitHydroMatrix({ types, direction, sizes, form: Form, sx }: Props) {
   return (
     <Box sx={mergeSxProp({ width: 1, height: 1 }, sx)}>
       {Form && <Form />}
-      <SplitView storageId={`hydro-${types[0]}-${types[1]}`} direction={direction} sizes={sizes}>
+      <SplitView splitId={`hydro-${types[0]}-${types[1]}`} direction={direction} sizes={sizes}>
         <HydroMatrix type={types[0]} />
         <HydroMatrix type={types[1]} />
       </SplitView>
