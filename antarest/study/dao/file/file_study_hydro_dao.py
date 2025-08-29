@@ -10,7 +10,10 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Dict
+from typing import TYPE_CHECKING, Dict
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 from typing_extensions import override
 
@@ -34,6 +37,10 @@ def get_inflow_path(area_id: str) -> list[str]:
 class FileStudyHydroDao(HydroDao):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
