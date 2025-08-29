@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import operator
 from abc import ABC, abstractmethod
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -33,6 +33,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 _STORAGE_LIST_PATH = "input/st-storage/clusters/{area_id}/list/{storage_id}"
 _STORAGE_SERIES_PATH = "input/st-storage/series/{area_id}/{storage_id}/{ts_name}"
 _ALL_STORAGE_PATH = "input/st-storage/clusters"
@@ -41,6 +44,10 @@ _ALL_STORAGE_PATH = "input/st-storage/clusters"
 class FileStudySTStorageDao(STStorageDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override

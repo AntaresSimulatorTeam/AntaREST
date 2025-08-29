@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -17,12 +18,19 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 TIMESERIES_PATH = ["settings", "generaldata", "general", "nbtimeseriesthermal"]
 
 
 class FileStudyTimeSeriesConfigDao(TimeSeriesConfigDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
