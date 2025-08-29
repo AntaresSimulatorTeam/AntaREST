@@ -54,7 +54,7 @@ class DistrictSet(AntaresBaseModel):
             {
                 **district.model_dump(include={"name", "output", "comments"}),
                 "inverted_set": inverted_set,
-                "areas": get_areas(inverted_set, all_areas, district.areas),
+                "areas": district.areas,
             }
         )
 
