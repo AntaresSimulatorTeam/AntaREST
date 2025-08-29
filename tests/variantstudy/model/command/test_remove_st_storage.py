@@ -13,12 +13,18 @@
 import pytest
 from pydantic import ValidationError
 
+from antarest.core.exceptions import STStorageNotFound
+from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
+    CreateSTStorageAdditionalConstraints,
+)
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -138,3 +144,48 @@ class TestRemoveSTStorage:
         output = cmd.apply(study)
         assert not output.status
         assert output.message == "Short-term storage 'fake_storage' in area 'fr' does not exist"
+
+    def test_apply(self, empty_study_920: FileStudy, command_context: CommandContext):
+        # Create an area and a short-term storage inside it
+        study = empty_study_920
+        version = study.config.version
+        cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+        cmd.apply(study_data=study)
+
+        cmd = CreateSTStorage(
+            area_id="fr",
+            parameters=STStorageCreation(name="STS"),
+            command_context=command_context,
+            study_version=version,
+        )
+        cmd.apply(study_data=study)
+
+        cmd = CreateSTStorageAdditionalConstraints(
+            command_context=command_context,
+            area_id="fr",
+            storage_id="sts",
+            constraints=[
+                STStorageAdditionalConstraintCreation(name="Constraint"),
+            ],
+            study_version=version,
+        )
+        output = cmd.apply(study)
+        assert output.status
+
+        assert "sts" in study.config.get_st_storage_ids("fr")
+        assert "constraint" in study.config.get_sts_constraint_ids("fr", "sts")
+
+        study_dao = FileStudyTreeDao(study)
+        assert study_dao.get_st_storage("fr", "sts") is not None
+
+        cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
+        output = cmd.apply(study)
+        assert output.status
+
+        study_dao = FileStudyTreeDao(study)
+        with pytest.raises(STStorageNotFound):
+            study_dao.get_st_storage("fr", "sts")
+
+        assert "sts" not in study.config.get_st_storage_ids("fr")
+        with pytest.raises(KeyError):
+            study.config.get_sts_constraint_ids("fr", "sts")
