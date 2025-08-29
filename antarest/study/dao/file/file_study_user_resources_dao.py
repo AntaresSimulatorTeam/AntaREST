@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
@@ -21,6 +21,9 @@ from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 
 def is_url_writeable(user_node: User, url: list[str]) -> bool:
     return url[0] not in [file.filename for file in user_node.registered_files]
@@ -29,6 +32,10 @@ def is_url_writeable(user_node: User, url: list[str]) -> bool:
 class FileStudyUserResourceDao(UserResourcesDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override

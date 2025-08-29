@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Self
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -22,6 +23,7 @@ from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
 from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
+from antarest.study.dao.file.file_study_playlist_config_dao import FileStudyPlaylistConfigDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
 from antarest.study.dao.file.file_study_thematic_trimming_dao import FileStudyThematicTrimmingDao
@@ -48,6 +50,7 @@ class FileStudyTreeDao(
     FileStudyAdequacyPatchParametersDao,
     FileStudyTimeSeriesConfigDao,
     FileStudyLayerDao,
+    FileStudyPlaylistConfigDao,
     FileStudyUserResourceDao,
 ):
     """
@@ -60,6 +63,10 @@ class FileStudyTreeDao(
     @override
     def get_file_study(self) -> FileStudy:
         return self._file_study
+
+    @override
+    def get_impl(self) -> Self:
+        return self
 
     @override
     def get_version(self) -> StudyVersion:

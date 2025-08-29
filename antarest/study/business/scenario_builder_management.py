@@ -77,7 +77,7 @@ def _read_ruleset(file_study: FileStudy, scenario_type: ScenarioType) -> Ruleset
     ruleset_config = extract_ruleset_data(file_study, ruleset_name, scenario_type)
 
     complete_ruleset = initialize_ruleset(
-        years=[str(y) for y in range(1, nb_years + 1)],
+        years=[str(y) for y in range(0, nb_years)],
         index=file_study.tree.config.to_study_index(),
         scenario_types={scenario_type},
     )

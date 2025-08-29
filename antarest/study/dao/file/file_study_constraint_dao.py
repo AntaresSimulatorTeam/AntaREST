@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Iterator, Sequence
+from typing import TYPE_CHECKING, Any, Iterator, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -44,10 +44,17 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
     default_bc_weekly_daily as default_bc_weekly_daily_86,
 )
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 
 class FileStudyConstraintDao(ConstraintDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override

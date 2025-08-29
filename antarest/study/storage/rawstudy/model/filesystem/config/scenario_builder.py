@@ -163,7 +163,7 @@ def _add_value_triple(
 
 def _to_percent(value: RuleValue) -> RuleValue:
     if isinstance(value, (int, float)):
-        return int(100 * value)
+        return 100 * value
     return value
 
 

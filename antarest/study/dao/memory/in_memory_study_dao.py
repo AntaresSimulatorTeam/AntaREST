@@ -25,6 +25,7 @@ from antarest.study.business.model.config.adequacy_patch_model import AdequacyPa
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
@@ -151,6 +152,8 @@ class InMemoryStudyDao(StudyDao):
         self._layers: list[Layer] = []
         # Comments
         self._comments = ""
+        # Playlist config
+        self._playlist_config = Playlist()
         # User resources
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
 
@@ -704,6 +707,14 @@ class InMemoryStudyDao(StudyDao):
     @override
     def layer_exists(self, layer_id: str) -> bool:
         return any(layer.id == layer_id for layer in self._layers)
+
+    @override
+    def get_playlist_config(self) -> Playlist:
+        return self._playlist_config
+
+    @override
+    def save_playlist_config(self, playlist: Playlist) -> None:
+        self._playlist_config = playlist
 
     @override
     def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
