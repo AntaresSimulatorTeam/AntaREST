@@ -16,7 +16,7 @@ from typing import Any, cast
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
-from antarest.study.business.model.user_model import CreateUserResourceData, ResourceType
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
@@ -32,7 +32,7 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         pass
 
     @override
-    def save_user_resource(self, resource_data: CreateUserResourceData) -> None:
+    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
         url = [item for item in resource_data.path.parts if item]
         study_tree = self.get_file_study().tree
         user_node = cast(User, study_tree.get_node(["user"]))

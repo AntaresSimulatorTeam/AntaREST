@@ -41,7 +41,7 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.user_model import CreateUserResourceData
+from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
@@ -706,7 +706,7 @@ class InMemoryStudyDao(StudyDao):
         return any(layer.id == layer_id for layer in self._layers)
 
     @override
-    def save_user_resource(self, resource_data: CreateUserResourceData) -> None:
+    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
         self._user_resources[resource_data.path] = resource_data.content
 
     @override

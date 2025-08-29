@@ -23,7 +23,7 @@ class ResourceType(StrEnum):
     FOLDER = "folder"
 
 
-class CreateUserResourceData(AntaresBaseModel):
+class UserResourceDataCreation(AntaresBaseModel):
     path: PurePosixPath
     resource_type: ResourceType
     content: bytes | None = None
@@ -35,5 +35,5 @@ class CreateUserResourceData(AntaresBaseModel):
         return self
 
 
-class RemoveUserResourceData(AntaresBaseModel):
+class UserResourceDataRemoval(AntaresBaseModel):
     path: str

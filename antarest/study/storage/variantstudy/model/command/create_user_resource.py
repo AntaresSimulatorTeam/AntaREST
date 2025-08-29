@@ -13,7 +13,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.user_model import CreateUserResourceData
+from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -38,7 +38,7 @@ class CreateUserResource(ICommand):
     # Command parameters
     # ==================
 
-    data: CreateUserResourceData
+    data: UserResourceDataCreation
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:

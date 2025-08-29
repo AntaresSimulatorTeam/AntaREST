@@ -84,7 +84,7 @@ from antarest.study.business.matrix_management import MatrixManager, MatrixManag
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
-from antarest.study.business.model.user_model import CreateUserResourceData, RemoveUserResourceData, ResourceType
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -1437,7 +1437,7 @@ class StudyService:
             context = self.storage_service.variant_study_service.command_factory.command_context
             user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
             args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
-            command_data = CreateUserResourceData.model_validate(args)
+            command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
             commands.append(cmd_1)
         else:
@@ -2275,7 +2275,7 @@ class StudyService:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
         args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
-        cmd_data = RemoveUserResourceData(**args)
+        cmd_data = UserResourceDataRemoval(**args)
         self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed)
 
     def create_user_folder(self, study_id: str, path: str) -> None:
@@ -2296,13 +2296,13 @@ class StudyService:
             "resource_type": ResourceType.FOLDER,
             "content": None,
         }
-        command_data = CreateUserResourceData.model_validate(args)
+        command_data = UserResourceDataCreation.model_validate(args)
         self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
-        command_data: CreateUserResourceData | RemoveUserResourceData,
+        command_data: UserResourceDataCreation | UserResourceDataRemoval,
         command_class: Type[CreateUserResource | RemoveUserResource],
         exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:

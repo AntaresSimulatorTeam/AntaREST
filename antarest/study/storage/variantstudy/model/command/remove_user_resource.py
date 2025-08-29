@@ -14,7 +14,7 @@ from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.user_model import RemoveUserResourceData
+from antarest.study.business.model.user_model import UserResourceDataRemoval
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -39,7 +39,7 @@ class RemoveUserResource(ICommand):
     # Command parameters
     # ==================
 
-    data: RemoveUserResourceData
+    data: UserResourceDataRemoval
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
