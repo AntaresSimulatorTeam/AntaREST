@@ -11,10 +11,10 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.district_model import District
+from antarest.study.business.model.district_model import District, DistrictBaseFilter
 
 
 class DistrictSet(AntaresBaseModel):
@@ -35,11 +35,31 @@ class DistrictSet(AntaresBaseModel):
         areas = self.areas or []
         return get_areas(self.inverted_set, all_areas, areas)
 
-    def to_model(self) -> District:
-        return District.model_validate(self.model_dump(exclude={"inverted_set", "filters_synthesis", "filters_year"}))
+    def to_model(self, district_id: str, all_areas: list[str]) -> District:
+        return District.model_validate(
+            {
+                **self.model_dump(include={"name", "output", "comments"}),
+                "id": district_id,
+                "areas": self.get_areas(all_areas),
+            }
+        )
+
+    @classmethod
+    def from_model(
+        cls, district: District, district_base_filter: Optional[DistrictBaseFilter], all_areas: list[str]
+    ) -> "DistrictSet":
+        base_filter = district_base_filter or DistrictBaseFilter.remove_all
+        inverted_set = base_filter == DistrictBaseFilter.add_all
+        return DistrictSet.model_validate(
+            {
+                **district.model_dump(include={"name", "output", "comments"}),
+                "inverted_set": inverted_set,
+                "areas": get_areas(inverted_set, all_areas, district.areas),
+            }
+        )
 
 
-def district_set_sign(item: dict[str, Any]) -> str:
+def area_sign_from_data(item: dict[str, Any]) -> Literal["+", "-"]:
     if "apply-filter" not in item:
         return "+"
     if item["apply-filter"] == "remove-all":
@@ -47,21 +67,15 @@ def district_set_sign(item: dict[str, Any]) -> str:
     return "-"  # "add-all"
 
 
-def parse_district(district_id: str, data: Any, all_areas: List[str]) -> District:
-    inverted_set = district_set_sign(data) == "-"
-    areas = data.get("-", []) if inverted_set else data.get("+", [])
-    return District.model_validate(
-        {
-            "id": district_id,
-            "name": data["caption"],
-            "areas": get_areas(inverted_set, all_areas, areas),
-            "output": data["output"],
-            "comments": data.get("comments", ""),
-        }
-    )
-
-
 def get_areas(inverted_set: bool, all_areas: List[str], areas: list[str]) -> List[str]:
     if inverted_set:
         areas = list(set(all_areas).difference(set(areas)))
     return sorted(areas)
+
+
+def areas_sign_from_base_filter(district_base_filter: Optional[DistrictBaseFilter]) -> Literal["+", "-"]:
+    if district_base_filter is None:
+        return "+"
+    if district_base_filter == DistrictBaseFilter.remove_all:
+        return "+"
+    return "-"

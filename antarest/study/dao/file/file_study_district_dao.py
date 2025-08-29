@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Literal, Optional, Sequence
+from typing import Optional, Sequence
 
 from typing_extensions import override
 
@@ -19,6 +19,7 @@ from antarest.study.business.model.district_model import District, DistrictBaseF
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     DistrictSet,
+    areas_sign_from_base_filter,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -37,17 +38,21 @@ class FileStudyDistrictDao(DistrictDao):
         Returns all districts of the study.
         """
         file_study = self.get_file_study()
-
-        return [district_set.to_model() for district_set in file_study.config.sets.values()]
+        all_areas = list(file_study.config.areas)
+        return [
+            district_set.to_model(district_id, all_areas)
+            for district_id, district_set in file_study.config.sets.items()
+        ]
 
     @override
     def get_district(self, district_id: str) -> District:
         """
         Returns the district with the given district id.
         """
-        study_data = self.get_file_study()
+        file_study = self.get_file_study()
+        all_areas = list(file_study.config.areas)
         try:
-            return study_data.config.sets[district_id].to_model()
+            return file_study.config.sets[district_id].to_model(district_id, all_areas)
         except KeyError:
             raise DistrictConfigNotFound(district_id)
 
@@ -56,8 +61,8 @@ class FileStudyDistrictDao(DistrictDao):
         """
         Returns whether a district with the given id exists in the study.
         """
-        study_data = self.get_file_study()
-        return district_id in study_data.config.sets
+        file_study = self.get_file_study()
+        return district_id in file_study.config.sets
 
     @override
     def save_district(self, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> None:
@@ -68,38 +73,27 @@ class FileStudyDistrictDao(DistrictDao):
 
         Depending on the `district_base_filter`, the areas in the district will be stored under the key "+" or "-".
         """
-        study_data = self.get_file_study()
+        file_study = self.get_file_study()
         invalid_areas = self.get_invalid_areas(district.areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
         district_id = transform_name_to_id(district.name)
-        item_key = self._update_district_sets_config(district_id, district, district_base_filter)
+        all_areas = list(file_study.config.areas)
+        district_set = DistrictSet.from_model(district, district_base_filter, all_areas)
+        item_key = areas_sign_from_base_filter(district_base_filter)
         apply_filter = district_base_filter.value if district_base_filter else DistrictBaseFilter.remove_all
-        study_data.tree.save(
+        file_study.config.sets[district_id] = district_set
+        file_study.tree.save(
             {
-                "caption": district.name,
+                "caption": district_set.name,
                 "apply-filter": apply_filter,
-                item_key: district.areas,
-                "output": district.output,
-                "comments": district.comments,
+                item_key: district_set.areas,
+                "output": district_set.output,
+                "comments": district_set.comments,
             },
             ["input", "areas", "sets", district_id],
         )
-
-    def _update_district_sets_config(
-        self, district_id: str, district: District, district_base_filter: Optional[DistrictBaseFilter]
-    ) -> Literal["+", "-"]:
-        study_data = self.get_file_study()
-        base_filter = district_base_filter or DistrictBaseFilter.remove_all
-        inverted_set = base_filter == DistrictBaseFilter.add_all
-        study_data.config.sets[district_id] = DistrictSet(
-            name=district.name,
-            areas=district.areas,
-            output=district.output,
-            inverted_set=inverted_set,
-        )
-        return "-" if inverted_set else "+"
 
     @override
     def remove_district(
@@ -109,9 +103,9 @@ class FileStudyDistrictDao(DistrictDao):
         """
         Remove a district from a study.
         """
-        study_data = self.get_file_study()
-        study_data.tree.delete(["input", "areas", "sets", district_id])
-        del study_data.config.sets[district_id]
+        file_study = self.get_file_study()
+        file_study.tree.delete(["input", "areas", "sets", district_id])
+        del file_study.config.sets[district_id]
 
     @override
     def get_invalid_areas(self, areas: list[str]) -> list[str]:

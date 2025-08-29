@@ -82,9 +82,9 @@ def study_with_sets(empty_study_880: FileStudy):
     study = FileStudyInterface(empty_study_880)
     study.file_study.tree.save(district_ini_content)
     study.file_study.config.sets = {
-        "d1": DistrictSet(name="D1", areas=[], output=True),
-        "d2": DistrictSet(name="D2", areas=["n1", "n2"], output=True),
-        "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False),
+        "d1": DistrictSet(name="D1", areas=[], output=True, comments="dummy"),
+        "d2": DistrictSet(name="D2", areas=["n1", "n2"], output=True, comments="dummy"),
+        "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False, comments="dummy"),
     }
     study.file_study.config.areas = {"n1": dummy_area("n1"), "n2": dummy_area("n2"), "n3": dummy_area("n3")}
     return study
