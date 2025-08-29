@@ -32,7 +32,7 @@ def test_ruleset_parsing_hydro():
     rules = {
         "h,be,1": 2,
         "h,be,2": 1,
-        "hl,be,1": 0.2,
+        "hl,be,1": 0.002,
         "hl,be,2": 0.1,
         "hfl,be,1": 0.4,
         "hfl,be,2": 0.2,
@@ -42,7 +42,7 @@ def test_ruleset_parsing_hydro():
     ruleset = parse_ruleset(rules)
     assert ruleset == Ruleset(
         hydro={"be": {"1": 2, "2": 1}},
-        hydro_initial_levels={"be": {"1": 20.0, "2": 10.0}},
+        hydro_initial_levels={"be": {"1": 0.2, "2": 10.0}},
         hydro_final_levels={"be": {"1": 40.0, "2": 20.0}},
         hydro_generation_power={"be": {"1": 10, "2": 20}},
     )

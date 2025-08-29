@@ -374,6 +374,8 @@ class TestCreateSTStorage:
         }
         assert config == expected
 
+        assert recent_study.config.get_sts_constraint_ids("area fr", "storage1") == []
+
     # noinspection SpellCheckingInspection
     def test_to_dto(self, command_context: CommandContext):
         cmd = CreateSTStorage(
@@ -445,6 +447,8 @@ class TestCreateSTStorage:
             }
         }
         assert ini_content == expected_content
+
+        assert study.config.get_sts_constraint_ids("area fr", "storage1") == []
 
         # Create new st storage by specifying 9.2 properties
         parameters_9_2 = copy.deepcopy(PARAMETERS)
