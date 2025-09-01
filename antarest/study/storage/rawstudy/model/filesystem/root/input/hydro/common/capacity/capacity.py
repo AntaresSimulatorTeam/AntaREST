@@ -82,17 +82,6 @@ MATRICES_INFO: List[MatrixInfo] = [
         "default_empty": default_water_values,
     },
     {
-        "name": "maxHourlyGenPower",
-        "freq": MatrixFrequency.HOURLY,
-        "start_version": STUDY_VERSION_9_2,
-        "default_empty": default_scenario_hourly,
-    },
-    {
-        "name": "maxHourlyPumpPower",
-        "freq": MatrixFrequency.HOURLY,
-        "start_version": STUDY_VERSION_9_2,
-        "default_empty": default_scenario_hourly,
-    },{
         "name" : "maxDailyPumpEnergy",
         "freq": MatrixFrequency.DAILY,
         "start_version": STUDY_VERSION_9_2,

@@ -25,8 +25,8 @@ from antarest.study.storage.variantstudy.business.matrix_constants.common import
     FIXED_4_COLUMNS,
     FIXED_8_COLUMNS,
     NULL_MATRIX,
-    NULL_SCENARIO_MATRIX_DAILY,
-    NULL_SCENARIO_MATRIX_HOURLY
+    NULL_SCENARIO_MATRIX,
+    DAILY_ROWS_OF_24S
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
@@ -114,13 +114,13 @@ class GeneratorMatrixConstants:
             self.hashes[LINK_INDIRECT] = self.matrix_service.create(matrix_constants.link.v8.indirect)
 
             self.hashes[NULL_MATRIX_NAME] = self.matrix_service.create(NULL_MATRIX)
-            self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(NULL_SCENARIO_MATRIX_HOURLY)
+            self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.create(NULL_SCENARIO_MATRIX)
             self.hashes[RESERVES_TS] = self.matrix_service.create(FIXED_4_COLUMNS)
             self.hashes[MISCGEN_TS] = self.matrix_service.create(FIXED_8_COLUMNS)
-            self.hashes[HYDRO_MAX_HOURLY_GEN_POWER] = self.matrix_service.create(NULL_SCENARIO_MATRIX_HOURLY)
-            self.hashes[HYDRO_MAX_HOURLY_PUMP_POWER] = self.matrix_service.create(NULL_SCENARIO_MATRIX_HOURLY)
-            self.hashes[HYDRO_MAX_DAILY_GEN_ENERGY] = self.matrix_service.create(NULL_SCENARIO_MATRIX_DAILY)
-            self.hashes[HYDRO_MAX_DAILY_PUMP_ENERGY] = self.matrix_service.create(NULL_SCENARIO_MATRIX_DAILY)
+            self.hashes[HYDRO_MAX_HOURLY_GEN_POWER] = self.matrix_service.create(NULL_MATRIX)
+            self.hashes[HYDRO_MAX_HOURLY_PUMP_POWER] = self.matrix_service.create(NULL_MATRIX)
+            self.hashes[HYDRO_MAX_DAILY_GEN_ENERGY] = self.matrix_service.create(DAILY_ROWS_OF_24S)
+            self.hashes[HYDRO_MAX_DAILY_PUMP_ENERGY] = self.matrix_service.create(DAILY_ROWS_OF_24S)
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
@@ -233,16 +233,13 @@ class GeneratorMatrixConstants:
         return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
 
     def get_hydro_max_hourly_gen_power(self) -> str:
-        """2D-matrix of shape (8761, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_MAX_HOURLY_GEN_POWER] 
 
     def get_hydro_max_hourly_pump_power(self) -> str:
-        """2D-matrix of shape (8761, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_MAX_HOURLY_PUMP_POWER]
     
     def get_max_daily_gen_energy(self) ->str:
-        """2D-matrix of shape (366, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_MAX_DAILY_GEN_ENERGY]
+    
     def get_max_daily_pump_energy(self) ->str:
-        """2D-matrix of shape (366, 1), filled-in with zeros."""
         return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_MAX_DAILY_PUMP_ENERGY]

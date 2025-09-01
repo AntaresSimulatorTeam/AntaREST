@@ -265,26 +265,19 @@ class CreateArea(ICommand):
 
             maxHourlyGenPower = self.command_context.generator_matrix_constants.get_hydro_max_hourly_gen_power()
             maxHourlyPumpPower = self.command_context.generator_matrix_constants.get_hydro_max_hourly_pump_power()
+            
             new_area_data["input"]["hydro"]["series"][area_id]["maxHourlyGenPower"] = (
                 maxHourlyGenPower
             )
 
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"maxHourlyGenPower_{area_id}"] = (
-                maxHourlyGenPower
+            new_area_data["input"]["hydro"]["series"][area_id]["maxHourlyPumpPower"] = (
+                maxHourlyPumpPower
             )
 
             new_area_data["input"]["hydro"]["common"]["capacity"][f"maxDailyGenEnergy_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_max_daily_gen_energy()
             )
                                
-            new_area_data["input"]["hydro"]["series"][area_id]["maxHourlyPumpPower"] = (
-                maxHourlyPumpPower
-            )
-
-            new_area_data["input"]["hydro"]["common"]["capacity"][f"maxHourlyPumpPower_{area_id}"] = (
-                maxHourlyPumpPower
-            )
-
             new_area_data["input"]["hydro"]["common"]["capacity"][f"maxDailyPumpEnergy_{area_id}"] = (
                 self.command_context.generator_matrix_constants.get_max_daily_pump_energy()
             )

@@ -14,7 +14,7 @@
 import pandas as pd
 
 NULL_MATRIX = pd.DataFrame()
-NULL_SCENARIO_MATRIX_HOURLY = pd.DataFrame([[0.0]] * 8760)
-NULL_SCENARIO_MATRIX_DAILY = pd.DataFrame([[0.0]] * 365)
+NULL_SCENARIO_MATRIX = pd.DataFrame([[0.0]] * 8760)
 FIXED_4_COLUMNS = pd.DataFrame([[0.0, 0.0, 0.0, 0.0]] * 8760)
 FIXED_8_COLUMNS = pd.DataFrame([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+DAILY_ROWS_OF_24S = pd.DataFrame([[24.0]] * 365)
