@@ -26,10 +26,10 @@ export const SCENARIOS = [
   "hydro",
   "wind",
   "solar",
-  "ntc",
-  "renewable",
+  "ntc", // Since v8.2
+  "renewable", // Since v8.1
   "hydroInitialLevels",
-  "bindingConstraints",
+  "bindingConstraints", // Since v8.7
   "hydroFinalLevels", // Since v9.2
   "shortTermStorageInflows", // Since v9.3
   "shortTermStorageAdditionalConstraints", // Since v9.3
@@ -274,6 +274,7 @@ export function isLevel3Display(config: AreaSelectionDisplay): config is Level3D
 interface ScenarioMetadata {
   level: 1 | 2 | 3;
   requiresAreaSelection: boolean;
+  minVersion?: number;
 }
 
 export const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
@@ -282,18 +283,18 @@ export const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
   hydro: { level: 1, requiresAreaSelection: false },
   wind: { level: 1, requiresAreaSelection: false },
   solar: { level: 1, requiresAreaSelection: false },
-  ntc: { level: 1, requiresAreaSelection: false },
+  ntc: { level: 1, requiresAreaSelection: false, minVersion: 820 },
   hydroInitialLevels: { level: 1, requiresAreaSelection: false },
-  bindingConstraints: { level: 1, requiresAreaSelection: false },
-  hydroFinalLevels: { level: 1, requiresAreaSelection: false },
+  bindingConstraints: { level: 1, requiresAreaSelection: false, minVersion: 870 },
+  hydroFinalLevels: { level: 1, requiresAreaSelection: false, minVersion: 920 },
 
   // Level 2 scenarios (area → entity → values)
   thermal: { level: 2, requiresAreaSelection: true },
-  renewable: { level: 2, requiresAreaSelection: true },
-  shortTermStorageInflows: { level: 2, requiresAreaSelection: true },
+  renewable: { level: 2, requiresAreaSelection: true, minVersion: 810 },
+  shortTermStorageInflows: { level: 2, requiresAreaSelection: true, minVersion: 930 },
 
   // Level 3 scenarios (area → entity → subentity → values)
-  shortTermStorageAdditionalConstraints: { level: 3, requiresAreaSelection: true },
+  shortTermStorageAdditionalConstraints: { level: 3, requiresAreaSelection: true, minVersion: 930 },
 };
 
 /**
@@ -304,4 +305,26 @@ export const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
  */
 export function getScenarioMetadata(type: ScenarioType): ScenarioMetadata {
   return SCENARIO_METADATA[type];
+}
+
+/**
+ * Check if a scenario is available for the given study version
+ *
+ * @param type - The scenario type to check
+ * @param studyVersion - The study version (3-digit format, e.g., 930 for v9.3)
+ * @returns True if the scenario is available for this version, false otherwise
+ */
+export function isScenarioAvailableForVersion(type: ScenarioType, studyVersion: number): boolean {
+  const metadata = getScenarioMetadata(type);
+  return !metadata.minVersion || studyVersion >= metadata.minVersion;
+}
+
+/**
+ * Filter scenarios by study version, only returning those available for the version
+ *
+ * @param studyVersion - The study version (3-digit format)
+ * @returns Array of scenario types available for this version
+ */
+export function getAvailableScenariosForVersion(studyVersion: number): ScenarioType[] {
+  return SCENARIOS.filter((scenario) => isScenarioAvailableForVersion(scenario, studyVersion));
 }

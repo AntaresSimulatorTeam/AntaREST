@@ -22,7 +22,7 @@ import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import { getScenarioConfigByType } from "./services";
 import Table from "./Table";
-import { SCENARIOS, type ScenarioType } from "./types";
+import { SCENARIOS, type ScenarioType, getAvailableScenariosForVersion } from "./types";
 import withAreas from "./withAreas";
 
 interface Props {
@@ -36,7 +36,10 @@ const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(SCENARIOS[0]);
+  
+  // Filter scenarios based on study version
+  const availableScenarios = getAvailableScenariosForVersion(Number(study.version));
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(availableScenarios[0]);
 
   const scenarioData = usePromiseWithSnackbarError(
     () => getScenarioConfigByType(study.id, selectedScenario),
@@ -73,7 +76,7 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
       <TabContext value={selectedScenario}>
         <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
           <TabList onChange={handleScenarioChange}>
-            {SCENARIOS.map((type) => (
+            {availableScenarios.map((type) => (
               <Tab
                 key={type}
                 value={type}
@@ -82,7 +85,7 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
             ))}
           </TabList>
         </Box>
-        {SCENARIOS.map((type) => (
+        {availableScenarios.map((type) => (
           <TabPanel key={type} value={type} sx={{ px: 1, height: 1, overflow: "auto" }}>
             <UsePromiseCond
               response={scenarioData}
