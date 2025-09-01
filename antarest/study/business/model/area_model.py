@@ -19,9 +19,9 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPathProperties,
-    AreaFolder,
-    OptimizationProperties,
+    AdequacyPathFileData,
+    AreaFileData,
+    OptimizationFileData,
 )
 
 
@@ -55,9 +55,9 @@ class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
 
 # noinspection SpellCheckingInspection
 class _BaseAreaDTO(
-    OptimizationProperties.FilteringSection,
-    OptimizationProperties.ModalOptimizationSection,
-    AdequacyPathProperties.AdequacyPathSection,
+    OptimizationFileData.FilteringSection,
+    OptimizationFileData.ModalOptimizationSection,
+    AdequacyPathFileData.AdequacyPathSection,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,
@@ -89,7 +89,7 @@ class AreaOutput(_BaseAreaDTO):
     @classmethod
     def from_model(
         cls,
-        area_folder: AreaFolder,
+        area_folder: AreaFileData,
         *,
         average_unsupplied_energy_cost: float,
         average_spilled_energy_cost: float,
@@ -118,25 +118,25 @@ class AreaOutput(_BaseAreaDTO):
         }
         return cls(**obj)
 
-    def _to_optimization(self) -> OptimizationProperties:
-        obj = {name: getattr(self, name) for name in OptimizationProperties.FilteringSection.model_fields}
-        filtering_section = OptimizationProperties.FilteringSection(**obj)
-        obj = {name: getattr(self, name) for name in OptimizationProperties.ModalOptimizationSection.model_fields}
-        nodal_optimization_section = OptimizationProperties.ModalOptimizationSection(**obj)
+    def _to_optimization(self) -> OptimizationFileData:
+        obj = {name: getattr(self, name) for name in OptimizationFileData.FilteringSection.model_fields}
+        filtering_section = OptimizationFileData.FilteringSection(**obj)
+        obj = {name: getattr(self, name) for name in OptimizationFileData.ModalOptimizationSection.model_fields}
+        nodal_optimization_section = OptimizationFileData.ModalOptimizationSection(**obj)
         args = {"filtering": filtering_section, "nodal_optimization": nodal_optimization_section}
-        return OptimizationProperties.model_validate(args)
+        return OptimizationFileData.model_validate(args)
 
-    def _to_adequacy_patch(self) -> Optional[AdequacyPathProperties]:
-        obj = {name: getattr(self, name) for name in AdequacyPathProperties.AdequacyPathSection.model_fields}
+    def _to_adequacy_patch(self) -> Optional[AdequacyPathFileData]:
+        obj = {name: getattr(self, name) for name in AdequacyPathFileData.AdequacyPathSection.model_fields}
         # If all fields are `None`, the object is empty.
         if all(value is None for value in obj.values()):
             return None
-        adequacy_path_section = AdequacyPathProperties.AdequacyPathSection(**obj)
-        return AdequacyPathProperties.model_validate({"adequacy_patch": adequacy_path_section})
+        adequacy_path_section = AdequacyPathFileData.AdequacyPathSection(**obj)
+        return AdequacyPathFileData.model_validate({"adequacy_patch": adequacy_path_section})
 
     @property
-    def area_folder(self) -> AreaFolder:
-        area_folder = AreaFolder(
+    def area_folder(self) -> AreaFileData:
+        area_folder = AreaFileData(
             optimization=self._to_optimization(),
             adequacy_patch=self._to_adequacy_patch(),
             # UI properties are not configurable in Table Mode

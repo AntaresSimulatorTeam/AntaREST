@@ -29,7 +29,7 @@ from antarest.study.business.model.area_properties_model import (
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AreaFolder,
+    AreaFileData,
     ThermalAreasProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -103,7 +103,7 @@ class AreaManager:
         # and the values are objects that can be converted to `AreaFolder`.
         area_map = {}
         for area_id, area_cfg in areas_cfg.items():
-            area_folder = AreaFolder(**area_cfg)
+            area_folder = AreaFileData(**area_cfg)
             area_map[area_id] = AreaOutput.from_model(
                 area_folder,
                 average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),

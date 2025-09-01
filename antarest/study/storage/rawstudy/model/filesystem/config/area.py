@@ -16,9 +16,11 @@ Object model used to read and update area configuration.
 
 from typing import Any, Dict, Mapping, MutableMapping, Optional, Set
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 from typing_extensions import override
 
+from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
@@ -26,92 +28,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_colors,
     validate_filtering,
 )
-
-
-# noinspection SpellCheckingInspection
-class OptimizationProperties(IniProperties):
-    """
-    Object linked to `/input/areas/<area>/optimization.ini` information.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import OptimizationProperties
-    >>> from pprint import pprint
-
-    Create and validate a new Optimization object from a dictionary read from a configuration file.
-
-    >>> obj = {
-    ...     "filtering": {
-    ...         "filter-synthesis": "hourly, daily, weekly, monthly, annual",
-    ...         "filter-year-by-year": "annual,hourly",
-    ...     },
-    ...     "nodal optimization": {
-    ...         "non-dispatchable-power": "true",
-    ...         "dispatchable-hydro-power": "false",
-    ...         "spread-unsupplied-energy-cost": "1500",
-    ...         "spread-spilled-energy-cost": "317.2500",
-    ...     },
-    ... }
-
-    >>> opt = OptimizationProperties(**obj)
-
-    >>> pprint(opt.model_dump(by_alias=True), width=80)
-    {'filtering': {'filter-synthesis': 'hourly, daily, weekly, monthly, annual',
-                   'filter-year-by-year': 'hourly, annual'},
-     'nodal optimization': {'dispatchable-hydro-power': False,
-                            'non-dispatchable-power': True,
-                            'other-dispatchable-power': True,
-                            'spread-spilled-energy-cost': 317.25,
-                            'spread-unsupplied-energy-cost': 1500.0}}
-
-    Update the filtering configuration :
-
-    >>> opt.filtering.filter_synthesis = "hourly,weekly,monthly,annual,century"
-    >>> opt.filtering.filter_year_by_year = "hourly, monthly, annual"
-
-    Update the modal optimization configuration :
-
-    >>> opt.nodal_optimization.non_dispatchable_power = False
-    >>> opt.nodal_optimization.spread_spilled_energy_cost = 0.0
-
-    Convert the object to a dictionary for writing to a configuration file:
-
-    >>> pprint(opt.model_dump(by_alias=True, exclude_defaults=True), width=80)
-    {'filtering': {'filter-synthesis': 'hourly, weekly, monthly, annual',
-                   'filter-year-by-year': 'hourly, monthly, annual'},
-     'nodal optimization': {'dispatchable-hydro-power': False,
-                            'non-dispatchable-power': False,
-                            'spread-unsupplied-energy-cost': 1500.0}}
-    """
-
-    class FilteringSection(IniProperties):
-        """Configuration read from section `[filtering]` of `/input/areas/<area>/optimization.ini`."""
-
-        filter_synthesis: str = Field("", alias="filter-synthesis")
-        filter_year_by_year: str = Field("", alias="filter-year-by-year")
-
-        @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
-        def _validate_filtering(cls, v: Any) -> str:
-            return validate_filtering(v)
-
-    # noinspection SpellCheckingInspection
-    class ModalOptimizationSection(IniProperties):
-        """Configuration read from section `[nodal optimization]` of `/input/areas/<area>/optimization.ini`."""
-
-        non_dispatchable_power: bool = Field(default=True, alias="non-dispatchable-power")
-        dispatchable_hydro_power: bool = Field(default=True, alias="dispatchable-hydro-power")
-        other_dispatchable_power: bool = Field(default=True, alias="other-dispatchable-power")
-        spread_unsupplied_energy_cost: float = Field(default=0.0, alias="spread-unsupplied-energy-cost")
-        spread_spilled_energy_cost: float = Field(default=0.0, alias="spread-spilled-energy-cost")
-
-    filtering: FilteringSection = Field(
-        default_factory=FilteringSection,
-        alias="filtering",
-    )
-    nodal_optimization: ModalOptimizationSection = Field(
-        default_factory=ModalOptimizationSection,
-        alias="nodal optimization",
-    )
 
 
 class AdequacyPatchMode(EnumIgnoreCase):
@@ -126,50 +42,7 @@ class AdequacyPatchMode(EnumIgnoreCase):
     VIRTUAL = "virtual"
 
 
-class AdequacyPathProperties(IniProperties):
-    """
-    Object linked to `/input/areas/<area>/adequacy_patch.ini` information.
-
-    Only available if study version >= 830.
-    """
-
-    class AdequacyPathSection(IniProperties):
-        """Configuration read from section `[adequacy-patch]` of `/input/areas/<area>/adequacy_patch.ini`."""
-
-        adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE, alias="adequacy-patch-mode")
-
-    adequacy_patch: AdequacyPathSection = Field(default_factory=AdequacyPathSection, alias="adequacy-patch")
-
-
 class AreaUI(IniProperties):
-    """
-    Style of an area in the map or in a layer.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
-    >>> from pprint import pprint
-
-    Create and validate a new AreaUI object from a dictionary read from a configuration file.
-
-    >>> obj = {
-    ...     "x": 1148,
-    ...     "y": 144,
-    ...     "color_r": 0,
-    ...     "color_g": 128,
-    ...     "color_b": 255,
-    ... }
-    >>> ui = AreaUI(**obj)
-    >>> pprint(ui.model_dump(by_alias=True), width=80)
-    {'colorRgb': '#0080FF', 'x': 1148, 'y': 144}
-
-    Update the color:
-
-    >>> ui.color_rgb = (192, 168, 127)
-    >>> pprint(ui.model_dump(by_alias=True), width=80)
-    {'colorRgb': '#C0A87F', 'x': 1148, 'y': 144}
-    """
-
     x: int = Field(default=0, description="x coordinate of the area in the map")
     y: int = Field(default=0, description="y coordinate of the area in the map")
     color_rgb: str = Field(
@@ -188,18 +61,6 @@ class AreaUI(IniProperties):
 
     @override
     def to_config(self) -> Dict[str, Any]:
-        """
-        Convert the object to a dictionary for writing to a configuration file:
-
-        Usage:
-
-        >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
-        >>> from pprint import pprint
-
-        >>> ui = AreaUI(x=1148, y=144, color_rgb="#0080FF")
-        >>> pprint(ui.to_config(), width=80)
-        {'color_b': 255, 'color_g': 128, 'color_r': 0, 'x': 1148, 'y': 144}
-        """
         assert self.color_rgb is not None
         r = int(self.color_rgb[1:3], 16)
         g = int(self.color_rgb[3:5], 16)
@@ -208,56 +69,6 @@ class AreaUI(IniProperties):
 
 
 class UIProperties(IniProperties):
-    """
-    Object linked to `/input/areas/<area>/ui.ini` information.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import UIProperties
-    >>> from pprint import pprint
-
-    UIProperties has default values for `style` and `layers`:
-
-    >>> ui = UIProperties()
-    >>> pprint(ui.model_dump(), width=80)
-    {'layer_styles': {0: {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}},
-     'layers': {0},
-     'style': {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}}
-
-    Create and validate a new UI object from a dictionary read from a configuration file.
-
-    >>> obj = {
-    ...     "ui": {
-    ...         "x": 1148,
-    ...         "y": 144,
-    ...         "color_r": 0,
-    ...         "color_g": 128,
-    ...         "color_b": 255,
-    ...         "layers": "0 7",
-    ...     },
-    ...     "layerX": {"0": 1148, "7": 18},
-    ...     "layerY": {"0": 144, "7": -22},
-    ...     "layerColor": {
-    ...         "0": "0 , 128 , 255",
-    ...         "4": "0 , 128 , 255",
-    ...         "6": "192 , 168 , 99",
-    ...         "7": "0 , 128 , 255",
-    ...         "8": "0 , 128 , 255",
-    ...     },
-    ... }
-
-    >>> ui = UIProperties(**obj)
-    >>> pprint(ui.model_dump(), width=80)
-    {'layer_styles': {0: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144},
-                      4: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144},
-                      6: {'color_rgb': '#C0A863', 'x': 1148, 'y': 144},
-                      7: {'color_rgb': '#0080FF', 'x': 18, 'y': -22},
-                      8: {'color_rgb': '#0080FF', 'x': 1148, 'y': 144}},
-     'layers': {0, 7},
-     'style': {'color_rgb': '#0080FF', 'x': 1148, 'y': 144}}
-
-    """
-
     style: AreaUI = Field(
         default_factory=AreaUI,
         description="style of the area in the map: coordinates and color",
@@ -346,33 +157,6 @@ class UIProperties(IniProperties):
 
     @override
     def to_config(self) -> Dict[str, Dict[str, Any]]:
-        """
-        Convert the object to a dictionary for writing to a configuration file:
-
-        Usage:
-
-        >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import UIProperties
-        >>> from pprint import pprint
-
-        >>> ui = UIProperties(
-        ...     style=AreaUI(x=1148, y=144, color_rgb=(0, 128, 255)),
-        ...     layers={0, 7},
-        ...     layer_styles={
-        ...         6: AreaUI(x=1148, y=144, color_rgb="#C0A863"),
-        ...         7: AreaUI(x=18, y=-22, color_rgb=(0, 128, 255)),
-        ...     },
-        ... )
-        >>> pprint(ui.to_config(), width=80)
-        {'layerColor': {'0': '230, 108, 44', '6': '192, 168, 99', '7': '0, 128, 255'},
-         'layerX': {'0': 0, '6': 1148, '7': 18},
-         'layerY': {'0': 0, '6': 144, '7': -22},
-         'ui': {'color_b': 255,
-                'color_g': 128,
-                'color_r': 0,
-                'layers': '0 7',
-                'x': 1148,
-                'y': 144}}
-        """
         obj: Dict[str, Dict[str, Any]] = {
             "ui": {},
             "layerX": {},
@@ -392,83 +176,59 @@ class UIProperties(IniProperties):
         return obj
 
 
-class AreaFolder(IniProperties):
+class OptimizationFileData(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+    class FilteringSection(AntaresBaseModel):
+        model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+        filter_synthesis: str = Field("")
+        filter_year_by_year: str = Field("")
+
+        @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
+        def _validate_filtering(cls, v: Any) -> str:
+            return validate_filtering(v)
+
+    class ModalOptimizationSection(AntaresBaseModel):
+        model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+        non_dispatchable_power: bool = Field(default=True)
+        dispatchable_hydro_power: bool = Field(default=True)
+        other_dispatchable_power: bool = Field(default=True)
+        spread_unsupplied_energy_cost: float = Field(default=0.0)
+        spread_spilled_energy_cost: float = Field(default=0.0)
+
+    filtering: FilteringSection = Field(
+        default_factory=FilteringSection,
+    )
+    nodal_optimization: ModalOptimizationSection = Field(
+        default_factory=ModalOptimizationSection,
+        alias="nodal optimization",
+    )
+
+
+class AdequacyPathFileData(AntaresBaseModel):
     """
-    Object linked to `/input/areas/<area>` information.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaFolder
-    >>> from pprint import pprint
-
-    Create and validate a new AreaProperties object from a dictionary read from a configuration file.
-
-    >>> obj = AreaFolder()
-    >>> pprint(obj.model_dump(), width=80)
-    {'adequacy_patch': None,
-     'optimization': {'filtering': {'filter_synthesis': '',
-                                    'filter_year_by_year': ''},
-                      'nodal_optimization': {'dispatchable_hydro_power': True,
-                                             'non_dispatchable_power': True,
-                                             'other_dispatchable_power': True,
-                                             'spread_spilled_energy_cost': 0.0,
-                                             'spread_unsupplied_energy_cost': 0.0}},
-     'ui': {'layer_styles': {0: {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}},
-            'layers': {0},
-            'style': {'color_rgb': '#E66C2C', 'x': 0, 'y': 0}}}
-
-    >>> pprint(obj.to_config(), width=80)
-    {'optimization': {'filtering': {'filter-synthesis': '',
-                                    'filter-year-by-year': ''},
-                      'nodal optimization': {'dispatchable-hydro-power': True,
-                                             'non-dispatchable-power': True,
-                                             'other-dispatchable-power': True,
-                                             'spread-spilled-energy-cost': 0.0,
-                                             'spread-unsupplied-energy-cost': 0.0}},
-     'ui': {'layerColor': {'0': '230, 108, 44'},
-            'layerX': {'0': 0},
-            'layerY': {'0': 0},
-            'ui': {'color_b': 44,
-                   'color_g': 108,
-                   'color_r': 230,
-                   'layers': '0',
-                   'x': 0,
-                   'y': 0}}}
-
-    We can construct an AreaProperties object from invalid data:
-
-    >>> data = {
-    ...     "optimization": {
-    ...         "filtering": {"filter-synthesis": "annual, centennial"},
-    ...         "nodal optimization": {
-    ...             "spread-spilled-energy-cost": "15.5",
-    ...             "spread-unsupplied-energy-cost": "yes",
-    ...         },
-    ...     },
-    ...     "ui": {"style": {"color_rgb": (0, 128, 256)}},
-    ... }
-
-    >>> obj = AreaFolder.construct(**data)
-    >>> pprint(obj.model_dump(), width=80)
-    {'adequacy_patch': None,
-     'optimization': {'filtering': {'filter-synthesis': 'annual, centennial'},
-                      'nodal optimization': {'spread-spilled-energy-cost': '15.5',
-                                             'spread-unsupplied-energy-cost': 'yes'}},
-     'ui': {'style': {'color_rgb': (0, 128, 256)}}}
-
-    >>> AreaFolder.validate(data)
-    Traceback (most recent call last):
-      ...
-    pydantic.error_wrappers.ValidationError: 1 validation error for AreaFolder
-    optimization -> nodal optimization -> spread-unsupplied-energy-cost
-      value is not a valid float (type=type_error.float)
+    Only available if study version >= 830.
     """
 
-    optimization: OptimizationProperties = Field(
-        default_factory=OptimizationProperties,
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+    class AdequacyPathSection(AntaresBaseModel):
+        model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+        adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE)
+
+    adequacy_patch: AdequacyPathSection = Field(default_factory=AdequacyPathSection)
+
+
+class AreaFileData(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
+
+    optimization: OptimizationFileData = Field(
+        default_factory=OptimizationFileData,
         description="optimization configuration",
     )
-    adequacy_patch: Optional[AdequacyPathProperties] = Field(
+    adequacy_patch: Optional[AdequacyPathFileData] = Field(
         None,
         description="adequacy patch configuration",
     )

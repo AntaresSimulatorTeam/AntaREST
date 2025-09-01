@@ -19,8 +19,8 @@ from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPatchMode,
-    AdequacyPathProperties,
-    OptimizationProperties,
+    AdequacyPathFileData,
+    OptimizationFileData,
     ThermalAreasProperties,
 )
 
@@ -128,8 +128,8 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
 @all_optional_model
 class AreaFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
     thermal_properties: ThermalAreasProperties
-    optimization_properties: OptimizationProperties
-    adequacy_properties: AdequacyPathProperties
+    optimization_properties: OptimizationFileData
+    adequacy_properties: AdequacyPathFileData
 
     def get_area_properties(self, area_id: str) -> AreaProperties:
         return AreaProperties(
