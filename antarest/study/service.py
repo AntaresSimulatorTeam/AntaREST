@@ -80,7 +80,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
@@ -1654,7 +1654,7 @@ class StudyService:
         uuid: str,
         area_type: Optional[AreaType],
         ui: bool,
-    ) -> List[AreaInfoDTO] | Dict[str, Any]:
+    ) -> List[Area] | Dict[str, Any]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
@@ -1675,8 +1675,8 @@ class StudyService:
     def create_area(
         self,
         uuid: str,
-        area_creation_dto: AreaCreationDTO,
-    ) -> AreaInfoDTO:
+        area_creation_dto: AreaCreation,
+    ) -> Area:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -2206,7 +2206,7 @@ class StudyService:
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
             all_areas = cast(
-                List[AreaInfoDTO],
+                List[Area],
                 self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False),
             )
             if matrix_path.parts[-1] == "allocation":

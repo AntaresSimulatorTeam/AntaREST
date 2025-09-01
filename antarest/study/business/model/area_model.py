@@ -30,15 +30,18 @@ class AreaType(enum.Enum):
     DISTRICT = "DISTRICT"
 
 
-class AreaCreationDTO(AntaresBaseModel):
+class Area(AntaresBaseModel):
+    id: str
     name: str
     type: AreaType
     set: Optional[List[str]] = None
-
-
-class AreaInfoDTO(AreaCreationDTO):
-    id: str
     thermals: Optional[List[ThermalCluster]] = None
+
+
+class AreaCreation(AntaresBaseModel):
+    name: str
+    type: AreaType
+    set: Optional[List[str]] = None
 
 
 class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):

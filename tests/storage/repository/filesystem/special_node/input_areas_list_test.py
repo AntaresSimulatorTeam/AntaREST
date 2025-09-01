@@ -13,7 +13,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, OptimizationParameters
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
 
 
@@ -32,7 +32,7 @@ IT
         study_id="id",
         version=-1,
         areas={
-            "fr": Area(
+            "fr": OptimizationParameters(
                 name="FR",
                 links={},
                 thermals=[],
@@ -40,7 +40,7 @@ IT
                 filters_synthesis=[],
                 filters_year=[],
             ),
-            "de": Area(
+            "de": OptimizationParameters(
                 name="DE",
                 links={},
                 thermals=[],
@@ -48,7 +48,7 @@ IT
                 filters_synthesis=[],
                 filters_year=[],
             ),
-            "it": Area(
+            "it": OptimizationParameters(
                 name="IT",
                 links={},
                 thermals=[],

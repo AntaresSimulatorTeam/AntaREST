@@ -52,11 +52,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
+    OptimizationParameters,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -299,7 +299,7 @@ def test_parse_area(study_path: Path) -> None:
         version=0,
         output_path=study_path / "output",
         areas={
-            "fr": Area(
+            "fr": OptimizationParameters(
                 name="FR",
                 thermals=[],
                 renewables=[],
@@ -335,7 +335,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
         version=0,
         output_path=study_path / "output",
         areas={
-            "fr": Area(
+            "fr": OptimizationParameters(
                 name="FR",
                 thermals=[],
                 renewables=[],
@@ -343,7 +343,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
                 filters_year=["hourly", "weekly", "annual"],
                 filters_synthesis=["daily", "monthly"],
             ),
-            "de": Area(
+            "de": OptimizationParameters(
                 name="DE",
                 links={},
                 thermals=[],
@@ -733,7 +733,7 @@ def test_config_to_study_index_8_8():
         study_id="my-study",
         version=STUDY_VERSION_8_8,
         areas={
-            "be": Area(
+            "be": OptimizationParameters(
                 name="BE",
                 links={"fr": LinkConfig()},
                 thermals=[ThermalCluster(name="Nuclear")],
@@ -743,7 +743,7 @@ def test_config_to_study_index_8_8():
                 st_storages=[STStorage(name="Battery")],
                 st_storages_additional_constraints={},
             ),
-            "fr": Area(
+            "fr": OptimizationParameters(
                 name="FR",
                 links={},
                 thermals=[],
@@ -774,7 +774,7 @@ def test_config_to_study_index_9_2_additional_constraints():
         study_id="my-study",
         version=STUDY_VERSION_9_2,
         areas={
-            "be": Area(
+            "be": OptimizationParameters(
                 name="BE",
                 links={},
                 thermals=[ThermalCluster(name="Nuclear")],

@@ -13,7 +13,7 @@
 from pathlib import Path
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, OptimizationParameters
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
 
 RULES = {
@@ -109,7 +109,7 @@ def test_get(tmp_path: Path) -> None:
     ]
 
     areas = {
-        n: Area(
+        n: OptimizationParameters(
             name=n,
             links=dict(),
             thermals=thermals,

@@ -19,7 +19,7 @@ from typing_extensions import Annotated, override
 
 from antarest.core.exceptions import AllocationDataNotFound, AreaNotFound
 from antarest.core.serde.np_array import NpArray
-from antarest.study.business.model.area_model import AreaInfoDTO
+from antarest.study.business.model.area_model import Area
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.utils import FormFieldsBaseModel
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
@@ -149,7 +149,7 @@ class AllocationManager:
         return allocation_data.get("[allocation]", allocation_data.get("allocation", {}))  # type: ignore
 
     def get_allocation_form_fields(
-        self, all_areas: List[AreaInfoDTO], study: StudyInterface, area_id: str
+        self, all_areas: List[Area], study: StudyInterface, area_id: str
     ) -> AllocationFormFields:
         """
         Get hydraulic allocation coefficients.
@@ -178,7 +178,7 @@ class AllocationManager:
 
     def set_allocation_form_fields(
         self,
-        all_areas: List[AreaInfoDTO],
+        all_areas: List[Area],
         study: StudyInterface,
         area_id: str,
         data: AllocationFormFields,
@@ -223,7 +223,7 @@ class AllocationManager:
             ]
         )
 
-    def get_allocation_matrix(self, study: StudyInterface, all_areas: List[AreaInfoDTO]) -> AllocationMatrix:
+    def get_allocation_matrix(self, study: StudyInterface, all_areas: List[Area]) -> AllocationMatrix:
         """
         Get the hydraulic allocation matrix for all areas in the study.
 

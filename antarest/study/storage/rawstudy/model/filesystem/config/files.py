@@ -42,11 +42,11 @@ from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
+    OptimizationParameters,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
@@ -234,7 +234,7 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
     }
 
 
-def _parse_areas(root: Path) -> Dict[str, Area]:
+def _parse_areas(root: Path) -> Dict[str, OptimizationParameters]:
     areas = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/list.txt"),
@@ -369,7 +369,7 @@ def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
     return {year + 1: weights.get(year, 1) for year in added if year not in removed}
 
 
-def parse_area(root: Path, area: str) -> "Area":
+def parse_area(root: Path, area: str) -> "OptimizationParameters":
     """
     Parse an area configuration and extract its filtering configuration.
 
@@ -394,7 +394,7 @@ def parse_area(root: Path, area: str) -> "Area":
     filter_year_by_year = extract_filtering(filtering.get("filter-year-by-year", ""))
 
     st_storages = _parse_st_storage(root, area_id)
-    return Area(
+    return OptimizationParameters(
         name=area,
         links=_parse_links_filtering(root, area_id),
         thermals=_parse_thermal(root, area_id),

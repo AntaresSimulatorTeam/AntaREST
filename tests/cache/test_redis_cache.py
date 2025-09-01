@@ -17,7 +17,10 @@ from antares.study.version import StudyVersion
 
 from antarest.core.cache.business.redis_cache import RedisCache, RedisCacheElement
 from antarest.core.serde.json import from_json
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    FileStudyTreeConfigDTO,
+    OptimizationParameters,
+)
 
 
 def test_lifecycle():
@@ -29,7 +32,7 @@ def test_lifecycle():
         study_id="",
         version=StudyVersion.parse(0),
         areas={
-            "a1": Area(
+            "a1": OptimizationParameters(
                 name="a1",
                 links={},
                 thermals=[],

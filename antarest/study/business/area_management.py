@@ -17,8 +17,8 @@ from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, Laye
 from antarest.core.model import JSON
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
 from antarest.study.business.model.area_model import (
-    AreaCreationDTO,
-    AreaInfoDTO,
+    Area,
+    AreaCreation,
     AreaOutput,
     AreaType,
     UpdateAreaUi,
@@ -33,7 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     ThermalAreasProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, OptimizationParameters
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -154,7 +154,7 @@ class AreaManager:
     def get_table_schema() -> JSON:
         return AreaOutput.model_json_schema()
 
-    def get_all_areas(self, study: StudyInterface, area_type: Optional[AreaType] = None) -> List[AreaInfoDTO]:
+    def get_all_areas(self, study: StudyInterface, area_type: Optional[AreaType] = None) -> List[Area]:
         """
         Retrieves all areas and districts of a raw study based on the area type.
 
@@ -166,12 +166,12 @@ class AreaManager:
             A list of area/district information.
         """
         file_study = study.get_files()
-        cfg_areas: Dict[str, Area] = file_study.config.areas
-        result: List[AreaInfoDTO] = []
+        cfg_areas: Dict[str, OptimizationParameters] = file_study.config.areas
+        result: List[Area] = []
 
         if area_type is None or area_type == AreaType.AREA:
             result.extend(
-                AreaInfoDTO(
+                Area(
                     id=area_id,
                     name=area.name,
                     type=AreaType.AREA,
@@ -183,7 +183,7 @@ class AreaManager:
         if area_type is None or area_type == AreaType.DISTRICT:
             cfg_sets: Dict[str, DistrictSet] = file_study.config.sets
             result.extend(
-                AreaInfoDTO(
+                Area(
                     id=set_id,
                     name=district.name or set_id,
                     type=AreaType.DISTRICT,
@@ -275,7 +275,7 @@ class AreaManager:
 
         study.add_commands(commands)
 
-    def create_area(self, study: StudyInterface, area_creation_info: AreaCreationDTO) -> AreaInfoDTO:
+    def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> Area:
         file_study = study.get_files()
 
         # check if area already exists
@@ -291,7 +291,7 @@ class AreaManager:
         )
         study.add_commands([command])
 
-        return AreaInfoDTO(
+        return Area(
             id=area_id,
             name=area_creation_info.name,
             type=AreaType.AREA,

@@ -43,7 +43,7 @@ from antarest.study.business.correlation_management import (
     CorrelationMatrix,
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, AreaType, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -154,9 +154,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Get all areas basic info",
-        response_model=List[AreaInfoDTO] | Dict[str, Any],
+        response_model=List[Area] | Dict[str, Any],
     )
-    def get_areas(uuid: str, type: AreaType = Query(None), ui: bool = False) -> List[AreaInfoDTO] | Dict[str, Any]:
+    def get_areas(uuid: str, type: AreaType = Query(None), ui: bool = False) -> List[Area] | Dict[str, Any]:
         logger.info(f"Fetching area list (type={type}) for study {uuid}")
         areas_list = study_service.get_all_areas(uuid, type, ui)
         return areas_list
@@ -171,9 +171,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
         summary="Create a new area",
-        response_model=AreaInfoDTO,
+        response_model=Area,
     )
-    def create_area(uuid: str, area_creation_info: AreaCreationDTO) -> Any:
+    def create_area(uuid: str, area_creation_info: AreaCreation) -> Any:
         logger.info(f"Creating new area for study {uuid}")
         return study_service.create_area(uuid, area_creation_info)
 
@@ -1102,7 +1102,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)
@@ -1126,7 +1126,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)
@@ -1163,7 +1163,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)
@@ -1212,7 +1212,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)
@@ -1258,7 +1258,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)
@@ -1282,7 +1282,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)
@@ -1319,7 +1319,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         all_areas = cast(
-            List[AreaInfoDTO],  # because `ui=False`
+            List[Area],
             study_service.get_all_areas(uuid, area_type=AreaType.AREA, ui=False),
         )
         study_interface = study_service.get_study_interface(study)

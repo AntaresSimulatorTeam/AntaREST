@@ -17,7 +17,7 @@ from typing import List
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.area_management import AreaInfoDTO
+from antarest.study.business.model.area_model import Area, AreaType
 
 
 @pytest.mark.unit_test
@@ -238,7 +238,7 @@ class TestHydroCorrelation:
         - the coefficient == 0 for the other areas.
         Other columns must not be changed.
         """
-        area_info = AreaInfoDTO(id="north", name="NORTH", type="AREA")
+        area_info = Area(id="north", name="NORTH", type=AreaType.AREA)
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},

@@ -24,7 +24,8 @@ from antarest.study.business.allocation_management import (
     AllocationManager,
     AllocationMatrix,
 )
-from antarest.study.business.area_management import AreaInfoDTO, AreaType
+from antarest.study.business.area_management import AreaType
+from antarest.study.business.model.area_model import Area
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -54,12 +55,12 @@ def manager(command_context: CommandContext) -> AllocationManager:
 
 class TestAllocationField:
     def test_base(self):
-        field = AllocationField(areaId="NORTH", coefficient=1)
+        field = AllocationField(area_id="NORTH", coefficient=1)
         assert field.area_id == "NORTH"
         assert field.coefficient == 1
 
     def test_camel_case(self):
-        field = AllocationField(areaId="NORTH", coefficient=1)
+        field = AllocationField(area_id="NORTH", coefficient=1)
         assert field.model_dump(by_alias=True) == {
             "areaId": "NORTH",
             "coefficient": 1,
@@ -70,13 +71,13 @@ class TestAllocationFormFields:
     def test_base_case(self):
         fields = AllocationFormFields(
             allocation=[
-                {"areaId": "NORTH", "coefficient": 0.75},
-                {"areaId": "SOUTH", "coefficient": 0.25},
+                AllocationField(area_id="NORTH", coefficient=0.75),
+                AllocationField(area_id="SOUTH", coefficient=0.25),
             ]
         )
         assert fields.allocation == [
-            AllocationField(areaId="NORTH", coefficient=0.75),
-            AllocationField(areaId="SOUTH", coefficient=0.25),
+            AllocationField(area_id="NORTH", coefficient=0.75),
+            AllocationField(area_id="SOUTH", coefficient=0.25),
         ]
 
     def test_fields_not_empty(self):
@@ -91,8 +92,8 @@ class TestAllocationFormFields:
         with pytest.raises(ValueError, match="duplicate"):
             AllocationFormFields(
                 allocation=[
-                    {"areaId": "NORTH", "coefficient": 0.75},
-                    {"areaId": "NORTH", "coefficient": 0.25},
+                    AllocationField(area_id="NORTH", coefficient=0.75),
+                    AllocationField(area_id="NORTH", coefficient=0.25),
                 ],
             )
 
@@ -100,8 +101,8 @@ class TestAllocationFormFields:
         """Check that negative coefficients are accepted"""
         fields = AllocationFormFields(
             allocation=[
-                {"areaId": "NORTH", "coefficient": -0.75},
-                {"areaId": "SOUTH", "coefficient": 1.25},
+                AllocationField(area_id="NORTH", coefficient=-0.75),
+                AllocationField(area_id="SOUTH", coefficient=1.25),
             ]
         )
         assert fields.allocation[0].coefficient == -0.75
@@ -112,8 +113,8 @@ class TestAllocationFormFields:
         with pytest.raises(ValueError, match="non-zero"):
             AllocationFormFields(
                 allocation=[
-                    {"areaId": "NORTH", "coefficient": 0},
-                    {"areaId": "SOUTH", "coefficient": 0},
+                    AllocationField(area_id="NORTH", coefficient=0),
+                    AllocationField(area_id="SOUTH", coefficient=0),
                 ],
             )
 
@@ -122,8 +123,8 @@ class TestAllocationFormFields:
         with pytest.raises(ValueError, match="positive"):
             AllocationFormFields(
                 allocation=[
-                    {"areaId": "NORTH", "coefficient": -0.75},
-                    {"areaId": "SOUTH", "coefficient": -0.25},
+                    AllocationField(area_id="NORTH", coefficient=-0.75),
+                    AllocationField(area_id="SOUTH", coefficient=-0.25),
                 ],
             )
 
@@ -132,8 +133,8 @@ class TestAllocationFormFields:
         with pytest.raises(ValueError, match="NaN"):
             AllocationFormFields(
                 allocation=[
-                    {"areaId": "NORTH", "coefficient": 0.75},
-                    {"areaId": "SOUTH", "coefficient": float("nan")},
+                    AllocationField(area_id="NORTH", coefficient=0.75),
+                    AllocationField(area_id="SOUTH", coefficient=float("nan")),
                 ],
             )
 
@@ -205,10 +206,10 @@ class TestAllocationManager:
 
         # Given the following arguments
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="e", name="East", type=AreaType.AREA),
+            Area(id="s", name="South", type=AreaType.AREA),
+            Area(id="w", name="West", type=AreaType.AREA),
         ]
 
         # run
@@ -240,10 +241,10 @@ class TestAllocationManager:
 
         # Given the following arguments
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="e", name="East", type=AreaType.AREA),
+            Area(id="s", name="South", type=AreaType.AREA),
+            Area(id="w", name="West", type=AreaType.AREA),
         ]
 
         with pytest.raises(AllocationDataNotFound) as ctx:
@@ -265,10 +266,10 @@ class TestAllocationManager:
         )
 
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="e", name="East", type=AreaType.AREA),
+            Area(id="s", name="South", type=AreaType.AREA),
+            Area(id="w", name="West", type=AreaType.AREA),
         ]
 
         area_id = "n"
@@ -291,7 +292,7 @@ class TestAllocationManager:
         )
 
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
         ]
 
         area_id = "n"
@@ -302,10 +303,10 @@ class TestAllocationManager:
 
     def test_set_allocation_form_fields__nominal_case(self, manager):
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="e", name="East", type=AreaType.AREA),
+            Area(id="s", name="South", type=AreaType.AREA),
+            Area(id="w", name="West", type=AreaType.AREA),
         ]
         area_id = "n"
         study = create_study_interface(
@@ -322,11 +323,11 @@ class TestAllocationManager:
                 all_areas=all_areas,
                 study=study,
                 area_id=area_id,
-                data=AllocationFormFields.construct(
+                data=AllocationFormFields.model_construct(
                     allocation=[
-                        AllocationField.construct(area_id="e", coefficient=0.5),
-                        AllocationField.construct(area_id="s", coefficient=0.25),
-                        AllocationField.construct(area_id="w", coefficient=0.25),
+                        AllocationField.model_construct(area_id="e", coefficient=0.5),
+                        AllocationField.model_construct(area_id="s", coefficient=0.25),
+                        AllocationField.model_construct(area_id="w", coefficient=0.25),
                     ],
                 ),
             )
@@ -342,10 +343,10 @@ class TestAllocationManager:
 
     def test_set_allocation_form_fields__no_allocation_data(self, manager):
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="e", name="East", type=AreaType.AREA),
+            Area(id="s", name="South", type=AreaType.AREA),
+            Area(id="w", name="West", type=AreaType.AREA),
         ]
 
         area_id = "n"
@@ -376,10 +377,10 @@ class TestAllocationManager:
 
     def test_set_allocation_form_fields__invalid_area_ids(self, manager):
         all_areas = [
-            AreaInfoDTO(id="n", name="North", type=AreaType.AREA),
-            AreaInfoDTO(id="e", name="East", type=AreaType.AREA),
-            AreaInfoDTO(id="s", name="South", type=AreaType.AREA),
-            AreaInfoDTO(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="e", name="East", type=AreaType.AREA),
+            Area(id="s", name="South", type=AreaType.AREA),
+            Area(id="w", name="West", type=AreaType.AREA),
         ]
 
         area_id = "n"
