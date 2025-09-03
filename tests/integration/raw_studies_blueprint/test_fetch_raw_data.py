@@ -56,7 +56,7 @@ def _check_endpoint_response(
         assert res.status_code == 417
         response = res.json()
         assert response["exception"] == "VariantGenerationError"
-        assert response["description"] == f"Error while generating variant {study_id} : {expected_msg}"
+        assert expected_msg in response["description"]
         # We have to delete the command to make the variant "clean" again.
         res = client.get(f"/v1/studies/{study_id}/commands")
         cmd_id = res.json()[-1]["id"]
@@ -191,10 +191,11 @@ class TestFetchRawData:
             res = client.get(f"/v1/studies/{internal_study_id}/commands")
             commands = res.json()
             # First command is created automatically to respect owners, we ignore it.
+            assert len(commands) == 2
             assert commands[1]["action"] == "create_user_resource"
-            assert commands[1]["args"] == [{"data": {"path": "somewhere/something.txt", "resource_type": "file"}}]
-            assert commands[2]["action"] == "update_file"
-            assert commands[2]["args"] == [{"target": file_to_create, "b64Data": "R29vZGJ5ZSBDcnVlbCBXb3JsZCE="}]
+            assert commands[1]["args"] == {
+                "data": {"path": "somewhere/something.txt", "resource_type": "file", "content": "Goodbye Cruel World!"}
+            }
 
         # To update a resource, you can use PUT method, with or without the `create_missing` flag.
         # The expected status code should be 204 No Content.
@@ -494,22 +495,22 @@ class TestFetchRawData:
         expected_msg = f"the given path isn't inside the 'User' folder: {wrong_folder}"
         res = client.put(raw_url, params={"path": wrong_folder, **additional_params})
         assert res.status_code == 403
-        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
         # try to create a folder inside the 'expansion` folder
         expansion_folder = "user/expansion/wrong_folder"
-        expected_msg = "Folder creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
+        expected_msg = "Resource creation failed because the given path is inside the `expansion` folder: user/expansion/wrong_folder"
         res = client.put(raw_url, params={"path": expansion_folder, **additional_params})
         assert res.status_code == 403
-        assert res.json()["exception"] == "FolderCreationNotAllowed"
+        assert res.json()["exception"] == "ResourceCreationNotAllowed"
         assert expected_msg in res.json()["description"]
 
         # try to create an already existing folder
         existing_folder = "user/folder_1"
         expected_msg = "the given resource already exists: folder_1"
         res = client.put(raw_url, params={"path": existing_folder, **additional_params})
-        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "FolderCreationNotAllowed")
+        _check_endpoint_response(study_type, res, client, internal_study_id, expected_msg, "ResourceCreationNotAllowed")
 
     def test_retrieve_from_archive(self, client: TestClient, user_access_token: str) -> None:
         # client headers
