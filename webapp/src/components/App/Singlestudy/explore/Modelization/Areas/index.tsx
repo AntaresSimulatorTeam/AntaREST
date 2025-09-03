@@ -96,7 +96,7 @@ function Areas() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView id="areas" sizes={[10, 90]}>
+    <SplitView splitId="areas">
       {/* Left */}
       <AreaPropsView studyId={study.id} onClick={handleAreaClick} currentArea={currentArea?.id} />
       {/* Right */}

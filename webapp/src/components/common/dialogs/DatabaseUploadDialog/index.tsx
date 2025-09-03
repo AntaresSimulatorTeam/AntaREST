@@ -127,7 +127,7 @@ function DatabaseUploadDialog({ studyId, path, open, onClose }: DatabaseUploadDi
       {isUploading ? (
         <SimpleLoader />
       ) : (
-        <SplitView id="matrix-assign" sizes={[20, 80]}>
+        <SplitView splitId="matrix-assign">
           <DataPropsView
             dataset={matrices || []}
             selectedItem={selectedItem}
