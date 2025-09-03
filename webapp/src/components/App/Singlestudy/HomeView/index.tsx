@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import SplitView from "@/components/common/SplitView";
 import { Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import SplitView from "@/components/common/SplitView";
 import type { StudyMetadata, VariantTree } from "../../../../types/types";
 import InformationView from "./InformationView";
 import StudyTreeView from "./StudyTreeView";
@@ -28,7 +28,7 @@ function HomeView({ study, variantTree }: Props) {
   const navigate = useNavigate();
 
   return (
-    <SplitView id="study-home" gutterSize={4} sizes={[36, 64]}>
+    <SplitView splitId="study-home" gutterSize={4} sizes={[30, 70]}>
       {/* Left */}
       <Box
         height="100%"
