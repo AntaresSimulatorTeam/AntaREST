@@ -11,18 +11,20 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import List, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPatchMode,
     AdequacyPathFileData,
     AreaFileData,
     OptimizationFileData,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 
 
 class AreaType(enum.Enum):
@@ -54,37 +56,32 @@ class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
 
 
 # noinspection SpellCheckingInspection
-class _BaseAreaDTO(
-    OptimizationFileData.FilteringSection,
-    OptimizationFileData.ModalOptimizationSection,
-    AdequacyPathFileData.AdequacyPathSection,
+@all_optional_model
+@camel_case_model
+class AreaOutput(
+    AntaresBaseModel,
     extra="forbid",
     validate_assignment=True,
     populate_by_name=True,
 ):
     """
-    Represents an area output.
-
-    Aggregates the fields of the `OptimizationProperties` and `AdequacyPathProperties` classes,
-    but without the `UIProperties` fields.
-
-    Add the fields extracted from the `/input/thermal/areas.ini` information:
-
-    - `average_unsupplied_energy_cost` is extracted from `unserverd_energy_cost`,
-    - `average_spilled_energy_cost` is extracted from `spilled_energy_cost`.
+    DTO object use to get the area information using a flat structure.
     """
 
     average_unsupplied_energy_cost: float = Field(0.0, description="average unserverd energy cost (€/MWh)")
     average_spilled_energy_cost: float = Field(0.0, description="average spilled energy cost (€/MWh)")
+    filter_synthesis: str = Field("")
+    filter_year_by_year: str = Field("")
+    non_dispatchable_power: bool = Field(default=True)
+    dispatchable_hydro_power: bool = Field(default=True)
+    other_dispatchable_power: bool = Field(default=True)
+    spread_unsupplied_energy_cost: float = Field(default=0.0)
+    spread_spilled_energy_cost: float = Field(default=0.0)
+    adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE)
 
-
-# noinspection SpellCheckingInspection
-@all_optional_model
-@camel_case_model
-class AreaOutput(_BaseAreaDTO):
-    """
-    DTO object use to get the area information using a flat structure.
-    """
+    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
+    def _validate_filtering(cls, v: Any) -> str:
+        return validate_filtering(v)
 
     @classmethod
     def from_model(
@@ -133,12 +130,3 @@ class AreaOutput(_BaseAreaDTO):
             return None
         adequacy_path_section = AdequacyPathFileData.AdequacyPathSection(**obj)
         return AdequacyPathFileData.model_validate({"adequacy_patch": adequacy_path_section})
-
-    @property
-    def area_folder(self) -> AreaFileData:
-        area_folder = AreaFileData(
-            optimization=self._to_optimization(),
-            adequacy_patch=self._to_adequacy_patch(),
-            # UI properties are not configurable in Table Mode
-        )
-        return area_folder
