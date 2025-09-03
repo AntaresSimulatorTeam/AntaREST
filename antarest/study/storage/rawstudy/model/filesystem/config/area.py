@@ -24,8 +24,6 @@ from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
-    validate_color_rgb,
-    validate_colors,
     validate_filtering,
 )
 
@@ -45,27 +43,13 @@ class AdequacyPatchMode(EnumIgnoreCase):
 class AreaUI(IniProperties):
     x: int = Field(default=0, description="x coordinate of the area in the map")
     y: int = Field(default=0, description="y coordinate of the area in the map")
-    color_rgb: str = Field(
-        default="#E66C2C",
-        alias="colorRgb",
-        description="color of the area in the map",
-    )
-
-    @field_validator("color_rgb", mode="before")
-    def _validate_color_rgb(cls, v: Any) -> str:
-        return validate_color_rgb(v)
-
-    @model_validator(mode="before")
-    def _validate_colors(cls, values: MutableMapping[str, Any]) -> Mapping[str, Any]:
-        return validate_colors(values)
+    color_r: int = Field(default=230, description="red component of the area color")
+    color_g: int = Field(default=108, description="green component of the area color")
+    color_b: int = Field(default=44, description="blue component of the area color")
 
     @override
     def to_config(self) -> Dict[str, Any]:
-        assert self.color_rgb is not None
-        r = int(self.color_rgb[1:3], 16)
-        g = int(self.color_rgb[3:5], 16)
-        b = int(self.color_rgb[5:7], 16)
-        return {"x": self.x, "y": self.y, "color_r": r, "color_g": g, "color_b": b}
+        return {"x": self.x, "y": self.y, "color_r": self.color_r, "color_g": self.color_g, "color_b": self.color_b}
 
 
 class UIProperties(IniProperties):
@@ -123,13 +107,12 @@ class UIProperties(IniProperties):
             # If `layers` is a single integer, convert it to `str` first
             layers = str(ui_section.pop("layers", "0"))
             values["layers"] = set([int(layer) for layer in layers.split()])
-            values["style"].x = ui_section.pop("x", values["style"].x)
-            values["style"].y = ui_section.pop("y", values["style"].y)
-            values["style"].color_rgb = (
-                ui_section.pop("color_r", values["style"].color_rgb[0]),
-                ui_section.pop("color_g", values["style"].color_rgb[1]),
-                ui_section.pop("color_b", values["style"].color_rgb[2]),
-            )
+            style = values["style"]
+            style.x = ui_section.pop("x", style.x)
+            style.y = ui_section.pop("y", style.y)
+            style.color_r = ui_section.pop("color_r", style.color_r)
+            style.color_g = ui_section.pop("color_g", style.color_g)
+            style.color_b = ui_section.pop("color_b", style.color_b)
 
         # Parse the `[layerX]`, `[layerY]` and `[layerColor]` sections (if any)
         layer_x_section = values.pop("layerX", {})
@@ -149,7 +132,9 @@ class UIProperties(IniProperties):
                 layer_styles[layer].y = int(y)
             for layer, color in layer_color_section.items():
                 r, g, b = [int(c) for c in color.split(",")]
-                layer_styles[layer].color_rgb = r, g, b
+                layer_styles[layer].color_r = r
+                layer_styles[layer].color_g = g
+                layer_styles[layer].color_b = b
             values["layer_styles"].update(layer_styles)
             values["layers"] = values["layers"].intersection(indexes)
 
@@ -168,11 +153,7 @@ class UIProperties(IniProperties):
         for layer, style in self.layer_styles.items():
             obj["layerX"][str(layer)] = style.x
             obj["layerY"][str(layer)] = style.y
-            assert style.color_rgb is not None
-            r = int(style.color_rgb[1:3], 16)
-            g = int(style.color_rgb[3:5], 16)
-            b = int(style.color_rgb[5:7], 16)
-            obj["layerColor"][str(layer)] = f"{r}, {g}, {b}"
+            obj["layerColor"][str(layer)] = f"{style.color_r}, {style.color_g}, {style.color_b}"
         return obj
 
 
