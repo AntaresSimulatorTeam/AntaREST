@@ -36,6 +36,8 @@ interface MatrixActionsProps {
   timeFrequency?: TimeFrequencyType;
   onMatrixUpdated: VoidFunction;
   canImport?: boolean;
+  enableFilters?: boolean;
+  enableResize?: boolean;
 }
 
 function MatrixActions({
@@ -48,6 +50,8 @@ function MatrixActions({
   isTimeSeries,
   timeFrequency,
   canImport = false,
+  enableFilters = false,
+  enableResize = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
   const { isSubmitting, updateCount, undo, redo, canUndo, canRedo, isDirty } = useMatrixContext();
@@ -88,14 +92,16 @@ function MatrixActions({
         </span>
       </Tooltip>
       <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
-      {isTimeSeries && (
+      {(enableResize || enableFilters) && (
         <>
-          <MatrixResize />
-          <MatrixFilter
-            dateTime={dateTime}
-            isTimeSeries={isTimeSeries}
-            timeFrequency={timeFrequency}
-          />
+          {enableResize && <MatrixResize />}
+          {enableFilters && (
+            <MatrixFilter
+              dateTime={dateTime}
+              isTimeSeries={isTimeSeries}
+              timeFrequency={timeFrequency}
+            />
+          )}
           <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
         </>
       )}

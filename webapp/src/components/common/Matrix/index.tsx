@@ -47,6 +47,8 @@ interface MatrixProps {
   fetchMatrixData?: fetchMatrixFn;
   canImport?: boolean;
   rowCountSource?: RowCountSource;
+  enableFilters?: boolean;
+  enableResize?: boolean;
 }
 
 function Matrix({
@@ -64,6 +66,8 @@ function Matrix({
   fetchMatrixData,
   canImport = true,
   rowCountSource,
+  enableFilters = isTimeSeries,
+  enableResize = isTimeSeries,
 }: MatrixProps) {
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
@@ -161,6 +165,8 @@ function Matrix({
                 onSave={handleSaveUpdates}
                 onMatrixUpdated={reload}
                 canImport={canImport}
+                enableFilters={enableFilters}
+                enableResize={enableResize}
                 onImport={(_, index) => {
                   setUploadType(index === 0 ? "file" : "database");
                 }}
