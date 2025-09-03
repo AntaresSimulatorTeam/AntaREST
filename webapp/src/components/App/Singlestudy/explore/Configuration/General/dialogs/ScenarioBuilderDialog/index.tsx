@@ -16,13 +16,14 @@ import { TabContext, TabList, type TabListProps, TabPanel } from "@mui/lab";
 import { Box, Button, Skeleton, Tab } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getScenarioConfigByType } from "@/services/api/studies/config/scenarioBuilder";
+import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
+import { getAvailableScenariosForVersion } from "@/services/api/studies/config/scenarioBuilder/utils";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
-import { getScenarioConfigByType } from "./services";
 import Table from "./Table";
-import { SCENARIOS, type ScenarioType, getAvailableScenariosForVersion } from "./types";
 import withAreas from "./withAreas";
 
 interface Props {
@@ -36,8 +37,6 @@ const EnhancedTable = withAreas(Table);
 
 function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
-  
-  // Filter scenarios based on study version
   const availableScenarios = getAvailableScenariosForVersion(Number(study.version));
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(availableScenarios[0]);
 

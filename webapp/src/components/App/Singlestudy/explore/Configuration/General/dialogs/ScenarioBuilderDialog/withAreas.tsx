@@ -14,18 +14,15 @@
 
 import { Box } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
+import type {
+  ScenarioData,
+  ScenarioType,
+} from "@/services/api/studies/config/scenarioBuilder/types";
+import { requiresAreaSelection } from "@/services/api/studies/config/scenarioBuilder/utils";
 import PropertiesView from "../../../../../../../common/PropertiesView";
 import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
-import {
-  requiresAreaSelection,
-  hasAreaSelection,
-  isLevel2Display,
-  isLevel3Display,
-  type ScenarioData,
-  type ScenarioType,
-  type ScenarioDisplay,
-} from "./types";
+import { hasAreaSelection, isLevel2Display, isLevel3Display, type ScenarioDisplay } from "./types";
 import { getConfigByScenario } from "./utils";
 
 interface ScenarioTableProps {

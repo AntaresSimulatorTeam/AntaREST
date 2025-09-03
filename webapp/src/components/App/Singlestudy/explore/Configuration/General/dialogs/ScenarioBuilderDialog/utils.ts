@@ -12,21 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { nestedStructureToFlattened } from "./adapters";
+import { nestedStructureToFlattened } from "@/services/api/studies/config/scenarioBuilder/adapters";
 import type {
   Level1Data,
   Level2Data,
-  Level2Display,
   Level3Data,
-  Level3Display,
   NonNullableScenarioData,
   ScenarioData,
-  ScenarioDisplayMap,
-} from "./types";
-
-////////////////////////////////////////////////////////////////
-// Data Processors
-////////////////////////////////////////////////////////////////
+} from "@/services/api/studies/config/scenarioBuilder/types";
+import type { Level2Display, Level3Display, ScenarioDisplayMap } from "./types";
 
 type DataProcessor<T, U = T> = (data: T) => U;
 

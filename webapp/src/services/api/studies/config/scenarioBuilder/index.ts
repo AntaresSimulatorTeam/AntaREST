@@ -12,14 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosResponse } from "axios";
-import client from "../../../../../../../../services/api/client";
-import type { StudyMetadata } from "../../../../../../../../types/types";
+import client from "@/services/api/client";
+import type { StudyMetadata } from "@/types/types";
 import type { ScenarioData, ScenarioType } from "./types";
-
-////////////////////////////////////////////////////////////////
-// API Services
-////////////////////////////////////////////////////////////////
 
 /**
  * Fetches the scenario configuration for a specific scenario type
@@ -50,9 +45,6 @@ export function updateScenarioBuilderConfig(
   studyId: StudyMetadata["id"],
   data: Partial<ScenarioData>,
   scenarioType: ScenarioType,
-) {
-  return client.put<AxiosResponse<null, string>>(
-    `v1/studies/${studyId}/config/scenariobuilder/${scenarioType}`,
-    data,
-  );
+): Promise<Partial<ScenarioData>> {
+  return client.put(`v1/studies/${studyId}/config/scenariobuilder/${scenarioType}`, data);
 }

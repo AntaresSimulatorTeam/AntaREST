@@ -12,17 +12,21 @@
  * This file is part of the Antares project.
  */
 
+import type {
+  EntityYearlyValues,
+  Level1Data,
+  Level3Data,
+  ScenarioData,
+  ScenarioDataStructure,
+  ScenarioType,
+} from "./types";
 import {
-  type EntityYearlyValues,
+  createCompositeKey,
   isLevel1Scenario,
   isLevel2Scenario,
   isLevel3Scenario,
-  type Level1Data,
-  type Level3Data,
-  type ScenarioData,
-  type ScenarioDataStructure,
-  type ScenarioType,
-} from "./types";
+  parseCompositeKey,
+} from "./utils";
 
 ////////////////////////////////////////////////////////////////
 // UI to DTO Adapters
@@ -44,13 +48,7 @@ function flattenedToNestedStructure(
   const nestedStructure: Record<string, Record<string, EntityYearlyValues>> = {};
 
   Object.entries(flatConfig).forEach(([compositeKey, yearlyValues]) => {
-    const [entityId, subEntityId] = compositeKey.split(" - ");
-
-    if (!entityId || !subEntityId) {
-      throw new Error(
-        `Invalid composite key format: ${compositeKey}. Expected format: "entityId - subEntityId"`,
-      );
-    }
+    const [entityId, subEntityId] = parseCompositeKey(compositeKey);
 
     if (!nestedStructure[entityId]) {
       nestedStructure[entityId] = {};
@@ -123,7 +121,7 @@ export function nestedStructureToFlattened(
 
   Object.entries(nestedStructure).forEach(([entityId, subEntities]) => {
     Object.entries(subEntities).forEach(([subEntityId, yearlyValues]) => {
-      const compositeKey = `${entityId} - ${subEntityId}`;
+      const compositeKey = createCompositeKey(entityId, subEntityId);
       flattenedData[compositeKey] = yearlyValues;
     });
   });
@@ -156,46 +154,4 @@ export function adaptScenarioDtoToForm<T extends ScenarioType>(
 
   // For other scenarios, return as-is
   return (apiData as Level1Data) || {};
-}
-
-////////////////////////////////////////////////////////////////
-// Validation Helpers
-////////////////////////////////////////////////////////////////
-
-/**
- * Validates that the composite key has the expected format
- *
- * @param key - The composite key to validate
- * @returns True if valid, false otherwise
- */
-export function isValidCompositeKey(key: string): boolean {
-  const parts = key.split(" - ");
-  return parts.length === 2 && parts[0].trim() !== "" && parts[1].trim() !== "";
-}
-
-/**
- * Extracts storage and constraint IDs from a composite key
- *
- * @param compositeKey - The composite key
- * @returns Tuple of [storageId, constraintId]
- * @throws {Error} If the key format is invalid
- */
-export function parseCompositeKey(compositeKey: string): [string, string] {
-  if (!isValidCompositeKey(compositeKey)) {
-    throw new Error(`Invalid composite key format: ${compositeKey}`);
-  }
-
-  const [storageId, constraintId] = compositeKey.split(" - ");
-  return [storageId.trim(), constraintId.trim()];
-}
-
-/**
- * Creates a composite key from storage and constraint IDs
- *
- * @param storageId - The storage identifier
- * @param constraintId - The constraint identifier
- * @returns Composite key in the format "storageId - constraintId"
- */
-export function createCompositeKey(storageId: string, constraintId: string): string {
-  return `${storageId} - ${constraintId}`;
 }

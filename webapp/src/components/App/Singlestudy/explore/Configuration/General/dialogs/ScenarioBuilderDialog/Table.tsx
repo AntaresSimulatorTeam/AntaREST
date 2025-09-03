@@ -14,15 +14,16 @@
 
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
+import { updateScenarioBuilderConfig } from "@/services/api/studies/config/scenarioBuilder";
+import { adaptScenarioFormToDto } from "@/services/api/studies/config/scenarioBuilder/adapters";
+import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
-import { adaptScenarioFormToDto } from "./adapters";
-import { updateScenarioBuilderConfig } from "./services";
-import type { ScenarioDisplay, ScenarioType } from "./types";
+import type { ScenarioDisplay } from "./types";
 
 interface Props {
   config: ScenarioDisplay;
