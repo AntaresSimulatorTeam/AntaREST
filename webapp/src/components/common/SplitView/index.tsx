@@ -73,7 +73,7 @@ function SplitView({
 
   // Update localStorage whenever `activeSizes` change.
   useUpdateEffect(() => {
-    storage.setItem(localStorageKey, activeSizes);
+    storage.setItem(localStorageKey, activeSizes?.map(Math.round));
   }, [activeSizes, localStorageKey]);
 
   ////////////////////////////////////////////////////////////////
@@ -87,11 +87,7 @@ function SplitView({
       direction={direction}
       sizes={activeSizes ?? defaultSizes}
       minSize={minSize}
-      onDragEnd={(sizes) => {
-        // Round to whole numbers to avoid excessive precision
-        const roundedSizes = sizes.map((size) => Math.round(size));
-        setActiveSizes(roundedSizes);
-      }}
+      onDragEnd={setActiveSizes}
       gutterSize={gutterSize}
       style={{
         display: "flex",

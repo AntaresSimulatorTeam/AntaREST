@@ -112,7 +112,7 @@ function Debug() {
             response={treeDataResponse}
             ifPending={() =>
               Array.from({ length: 3 }).map((_, index) => (
-                <Skeleton key={buildKey(index)} height={32} />
+                <Skeleton key={buildKey("skeleton", index)} height={32} />
               ))
             }
             ifFulfilled={(data) => (
