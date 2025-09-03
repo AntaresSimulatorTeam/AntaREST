@@ -39,7 +39,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     {
       label: t("study.modelization.storages.modulation"),
       content: (
-        <SplitView id="storage-injectionModulation-withdrawalModulation" sizes={[50, 50]}>
+        <SplitView splitId="storage-injectionModulation-withdrawalModulation" sizes={[50, 50]}>
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
@@ -64,7 +64,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     {
       label: t("study.modelization.storages.ruleCurves"),
       content: (
-        <SplitView id="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
+        <SplitView splitId="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
@@ -102,7 +102,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     {
       label: t("study.modelization.storages.costs"),
       content: (
-        <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
+        <SplitView splitId="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
@@ -127,7 +127,10 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     {
       label: t("study.modelization.storages.variationCosts"),
       content: (
-        <SplitView id="storage-variationInjectionCost-variationWithdrawalCost" sizes={[50, 50]}>
+        <SplitView
+          splitId="storage-variationInjectionCost-variationWithdrawalCost"
+          sizes={[50, 50]}
+        >
           <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix

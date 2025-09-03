@@ -173,7 +173,7 @@ function Map() {
       response={mapNodesRes}
       ifFulfilled={(mapNodes) => (
         <>
-          <SplitView id="map" sizes={[10, 90]}>
+          <SplitView splitId="map">
             <Box>
               <Areas onAdd={() => setOpenDialog(true)} nodes={mapNodes} updateUI={updateUI} />
             </Box>
