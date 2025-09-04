@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { StudyMetadata } from "@/types/types";
 import type { LEVEL1_SCENARIOS, LEVEL2_SCENARIOS, LEVEL3_SCENARIOS, SCENARIOS } from "./constants";
 
 export type ScenarioType = (typeof SCENARIOS)[number];
@@ -81,3 +82,26 @@ export type ScenarioDataStructure<T extends ScenarioType> = T extends Level1Scen
     : T extends Level3ScenarioType
       ? Level3Data
       : never;
+
+export interface BaseScenarioBuilderParams {
+  studyId: StudyMetadata["id"];
+}
+
+export interface GetScenarioBuilderParams extends BaseScenarioBuilderParams {
+  scenarioType: ScenarioType;
+}
+
+export interface UpdateScenarioBuilderParams extends BaseScenarioBuilderParams {
+  scenarioType: ScenarioType;
+  values: Partial<ScenarioData>;
+}
+
+export interface GetScenarioBuilderFormParams extends BaseScenarioBuilderParams {
+  scenarioType: ScenarioType;
+}
+
+export interface UpdateScenarioBuilderFormParams extends BaseScenarioBuilderParams {
+  scenarioType: ScenarioType;
+  values: Level1Data;
+  areaId?: string;
+}

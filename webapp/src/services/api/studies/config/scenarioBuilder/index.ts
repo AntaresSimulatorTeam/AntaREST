@@ -13,38 +13,47 @@
  */
 
 import client from "@/services/api/client";
-import type { StudyMetadata } from "@/types/types";
-import type { ScenarioData, ScenarioType } from "./types";
+import { format } from "@/utils/stringUtils";
+import { adaptScenarioDtoToForm, adaptScenarioFormToDto, getConfigByScenario } from "./adapters";
+import type {
+  GetScenarioBuilderFormParams,
+  GetScenarioBuilderParams,
+  ScenarioData,
+  UpdateScenarioBuilderFormParams,
+  UpdateScenarioBuilderParams,
+} from "./types";
 
-/**
- * Fetches the scenario configuration for a specific scenario type
- *
- * @param studyId - The study identifier
- * @param scenarioType - The type of scenario to fetch
- * @returns The scenario configuration data
- */
-export async function getScenarioConfigByType(
-  studyId: StudyMetadata["id"],
-  scenarioType: ScenarioType,
-): Promise<ScenarioData> {
-  const res = await client.get<ScenarioData>(
-    `v1/studies/${studyId}/config/scenariobuilder/${scenarioType}`,
-  );
-  return res.data;
+const URL = "/v1/studies/{studyId}/config/scenariobuilder/{scenarioType}";
+
+export async function getScenarioBuilder({ studyId, scenarioType }: GetScenarioBuilderParams) {
+  const { data } = await client.get<ScenarioData>(format(URL, { studyId, scenarioType }));
+  return data;
 }
 
-/**
- * Updates the scenario builder configuration for a specific scenario type
- *
- * @param studyId - The study identifier
- * @param data - The configuration data to update
- * @param scenarioType - The type of scenario to update
- * @returns The API response
- */
-export function updateScenarioBuilderConfig(
-  studyId: StudyMetadata["id"],
-  data: Partial<ScenarioData>,
-  scenarioType: ScenarioType,
-): Promise<Partial<ScenarioData>> {
-  return client.put(`v1/studies/${studyId}/config/scenariobuilder/${scenarioType}`, data);
+export async function updateScenarioBuilder({
+  studyId,
+  scenarioType,
+  values,
+}: UpdateScenarioBuilderParams) {
+  const { data } = await client.put<ScenarioData>(format(URL, { studyId, scenarioType }), values);
+  return data;
+}
+
+export async function getScenarioBuilderForm({
+  studyId,
+  scenarioType,
+}: GetScenarioBuilderFormParams) {
+  const dto = await getScenarioBuilder({ studyId, scenarioType });
+  return getConfigByScenario(dto, scenarioType);
+}
+
+export async function updateScenarioBuilderForm({
+  studyId,
+  scenarioType,
+  values,
+  areaId,
+}: UpdateScenarioBuilderFormParams) {
+  const adaptedValues = adaptScenarioFormToDto(scenarioType, values, areaId);
+  const dto = await updateScenarioBuilder({ studyId, scenarioType, values: adaptedValues });
+  return adaptScenarioDtoToForm(scenarioType, dto, areaId);
 }

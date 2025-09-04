@@ -16,7 +16,7 @@ import { TabContext, TabList, type TabListProps, TabPanel } from "@mui/lab";
 import { Box, Button, Skeleton, Tab } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getScenarioConfigByType } from "@/services/api/studies/config/scenarioBuilder";
+import { getScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
 import { getAvailableScenariosForVersion } from "@/services/api/studies/config/scenarioBuilder/utils";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
@@ -41,7 +41,11 @@ function ScenarioBuilderDialog({ study, open, onClose }: Props) {
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>(availableScenarios[0]);
 
   const scenarioData = usePromiseWithSnackbarError(
-    () => getScenarioConfigByType(study.id, selectedScenario),
+    () =>
+      getScenarioBuilderForm({
+        studyId: study.id,
+        scenarioType: selectedScenario,
+      }),
     {
       errorMessage: t("study.configuration.general.mcScenarioBuilder.noConfig.error"),
     },

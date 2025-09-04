@@ -13,46 +13,13 @@
  */
 
 import type {
-  EntityYearlyValues,
-  Level1Data,
-} from "@/services/api/studies/config/scenarioBuilder/types";
-
-// UI representation for Level 1 data (direct use)
-export type Level1Display = Level1Data;
-
-// UI representation for Level 2 data (with area selection)
-export interface Level2Display {
-  areas: string[];
-  entities: Record<string, Record<string, EntityYearlyValues>>;
-}
-
-// UI representation for Level 3 data (with area selection)
-export interface Level3Display {
-  areas: string[];
-  // Flattened representation with composite keys: "entityId - subEntityId"
-  flattenedEntities: Record<string, Level1Data>;
-}
-
-// Any UI-ready configuration type
-export type ScenarioDisplay = Level1Display | Level2Display | Level3Display;
+  Level2Display,
+  Level3Display,
+  ScenarioDisplayMap,
+} from "@/services/api/studies/config/scenarioBuilder/adapters";
 
 // Configuration types that require area selection
 export type AreaSelectionDisplay = Level2Display | Level3Display;
-
-export interface ScenarioDisplayMap {
-  load: Level1Display;
-  thermal: Level2Display;
-  hydro: Level1Display;
-  wind: Level1Display;
-  solar: Level1Display;
-  ntc: Level1Display;
-  renewable: Level2Display;
-  hydroInitialLevels: Level1Display;
-  bindingConstraints: Level1Display;
-  hydroFinalLevels: Level1Display;
-  shortTermStorageInflows: Level2Display;
-  shortTermStorageAdditionalConstraints: Level3Display;
-}
 
 ////////////////////////////////////////////////////////////////
 // Type Guards
