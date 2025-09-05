@@ -63,6 +63,7 @@ def get_next_available_key(ini_content: dict[str, Any]) -> str:
     next_index = max(existing_indices, default=-1) + 1
     return str(next_index)
 
+
 class FileStudyConstraintDao(ConstraintDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
