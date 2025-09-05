@@ -13,12 +13,17 @@
  */
 
 import type { StudyMetadata } from "@/types/types";
-import type { LEVEL1_SCENARIOS, LEVEL2_SCENARIOS, LEVEL3_SCENARIOS, SCENARIOS } from "./constants";
+import { LEVEL1_SCENARIOS, LEVEL2_SCENARIOS, LEVEL3_SCENARIOS, type SCENARIOS } from "./constants";
+
+////////////////////////////////////////////////////////////////
+// Core Types
+////////////////////////////////////////////////////////////////
 
 export type ScenarioType = (typeof SCENARIOS)[number];
 export type Level1ScenarioType = (typeof LEVEL1_SCENARIOS)[number];
 export type Level2ScenarioType = (typeof LEVEL2_SCENARIOS)[number];
 export type Level3ScenarioType = (typeof LEVEL3_SCENARIOS)[number];
+export type DataProcessor<T, U = T> = (data: T) => U;
 
 /**
  * Yearly configuration values, either a number or uninitialized ("rand")
@@ -83,6 +88,43 @@ export type ScenarioDataStructure<T extends ScenarioType> = T extends Level1Scen
       ? Level3Data
       : never;
 
+////////////////////////////////////////////////////////////////
+// Display Types
+////////////////////////////////////////////////////////////////
+
+export type Level1Display = Level1Data;
+
+export interface Level2Display {
+  areas: string[];
+  entities: Record<string, Record<string, EntityYearlyValues>>;
+}
+
+export interface Level3Display {
+  areas: string[];
+  flattenedEntities: Record<string, Level1Data>;
+}
+
+export type ScenarioDisplay = Level1Display | Level2Display | Level3Display;
+
+export interface ScenarioDisplayMap {
+  load: Level1Display;
+  thermal: Level2Display;
+  hydro: Level1Display;
+  wind: Level1Display;
+  solar: Level1Display;
+  ntc: Level1Display;
+  renewable: Level2Display;
+  hydroInitialLevels: Level1Display;
+  bindingConstraints: Level1Display;
+  hydroFinalLevels: Level1Display;
+  shortTermStorageInflows: Level2Display;
+  shortTermStorageAdditionalConstraints: Level3Display;
+}
+
+////////////////////////////////////////////////////////////////
+// API Types
+////////////////////////////////////////////////////////////////
+
 export interface BaseScenarioBuilderParams {
   studyId: StudyMetadata["id"];
 }
@@ -96,12 +138,41 @@ export interface UpdateScenarioBuilderParams extends BaseScenarioBuilderParams {
   values: Partial<ScenarioData>;
 }
 
-export interface GetScenarioBuilderFormParams extends BaseScenarioBuilderParams {
-  scenarioType: ScenarioType;
-}
-
-export interface UpdateScenarioBuilderFormParams extends BaseScenarioBuilderParams {
-  scenarioType: ScenarioType;
+export interface UpdateScenarioBuilderFormParams extends UpdateScenarioBuilderParams {
   values: Level1Data;
   areaId?: string;
+}
+
+////////////////////////////////////////////////////////////////
+// Type Guards
+////////////////////////////////////////////////////////////////
+
+/**
+ * Checks if a scenario has Level 1 structure (area → values)
+ *
+ * @param type - The scenario type to check
+ * @returns True if the scenario has Level 1 structure, false otherwise
+ */
+export function isLevel1Scenario(type: ScenarioType): type is Level1ScenarioType {
+  return LEVEL1_SCENARIOS.includes(type);
+}
+
+/**
+ * Checks if a scenario has Level 2 structure (area → entity → values)
+ *
+ * @param type - The scenario type to check
+ * @returns True if the scenario has Level 2 structure, false otherwise
+ */
+export function isLevel2Scenario(type: ScenarioType): type is Level2ScenarioType {
+  return LEVEL2_SCENARIOS.includes(type);
+}
+
+/**
+ * Checks if a scenario has Level 3 structure (area → entity → subentity → values)
+ *
+ * @param type - The scenario type to check
+ * @returns True if the scenario has Level 3 structure, false otherwise
+ */
+export function isLevel3Scenario(type: ScenarioType): type is Level3ScenarioType {
+  return LEVEL3_SCENARIOS.includes(type);
 }

@@ -14,9 +14,8 @@
 
 import client from "@/services/api/client";
 import { format } from "@/utils/stringUtils";
-import { adaptScenarioDtoToForm, adaptScenarioFormToDto, getConfigByScenario } from "./adapters";
+import { adaptScenarioBuilderDtoToForm, adaptScenarioBuilderFormToDto } from "./adapters";
 import type {
-  GetScenarioBuilderFormParams,
   GetScenarioBuilderParams,
   ScenarioData,
   UpdateScenarioBuilderFormParams,
@@ -39,12 +38,9 @@ export async function updateScenarioBuilder({
   return data;
 }
 
-export async function getScenarioBuilderForm({
-  studyId,
-  scenarioType,
-}: GetScenarioBuilderFormParams) {
+export async function getScenarioBuilderForm({ studyId, scenarioType }: GetScenarioBuilderParams) {
   const dto = await getScenarioBuilder({ studyId, scenarioType });
-  return getConfigByScenario(dto, scenarioType);
+  return adaptScenarioBuilderDtoToForm(scenarioType, dto);
 }
 
 export async function updateScenarioBuilderForm({
@@ -53,7 +49,7 @@ export async function updateScenarioBuilderForm({
   values,
   areaId,
 }: UpdateScenarioBuilderFormParams) {
-  const adaptedValues = adaptScenarioFormToDto(scenarioType, values, areaId);
-  const dto = await updateScenarioBuilder({ studyId, scenarioType, values: adaptedValues });
-  return adaptScenarioDtoToForm(scenarioType, dto, areaId);
+  const formValuesToDto = adaptScenarioBuilderFormToDto(scenarioType, values, areaId);
+  const dto = await updateScenarioBuilder({ studyId, scenarioType, values: formValuesToDto });
+  return adaptScenarioBuilderDtoToForm(scenarioType, dto);
 }

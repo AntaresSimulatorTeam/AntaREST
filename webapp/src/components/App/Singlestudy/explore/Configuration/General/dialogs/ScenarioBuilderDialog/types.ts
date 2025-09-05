@@ -16,7 +16,7 @@ import type {
   Level2Display,
   Level3Display,
   ScenarioDisplayMap,
-} from "@/services/api/studies/config/scenarioBuilder/adapters";
+} from "@/services/api/studies/config/scenarioBuilder/types";
 
 // Configuration types that require area selection
 export type AreaSelectionDisplay = Level2Display | Level3Display;

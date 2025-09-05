@@ -12,72 +12,165 @@
  * This file is part of the Antares project.
  */
 
-import {
-  LEVEL1_SCENARIOS,
-  LEVEL2_SCENARIOS,
-  LEVEL3_SCENARIOS,
-  SCENARIO_METADATA,
-  SCENARIOS,
-} from "./constants";
 import type {
-  Level1ScenarioType,
-  Level2ScenarioType,
-  Level3ScenarioType,
-  ScenarioType,
+  DataProcessor,
+  EntityYearlyValues,
+  Level1Data,
+  Level1Display,
+  Level2Data,
+  Level2Display,
+  Level3Data,
+  Level3Display,
+  NonNullableScenarioData,
+  ScenarioData,
+  ScenarioDisplayMap,
 } from "./types";
 
 ////////////////////////////////////////////////////////////////
-// Type Guards
+// Utils
 ////////////////////////////////////////////////////////////////
 
+const processors: {
+  [K in keyof NonNullableScenarioData]: DataProcessor<
+    NonNullableScenarioData[K],
+    ScenarioDisplayMap[K]
+  >;
+} = {
+  load: processLevel1Data,
+  thermal: processLevel2Data,
+  hydro: processLevel1Data,
+  wind: processLevel1Data,
+  solar: processLevel1Data,
+  ntc: processLevel1Data,
+  renewable: processLevel2Data,
+  hydroInitialLevels: processLevel1Data,
+  bindingConstraints: processLevel1Data,
+  hydroFinalLevels: processLevel1Data,
+  shortTermStorageInflows: processLevel2Data,
+  shortTermStorageAdditionalConstraints: processLevel3Data,
+};
+
 /**
- * Checks if a scenario has Level 1 structure (area → values)
+ * Processes Level 1 data (direct area to yearly values)
  *
- * @param type - The scenario type to check
- * @returns True if the scenario has Level 1 structure, false otherwise
+ * @param data - The Level 1 data from API
+ * @returns The processed Level 1 display data
  */
-export function isLevel1Scenario(type: ScenarioType): type is Level1ScenarioType {
-  return LEVEL1_SCENARIOS.includes(type);
+function processLevel1Data(data: Level1Data): Level1Display {
+  return Object.entries(data).reduce<Level1Data>((acc, [areaId, yearlyValue]) => {
+    acc[areaId] = yearlyValue;
+    return acc;
+  }, {});
 }
 
 /**
- * Checks if a scenario has Level 2 structure (area → entity → values)
+ * Processes Level 2 data (area → entity → yearly values)
+ * Extracts areas and organizes entities by area
  *
- * @param type - The scenario type to check
- * @returns True if the scenario has Level 2 structure, false otherwise
+ * @param data - The Level 2 data from API
+ * @returns Object with areas list and entity configurations
  */
-export function isLevel2Scenario(type: ScenarioType): type is Level2ScenarioType {
-  return LEVEL2_SCENARIOS.includes(type);
+function processLevel2Data(data: Level2Data): Level2Display {
+  return Object.entries(data).reduce<Level2Display>(
+    (acc, [areaId, entityConfig]) => {
+      acc.areas.push(areaId);
+      acc.entities[areaId] = entityConfig;
+      return acc;
+    },
+    { areas: [], entities: {} },
+  );
 }
 
 /**
- * Checks if a scenario has Level 3 structure (area → entity → subentity → values)
+ * Processes Level 3 data (area → entity → subentity → yearly values)
+ * Extracts areas and flattens the nested structure for UI display
  *
- * @param type - The scenario type to check
- * @returns True if the scenario has Level 3 structure, false otherwise
+ * @param data - The Level 3 data from API
+ * @returns Object with areas list and flattened entity configurations
  */
-export function isLevel3Scenario(type: ScenarioType): type is Level3ScenarioType {
-  return LEVEL3_SCENARIOS.includes(type);
+function processLevel3Data(data: Level3Data): Level3Display {
+  return Object.entries(data).reduce<Level3Display>(
+    (acc, [areaId, entityConfig]) => {
+      acc.areas.push(areaId);
+      // Flatten the nested structure for UI display
+      acc.flattenedEntities[areaId] = nestedStructureToFlattened(entityConfig);
+      return acc;
+    },
+    { areas: [], flattenedEntities: {} },
+  );
 }
 
 /**
- * Checks if a scenario requires area selection
+ * Retrieves and processes the configuration for a specific scenario type
  *
- * @param type - The scenario type to check
- * @returns True if the scenario requires area selection, false otherwise
+ * @param data - Full scenario data from API
+ * @param scenario - The specific scenario type to process
+ * @returns The processed display data or undefined if not found
  */
-export function requiresAreaSelection(type: ScenarioType): boolean {
-  return isLevel2Scenario(type) || isLevel3Scenario(type);
+export function getConfigByScenario<K extends keyof ScenarioData>(
+  data: ScenarioData,
+  scenario: K,
+): ScenarioDisplayMap[K] | undefined {
+  const scenarioData = data[scenario];
+
+  if (!scenarioData) {
+    return undefined;
+  }
+
+  return processors[scenario](scenarioData);
 }
 
 /**
- * Get metadata for a scenario type
+ * Converts nested entity-subentity structure to flattened representation
  *
- * @param type - The scenario type to get metadata for
- * @returns The metadata for the scenario type
+ * @param nestedStructure - Nested configuration from the API
+ * @returns Flattened configuration with composite keys
+ *
+ * @example
+ * Input:  { "storage1": { "constraint1": { "1": 10, "2": 20 } } }
+ * Output: { "storage1 - constraint1": { "1": 10, "2": 20 } }
  */
-export function getScenarioMetadata(type: ScenarioType) {
-  return SCENARIO_METADATA[type];
+export function nestedStructureToFlattened(
+  nestedStructure: Record<string, Record<string, EntityYearlyValues>>,
+): Level1Data {
+  const flattenedData: Level1Data = {};
+
+  Object.entries(nestedStructure).forEach(([entityId, subEntities]) => {
+    Object.entries(subEntities).forEach(([subEntityId, yearlyValues]) => {
+      const compositeKey = createCompositeKey(entityId, subEntityId);
+      flattenedData[compositeKey] = yearlyValues;
+    });
+  });
+
+  return flattenedData;
+}
+
+/**
+ * Converts flattened Level 1 representation back to nested Level 3 structure
+ *
+ * @param flatConfig - Flattened configuration with "entityId - subEntityId" keys
+ * @returns Nested entity-subentity structure for the API
+ *
+ * @example
+ * Input:  { "storage1 - constraint1": { "1": 10, "2": 20 } }
+ * Output: { "storage1": { "constraint1": { "1": 10, "2": 20 } } }
+ */
+export function flattenedToNestedStructure(
+  flatConfig: Level1Data,
+): Record<string, Record<string, EntityYearlyValues>> {
+  const nestedStructure: Record<string, Record<string, EntityYearlyValues>> = {};
+
+  Object.entries(flatConfig).forEach(([compositeKey, yearlyValues]) => {
+    const [entityId, subEntityId] = parseCompositeKey(compositeKey);
+
+    if (!nestedStructure[entityId]) {
+      nestedStructure[entityId] = {};
+    }
+
+    nestedStructure[entityId][subEntityId] = yearlyValues;
+  });
+
+  return nestedStructure;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -90,7 +183,7 @@ export function getScenarioMetadata(type: ScenarioType) {
  * @param key - The composite key to validate
  * @returns True if valid, false otherwise
  */
-export function isValidCompositeKey(key: string): boolean {
+function isValidCompositeKey(key: string): boolean {
   if (!key || typeof key !== "string") {
     return false;
   }
@@ -100,65 +193,35 @@ export function isValidCompositeKey(key: string): boolean {
 }
 
 /**
- * Extracts storage and constraint IDs from a composite key
+ * Extracts entity and sub-entity IDs from a composite key
  *
  * @param compositeKey - The composite key
- * @returns Tuple of [storageId, constraintId]
- * @throws {Error} If the key format is invalid
+ * @returns Tuple of [entityId, subEntityId]
  */
-export function parseCompositeKey(compositeKey: string): [string, string] {
+function parseCompositeKey(compositeKey: string): [string, string] {
   if (!isValidCompositeKey(compositeKey)) {
     throw new Error(
       `Invalid composite key format: "${compositeKey}". Expected format: "entityId - subEntityId"`,
     );
   }
 
-  const [storageId, constraintId] = compositeKey.split(" - ");
-  return [storageId.trim(), constraintId.trim()];
+  const [entityId, subEntityId] = compositeKey.split(" - ");
+  return [entityId.trim(), subEntityId.trim()];
 }
 
 /**
- * Creates a composite key from storage and constraint IDs
+ * Creates a composite key from entity and sub-entity IDs
  *
- * @param storageId - The storage identifier
- * @param constraintId - The constraint identifier
- * @returns Composite key in the format "storageId - constraintId"
- * @throws {Error} If either ID is empty or invalid
+ * @param entityId - The entity identifier
+ * @param subEntityId - The sub-entity identifier
+ * @returns Composite key in the format "entityId - subEntityId"
  */
-export function createCompositeKey(storageId: string, constraintId: string): string {
-  if (!storageId || typeof storageId !== "string" || storageId.trim() === "") {
-    throw new Error(`Storage ID must be a non-empty string, got: "${storageId}"`);
+function createCompositeKey(entityId: string, subEntityId: string): string {
+  if (!entityId?.trim() || !subEntityId?.trim()) {
+    throw new Error(
+      `Entity ID and Sub-entity ID must be non-empty strings, entityId: "${entityId}", subEntityId: "${subEntityId}"`,
+    );
   }
 
-  if (!constraintId || typeof constraintId !== "string" || constraintId.trim() === "") {
-    throw new Error(`Constraint ID must be a non-empty string, got: "${constraintId}"`);
-  }
-
-  return `${storageId.trim()} - ${constraintId.trim()}`;
-}
-
-////////////////////////////////////////////////////////////////
-// Version Management
-////////////////////////////////////////////////////////////////
-
-/**
- * Check if a scenario is available for the given study version
- *
- * @param type - The scenario type to check
- * @param studyVersion - The study version (3-digit format, e.g., 930 for v9.3)
- * @returns True if the scenario is available for this version, false otherwise
- */
-export function isScenarioAvailableForVersion(type: ScenarioType, studyVersion: number): boolean {
-  const metadata = getScenarioMetadata(type);
-  return !metadata.minVersion || studyVersion >= metadata.minVersion;
-}
-
-/**
- * Filter scenarios by study version, only returning those available for the version
- *
- * @param studyVersion - The study version (3-digit format)
- * @returns Array of scenario types available for this version
- */
-export function getAvailableScenariosForVersion(studyVersion: number): ScenarioType[] {
-  return SCENARIOS.filter((scenario) => isScenarioAvailableForVersion(scenario, studyVersion));
+  return `${entityId.trim()} - ${subEntityId.trim()}`;
 }

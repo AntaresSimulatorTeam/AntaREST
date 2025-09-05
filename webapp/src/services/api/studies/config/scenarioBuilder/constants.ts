@@ -12,8 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ScenarioType } from "./types";
-
+// !NOTE: Do not change the order of scenarios - this matches the order displayed in the UI
 export const SCENARIOS = [
   "load",
   "thermal",
@@ -46,29 +45,3 @@ export const LEVEL2_SCENARIOS = ["thermal", "renewable", "shortTermStorageInflow
 
 // Scenarios with structure: area → entity → subentity → yearly values
 export const LEVEL3_SCENARIOS = ["shortTermStorageAdditionalConstraints"] as const;
-
-interface ScenarioMetadata {
-  level: 1 | 2 | 3;
-  requiresAreaSelection: boolean;
-  minVersion?: number;
-}
-
-export const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
-  // Level 1 scenarios (area → values)
-  load: { level: 1, requiresAreaSelection: false },
-  hydro: { level: 1, requiresAreaSelection: false },
-  wind: { level: 1, requiresAreaSelection: false },
-  solar: { level: 1, requiresAreaSelection: false },
-  ntc: { level: 1, requiresAreaSelection: false, minVersion: 820 },
-  hydroInitialLevels: { level: 1, requiresAreaSelection: false },
-  bindingConstraints: { level: 1, requiresAreaSelection: false, minVersion: 870 },
-  hydroFinalLevels: { level: 1, requiresAreaSelection: false, minVersion: 920 },
-
-  // Level 2 scenarios (area → entity → values)
-  thermal: { level: 2, requiresAreaSelection: true },
-  renewable: { level: 2, requiresAreaSelection: true, minVersion: 810 },
-  shortTermStorageInflows: { level: 2, requiresAreaSelection: true, minVersion: 930 },
-
-  // Level 3 scenarios (area → entity → subentity → values)
-  shortTermStorageAdditionalConstraints: { level: 3, requiresAreaSelection: true, minVersion: 930 },
-};

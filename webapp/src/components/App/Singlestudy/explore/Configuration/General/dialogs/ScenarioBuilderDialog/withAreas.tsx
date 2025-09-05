@@ -13,14 +13,16 @@
  */
 
 import { Box } from "@mui/material";
-import { useEffect, useId, useState } from "react";
-import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
-import { requiresAreaSelection } from "@/services/api/studies/config/scenarioBuilder/utils";
+import { useEffect, useState } from "react";
+import type {
+  ScenarioDisplay,
+  ScenarioType,
+} from "@/services/api/studies/config/scenarioBuilder/types";
 import PropertiesView from "../../../../../../../common/PropertiesView";
 import SplitView from "../../../../../../../common/SplitView";
 import ListElement from "../../../../common/ListElement";
 import { hasAreaSelection, isLevel2Display, isLevel3Display } from "./types";
-import type { ScenarioDisplay } from "@/services/api/studies/config/scenarioBuilder/adapters";
+import { requiresAreaSelection } from "./utils";
 
 interface ScenarioTableProps {
   type: ScenarioType;
@@ -36,7 +38,6 @@ function withAreas(
   >,
 ) {
   return function TableWithAreas({ type, config, ...props }: ScenarioTableProps) {
-    const splitViewId = useId();
     const [selectedAreaId, setSelectedAreaId] = useState("");
     const [areas, setAreas] = useState<string[]>([]);
     const [configByArea, setConfigByArea] = useState<ScenarioDisplay>({});

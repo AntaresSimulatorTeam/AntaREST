@@ -18,12 +18,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
-import { getAvailableScenariosForVersion } from "@/services/api/studies/config/scenarioBuilder/utils";
 import usePromiseWithSnackbarError from "../../../../../../../../hooks/usePromiseWithSnackbarError";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import BasicDialog from "../../../../../../../common/dialogs/BasicDialog";
 import UsePromiseCond from "../../../../../../../common/utils/UsePromiseCond";
 import Table from "./Table";
+import { getAvailableScenariosForVersion } from "./utils";
 import withAreas from "./withAreas";
 
 interface Props {

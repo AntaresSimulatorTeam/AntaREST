@@ -15,8 +15,10 @@
 import { useTranslation } from "react-i18next";
 import { useOutletContext } from "react-router";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
-import type { ScenarioDisplay } from "@/services/api/studies/config/scenarioBuilder/adapters";
-import type { ScenarioType } from "@/services/api/studies/config/scenarioBuilder/types";
+import type {
+  ScenarioDisplay,
+  ScenarioType,
+} from "@/services/api/studies/config/scenarioBuilder/types";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
 import type { StudyMetadata } from "../../../../../../../../types/types";
 import { toError } from "../../../../../../../../utils/fnUtils";
