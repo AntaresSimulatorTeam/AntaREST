@@ -12,18 +12,18 @@
  * This file is part of the Antares project.
  */
 
-import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
-import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/SplitButton";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
 import { Button, Divider, IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import DownloadMatrixButton from "@/components/common/buttons/DownloadMatrixButton";
+import SplitButton, { type SplitButtonProps } from "@/components/common/buttons/SplitButton";
 import { useMatrixContext } from "../../context/MatrixContext";
-import MatrixResize from "../MatrixResize";
-import MatrixFilter from "../MatrixFilter";
 import type { DateTimes, TimeFrequencyType } from "../../shared/types";
+import MatrixFilter from "../MatrixFilter";
+import MatrixResize from "../MatrixResize";
 
 interface MatrixActionsProps {
   studyId: string;
@@ -36,6 +36,8 @@ interface MatrixActionsProps {
   timeFrequency?: TimeFrequencyType;
   onMatrixUpdated: VoidFunction;
   canImport?: boolean;
+  enableFilters?: boolean;
+  enableResize?: boolean;
 }
 
 function MatrixActions({
@@ -48,6 +50,8 @@ function MatrixActions({
   isTimeSeries,
   timeFrequency,
   canImport = false,
+  enableFilters = false,
+  enableResize = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
   const { isSubmitting, updateCount, undo, redo, canUndo, canRedo, isDirty } = useMatrixContext();
@@ -88,14 +92,16 @@ function MatrixActions({
         </span>
       </Tooltip>
       <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
-      {isTimeSeries && (
+      {(enableResize || enableFilters) && (
         <>
-          <MatrixResize />
-          <MatrixFilter
-            dateTime={dateTime}
-            isTimeSeries={isTimeSeries}
-            timeFrequency={timeFrequency}
-          />
+          {enableResize && <MatrixResize />}
+          {enableFilters && (
+            <MatrixFilter
+              dateTime={dateTime}
+              isTimeSeries={isTimeSeries}
+              timeFrequency={timeFrequency}
+            />
+          )}
           <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
         </>
       )}
