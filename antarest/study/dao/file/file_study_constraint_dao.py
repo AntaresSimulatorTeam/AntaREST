@@ -47,6 +47,7 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
+
 def get_next_available_key(ini_content: dict[str, Any]) -> str:
     """Find the next available key in the ini content."""
     existing_keys = {int(k) for k in ini_content.keys() if k.isdigit()}
