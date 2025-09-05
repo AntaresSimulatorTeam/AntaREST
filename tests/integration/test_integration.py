@@ -2003,9 +2003,9 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     # END EDITING AREA
 
     # START DELETING AREA
-    res_delete = client.delete(f"/studies/{study_id}/areas/area_1")
+    res_delete = client.delete(f"/v1/studies/{study_id}/areas/area_1", headers=headers_creator)
     assert res_delete.status_code == 200, res.json()
     res_area_delete = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator).json()["antares"]
     assert res_area_delete["author"] == "creator_2"
-    assert res_area_delete["editor"] == 3
+    assert res_area_delete["editor"] == 2
     # END DELETING AREA
