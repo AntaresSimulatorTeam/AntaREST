@@ -47,21 +47,13 @@ from antarest.study.storage.variantstudy.business.matrix_constants.binding_const
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
-
 def get_next_available_key(ini_content: dict[str, Any]) -> str:
-    """
-    Get the next available numeric key for the INI content.
-
-    Args:
-        ini_content: The current content of the binding constraints INI file
-
-    Returns:
-        The next available numeric key as a string
-    """
-    # Find the next index after the maximum existing one
-    existing_indices = [int(k) for k in ini_content.keys() if k.isdigit()]
-    next_index = max(existing_indices, default=-1) + 1
-    return str(next_index)
+    """Find the next available key in the ini content."""
+    existing_keys = {int(k) for k in ini_content.keys() if k.isdigit()}
+    next_key = 0
+    while next_key in existing_keys:
+        next_key += 1
+    return str(next_key)
 
 
 class FileStudyConstraintDao(ConstraintDao, ABC):
