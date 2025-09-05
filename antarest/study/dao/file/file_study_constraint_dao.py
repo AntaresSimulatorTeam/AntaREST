@@ -48,6 +48,21 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
+def get_next_available_key(ini_content: dict[str, Any]) -> str:
+    """
+    Get the next available numeric key for the INI content.
+
+    Args:
+        ini_content: The current content of the binding constraints INI file
+
+    Returns:
+        The next available numeric key as a string
+    """
+    # Find the next index after the maximum existing one
+    existing_indices = [int(k) for k in ini_content.keys() if k.isdigit()]
+    next_index = max(existing_indices, default=-1) + 1
+    return str(next_index)
+
 class FileStudyConstraintDao(ConstraintDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -140,7 +155,7 @@ class FileStudyConstraintDao(ConstraintDao, ABC):
                 # We're creating a new constraint
                 study_data.config.bindings.append(constraint)
 
-            ini_key = bc_id_to_key_in_ini.get(constraint.id, str(len(ini_content)))
+            ini_key = bc_id_to_key_in_ini.get(constraint.id, get_next_available_key(ini_content))
             ini_content[ini_key] = serialize_binding_constraint(study_version, constraint)
 
         study_data.tree.save(ini_content, ["input", "bindingconstraints", "bindingconstraints"])
