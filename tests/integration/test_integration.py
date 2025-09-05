@@ -1890,3 +1890,122 @@ def test_links_deletion_with_binding_constraints(
     # delete the link
     res = client.delete(f"/v1/studies/{internal_study_id}/links/area_1/area_2")
     assert res.status_code == 200, res.json()
+
+
+def test_update_with_editor(client: TestClient, admin_access_token: str):
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # 1. Create a group and two users
+    group_name = "test_copy_group"
+    res = client.post("/v1/groups", json={"name": group_name})
+    group_id = res.json()["id"]
+
+    client.post("/v1/users", json={"name": "creator_2", "password": "password123"})
+    client.post("/v1/users", json={"name": "editor_2", "password": "password456"})
+
+    # Log in as 'creator' to get ID
+    res_creator = client.post("/v1/login", json={"username": "creator_2", "password": "password123"})
+    creator_creds = res_creator.json()
+    creator_id = creator_creds["user"]
+
+    # Log in as 'editor' to get ID
+    res_editor = client.post("/v1/login", json={"username": "editor_2", "password": "password456"})
+    res_editor.raise_for_status()
+    editor_creds = res_editor.json()
+    editor_id = editor_creds["user"]
+
+    # Add users to the group
+    client.post(
+        "/v1/roles",
+        json={"type": 40, "group_id": group_id, "identity_id": creator_id},  # ADMIN
+    )
+    client.post(
+        "/v1/roles",
+        json={"type": 30, "group_id": group_id, "identity_id": editor_id},  # WRITER
+    )
+
+    # Refresh tokens to update permissions
+    res_creator = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {creator_creds['refresh_token']}"},
+    )
+    creator_creds = res_creator.json()
+    creator_token = creator_creds["access_token"]
+
+    res_editor = client.post(
+        "/v1/refresh",
+        headers={"Authorization": f"Bearer {editor_creds['refresh_token']}"},
+    )
+    editor_creds = res_editor.json()
+    editor_token = editor_creds["access_token"]
+    headers_editor = {"Authorization": f"Bearer {editor_token}"}
+
+    # 2. 'creator' creates a new study associated with the group
+    headers_creator = {"Authorization": f"Bearer {creator_token}"}
+    study_name = "test_author_preservation_on_copy"
+    res_create = client.post(f"/v1/studies?name={study_name}&groups={group_id}", headers=headers_creator)
+    study_id = res_create.json()
+
+    # 3. Verify that 'author' and 'editor' are set to 'creator'
+    res_raw_initial = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator)
+    initial_antares_data = res_raw_initial.json()["antares"]
+    assert initial_antares_data["author"] == "creator_2"
+    assert initial_antares_data["editor"] == "creator_2"
+
+    # start testing editor edition by creating, editing and deleting areas from a study
+
+    comment = "updated comment"
+    client.put(f"/v1/studies/{study_id}/comments", json={"comments": comment}, headers=headers_editor)
+    res_raw_changed = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_editor)
+    changed_antares_data = res_raw_changed.json()["antares"]
+    assert changed_antares_data["author"] == "creator_2"
+    assert changed_antares_data["editor"] == 3
+
+    # START CREATING AREA
+    res = client.post(
+        f"/v1/studies/{study_id}/areas",
+        json={
+            "name": "area_1",
+            "type": "AREA",
+            "metadata": {"country": "FR"},
+        },
+        headers=headers_creator,
+    )
+    assert res.status_code == 200, res.json()
+
+    res_creating_area = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_editor).json()["antares"]
+    assert res_creating_area["author"] == "creator_2"
+    assert res_creating_area["editor"] == 2
+    # END CREATING AREA
+
+    # START EDITING AREA
+    res_config = client.put(
+        f"/v1/studies/{study_id}/areas/area_1/properties/form",
+        json={
+            "energyCostUnsupplied": 2.0,
+            "energyCostSpilled": 4.0,
+            "nonDispatchPower": False,
+            "dispatchHydroPower": False,
+            "otherDispatchPower": False,
+            "spreadUnsuppliedEnergyCost": -10.0,
+            "spreadSpilledEnergyCost": 10.0,
+            "filterSynthesis": ["monthly", "annual"],
+            "filterByYear": ["hourly", "daily", "annual"],
+            "adequacyPatchMode": "inside",
+        },
+        headers=headers_editor,
+    )
+    assert res_config.status_code == 200
+
+    res_area_initial = client.get(f"/v1/studies/{study_id}/raw?path=study").json()["antares"]
+    assert res_area_initial["author"] == "creator_2"
+    assert res_area_initial["editor"] == 3
+    # END EDITING AREA
+
+    # START DELETING AREA
+    res_delete = client.delete(f"/studies/{study_id}/areas/area_1")
+    assert res_delete.status_code == 200, res.json()
+    res_area_delete = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator).json()["antares"]
+    assert res_area_delete["author"] == "creator_2"
+    assert res_area_delete["editor"] == 3
+    # END DELETING AREA

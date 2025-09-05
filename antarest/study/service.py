@@ -140,6 +140,7 @@ from antarest.study.storage.utils import (
     is_managed,
     is_study_folder,
     remove_from_cache,
+    update_editor_name,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_user_resource import (
@@ -404,6 +405,7 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         should_invalidate_cache = False
         file_study = self.get_files()
+        update_editor_name(file_study, get_user_id())
         for command in commands:
             result = command.apply(FileStudyTreeDao(file_study), listener)
             if result.should_invalidate_cache:

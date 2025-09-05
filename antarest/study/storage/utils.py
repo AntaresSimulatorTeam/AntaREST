@@ -70,6 +70,14 @@ TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 
+def update_editor_name(file_study: FileStudy, new_editor_name: str) -> None:
+    antares_url = ["study", "antares"]
+    study_antares = file_study.tree.get(url=antares_url)
+    # rajouter un test au cas où l'editor n'existe pas
+    study_antares["editor"] = new_editor_name
+    file_study.tree.save(study_antares, antares_url)
+
+
 def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool, editor: str = "") -> None:
     """
     Update antares study information in the study.antares file.
