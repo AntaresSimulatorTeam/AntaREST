@@ -244,7 +244,7 @@ function ResultDetails() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <SplitView id="results" sizes={[15, 85]} minSize={[200, 300]}>
+    <SplitView splitId="results" minSize={[150, 400]}>
       <ResultItemSelector
         itemType={itemType}
         onItemTypeChange={handleItemTypeChange}

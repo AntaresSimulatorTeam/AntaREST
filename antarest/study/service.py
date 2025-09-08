@@ -33,12 +33,12 @@ from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
     CommandApplicationError,
-    FolderCreationNotAllowed,
     IncorrectArgumentsForCopy,
     IncorrectPathError,
     MatrixImportFailed,
     NotAManagedStudyException,
     ReferencedObjectDeletionNotAllowed,
+    ResourceCreationNotAllowed,
     ResourceDeletionNotAllowed,
     StudyDeletionNotAllowed,
     StudyNotFoundError,
@@ -83,6 +83,7 @@ from antarest.study.business.matrix_management import MatrixManager, MatrixManag
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -143,8 +144,6 @@ from antarest.study.storage.utils import (
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_user_resource import (
     CreateUserResource,
-    CreateUserResourceData,
-    ResourceType,
 )
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
@@ -152,7 +151,6 @@ from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import (
     RemoveUserResource,
-    RemoveUserResourceData,
 )
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
@@ -187,7 +185,7 @@ def get_disk_usage(path: str | Path) -> int:
 
 
 def _get_path_inside_user_folder(
-    path: str, exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed]
+    path: str, exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed]
 ) -> str:
     """
     Retrieves the path inside the `user` folder for a given user path
@@ -1435,18 +1433,11 @@ class StudyService:
         create_missing &= not file_path.exists()
         if create_missing:
             context = self.storage_service.variant_study_service.command_factory.command_context
-            user_path = _get_path_inside_user_folder(str(file_relpath), FolderCreationNotAllowed)
-            args = {"path": user_path, "resource_type": ResourceType.FILE}
-            command_data = CreateUserResourceData.model_validate(args)
+            user_path = _get_path_inside_user_folder(str(file_relpath), ResourceCreationNotAllowed)
+            args = {"path": user_path, "resource_type": ResourceType.FILE, "content": data or b""}
+            command_data = UserResourceDataCreation.model_validate(args)
             cmd_1 = CreateUserResource(data=command_data, command_context=context, study_version=version)
-            assert isinstance(data, bytes)
-            cmd_2 = UpdateRawFile(
-                target=url,
-                b64Data=base64.b64encode(data).decode("utf-8"),
-                command_context=context,
-                study_version=version,
-            )
-            commands.extend([cmd_1, cmd_2])
+            commands.append(cmd_1)
         else:
             # A 404 Not Found error is raised if the file does not exist.
             tree_node = file_study.tree.get_node(file_relpath.parts)  # type: ignore
@@ -2282,7 +2273,7 @@ class StudyService:
             ResourceDeletionNotAllowed: if the path does not comply with the above rules
         """
         args = {"path": _get_path_inside_user_folder(path, ResourceDeletionNotAllowed)}
-        cmd_data = RemoveUserResourceData(**args)
+        cmd_data = UserResourceDataRemoval(**args)
         self._alter_user_folder(study_id, cmd_data, RemoveUserResource, ResourceDeletionNotAllowed)
 
     def create_user_folder(self, study_id: str, path: str) -> None:
@@ -2296,21 +2287,22 @@ class StudyService:
             path: Path corresponding to the resource to be deleted
 
         Raises:
-            FolderCreationNotAllowed: if the path does not comply with the above rules
+            ResourceCreationNotAllowed: if the path does not comply with the above rules
         """
         args = {
-            "path": _get_path_inside_user_folder(path, FolderCreationNotAllowed),
+            "path": _get_path_inside_user_folder(path, ResourceCreationNotAllowed),
             "resource_type": ResourceType.FOLDER,
+            "content": None,
         }
-        command_data = CreateUserResourceData.model_validate(args)
-        self._alter_user_folder(study_id, command_data, CreateUserResource, FolderCreationNotAllowed)
+        command_data = UserResourceDataCreation.model_validate(args)
+        self._alter_user_folder(study_id, command_data, CreateUserResource, ResourceCreationNotAllowed)
 
     def _alter_user_folder(
         self,
         study_id: str,
-        command_data: CreateUserResourceData | RemoveUserResourceData,
+        command_data: UserResourceDataCreation | UserResourceDataRemoval,
         command_class: Type[CreateUserResource | RemoveUserResource],
-        exception_class: Type[FolderCreationNotAllowed | ResourceDeletionNotAllowed],
+        exception_class: Type[ResourceCreationNotAllowed | ResourceDeletionNotAllowed],
     ) -> None:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)

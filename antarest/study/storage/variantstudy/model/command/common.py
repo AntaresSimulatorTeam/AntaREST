@@ -12,12 +12,6 @@
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Generic, List, TypeVar
-
-from antares.study.version import StudyVersion
-
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.root.user.user import User
 
 
 @dataclass(frozen=True)
@@ -100,31 +94,3 @@ class CommandName(Enum):
     UPDATE_THEMATIC_TRIMMING = "update_thematic_trimming"
     UPDATE_ADEQUACY_PATCH_PARAMETERS = "update_adequacy_patch_parameters"
     UPDATE_TIMESERIES_CONFIG = "update_time"
-
-
-def is_url_writeable(user_node: User, url: List[str]) -> bool:
-    return url[0] not in [file.filename for file in user_node.registered_files]
-
-
-T = TypeVar("T")
-
-
-class IdMapping(Generic[T]):
-    """
-    This utility class performs several things:
-        - It validates a file data: `data` via `func` and `study_version`
-        - It constructs a mapping from the object id to the validated data
-    """
-
-    def __init__(
-        self, func: Callable[[StudyVersion, Any], T], data: dict[str, dict[str, Any]], study_version: StudyVersion
-    ) -> None:
-        self.id_mapping: dict[str, tuple[str, T]] = {
-            transform_name_to_id(k): (k, func(study_version, v)) for k, v in data.items()
-        }
-
-    def asserts_id_exists(self, id: str) -> bool:
-        return id in self.id_mapping
-
-    def get_key_and_properties(self, id: str) -> tuple[str, T]:
-        return self.id_mapping[id]
