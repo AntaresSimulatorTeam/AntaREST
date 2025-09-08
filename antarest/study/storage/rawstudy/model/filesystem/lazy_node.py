@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, Generic, List, Optional, Tuple
+from typing import Any, Dict, Generic, List, Optional, Tuple, cast
 from zipfile import ZipFile
 
 from typing_extensions import override
@@ -31,8 +31,7 @@ class SimpleCache:
 
 class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
     """
-    A "lazy" node does not return its full content but a summarized, short representation
-    when in the context of a tree expansion (typically getting children of a folder node).
+    Abstract left with implemented a lazy loading for its daughter implementation.
     """
 
     ZIP_FILELIST_CACHE: Dict[str, SimpleCache] = {}
@@ -70,6 +69,24 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         else:
             return self.config.path.exists()
 
+    def _get(
+        self,
+        url: Optional[List[str]] = None,
+        depth: int = -1,
+        expanded: bool = False,
+        formatted: bool = True,
+        get_node: bool = False,
+    ) -> str | G | INode[G, S, V]:
+        self._assert_url_end(url)
+
+        if get_node:
+            return self
+
+        if expanded:
+            return self.get_lazy_content()
+
+        return self.load(url, depth, expanded, formatted)
+
     @override
     def get(
         self,
@@ -78,18 +95,18 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
         expanded: bool = False,
         formatted: bool = True,
     ) -> str | G:
-        if expanded:
-            return self.get_lazy_content()
-
-        return self.load(url, depth, expanded, formatted)
+        output = self._get(url, depth, expanded, formatted, get_node=False)
+        assert not isinstance(output, INode)
+        return output
 
     @override
-    def get_node_and_remainder(
+    def get_node(
         self,
         url: Optional[List[str]] = None,
-    ) -> tuple[INode[G, S, V], list[str]]:
-        self._assert_url_end(url)
-        return self, []
+    ) -> INode[G, S, V]:
+        output = self._get(url, get_node=True)
+        assert isinstance(output, INode)
+        return output
 
     @override
     def delete(self, url: Optional[List[str]] = None) -> None:
@@ -98,10 +115,10 @@ class LazyNode(INode, ABC, Generic[G, S, V]):  # type: ignore
             self.config.path.unlink()
 
     @override
-    def save(self, data: S, url: Optional[List[str]] = None) -> None:
+    def save(self, data: Any, url: Optional[List[str]] = None) -> None:
         self._assert_not_in_zipped_file()
         self._assert_url_end(url)
-        self.dump(data, url)
+        self.dump(cast(S, data), url)
 
     def get_lazy_content(
         self,
