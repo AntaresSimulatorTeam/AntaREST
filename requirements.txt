@@ -1,5 +1,6 @@
 Antares-Launcher==1.4.5
-antares-study-version==1.0.20
+#antares-study-version==1.0.20
+git+https://github.com/rte-i/antares-study-version-rtei.git@change-request23#egg=antares-study-version
 antares-timeseries-generation==0.1.7
 
 # When you install `fastapi[all]`, you get FastAPI along with additional dependencies:
