@@ -10,12 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+from typing import Any, Dict, Final, List, Optional
 
+from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.model.district_model import DistrictBaseFilter
+from antarest.study.business.model.district_model import DistrictUpdate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -42,10 +43,28 @@ class UpdateDistrict(ICommand):
     # ==================
 
     id: str
-    base_filter: Optional[DistrictBaseFilter] = None
-    areas: Optional[List[str]] = None
-    output: Optional[bool] = None
-    comments: Optional[str] = None
+
+    parameters: DistrictUpdate
+    # version 2: rename filter_items to areas, move all parameters under "parameters"
+    _SERIALIZATION_VERSION: Final[int] = 2
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                parameters = {}
+                if "base_filter" in values:
+                    parameters["base_filter"] = values.pop("base_filter")
+                if "filter_items" in values:
+                    parameters["areas"] = values.pop("filter_items")
+                if "output" in values:
+                    parameters["output"] = values.pop("output")
+                if "comments" in values:
+                    parameters["comments"] = values.pop("comments")
+                values["parameters"] = parameters
+        return values
 
     class Config:
         populate_by_name = True
@@ -58,11 +77,13 @@ class UpdateDistrict(ICommand):
         district = study_data.get_district(self.id)
 
         updated_district = district.model_copy(
-            update=self.model_dump(exclude_none=True, by_alias=True, include={"areas", "output", "comments"})
+            update=self.parameters.model_dump(
+                mode="json", exclude_none=True, by_alias=True, include={"areas", "output", "comments"}
+            )
         )
 
         try:
-            study_data.save_district(updated_district, self.base_filter)
+            study_data.save_district(updated_district, self.parameters.base_filter)
         except AreaNotFound as e:
             return command_failed(message=f"Area not found {e}")
 
@@ -74,11 +95,9 @@ class UpdateDistrict(ICommand):
             action=CommandName.UPDATE_DISTRICT.value,
             args={
                 "id": self.id,
-                "base_filter": self.base_filter.value if self.base_filter else None,
-                "areas": self.areas,
-                "output": self.output,
-                "comments": self.comments,
+                "parameters": self.parameters.model_dump(mode="json", exclude_none=True),
             },
+            version=self._SERIALIZATION_VERSION,
             study_version=self.study_version,
         )
 

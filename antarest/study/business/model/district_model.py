@@ -10,11 +10,17 @@
 #
 # This file is part of the Antares project.
 from enum import Enum
-from typing import Any, List, MutableMapping
+from typing import Any, List, MutableMapping, Optional
 
+from pydantic import field_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
+
+
+class DistrictBaseFilter(Enum):
+    add_all = "add-all"
+    remove_all = "remove-all"
 
 
 class DistrictUpdate(AntaresBaseModel):
@@ -33,13 +39,20 @@ class DistrictUpdate(AntaresBaseModel):
                 comments="Some comment", areas=["z1", "z2", "z3"], output=True
             ).model_dump(mode="json")
 
+    @field_validator("areas", mode="before")
+    def validate_areas(cls, areas: Any) -> Optional[List[str]]:
+        if areas is None:
+            return areas
+        return list(set(areas))
+
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: bool
+    output: Optional[bool] = None
     #: User-defined comments.
-    comments: str = ""
+    comments: Optional[str] = None
     #: List of areas that will be grouped in the district.
-    areas: List[str]
+    areas: Optional[List[str]] = None
+    base_filter: Optional[DistrictBaseFilter] = None
 
 
 class DistrictCreation(AntaresBaseModel):
@@ -58,20 +71,22 @@ class DistrictCreation(AntaresBaseModel):
                 name="My District", comments="", areas=["z1", "z2", "z3"], output=True
             ).model_dump(mode="json")
 
+    @field_validator("areas", mode="before")
+    def validate_areas(cls, areas: Any) -> Optional[List[str]]:
+        if areas is None:
+            return areas
+        return list(set(areas))
+
     #: Name of the district (this name is also used as a unique identifier).
     name: str
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: bool
+    output: Optional[bool] = True
     #: User-defined comments.
-    comments: str = ""
+    comments: Optional[str] = ""
     #: List of areas that will be grouped in the district.
-    areas: List[str]
-
-
-class DistrictBaseFilter(Enum):
-    add_all = "add-all"
-    remove_all = "remove-all"
+    areas: Optional[List[str]] = []
+    base_filter: Optional[DistrictBaseFilter] = None
 
 
 class District(AntaresBaseModel):
@@ -94,10 +109,22 @@ class District(AntaresBaseModel):
     id: str
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: bool
+    output: bool = True
     #: User-defined comments.
     comments: str = ""
     #: List of areas that will be grouped in the district.
-    areas: List[str]
+    areas: List[str] = []
     #: Name of the district (this name is also used as a unique identifier).
     name: str
+
+
+def create_district(district_creation: DistrictCreation, district_id: str) -> District:
+    """
+    Creates a district  from a creation request.
+    """
+    return District.model_validate(
+        {
+            **district_creation.model_dump(exclude_none=True, include={"name", "areas", "output", "comments"}),
+            "id": district_id,
+        }
+    )

@@ -101,10 +101,12 @@ class RenewableClusterConfigNotFound(ConfigFileNotFound):
     object_name = RENEWABLE_CLUSTER
 
 
-class DistrictConfigNotFound(ConfigFileNotFound):
+class DistrictConfigNotFound(HTTPException):
     """Configuration for district is not found (404 Not Found)"""
 
-    object_name = DISTRICT
+    def __init__(self, path: str):
+        msg = f"District config path '{path}' not found"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class STStorageConfigNotFound(ConfigFileNotFound):

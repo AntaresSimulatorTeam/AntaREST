@@ -44,7 +44,7 @@ class ReadOnlyDistrictDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_invalid_areas(self, areas: list[str]) -> list[str]:
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
         """
         Check all areas exists in the study
         """
@@ -56,14 +56,20 @@ class DistrictDao(ReadOnlyDistrictDao):
     @abstractmethod
     def save_district(self, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> None:
         """
-        Update the properties of a district and/or the areas list.
+        Create a district or update the district if it already exists.
 
         Note:
             the `name` can't be updated because it is used as a unique identifier.
 
+            Also, the areas in district will be stored under the "+" or "-" key depending if the base filter is "remove_all" or "add_all".
+
+            If the base filter is "add_all" it means that this distrit will contain all existing areas except the ones in district.areas .
+
+            Otherwise if the base filter is "remove_all" it means the district contains only the areas in district.areas .
+
         Args:
-            district_id: district identifier
-            dto: Data Transfer Objects (DTO) used for update.
+            district: District object note that the areas field will contains exactly the area that will be stored.
+            district_base_filter: indicate whether this district include all areas except those given in district or only those .
 
         Raises:
             DistrictNotFound: exception raised when district is not found in the study.

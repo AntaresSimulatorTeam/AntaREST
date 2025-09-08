@@ -19,6 +19,7 @@ from antarest.study.business.model.district_model import District, DistrictBaseF
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     DistrictSet,
+    areas_sign_from_base_filter,
     parse_district,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -85,17 +86,22 @@ class FileStudyDistrictDao(DistrictDao):
         Depending on the `district_base_filter`, the areas in the district will be stored under the key "+" or "-".
         """
         study_data = self.get_file_study()
-        invalid_areas = self.get_invalid_areas(district.areas)
+        invalid_areas = self.get_invalid_areas_in_district(district.areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
         district_id = transform_name_to_id(district.name)
-        item_key = self._update_district_sets_config(district_id, district, district_base_filter)
-        apply_filter = district_base_filter.value if district_base_filter else DistrictBaseFilter.remove_all
+
+        # Update the in-memory config
+        study_data.config.sets[district_id] = DistrictSet.from_model(district, district_base_filter)
+
+        # Persist the change in the filesystem
+        item_key = areas_sign_from_base_filter(district_base_filter)
+        apply_filter = district_base_filter if district_base_filter else DistrictBaseFilter.remove_all
         study_data.tree.save(
             {
                 "caption": district.name,
-                "apply-filter": apply_filter,
+                "apply-filter": apply_filter.value,
                 item_key: district.areas,
                 "output": district.output,
                 "comments": district.comments,
@@ -130,7 +136,7 @@ class FileStudyDistrictDao(DistrictDao):
         del study_data.config.sets[district_id]
 
     @override
-    def get_invalid_areas(self, areas: list[str]) -> list[str]:
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
         """
         Check all areas exists in the study.
 

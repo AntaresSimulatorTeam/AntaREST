@@ -13,8 +13,10 @@
 
 from typing import Any, List, Optional
 
+from typing_extensions import Literal
+
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.district_model import District
+from antarest.study.business.model.district_model import District, DistrictBaseFilter
 
 
 class DistrictSet(AntaresBaseModel):
@@ -33,6 +35,18 @@ class DistrictSet(AntaresBaseModel):
     def get_areas(self, all_areas: List[str]) -> List[str]:
         areas = self.areas or []
         return get_areas(self.inverted_set, all_areas, areas)
+
+    @classmethod
+    def from_model(cls, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> "DistrictSet":
+        base_filter = district_base_filter or DistrictBaseFilter.remove_all
+        inverted_set = base_filter == DistrictBaseFilter.add_all
+        return DistrictSet.model_validate(
+            {
+                **district.model_dump(include={"name", "output", "comments"}),
+                "inverted_set": inverted_set,
+                "areas": district.areas,
+            }
+        )
 
 
 def district_set_sign(item: dict[str, Any]) -> str:
@@ -61,3 +75,11 @@ def get_areas(inverted_set: bool, all_areas: List[str], areas: list[str]) -> Lis
     if inverted_set:
         areas = list(set(all_areas).difference(set(areas)))
     return sorted(areas)
+
+
+def areas_sign_from_base_filter(district_base_filter: Optional[DistrictBaseFilter]) -> Literal["+", "-"]:
+    if district_base_filter is None:
+        return "+"
+    if district_base_filter == DistrictBaseFilter.remove_all:
+        return "+"
+    return "-"

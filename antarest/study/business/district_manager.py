@@ -15,9 +15,9 @@ from typing import Sequence
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.model.district_model import (
     District,
-    DistrictBaseFilter,
     DistrictCreation,
     DistrictUpdate,
+    create_district,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -76,31 +76,17 @@ class DistrictManager:
         if study_dao.district_exists(district_id):
             raise DistrictAlreadyExist(district_id)
 
-        areas = list(set(district_creation.areas))  # remove duplicates if any
-
-        invalid_areas = study_dao.get_invalid_areas(areas)
+        invalid_areas = study_dao.get_invalid_areas_in_district(district_creation.areas or [])
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
         command = CreateDistrict(
-            name=district_creation.name,
-            output=district_creation.output,
-            comments=district_creation.comments,
-            base_filter=DistrictBaseFilter.remove_all,
-            areas=areas,
+            parameters=district_creation,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
-        return District.model_validate(
-            {
-                "id": district_id,
-                "name": district_creation.name,
-                "areas": areas,
-                "output": district_creation.output,
-                "comments": district_creation.comments,
-            }
-        )
+        return create_district(district_creation, district_id)
 
     def update_district(
         self,
@@ -127,16 +113,13 @@ class DistrictManager:
         if not study_dao.district_exists(district_id):
             raise DistrictNotFound(district_id)
 
-        invalid_areas = study_dao.get_invalid_areas(district_update.areas)
+        invalid_areas = study_dao.get_invalid_areas_in_district(district_update.areas or [])
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
         command = UpdateDistrict(
             id=district_id,
-            base_filter=DistrictBaseFilter.remove_all,
-            areas=district_update.areas,
-            output=district_update.output,
-            comments=district_update.comments,
+            parameters=district_update,
             command_context=self._command_context,
             study_version=study.version,
         )

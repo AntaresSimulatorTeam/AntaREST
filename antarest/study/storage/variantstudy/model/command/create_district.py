@@ -10,13 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
+from typing import Any, Dict, Final, List, Optional
 
-from pydantic import computed_field, field_validator
+from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.study.business.model.district_model import District, DistrictBaseFilter
+from antarest.study.business.model.district_model import DistrictCreation, create_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -43,49 +43,62 @@ class CreateDistrict(ICommand):
     # Command parameters
     # ==================
 
-    name: str
-    base_filter: Optional[DistrictBaseFilter] = None
-    areas: List[str] = []
-    output: bool = True
-    comments: str = ""
+    parameters: DistrictCreation
 
-    @field_validator("name")
-    def validate_district_name(cls, val: str) -> str:
-        valid_name = transform_name_to_id(val, lower=False)
-        if valid_name != val:
+    # version 2: rename filter_items to areas, move all parameters under "parameters"
+    _SERIALIZATION_VERSION: Final[int] = 2
+
+    @model_validator(mode="before")
+    @classmethod
+    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+        if info.context:
+            version = info.context.version
+            if version == 1:
+                parameters = {}
+                if "name" in values:
+                    parameters["name"] = values.pop("name")
+                if "base_filter" in values:
+                    parameters["base_filter"] = values.pop("base_filter")
+                if "filter_items" in values:
+                    parameters["areas"] = values.pop("filter_items")
+                if "output" in values:
+                    parameters["output"] = values.pop("output")
+                if "comments" in values:
+                    parameters["comments"] = values.pop("comments")
+                values["parameters"] = parameters
+        return values
+
+    @field_validator("parameters")
+    def validate_district_name(cls, val: DistrictCreation) -> DistrictCreation:
+        valid_name = transform_name_to_id(val.name, lower=False)
+        if valid_name != val.name:
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def id(self) -> str:
-        return transform_name_to_id(self.name)
-
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        if study_data.district_exists(self.id):
-            return command_failed(message=f"District '{self.name}' already exists and could not be created")
+        district_id = transform_name_to_id(self.parameters.name)
 
-        new_district = District.model_validate(self.model_dump(include={"id", "name", "areas", "output", "comments"}))
+        if study_data.district_exists(district_id):
+            return command_failed(message=f"District '{self.parameters.name}' already exists and could not be created")
+
+        new_district = create_district(self.parameters, district_id)
 
         try:
-            study_data.save_district(new_district, self.base_filter)
+            study_data.save_district(new_district, self.parameters.base_filter)
         except AreaNotFound as e:
             return command_failed(message=f"Area not found {e}")
 
-        return command_succeeded(message=self.id)
+        return command_succeeded(message=district_id)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.CREATE_DISTRICT.value,
             args={
-                "name": self.name,
-                "base_filter": self.base_filter.value if self.base_filter else None,
-                "areas": self.areas,
-                "output": self.output,
-                "comments": self.comments,
+                "parameters": self.parameters.model_dump(mode="json", exclude_none=True),
             },
+            version=self._SERIALIZATION_VERSION,
             study_version=self.study_version,
         )
 

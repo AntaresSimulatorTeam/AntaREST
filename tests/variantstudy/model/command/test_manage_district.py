@@ -11,12 +11,13 @@
 # This file is part of the Antares project.
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.business.model.district_model import DistrictBaseFilter, DistrictCreation, DistrictUpdate
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
@@ -49,9 +50,11 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     ).apply(study_dao)
 
     create_district1_command: ICommand = CreateDistrict(
-        name="Two added zone",
-        areas=[area1_id, area2_id],
-        comments="First district",
+        parameters=DistrictCreation(
+            name="Two added zone",
+            areas=[area1_id, area2_id, area2_id],
+            comments="First district",
+        ),
         command_context=command_context,
         study_version=study_version,
     )
@@ -66,9 +69,11 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert set_config["comments"] == "First district"
 
     create_district2_command: ICommand = CreateDistrict(
-        name="One subtracted zone",
-        base_filter=DistrictBaseFilter.add_all,
-        areas=[area1_id],
+        parameters=DistrictCreation(
+            name="One subtracted zone",
+            base_filter=DistrictBaseFilter.add_all,
+            areas=[area1_id],
+        ),
         command_context=command_context,
         study_version=study_version,
     )
@@ -83,8 +88,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
 
     update_district2_command: ICommand = UpdateDistrict(
         id="one subtracted zone",
-        base_filter=DistrictBaseFilter.remove_all,
-        areas=[area2_id],
+        parameters=DistrictUpdate(base_filter=DistrictBaseFilter.remove_all, areas=[area2_id]),
         command_context=command_context,
         study_version=study_version,
     )
@@ -97,7 +101,9 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert set_config["apply-filter"] == "remove-all"
 
     create_district3_command: ICommand = CreateDistrict(
-        name="Empty district without output", output=False, command_context=command_context, study_version=study_version
+        parameters=DistrictCreation(name="Empty district without output", output=False),
+        command_context=command_context,
+        study_version=study_version,
     )
     output_d3 = create_district3_command.apply(
         study_data=study_dao,

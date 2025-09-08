@@ -395,8 +395,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.district_exists(district_id)
 
     @override
-    def get_invalid_areas(self, areas: list[str]) -> list[str]:
-        return self._adaptee.get_invalid_areas(areas)
+    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
+        return self._adaptee.get_invalid_areas_in_district(areas)
 
     @override
     def get_layers(self) -> Sequence[Layer]:
