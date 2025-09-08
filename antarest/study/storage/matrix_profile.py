@@ -18,7 +18,7 @@ from typing import Dict, NamedTuple, Sequence
 import pandas as pd
 from antares.study.version import StudyVersion
 
-from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7 , STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_9_2
 from antarest.study.storage.utils import MONTHS
 
 
