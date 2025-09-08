@@ -22,11 +22,11 @@ from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixSe
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
+    DAILY_ROWS_OF_24S,
     FIXED_4_COLUMNS,
     FIXED_8_COLUMNS,
     NULL_MATRIX,
     NULL_SCENARIO_MATRIX,
-    DAILY_ROWS_OF_24S,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
