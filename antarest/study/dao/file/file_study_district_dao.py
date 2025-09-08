@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Literal, Optional, Sequence
+from typing import Optional, Sequence
 
 from typing_extensions import override
 
@@ -108,20 +108,6 @@ class FileStudyDistrictDao(DistrictDao):
             },
             ["input", "areas", "sets", district_id],
         )
-
-    def _update_district_sets_config(
-        self, district_id: str, district: District, district_base_filter: Optional[DistrictBaseFilter]
-    ) -> Literal["+", "-"]:
-        study_data = self.get_file_study()
-        base_filter = district_base_filter or DistrictBaseFilter.remove_all
-        inverted_set = base_filter == DistrictBaseFilter.add_all
-        study_data.config.sets[district_id] = DistrictSet(
-            name=district.name,
-            areas=district.areas,
-            output=district.output,
-            inverted_set=inverted_set,
-        )
-        return "-" if inverted_set else "+"
 
     @override
     def remove_district(

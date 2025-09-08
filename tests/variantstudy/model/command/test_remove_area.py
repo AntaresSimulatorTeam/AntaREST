@@ -13,6 +13,7 @@
 from checksumdir import dirhash
 
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
+from antarest.study.business.model.district_model import DistrictBaseFilter, DistrictCreation
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterGroup,
@@ -30,7 +31,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
-from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict, DistrictBaseFilter
+from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -93,9 +94,7 @@ class TestRemoveArea:
             study_version = empty_study.config.version
 
             create_district_command = CreateDistrict(
-                name="foo",
-                base_filter=DistrictBaseFilter.add_all,
-                areas=[area_id],
+                parameters=DistrictCreation(name="foo", base_filter=DistrictBaseFilter.add_all, areas=[area_id]),
                 command_context=command_context,
                 study_version=study_version,
             )
@@ -214,9 +213,11 @@ class TestRemoveArea:
             assert output.status, output.message
 
             create_district_command = CreateDistrict(
-                name="foo",
-                base_filter=DistrictBaseFilter.add_all,
-                areas=[area_id, area_id2],
+                parameters=DistrictCreation(
+                    name="foo",
+                    base_filter=DistrictBaseFilter.add_all,
+                    areas=[area_id, area_id2],
+                ),
                 command_context=command_context,
                 study_version=study_version,
             )
