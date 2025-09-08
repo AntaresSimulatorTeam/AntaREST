@@ -70,8 +70,8 @@ class TestInputSeriesMatrix:
         # checks binary response
         # We cannot check the content as is as we're applying a transformation to the data
         df_binary = pd.DataFrame(data=expected["data"])
-        buffer = io.BytesIO()
-        df_binary.to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
+        buffer = io.StringIO()
+        df_binary.to_csv(buffer, sep="\t", header=False, index=False)
         actual_binary = node.load(formatted=False)
         assert actual_binary == buffer.getvalue()
 
@@ -99,8 +99,8 @@ class TestInputSeriesMatrix:
 
         # checks binary response
         actual = node.load(formatted=False)
-        buffer = io.BytesIO()
-        pd.DataFrame(default_matrix).to_csv(buffer, sep="\t", header=False, index=False, encoding="utf-8")
+        buffer = io.StringIO()
+        pd.DataFrame(default_matrix).to_csv(buffer, sep="\t", header=False, index=False)
         assert actual == buffer.getvalue()
 
     def test_load__file_not_found(self, my_study_config: FileStudyTreeConfig) -> None:

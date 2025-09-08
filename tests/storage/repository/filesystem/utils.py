@@ -28,11 +28,11 @@ class CheckSubNode(INode[int, int, int]):
         super().__init__(config)
         self.value = value
 
-    def get_node_and_remainder(
+    def get_node(
         self,
         url: Optional[List[str]] = None,
-    ) -> tuple[INode[int, int, int], list[str]]:
-        return self, []
+    ) -> INode[int, int, int]:
+        return self
 
     def get(
         self,
