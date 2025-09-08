@@ -457,6 +457,8 @@ class VariantStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         # get current user if not in session, otherwise get session user
+        file_study = self.get_files()
+        update_editor_name(file_study, get_user_id())
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
 
