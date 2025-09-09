@@ -128,7 +128,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode, imports_matrix_from_bytes
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.rawstudy.model.filesystem.matrix.output_series_matrix import OutputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -2345,26 +2345,3 @@ class StudyService:
         It will put every matrix in the study in the matrix-store.
         """
         self.storage_service.get_storage(study).get_raw(study).tree.normalize()
-
-    def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
-        """
-        Returns the content of a node based on the provided arguments.
-
-        Depending on the type of node, it may return the following types of data:
-          - an arbitrary dictionary (ini files ...)
-          - a dataframe (input matrices ...)
-          - raw file content (arbitrary user files ...)
-
-        This allows callers to handle the result as most appropriate.
-        """
-        study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.READ)
-        file_study = self.get_file_study(study)
-        url = [item for item in path.split("/") if item]
-        node, relative_url = file_study.tree.get_node_and_remainder(url)
-
-        # Return a datframe when possible instead of less memory & computation - efficient python objects
-        if isinstance(node, MatrixNode):
-            return node.parse_as_dataframe()
-
-        return node.get(url=relative_url, depth=depth, formatted=formatted)
