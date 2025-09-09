@@ -1959,7 +1959,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     res_raw_changed = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_editor)
     changed_antares_data = res_raw_changed.json()["antares"]
     assert changed_antares_data["author"] == "creator_2"
-    assert changed_antares_data["editor"] == 3
+    assert changed_antares_data["editor"] == "editor_2"
 
     # START CREATING AREA
     res = client.post(
@@ -1975,7 +1975,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
 
     res_creating_area = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_editor).json()["antares"]
     assert res_creating_area["author"] == "creator_2"
-    assert res_creating_area["editor"] == 2
+    assert res_creating_area["editor"] == "creator_2"
     # END CREATING AREA
 
     # START EDITING AREA
@@ -1999,7 +1999,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
 
     res_area_initial = client.get(f"/v1/studies/{study_id}/raw?path=study").json()["antares"]
     assert res_area_initial["author"] == "creator_2"
-    assert res_area_initial["editor"] == 3
+    assert res_area_initial["editor"] == "editor_2"
     # END EDITING AREA
 
     # START DELETING AREA
@@ -2007,5 +2007,5 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     assert res_delete.status_code == 200, res.json()
     res_area_delete = client.get(f"/v1/studies/{study_id}/raw?path=study", headers=headers_creator).json()["antares"]
     assert res_area_delete["author"] == "creator_2"
-    assert res_area_delete["editor"] == 2
+    assert res_area_delete["editor"] == "creator_2"
     # END DELETING AREA
