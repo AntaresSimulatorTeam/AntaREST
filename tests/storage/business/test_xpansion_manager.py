@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import io
-from pathlib import Path
 
+import pandas as pd
 import pytest
 from fastapi import UploadFile
 
@@ -32,12 +32,13 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.business.xpansion_management import (
-    XpansionCandidateDTO,
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -55,7 +56,6 @@ def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
 @pytest.mark.unit_test
 def test_create_configuration(
     xpansion_manager: XpansionManager,
-    tmp_path: Path,
     empty_study_810: FileStudy,
 ) -> None:
     """
@@ -79,7 +79,7 @@ def test_create_configuration(
             "optimality_gap": 1,
             "relative_gap": 1e-06,
             "relaxed_optimality_gap": 1e-05,
-            "max_iteration": 1000,
+            "max_iteration": 1000000000000,
             "solver": "Xpress",
             "log_level": 0,
             "separation_parameter": 0.5,
@@ -91,9 +91,7 @@ def test_create_configuration(
 
 
 @pytest.mark.unit_test
-def test_delete_xpansion_configuration(
-    xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: FileStudy
-) -> None:
+def test_delete_xpansion_configuration(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the deletion of a configuration.
     """
@@ -112,13 +110,24 @@ def test_delete_xpansion_configuration(
 
 
 @pytest.mark.unit_test
-def test_get_xpansion_settings(xpansion_manager: XpansionManager, tmp_path: Path, empty_study_810: FileStudy) -> None:
+def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
     study = FileStudyInterface(empty_study_810)
     xpansion_manager.create_xpansion_configuration(study)
 
+    # Write "+Inf" as the max_iteration value to ensure we're able to read it.
+    ini_path = empty_study_810.config.study_path / "user" / "expansion" / "settings.ini"
+    content = ini_path.read_text().splitlines()
+    for k, line in enumerate(content):
+        if "max_iteration" in line:
+            content[k] = "max_iteration=+Inf"
+    with open(ini_path, "w") as f:
+        for line in content:
+            f.write(f"{line}\n")
+
+    # Checks the reading method
     actual = xpansion_manager.get_xpansion_settings(study)
     assert actual.model_dump(by_alias=True) == {
         "master": Master.INTEGER,
@@ -126,7 +135,7 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, tmp_path: Path
         "optimality_gap": 1.0,
         "relative_gap": 1e-06,
         "relaxed_optimality_gap": 1e-05,
-        "max_iteration": 1000,
+        "max_iteration": 1000000000000,
         "solver": Solver.XPRESS,
         "log_level": 0,
         "separation_parameter": 0.5,
@@ -151,7 +160,7 @@ def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study
         "max_iteration": 123,
         "uc_type": UcType.EXPANSION_FAST,
         "master": Master.INTEGER,
-        "relaxed_optimality_gap": "1.2%",  # percentage
+        "relaxed_optimality_gap": 1.2,
         "relative_gap": 1e-12,
         "batch_size": 4,
         "separation_parameter": 0.5,
@@ -197,7 +206,7 @@ def test_add_candidate(
     actual = study.get_files().tree.get(["user", "expansion", "candidates"])
     assert actual == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
+    new_candidate = XpansionCandidateCreation.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -206,7 +215,7 @@ def test_add_candidate(
         }
     )
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
+    new_candidate2 = XpansionCandidateCreation.model_validate(
         {
             "name": "candidate_2",
             "link": "area1 - area2",
@@ -253,29 +262,25 @@ def test_get_candidate(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_1 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_2",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_2 = {
+        "name": "candidate_2",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    xpansion_manager.add_candidate(study, new_candidate)
-    xpansion_manager.add_candidate(study, new_candidate2)
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
-    assert xpansion_manager.get_candidate(study, new_candidate.name) == new_candidate
-    assert xpansion_manager.get_candidate(study, new_candidate2.name) == new_candidate2
+    assert xpansion_manager.get_candidate(study, cdt_1["name"]) == XpansionCandidate(**cdt_1)
+    assert xpansion_manager.get_candidate(study, cdt_2["name"]) == XpansionCandidate(**cdt_2)
 
 
 @pytest.mark.unit_test
@@ -292,31 +297,24 @@ def test_get_candidates(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_1 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_2",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
+    cdt_2 = {
+        "name": "candidate_2",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    xpansion_manager.add_candidate(study, new_candidate)
-    xpansion_manager.add_candidate(study, new_candidate2)
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
-    assert xpansion_manager.get_candidates(study) == [
-        new_candidate,
-        new_candidate2,
-    ]
+    assert xpansion_manager.get_candidates(study) == [XpansionCandidate(**cdt_1), XpansionCandidate(**cdt_2)]
 
 
 @pytest.mark.unit_test
@@ -333,27 +331,25 @@ def test_update_candidates(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
-    xpansion_manager.add_candidate(study, new_candidate)
+    cdt_1 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_1",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
-    xpansion_manager.update_candidate(study, new_candidate.name, new_candidate2)
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
 
-    assert xpansion_manager.get_candidate(study, candidate_name=new_candidate.name) == new_candidate2
+    cdt_2 = {
+        "name": "candidate_1",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
+
+    xpansion_manager.replace_candidate(study, cdt_1["name"], XpansionCandidateCreation(**cdt_2))
+
+    assert xpansion_manager.get_candidate(study, candidate_name=cdt_1["name"]) == XpansionCandidate(**cdt_2)
 
 
 @pytest.mark.unit_test
@@ -370,7 +366,7 @@ def test_delete_candidate(
 
     assert study.get_files().tree.get(["user", "expansion", "candidates"]) == {}
 
-    new_candidate = XpansionCandidateDTO.model_validate(
+    new_candidate = XpansionCandidateCreation.model_validate(
         {
             "name": "candidate_1",
             "link": "area1 - area2",
@@ -380,19 +376,17 @@ def test_delete_candidate(
     )
     xpansion_manager.add_candidate(study, new_candidate)
 
-    new_candidate2 = XpansionCandidateDTO.model_validate(
-        {
-            "name": "candidate_2",
-            "link": "area1 - area2",
-            "annual-cost-per-mw": 1,
-            "max-investment": 1,
-        }
-    )
-    xpansion_manager.add_candidate(study, new_candidate2)
+    cdt_2 = {
+        "name": "candidate_2",
+        "link": "area1 - area2",
+        "annual-cost-per-mw": 1,
+        "max-investment": 1,
+    }
+    xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
     xpansion_manager.delete_candidate(study, new_candidate.name)
 
-    assert xpansion_manager.get_candidates(study) == [new_candidate2]
+    assert xpansion_manager.get_candidates(study) == [XpansionCandidate(**cdt_2)]
 
 
 @pytest.mark.unit_test
@@ -418,10 +412,7 @@ def test_update_constraints(
 
 
 @pytest.mark.unit_test
-def test_update_constraints_via_the_front(
-    xpansion_manager: XpansionManager,
-    empty_study_880: FileStudy,
-) -> None:
+def test_update_constraints_via_the_front(xpansion_manager: XpansionManager, empty_study_880: FileStudy) -> None:
     study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -451,10 +442,7 @@ def test_update_constraints_via_the_front(
 
 
 @pytest.mark.unit_test
-def test_update_weights_via_the_front(
-    xpansion_manager: XpansionManager,
-    empty_study_880: FileStudy,
-) -> None:
+def test_update_weights_via_the_front(xpansion_manager: XpansionManager, empty_study_880: FileStudy) -> None:
     study = FileStudyInterface(empty_study_880)
     xpansion_manager.create_xpansion_configuration(study)
     # Same test as the one for constraints
@@ -484,10 +472,7 @@ def test_update_weights_via_the_front(
 
 
 @pytest.mark.unit_test
-def test_add_resources(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
@@ -538,10 +523,7 @@ def test_add_resources(
 
 
 @pytest.mark.unit_test
-def test_get_single_constraints(
-    xpansion_manager: XpansionManager,
-    empty_study_870: FileStudy,
-) -> None:
+def test_get_single_constraints(xpansion_manager: XpansionManager, empty_study_870: FileStudy) -> None:
     study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -559,10 +541,7 @@ def test_get_single_constraints(
 
 
 @pytest.mark.unit_test
-def test_get_settings_without_sensitivity(
-    xpansion_manager: XpansionManager,
-    empty_study_870: FileStudy,
-) -> None:
+def test_get_settings_without_sensitivity(xpansion_manager: XpansionManager, empty_study_870: FileStudy) -> None:
     study = FileStudyInterface(empty_study_870)
     xpansion_manager.create_xpansion_configuration(study)
 
@@ -572,10 +551,7 @@ def test_get_settings_without_sensitivity(
 
 
 @pytest.mark.unit_test
-def test_get_all_constraints(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_get_all_constraints(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
@@ -596,10 +572,7 @@ def test_get_all_constraints(
 
 
 @pytest.mark.unit_test
-def test_add_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -629,10 +602,7 @@ def test_add_capa(
 
 
 @pytest.mark.unit_test
-def test_delete_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -654,10 +624,7 @@ def test_delete_capa(
 
 
 @pytest.mark.unit_test
-def test_get_single_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -670,20 +637,15 @@ def test_get_single_capa(
 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
-    assert xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1) == {
-        "columns": [0],
-        "data": [[0.0]],
-        "index": [0],
-    }
+    df = xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1)
+    pd.testing.assert_frame_equal(df, pd.DataFrame({0: [0.0]}))
+
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
 
 @pytest.mark.unit_test
-def test_get_all_capa(
-    xpansion_manager: XpansionManager,
-    study: StudyInterface,
-) -> None:
+def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"

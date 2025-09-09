@@ -20,15 +20,12 @@ import { toError } from "../../../../../../../../utils/fnUtils";
 import type { SubmitHandlerPlus } from "../../../../../../../common/Form/types";
 import EmptyView from "../../../../../../../common/page/EmptyView";
 import TableForm from "../../../../../../../common/TableForm";
-import {
-  updateScenarioBuilderConfig,
-  type ClustersHandlerReturn,
-  type GenericScenarioConfig,
-  type ScenarioType,
-} from "./utils";
+import { adaptScenarioFormToDto } from "./adapters";
+import { updateScenarioBuilderConfig } from "./services";
+import type { ScenarioDisplay, ScenarioType } from "./types";
 
 interface Props {
-  config: GenericScenarioConfig | ClustersHandlerReturn;
+  config: ScenarioDisplay;
   type: ScenarioType;
   areaId?: string;
 }
@@ -43,14 +40,8 @@ function Table({ config, type, areaId }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
-    const updatedScenario = {
-      [type]:
-        (type === "thermal" || type === "renewable") && areaId
-          ? { [areaId]: dirtyValues }
-          : dirtyValues,
-    };
-
     try {
+      const updatedScenario = adaptScenarioFormToDto(type, dirtyValues, areaId);
       await updateScenarioBuilderConfig(study.id, updatedScenario, type);
     } catch (error) {
       enqueueErrorSnackbar(

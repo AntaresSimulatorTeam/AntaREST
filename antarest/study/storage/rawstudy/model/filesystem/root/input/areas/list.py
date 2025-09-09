@@ -23,14 +23,6 @@ AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
 class InputAreasList(INode[List[str], List[str], List[str]]):
-    @override
-    def normalize(self) -> None:
-        pass  # no external store in this node
-
-    @override
-    def denormalize(self) -> None:
-        pass  # no external store in this node
-
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
         super().__init__(config)
         self.matrix_mapper = matrix_mapper
@@ -68,15 +60,3 @@ class InputAreasList(INode[List[str], List[str], List[str]]):
     def delete(self, url: Optional[List[str]] = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()
-
-    @override
-    def check_errors(
-        self,
-        data: List[str],
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        errors = []
-        if any(a not in data for a in [area.name for area in self.config.areas.values()]):
-            errors.append(f"list.txt should have {self.config.area_names()} nodes but given {data}")
-        return errors

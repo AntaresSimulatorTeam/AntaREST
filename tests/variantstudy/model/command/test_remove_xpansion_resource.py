@@ -22,7 +22,17 @@ class TestRemoveXpansionResource:
     @staticmethod
     def set_up(empty_study: FileStudy):
         empty_study.tree.save(
-            {"user": {"expansion": {"capa": {}, "weights": {}, "constraints": {}, "settings": {}, "candidates": {}}}}
+            {
+                "user": {
+                    "expansion": {
+                        "capa": {},
+                        "weights": {},
+                        "constraints": {},
+                        "settings": {"master": "integer"},
+                        "candidates": {},
+                    }
+                }
+            }
         )
         study_path = empty_study.config.study_path
         xpansion_path = study_path / "user" / "expansion"
@@ -141,7 +151,7 @@ class TestRemoveXpansionResource:
 
         settings_file = empty_study.config.path / "user" / "expansion" / "candidates.ini"
         with open(settings_file, "w") as f:
-            f.write(f"[0]\n{profile} = {file_name}")
+            f.write(f"[0]\nname=cdt1\nlink=a - b\nannual-cost-per-mw=2\n{profile} = {file_name}")
 
         cmd = RemoveXpansionResource(
             resource_type=XpansionResourceFileType.CAPACITIES,

@@ -13,21 +13,21 @@
 import logging
 from typing import List
 
+import pandas as pd
 from fastapi import UploadFile
 
 from antarest.core.exceptions import (
-    CandidateNotFoundError,
-    ChildNotFoundError,
     FileImportFailed,
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
-from antarest.core.model import JSON
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
-    XpansionCandidateDTO,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionResourceFileType,
+    XpansionSettings,
     XpansionSettingsUpdate,
+    create_xpansion_candidate,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
@@ -43,17 +43,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
-    checks_resource_deletion_is_allowed,
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
-from antarest.study.storage.variantstudy.model.command.xpansion_common import (
-    assert_link_exist,
-    checks_candidate_can_be_deleted,
-    checks_settings_are_correct_and_returns_fields_to_exclude,
-    get_resource_dir,
-    get_xpansion_settings,
-)
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
@@ -74,75 +66,59 @@ class XpansionManager:
         command = RemoveXpansionConfiguration(command_context=self._command_context, study_version=study.version)
         study.add_commands([command])
 
-    def get_xpansion_settings(self, study: StudyInterface) -> GetXpansionSettings:
+    def get_xpansion_settings(self, study: StudyInterface) -> XpansionSettings:
         logger.info(f"Getting xpansion settings for study '{study.id}'")
-        file_study = study.get_files()
-        return get_xpansion_settings(file_study)
+        return study.get_study_dao().get_xpansion_settings()
 
     def update_xpansion_settings(
         self, study: StudyInterface, new_xpansion_settings: XpansionSettingsUpdate
-    ) -> GetXpansionSettings:
+    ) -> XpansionSettings:
         logger.info(f"Updating xpansion settings for study '{study.id}'")
         # Checks settings are correct
-        file_study = study.get_files()
-        checks_settings_are_correct_and_returns_fields_to_exclude(new_xpansion_settings, file_study)
+        study_dao = study.get_study_dao()
+        study_dao.checks_xpansion_settings_are_correct(new_xpansion_settings)
         command = UpdateXpansionSettings(
             settings=new_xpansion_settings, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
         return self.get_xpansion_settings(study)
 
-    def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateDTO) -> XpansionCandidateDTO:
+    def add_candidate(self, study: StudyInterface, xpansion_candidate: XpansionCandidateCreation) -> XpansionCandidate:
         logger.info(f"Adding candidate '{xpansion_candidate.name}' to study '{study.id}'")
 
-        file_study = study.get_files()
-        internal_candidate = xpansion_candidate.to_internal_model()
-        assert_link_exist(file_study, internal_candidate)
+        candidate = create_xpansion_candidate(xpansion_candidate)
+        study.get_study_dao().checks_xpansion_candidate_coherence(candidate)
 
         command = CreateXpansionCandidate(
-            candidate=internal_candidate, command_context=self._command_context, study_version=study.version
+            candidate=xpansion_candidate, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
+        return candidate
 
-        # Should we add a field in the study config containing the xpansion candidates like the links or the areas ?
-        return self.get_candidate(study, xpansion_candidate.name)
-
-    def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidateDTO:
+    def get_candidate(self, study: StudyInterface, candidate_name: str) -> XpansionCandidate:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
-        # This takes the first candidate with the given name and not the id, because the name is the primary key.
-        file_study = study.get_files()
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        try:
-            candidate = next(c for c in candidates.values() if c["name"] == candidate_name)
-            return XpansionCandidateDTO(**candidate)
+        return study.get_study_dao().get_xpansion_candidate(candidate_name)
 
-        except StopIteration:
-            raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
-
-    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidate]:
         logger.info(f"Getting all candidates of study {study.id}")
-        file_study = study.get_files()
-        candidates = file_study.tree.get(["user", "expansion", "candidates"])
-        return [XpansionCandidateDTO(**c) for c in candidates.values()]
+        return study.get_study_dao().get_all_xpansion_candidates()
 
-    def update_candidate(
-        self,
-        study: StudyInterface,
-        candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> None:
-        internal_candidate = xpansion_candidate_dto.to_internal_model()
+    def replace_candidate(
+        self, study: StudyInterface, candidate_name: str, xpansion_candidate: XpansionCandidateCreation
+    ) -> XpansionCandidate:
+        final_candidate = create_xpansion_candidate(xpansion_candidate)
         command = ReplaceXpansionCandidate(
             candidate_name=candidate_name,
-            properties=internal_candidate,
+            properties=xpansion_candidate,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
+        return final_candidate
 
     def delete_candidate(self, study: StudyInterface, candidate_name: str) -> None:
         logger.info(f"Deleting candidate '{candidate_name}' from study '{study.id}'")
-        checks_candidate_can_be_deleted(candidate_name, study.get_files())
+        study.get_study_dao().checks_xpansion_candidate_can_be_deleted(candidate_name)
         command = RemoveXpansionCandidate(
             candidate_name=candidate_name,
             command_context=self._command_context,
@@ -152,7 +128,7 @@ class XpansionManager:
 
     def update_xpansion_constraints_settings(
         self, study: StudyInterface, constraints_file_name: str
-    ) -> GetXpansionSettings:
+    ) -> XpansionSettings:
         # Make sure filename is not `None`, because `None` values are ignored by the update.
         constraints_file_name = constraints_file_name or ""
         # noinspection PyArgumentList
@@ -186,21 +162,15 @@ class XpansionManager:
                 raise NotImplementedError(f"resource_type '{resource_type}' not implemented")
         return command
 
-    def add_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        file: UploadFile,
-    ) -> None:
+    def add_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, file: UploadFile) -> None:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
         # checks the file doesn't already exist
-        keys = get_resource_dir(resource_type)
-        file_study = study.get_files()
-        if filename in file_study.tree.get(keys):
+        resources = study.get_study_dao().get_xpansion_resources(resource_type)
+        if filename in resources:
             raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
         # parses the content
@@ -213,15 +183,9 @@ class XpansionManager:
 
         study.add_commands([command])
 
-    def delete_resource(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> None:
-        file_study = study.get_files()
-        logger.info(f"Checking xpansion file '{filename}' is not used in study '{file_study.config.study_id}'")
-        checks_resource_deletion_is_allowed(resource_type, filename, file_study)
+    def delete_resource(self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str) -> None:
+        logger.info(f"Checking xpansion file '{filename}' is not used in study '{study.id}'")
+        study.get_study_dao().checks_xpansion_resource_can_be_deleted(resource_type, filename)
         logger.info(f"Deleting xpansion resource {filename} for study '{study.id}'")
         command = RemoveXpansionResource(
             resource_type=resource_type,
@@ -232,19 +196,11 @@ class XpansionManager:
         study.add_commands([command])
 
     def get_resource_content(
-        self,
-        study: StudyInterface,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> JSON | bytes:
+        self, study: StudyInterface, resource_type: XpansionResourceFileType, filename: str
+    ) -> bytes | pd.DataFrame:
         logger.info(f"Getting xpansion {resource_type} resource file '{filename}' from study '{study.id}'")
-        file_study = study.get_files()
-        return file_study.tree.get(get_resource_dir(resource_type) + [filename])
+        return study.get_study_dao().get_xpansion_resource(resource_type, filename)
 
-    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> List[str]:
+    def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
-        file_study = study.get_files()
-        try:
-            return sorted([filename for filename in file_study.tree.get(get_resource_dir(resource_type)).keys()])
-        except ChildNotFoundError:
-            return []
+        return study.get_study_dao().get_xpansion_resources(resource_type)

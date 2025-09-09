@@ -64,20 +64,3 @@ class RawFileNode(LazyNode[bytes, bytes, str]):
     def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
         self.config.path.parent.mkdir(exist_ok=True, parents=True)
         self.config.path.write_bytes(data)
-
-    @override
-    def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
-        if not self.config.path.exists():
-            msg = f"{self.config.path} not exist"
-            if raising:
-                raise ValueError(msg)
-            return [msg]
-        return []
-
-    @override
-    def normalize(self) -> None:
-        pass  # no external store in this node
-
-    @override
-    def denormalize(self) -> None:
-        pass  # no external store in this node

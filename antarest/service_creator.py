@@ -187,6 +187,15 @@ def create_core_services(app_ctxt: Optional[AppBuildContext], config: Config) ->
     )
 
 
+def create_matrix_gc(config: Config, matrix_service: MatrixService) -> MatrixGarbageCollector:
+    return MatrixGarbageCollector(
+        matrix_service=matrix_service,
+        sleeping_time=config.storage.matrix_gc_sleeping_time,
+        dry_run=config.storage.matrix_gc_dry_run,
+        retention_time=config.storage.matrix_gc_retention_time,
+    )
+
+
 def create_watcher(
     config: Config,
     app_ctxt: Optional[AppBuildContext],
@@ -218,27 +227,6 @@ def create_explorer(config: Config, app_ctxt: Optional[AppBuildContext]) -> Expl
         app_ctxt.api_root.include_router(create_explorer_routes(config=config, explorer=explorer))
 
     return explorer
-
-
-def create_matrix_gc(
-    config: Config,
-    app_ctxt: Optional[AppBuildContext],
-    study_service: Optional[StudyService] = None,
-    matrix_service: Optional[MatrixService] = None,
-) -> MatrixGarbageCollector:
-    if study_service and matrix_service:
-        return MatrixGarbageCollector(
-            config=config,
-            study_service=study_service,
-            matrix_service=matrix_service,
-        )
-    else:
-        core_services = create_core_services(app_ctxt, config)
-        return MatrixGarbageCollector(
-            config=config,
-            study_service=core_services.study_service,
-            matrix_service=core_services.matrix_service,
-        )
 
 
 def create_archive_worker(
@@ -291,12 +279,7 @@ def create_services(config: Config, app_ctxt: Optional[AppBuildContext], create_
 
     matrix_garbage_collector = None
     if config.server.services and Module.MATRIX_GC.value in config.server.services or create_all:
-        matrix_garbage_collector = create_matrix_gc(
-            config=config,
-            app_ctxt=app_ctxt,
-            study_service=core_services.study_service,
-            matrix_service=core_services.matrix_service,
-        )
+        matrix_garbage_collector = create_matrix_gc(config, core_services.matrix_service)
 
     auto_archiver = None
     if config.server.services and Module.AUTO_ARCHIVER.value in config.server.services or create_all:

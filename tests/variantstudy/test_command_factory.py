@@ -20,7 +20,7 @@ import pytest
 
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.area_model import UpdateAreaUi
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -34,9 +34,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 COMMANDS = [
     pytest.param(
         CommandDTO(
-            action=CommandName.CREATE_AREA.value,
-            args={"area_name": "area_name"},
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.CREATE_AREA.value, args={"area_name": "area_name"}, study_version=STUDY_VERSION_8_8
         ),
         None,
         id="create_area",
@@ -44,10 +42,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_AREA.value,
-            args=[
-                {"area_name": "area_name"},
-                {"area_name": "area2"},
-            ],
+            args=[{"area_name": "area_name"}, {"area_name": "area2"}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -68,12 +63,7 @@ COMMANDS = [
             args={
                 "area_id": "id",
                 "area_ui": UpdateAreaUi(
-                    x=100,
-                    y=100,
-                    color_rgb=(100, 100, 100),
-                    layer_x={},
-                    layer_y={},
-                    layer_color={},
+                    x=100, y=100, color_rgb=(100, 100, 100), layer_x={}, layer_y={}, layer_color={}
                 ),
                 "layer": "0",
             },
@@ -83,22 +73,39 @@ COMMANDS = [
         id="update_area_ui",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_AREA.value,
-            args={"id": "id"},
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_AREA.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
         None,
         id="remove_area",
     ),
     pytest.param(
+        CommandDTO(action=CommandName.REMOVE_AREA.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
+        None,
+        id="remove_area2",
+    ),
+    pytest.param(
         CommandDTO(
-            action=CommandName.REMOVE_AREA.value,
-            args=[{"id": "id"}],
+            action=CommandName.CREATE_LAYER.value,
+            args={"parameters": {"name": "layer_name"}},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="remove_area2",
+        id="create_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_LAYER.value, args={"layer_id": "layer_id"}, study_version=STUDY_VERSION_8_8
+        ),
+        None,
+        id="remove_layer",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_LAYER.value,
+            args={"parameters": {"id": "layer_id", "name": "layer_name"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_layer",
     ),
     pytest.param(
         CommandDTO(
@@ -131,20 +138,12 @@ COMMANDS = [
         id="create_district_list",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_DISTRICT.value,
-            args={"id": "id"},
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args={"id": "id"}, study_version=STUDY_VERSION_8_8),
         None,
         id="remove_district",
     ),
     pytest.param(
-        CommandDTO(
-            action=CommandName.REMOVE_DISTRICT.value,
-            args=[{"id": "id"}],
-            study_version=STUDY_VERSION_8_8,
-        ),
+        CommandDTO(action=CommandName.REMOVE_DISTRICT.value, args=[{"id": "id"}], study_version=STUDY_VERSION_8_8),
         None,
         id="remove_district_list",
     ),
@@ -200,10 +199,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args={
-                "area1": "area1",
-                "area2": "area2",
-            },
+            args={"area1": "area1", "area2": "area2"},
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -212,12 +208,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REMOVE_LINK.value,
-            args=[
-                {
-                    "area1": "area1",
-                    "area2": "area2",
-                }
-            ],
+            args=[{"area1": "area1", "area2": "area2"}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -300,17 +291,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_BINDING_CONSTRAINTS.value,
-            args=[
-                {
-                    "bc_props_by_id": {
-                        "id": {
-                            "enabled": True,
-                            "time_step": "hourly",
-                            "operator": "equal",
-                        }
-                    }
-                }
-            ],
+            args=[{"bc_props_by_id": {"id": {"enabled": True, "time_step": "hourly", "operator": "equal"}}}],
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
@@ -387,11 +368,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_THERMAL_CLUSTERS.value,
-            args=[
-                {
-                    "cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}},
-                }
-            ],
+            args=[{"cluster_properties": {"area_name": {"cluster_name": {"efficiency": 90}}}}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
@@ -449,22 +426,13 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.CREATE_RENEWABLES_CLUSTER.value,
             version=3,
-            args=[
-                {
-                    "area_id": "area_name",
-                    "parameters": {"name": "cluster_name", "enabled": False, "unitCount": 4},
-                }
-            ],
+            args=[{"area_id": "area_name", "parameters": {"name": "cluster_name", "enabled": False, "unitCount": 4}}],
             study_version=STUDY_VERSION_8_8,
         ),
         [
             {
                 "area_id": "area_name",
-                "parameters": {
-                    "enabled": False,
-                    "name": "cluster_name",
-                    "unitCount": 4,
-                },
+                "parameters": {"enabled": False, "name": "cluster_name", "unitCount": 4},
             }
         ],
         id="create_renewables_cluster_list",
@@ -534,21 +502,17 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_COMMENTS.value,
-            args={"comments": "comments"},
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.REPLACE_COMMENTS.value, args={"comments": "comments"}, study_version=STUDY_VERSION_8_8
         ),
         None,
-        id="update_comments",
+        id="replace_comments",
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_COMMENTS.value,
-            args=[{"comments": "comments"}],
-            study_version=STUDY_VERSION_8_8,
+            action=CommandName.REPLACE_COMMENTS.value, args=[{"comments": "comments"}], study_version=STUDY_VERSION_8_8
         ),
         None,
-        id="update_comments_list",
+        id="replace_comments_list",
     ),
     pytest.param(
         CommandDTO(
@@ -583,8 +547,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
-            args=[{"active": True, "items": [1, 3], "reverse": False}],
+            args=[{"playlist": {"years": {2: {"status": True, "weight": 0.9}}}}],
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_playlist_list",
@@ -592,13 +557,9 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_PLAYLIST.value,
-            args={
-                "active": True,
-                "items": [1, 3],
-                "weights": {1: 5.0},
-                "reverse": False,
-            },
+            args={"playlist": {"years": {2: {"status": False, "weight": 4}}}},
             study_version=STUDY_VERSION_8_8,
+            version=2,
         ),
         None,
         id="update_playlist",
@@ -606,13 +567,24 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+            version=2,
             args={
                 "data": {
                     "ruleset test": {
-                        "l": {"area1": {"0": 1}},
+                        "binding_constraints": {},
+                        "hydro": {},
+                        "hydro_final_levels": {},
+                        "hydro_generation_power": {},
+                        "hydro_initial_levels": {},
+                        "load": {"area1": {"0": 1}},
                         "ntc": {"area1 / area2": {"1": 23}},
-                        "t": {"area1": {"thermal": {"1": 2}}},
-                    },
+                        "renewable": {},
+                        "solar": {},
+                        "storage_constraints": {},
+                        "storage_inflows": {},
+                        "thermal": {"area1": {"thermal": {"1": ""}}},
+                        "wind": {},
+                    }
                 }
             },
             study_version=STUDY_VERSION_8_8,
@@ -893,6 +865,110 @@ COMMANDS = [
         None,
         id="update_xpansion_settings",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_GENERAL_CONFIG.value,
+            args={
+                "parameters": {"horizon": "2030", "first_week_day": "Monday", "year_by_year": True},
+            },
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_general_config",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value,
+            args={"parameters": {"binding_constraints": True, "unfeasible_problem_behavior": "error-verbose"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_optimization_preferences",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADVANCED_PARAMETERS.value,
+            args={"parameters": {"seed_tsgen_thermal": 2, "hydro_pricing_mode": "accurate"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_advanced_parameters",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {
+                    "area_id": "fr",
+                    "storage_id": "sts_2",
+                    "constraints": [
+                        {
+                            "name": "c3",
+                            "variable": "withdrawal",
+                            "operator": "greater",
+                            "occurrences": [{"hours": [1, 2, 3, 4]}, {"hours": [12, 13]}],
+                        }
+                    ],
+                }
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="create_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {"additional_constraint_properties": {"fr": {"sts_2": {"c1": {"enabled": False}}}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_MULTIPLE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value,
+            args=[
+                {"area_id": "fr", "storage_id": "sts", "ids": ["c1", "c2", "c3"]},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="remove_st_storage_additional_constraints",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_THEMATIC_TRIMMING.value,
+            args=[
+                {"parameters": {"ov_cost": False, "sts_by_group": True, "dispatch_gen": False}},
+            ],
+            study_version=STUDY_VERSION_9_3,
+        ),
+        None,
+        id="update_thematic_trimming",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_ADEQUACY_PATCH_PARAMETERS.value,
+            args={"parameters": {"enable_adequacy_patch": False, "price_taking_order": "DENS"}},
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_adequacy_patch_parameters",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_TIMESERIES_CONFIG.value,
+            args=[
+                {"parameters": {"thermal": {"number": 42}}},
+            ],
+            study_version=STUDY_VERSION_9_2,
+        ),
+        None,
+        id="update_timeseries_configuration",
+    ),
 ]
 
 
@@ -903,16 +979,8 @@ def command_factory() -> CommandFactory:
 
     matrix_service = Mock(spec=MatrixService, get_matrix_id=get_matrix_id)
 
-    class FakeGeneratorMatrixConstants(GeneratorMatrixConstants):
-        """Made to avoid having Mock objects in commands arguments"""
-
-        def __getattribute__(self, name):
-            if name in ("_return_value", "__class__"):  # Avoid infinite loop
-                return super().__getattribute__(name)
-            return lambda *args, **kwargs: "fake_matrix"
-
     return CommandFactory(
-        generator_matrix_constants=FakeGeneratorMatrixConstants(matrix_service),
+        generator_matrix_constants=GeneratorMatrixConstants(matrix_service),
         matrix_service=matrix_service,
     )
 
@@ -1230,3 +1298,71 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert dto.action == "remove_multiple_binding_constraints"
     assert dto.version == 1
     assert dto.args == {"ids": ["id"]}
+
+
+def test_parse_update_scenario_builder_v1(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_SCENARIO_BUILDER.value,
+        version=1,
+        args={
+            "data": {
+                "ruleset test": {
+                    "l,area1,0": 1,
+                    "ntc,area1,area2,1": 23,
+                    "t,area1,1,thermal": None,
+                },
+            }
+        },
+        study_version=STUDY_VERSION_8_8,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_scenario_builder"
+    assert dto.version == 2
+    assert dto.args == {
+        "data": {
+            "ruleset test": {
+                "load": {"area1": {"0": 1}},
+                "ntc": {"area1 / area2": {"1": 23}},
+                "thermal": {"area1": {"thermal": {"1": ""}}},
+            }
+        }
+    }
+
+
+def test_parse_legacy_command_update_comments(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_COMMENTS.value,
+        args={"comments": "new comment"},
+        study_version=STUDY_VERSION_8_6,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "replace_comments"
+    assert dto.version == 1
+    assert dto.args == {"comments": "new comment"}
+
+
+def test_parse_legacy_command_update_playlist(command_factory: CommandFactory):
+    dto = CommandDTO(
+        action=CommandName.UPDATE_PLAYLIST.value,
+        args={
+            "active": True,
+            "items": [1, 3],
+            "weights": {1: 5.0},
+            "reverse": False,
+        },
+        study_version=STUDY_VERSION_8_6,
+        version=1,
+    )
+    commands = command_factory.to_command(dto)
+    assert len(commands) == 1
+    command = commands[0]
+    dto = command.to_dto()
+    assert dto.action == "update_playlist"
+    assert dto.version == 2
+    assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}

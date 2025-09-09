@@ -147,7 +147,7 @@ class JobResultDTO(AntaresBaseModel):
             ).model_dump(mode="json")
 
 
-class JobLog(Base):  # type: ignore
+class JobLog(Base):
     __tablename__ = "launcherjoblog"
 
     id: Mapped[int] = mapped_column(Integer(), Sequence("launcherjoblog_id_sequence"), primary_key=True)
@@ -171,7 +171,7 @@ class JobLog(Base):  # type: ignore
         return f"<JobLog(id={self.id!r}, message={self.message!r}, job_id={self.job_id!r}, log_type={self.log_type!r})>"
 
 
-class JobResult(Base):  # type: ignore
+class JobResult(Base):
     __tablename__ = "job_result"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
@@ -243,7 +243,7 @@ class JobResult(Base):  # type: ignore
             for column in self.__table__.columns
             if column.key not in ["id", "study_id"]
         }
-        return JobResult(
+        return type(self)(
             **data,
             id=str(uuid4()),
             study_id=study_id,

@@ -56,7 +56,6 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
 
   const config = getConfig();
 
-  console.log(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
   webSocket = new WebSocket(`${config.wsUrl + config.wsEndpoint}?token=${user?.accessToken}`);
 
   if (!globalListenerAdded) {
@@ -73,7 +72,9 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
   webSocket.onmessage = (event: MessageEvent): void => {
     const message = JSON.parse(event.data) as WsEvent;
     logInfo("WebSocket message received", message);
-    eventListeners.forEach((listener) => listener(message));
+    eventListeners.forEach((listener) => {
+      listener(message);
+    });
   };
 
   webSocket.onerror = (event): void => {

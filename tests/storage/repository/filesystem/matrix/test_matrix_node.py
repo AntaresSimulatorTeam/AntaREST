@@ -35,6 +35,9 @@ class MockMatrixNode(MatrixNode):
     def parse_as_dataframe(self, file_path: Optional[Path] = None) -> pd.DataFrame:
         return MOCK_MATRIX
 
+    def write_dataframe(self, df: pd.DataFrame) -> None:
+        df.to_csv(self.config.path, sep="\t", header=False, index=False)
+
     def check_errors(self, data: str, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
         pass  # not used
 

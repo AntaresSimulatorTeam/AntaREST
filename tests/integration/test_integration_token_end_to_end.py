@@ -65,7 +65,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     res = client.put(
         f"/v1/studies/{variant_id}/config/general/form",
         headers=bot_headers,
-        json={"geographicTrimming": True},
+        json={"yearByYear": True},
     )
     assert res.status_code == 200
     commands: t.List[CommandDict]
@@ -84,7 +84,11 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     # modify its playlist (to do so, set its mcYears to more than the biggest year of the playlist)
     res = client.put(f"/v1/studies/{variant_id}/config/general/form", headers=bot_headers, json={"nbYears": 10})
     assert res.status_code == 200
-    res = client.put(f"/v1/studies/{variant_id}/config/playlist", headers=bot_headers, json={"playlist": [1, 4, 7]})
+    res = client.put(
+        f"/v1/studies/{variant_id}/config/playlist/form",
+        headers=bot_headers,
+        json={1: {"status": False}, 4: {"weight": 12}, 7: {}},
+    )
     assert res.status_code == 200
 
     # create a first simple thermal cluster

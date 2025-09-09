@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -20,15 +20,33 @@ from typing_extensions import override
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
     InflowStructure,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -45,6 +63,12 @@ class ClusterKey:
     cluster_id: str
 
 
+@dataclass(frozen=True)
+class AdditionalConstraintKey:
+    area_id: str
+    constraint_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
@@ -52,6 +76,10 @@ def link_key(area1_id: str, area2_id: str) -> LinkKey:
 
 def cluster_key(area_id: str, cluster_id: str) -> ClusterKey:
     return ClusterKey(area_id, cluster_id)
+
+
+def additional_constraint_key(area_id: str, constraint_id: str) -> AdditionalConstraintKey:
+    return AdditionalConstraintKey(area_id, constraint_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -92,12 +120,38 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_level: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_injection: Dict[ClusterKey, str] = {}
         self._storage_cost_variation_withdrawal: Dict[ClusterKey, str] = {}
+        # Short-term storages additional constraints
+        self._st_storages_constraints: STStorageAdditionalConstraintsMap = {}
+        self._st_storages_constraints_terms: Dict[str, dict[str, str]] = {}
         # Binding constraints
         self._constraints: Dict[str, BindingConstraint] = {}
         self._constraints_values_matrix: dict[str, str] = {}
         self._constraints_less_term_matrix: dict[str, str] = {}
         self._constraints_greater_term_matrix: dict[str, str] = {}
         self._constraints_equal_term_matrix: dict[str, str] = {}
+        # General config
+        self._general_config: GeneralConfig = GeneralConfig()
+        # Optimization preferences config
+        self._optimization_preferences: OptimizationPreferences = OptimizationPreferences()
+        # Advanced parameters config
+        self._advanced_parameters: AdvancedParameters = AdvancedParameters()
+        # Xpansion
+        self._xpansion_candidates: dict[str, XpansionCandidate] = {}
+        self._xpansion_settings: XpansionSettings = XpansionSettings()
+        self._xpansion_configuration_exists: bool = False
+        self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
+        # Thematic trimming
+        self._thematic_trimming: ThematicTrimming = ThematicTrimming()
+        # AdequacyPatch parameters
+        self._adequacy_patch_parameters: AdequacyPatchParameters = AdequacyPatchParameters()
+        # TimeSeries config
+        self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
+        # Layer
+        self._layers: list[Layer] = []
+        # Comments
+        self._comments = ""
+        # Playlist config
+        self._playlist_config = Playlist()
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -105,6 +159,14 @@ class InMemoryStudyDao(StudyDao):
         To ease transition, to be removed when all goes through other methods
         """
         raise NotImplementedError()
+
+    @override
+    def get_comments(self) -> str:
+        return self._comments
+
+    @override
+    def save_comments(self, comments: str) -> None:
+        self._comments = comments
 
     @override
     def get_version(self) -> StudyVersion:
@@ -456,5 +518,196 @@ class InMemoryStudyDao(StudyDao):
         self._storage_cost_variation_withdrawal[cluster_key(area_id, storage_id)] = series_id
 
     @override
-    def delete_storage(self, area_id: str, storage: STStorage) -> None:
+    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
         del self._st_storages[cluster_key(area_id, storage.id)]
+
+    @override
+    def save_general_config(self, config: GeneralConfig) -> None:
+        self._general_config = config
+
+    @override
+    def get_general_config(self) -> GeneralConfig:
+        return self._general_config
+
+    @override
+    def get_optimization_preferences(self) -> OptimizationPreferences:
+        return self._optimization_preferences
+
+    @override
+    def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
+        self._optimization_preferences = config
+
+    @override
+    def get_advanced_parameters(self) -> AdvancedParameters:
+        return self._advanced_parameters
+
+    @override
+    def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
+        self._advanced_parameters = parameters
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        return self._st_storages_constraints
+
+    @override
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
+
+    @override
+    def save_st_storage_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
+    ) -> None:
+        self._st_storages_constraints_terms.setdefault(area_id, {})[storage_id] = series_id
+
+    @override
+    def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
+        existing_constraints = self._st_storages_constraints[area_id][storage_id]
+        constraints_to_remove = []
+        for constraint in existing_constraints:
+            if constraint.id in constraints:
+                constraints_to_remove.append(constraint)
+        for constraint in constraints_to_remove:
+            self._st_storages_constraints[area_id][storage_id].remove(constraint)
+
+    @override
+    def save_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
+    ) -> None:
+        existing_constraints = self._st_storages_constraints.get(area_id, {}).get(storage_id, [])
+
+        existing_map = {}
+        for constraint in existing_constraints:
+            existing_map[constraint.id] = constraint
+
+        for constraint in constraints:
+            existing_map[constraint.id] = constraint
+
+        self._st_storages_constraints.setdefault(area_id, {})[storage_id] = list(existing_map.values())
+
+    @override
+    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
+        return list(self._xpansion_candidates.values())
+
+    @override
+    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
+        return self._xpansion_candidates[candidate_id]
+
+    @override
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+        if old_id:
+            del self._xpansion_candidates[old_id]
+        self._xpansion_candidates[candidate.name] = candidate
+
+    @override
+    def delete_xpansion_candidate(self, candidate_name: str) -> None:
+        del self._xpansion_candidates[candidate_name]
+
+    @override
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return
+
+    @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        return
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        return self._xpansion_settings
+
+    @override
+    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
+        self._xpansion_settings = settings
+
+    @override
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return
+
+    @override
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+        return self._xpansion_resources[resource_type][filename]
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        return list(self._xpansion_resources.get(resource_type, {}).keys())
+
+    @override
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        return
+
+    @override
+    def get_thematic_trimming(self) -> ThematicTrimming:
+        return self._thematic_trimming
+
+    @override
+    def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
+        self._thematic_trimming = trimming
+
+    @override
+    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
+        return self._adequacy_patch_parameters
+
+    @override
+    def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
+        self._adequacy_patch_parameters = parameters
+
+    @override
+    def get_timeseries_config(self) -> TimeSeriesConfiguration:
+        return self._timeseries_config
+
+    @override
+    def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
+        self._timeseries_config = config
+
+    @override
+    def create_xpansion_configuration(self) -> None:
+        self._xpansion_configuration_exists = True
+
+    @override
+    def delete_xpansion_configuration(self) -> None:
+        self._xpansion_configuration_exists = False
+
+    @override
+    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        del self._xpansion_resources[resource_type][filename]
+
+    @override
+    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+        self._xpansion_resources[XpansionResourceFileType.CONSTRAINTS][filename] = content
+
+    @override
+    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+        content = series.encode("utf-8")
+        self._xpansion_resources[XpansionResourceFileType.CAPACITIES][filename] = content
+
+    @override
+    def save_xpansion_weight(self, filename: str, series: str) -> None:
+        content = series.encode("utf-8")
+        self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def save_layer(self, layer: Layer) -> None:
+        new_id = max((int(layer.id) for layer in self._layers if layer.id is not None), default=0) + 1
+        layer.id = str(new_id)
+        self._layers.insert(new_id, layer)
+
+    @override
+    def get_layers(self) -> Sequence[Layer]:
+        return self._layers
+
+    @override
+    def delete_layer(self, layer: Layer) -> None:
+        self._layers.remove(layer)
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return any(layer.id == layer_id for layer in self._layers)
+
+    @override
+    def get_playlist_config(self) -> Playlist:
+        return self._playlist_config
+
+    @override
+    def save_playlist_config(self, playlist: Playlist) -> None:
+        self._playlist_config = playlist

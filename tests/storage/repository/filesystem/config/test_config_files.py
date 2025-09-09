@@ -14,6 +14,7 @@ import logging
 import textwrap
 import typing as t
 from pathlib import Path
+from typing import Iterable, Mapping
 from zipfile import ZipFile
 
 import pytest
@@ -27,8 +28,16 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage, STStorageGroup
+from antarest.study.business.model.sts_model import (
+    AdditionalConstraintOperator,
+    AdditionalConstraintVariable,
+    Occurrence,
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageGroup,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
@@ -36,6 +45,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_renewables,
     _parse_sets,
     _parse_st_storage,
+    _parse_st_storage_additional_constraints,
     _parse_thermal,
     build,
     parse_outputs,
@@ -597,6 +607,72 @@ def test_parse_st_storage_with_no_file(tmp_path: Path) -> None:
     assert _parse_st_storage(tmp_path, "") == []
 
 
+ADDITIONAL_CONSTRAINTS_INI = """\
+[Withdrawal-1]
+variable = withdrawal
+operator = equal
+hours = [1,3,5], [120,121,122,123,124,125,126,127,128]
+
+[nettinG?-1]
+variable = netting
+operator = less
+hours = [1, 168]
+"""
+
+
+def test_parse_st_storage_additional_constraints(study_path: Path) -> None:
+    # Set up
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 9.2")
+    config_dir = study_path.joinpath("input", "st-storage", "constraints", "fr", "sts_test")
+    config_dir.mkdir(parents=True)
+    config_dir.joinpath("additional-constraints.ini").write_text(ADDITIONAL_CONSTRAINTS_INI)
+
+    storage = STStorage(**{"name": "sts_test"})
+    storage2 = STStorage(**{"name": "sts_test_2"})
+    # Check values
+    assert _parse_st_storage_additional_constraints(study_path, "fr", [storage, storage2]) == {
+        "sts_test": [
+            STStorageAdditionalConstraint(
+                id="withdrawal-1",
+                name="Withdrawal-1",
+                variable=AdditionalConstraintVariable.WITHDRAWAL,
+                operator=AdditionalConstraintOperator.EQUAL,
+                occurrences=[
+                    Occurrence(hours=[1, 3, 5]),
+                    Occurrence(hours=[120, 121, 122, 123, 124, 125, 126, 127, 128]),
+                ],
+                enabled=True,
+            ),
+            STStorageAdditionalConstraint(
+                id="netting -1",
+                name="nettinG?-1",
+                variable=AdditionalConstraintVariable.NETTING,
+                operator=AdditionalConstraintOperator.LESS,
+                occurrences=[Occurrence(hours=[1, 168])],
+                enabled=True,
+            ),
+        ],
+        "sts_test_2": [],
+    }
+
+    # With a study version anterior to 9.2, it should always return an empty list
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 880")
+    assert _parse_st_storage_additional_constraints(study_path, "fr", [storage]) == {}
+
+
+def test_parse_st_storage_additional_constraints_no_file(study_path: Path) -> None:
+    """
+    The file is optional, and if not present, we should return an empty list.
+    """
+    # Set up
+    study_path.joinpath("study.antares").write_text("[antares] \n version = 9.2")
+    config_dir = study_path.joinpath("input", "st-storage", "constraints")
+    config_dir.mkdir(parents=True)
+
+    # Check values
+    assert _parse_st_storage_additional_constraints(study_path, "fr", []) == {}
+
+
 def test_parse_links(study_path: Path) -> None:
     (study_path / "input/links/fr").mkdir(parents=True)
     content = """
@@ -639,3 +715,86 @@ def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
     assert "file_3" not in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+
+
+def _assert_mapping_equals(left: Mapping[str, Iterable[str]], right: Mapping[str, Iterable[str]]) -> None:
+    """Custom comparator to compare just the mapping, content, when the exact iterable type can be different."""
+    for k, v in left.items():
+        assert k in right
+        assert list(v) == list(right[k])
+    for k, v in right.items():
+        assert k in left
+
+
+def test_config_to_study_index_8_8():
+    config = FileStudyTreeConfig(
+        study_path=Path(),
+        path=Path(),
+        study_id="my-study",
+        version=STUDY_VERSION_8_8,
+        areas={
+            "be": Area(
+                name="BE",
+                links={"fr": LinkConfig()},
+                thermals=[ThermalCluster(name="Nuclear")],
+                renewables=[RenewableCluster(name="Wind")],
+                filters_synthesis=[],
+                filters_year=[],
+                st_storages=[STStorage(name="Battery")],
+                st_storages_additional_constraints={},
+            ),
+            "fr": Area(
+                name="FR",
+                links={},
+                thermals=[],
+                renewables=[],
+                filters_synthesis=[],
+                filters_year=[],
+                st_storages=[STStorage(name="Battery")],
+                st_storages_additional_constraints={},
+            ),
+        },
+        bindings=[BindingConstraint(name="Constraint", group="BCGroup")],
+    )
+
+    index = config.to_study_index()
+    assert list(index.area_ids) == ["be", "fr"]
+    assert list(index.link_ids) == ["be / fr"]
+    _assert_mapping_equals(index.thermal_ids, {"be": ["nuclear"], "fr": []})
+    _assert_mapping_equals(index.renewable_ids, {"be": ["wind"], "fr": []})
+    _assert_mapping_equals(index.storage_ids, {"be": ["battery"], "fr": ["battery"]})
+    assert list(index.bc_group_ids) == ["bcgroup"]
+    assert list(index.sts_constraint_ids) == []
+
+
+def test_config_to_study_index_9_2_additional_constraints():
+    config = FileStudyTreeConfig(
+        study_path=Path(),
+        path=Path(),
+        study_id="my-study",
+        version=STUDY_VERSION_9_2,
+        areas={
+            "be": Area(
+                name="BE",
+                links={},
+                thermals=[ThermalCluster(name="Nuclear")],
+                renewables=[RenewableCluster(name="Wind")],
+                filters_synthesis=[],
+                filters_year=[],
+                st_storages=[STStorage(name="Battery")],
+                st_storages_additional_constraints={"battery": [STStorageAdditionalConstraint(name="STSConstraint")]},
+            ),
+        },
+    )
+
+    index = config.to_study_index()
+    assert list(index.area_ids) == ["be"]
+    assert list(index.link_ids) == []
+    _assert_mapping_equals(index.thermal_ids, {"be": ["nuclear"]})
+    _assert_mapping_equals(index.renewable_ids, {"be": ["wind"]})
+    _assert_mapping_equals(index.storage_ids, {"be": ["battery"]})
+    assert list(index.bc_group_ids) == []
+
+    assert list(index.sts_constraint_ids) == ["be"]
+    assert list(index.sts_constraint_ids["be"]) == ["battery"]
+    assert list(index.sts_constraint_ids["be"]["battery"]) == ["stsconstraint"]

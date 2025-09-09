@@ -27,8 +27,4 @@ class LayersIni(IniFileNode):
     """
 
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "layers": {},
-            "activeLayer": {"activeLayerID": int, "showAllLayer": bool},
-        }
-        IniFileNode.__init__(self, config, types=types)
+        IniFileNode.__init__(self, config)

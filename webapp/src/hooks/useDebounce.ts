@@ -21,8 +21,9 @@ import type {
 import debounce from "lodash/debounce";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import type { F } from "ts-toolbelt";
+import useUpdatedRef from "./useUpdatedRef";
 
 export interface UseDebounceParams extends DebounceSettings {
   wait?: number;
@@ -41,13 +42,11 @@ function useDebounce<T extends F.Function, U extends WaitOrParams>(
   params?: U,
 ): U extends DebounceSettingsLeading ? DebouncedFuncLeading<T> : DebouncedFunc<T> {
   const { wait, ...options } = toParams(params);
-  const fnRef = useRef(fn);
-
-  useEffect(() => {
-    fnRef.current = fn;
-  });
+  const fnRef = useUpdatedRef(fn);
 
   const debouncedFn = useMemo(
+    // Instead of passing `fn` directly to `debounce`, we wrap it with a function that calls
+    // `fnRef.current` to ensures the debounced function always invokes the most recent `fn`
     () => debounce((...args) => fnRef.current(...args), wait, options),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [JSON.stringify(options), wait],

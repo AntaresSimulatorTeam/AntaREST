@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
 import pandas as pd
 
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService

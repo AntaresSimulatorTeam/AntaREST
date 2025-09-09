@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import i18n, { type TFunction } from "i18next";
+import i18n from "@/i18n";
+import { type TFunction } from "i18next";
 import moment from "moment";
 import * as R from "ramda";
 import {
@@ -200,7 +201,8 @@ export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
   return res;
 };
 
-export const sortByName = R.sortBy(R.compose(R.toLower, R.prop("name")));
+export const sortByName = <T extends { name: string }>(list: T[]) =>
+  R.sortBy(R.compose(R.toLower, R.prop("name")), list);
 
 /**
  * Converts a name string to an ID format.

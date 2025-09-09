@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { Area, Cluster, StudyMetadata } from "../../../../../../../types/types";
 import client from "../../../../../../../services/api/client";
+import type { Area, Cluster, StudyMetadata } from "../../../../../../../types/types";
 import type { PartialExceptFor } from "../../../../../../../utils/tsUtils";
 import type { ClusterWithCapacity } from "../common/clustersUtils";
 
@@ -88,10 +88,10 @@ type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 type CostGeneration = (typeof COST_GENERATION_OPTIONS)[number];
 type ThermalPollutants = Record<(typeof THERMAL_POLLUTANTS)[number], number>;
 
-export interface ThermalCluster extends ThermalPollutants {
+export interface ThermalCluster<LegacyGroup extends boolean = false> extends ThermalPollutants {
   id: string;
   name: string;
-  group: ThermalGroup;
+  group: LegacyGroup extends true ? ThermalGroup : string; // Before v9.3 => ThermalGroup, since v9.3 => string
   enabled: boolean;
   unitCount: number;
   nominalCapacity: number;

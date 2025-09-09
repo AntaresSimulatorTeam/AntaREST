@@ -20,7 +20,7 @@ from antares.study.version.upgrade_app import UpgradeApp
 
 from antarest.core.exceptions import UnsupportedStudyVersion
 
-AVAILABLE_VERSIONS = ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880", "920"]
+AVAILABLE_VERSIONS = ["700", "710", "720", "800", "810", "820", "830", "840", "850", "860", "870", "880", "920", "930"]
 
 
 class InvalidUpgrade(HTTPException):

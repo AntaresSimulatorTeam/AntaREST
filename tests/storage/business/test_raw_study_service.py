@@ -124,28 +124,6 @@ def test_get_cache(tmp_path: str) -> None:
 
 
 @pytest.mark.unit_test
-def test_check_errors():
-    study = Mock()
-    study.check_errors.return_value = ["Hello"]
-
-    factory = Mock()
-    factory.create_from_fs.return_value = FileStudy(Mock(), study)
-    config = build_config(Path())
-    study_service = RawStudyService(
-        config=config,
-        cache=Mock(),
-        study_factory=factory,
-    )
-
-    metadata = create_raw_study(
-        id="study",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(config.get_workspace_path() / "study"),
-    )
-    assert study_service.check_errors(metadata) == ["Hello"]
-
-
-@pytest.mark.unit_test
 def test_assert_study_exist(tmp_path: str, project_path) -> None:
     tmp = Path(tmp_path)
     (tmp / "study1").mkdir()
@@ -536,7 +514,7 @@ def test_initialize_additional_data(tmp_path: Path) -> None:
     study_path.mkdir()
     (study_path / "study.antares").touch()
 
-    study_additional_data = StudyAdditionalData(horizon=10, author="foo", patch="bar")
+    study_additional_data = StudyAdditionalData(horizon=10, author="foo")
 
     cache = Mock()
 

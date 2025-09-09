@@ -44,7 +44,7 @@ import RenewableConfig from "./Singlestudy/explore/Modelization/Areas/Renewables
 import Reserve from "./Singlestudy/explore/Modelization/Areas/Reserve";
 import Solar from "./Singlestudy/explore/Modelization/Areas/Solar";
 import Storages from "./Singlestudy/explore/Modelization/Areas/Storages";
-import StorageForm from "./Singlestudy/explore/Modelization/Areas/Storages/StorageConfig";
+import StorageConfig from "./Singlestudy/explore/Modelization/Areas/Storages/StorageConfig";
 import Thermal from "./Singlestudy/explore/Modelization/Areas/Thermal";
 import ThermalConfig from "./Singlestudy/explore/Modelization/Areas/Thermal/ThermalConfig";
 import Wind from "./Singlestudy/explore/Modelization/Areas/Wind";
@@ -109,7 +109,7 @@ function App() {
                               <Route path="thermal" element={<Thermal />} />
                               <Route path="thermal/:clusterId" element={<ThermalConfig />} />
                               <Route path="storages" element={<Storages />} />
-                              <Route path="storages/:storageId" element={<StorageForm />} />
+                              <Route path="storages/:storageId" element={<StorageConfig />} />
                               <Route path="hydro" element={<Navigate to="management" replace />} />
                               <Route path="hydro" element={<Hydro />}>
                                 <Route path="management" element={<ManagementOptions />} />

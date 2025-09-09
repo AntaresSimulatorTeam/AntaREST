@@ -375,18 +375,6 @@ def test_edit_study() -> None:
 
 
 @pytest.mark.unit_test
-def test_validate() -> None:
-    mock_service = Mock()
-    mock_service.check_errors.return_value = ["Hello"]
-
-    client = create_test_client(mock_service, raise_server_exceptions=False)
-    res = client.get("/v1/studies/my-uuid/raw/validate")
-
-    assert res.json() == ["Hello"]
-    mock_service.check_errors.assert_called_once_with("my-uuid")
-
-
-@pytest.mark.unit_test
 def test_output_download(tmp_path: Path) -> None:
     mock_output_service = Mock(spec=OutputService)
 

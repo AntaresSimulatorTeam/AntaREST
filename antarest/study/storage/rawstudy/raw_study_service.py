@@ -29,11 +29,13 @@ from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.archives import ArchiveFormat, extract_archive
 from antarest.matrixstore.matrix_uri_mapper import NormalizedMatrixUriMapper
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, Patch, RawStudy, Study, StudyAdditionalData
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_9_2, RawStudy, Study, StudyAdditionalData
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract_storage_service import AbstractStorageService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
+from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.utils import (
     create_new_empty_study,
     export_study_flat,
@@ -53,11 +55,20 @@ def copy_output_folders(
         if selected_outputs:  # if some outputs are selected, we copy only them
             for file_name in selected_outputs:
                 src_folder = src_output_path / file_name
-                dest_folder = dest_output_path / file_name
 
                 if src_folder.exists():
-                    shutil.copytree(src_folder, dest_folder)
+                    shutil.copytree(src_folder, dest_output_path / file_name)
                 else:
+                    # The src output could be archived
+                    zip_path = src_output_path / f"{file_name}.zip"
+                    seven_zip_path = src_output_path / f"{file_name}.7z"
+                    for archive_path in [zip_path, seven_zip_path]:
+                        if archive_path.exists():
+                            dest_output_path.mkdir(exist_ok=True)
+                            dest_path = dest_output_path / f"{file_name}{archive_path.suffix}"
+                            shutil.copy(archive_path, dest_path)
+                            return
+
                     raise IncorrectArgumentsForCopy(f"Output folder {file_name} not found in {src_output_path}")
 
         else:  # we copy all the outputs if none is selected
@@ -88,6 +99,11 @@ class RawStudyService(AbstractStorageService):
             daemon=True,
         )
         self.cleanup_thread.start()
+
+        RawStudyMatrixUsageProvider(
+            StudyMetadataRepository(cache_service=cache),
+            matrix_service=self.study_factory._matrix_mapper_factory._matrix_service,
+        )
 
     def update_from_raw_meta(
         self, metadata: RawStudy, fallback_on_default: Optional[bool] = False, study_path: Optional[Path] = None
@@ -126,7 +142,6 @@ class RawStudyService(AbstractStorageService):
                 metadata.updated_at = metadata.updated_at or datetime.utcnow()
                 if metadata.additional_data is None:
                     metadata.additional_data = StudyAdditionalData()
-                metadata.additional_data.patch = metadata.additional_data.patch or Patch().model_dump_json()
                 metadata.additional_data.author = metadata.additional_data.author or "Unknown"
                 metadata.additional_data.editor = metadata.additional_data.editor or "Unknown"
 
@@ -162,7 +177,7 @@ class RawStudyService(AbstractStorageService):
             return False
 
     @override
-    def exists(self, study: RawStudy) -> bool:
+    def exists(self, study: Study) -> bool:
         """
         Check if the study exists in the filesystem.
 
@@ -181,7 +196,7 @@ class RawStudyService(AbstractStorageService):
     @override
     def get_raw(
         self,
-        metadata: RawStudy,
+        metadata: Study,
         use_cache: bool = True,
         output_dir: Optional[Path] = None,
     ) -> FileStudy:
@@ -201,13 +216,12 @@ class RawStudyService(AbstractStorageService):
         )
 
     @override
-    def get_synthesis(self, metadata: RawStudy) -> FileStudyTreeConfigDTO:
+    def get_synthesis(self, metadata: Study) -> FileStudyTreeConfigDTO:
         self._check_study_exists(metadata)
         study_path = self.get_study_path(metadata)
         study = self.study_factory.create_from_fs(study_path, is_managed(metadata), metadata.id)
         return FileStudyTreeConfigDTO.from_build_config(study.config)
 
-    @override
     def create(self, metadata: RawStudy) -> RawStudy:
         """
         Create a new empty study based on the given metadata.
@@ -239,7 +253,7 @@ class RawStudyService(AbstractStorageService):
     @override
     def copy(
         self,
-        src_meta: RawStudy,
+        src_meta: Study,
         dest_study_name: str,
         groups: Sequence[str],
         destination_folder: PurePosixPath,
@@ -288,7 +302,6 @@ class RawStudyService(AbstractStorageService):
             additional_data = StudyAdditionalData(
                 horizon=src_study.additional_data.horizon,
                 author=src_study.additional_data.author,
-                patch=src_study.additional_data.patch,
             )
         dest_id = str(uuid4())
         dest_study = RawStudy(
@@ -307,7 +320,7 @@ class RawStudyService(AbstractStorageService):
         return dest_study
 
     @override
-    def delete(self, metadata: RawStudy) -> None:
+    def delete(self, metadata: Study) -> None:
         """
         Delete study
         Args:
@@ -325,7 +338,7 @@ class RawStudyService(AbstractStorageService):
             raise StudyDeletionNotAllowed(metadata.id)
 
     @override
-    def delete_output(self, metadata: RawStudy, output_name: str) -> None:
+    def delete_output(self, metadata: Study, output_name: str) -> None:
         """
         Delete output folder
         Args:
@@ -344,7 +357,7 @@ class RawStudyService(AbstractStorageService):
             output_path.unlink(missing_ok=True)
         remove_from_cache(self.cache, metadata.id)
 
-    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> Study:
+    def import_study(self, metadata: RawStudy, stream: BinaryIO) -> RawStudy:
         """
         Import study in the directory of the study.
 
@@ -382,7 +395,7 @@ class RawStudyService(AbstractStorageService):
     @override
     def export_study_flat(
         self,
-        metadata: RawStudy,
+        metadata: Study,
         dst_path: Path,
         outputs: bool = True,
         output_list_filter: Optional[List[str]] = None,
@@ -390,7 +403,10 @@ class RawStudyService(AbstractStorageService):
     ) -> None:
         try:
             if metadata.archived:
-                self.unarchive(metadata)  # may raise BadArchiveContent
+                if isinstance(metadata, RawStudy):
+                    self.unarchive(metadata)  # may raise BadArchiveContent
+                else:
+                    raise TypeError(f"unarchive requires a RawStudy, got {type(metadata)}")
 
             export_study_flat(
                 Path(metadata.path),
@@ -405,22 +421,6 @@ class RawStudyService(AbstractStorageService):
         finally:
             if metadata.archived:
                 shutil.rmtree(metadata.path, ignore_errors=True)
-
-    def check_errors(
-        self,
-        metadata: RawStudy,
-    ) -> List[str]:
-        """
-        Check study antares data integrity
-        Args:
-            metadata: study
-
-        Returns: list of non integrity inside study
-
-        """
-        path = self.get_study_path(metadata)
-        study = self.study_factory.create_from_fs(path, is_managed(metadata), metadata.id)
-        return study.tree.check_errors(study.tree.get())
 
     def archive(self, study: RawStudy) -> Path:
         archive_path = self.config.storage.archive_dir.joinpath(f"{study.id}{ArchiveFormat.SEVEN_ZIP}")
@@ -444,7 +444,7 @@ class RawStudyService(AbstractStorageService):
         with open(self.find_archive_path(study), mode="rb") as fh:
             self.import_study(study, fh)
 
-    def find_archive_path(self, study: RawStudy) -> Path:
+    def find_archive_path(self, study: Study) -> Path:
         """
         Fetch for archive path of a study if it exists else raise an incorrectly archived study.
 
@@ -476,7 +476,7 @@ class RawStudyService(AbstractStorageService):
         return Path(metadata.path)
 
     @override
-    def initialize_additional_data(self, raw_study: RawStudy) -> bool:
+    def initialize_additional_data(self, raw_study: Study) -> bool:
         try:
             study = self.study_factory.create_from_fs(
                 self.get_study_path(raw_study),

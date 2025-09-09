@@ -38,7 +38,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
       items={[
         {
           label: t("study.modelization.clusters.matrix.common"),
-          content: () => (
+          content: (
             <Matrix
               url={`input/thermal/prepro/${areaId}/${clusterId}/modulation`}
               customColumns={COMMON_MATRIX_COLS}
@@ -48,7 +48,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
         },
         {
           label: t("study.modelization.clusters.matrix.tsGen"),
-          content: () => (
+          content: (
             <Matrix
               url={`input/thermal/prepro/${areaId}/${clusterId}/data`}
               customColumns={TS_GEN_MATRIX_COLS}
@@ -58,7 +58,7 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
         },
         {
           label: t("study.modelization.clusters.matrix.availability"),
-          content: () => (
+          content: (
             <Matrix
               url={`input/thermal/series/${areaId}/${clusterId}/series`}
               aggregateColumns="stats" // avg, min, max
@@ -67,11 +67,11 @@ function ThermalMatrices({ study, areaId, clusterId }: Props) {
         },
         studyVersion >= 870 && {
           label: t("study.modelization.clusters.matrix.fuelCosts"),
-          content: () => <Matrix url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`} />,
+          content: <Matrix url={`input/thermal/series/${areaId}/${clusterId}/fuelCost`} />,
         },
         studyVersion >= 870 && {
           label: t("study.modelization.clusters.matrix.co2Costs"),
-          content: () => <Matrix url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`} />,
+          content: <Matrix url={`input/thermal/series/${areaId}/${clusterId}/CO2Cost`} />,
         },
       ].filter(Boolean)}
     />

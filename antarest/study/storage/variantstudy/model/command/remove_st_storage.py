@@ -33,7 +33,7 @@ REQUIRED_VERSION = STUDY_VERSION_8_6
 
 class RemoveSTStorage(ICommand):
     """
-    Command used to remove a short-terme storage from an area.
+    Command used to remove a short-term storage from an area.
     """
 
     # Overloaded metadata
@@ -53,7 +53,7 @@ class RemoveSTStorage(ICommand):
             return command_failed(f"Short-term storage '{self.storage_id}' in area '{self.area_id}' does not exist")
 
         storage = study_data.get_st_storage(self.area_id, self.storage_id)
-        study_data.delete_storage(self.area_id, storage)
+        study_data.delete_st_storage(self.area_id, storage)
 
         return command_succeeded(f"Short-term storage '{self.storage_id}' inside area '{self.area_id}' deleted")
 

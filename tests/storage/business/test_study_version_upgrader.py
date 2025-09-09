@@ -54,7 +54,7 @@ class TestFindNextVersion:
         "from_version, message",
         [
             ("3.14", "Version '3.14' isn't among supported versions"),
-            ("920", "Your study is already in the latest supported version: '920'"),
+            ("930", "Your study is already in the latest supported version: '930'"),
             ("900", "Version '900' isn't among supported versions"),
         ],
     )
@@ -107,7 +107,7 @@ def test_end_to_end_upgrades(tmp_path: Path):
     old_areas_values = get_old_area_values(study_dir)
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "9.2"
+    target_version = "9.3"
     study_upgrader = StudyUpgrader(study_dir, target_version)
     study_upgrader.upgrade()
     assert_study_antares_file_is_updated(study_dir, target_version)
@@ -191,6 +191,15 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert "initial-reservoir-levels" not in other_preferences
     compatibility = data["compatibility"]
     assert compatibility == {"hydro-pmax": "daily"}
+    # v9.3 upgrade
+    assert "refreshtimeseries" not in general
+    assert "refreshintervalload" not in general
+    assert "refreshintervalhydro" not in general
+    assert "refreshintervalwind" not in general
+    assert "refreshintervalthermal" not in general
+    assert "refreshintervalsolar" not in general
+    assert adequacy_patch["redispatch"] is False
+    assert other_preferences["accurate-shave-peaks-include-short-term-storage"] is False
 
 
 def get_old_settings_values(tmp_path: Path) -> List[str]:

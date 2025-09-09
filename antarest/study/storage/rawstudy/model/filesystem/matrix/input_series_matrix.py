@@ -13,7 +13,7 @@ import io
 import logging
 import shutil
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ from pandas.errors import EmptyDataError
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.model import JSON
+from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
 from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.utils import StopWatch
@@ -99,20 +99,13 @@ class InputSeriesMatrix(MatrixNode):
             return final_matrix
 
     @override
-    def check_errors(
-        self,
-        data: JSON,
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        self._assert_url_end(url)
-
-        errors = []
-        if not self.config.path.exists():
-            errors.append(f"Input Series Matrix f{self.config.path} not exists")
-        if self.nb_columns and len(data) != self.nb_columns:
-            errors.append(f"{self.config.path}: Data was wrong size. expected {self.nb_columns} get {len(data)}")
-        return errors
+    def write_dataframe(self, df: pd.DataFrame) -> None:
+        # If the DataFrame content corresponds to the `default_empty` attribute, we should just create an empty file.
+        # This way, we can write the content quicker, and the file takes less place on the fs.
+        if self.default_empty is not None and np.array_equal(df.to_numpy(dtype=np.float64), self.default_empty):
+            self.config.path.touch(exist_ok=True)
+        else:
+            write_dataframe_in_tsv_format(df, self.config.path)
 
     def _infer_path(self) -> Path:
         link_path = self.matrix_mapper.get_link_path(self)
@@ -150,4 +143,11 @@ class InputSeriesMatrix(MatrixNode):
             filename = target_path.name
         else:
             content = self.config.path.read_bytes()
+
+        if content == b"" and self.default_empty is not None:
+            # The file is empty, we should return the `default_empty` value
+            buffer = io.BytesIO()
+            dump_dataframe(pd.DataFrame(self.default_empty), buffer)
+            content = buffer.getvalue()
+
         return OriginalFile(content=content, suffix=suffix, filename=filename)

@@ -100,37 +100,21 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    @abstractmethod
-    def check_errors(self, data: V, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
-        """
-        List inconsistency error between data and study configuration.
-        Args:
-            data: data to compare
-            url: data path to compare
-            raising: raise error if inconsistency occurs
-
-        Returns: list of errors belongs to this node or children
-
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
     def normalize(self) -> None:
         """
         Scan tree to send matrix in matrix store and replace by its links
         Returns:
 
         """
-        raise NotImplementedError()
+        pass
 
-    @abstractmethod
     def denormalize(self) -> None:
         """
         Scan tree to fetch matrix by its links
         Returns:
 
         """
-        raise NotImplementedError()
+        pass
 
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix

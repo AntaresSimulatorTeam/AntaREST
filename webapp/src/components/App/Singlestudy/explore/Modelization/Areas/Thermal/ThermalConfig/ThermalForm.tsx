@@ -71,13 +71,25 @@ function ThermalForm({ study, areaId, clusterId }: Props) {
           <>
             <Fieldset legend={t("global.general")}>
               <StringFE label={t("global.name")} name="name" control={control} disabled />
-              <SelectFE
-                label={t("global.group")}
-                name="group"
-                control={control}
-                options={THERMAL_GROUPS}
-                startCaseLabel={false}
-              />
+              {studyVersion < 930 ? (
+                <SelectFE
+                  label={t("global.group")}
+                  name="group"
+                  control={control}
+                  options={THERMAL_GROUPS}
+                  startCaseLabel={false}
+                  sx={{
+                    alignSelf: "center",
+                  }}
+                />
+              ) : (
+                <StringFE
+                  label={t("global.group")}
+                  name="group"
+                  datalist={THERMAL_GROUPS}
+                  control={control}
+                />
+              )}
             </Fieldset>
             <Fieldset legend={t("study.modelization.clusters.operatingParameters")}>
               <SwitchFE

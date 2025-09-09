@@ -21,7 +21,6 @@ import SplitView from "../../../../../../../common/SplitView";
 import type { Storage } from "../utils";
 
 interface Props {
-  study: StudyMetadata;
   areaId: StudyMetadata["id"];
   storageId: Storage["id"];
   studyVersion: number;
@@ -36,16 +35,12 @@ interface Props {
 function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
   const { t } = useTranslation();
 
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
   const matricesAllVersions = [
     {
       label: t("study.modelization.storages.modulation"),
-      content: () => (
+      content: (
         <SplitView id="storage-injectionModulation-withdrawalModulation" sizes={[50, 50]}>
-          <Box sx={{ pr: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.injectionModulation")}
@@ -54,7 +49,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.withdrawalModulation")}
@@ -68,9 +63,9 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
     {
       label: t("study.modelization.storages.ruleCurves"),
-      content: () => (
+      content: (
         <SplitView id="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
-          <Box sx={{ pr: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.lowerRuleCurve")}
@@ -79,7 +74,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.upperRuleCurve")}
@@ -93,11 +88,11 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
     {
       label: t("study.modelization.storages.inflows"),
-      content: () => (
+      content: (
         <Matrix
           url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
-          isTimeSeries={false}
-          customColumns={["TS 1"]}
+          // Since v9.3 this matrix supports the resize functionality
+          {...(studyVersion < 930 && { isTimeSeries: false, customColumns: ["TS 1"] })}
         />
       ),
     },
@@ -106,9 +101,9 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
   const matrices920 = [
     {
       label: t("study.modelization.storages.costs"),
-      content: () => (
+      content: (
         <SplitView id="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
-          <Box sx={{ pr: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.injectionCost")}
@@ -117,7 +112,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.withdrawalCost")}
@@ -131,9 +126,9 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
     {
       label: t("study.modelization.storages.variationCosts"),
-      content: () => (
+      content: (
         <SplitView id="storage-variationInjectionCost-variationWithdrawalCost" sizes={[50, 50]}>
-          <Box sx={{ pr: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.injectionVariationCost")}
@@ -142,7 +137,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               customColumns={["TS 1"]}
             />
           </Box>
-          <Box sx={{ pl: 2 }}>
+          <Box sx={{ p: 2 }}>
             {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
             <Matrix
               title={t("study.modelization.storages.withdrawalVariationCost")}
@@ -156,7 +151,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
     {
       label: t("study.modelization.storages.levelCost"),
-      content: () => (
+      content: (
         <Matrix
           title={t("study.modelization.storages.levelCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
@@ -167,12 +162,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
     },
   ];
 
-  return (
-    <TabsView
-      disableGutters
-      items={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]}
-    />
-  );
+  return <TabsView items={[...matricesAllVersions, ...(studyVersion >= 920 ? matrices920 : [])]} />;
 }
 
 export default StorageMatrices;

@@ -12,9 +12,9 @@
 
 import datetime
 import uuid
-from typing import Any, List, TypeAlias
+from typing import Any, List, Optional, TypeAlias
 
-from pydantic import field_serializer
+from pydantic import ConfigDict, field_serializer
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -24,7 +24,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.login.model import Group, GroupDTO, Identity, UserInfo
 
 
-class Matrix(Base):  # type: ignore
+class Matrix(Base):
     """
     Represents a matrix object in the database.
 
@@ -99,7 +99,7 @@ class MatrixMetadataDTO(AntaresBaseModel, extra="forbid", populate_by_name=True)
         return created_at.strftime("%Y-%m-%d %H:%M:%S.%f")
 
 
-class MatrixDataSetRelation(Base):  # type: ignore
+class MatrixDataSetRelation(Base):
     # noinspection SpellCheckingInspection
     __tablename__ = "dataset_matrices"
 
@@ -135,7 +135,35 @@ class MatrixDataSetRelation(Base):  # type: ignore
         return res
 
 
-class MatrixDataSet(Base):  # type: ignore
+class MatrixReference(AntaresBaseModel):
+    """
+    Give information about one reference to a matrix from a client
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    matrix_id: str
+    use_description: str
+
+
+class MatrixDescriptionDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    Pydantic translation of one matrix reference from a client
+    """
+
+    description: str
+
+
+class MatrixReferencesDTO(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    """
+    Pydantic translation of one list of matrix references from a client
+    """
+
+    refs: list[MatrixDescriptionDTO]
+    disk_usage: Optional[int] = None
+
+
+class MatrixDataSet(Base):
     """
     Represents a user dataset containing matrices in the database.
 

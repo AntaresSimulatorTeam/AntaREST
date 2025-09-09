@@ -92,10 +92,11 @@ STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
     STUDY_VERSION_8_7,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
 }
 
 
-class StudyGroup(Base):  # type:ignore
+class StudyGroup(Base):
     """
     A table to manage the many-to-many relationship between `Study` and `Group`
 
@@ -127,7 +128,7 @@ class StudyGroup(Base):  # type:ignore
         return f"{cls_name}({study_id=}, {group_id=})"
 
 
-class StudyTag(Base):  # type:ignore
+class StudyTag(Base):
     """
     A table to manage the many-to-many relationship between `Study` and `Tag`
 
@@ -149,17 +150,17 @@ class StudyTag(Base):  # type:ignore
     @override
     def __str__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
-        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag}"
+        return f"[{cls_name}] study_id={self.study_id}, tag={self.tag_label}"
 
     @override
     def __repr__(self) -> str:  # pragma: no cover
         cls_name = self.__class__.__name__
         study_id = self.study_id
-        tag = self.tag
+        tag = self.tag_label
         return f"{cls_name}({study_id=}, {tag=})"
 
 
-class Tag(Base):  # type:ignore
+class Tag(Base):
     """
     Represents a tag in the database.
 
@@ -199,7 +200,7 @@ class CommentsDto(AntaresBaseModel):
     comments: str
 
 
-class StudyAdditionalData(Base):  # type:ignore
+class StudyAdditionalData(Base):
     """
     Study additional data
     """
@@ -214,7 +215,6 @@ class StudyAdditionalData(Base):  # type:ignore
     author: Mapped[str] = mapped_column(String(255), default="Unknown")
     editor: Mapped[str] = mapped_column(String(255), default="Unknown")
     horizon: Mapped[Optional[str]] = mapped_column(String)
-    patch: Mapped[Optional[str]] = mapped_column(String(), index=True, nullable=True)
 
     @override
     def __eq__(self, other: Any) -> bool:
@@ -222,10 +222,10 @@ class StudyAdditionalData(Base):  # type:ignore
             return False
         if not isinstance(other, StudyAdditionalData):
             return False
-        return bool(other.author == self.author and other.horizon == self.horizon and other.patch == self.patch)
+        return bool(other.author == self.author and other.horizon == self.horizon)
 
 
-class Study(Base):  # type: ignore
+class Study(Base):
     """
     Base study entity to save main metadata, common for any type of study (raw, variant, managed or not)
 
@@ -482,18 +482,6 @@ class WorkspaceDTO(AntaresBaseModel):
     name: str
     disk_name: Optional[str] = None
     model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
-
-
-class PatchStudy(AntaresBaseModel):
-    scenario: Optional[str] = None
-    doc: Optional[str] = None
-    status: Optional[str] = None
-    comments: Optional[str] = None
-    tags: List[str] = []
-
-
-class Patch(AntaresBaseModel, extra="allow"):
-    study: Optional[PatchStudy] = None
 
 
 class OwnerInfo(AntaresBaseModel):

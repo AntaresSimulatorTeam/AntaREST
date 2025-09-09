@@ -58,22 +58,3 @@ class TsNumbersVector(LazyNode[List[int], List[int], JSON]):
             fh.write(f"size:1x{len(data)}\n")
             for d in data:
                 fh.write(f"{d}\n")
-
-    @override
-    def check_errors(
-        self,
-        data: JSON,
-        url: Optional[List[str]] = None,
-        raising: bool = False,
-    ) -> List[str]:
-        return []
-
-    @override
-    def normalize(self) -> None:
-        # this is not normalizable
-        pass
-
-    @override
-    def denormalize(self) -> None:
-        # this is not normalizable
-        pass

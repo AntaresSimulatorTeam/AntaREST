@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import BackButton from "@/components/common/buttons/BackButton";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
 import { useState } from "react";
@@ -19,10 +20,11 @@ import { useState } from "react";
 interface TabsViewProps {
   items: Array<{
     label: string;
-    content: React.FunctionComponent;
+    content: React.ReactNode;
     disabled?: boolean;
   }>;
   onChange?: TabListProps["onChange"];
+  onBack?: VoidFunction;
   divider?: boolean;
   disablePadding?: boolean;
   disableGutters?: boolean;
@@ -31,7 +33,8 @@ interface TabsViewProps {
 function TabsView({
   items,
   onChange,
-  divider,
+  onBack,
+  divider = false,
   disablePadding = false,
   disableGutters = false,
 }: TabsViewProps) {
@@ -61,14 +64,20 @@ function TabsView({
       }}
     >
       <TabContext value={value}>
-        <Box sx={divider ? { borderBottom: 1, borderColor: "divider" } : null}>
+        <Box
+          sx={[
+            !!onBack && { display: "flex" },
+            divider && { borderBottom: 1, borderColor: "divider" },
+          ]}
+        >
+          {onBack && <BackButton onClick={onBack} />}
           <TabList onChange={handleChange}>
             {items.map(({ label, disabled }, index) => (
               <Tab key={label + index} label={label} value={index} disabled={disabled} />
             ))}
           </TabList>
         </Box>
-        {items.map(({ content: Content, label }, index) => (
+        {items.map(({ content, label }, index) => (
           <TabPanel
             key={label + index}
             value={index}
@@ -78,15 +87,16 @@ function TabsView({
                 p: 2,
                 position: "relative",
                 overflow: "auto",
-                ":has(.TabsView:first-child), :has(.TabWrapper:first-child)": {
-                  p: 0,
-                },
+                ":has(> .TabsView:first-child), :has(> .TabWrapper:first-child), :has(> .SplitView:first-child)":
+                  {
+                    p: 0,
+                  },
               },
               disablePadding && { p: 0 },
               disableGutters && { px: 0 },
             ]}
           >
-            <Content />
+            {content}
           </TabPanel>
         ))}
       </TabContext>

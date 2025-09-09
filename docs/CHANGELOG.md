@@ -1,6 +1,94 @@
 Antares Web Changelog
 =====================
 
+v2.24.0 (2025-09-08)
+--------------------
+
+## What's Changed
+
+### Features
+
+* **cluster**: use free groups for thermal and renewable in v9.3 [`2613`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2613)
+* **optimization**: implements DAO for optimization config [`2598`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2598)
+* **generalconfig**: add dao for config general [`2579`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2579)
+* **study**: enable study 9.3 creation [`2626`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2626)
+* **thematic-trimming**: support new 9.3 fields [`2625`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2625)
+* **sts**: support additional constraints [`2557`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2557)
+* **matrix**: when denormalizing, only write content if it isn't the default one [`2632`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2632)
+* **matrix**: add arrow format for input matrices inside GET `/raw` endpoint [`2624`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2624)
+* **ui-api**: add storage additional constraints functions [`2610`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2610)
+* **ui-storages**: add storages additional constraints view [`2639`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2639)
+* **scenario-builder**: support sts inflows [`2636`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2636)
+* **ui-storages**: update additional constraints [`2643`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2643)
+* **ui-storages**: allow `inflows` matrix resize for v9.3 studies [`2649`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2649)
+* **ui-sts**: add additional constraints matrix [`2650`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2650)
+* **parameters**: return model inside edition endpoints responses [`2659`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2659)
+* **matrix_usage_provider**: add usage provider [`2583`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2583)
+* **matrixstore**: add a retention time inside the garbage collector [`2664`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2664)
+* **matrix_references**: finished matrix references and unit testing [`2673`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2673)
+* **solver**: add new solver options for linear and quadratic [`2680`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2680)
+* **ui-sts**: add occurrences edition in additional constraints form [`2666`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2666)
+* **layer**: storage isolation [`2677`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2677)
+* **scenariobuilder**: handle storages additional constraints [`2681`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2681)
+* **ui-scenario**: add sts constraints scenario builder UI [`2687`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2687)
+* **ui-playlist**: disable action buttons when no year is selected [`2688`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2688)
+* **ui-matrix-filter**: enable granular removal of filter values via separate chips [`2682`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2682)
+
+### Bug fixes
+
+* **alembic**: fix concat not supported on sqlite [`2618`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2618)
+* **sts-matrix**: restore deprecated enpoint as a security net [`2616`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2616)
+* **tests**: remove inter-test dependency [`2627`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2627)
+* **matrix**: don't raise when optional matrices don't exist [`2631`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2631)
+* **outputs**: allow study copy with archived outputs [`2634`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2634)
+* **general**: write building mode in lower case [`2644`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2644)
+* **general**: remove `building_mode` from the generaldata.ini [`2645`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2645)
+* **sts**: make constraints matrices optional [`2646`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2646)
+* **table-mode**: remove `cluster` column for additional constraints [`2648`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2648)
+* **ui-bc**: exclude `filterSynthesis` and `filterYearByYear` for study versions < 8.3 [`2654`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2654)
+* **migration**: fixes migration for sqlite [`2657`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2657)
+* **thematic-trimming**: regression introduced by the DAO [`2656`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2656)
+* **st-storage**: fix issue when reading `hours` field for additional constraints [`2661`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2661)
+* **matrix**: fix missing import in matrix service [`2662`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2662)
+* **raw**: fix getting link output data [`2660`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2660)
+* **matrix-gc**: fix singleton services creation [`2663`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2663)
+* **tests**: fix random failure in matrix gc tests [`2668`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2668)
+* **ui**: resolve z-index conflicts for dropdowns and `MatrixFilter` drawer in dialogs [`2658`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2658)
+* **ui-sts**: preserve active tab when saving a matrix [`2674`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2674)
+* **ui**: preserve tab state by passing ReactNode to TabsView content [`2676`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2676)
+* **ui-optimization**: add new options for 'exportMps' field [`2669`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2669)
+* **ui-districts**: update erase areas [`2684`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2684)
+* **matrix-gc**: reduce matrix gc memory usage [`2689`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2689)
+* **scenario**: fix scenario builder API regressions [`2691`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2691)
+
+### Performances
+
+* **matrix**: write matrices as integers when possible [`2641`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2641)
+* **matrix**: return matrices as integers when possible inside endpoint [`2655`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2655)
+* **raw**: avoid double tree parsing when getting file content [`2667`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2667)
+
+### Refactorings
+
+* **advanced parameters**: introduce dao and new classes design [`2628`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2628)
+* **xpansion**: implement dao and new class design for candidates [`2614`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2614)
+* **thematic-trimming**: introduce DAO and associated command [`2635`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2635)
+* **adequacy-patch**: introduce DAO and new class design [`2629`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2629)
+* **xpansion**: introduce DAO and new class design for settings [`2637`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2637)
+* **settings**: implement DAO for timeseries configuration [`2640`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2640)
+* **xpansion**: introduce DAO for resources [`2653`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2653)
+* **dao**: use dao inside the generate thermal timeseries command [`2665`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2665)
+* **scenario_builder**: improve scenario builder implementation [`2679`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2679) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **comments**: introduce dao [`2685`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2685)
+* **playlist**: introduce dao and new class design [`2683`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2683) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+
+### Chore
+
+* **mypy**: fix issue due to deps bump [`2622`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2622)
+* **node**: clean normalization / denormalization methods [`2633`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2633)
+* **release**: v2.23.0 [`2642`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2642)
+* **patch**: remove "patch" related dead code [`2652`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2652)
+* **study**: remove unused validation feature [`2670`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/2670) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+
 v2.23.0 (2025-08-07)
 --------------------
 

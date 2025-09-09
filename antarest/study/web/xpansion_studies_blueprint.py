@@ -9,22 +9,24 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import io
 import logging
 from typing import Any, Sequence
 
+import pandas as pd
 from fastapi import APIRouter, File, UploadFile
 from starlette.responses import Response
 
 from antarest.core.config import Config
-from antarest.core.model import JSON, StudyPermissionType
+from antarest.core.model import StudyPermissionType
 from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
-    XpansionCandidateDTO,
+    XpansionCandidate,
+    XpansionCandidateCreation,
     XpansionResourceFileType,
+    XpansionSettings,
     XpansionSettingsUpdate,
 )
 from antarest.study.service import StudyService
@@ -66,7 +68,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Settings",
     )
-    def get_settings(uuid: str) -> GetXpansionSettings:
+    def get_settings(uuid: str) -> XpansionSettings:
         logger.info(f"Fetching Xpansion Settings of the study {uuid}")
         return study_service.get_xpansion_settings(uuid=uuid)
 
@@ -75,8 +77,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings",
     )
-    def update_settings(uuid: str, xpansion_settings: XpansionSettingsUpdate) -> GetXpansionSettings:
-        logger.info(f"Updating Xpansion Settings Of Study {uuid}")
+    def update_settings(uuid: str, xpansion_settings: XpansionSettingsUpdate) -> XpansionSettings:
+        logger.info(f"Updating Xpansion Settings of Study {uuid}")
         return study_service.update_xpansion_settings(uuid, xpansion_settings)
 
     @bp.put(
@@ -84,11 +86,8 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Update Xpansion Settings Additional Constraints",
     )
-    def update_additional_constraints_settings(
-        uuid: str,
-        filename: str = "",
-    ) -> GetXpansionSettings:
-        logger.info(f"Updating Xpansion Settings Of Study {uuid} with additional constraints {filename}")
+    def update_additional_constraints_settings(uuid: str, filename: str = "") -> XpansionSettings:
+        logger.info(f"Updating Xpansion Settings of Study {uuid} with additional constraints {filename}")
         return study_service.update_xpansion_constraints_settings(uuid, filename)
 
     @bp.post(
@@ -96,22 +95,16 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Create Xpansion Candidate",
     )
-    def add_candidate(
-        uuid: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> XpansionCandidateDTO:
-        logger.info(f"Adding new candidate {xpansion_candidate_dto.model_dump(by_alias=True)} to study {uuid}")
-        return study_service.add_candidate(uuid, xpansion_candidate_dto)
+    def add_candidate(uuid: str, xpansion_candidate: XpansionCandidateCreation) -> XpansionCandidate:
+        logger.info(f"Adding new candidate {xpansion_candidate.model_dump(by_alias=True)} to study {uuid}")
+        return study_service.add_candidate(uuid, xpansion_candidate)
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Candidate",
     )
-    def get_candidate(
-        uuid: str,
-        candidate_name: str,
-    ) -> XpansionCandidateDTO:
+    def get_candidate(uuid: str, candidate_name: str) -> XpansionCandidate:
         logger.info("Fetching study list")
         return study_service.get_candidate(uuid, candidate_name)
 
@@ -120,9 +113,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Get Xpansion Candidates",
     )
-    def get_candidates(
-        uuid: str,
-    ) -> Sequence[XpansionCandidateDTO]:
+    def get_candidates(uuid: str) -> Sequence[XpansionCandidate]:
         logger.info("Fetching study list")
         return study_service.get_candidates(uuid)
 
@@ -132,22 +123,17 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         summary="Update Xpansion Candidate",
     )
     def update_candidate(
-        uuid: str,
-        candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> Any:
-        logger.info(f"Updating xpansion candidate {xpansion_candidate_dto.name} of the study {uuid}")
-        return study_service.update_xpansion_candidate(uuid, candidate_name, xpansion_candidate_dto)
+        uuid: str, candidate_name: str, xpansion_candidate: XpansionCandidateCreation
+    ) -> XpansionCandidate:
+        logger.info(f"Updating xpansion candidate {xpansion_candidate.name} of the study {uuid}")
+        return study_service.replace_xpansion_candidate(uuid, candidate_name, xpansion_candidate)
 
     @bp.delete(
         "/studies/{uuid}/extensions/xpansion/candidates/{candidate_name}",
         tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion Candidate",
     )
-    def delete_candidate(
-        uuid: str,
-        candidate_name: str,
-    ) -> None:
+    def delete_candidate(uuid: str, candidate_name: str) -> None:
         logger.info(f"Deleting candidate {candidate_name} of the study {uuid}")
         study_service.delete_xpansion_candidate(uuid, candidate_name)
 
@@ -156,11 +142,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Add Xpansion resource file",
     )
-    def add_resource(
-        uuid: str,
-        resource_type: XpansionResourceFileType,
-        file: UploadFile = File(...),
-    ) -> None:
+    def add_resource(uuid: str, resource_type: XpansionResourceFileType, file: UploadFile = File(...)) -> None:
         logger.info(f"Add xpansion {resource_type} files in the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -171,11 +153,7 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Delete Xpansion resource file",
     )
-    def delete_resource(
-        uuid: str,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> Any:
+    def delete_resource(uuid: str, resource_type: XpansionResourceFileType, filename: str) -> Any:
         logger.info(f"Deleting xpansion {resource_type} file from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -186,37 +164,26 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         tags=[APITag.xpansion_study_management],
         summary="Getting Xpansion resource file content",
     )
-    def get_resource_content(
-        uuid: str,
-        resource_type: XpansionResourceFileType,
-        filename: str,
-    ) -> Any:
+    def get_resource_content(uuid: str, resource_type: XpansionResourceFileType, filename: str) -> Response:
         logger.info(f"Getting xpansion {resource_type} file {filename} from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        output: JSON | bytes | str = study_service.xpansion_manager.get_resource_content(
-            study_interface, resource_type, filename
-        )
 
-        if isinstance(output, bytes):
-            try:
-                # try to decode string
-                output = output.decode("utf-8")
-            except (AttributeError, UnicodeDecodeError):
-                pass
+        output = study_service.xpansion_manager.get_resource_content(study_interface, resource_type, filename)
 
-        json_response = to_json(output)
-        return Response(content=json_response, media_type="application/json")
+        if isinstance(output, pd.DataFrame):
+            buffer = io.BytesIO()
+            output.to_json(buffer, orient="split")
+            return Response(content=buffer.getvalue(), media_type="application/json")
+
+        return Response(content=to_json(output.decode("utf-8")), media_type="application/json")
 
     @bp.get(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
         tags=[APITag.xpansion_study_management],
         summary="Getting all Xpansion resources files",
     )
-    def list_resources(
-        uuid: str,
-        resource_type: XpansionResourceFileType,
-    ) -> Any:
+    def list_resources(uuid: str, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting xpansion {resource_type} resources files from the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)

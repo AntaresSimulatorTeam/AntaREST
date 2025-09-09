@@ -20,6 +20,8 @@ const TAB_MIN_HEIGHT_XS = 30;
 const muiPopComp = {
   styleOverrides: {
     root: ({ theme }: { theme: CssVarsTheme }) => ({
+      // Set z-index higher than modals (1300) to avoid overlapping issues.
+      zIndex: theme.zIndex.modal + 150, // 1450
       ".MuiList-root": theme.applyStyles("light", {
         backgroundColor: theme.palette.background.paper,
       }),
@@ -45,11 +47,6 @@ export default {
   MuiFormControl: {
     defaultProps: {
       size: "small",
-    },
-    styleOverrides: {
-      root: {
-        minWidth: 70,
-      },
     },
   },
   MuiAutocomplete: {
@@ -123,9 +120,8 @@ export default {
     },
   },
   MuiInputBase: {
-    defaultProps: {
-      size: "small",
-    },
+    // Setting the default size to 'small' prevents setting the size 'medium'
+    // defaultProps: { size: "small" },
     variants: [
       {
         props: { disabled: false },

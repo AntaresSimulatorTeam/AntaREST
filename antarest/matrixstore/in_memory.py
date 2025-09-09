@@ -10,12 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict
+from typing import Dict, List
 
 import pandas as pd
 from typing_extensions import override
 
-from antarest.matrixstore.model import MatrixMetadataDTO
+from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
+from antarest.matrixstore.model import MatrixMetadataDTO, MatrixReferencesDTO
 from antarest.matrixstore.repository import compute_hash
 from antarest.matrixstore.service import ISimpleMatrixService
 
@@ -27,6 +28,7 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
 
     def __init__(self) -> None:
         self._content: Dict[str, pd.DataFrame] = {}
+        self.usage_providers: List[IMatrixUsageProvider] = []
 
     @override
     def create(self, data: pd.DataFrame) -> str:
@@ -47,5 +49,13 @@ class InMemorySimpleMatrixService(ISimpleMatrixService):
         del self._content[matrix_id]
 
     @override
+    def register_usage_provider(self, usage_provider: IMatrixUsageProvider) -> None:
+        self.usage_providers.append(usage_provider)
+
+    @override
     def get_matrices(self) -> list[MatrixMetadataDTO]:
+        raise NotImplementedError()
+
+    @override
+    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
         raise NotImplementedError()

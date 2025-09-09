@@ -22,27 +22,12 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 
 class PreproCorrelation(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig):
-        types = {
-            "general": {"mode": str},
-            "0": {},
-            "1": {},
-            "2": {},
-            "3": {},
-            "4": {},
-            "5": {},
-            "6": {},
-            "7": {},
-            "8": {},
-            "9": {},
-            "10": {},
-            "11": {},
-        }
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)
 
 
 class PreproAreaSettings(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig):
-        IniFileNode.__init__(self, config, types={})
+        IniFileNode.__init__(self, config)
 
 
 default_k = np.zeros((24, 12), dtype=np.float64)

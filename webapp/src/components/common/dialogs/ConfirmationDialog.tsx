@@ -57,10 +57,10 @@ function ConfirmationDialog({
       actions={
         <>
           <Button onClick={onCancel} color={alert ? "inherit" : "primary"}>
-            {cancelButtonText || t("button.no")}
+            {cancelButtonText || t("global.cancel")}
           </Button>
           <Button onClick={onConfirm} variant="contained" disabled={disableConfirm} color={alert}>
-            {confirmButtonText || t("button.yes")}
+            {confirmButtonText || t("button.ok")}
           </Button>
         </>
       }

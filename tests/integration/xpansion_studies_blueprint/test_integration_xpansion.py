@@ -21,7 +21,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from antarest.study.business.xpansion_management import XpansionCandidateDTO
+from antarest.study.business.xpansion_management import XpansionCandidate
 from tests.integration.utils import wait_task_completion
 
 
@@ -131,7 +131,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "optimality_gap": 1.0,
         "relative_gap": 1e-06,
         "relaxed_optimality_gap": 1e-05,
-        "max_iteration": 1000,
+        "max_iteration": 1000000000000,
         "solver": "Xpress",
         "log_level": 0,
         "separation_parameter": 0.5,
@@ -150,7 +150,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         "optimality_gap": 42,
         "relative_gap": 1e-06,
         "relaxed_optimality_gap": 1e-05,
-        "max_iteration": 1000,
+        "max_iteration": 1000000000000,
         "solver": "Xpress",
         "log_level": 0,
         "separation_parameter": 0.5,
@@ -388,13 +388,13 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
 
     res = xp_client.get(f"candidates/{candidate1['name']}")
     assert res.status_code == 200
-    assert res.json() == XpansionCandidateDTO.model_validate(candidate1).model_dump(by_alias=True)
+    assert res.json() == XpansionCandidate.model_validate(candidate1).model_dump(by_alias=True)
 
     res = xp_client.get("candidates")
     assert res.status_code == 200
     assert res.json() == [
-        XpansionCandidateDTO.model_validate(candidate1).model_dump(by_alias=True),
-        XpansionCandidateDTO.model_validate(candidate4).model_dump(by_alias=True),
+        XpansionCandidate.model_validate(candidate1).model_dump(by_alias=True),
+        XpansionCandidate.model_validate(candidate4).model_dump(by_alias=True),
     ]
 
     res = xp_client.delete(f"resources/capacities/{filename_capa1}")

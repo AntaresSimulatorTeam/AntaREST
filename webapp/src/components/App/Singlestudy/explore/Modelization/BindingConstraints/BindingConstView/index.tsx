@@ -12,35 +12,35 @@
  * This file is part of the Antares project.
  */
 
-import type { BindingConstraint } from "./utils";
 import { Box, Button, Skeleton } from "@mui/material";
-import Form from "../../../../../../common/Form";
-import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
+import { useOutletContext } from "react-router";
 import {
   getBindingConstraint,
   getBindingConstraintList,
   updateBindingConstraint,
 } from "../../../../../../../services/api/studydata";
-import { useOutletContext } from "react-router";
+import Form from "../../../../../../common/Form";
+import UsePromiseCond, { mergeResponses } from "../../../../../../common/utils/UsePromiseCond";
+import type { BindingConstraint } from "./utils";
 
-import type { AxiosError } from "axios";
-import BindingConstForm from "./BindingConstForm";
-import { CommandEnum } from "../../../../CommandsDrawer/EditionView/commandTypes";
-import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
-import ConstraintFields from "./ConstraintFields";
 import Delete from "@mui/icons-material/Delete";
-import type { StudyMetadata } from "../../../../../../../types/types";
-import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
-import { appendCommands } from "../../../../../../../services/api/variant";
-import { getLinksAndClusters } from "../../../../../../../redux/selectors";
-import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
-import { t } from "i18next";
-import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
-import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
-import usePromise from "../../../../../../../hooks/usePromise";
+import type { AxiosError } from "axios";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import useEnqueueErrorSnackbar from "../../../../../../../hooks/useEnqueueErrorSnackbar";
+import usePromise from "../../../../../../../hooks/usePromise";
+import { setCurrentBindingConst } from "../../../../../../../redux/ducks/studySyntheses";
+import useAppDispatch from "../../../../../../../redux/hooks/useAppDispatch";
 import useStudySynthesis from "../../../../../../../redux/hooks/useStudySynthesis";
+import { getLinksAndClusters } from "../../../../../../../redux/selectors";
+import { appendCommands } from "../../../../../../../services/api/variant";
+import type { StudyMetadata } from "../../../../../../../types/types";
+import ConfirmationDialog from "../../../../../../common/dialogs/ConfirmationDialog";
+import type { SubmitHandlerPlus } from "../../../../../../common/Form/types";
+import { CommandEnum } from "../../../../CommandsDrawer/EditionView/commandTypes";
+import BindingConstForm from "./BindingConstForm";
+import ConstraintFields from "./ConstraintFields";
 
 interface Props {
   constraintId: string;
@@ -48,10 +48,12 @@ interface Props {
 
 // TODO rename Form (its the constraint form => properties form + terms form)
 function BindingConstView({ constraintId }: Props) {
+  const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const dispatch = useAppDispatch();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const studyVersion = Number(study.version);
   const [deleteConstraintDialogOpen, setDeleteConstraintDialogOpen] = useState(false);
 
   const constraint = usePromise(
@@ -70,6 +72,12 @@ function BindingConstView({ constraintId }: Props) {
 
   const handleSubmitConstraint = ({ values }: SubmitHandlerPlus<BindingConstraint>) => {
     const { id, name, ...updatedConstraint } = values;
+
+    // Exclude filter fields for legacy versions support
+    if (studyVersion < 830) {
+      const { filterSynthesis, filterYearByYear, ...constraintWithoutFilters } = updatedConstraint;
+      return updateBindingConstraint(study.id, constraintId, constraintWithoutFilters);
+    }
 
     return updateBindingConstraint(study.id, constraintId, updatedConstraint);
   };

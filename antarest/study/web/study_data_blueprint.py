@@ -17,6 +17,7 @@ from typing import Any, Dict, List, Mapping, Optional, Sequence, cast
 
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
+from pydantic import ConfigDict, RootModel
 from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
@@ -25,8 +26,6 @@ from antarest.core.utils.utils import sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
-from antarest.study.business.adequacy_patch_management import AdequacyPatchFormFields
-from antarest.study.business.advanced_parameters_management import AdvancedParamsFormFields
 from antarest.study.business.allocation_management import AllocationField, AllocationFormFields, AllocationMatrix
 from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import (
@@ -44,8 +43,7 @@ from antarest.study.business.correlation_management import (
     CorrelationMatrix,
 )
 from antarest.study.business.district_manager import DistrictCreationDTO, DistrictInfoDTO, DistrictUpdateDTO
-from antarest.study.business.general_management import GeneralFormFields
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, LayerInfoDTO, UpdateAreaUi
+from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.area_properties_model import AreaProperties, AreaPropertiesUpdate
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -56,6 +54,21 @@ from antarest.study.business.model.binding_constraint_model import (
     ConstraintTerm,
     ConstraintTermUpdate,
 )
+from antarest.study.business.model.config.adequacy_patch_model import (
+    AdequacyPatchParameters,
+    AdequacyPatchParametersUpdate,
+)
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters, AdvancedParametersUpdate
+from antarest.study.business.model.config.general_model import GeneralConfig, GeneralConfigUpdate
+from antarest.study.business.model.config.optimization_config_model import (
+    OptimizationPreferences,
+    OptimizationPreferencesUpdate,
+)
+from antarest.study.business.model.config.playlist_model import PlaylistUpdate, PlaylistValues, PlaylistValuesUpdate
+from antarest.study.business.model.config.timeseries_config_model import (
+    TimeSeriesConfiguration,
+    TimeSeriesConfigurationUpdate,
+)
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
@@ -63,27 +76,32 @@ from antarest.study.business.model.hydro_model import (
     InflowStructure,
     InflowStructureUpdate,
 )
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
     RenewableClusterCreation,
     RenewableClusterUpdate,
 )
-from antarest.study.business.model.sts_model import STStorage, STStorageCreation, STStorageUpdate
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, ScenarioType
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintCreation,
+    STStorageAdditionalConstraintUpdate,
+    STStorageCreation,
+    STStorageUpdate,
+)
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming, ThematicTrimmingUpdate
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
-from antarest.study.business.optimization_management import OptimizationFormFields
-from antarest.study.business.playlist_management import PlaylistColumns
-from antarest.study.business.scenario_builder_management import Rulesets, ScenarioType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.business.timeseries_config_management import TimeSeriesConfigDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.ruleset_matrices import TableForm as SBTableForm
+from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
 
 logger = logging.getLogger(__name__)
 
@@ -107,6 +125,14 @@ class ClusterType(enum.StrEnum):
     ST_STORAGES = "storages"
     RENEWABLES = "renewables"
     THERMALS = "thermals"
+
+
+class PlaylistRootModel(RootModel[dict[int, PlaylistValues]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
+
+
+class PlaylistUpdateRootModel(RootModel[dict[int, PlaylistValuesUpdate]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
 
 
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
@@ -204,23 +230,22 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
         summary="Get all layers info",
-        response_model=List[LayerInfoDTO],
+        response_model=List[Layer],
     )
-    def get_layers(uuid: str) -> List[LayerInfoDTO]:
+    def get_layers(uuid: str) -> List[Layer]:
         logger.info(f"Fetching layer list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        return study_service.area_manager.get_layers(study_service.get_study_interface(study))
+        return study_service.layer_manager.get_layers(study_service.get_study_interface(study))
 
     @bp.post(
         "/studies/{uuid}/layers",
         tags=[APITag.study_data],
         summary="Create new layer",
-        response_model=str,
     )
     def create_layer(uuid: str, name: str) -> str:
         logger.info(f"Create layer {name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        return study_service.area_manager.create_layer(study_service.get_study_interface(study), name)
+        return study_service.layer_manager.create_layer(study_service.get_study_interface(study), name)
 
     @bp.put(
         "/studies/{uuid}/layers/{layer_id}",
@@ -228,11 +253,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         summary="Update layer",
     )
     def update_layer(uuid: str, layer_id: str, name: str = "", areas: Optional[List[str]] = None) -> None:
-        logger.info(f"Updating layer {layer_id} for study {uuid}")
+        logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         if name:
-            study_service.area_manager.update_layer_name(study_interface, layer_id, name)
+            study_service.layer_manager.update_layer_name(study_interface, layer_id, name)
         if areas:
             study_service.area_manager.update_layer_areas(study_interface, layer_id, areas)
 
@@ -246,7 +271,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     def remove_layer(uuid: str, layer_id: str) -> None:
         logger.info(f"Remove layer {layer_id} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_service.area_manager.remove_layer(study_service.get_study_interface(study), layer_id)
+        study_service.layer_manager.remove_layer(study_service.get_study_interface(study), layer_id)
 
     @bp.get(
         "/studies/{uuid}/districts",
@@ -387,91 +412,63 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Fetching thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.thematic_trimming_manager.get_field_values(study_interface)
+        return study_service.thematic_trimming_manager.get_thematic_trimming(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/thematictrimming/form",
         tags=[APITag.study_data],
         summary="Set thematic trimming config",
     )
-    def set_thematic_trimming(uuid: str, field_values: ThematicTrimming) -> None:
+    def set_thematic_trimming(uuid: str, field_values: ThematicTrimmingUpdate) -> ThematicTrimming:
         logger.info(f"Updating thematic trimming config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.thematic_trimming_manager.set_field_values(study_interface, field_values)
+        return study_service.thematic_trimming_manager.update_thematic_trimming(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
         summary="Get MC Scenario playlist data for table form",
-        response_model=Dict[int, PlaylistColumns],
-        response_model_exclude_none=True,
     )
-    def get_playlist(uuid: str) -> Dict[int, PlaylistColumns]:
+    def get_playlist(uuid: str) -> PlaylistRootModel:
         logger.info(f"Getting MC Scenario playlist data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.playlist_manager.get_table_data(study_interface)
+        playlist_as_dict = study_service.playlist_manager.get_playlist(study_interface).years
+        return PlaylistRootModel.model_validate(playlist_as_dict)
 
     @bp.put(
         path="/studies/{uuid}/config/playlist/form",
         tags=[APITag.study_data],
-        summary="Set MC Scenario playlist data with values from table form",
+        summary="Update MC Scenario playlist data with values from table form",
     )
-    def set_playlist(uuid: str, data: Dict[int, PlaylistColumns]) -> None:
+    def update_playlist(uuid: str, data: PlaylistUpdateRootModel) -> PlaylistRootModel:
         logger.info(f"Updating MC Scenario playlist table data for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.playlist_manager.set_table_data(study_interface, data)
-
-    @bp.get(
-        "/studies/{uuid}/config/playlist",
-        tags=[APITag.study_data],
-        summary="Get playlist config",
-        response_model=Optional[Dict[int, float]],
-    )
-    def get_playlist_config(uuid: str) -> Optional[Dict[int, float]]:
-        logger.info(f"Fetching playlist config for study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.config_manager.get_playlist(study_interface)
-
-    @bp.put(
-        path="/studies/{uuid}/config/playlist",
-        tags=[APITag.study_data],
-        summary="Set playlist config",
-    )
-    def set_playlist_config(
-        uuid: str,
-        active: bool = True,
-        reverse: bool = False,
-        playlist: Optional[List[int]] = Body(default=None),
-        weights: Optional[Dict[int, int]] = Body(default=None),
-    ) -> Any:
-        logger.info(f"Updating playlist config for study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        study_interface = study_service.get_study_interface(study)
-        study_service.config_manager.set_playlist(study_interface, playlist, weights, reverse, active)
+        playlist_update = PlaylistUpdate.model_validate({"years": data.model_dump()})
+        playlist_as_dict = study_service.playlist_manager.update_playlist(study_interface, playlist_update).years
+        return PlaylistRootModel.model_validate(playlist_as_dict)
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Rulesets,
+        response_model=RulesetsView,
+        response_model_exclude_none=True,
     )
-    def get_scenario_builder_config(uuid: str) -> Rulesets:
+    def get_scenario_builder_config(uuid: str) -> RulesetsView:
         logger.info(f"Getting MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.scenario_builder_manager.get_config(study_interface)
+        return rulesets_model_to_view(study_service.scenario_builder_manager.get_config(study_interface))
 
     @bp.get(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Get MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
-    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, SBTableForm]:
+    def get_scenario_builder_config_by_type(uuid: str, scenario_type: ScenarioType) -> Dict[str, AnyScenarios]:
         """
         Retrieve the scenario matrix corresponding to a specified scenario type.
 
@@ -545,21 +542,20 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
     )
-    def update_scenario_builder_config(uuid: str, data: Rulesets) -> None:
+    def update_scenario_builder_config(uuid: str, data: RulesetsView) -> None:
         logger.info(f"Updating MC Scenario builder config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.scenario_builder_manager.update_config(study_interface, data)
+        study_service.scenario_builder_manager.update_config(study_interface, rulesets_view_to_model(data))
 
     @bp.put(
         path="/studies/{uuid}/config/scenariobuilder/{scenario_type}",
         tags=[APITag.study_data],
         summary="Set MC Scenario builder config",
-        response_model=Dict[str, SBTableForm],
     )
     def update_scenario_builder_config_by_type(
-        uuid: str, scenario_type: ScenarioType, data: Dict[str, SBTableForm]
-    ) -> Dict[str, SBTableForm]:
+        uuid: str, scenario_type: ScenarioType, data: Dict[ScenarioType, AnyScenarios]
+    ) -> Dict[ScenarioType, AnyScenarios]:
         """
         Update the scenario matrix corresponding to a specified scenario type.
 
@@ -586,7 +582,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         logger.info(f"Updating MC Scenario builder config for study {uuid} with scenario type filter: {scenario_type}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        table_form = data[scenario_type]
+        table_form = data.get(scenario_type, {})
         table_form = study_service.scenario_builder_manager.update_scenario_by_type(
             study_interface, table_form, scenario_type
         )
@@ -596,97 +592,94 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/general/form",
         tags=[APITag.study_data],
         summary="Get General config values for form",
-        response_model=GeneralFormFields,
         response_model_exclude_none=True,
     )
-    def get_general_form_values(uuid: str) -> GeneralFormFields:
+    def get_general_form_values(uuid: str) -> GeneralConfig:
         logger.info(msg=f"Getting General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.general_manager.get_field_values(study_interface)
+        return study_service.general_manager.get_general_config(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/general/form",
         tags=[APITag.study_data],
         summary="Set General config with values from form",
     )
-    def set_general_form_values(uuid: str, field_values: GeneralFormFields) -> None:
+    def set_general_form_values(uuid: str, config: GeneralConfigUpdate) -> GeneralConfig:
         logger.info(f"Updating General management config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.general_manager.set_field_values(study_interface, field_values)
+        return study_service.general_manager.update_general_config(study_interface, config)
 
     @bp.get(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Get optimization config values for form",
-        response_model=OptimizationFormFields,
-        response_model_exclude_none=True,
     )
-    def get_optimization_form_values(uuid: str) -> OptimizationFormFields:
+    def get_optimization_form_values(uuid: str) -> OptimizationPreferences:
         logger.info(msg=f"Getting optimization config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.optimization_manager.get_field_values(study_interface)
+        return study_service.optimization_manager.get_optimization_preferences(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/optimization/form",
         tags=[APITag.study_data],
         summary="Set optimization config with values from form",
     )
-    def set_optimization_form_values(uuid: str, field_values: OptimizationFormFields) -> None:
+    def set_optimization_form_values(uuid: str, field_values: OptimizationPreferencesUpdate) -> OptimizationPreferences:
         logger.info(f"Updating optimization config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.optimization_manager.set_field_values(study_interface, field_values)
+        return study_service.optimization_manager.update_optimization_preferences(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/config/adequacypatch/form",
         tags=[APITag.study_data],
         summary="Get adequacy patch config values for form",
-        response_model=AdequacyPatchFormFields,
         response_model_exclude_none=True,
     )
-    def get_adequacy_patch_form_values(uuid: str) -> AdequacyPatchFormFields:
+    def get_adequacy_patch_form_values(uuid: str) -> AdequacyPatchParameters:
         logger.info(msg=f"Getting adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.adequacy_patch_manager.get_field_values(study_interface)
+        return study_service.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/adequacypatch/form",
         tags=[APITag.study_data],
         summary="Set adequacy patch config with values from form",
     )
-    def set_adequacy_patch_form_values(uuid: str, field_values: AdequacyPatchFormFields) -> None:
+    def set_adequacy_patch_form_values(
+        uuid: str, field_values: AdequacyPatchParametersUpdate
+    ) -> AdequacyPatchParameters:
         logger.info(f"Updating adequacy patch config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.adequacy_patch_manager.set_field_values(study_interface, field_values)
+        return study_service.adequacy_patch_manager.set_adequacy_patch_parameters(study_interface, field_values)
 
     @bp.get(
         path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
         summary="Gets the TS Generation config",
-        response_model=TimeSeriesConfigDTO,
         response_model_exclude_none=True,
     )
-    def get_timeseries_form_values(uuid: str) -> TimeSeriesConfigDTO:
+    def get_timeseries_form_values(uuid: str) -> TimeSeriesConfiguration:
         logger.info(msg=f"Getting Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.ts_config_manager.get_values(study_interface)
+        return study_service.ts_config_manager.get_timeseries_configuration(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/timeseries/config",
         tags=[APITag.study_data],
         summary="Sets the TS Generation config",
     )
-    def set_ts_generation_config(uuid: str, field_values: TimeSeriesConfigDTO) -> None:
+    def set_ts_generation_config(uuid: str, field_values: TimeSeriesConfigurationUpdate) -> TimeSeriesConfiguration:
         logger.info(f"Updating Time-Series generation config for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.ts_config_manager.set_values(study_interface, field_values)
+        return study_service.ts_config_manager.set_timeseries_configuration(study_interface, field_values)
 
     @bp.get(
         path="/table-schema/{table_type}",
@@ -767,14 +760,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_interface = study_service.get_study_interface(study)
         table_data = study_service.table_mode_manager.update_table_data(study_interface, table_type, data)
         return table_data
-
-    @bp.post(
-        "/studies/_update_version",
-        tags=[APITag.study_data],
-        summary="update database version of all studies",
-    )
-    def update_version() -> Any:
-        study_service.check_and_update_all_study_versions_in_database()
 
     @bp.get("/studies/{uuid}/bindingconstraints", tags=[APITag.study_data], summary="Get binding constraint list")
     def get_binding_constraint_list(
@@ -1344,26 +1329,25 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Get Advanced parameters form values",
-        response_model=AdvancedParamsFormFields,
         response_model_exclude_none=True,
     )
-    def get_advanced_parameters(uuid: str) -> AdvancedParamsFormFields:
+    def get_advanced_parameters(uuid: str) -> AdvancedParameters:
         logger.info(msg=f"Getting Advanced Parameters for study {uuid}")
 
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.advanced_parameters_manager.get_field_values(study_interface)
+        return study_service.advanced_parameters_manager.get_advanced_parameters(study_interface)
 
     @bp.put(
         path="/studies/{uuid}/config/advancedparameters/form",
         tags=[APITag.study_data],
         summary="Set Advanced parameters new values",
     )
-    def set_advanced_parameters(uuid: str, field_values: AdvancedParamsFormFields) -> None:
+    def set_advanced_parameters(uuid: str, field_values: AdvancedParametersUpdate) -> AdvancedParameters:
         logger.info(f"Updating Advanced parameters values for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        study_service.advanced_parameters_manager.set_field_values(study_interface, field_values)
+        return study_service.advanced_parameters_manager.update_advanced_parameters(study_interface, field_values)
 
     @bp.put(
         "/studies/{uuid}/timeseries/generate",
@@ -1816,6 +1800,84 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.st_storage_manager.delete_storages(study_interface, area_id, storage_ids)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Get all additional constraints relative to a short-term storage object",
+    )
+    def get_additional_constraints(uuid: str, area_id: str, storage_id: str) -> list[STStorageAdditionalConstraint]:
+        logger.info(f"Getting additional constraints for short-term storage {storage_id} in {area_id} for study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_additional_constraints(study_interface, area_id, storage_id)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints/{constraint_id}",
+        tags=[APITag.study_data],
+        summary="Get a specific constraint relative to a short-term storage object",
+    )
+    def get_additional_constraint(
+        uuid: str, area_id: str, storage_id: str, constraint_id: str
+    ) -> STStorageAdditionalConstraint:
+        logger.info(
+            f"Getting additional constraint {constraint_id} for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.get_additional_constraint(
+            study_interface, area_id, storage_id, constraint_id
+        )
+
+    @bp.post(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Create additional constraint(s) for a short-term storage object",
+    )
+    def create_additional_constraints(
+        uuid: str, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraintCreation]
+    ) -> list[STStorageAdditionalConstraint]:
+        logger.info(
+            f"Creating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.st_storage_manager.create_additional_constraints(
+            study_interface, area_id, storage_id, constraints
+        )
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Update additional constraint(s) for a short-term storage object",
+    )
+    def update_additional_constraints(
+        uuid: str, area_id: str, storage_id: str, constraints: dict[str, STStorageAdditionalConstraintUpdate]
+    ) -> list[STStorageAdditionalConstraint]:
+        logger.info(
+            f"Updating additional constraint(s) for short-term storage {storage_id} in {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        all_constraints = study_service.st_storage_manager.update_additional_constraints(
+            study_interface, {area_id: {storage_id: constraints}}
+        )
+        return all_constraints[area_id][storage_id]
+
+    @bp.delete(
+        path="/studies/{uuid}/areas/{area_id}/storages/{storage_id}/additional-constraints",
+        tags=[APITag.study_data],
+        summary="Delete additional constraint(s) for a given area",
+    )
+    def delete_additional_constraints(uuid: str, area_id: str, storage_id: str, constraints_ids: list[str]) -> None:
+        logger.info(
+            f"Deleting short-term storage additional constraint(s) for storage {storage_id} in area {area_id} for study {uuid}"
+        )
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.st_storage_manager.delete_additional_constraints(
+            study_interface, area_id, storage_id, constraints_ids
+        )
 
     @bp.post(
         path="/studies/{uuid}/areas/{area_id}/{cluster_type}/{source_cluster_id}",

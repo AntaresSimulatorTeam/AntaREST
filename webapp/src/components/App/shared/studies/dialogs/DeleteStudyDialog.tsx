@@ -20,9 +20,7 @@ import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { Typography } from "@mui/material";
-import { t } from "i18next";
-import { Trans } from "react-i18next";
-
+import { Trans, useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 interface Props {
@@ -37,6 +35,7 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

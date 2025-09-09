@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import * as RA from "ramda-adjunct";
 import client from "../../../../../../../services/api/client";
 import type { Area, StudyMetadata } from "../../../../../../../types/types";
 import type { ExcludeNullFromProps, PartialExceptFor } from "../../../../../../../utils/tsUtils";
@@ -160,4 +161,38 @@ export async function deleteStorages(
   storageIds: Array<Storage["id"]>,
 ) {
   await client.delete(getStoragesUrl(studyId, areaId), { data: storageIds });
+}
+
+export function convertRatioToPercentage<T extends Partial<Storage>>(storage: T): T {
+  const values = { ...storage };
+
+  // Convert to percentage ([0-1] -> [0-100])
+  if (RA.isNumber(values.efficiency)) {
+    values.efficiency *= 100;
+  }
+  if (RA.isNumber(values.initialLevel)) {
+    values.initialLevel *= 100;
+  }
+  if (RA.isNumber(values.efficiencyWithdrawal)) {
+    values.efficiencyWithdrawal *= 100;
+  }
+
+  return values;
+}
+
+export function convertPercentageToRatio(storage: Partial<Storage>): Partial<Storage> {
+  const values = { ...storage };
+
+  // Convert to ratio ([0-100] -> [0-1])
+  if (RA.isNumber(values.efficiency)) {
+    values.efficiency /= 100;
+  }
+  if (RA.isNumber(values.initialLevel)) {
+    values.initialLevel /= 100;
+  }
+  if (RA.isNumber(values.efficiencyWithdrawal)) {
+    values.efficiencyWithdrawal /= 100;
+  }
+
+  return values;
 }

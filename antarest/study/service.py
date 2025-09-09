@@ -62,7 +62,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id, require_current_user
+from antarest.login.utils import get_current_user, get_user_id
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -74,18 +74,19 @@ from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
-from antarest.study.business.config_management import ConfigManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
 from antarest.study.business.general_management import GeneralManager
+from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.xpansion_model import (
-    GetXpansionSettings,
-    XpansionCandidateDTO,
+    XpansionCandidate,
+    XpansionCandidateCreation,
+    XpansionSettings,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.optimization_management import OptimizationManager
@@ -104,7 +105,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
-    CommentsDto,
     MatrixIndex,
     RawStudy,
     Study,
@@ -116,7 +116,6 @@ from antarest.study.model import (
     StudyMetadataPatchDTO,
 )
 from antarest.study.repository import (
-    AccessPermissions,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
@@ -155,8 +154,8 @@ from antarest.study.storage.variantstudy.model.command.remove_user_resource impo
     RemoveUserResource,
     RemoveUserResourceData,
 )
+from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
-from antarest.study.storage.variantstudy.model.command.update_comments import UpdateComments
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -203,6 +202,12 @@ def _get_path_inside_user_folder(
     return "/".join(url[1:])
 
 
+def assert_raw(study: Study) -> RawStudy:
+    if not isinstance(study, RawStudy):
+        raise TypeError("Study must be a RawStudy")
+    return study
+
+
 class TaskProgressRecorder(ICommandListener):
     def __init__(self, notifier: ITaskNotifier) -> None:
         self.notifier = notifier
@@ -237,10 +242,8 @@ class ThermalClusterTimeSeriesGeneratorTask:
         listener = TaskProgressRecorder(notifier=notifier)
         with db():
             study = self.repository.one(self._study_id)
-            file_study = self.storage_service.get_storage(study).get_raw(study)
-            command = GenerateThermalClusterTimeSeries(
-                command_context=command_context, study_version=file_study.config.version
-            )
+            study_version = StudyVersion.parse(study.version)
+            command = GenerateThermalClusterTimeSeries(command_context=command_context, study_version=study_version)
             self.study_interface_supplier(study).add_commands([command], listener)
 
             if isinstance(study, VariantStudy):
@@ -307,10 +310,9 @@ class StudyUpgraderTask:
         with db():
             # TODO We want to verify that a study doesn't have children and if it does do we upgrade all of them ?
             study_to_upgrade = self.repository.one(study_id)
-            is_variant = isinstance(study_to_upgrade, VariantStudy)
             try:
                 # sourcery skip: extract-method
-                if is_variant:
+                if isinstance(study_to_upgrade, VariantStudy):
                     self.storage_service.variant_study_service.clear_snapshot(study_to_upgrade)
                 else:
                     study_path = Path(study_to_upgrade.path)
@@ -485,9 +487,9 @@ class StudyService:
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
         self.area_manager = AreaManager(command_context)
+        self.layer_manager = LayerManager(command_context)
         self.district_manager = DistrictManager(command_context)
         self.links_manager = LinkManager(command_context)
-        self.config_manager = ConfigManager(command_context)
         self.general_manager = GeneralManager(command_context)
         self.thematic_trimming_manager = ThematicTrimmingManager(command_context)
         self.optimization_manager = OptimizationManager(command_context)
@@ -619,7 +621,7 @@ class StudyService:
         )
         stopwatch.log_elapsed(lambda d: logger.info(f"Saved logs for job {job_id} in {d}s"))
 
-    def get_comments(self, study_id: str) -> str | JSON:
+    def get_comments(self, study_id: str) -> str:
         """
         Get the comments of a study.
 
@@ -631,20 +633,15 @@ class StudyService:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
 
-        output = self.storage_service.get_storage(study).get(metadata=study, url="/settings/comments")
+        return self.get_study_interface(study).get_study_dao().get_comments()
 
-        with contextlib.suppress(AttributeError, UnicodeDecodeError):
-            output = output.decode("utf-8")  # type: ignore
-
-        return output
-
-    def edit_comments(self, uuid: str, data: CommentsDto) -> None:
+    def set_comments(self, uuid: str, comments: str) -> None:
         """
         Replace data inside study.
 
         Args:
             uuid: study id
-            data: new data to replace
+            comments: new comments to replace
 
         Returns: new data replaced
 
@@ -653,19 +650,14 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
 
-        if isinstance(study, RawStudy):
-            self.edit_study(uuid=uuid, url="settings/comments", new=bytes(data.comments, "utf-8"))
-        else:
-            variant_study_service = self.storage_service.variant_study_service
-            command = [
-                UpdateRawFile(
-                    target="settings/comments",
-                    b64Data=base64.b64encode(data.comments.encode("utf-8")).decode("utf-8"),
-                    command_context=variant_study_service.command_factory.command_context,
-                    study_version=study.version,
-                )
-            ]
-            variant_study_service.append_commands(study.id, transform_command_to_dto(command, force_aggregate=True))
+        study_interface = self.get_study_interface(study)
+        command_context = self.storage_service.variant_study_service.command_factory.command_context
+        command = ReplaceComments(
+            comments=comments,
+            study_version=study_interface.version,
+            command_context=command_context,
+        )
+        study_interface.add_commands([command])
 
     def get_studies_information(
         self,
@@ -1287,12 +1279,13 @@ class StudyService:
 
         if self.storage_service.variant_study_service.has_children(study):
             if children:
-                self.storage_service.variant_study_service.walk_children(
-                    study.id,
-                    lambda v: self.delete_study(v.id, True),
-                    bottom_first=True,
-                )
-                return
+                if isinstance(study, VariantStudy):
+                    self.storage_service.variant_study_service.walk_children(
+                        study.id,
+                        lambda v: self.delete_study(v.id, True),
+                        bottom_first=True,
+                    )
+                    return
             else:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
 
@@ -1402,7 +1395,7 @@ class StudyService:
                 if isinstance(data, bytes):
                     data = data.decode("utf-8")
                 assert isinstance(data, str)
-                return UpdateComments(comments=data, command_context=context, study_version=study_version)
+                return ReplaceComments(comments=data, command_context=context, study_version=study_version)
             elif isinstance(data, bytes):
                 return UpdateRawFile(
                     target=url,
@@ -1656,11 +1649,6 @@ class StudyService:
             get_user_id(),
         )
 
-    def check_errors(self, uuid: str) -> List[str]:
-        study = self.get_study(uuid)
-        self.assert_study_unarchived(study)
-        return self.storage_service.raw_study_service.check_errors(study)
-
     def get_all_areas(
         self,
         uuid: str,
@@ -1770,12 +1758,15 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         study_interface = self.get_study_interface(study)
         self.assert_study_unarchived(study)
+        # Checks the area is not referenced in any constraint
         referencing_binding_constraints = self.binding_constraint_manager.get_binding_constraints(
             study_interface, ConstraintFilters(area_name=area_id)
         )
         if referencing_binding_constraints:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
+
+        # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
         self.event_bus.push(
             Event(
@@ -1847,6 +1838,7 @@ class StudyService:
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
+            study_to_archive = assert_raw(study_to_archive)
             self.storage_service.raw_study_service.archive(study_to_archive)
             study_to_archive.archived = True
             self.repository.save(study_to_archive)
@@ -1889,6 +1881,7 @@ class StudyService:
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             study_to_archive = self.get_study(uuid)
+            study_to_archive = assert_raw(study_to_archive)
             self.storage_service.raw_study_service.unarchive(study_to_archive)
             study_to_archive.archived = False
 
@@ -1976,30 +1969,6 @@ class StudyService:
             raise UnsupportedOperationOnArchivedStudy(study.id)
         return not study.archived
 
-    def _analyse_study(self, metadata: Study) -> StudyContentStatus:
-        """
-        Analyzes the integrity of a study.
-
-        Args:
-            metadata: The study to analyze.
-
-        Returns:
-            - VALID if the study has no integrity issues.
-            - WARNING if the study has some issues.
-            - ERROR if the tree was unable to analyze the structure without raising an error.
-        """
-        try:
-            if not isinstance(metadata, RawStudy):
-                raise UnsupportedOperationOnThisStudyType(metadata.id, "synchronization", "raw")
-
-            if self.storage_service.raw_study_service.check_errors(metadata):
-                return StudyContentStatus.WARNING
-            else:
-                return StudyContentStatus.VALID
-        except Exception as e:
-            logger.error(e)
-            return StudyContentStatus.ERROR
-
     # noinspection PyUnusedLocal
     @staticmethod
     def get_studies_versions() -> List[str]:
@@ -2022,17 +1991,13 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.delete_xpansion_configuration(study_interface)
 
-    def get_xpansion_settings(self, uuid: str) -> GetXpansionSettings:
+    def get_xpansion_settings(self, uuid: str) -> XpansionSettings:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_xpansion_settings(study_interface)
 
-    def update_xpansion_settings(
-        self,
-        uuid: str,
-        xpansion_settings_dto: XpansionSettingsUpdate,
-    ) -> GetXpansionSettings:
+    def update_xpansion_settings(self, uuid: str, xpansion_settings_dto: XpansionSettingsUpdate) -> XpansionSettings:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
@@ -2042,37 +2007,37 @@ class StudyService:
     def add_candidate(
         self,
         uuid: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> XpansionCandidateDTO:
+        xpansion_candidate: XpansionCandidateCreation,
+    ) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate_dto)
+        return self.xpansion_manager.add_candidate(study_interface, xpansion_candidate)
 
-    def get_candidate(self, uuid: str, candidate_name: str) -> XpansionCandidateDTO:
+    def get_candidate(self, uuid: str, candidate_name: str) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidate(study_interface, candidate_name)
 
-    def get_candidates(self, uuid: str) -> List[XpansionCandidateDTO]:
+    def get_candidates(self, uuid: str) -> List[XpansionCandidate]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.get_candidates(study_interface)
 
-    def update_xpansion_candidate(
+    def replace_xpansion_candidate(
         self,
         uuid: str,
         candidate_name: str,
-        xpansion_candidate_dto: XpansionCandidateDTO,
-    ) -> None:
+        xpansion_candidate: XpansionCandidateCreation,
+    ) -> XpansionCandidate:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
-        return self.xpansion_manager.update_candidate(study_interface, candidate_name, xpansion_candidate_dto)
+        return self.xpansion_manager.replace_candidate(study_interface, candidate_name, xpansion_candidate)
 
     def delete_xpansion_candidate(self, uuid: str, candidate_name: str) -> None:
         study = self.get_study(uuid)
@@ -2081,23 +2046,14 @@ class StudyService:
         study_interface = self.get_study_interface(study)
         self.xpansion_manager.delete_candidate(study_interface, candidate_name)
 
-    def update_xpansion_constraints_settings(
-        self,
-        uuid: str,
-        constraints_file_name: str,
-    ) -> GetXpansionSettings:
+    def update_xpansion_constraints_settings(self, uuid: str, constraints_file_name: str) -> XpansionSettings:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         study_interface = self.get_study_interface(study)
         return self.xpansion_manager.update_xpansion_constraints_settings(study_interface, constraints_file_name)
 
-    def update_matrix(
-        self,
-        uuid: str,
-        path: str,
-        matrix_edit_instruction: List[MatrixEditInstruction],
-    ) -> None:
+    def update_matrix(self, uuid: str, path: str, matrix_edit_instruction: List[MatrixEditInstruction]) -> None:
         """
         Updates a matrix in a study based on the provided edit instructions.
 
@@ -2120,28 +2076,6 @@ class StudyService:
             self.matrix_manager.update_matrix(study_interface, path, matrix_edit_instruction)
         except MatrixManagerError as exc:
             raise BadEditInstructionException(str(exc)) from exc
-
-    def check_and_update_all_study_versions_in_database(self) -> None:
-        """
-        This function updates studies version on the db.
-
-        **Warnings: Only users with Admins rights should be able to run this function.**
-
-        Raises:
-            UserHasNotPermissionError: if params user is not admin.
-
-        """
-        user = require_current_user()
-        if not user.is_site_admin():
-            logger.error(f"User {get_user_id()} is not site admin")
-            raise UserHasNotPermissionError()
-        studies = self.repository.get_all(
-            study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_current_user())
-        )
-
-        for study in studies:
-            storage = self.storage_service.raw_study_service
-            storage.check_and_update_study_version_in_database(study)
 
     def generate_timeseries(self, study: Study) -> str:
         task_name = f"Generating thermal timeseries for study {study.name} ({study.id})"
@@ -2172,11 +2106,7 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def upgrade_study(
-        self,
-        study_id: str,
-        target_version: str,
-    ) -> str:
+    def upgrade_study(self, study_id: str, target_version: str) -> str:
         study = self.get_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)

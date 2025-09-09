@@ -14,7 +14,7 @@ import http
 import io
 import logging
 from pathlib import Path, PurePosixPath
-from typing import Annotated, Any, List
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Body, File, HTTPException
 from fastapi.params import Query
@@ -270,27 +270,6 @@ def create_raw_study_routes(
         else:
             logger.info(f"Uploading new data file at {path} for study {uuid}")
             study_service.edit_study(uuid, path, file, create_missing=create_missing)
-
-    @bp.get(
-        "/studies/{uuid}/raw/validate",
-        summary="Launch test validation on study",
-        tags=[APITag.study_raw_data],
-        response_model=List[str],
-    )
-    def validate(uuid: str) -> List[str]:
-        """
-        Launches test validation on the raw data of a study.
-        The validation is done recursively on all the files in the study
-
-        Parameters:
-        - `uuid`: The UUID of the study.
-
-        Response:
-        - A list of strings indicating validation errors (if any) for the study's raw data.
-          The list is empty if no errors were found.
-        """
-        logger.info(f"Validating data for study {uuid}")
-        return study_service.check_errors(uuid)
 
     @bp.get(
         "/studies/{uuid}/raw/download",

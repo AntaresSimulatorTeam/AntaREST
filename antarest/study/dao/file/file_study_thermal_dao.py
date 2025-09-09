@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
 import pandas as pd
 from typing_extensions import override
@@ -26,6 +26,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
@@ -34,6 +37,10 @@ _ALL_CLUSTERS_PATH = "input/thermal/clusters"
 class FileStudyThermalDao(ThermalDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
@@ -72,7 +79,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         try:
             cluster_data = file_study.tree.get(path.split("/"), depth=1)
         except KeyError:
-            raise ThermalClusterNotFound(path, thermal_id) from None
+            raise ThermalClusterNotFound(area_id, thermal_id) from None
         return parse_thermal_cluster(file_study.config.version, cluster_data)
 
     @override

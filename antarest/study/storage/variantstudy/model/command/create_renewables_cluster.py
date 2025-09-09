@@ -10,12 +10,17 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional
+from typing import Any, Dict, Final, List, Optional, Self
 
+from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.renewable_cluster_model import RenewableClusterCreation, create_renewable_cluster
+from antarest.study.business.model.renewable_cluster_model import (
+    RenewableClusterCreation,
+    create_renewable_cluster,
+    validate_renewable_cluster_against_version,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId
@@ -61,13 +66,19 @@ class CreateRenewablesCluster(ICommand):
                 if version == 1:
                     parameters["name"] = values.pop("cluster_name")
                 if version < 3:
-                    cluster = parse_renewable_cluster(parameters)
+                    study_version = StudyVersion.parse(values["study_version"])
+                    cluster = parse_renewable_cluster(study_version, parameters)
                     values["parameters"] = RenewableClusterCreation.from_cluster(cluster)
         return values
 
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_renewable_cluster_against_version(self.study_version, self.parameters)
+        return self
+
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        renewable = create_renewable_cluster(self.parameters)
+        renewable = create_renewable_cluster(self.parameters, self.study_version)
         renewable_id = renewable.id
         lower_renewable_id = renewable_id.lower()
         if study_data.renewable_exists(self.area_id, lower_renewable_id):

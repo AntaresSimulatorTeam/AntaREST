@@ -45,23 +45,19 @@ def clean_locks(config: Path) -> None:
 
 def reindex_table(config: Path) -> None:
     import sqlalchemy
-    from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-    from psycopg2.extensions import connection as Psycopg2Connection
+    from sqlalchemy import text
 
     config_obj = get_config(config)
-    assert config_obj.db.db_admin_url is not None, "db_admin_url ne peut pas être None"
+    assert config_obj.db.db_admin_url is not None, "db_admin_url can not be None"
 
     engine = sqlalchemy.create_engine(str(config_obj.db.db_admin_url), echo=False)
 
-    raw_conn = engine.raw_connection()
-    try:
-        conn: Psycopg2Connection = raw_conn.connection
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    with engine.connect() as connection:
+        with connection.begin():
+            pass
 
-        with conn.cursor() as cursor:
-            cursor.execute("VACUUM ANALYSE study")
-            cursor.execute("REINDEX INDEX study_pkey")
-            cursor.execute("VACUUM ANALYSE rawstudy")
-            cursor.execute("REINDEX INDEX rawstudy_pkey")
-    finally:
-        raw_conn.close()
+        connection = connection.execution_options(autocommit=True)
+        connection.execute(text("VACUUM ANALYSE study"))
+        connection.execute(text("REINDEX INDEX study_pkey"))
+        connection.execute(text("VACUUM ANALYSE rawstudy"))
+        connection.execute(text("REINDEX INDEX rawstudy_pkey"))

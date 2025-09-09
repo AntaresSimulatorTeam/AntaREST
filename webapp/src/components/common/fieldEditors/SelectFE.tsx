@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 // eslint-disable-next-line @typescript-eslint/no-restricted-imports
 import type { SelectInputProps } from "@mui/material/Select/SelectInput";
+import type { TFunction } from "i18next";
 import startCase from "lodash/startCase";
 import * as RA from "ramda-adjunct";
 import { useMemo, useState } from "react";
@@ -36,13 +37,13 @@ import { useTranslation } from "react-i18next";
 type AllowedValue = string | number;
 
 interface Option<T extends AllowedValue> {
-  label: string;
   value: T;
+  label?: string | ((t: TFunction) => string);
   icon?: SvgIconComponent;
   tooltip?: string;
 }
 
-type Options<T extends AllowedValue> = Array<T | Option<T>> | ReadonlyArray<T | Option<T>>;
+export type Options<T extends AllowedValue> = Array<T | Option<T>> | ReadonlyArray<T | Option<T>>;
 
 // With the default event handler, the type of event depends on what caused the change
 // (cf. SelectChangeEvent from MUI). This event type is used to ensure to have a consistent type
@@ -107,19 +108,28 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
 
   const optionsFormatted = useMemo(
     () =>
-      options.map((opt, index) =>
-        RA.isPlainObj(opt)
-          ? {
-              ...opt,
-              id: opt.value + opt.label + index,
-            }
-          : {
-              label: startCaseLabel ? startCase(String(opt)) : String(opt),
-              value: opt,
-              id: String(opt) + index,
-            },
-      ),
-    [options, startCaseLabel],
+      options.map((opt, index) => {
+        const valueToLabel = (v: OptionValue) =>
+          startCaseLabel ? startCase(String(v)) : String(v);
+
+        if (RA.isPlainObj(opt)) {
+          const label =
+            typeof opt.label === "function" ? opt.label(t) : opt.label || valueToLabel(opt.value);
+
+          return {
+            ...opt,
+            id: opt.value + label + index,
+            label,
+          };
+        }
+
+        return {
+          label: valueToLabel(opt),
+          value: opt,
+          id: String(opt) + index,
+        };
+      }),
+    [options, startCaseLabel, t],
   );
 
   // Invalid options are values that are in the current value (multiple mode) but not in the options.

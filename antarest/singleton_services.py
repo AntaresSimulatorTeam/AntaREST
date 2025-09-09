@@ -51,12 +51,7 @@ def _init(config_file: Path, services_list: List[Module]) -> Dict[Module, IServi
         services[Module.WATCHER] = watcher
 
     if Module.MATRIX_GC in services_list:
-        matrix_gc = create_matrix_gc(
-            config=config,
-            app_ctxt=None,
-            study_service=core_services.study_service,
-            matrix_service=core_services.matrix_service,
-        )
+        matrix_gc = create_matrix_gc(config, core_services.matrix_service)
         services[Module.MATRIX_GC] = matrix_gc
 
     if Module.ARCHIVE_WORKER in services_list:

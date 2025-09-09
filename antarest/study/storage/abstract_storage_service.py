@@ -24,15 +24,12 @@ from antarest.core.config import Config
 from antarest.core.exceptions import BadOutputError, StudyOutputNotFoundError
 from antarest.core.interfaces.cache import ICache, study_raw_cache_key
 from antarest.core.model import JSON, PublicMode
-from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive, unzip
 from antarest.core.utils.utils import StopWatch
 from antarest.login.model import GroupDTO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     OwnerInfo,
-    Patch,
-    PatchStudy,
     Study,
     StudyAdditionalData,
     StudyMetadataDTO,
@@ -68,16 +65,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
         study: Study,
     ) -> StudyMetadataDTO:
         additional_data = study.additional_data or StudyAdditionalData()
-
-        try:
-            patch = Patch.model_validate(from_json(additional_data.patch or "{}"))
-        except ValueError as e:
-            # The conversion to JSON and the parsing can fail if the patch is not valid
-            logger.warning(f"Failed to parse patch for study {study.id}", exc_info=e)
-            patch = Patch()
-
-        patch_metadata = patch.study or PatchStudy()
-
         study_workspace = getattr(study, "workspace", DEFAULT_WORKSPACE_NAME)
         folder: Optional[str] = None
         if hasattr(study, "folder"):
@@ -103,9 +90,6 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
             public_mode=study.public_mode or PublicMode.NONE,
             horizon=additional_data.horizon,
-            scenario=patch_metadata.scenario,
-            status=patch_metadata.status,
-            doc=patch_metadata.doc,
             folder=folder,
             tags=[tag.label for tag in study.tags],
         )

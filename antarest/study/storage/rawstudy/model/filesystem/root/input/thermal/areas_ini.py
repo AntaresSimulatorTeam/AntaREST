@@ -16,6 +16,4 @@ from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFi
 
 class InputThermalAreasIni(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig):
-        section = {a: float for a in config.area_names()}
-        types = {"unserverdenergycost": section, "spilledenergycost": {}}
-        IniFileNode.__init__(self, config, types)
+        IniFileNode.__init__(self, config)

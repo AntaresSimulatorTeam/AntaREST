@@ -72,12 +72,6 @@ class TestStudy:
         index_names = {index["name"] for index in indexes}
         assert not index_names
 
-    def test_index_on_study_additional_data(self, db_engine: Engine) -> None:
-        inspector = inspect(db_engine)
-        indexes = inspector.get_indexes("study_additional_data")
-        index_names = {index["name"] for index in indexes}
-        assert index_names == {"ix_study_additional_data_patch"}
-
     def test_study_tag_relationship(self, db_session: Session) -> None:
         study_id_1 = str(uuid.uuid4())
         study_id_2 = str(uuid.uuid4())

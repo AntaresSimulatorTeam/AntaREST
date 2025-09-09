@@ -17,17 +17,50 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+    STStorageAdditionalConstraintsMap,
+)
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.xpansion_model import (
+    XpansionCandidate,
+    XpansionResourceFileType,
+    XpansionSettings,
+    XpansionSettingsUpdate,
+)
+from antarest.study.dao.api.adequacy_patch_parameters_dao import (
+    AdequacyPatchParametersDao,
+    ReadOnlyAdequacyPatchParametersDao,
+)
+from antarest.study.dao.api.advanced_parameters_dao import AdvancedParametersDao, ReadOnlyAdvancedParametersDao
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao, ReadOnlyConstraintDao
+from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
+from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
 from antarest.study.dao.api.link_dao import LinkDao, ReadOnlyLinkDao
+from antarest.study.dao.api.optimization_preferences_dao import (
+    OptimizationPreferencesDao,
+    ReadOnlyOptimizationPreferencesDao,
+)
+from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
+from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
+from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
+from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -38,13 +71,43 @@ class ReadOnlyStudyDao(
     ReadOnlyConstraintDao,
     ReadOnlySTStorageDao,
     ReadOnlyHydroDao,
+    ReadOnlyGeneralConfigDao,
+    ReadOnlyOptimizationPreferencesDao,
+    ReadOnlyAdvancedParametersDao,
+    ReadOnlyXpansionDao,
+    ReadOnlyThematicTrimmingDao,
+    ReadOnlyAdequacyPatchParametersDao,
+    ReadOnlyTimeSeriesConfigDao,
+    ReadOnlyLayerDao,
+    ReadOnlyPlaylistConfigDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_comments(self) -> str:
+        raise NotImplementedError()
 
-class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, ConstraintDao, STStorageDao, HydroDao):
+
+class StudyDao(
+    ReadOnlyStudyDao,
+    LinkDao,
+    ThermalDao,
+    RenewableDao,
+    ConstraintDao,
+    STStorageDao,
+    HydroDao,
+    GeneralConfigDao,
+    OptimizationPreferencesDao,
+    AdvancedParametersDao,
+    XpansionDao,
+    ThematicTrimmingDao,
+    AdequacyPatchParametersDao,
+    TimeSeriesConfigDao,
+    LayerDao,
+    PlaylistConfigDao,
+):
     """
     Abstraction for access to study data. Handles all reading
     and writing from underlying storage format.
@@ -64,6 +127,10 @@ class StudyDao(ReadOnlyStudyDao, LinkDao, ThermalDao, RenewableDao, ConstraintDa
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def save_comments(self, comments: str) -> None:
+        raise NotImplementedError()
+
 
 class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
@@ -76,6 +143,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_version(self) -> StudyVersion:
         return self._adaptee.get_version()
+
+    @override
+    def get_comments(self) -> str:
+        return self._adaptee.get_comments()
 
     @override
     def get_links(self) -> Sequence[Link]:
@@ -236,3 +307,85 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_inflow_structure(self, area_id: str) -> InflowStructure:
         return self._adaptee.get_inflow_structure(area_id)
+
+    @override
+    def get_general_config(self) -> GeneralConfig:
+        return self._adaptee.get_general_config()
+
+    @override
+    def get_optimization_preferences(self) -> OptimizationPreferences:
+        return self._adaptee.get_optimization_preferences()
+
+    @override
+    def get_advanced_parameters(self) -> AdvancedParameters:
+        return self._adaptee.get_advanced_parameters()
+
+    @override
+    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
+        return self._adaptee.get_all_st_storage_additional_constraints()
+
+    @override
+    def get_st_storage_additional_constraints(
+        self, area_id: str, storage_id: str
+    ) -> list[STStorageAdditionalConstraint]:
+        return self._adaptee.get_st_storage_additional_constraints(area_id, storage_id)
+
+    @override
+    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
+        return self._adaptee.get_all_xpansion_candidates()
+
+    @override
+    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
+        return self._adaptee.get_xpansion_candidate(candidate_id)
+
+    @override
+    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
+        return self._adaptee.checks_xpansion_candidate_coherence(candidate)
+
+    @override
+    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
+        return self._adaptee.checks_xpansion_candidate_can_be_deleted(candidate_name)
+
+    @override
+    def get_xpansion_settings(self) -> XpansionSettings:
+        return self._adaptee.get_xpansion_settings()
+
+    @override
+    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
+        return self._adaptee.checks_xpansion_settings_are_correct(settings)
+
+    @override
+    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pd.DataFrame:
+        return self._adaptee.get_xpansion_resource(resource_type, filename)
+
+    @override
+    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
+        return self._adaptee.get_xpansion_resources(resource_type)
+
+    @override
+    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        return self._adaptee.checks_xpansion_resource_can_be_deleted(resource_type, filename)
+
+    @override
+    def get_thematic_trimming(self) -> ThematicTrimming:
+        return self._adaptee.get_thematic_trimming()
+
+    @override
+    def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
+        return self._adaptee.get_adequacy_patch_parameters()
+
+    @override
+    def get_timeseries_config(self) -> TimeSeriesConfiguration:
+        return self._adaptee.get_timeseries_config()
+
+    @override
+    def get_layers(self) -> Sequence[Layer]:
+        return self._adaptee.get_layers()
+
+    @override
+    def layer_exists(self, layer_id: str) -> bool:
+        return self._adaptee.layer_exists(layer_id)
+
+    @override
+    def get_playlist_config(self) -> Playlist:
+        return self._adaptee.get_playlist_config()

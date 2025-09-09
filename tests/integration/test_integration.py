@@ -23,7 +23,7 @@ from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
-from antarest.study.business.area_management import LayerInfoDTO
+from antarest.study.business.model.layer_model import Layer
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -117,6 +117,14 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code == 200
 
     # scenario builder
+    res = client.get(
+        f"/v1/studies/{study_id}/config/scenariobuilder",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+    )
+    assert res.status_code == 200
+    assert "Default Ruleset" in res.json()
+    initial_ruleset = res.json()["Default Ruleset"]
+
     res = client.put(
         f"/v1/studies/{study_id}/config/scenariobuilder",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
@@ -127,7 +135,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
                 "t": {"area1": {"thermal": {"1": 2}}},
                 "hl": {"area1": {"0": 75}},
             },
-            "Default Ruleset": {},  # should be removed
+            "Default Ruleset": {},  # Changed from previous behaviour: does not remove anymore
         },
     )
     assert res.status_code == 200, res.json()
@@ -137,17 +145,13 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
     )
     assert res.status_code == 200
-    assert res.json() == {
-        active_ruleset_name: {
-            "l": {"area1": {"0": 1}},
-            "ntc": {"area1 / area2": {"1": 23}},
-            "t": {"area1": {"thermal": {"1": 2}}},
-            "hl": {"area1": {"0": 75}},
-        },
+    assert res.json()[active_ruleset_name] == {
+        "l": {"area1": {"0": 1}},
+        "ntc": {"area1 / area2": {"1": 23}},
+        "t": {"area1": {"thermal": {"1": 2}}},
+        "hl": {"area1": {"0": 75}},
     }
-
-    # Keys must be sorted in each section (to improve reading performance).
-    assert list(res.json()[active_ruleset_name]) == ["hl", "l", "ntc", "t"]
+    assert res.json()["Default Ruleset"] == initial_ruleset
 
     # config / thematic trimming
     res = client.get(
@@ -591,15 +595,15 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     res.raise_for_status()
-    assert res.json() == [LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
+    assert res.json() == [Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json")]
 
     res = client.post(f"/v1/studies/{study_id}/layers?name=test")
-    assert res.json() == "1"
+    assert res.json() == "test"
 
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
-        LayerInfoDTO(id="1", name="test", areas=[]).model_dump(mode="json"),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        Layer(id="1", name="test", areas=[]).model_dump(mode="json"),
     ]
 
     res = client.put(f"/v1/studies/{study_id}/layers/1?name=test2")
@@ -610,8 +614,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     assert res.status_code in {200, 201}, res.json()
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
-        LayerInfoDTO(id="1", name="test2", areas=["area 2"]).model_dump(mode="json"),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(mode="json"),
+        Layer(id="1", name="test2", areas=["area 2"]).model_dump(mode="json"),
     ]
 
     # Delete the layer '1' that has 1 area
@@ -621,12 +625,12 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Ensure the layer is deleted
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
     ]
 
     # Create the layer again without areas
     res = client.post(f"/v1/studies/{study_id}/layers?name=test2")
-    assert res.json() == "1"
+    assert res.json() == "test2"
 
     # Delete the layer with no areas
     res = client.delete(f"/v1/studies/{study_id}/layers/1")
@@ -635,7 +639,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     # Ensure the layer is deleted
     res = client.get(f"/v1/studies/{study_id}/layers")
     assert res.json() == [
-        LayerInfoDTO(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
+        Layer(id="0", name="All", areas=["area 1", "area 2"]).model_dump(),
     ]
 
     # Try to delete a non-existing layer
@@ -1543,23 +1547,30 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     variant = client.post(f"/v1/studies/{raw.json()}/variants", params={"name": "variant"})
 
     # Create a fake output file
-    output_file = tmp_path / "internal_workspace" / variant.json() / "output" / "output1" / "output.txt"
+    output_path = tmp_path / "internal_workspace" / variant.json() / "output"
+    output_file = output_path / "output1" / "output.txt"
     output_file.parent.mkdir(parents=True)
     output_file.write_text("Output data")
+
+    # Create a fake zipped output
+    output_zip_file = output_path / "output2.zip"
+    output_zip_file.touch()
 
     # Copy of the variant as a reference study
     copy = client.post(
         f"/v1/studies/{variant.json()}/copy",
-        params={"study_name": "copied", "with_outputs": True, "use_task": True, "output_ids": ["output1"]},  # type: ignore
+        params={"study_name": "copied", "with_outputs": True, "output_ids": ["output1", "output2"]},
     )
     client.get(f"/v1/tasks/{copy.json()}?wait_for_completion=True")
 
     copied_study = client.get("/v1/studies?name=copied")
     copied_id = next(iter(copied_study.json()))
 
-    # The new study must contain an output fodler with the same data as the source variant study
-    new_output_file = tmp_path / "internal_workspace" / copied_id / "output" / "output1" / "output.txt"
+    # The new study must contain an output folder with the same data as the source variant study
+    new_output_path = tmp_path / "internal_workspace" / copied_id / "output"
+    new_output_file = new_output_path / "output1" / "output.txt"
     assert output_file.read_text() == new_output_file.read_text()
+    assert (new_output_path / "output2.zip").exists()
 
 
 def test_copy_variant_with_specific_path(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:

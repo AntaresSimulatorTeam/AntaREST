@@ -58,9 +58,6 @@ class InputLinkArea(FolderNode):
             }
             children["capacities"] = InputLinkAreaCapacities(ctx, cfg.next_file("capacities"), area=self.area)
 
-        children["properties"] = InputLinkAreaProperties(
-            cfg.next_file("properties.ini"),
-            area=self.area,
-        )
+        children["properties"] = InputLinkAreaProperties(cfg.next_file("properties.ini"))
 
         return children
