@@ -140,7 +140,6 @@ from antarest.study.storage.utils import (
     is_managed,
     is_study_folder,
     remove_from_cache,
-    update_editor_name,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_user_resource import (
@@ -372,12 +371,12 @@ class RawStudyInterface(StudyInterface):
         self,
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
-        service: "StudyService",
+        user_service: LoginService,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
-        self._study_service = service
+        self._user_service = user_service
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -407,7 +406,7 @@ class RawStudyInterface(StudyInterface):
         study = self._study
         should_invalidate_cache = False
         file_study = self.get_files()
-        update_editor_name(file_study, self._study_service.get_user_name())
+
         for command in commands:
             result = command.apply(FileStudyTreeDao(file_study), listener)
             if result.should_invalidate_cache:
@@ -423,6 +422,13 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
+        jwt_user = get_current_user()
+        if jwt_user:
+            user = self._user_service.get_identity(jwt_user.id)
+            if user and user.name:
+                study_antares = file_study.tree.get(["study", "antares"])
+                study_antares["editor"] = user.name
+                file_study.tree.save(study_antares, ["study", "antares"])
 
 
 class VariantStudyInterface(StudyInterface):
@@ -433,9 +439,8 @@ class VariantStudyInterface(StudyInterface):
     to the variant.
     """
 
-    def __init__(self, variant_service: VariantStudyService, service: "StudyService", study: VariantStudy):
+    def __init__(self, variant_service: VariantStudyService, study: VariantStudy):
         self._variant_service = variant_service
-        self.study_service = service
         self._study = study
         self._version = StudyVersion.parse(self._study.version)
 
@@ -460,8 +465,6 @@ class VariantStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: Optional[ICommandListener] = None) -> None:
         # get current user if not in session, otherwise get session user
-        file_study = self.get_files()
-        update_editor_name(file_study, self.study_service.get_user_name())
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
 
@@ -811,14 +814,13 @@ class StudyService:
         if isinstance(study, VariantStudy):
             return VariantStudyInterface(
                 self.storage_service.variant_study_service,
-                self,
                 study,
             )
         elif isinstance(study, RawStudy):
             return RawStudyInterface(
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
-                self,
+                self.user_service,
                 study,
             )
         else:
