@@ -126,6 +126,7 @@ function ConstraintForm({
             {...(studyVersion < 930 && {
               isTimeSeries: false,
               customColumns: ["TS 1"],
+              enableFilters: true,
             })}
           />
         </OkDialog>
