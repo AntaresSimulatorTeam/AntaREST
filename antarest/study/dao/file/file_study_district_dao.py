@@ -19,8 +19,7 @@ from antarest.study.business.model.district_model import District, DistrictBaseF
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     DistrictSet,
-    areas_sign_from_base_filter,
-    parse_district,
+    district_set_sign_from_base_filter,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -49,7 +48,8 @@ class FileStudyDistrictDao(DistrictDao):
 
         all_areas = list(file_study.config.areas)
         return [
-            parse_district(district_id, district_data, all_areas) for district_id, district_data in districts.items()
+            DistrictSet.from_data(district_data).to_model(district_id, all_areas)
+            for district_id, district_data in districts.items()
         ]
 
     @override
@@ -66,7 +66,7 @@ class FileStudyDistrictDao(DistrictDao):
             raise DistrictConfigNotFound(str(path))
 
         all_areas = list(study_data.config.areas)
-        return parse_district(district_id, district_data, all_areas)
+        return DistrictSet.from_data(district_data).to_model(district_id, all_areas)
 
     @override
     def district_exists(self, district_id: str) -> bool:
@@ -96,7 +96,7 @@ class FileStudyDistrictDao(DistrictDao):
         study_data.config.sets[district_id] = DistrictSet.from_model(district, district_base_filter)
 
         # Persist the change in the filesystem
-        item_key = areas_sign_from_base_filter(district_base_filter)
+        item_key = district_set_sign_from_base_filter(district_base_filter)
         apply_filter = district_base_filter if district_base_filter else DistrictBaseFilter.remove_all
         study_data.tree.save(
             {

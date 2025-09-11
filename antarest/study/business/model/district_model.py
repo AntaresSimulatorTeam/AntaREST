@@ -52,6 +52,7 @@ class DistrictUpdate(AntaresBaseModel):
     comments: Optional[str] = None
     #: List of areas that will be grouped in the district.
     areas: Optional[List[str]] = None
+    #: Base filter for the district.
     base_filter: Optional[DistrictBaseFilter] = None
 
 
@@ -86,6 +87,7 @@ class DistrictCreation(AntaresBaseModel):
     comments: Optional[str] = ""
     #: List of areas that will be grouped in the district.
     areas: Optional[List[str]] = []
+    #: Base filter for the district.
     base_filter: Optional[DistrictBaseFilter] = None
 
 
