@@ -120,6 +120,31 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     )
     assert not output_d3.status
 
+    # case create district with invalid area
+    create_district4_command: ICommand = CreateDistrict(
+        parameters=DistrictCreation(name="district with invalid area", output=False, areas=["unknown_area"]),
+        command_context=command_context,
+        study_version=study_version,
+    )
+    output_d4 = create_district4_command.apply(
+        study_data=study_dao,
+    )
+    assert not output_d4.status
+    assert output_d4.message == "District 'district with invalid area' has invalid areas: ['unknown_area']"
+
+    # case update district with invalid area
+    update_district5_command: ICommand = UpdateDistrict(
+        id="one subtracted zone",
+        parameters=DistrictUpdate(areas=["unknown_area"]),
+        command_context=command_context,
+        study_version=study_version,
+    )
+    output_d5 = update_district5_command.apply(
+        study_data=study_dao,
+    )
+    assert not output_d5.status
+    assert output_d5.message == "District 'one subtracted zone' has invalid areas: ['unknown_area']"
+
     read_config = build(empty_study.config.study_path, "")
     assert len(read_config.sets.keys()) == 4
 

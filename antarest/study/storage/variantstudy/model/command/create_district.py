@@ -15,7 +15,6 @@ from typing import Any, Dict, Final, List, Optional
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.district_model import DistrictCreation, create_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -82,12 +81,13 @@ class CreateDistrict(ICommand):
         if study_data.district_exists(district_id):
             return command_failed(message=f"District '{self.parameters.name}' already exists and could not be created")
 
+        invalid_areas = study_data.get_invalid_areas_in_district(self.parameters.areas or [])
+        if invalid_areas:
+            return command_failed(message=f"District '{self.parameters.name}' has invalid areas: {invalid_areas}")
+
         new_district = create_district(self.parameters, district_id)
 
-        try:
-            study_data.save_district(new_district, self.parameters.base_filter)
-        except AreaNotFound as e:
-            return command_failed(message=f"Area not found {e}")
+        study_data.save_district(new_district, self.parameters.base_filter)
 
         return command_succeeded(message=district_id)
 
