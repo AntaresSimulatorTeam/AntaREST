@@ -12,7 +12,7 @@
 
 from dataclasses import dataclass
 from pathlib import PurePosixPath
-from typing import Dict, Optional, Sequence
+from typing import Dict, Mapping, Optional, Sequence
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_model import Area, AreaOutput
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -156,6 +157,10 @@ class InMemoryStudyDao(StudyDao):
         self._playlist_config = Playlist()
         # User resources
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        # Area
+        self._area: dict[str, Area] = {}
+        # Area output
+        self._area_output: dict[str, AreaOutput] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -723,3 +728,7 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         del self._user_resources[resource_path]
+
+    @override
+    def get_all_area_props(self) -> Mapping[str, AreaOutput]:
+        return self._area_output
