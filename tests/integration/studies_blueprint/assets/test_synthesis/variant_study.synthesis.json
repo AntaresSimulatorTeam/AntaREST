@@ -1495,31 +1495,11 @@
   },
   "sets": {
     "all areas": {
-      "ALL": [
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "annual"
-      ],
       "name": "All areas",
       "inverted_set": true,
       "areas": null,
       "output": false,
-      "filters_synthesis": [
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "annual"
-      ],
-      "filters_year": [
-        "hourly",
-        "daily",
-        "weekly",
-        "monthly",
-        "annual"
-      ]
+      "comments": null
     }
   },
   "outputs": {},
