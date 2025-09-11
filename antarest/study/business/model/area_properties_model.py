@@ -126,7 +126,7 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
 
 
 @all_optional_model
-class AreaFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
+class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
     thermal_properties: ThermalAreasProperties
     optimization_properties: OptimizationFileData
     adequacy_properties: AdequacyPathFileData

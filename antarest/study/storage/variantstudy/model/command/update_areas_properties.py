@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import override
 
 from antarest.study.business.model.area_properties_model import (
-    AreaFileData,
+    AreaPropertiesFileData,
     AreaPropertiesUpdate,
     get_adequacy_patch_path,
     get_optimization_path,
@@ -49,7 +49,7 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_properties: AreaFileData = AreaFileData(
+        current_properties: AreaPropertiesFileData = AreaPropertiesFileData(
             thermal_properties=ThermalAreasProperties(),
             optimization_properties=OptimizationFileData(),
             adequacy_properties=AdequacyPathFileData(),
@@ -60,7 +60,7 @@ class UpdateAreasProperties(ICommand):
         for area_id, area_properties in self.properties.items():
             current_optim_properties, current_adequacy_patch = self.fetch_area_properties(study_data, area_id)
 
-            current_properties = AreaFileData(
+            current_properties = AreaPropertiesFileData(
                 thermal_properties=current_thermal_props,
                 optimization_properties=OptimizationFileData(**current_optim_properties),
                 adequacy_properties=AdequacyPathFileData(**current_adequacy_patch),
@@ -83,7 +83,9 @@ class UpdateAreasProperties(ICommand):
         updated_areas = ", ".join(self.properties.keys())
         return command_succeeded(message=f"Areas properties updated: {updated_areas}")
 
-    def save_area_properties(self, study_data: FileStudy, area_id: str, current_properties: AreaFileData) -> None:
+    def save_area_properties(
+        self, study_data: FileStudy, area_id: str, current_properties: AreaPropertiesFileData
+    ) -> None:
         study_data.tree.save(
             current_properties.optimization_properties.model_dump(mode="json", by_alias=True),
             get_optimization_path(area_id),
