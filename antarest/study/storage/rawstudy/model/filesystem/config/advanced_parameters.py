@@ -33,6 +33,11 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 )
 
 
+class CompatibilitySection(AntaresBaseModel):
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
+    hydro_pmax: str | None = None
+
+
 class AdvancedParametersSection(AntaresBaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
 
@@ -66,6 +71,7 @@ class OtherPreferencesSection(AntaresBaseModel):
     unit_commitment_mode: UnitCommitmentMode | None = None
     number_of_cores_mode: SimulationCore | None = None
     day_ahead_reserve_management: ReserveManagement | None = None
+    hydro_pmax: str | None = None
     renewable_generation_modelling: RenewableGenerationModeling | None = None
     accurate_shave_peaks_include_short_term_storage: bool | None = None
 
@@ -76,6 +82,7 @@ class AdvancedParametersFileData(AntaresBaseModel):
     other_preferences: OtherPreferencesSection | None = Field(default=None, alias="other preferences")
     seed_parameters: SeedParametersSection | None = Field(default=None, alias="seeds - Mersenne Twister")
     advanced_parameters: AdvancedParametersSection | None = Field(default=None, alias="advanced parameters")
+    compatibility: CompatibilitySection | None = Field(default=None, alias="compatibility")
 
     def to_model(self) -> AdvancedParameters:
         args = {}
@@ -85,6 +92,8 @@ class AdvancedParametersFileData(AntaresBaseModel):
             args.update(self.seed_parameters.model_dump(exclude_none=True))
         if self.advanced_parameters:
             args.update(self.advanced_parameters.model_dump(exclude_none=True))
+        if self.compatibility:
+            args.update(self.compatibility.model_dump(exclude_none=True))
         return AdvancedParameters.model_validate(args)
 
     @classmethod
@@ -93,6 +102,7 @@ class AdvancedParametersFileData(AntaresBaseModel):
         args["other_preferences"] = parameters.model_dump(include=set(OtherPreferencesSection.model_fields))
         args["seed_parameters"] = parameters.model_dump(include=set(SeedParametersSection.model_fields))
         args["advanced_parameters"] = parameters.model_dump(include=set(AdvancedParametersSection.model_fields))
+        args["compatibility"] = parameters.model_dump(include=set(CompatibilitySection.model_fields))
         return cls.model_validate(args)
 
 
@@ -101,6 +111,7 @@ def parse_advanced_parameters(version: StudyVersion, data: dict[str, Any]) -> Ad
     args["advanced_parameters"] = data.get("advanced parameters", {})
     args["other_preferences"] = data.get("other preferences", {})
     args["seed_parameters"] = data.get("seeds - Mersenne Twister", {})
+    args["compatibility"] = data.get("compatibility", {})
     parameters = AdvancedParametersFileData.model_validate(args).to_model()
     validate_advanced_parameters_against_version(version, parameters)
     initialize_advanced_parameters_against_version(parameters, version)

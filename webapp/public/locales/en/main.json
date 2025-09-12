@@ -494,6 +494,8 @@
   "study.configuration.advancedParameters.spatialTimeSeriesCorrelation": "Spatial time-series correlation",
   "study.configuration.advancedParameters.otherPreferences": "Other preferences",
   "study.configuration.advancedParameters.windTimeSeriesGeneration": "Wind time-series generation",
+  "study.configuration.advancedParameters.compatibility": "Compatibility",
+  "study.configuration.advancedParameters.compatibility.hydro-pmax": "Hydro Pmax",
   "study.configuration.advancedParameters.loadTimeSeriesGeneration": "Load time-series generation",
   "study.configuration.advancedParameters.hydroTimeSeriesGeneration": "Hydro time-series generation",
   "study.configuration.advancedParameters.thermalTimeSeriesGeneration": "Thermal time-series generation",

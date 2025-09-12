@@ -114,6 +114,9 @@ class AdvancedParameters(AntaresBaseModel):
     seed_thermal_costs: int = 8005489
     seed_hydro_costs: int = 9005489
     seed_initial_reservoir_levels: int = 10005489
+    # Field introduced in v9.2
+    hydro_pmax: Optional[str] = None
+
     # Field removed in v9.2
     initial_reservoir_levels: Optional[InitialReservoirLevel] = None
     # Field introduced in v9.3
@@ -145,6 +148,7 @@ class AdvancedParametersUpdate(AntaresBaseModel):
     seed_initial_reservoir_levels: Optional[int] = None
     initial_reservoir_levels: Optional[InitialReservoirLevel] = None
     accurate_shave_peaks_include_short_term_storage: Optional[bool] = None
+    hydro_pmax: Optional[str] = None
 
 
 def update_advanced_parameters(
