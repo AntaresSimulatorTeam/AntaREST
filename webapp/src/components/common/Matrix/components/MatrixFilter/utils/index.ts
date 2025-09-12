@@ -115,6 +115,7 @@ const createIndexedValues = R.memoizeWith(
  * @param props.isTimeSeries - Whether the data represents a time series
  * @param props.timeFrequency - The time frequency of the data
  * @param props.totalRows - Total number of rows in the dataset
+ * @param props.datesInfo
  * @returns Array of row indices that match the filter criteria
  */
 export function getTemporalIndices({
@@ -436,9 +437,9 @@ export const INDEX_TYPE_TO_DATEINFO_PROPERTY: Record<string, keyof DateInfo> = {
 /**
  * Retrieves the temporal value from a given date object based on the specified indexing type.
  *
- * @param {DateInfo} date - The date object.
- * @param {TimeIndexingType} indexingType - The type of value we want to extract.
- * @return {number} The extracted temporal value from the date object.
+ * @param date - The date object.
+ * @param indexingType - The type of value we want to extract.
+ * @returns The extracted temporal value from the date object.
  */
 export function getTemporalValue(date: DateInfo, indexingType: TimeIndexingType): number {
   const property = INDEX_TYPE_TO_DATEINFO_PROPERTY[indexingType];

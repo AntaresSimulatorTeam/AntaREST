@@ -80,7 +80,7 @@ enum RenewableGenerationModeling {
 
 enum HydroPMax {
   daily = "daily",
-  hourly = "hourly"
+  hourly = "hourly",
 }
 
 ////////////////////////////////////////////////////////////////
@@ -129,7 +129,6 @@ export interface AdvancedParamsFormFields {
 
   // Since v9.3
   accurateShavePeaksIncludeShortTermStorage?: boolean;
-
 }
 
 type AdvancedParamsFormFields_RAW = Omit<AdvancedParamsFormFields, "accuracyOnCorrelation"> & {

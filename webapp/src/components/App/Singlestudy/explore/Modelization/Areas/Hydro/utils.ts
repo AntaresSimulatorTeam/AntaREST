@@ -148,7 +148,7 @@ export const HYDRO_ROUTES: HydroRoute[] = [
   {
     path: "maxDailyPumpEnergy",
     type: HydroMatrix.MaxDailyPumpEnergy,
-  }
+  },
 ];
 
 export const MATRICES: Matrices = {

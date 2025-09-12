@@ -26,7 +26,6 @@ function Hydro() {
   const studyVersion = Number(study.version);
   const [hydroPmax, setHydroPmax] = useState<string>("");
 
-
   useEffect(() => {
     getAdvancedParamsFormFields(study.id).then((data) => {
       setHydroPmax(data.hydroPmax || "");
@@ -51,11 +50,11 @@ function Hydro() {
       studyVersion >= 860 && { label: "Min Gen", path: `${basePath}/mingen` },
       ...(studyVersion >= 920 && hydroPmax === "hourly"
         ? [
-          { label: "Max Pump Power", path: `${basePath}/maxHourlyPumpPower` },
-          { label: "Max Gen Power", path: `${basePath}/maxHourlyGenPower` },
-          { label: "Max Pump Energy", path: `${basePath}/maxDailyPumpEnergy` },
-          { label: "Max Gen Energy", path: `${basePath}/maxDailyGenEnergy` },
-        ]
+            { label: "Max Pump Power", path: `${basePath}/maxHourlyPumpPower` },
+            { label: "Max Gen Power", path: `${basePath}/maxHourlyGenPower` },
+            { label: "Max Pump Energy", path: `${basePath}/maxDailyPumpEnergy` },
+            { label: "Max Gen Energy", path: `${basePath}/maxDailyGenEnergy` },
+          ]
         : []),
     ].filter(Boolean);
   }, [areaId, study?.id, studyVersion, hydroPmax]);
