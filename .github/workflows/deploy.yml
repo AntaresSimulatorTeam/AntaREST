@@ -4,6 +4,7 @@ on:
     branches:
       - "master"
       - "hotfix/**"
+      - "fix/desktop-watcher-config-disabled"
 
 jobs:
   binary:
