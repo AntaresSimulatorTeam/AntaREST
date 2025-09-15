@@ -13,7 +13,7 @@
 import logging
 from typing import Any, Dict, List, Mapping, Optional
 
-from antarest.core.exceptions import DuplicateAreaName, LayerNotFound
+from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotFound
 from antarest.core.model import JSON
 from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_info_map
 from antarest.study.business.model.area_model import (
@@ -28,6 +28,10 @@ from antarest.study.business.model.area_properties_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AreaFileData,
+    ThermalAreasProperties,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, OptimizationParameters
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
@@ -41,6 +45,10 @@ from antarest.study.storage.variantstudy.model.command.update_config import Upda
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 logger = logging.getLogger(__name__)
+
+
+_ALL_AREAS_PATH = "input/areas"
+_THERMAL_AREAS_PATH = "input/thermal/areas"
 
 
 class AreaManager:
@@ -69,7 +77,40 @@ class AreaManager:
         Raises:
             ConfigFileNotFound: if a configuration file is not found.
         """
-        return study.get_study_dao().get_all_area_props()
+        file_study = study.get_files()
+
+        # Get the area information from the `/input/areas/<area>` file.
+        path = _ALL_AREAS_PATH
+        try:
+            areas_cfg = file_study.tree.get(path.split("/"), depth=5)
+        except KeyError:
+            raise ConfigFileNotFound(path) from None
+        else:
+            # "list" and "sets" must be removed: we only need areas.
+            areas_cfg.pop("list", None)
+            areas_cfg.pop("sets", None)
+
+        # Get the unserverd and spilled energy costs from the `/input/thermal/areas.ini` file.
+        path = _THERMAL_AREAS_PATH
+        try:
+            thermal_cfg = file_study.tree.get(path.split("/"), depth=3)
+        except KeyError:
+            raise ConfigFileNotFound(path) from None
+        else:
+            thermal_areas = ThermalAreasProperties(**thermal_cfg)
+
+        # areas_cfg contains a dictionary where the keys are the area IDs,
+        # and the values are objects that can be converted to `AreaFolder`.
+        area_map = {}
+        for area_id, area_cfg in areas_cfg.items():
+            area_folder = AreaFileData(**area_cfg)
+            area_map[area_id] = AreaOutput.from_model(
+                area_folder,
+                average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
+                average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
+            )
+
+        return area_map
 
     # noinspection SpellCheckingInspection
     def update_areas_props(

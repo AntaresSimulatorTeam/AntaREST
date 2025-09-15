@@ -26,9 +26,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 
-ALL_AREAS_PATH = ["input", "areas"]
-THERMAL_AREAS_PATH = ["input", "thermal", "areas"]
-
 
 class AreaType(enum.Enum):
     AREA = "AREA"
