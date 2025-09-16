@@ -15,6 +15,7 @@
 import { Box } from "@mui/material";
 import type { StudyMetadata } from "../../../../types/types";
 import Actions from "./Actions";
+import Breadcrumb from "./Breadcrumb";
 import Details from "./Details";
 
 interface Props {
@@ -43,6 +44,7 @@ function NavHeader({ study, parentStudy, variantNb, isExplorer }: Props) {
         variantNb={variantNb}
         isExplorer={isExplorer}
       />
+      <Breadcrumb folder={study.folder} studyId={study.id} workspace={study.workspace} />
       <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
     </Box>
   );
