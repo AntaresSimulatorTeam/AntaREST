@@ -21,7 +21,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     DistrictSet,
     district_set_sign_from_base_filter,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 DISTRICTS_PATH = ["input", "areas", "sets"]
@@ -48,7 +47,7 @@ class FileStudyDistrictDao(DistrictDao):
 
         all_areas = list(file_study.config.areas)
         return [
-            DistrictSet.from_data(district_data).to_model(district_id, all_areas)
+            DistrictSet.from_data(district_data, district_id).to_model(district_id, all_areas)
             for district_id, district_data in districts.items()
         ]
 
@@ -66,7 +65,7 @@ class FileStudyDistrictDao(DistrictDao):
             raise DistrictConfigNotFound(str(path))
 
         all_areas = list(study_data.config.areas)
-        return DistrictSet.from_data(district_data).to_model(district_id, all_areas)
+        return DistrictSet.from_data(district_data, district_id).to_model(district_id, all_areas)
 
     @override
     def district_exists(self, district_id: str) -> bool:
@@ -90,10 +89,8 @@ class FileStudyDistrictDao(DistrictDao):
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
-        district_id = transform_name_to_id(district.name)
-
         # Update the in-memory config
-        study_data.config.sets[district_id] = DistrictSet.from_model(district, district_base_filter)
+        study_data.config.sets[district.id] = DistrictSet.from_model(district, district_base_filter)
 
         # Persist the change in the filesystem
         item_key = district_set_sign_from_base_filter(district_base_filter)
@@ -106,7 +103,7 @@ class FileStudyDistrictDao(DistrictDao):
                 "output": district.output,
                 "comments": district.comments,
             },
-            ["input", "areas", "sets", district_id],
+            ["input", "areas", "sets", district.id],
         )
 
     @override

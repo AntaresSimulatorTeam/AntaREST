@@ -48,12 +48,12 @@ class DistrictSet(AntaresBaseModel):
         )
 
     @classmethod
-    def from_data(cls, data: Any) -> "DistrictSet":
+    def from_data(cls, data: Any, district_id: str) -> "DistrictSet":
         inverted_set = district_set_sign_from_data(data) == "-"
         areas = data.get("-", []) if inverted_set else data.get("+", [])
         return DistrictSet.model_validate(
             {
-                "name": data.get("caption", None),
+                "name": data.get("caption", district_id),
                 "output": data.get("output", True),
                 "comments": data.get("comments", ""),
                 "inverted_set": inverted_set,
