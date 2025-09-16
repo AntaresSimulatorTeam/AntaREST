@@ -24,15 +24,11 @@ from antarest.study.business.model.area_model import (
     UpdateAreaUi,
 )
 from antarest.study.business.model.area_properties_model import (
-    AreaProperties,
     AreaPropertiesUpdate,
-    encode_filter,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPatchMode,
     AreaFileData,
     ThermalAreasProperties,
 )
@@ -108,28 +104,11 @@ class AreaManager:
         area_map = {}
         for area_id, area_cfg in areas_cfg.items():
             area_folder = AreaFileData(**area_cfg)
-            nodal_opt = area_folder.optimization.nodal_optimization
-            filtering = area_folder.optimization.filtering
-            adequacy_section = area_folder.adequacy_patch.adequacy_patch if area_folder.adequacy_patch else None
-            adequacy_mode = adequacy_section.adequacy_patch_mode if adequacy_section else AdequacyPatchMode.OUTSIDE
-
-            properties = AreaProperties(
-                energy_cost_unsupplied=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
-                energy_cost_spilled=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
-                non_dispatch_power=nodal_opt.non_dispatchable_power,
-                dispatch_hydro_power=nodal_opt.dispatchable_hydro_power,
-                other_dispatch_power=nodal_opt.other_dispatchable_power,
-                spread_unsupplied_energy_cost=nodal_opt.spread_unsupplied_energy_cost,
-                spread_spilled_energy_cost=nodal_opt.spread_spilled_energy_cost,
-                filter_synthesis=encode_filter(filtering.filter_synthesis),
-                filter_by_year=encode_filter(filtering.filter_year_by_year),
-                adequacy_patch_mode=adequacy_mode,
+            area_map[area_id] = AreaOutput.from_model(
+                area_folder,
+                average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
+                average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
             )
-
-            area_output = AreaOutput.from_properties(properties)
-            if study.version < STUDY_VERSION_8_3:
-                area_output.adequacy_patch_mode = None
-            area_map[area_id] = area_output
 
         return area_map
 
@@ -153,16 +132,13 @@ class AreaManager:
         areas_properties: Dict[str, AreaPropertiesUpdate] = {}
 
         for area_id, update_area in properties.items():
-            old_properties = old_areas_by_ids[area_id].to_properties()
-            update_data = update_area.to_properties_update()
-            payload = update_data.model_dump(exclude_none=True)
-            new_properties = old_properties.model_copy(update=payload)
+            old_area = old_areas_by_ids[area_id]
+            new_area = old_area.model_copy(update=update_area.model_dump(exclude_none=True))
+            new_areas_by_ids[area_id] = new_area
 
-            area_output = AreaOutput.from_properties(new_properties)
-            if study.version < STUDY_VERSION_8_3:
-                area_output.adequacy_patch_mode = None
-            new_areas_by_ids[area_id] = area_output
-            areas_properties[area_id] = update_data
+            properties = update_area.model_dump(exclude_none=True, exclude_unset=True, by_alias=True)
+            area_properties = AreaPropertiesUpdate(**properties)
+            areas_properties.update({area_id: area_properties})
 
         command = UpdateAreasProperties(
             properties=areas_properties,
