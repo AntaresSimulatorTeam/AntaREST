@@ -11,12 +11,18 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import Any, List, Mapping, Optional, Sequence
+from typing import Any, Dict, List, Mapping, Optional, Sequence
 
 from pydantic import Field, field_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
+from antarest.study.business.model.area_properties_model import (
+    AreaProperties,
+    AreaPropertiesUpdate,
+    decode_filter,
+    encode_filter,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AdequacyPatchMode,
@@ -77,7 +83,7 @@ class AreaOutput(
     other_dispatchable_power: bool = Field(default=True)
     spread_unsupplied_energy_cost: float = Field(default=0.0)
     spread_spilled_energy_cost: float = Field(default=0.0)
-    adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE)
+    adequacy_patch_mode: Optional[AdequacyPatchMode] = Field(default=None)
 
     @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
     def _validate_filtering(cls, v: Any) -> str:
@@ -101,19 +107,71 @@ class AreaOutput(
         Returns:
             The `GetAreaDTO` object.
         """
-        obj = {
-            "average_unsupplied_energy_cost": average_unsupplied_energy_cost,
-            "average_spilled_energy_cost": average_spilled_energy_cost,
-            **area_folder.optimization.filtering.model_dump(mode="json", by_alias=False),
-            **area_folder.optimization.nodal_optimization.model_dump(mode="json", by_alias=False),
-            # adequacy_patch is only available if study version >= 830.
-            **(
-                area_folder.adequacy_patch.adequacy_patch.model_dump(mode="json", by_alias=False)
-                if area_folder.adequacy_patch
-                else {}
+        nodal_opt = area_folder.optimization.nodal_optimization
+        filtering = area_folder.optimization.filtering
+        adequacy_section = area_folder.adequacy_patch.adequacy_patch if area_folder.adequacy_patch else None
+
+        properties = AreaProperties(
+            energy_cost_unsupplied=average_unsupplied_energy_cost,
+            energy_cost_spilled=average_spilled_energy_cost,
+            non_dispatch_power=nodal_opt.non_dispatchable_power,
+            dispatch_hydro_power=nodal_opt.dispatchable_hydro_power,
+            other_dispatch_power=nodal_opt.other_dispatchable_power,
+            spread_unsupplied_energy_cost=nodal_opt.spread_unsupplied_energy_cost,
+            spread_spilled_energy_cost=nodal_opt.spread_spilled_energy_cost,
+            filter_synthesis=encode_filter(filtering.filter_synthesis),
+            filter_by_year=encode_filter(filtering.filter_year_by_year),
+            adequacy_patch_mode=(
+                adequacy_section.adequacy_patch_mode if adequacy_section else AdequacyPatchMode.OUTSIDE
             ),
-        }
-        return cls(**obj)
+        )
+        area_output = cls.from_properties(properties)
+        if adequacy_section is None:
+            area_output.adequacy_patch_mode = None
+        return area_output
+
+    @classmethod
+    def from_properties(cls, properties: AreaProperties) -> "AreaOutput":
+        return cls(
+            average_unsupplied_energy_cost=properties.energy_cost_unsupplied,
+            average_spilled_energy_cost=properties.energy_cost_spilled,
+            filter_synthesis=decode_filter(properties.filter_synthesis),
+            filter_year_by_year=decode_filter(properties.filter_by_year),
+            non_dispatchable_power=properties.non_dispatch_power,
+            dispatchable_hydro_power=properties.dispatch_hydro_power,
+            other_dispatchable_power=properties.other_dispatch_power,
+            spread_unsupplied_energy_cost=properties.spread_unsupplied_energy_cost,
+            spread_spilled_energy_cost=properties.spread_spilled_energy_cost,
+            adequacy_patch_mode=properties.adequacy_patch_mode,
+        )
+
+    def to_properties(self) -> AreaProperties:
+        data: Dict[str, Any] = {}
+        if self.average_unsupplied_energy_cost is not None:
+            data["energy_cost_unsupplied"] = self.average_unsupplied_energy_cost
+        if self.average_spilled_energy_cost is not None:
+            data["energy_cost_spilled"] = self.average_spilled_energy_cost
+        if self.non_dispatchable_power is not None:
+            data["non_dispatch_power"] = self.non_dispatchable_power
+        if self.dispatchable_hydro_power is not None:
+            data["dispatch_hydro_power"] = self.dispatchable_hydro_power
+        if self.other_dispatchable_power is not None:
+            data["other_dispatch_power"] = self.other_dispatchable_power
+        if self.spread_unsupplied_energy_cost is not None:
+            data["spread_unsupplied_energy_cost"] = self.spread_unsupplied_energy_cost
+        if self.spread_spilled_energy_cost is not None:
+            data["spread_spilled_energy_cost"] = self.spread_spilled_energy_cost
+        if self.filter_synthesis is not None:
+            data["filter_synthesis"] = encode_filter(self.filter_synthesis)
+        if self.filter_year_by_year is not None:
+            data["filter_by_year"] = encode_filter(self.filter_year_by_year)
+        if self.adequacy_patch_mode is not None:
+            data["adequacy_patch_mode"] = self.adequacy_patch_mode
+        return AreaProperties(**data)
+
+    def to_properties_update(self) -> AreaPropertiesUpdate:
+        payload = self.model_dump(exclude_none=True, exclude_unset=True, by_alias=True)
+        return AreaPropertiesUpdate(**payload)
 
     def _to_optimization(self) -> OptimizationFileData:
         obj = {name: getattr(self, name) for name in OptimizationFileData.FilteringSection.model_fields}
