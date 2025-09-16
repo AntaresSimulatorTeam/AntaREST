@@ -12,20 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import HomeIcon from "@mui/icons-material/Home";
-import { Box, Breadcrumbs, Link } from "@mui/material";
+import { Box, Breadcrumbs } from "@mui/material";
 import { useNavigate } from "react-router";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import BreadcrumbLink from "./BreadcrumbLink";
 import { buildBreadcrumbPath, shouldShowBreadcrumb } from "./utils";
 
-interface Props {
+interface BreadcrumbProps {
   studyId: string;
   workspace: string;
   folder?: string;
 }
 
-function Breadcrumb({ studyId, workspace, folder }: Props) {
+function Breadcrumb({ studyId, workspace, folder }: BreadcrumbProps) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -54,33 +54,18 @@ function Breadcrumb({ studyId, workspace, folder }: Props) {
 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <Breadcrumbs maxItems={5} sx={{ fontSize: "0.875rem" }}>
+      <Breadcrumbs maxItems={5} sx={{ fontSize: 13 }}>
         {pathHierarchy.map((folderName, index) => {
           const path = pathHierarchy.slice(0, index + 1).join("/");
           const isFirstSegment = index === 0;
 
           return (
-            <Link
+            <BreadcrumbLink
               key={path}
-              underline={isFirstSegment ? "none" : "hover"}
-              color="inherit"
+              folderName={folderName}
+              isFirstSegment={isFirstSegment}
               onClick={() => handleBreadcrumbClick(path)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-                fontSize: "0.875rem",
-              }}
-            >
-              {isFirstSegment ? (
-                <>
-                  <HomeIcon fontSize="inherit" sx={{ marginRight: 0.5 }} />
-                  {folderName}
-                </>
-              ) : (
-                folderName
-              )}
-            </Link>
+            />
           );
         })}
       </Breadcrumbs>
