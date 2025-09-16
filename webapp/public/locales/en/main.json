@@ -586,6 +586,7 @@
   "study.modelization.storages.penalizeVariationInjection.info": "Penalty on injection variation from stock to the network (€/MWh)",
   "study.modelization.storages.penalizeVariationWithdrawal": "Penalty on withdrawal variation",
   "study.modelization.storages.penalizeVariationWithdrawal.info": "Penalty on injection variation from the network (€/MWh)",
+  "study.modelization.storages.allowOverflow": "Allow overflow for the storage",
   "study.modelization.storages.initialLevel": "Initial level (%)",
   "study.modelization.storages.initialLevelOptim": "Initial level optimized",
   "study.modelization.storages.operatingParameters": "Operating Parameters",

@@ -215,6 +215,13 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 />
               </>
             )}
+            {studyVersion >= 930 && (
+              <SwitchFE
+                label={t("study.modelization.storages.allowOverflow")}
+                name="allowOverflow"
+                control={control}
+              />
+            )}
           </Fieldset>
         </>
       )}
