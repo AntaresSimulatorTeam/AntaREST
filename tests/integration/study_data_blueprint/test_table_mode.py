@@ -69,25 +69,25 @@ class TestTableMode:
         actual = res.json()
         assert set(actual["properties"]) == {
             # Optimization - Nodal optimization
-            "nonDispatchPower",
-            "dispatchHydroPower",
-            "otherDispatchPower",
-            "energyCostUnsupplied",
+            "nonDispatchablePower",
+            "dispatchableHydroPower",
+            "otherDispatchablePower",
+            "averageUnsuppliedEnergyCost",
             "spreadUnsuppliedEnergyCost",
-            "energyCostSpilled",
+            "averageSpilledEnergyCost",
             "spreadSpilledEnergyCost",
             # Optimization - Filtering
             "filterSynthesis",
-            "filterByYear",
+            "filterYearByYear",
             # Adequacy patch
             "adequacyPatchMode",
         }
 
         _de_values = {
-            "energyCostUnsupplied": 3456,
-            "dispatchHydroPower": False,
+            "averageUnsuppliedEnergyCost": 3456,
+            "dispatchableHydroPower": False,
             "filterSynthesis": "daily, monthly",  # not changed
-            "filterByYear": "annual, weekly",
+            "filterYearByYear": "annual, weekly",
         }
         _es_values = {"spreadSpilledEnergyCost": None}  # not changed
 
@@ -105,46 +105,46 @@ class TestTableMode:
         expected_areas: t.Dict[str, t.Dict[str, t.Any]]
         expected_areas = {
             "de": {
-                "energyCostSpilled": 0,
-                "energyCostUnsupplied": 3456,
-                "dispatchHydroPower": False,
+                "averageSpilledEnergyCost": 0,
+                "averageUnsuppliedEnergyCost": 3456,
+                "dispatchableHydroPower": False,
                 "filterSynthesis": "daily, monthly",
-                "filterByYear": "weekly, annual",
-                "nonDispatchPower": True,
-                "otherDispatchPower": True,
+                "filterYearByYear": "weekly, annual",
+                "nonDispatchablePower": True,
+                "otherDispatchablePower": True,
                 "spreadSpilledEnergyCost": 0,
                 "spreadUnsuppliedEnergyCost": 0,
             },
             "es": {
-                "energyCostSpilled": 0,
-                "energyCostUnsupplied": 3000,
-                "dispatchHydroPower": True,
+                "averageSpilledEnergyCost": 0,
+                "averageUnsuppliedEnergyCost": 3000,
+                "dispatchableHydroPower": True,
                 "filterSynthesis": "daily, monthly",
-                "filterByYear": "hourly, weekly, annual",
-                "nonDispatchPower": True,
-                "otherDispatchPower": True,
+                "filterYearByYear": "hourly, weekly, annual",
+                "nonDispatchablePower": True,
+                "otherDispatchablePower": True,
                 "spreadSpilledEnergyCost": 0,
                 "spreadUnsuppliedEnergyCost": 0,
             },
             "fr": {
-                "energyCostSpilled": 0,
-                "energyCostUnsupplied": 3000,
-                "dispatchHydroPower": True,
+                "averageSpilledEnergyCost": 0,
+                "averageUnsuppliedEnergyCost": 3000,
+                "dispatchableHydroPower": True,
                 "filterSynthesis": "",
-                "filterByYear": "hourly",
-                "nonDispatchPower": True,
-                "otherDispatchPower": True,
+                "filterYearByYear": "hourly",
+                "nonDispatchablePower": True,
+                "otherDispatchablePower": True,
                 "spreadSpilledEnergyCost": 0,
                 "spreadUnsuppliedEnergyCost": 0,
             },
             "it": {
-                "energyCostSpilled": 0,
-                "energyCostUnsupplied": 3000,
-                "dispatchHydroPower": True,
+                "averageSpilledEnergyCost": 0,
+                "averageUnsuppliedEnergyCost": 3000,
+                "dispatchableHydroPower": True,
                 "filterSynthesis": "",
-                "filterByYear": "hourly",
-                "nonDispatchPower": True,
-                "otherDispatchPower": True,
+                "filterYearByYear": "hourly",
+                "nonDispatchablePower": True,
+                "otherDispatchablePower": True,
                 "spreadSpilledEnergyCost": 0,
                 "spreadUnsuppliedEnergyCost": 0,
             },
@@ -164,10 +164,10 @@ class TestTableMode:
         actual = res.json()
         assert actual == expected_areas
 
-        # Specific tests for energyCostSpilled and energyCostUnsupplied
+        # Specific tests for averageSpilledEnergyCost and averageUnsuppliedEnergyCost
         _de_values = {
-            "energyCostSpilled": 123,
-            "energyCostUnsupplied": 456,
+            "averageSpilledEnergyCost": 123,
+            "averageUnsuppliedEnergyCost": 456,
         }
         res = client.put(
             f"/v1/studies/{internal_study_id}/table-mode/areas",
@@ -175,8 +175,8 @@ class TestTableMode:
         )
         assert res.status_code == 200, res.json()
         actual = res.json()["de"]
-        assert actual["energyCostSpilled"] == 123
-        assert actual["energyCostUnsupplied"] == 456
+        assert actual["averageSpilledEnergyCost"] == 123
+        assert actual["averageUnsuppliedEnergyCost"] == 456
 
         # Table Mode - Links
         # ==================

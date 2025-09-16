@@ -11,12 +11,20 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import List, Mapping, Optional, Sequence
+from typing import Any, List, Mapping, Optional, Sequence
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.business.all_optional_meta import all_optional_model, camel_case_model
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPatchMode,
+    AdequacyPathFileData,
+    AreaFileData,
+    OptimizationFileData,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.validation import validate_filtering
 
 
 class AreaType(enum.Enum):
@@ -45,3 +53,80 @@ class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):
     layer_x: Mapping[int, int] = Field(default_factory=dict, title="X position of each layer", alias="layerX")
     layer_y: Mapping[int, int] = Field(default_factory=dict, title="Y position of each layer", alias="layerY")
     layer_color: Mapping[int, str] = Field(default_factory=dict, title="Color of each layer", alias="layerColor")
+
+
+# noinspection SpellCheckingInspection
+@all_optional_model
+@camel_case_model
+class AreaOutput(
+    AntaresBaseModel,
+    extra="forbid",
+    validate_assignment=True,
+    populate_by_name=True,
+):
+    """
+    DTO object use to get the area information using a flat structure.
+    """
+
+    average_unsupplied_energy_cost: float = Field(0.0, description="average unserverd energy cost (€/MWh)")
+    average_spilled_energy_cost: float = Field(0.0, description="average spilled energy cost (€/MWh)")
+    filter_synthesis: str = Field("")
+    filter_year_by_year: str = Field("")
+    non_dispatchable_power: bool = Field(default=True)
+    dispatchable_hydro_power: bool = Field(default=True)
+    other_dispatchable_power: bool = Field(default=True)
+    spread_unsupplied_energy_cost: float = Field(default=0.0)
+    spread_spilled_energy_cost: float = Field(default=0.0)
+    adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE)
+
+    @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
+    def _validate_filtering(cls, v: Any) -> str:
+        return validate_filtering(v)
+
+    @classmethod
+    def from_model(
+        cls,
+        area_folder: AreaFileData,
+        *,
+        average_unsupplied_energy_cost: float,
+        average_spilled_energy_cost: float,
+    ) -> "AreaOutput":
+        """
+        Creates a `GetAreaDTO` object from configuration data.
+
+        Args:
+            area_folder: Configuration data read from the `/input/areas/<area>` information.
+            average_unsupplied_energy_cost: Unserverd energy cost (€/MWh).
+            average_spilled_energy_cost: Spilled energy cost (€/MWh).
+        Returns:
+            The `GetAreaDTO` object.
+        """
+        obj = {
+            "average_unsupplied_energy_cost": average_unsupplied_energy_cost,
+            "average_spilled_energy_cost": average_spilled_energy_cost,
+            **area_folder.optimization.filtering.model_dump(mode="json", by_alias=False),
+            **area_folder.optimization.nodal_optimization.model_dump(mode="json", by_alias=False),
+            # adequacy_patch is only available if study version >= 830.
+            **(
+                area_folder.adequacy_patch.adequacy_patch.model_dump(mode="json", by_alias=False)
+                if area_folder.adequacy_patch
+                else {}
+            ),
+        }
+        return cls(**obj)
+
+    def _to_optimization(self) -> OptimizationFileData:
+        obj = {name: getattr(self, name) for name in OptimizationFileData.FilteringSection.model_fields}
+        filtering_section = OptimizationFileData.FilteringSection(**obj)
+        obj = {name: getattr(self, name) for name in OptimizationFileData.ModalOptimizationSection.model_fields}
+        nodal_optimization_section = OptimizationFileData.ModalOptimizationSection(**obj)
+        args = {"filtering": filtering_section, "nodal_optimization": nodal_optimization_section}
+        return OptimizationFileData.model_validate(args)
+
+    def _to_adequacy_patch(self) -> Optional[AdequacyPathFileData]:
+        obj = {name: getattr(self, name) for name in AdequacyPathFileData.AdequacyPathSection.model_fields}
+        # If all fields are `None`, the object is empty.
+        if all(value is None for value in obj.values()):
+            return None
+        adequacy_path_section = AdequacyPathFileData.AdequacyPathSection(**obj)
+        return AdequacyPathFileData.model_validate({"adequacy_patch": adequacy_path_section})

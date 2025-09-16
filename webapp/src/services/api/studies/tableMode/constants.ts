@@ -41,15 +41,15 @@ export const TABLE_MODE_TYPES_ALIASES = {
 
 export const TABLE_MODE_COLUMNS_BY_TYPE = {
   [AREA]: [
-    "nonDispatchPower",
-    "dispatchHydroPower",
-    "otherDispatchPower",
-    "energyCostUnsupplied",
+    "nonDispatchablePower",
+    "dispatchableHydroPower",
+    "otherDispatchablePower",
+    "averageUnsuppliedEnergyCost",
     "spreadUnsuppliedEnergyCost",
-    "energyCostSpilled",
+    "averageSpilledEnergyCost",
     "spreadSpilledEnergyCost",
     "filterSynthesis",
-    "filterByYear",
+    "filterYearByYear",
     // Since v8.3
     "adequacyPatchMode",
   ],
