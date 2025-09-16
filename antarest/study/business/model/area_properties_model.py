@@ -85,7 +85,6 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
         return values
 
 
-
 @all_optional_model
 class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True):
     """
