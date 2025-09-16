@@ -372,11 +372,13 @@ class RawStudyInterface(StudyInterface):
         raw_service: RawStudyService,
         variant_service: VariantStudyService,
         user_service: LoginService,
+        repository: StudyMetadataRepository,
         study: RawStudy,
     ):
         self._raw_study_service = raw_service
         self._variant_study_service = variant_service
         self._user_service = user_service
+        self._repository = repository
         self._study = study
         self._cached_file_study: Optional[FileStudy] = None
         self._version = StudyVersion.parse(self._study.version)
@@ -427,8 +429,11 @@ class RawStudyInterface(StudyInterface):
             user = self._user_service.get_identity(jwt_user.id)
             if user and user.name:
                 study_antares = file_study.tree.get(["study", "antares"])
+                study_db = self._repository.get(self._study.id)
                 study_antares["editor"] = user.name
+                study_db.additional_data.editor = user.name
                 file_study.tree.save(study_antares, ["study", "antares"])
+                self._repository.save(study_db)
 
 
 class VariantStudyInterface(StudyInterface):
@@ -821,6 +826,7 @@ class StudyService:
                 self.storage_service.raw_study_service,
                 self.storage_service.variant_study_service,
                 self.user_service,
+                self.repository,
                 study,
             )
         else:

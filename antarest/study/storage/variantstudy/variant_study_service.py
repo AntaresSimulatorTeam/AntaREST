@@ -126,6 +126,17 @@ class VariantStudyService(AbstractStorageService):
                 study.additional_data = study.additional_data or StudyAdditionalData()
                 study.additional_data.editor = user_name
 
+    def _update_db_study_editor(self, study_id: str) -> None:
+        user_id = get_user_id()
+        study_db = self.repository.get(study_id)
+
+        if user_id and study_db:
+            user_name = self._get_user_name_from_id(int(user_id))
+
+            if user_name:
+                study_db.additional_data.editor = user_name
+                self.repository.save(study_db)
+
     @staticmethod
     def _get_user_name_from_id(user_id: int) -> str:
         """
@@ -246,6 +257,7 @@ class VariantStudyService(AbstractStorageService):
         ]
         study.commands.extend(new_commands)
         self._update_editor(study)
+        self._update_db_study_editor(study.id)
         self.on_variant_advance(study)
         self.event_bus.push(
             Event(
@@ -282,6 +294,7 @@ class VariantStudyService(AbstractStorageService):
             for i, command in enumerate(validated_commands)
         ]
         self._update_editor(study)
+        self._update_db_study_editor(study.id)
         self.on_variant_rebase(study)
         return str(study.id)
 
@@ -305,6 +318,7 @@ class VariantStudyService(AbstractStorageService):
             for idx in range(len(study.commands)):
                 study.commands[idx].index = idx
             self._update_editor(study)
+            self._update_db_study_editor(study.id)
             self.on_variant_rebase(study)
 
     def remove_command(self, study_id: str, command_id: str) -> None:
@@ -324,6 +338,7 @@ class VariantStudyService(AbstractStorageService):
             for idx, command in enumerate(study.commands):
                 command.index = idx
             self._update_editor(study)
+            self._update_db_study_editor(study.id)
             self.on_variant_rebase(study)
 
     def remove_all_commands(self, study_id: str) -> None:
@@ -338,6 +353,7 @@ class VariantStudyService(AbstractStorageService):
 
         study.commands = []
         self._update_editor(study)
+        self._update_db_study_editor(study.id)
         self.on_variant_rebase(study)
 
     def update_command(self, study_id: str, command_id: str, command: CommandDTO) -> None:
@@ -359,6 +375,7 @@ class VariantStudyService(AbstractStorageService):
             study.commands[index].command = validated_commands[0].action
             study.commands[index].args = to_json_string(validated_commands[0].args)
             self._update_editor(study)
+            self._update_db_study_editor(study.id)
             self.on_variant_rebase(study)
 
     def export_commands_matrices(self, study_id: str) -> FileDownloadTaskDTO:
