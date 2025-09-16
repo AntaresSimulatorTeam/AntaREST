@@ -51,11 +51,11 @@ def test_update_areas_properties(empty_study_870: FileStudy, command_context: Co
     assert expected_adequacy_props == empty_study.tree.get(get_adequacy_patch_path(area_id))
 
     update_args = {
-        "averageUnsuppliedEnergyCost": 2.0,
-        "averageSpilledEnergyCost": 3.0,
-        "nonDispatchablePower": False,
-        "dispatchableHydroPower": False,
-        "otherDispatchablePower": False,
+        "energyCostUnsupplied": 2.0,
+        "energyCostSpilled": 3.0,
+        "nonDispatchPower": False,
+        "dispatchHydroPower": False,
+        "otherDispatchPower": False,
         "spreadUnsuppliedEnergyCost": 4.0,
         "spreadSpilledEnergyCost": 5.0,
         "filterSynthesis": {"hourly"},

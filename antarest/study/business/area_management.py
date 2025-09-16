@@ -19,12 +19,13 @@ from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_i
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
-    AreaOutput,
     AreaType,
     UpdateAreaUi,
 )
 from antarest.study.business.model.area_properties_model import (
+    AreaProperties,
     AreaPropertiesUpdate,
+    encode_filter,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
@@ -66,7 +67,7 @@ class AreaManager:
         self._command_context = command_context
 
     # noinspection SpellCheckingInspection
-    def get_all_area_props(self, study: StudyInterface) -> Mapping[str, AreaOutput]:
+    def get_all_area_props(self, study: StudyInterface) -> Mapping[str, AreaProperties]:
         """
         Retrieves all areas of a study.
 
@@ -101,21 +102,37 @@ class AreaManager:
 
         # areas_cfg contains a dictionary where the keys are the area IDs,
         # and the values are objects that can be converted to `AreaFolder`.
-        area_map = {}
+        area_map: Dict[str, AreaProperties] = {}
         for area_id, area_cfg in areas_cfg.items():
             area_folder = AreaFileData(**area_cfg)
-            area_map[area_id] = AreaOutput.from_model(
-                area_folder,
-                average_unsupplied_energy_cost=thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
-                average_spilled_energy_cost=thermal_areas.spilled_energy_cost.get(area_id, 0.0),
-            )
+            optimization = area_folder.optimization
+            nodal_optimization = optimization.nodal_optimization
+            filtering = optimization.filtering
+
+            props_kwargs: Dict[str, Any] = {
+                "energy_cost_unsupplied": thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
+                "energy_cost_spilled": thermal_areas.spilled_energy_cost.get(area_id, 0.0),
+                "non_dispatch_power": nodal_optimization.non_dispatchable_power,
+                "dispatch_hydro_power": nodal_optimization.dispatchable_hydro_power,
+                "other_dispatch_power": nodal_optimization.other_dispatchable_power,
+                "spread_unsupplied_energy_cost": nodal_optimization.spread_unsupplied_energy_cost,
+                "spread_spilled_energy_cost": nodal_optimization.spread_spilled_energy_cost,
+                "filter_synthesis": encode_filter(filtering.filter_synthesis),
+                "filter_by_year": encode_filter(filtering.filter_year_by_year),
+            }
+
+            adequacy_patch = area_folder.adequacy_patch.adequacy_patch if area_folder.adequacy_patch else None
+            if adequacy_patch:
+                props_kwargs["adequacy_patch_mode"] = adequacy_patch.adequacy_patch_mode
+
+            area_map[area_id] = AreaProperties(**props_kwargs)
 
         return area_map
 
     # noinspection SpellCheckingInspection
     def update_areas_props(
-        self, study: StudyInterface, properties: Mapping[str, AreaOutput]
-    ) -> Mapping[str, AreaOutput]:
+        self, study: StudyInterface, properties: Mapping[str, AreaPropertiesUpdate]
+    ) -> Mapping[str, AreaProperties]:
         """
         Update the properties of ares.
 
@@ -133,12 +150,9 @@ class AreaManager:
 
         for area_id, update_area in properties.items():
             old_area = old_areas_by_ids[area_id]
-            new_area = old_area.model_copy(update=update_area.model_dump(exclude_none=True))
-            new_areas_by_ids[area_id] = new_area
-
-            properties = update_area.model_dump(exclude_none=True, exclude_unset=True, by_alias=True)
-            area_properties = AreaPropertiesUpdate(**properties)
-            areas_properties.update({area_id: area_properties})
+            update_data = update_area.model_dump(exclude_none=True)
+            new_areas_by_ids[area_id] = old_area.model_copy(update=update_data)
+            areas_properties[area_id] = update_area
 
         command = UpdateAreasProperties(
             properties=areas_properties,
@@ -152,7 +166,7 @@ class AreaManager:
 
     @staticmethod
     def get_table_schema() -> JSON:
-        return AreaOutput.model_json_schema()
+        return AreaProperties.model_json_schema()
 
     def get_all_areas(self, study: StudyInterface, area_type: Optional[AreaType] = None) -> List[Area]:
         """
