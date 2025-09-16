@@ -81,7 +81,9 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
                 options = encode_filter(decode_filter(val))
                 if any(opt not in FILTER_OPTIONS for opt in options):
                     raise ValueError(f"Invalid value in '{filter_name}'")
+                values[filter_name] = options
         return values
+
 
 
 @all_optional_model
@@ -114,14 +116,17 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
         filters = {
             "filterSynthesis": values.get("filterSynthesis"),
             "filterYearByYear": values.get("filterYearByYear"),
+            "filterByYear": values.get("filterByYear"),
         }
         for filter_name, val in filters.items():
             if val is not None:
                 options = encode_filter(decode_filter(val))
                 if any(opt not in FILTER_OPTIONS for opt in options):
                     raise ValueError(f"Invalid value in '{filter_name}'")
-                if isinstance(val, str):
-                    values[filter_name] = encode_filter(val)
+                values[filter_name] = options
+                if filter_name == "filterByYear":
+                    values.setdefault("filterYearByYear", options)
+                    values.pop("filterByYear", None)
         return values
 
 

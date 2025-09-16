@@ -81,13 +81,13 @@ function Configuration() {
                 studyId={study.id}
                 type="areas"
                 columns={[
-                  "averageUnsuppliedEnergyCost",
+                  "energyCostUnsupplied",
                   "spreadUnsuppliedEnergyCost",
-                  "averageSpilledEnergyCost",
+                  "energyCostSpilled",
                   "spreadSpilledEnergyCost",
-                  "nonDispatchablePower",
-                  "dispatchableHydroPower",
-                  "otherDispatchablePower",
+                  "nonDispatchPower",
+                  "dispatchHydroPower",
+                  "otherDispatchPower",
                 ]}
               />
             ),
@@ -98,7 +98,7 @@ function Configuration() {
               <TableMode
                 studyId={study.id}
                 type="areas"
-                columns={["filterYearByYear", "filterSynthesis"]}
+                columns={["filterByYear", "filterSynthesis"]}
               />
             ),
           ],
