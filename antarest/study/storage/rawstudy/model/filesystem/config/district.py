@@ -53,8 +53,8 @@ class DistrictSet(AntaresBaseModel):
         areas = data.get("-", []) if inverted_set else data.get("+", [])
         return DistrictSet.model_validate(
             {
-                "name": data["caption"],
-                "output": data["output"],
+                "name": data.get("caption", None),
+                "output": data.get("output", True),
                 "comments": data.get("comments", ""),
                 "inverted_set": inverted_set,
                 "areas": sorted(areas),
