@@ -2,7 +2,6 @@ FROM python:3.11-slim-bullseye
 
 RUN apt update && apt install -y procps gdb gcc g++ make git
 
-
 # Add the `ls` alias to simplify debugging
 RUN echo "alias ll='/bin/ls -l --color=auto'" >> /root/.bashrc
 
