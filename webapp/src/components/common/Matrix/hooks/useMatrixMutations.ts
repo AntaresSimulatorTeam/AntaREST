@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useFormCloseProtection from "@/hooks/useFormCloseProtection";
 import { updateMatrix } from "@/services/api/matrix";
 import { uploadFile } from "@/services/api/studies/raw";
 import { toError } from "@/utils/fnUtils";
