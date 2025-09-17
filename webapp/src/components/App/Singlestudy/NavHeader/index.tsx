@@ -44,7 +44,12 @@ function NavHeader({ study, parentStudy, variantNb, isExplorer }: Props) {
         variantNb={variantNb}
         isExplorer={isExplorer}
       />
-      <Breadcrumb folder={study.folder} studyId={study.id} workspace={study.workspace} />
+      <Breadcrumb
+        folder={study.folder}
+        studyId={study.id}
+        studyName={study.name}
+        workspace={study.workspace}
+      />
       <Details study={study} parentStudy={parentStudy} variantNb={variantNb} />
     </Box>
   );

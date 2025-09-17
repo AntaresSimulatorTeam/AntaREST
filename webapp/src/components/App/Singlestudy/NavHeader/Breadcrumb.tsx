@@ -17,40 +17,44 @@ import { useNavigate } from "react-router";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import BreadcrumbLink from "./BreadcrumbLink";
-import { buildBreadcrumbPath, shouldShowBreadcrumb } from "./utils";
+import { buildBreadcrumbPath } from "./utils";
 
 interface BreadcrumbProps {
   studyId: string;
+  studyName: string;
   workspace: string;
   folder?: string;
 }
 
-function Breadcrumb({ studyId, workspace, folder }: BreadcrumbProps) {
+function Breadcrumb({ studyId, studyName, workspace, folder }: BreadcrumbProps) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const pathHierarchy = buildBreadcrumbPath({
+    folderPath: folder,
+    workspaceName: workspace,
+    studyName,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleBreadcrumbClick = (folderPath: string) => {
-    dispatch(updateStudyFilters({ folder: `/${folderPath}` }));
-    navigate("/studies");
+  const handleBreadcrumbClick = (folderPath: string, isLastSegment: boolean) => {
+    if (isLastSegment) {
+      // Navigate to the specific study's detail page when clicking the study name
+      // This allows users to go back to the study overview from any sub-page
+      navigate(`/studies/${studyId}`);
+    } else {
+      // Navigate to studies list with folder filter when clicking folder segments
+      // This allows users to browse other studies in the same folder hierarchy
+      dispatch(updateStudyFilters({ folder: `/${folderPath}` }));
+      navigate("/studies");
+    }
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
-  if (!folder) {
-    return null;
-  }
-
-  const pathHierarchy = buildBreadcrumbPath(folder, workspace, studyId);
-
-  if (!shouldShowBreadcrumb(pathHierarchy)) {
-    return null;
-  }
 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -58,13 +62,14 @@ function Breadcrumb({ studyId, workspace, folder }: BreadcrumbProps) {
         {pathHierarchy.map((folderName, index) => {
           const path = pathHierarchy.slice(0, index + 1).join("/");
           const isFirstSegment = index === 0;
+          const isLastSegment = index === pathHierarchy.length - 1;
 
           return (
             <BreadcrumbLink
               key={path}
               folderName={folderName}
               isFirstSegment={isFirstSegment}
-              onClick={() => handleBreadcrumbClick(path)}
+              onClick={() => handleBreadcrumbClick(path, isLastSegment)}
             />
           );
         })}

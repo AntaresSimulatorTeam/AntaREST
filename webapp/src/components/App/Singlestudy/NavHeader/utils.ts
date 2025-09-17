@@ -12,51 +12,43 @@
  * This file is part of the Antares project.
  */
 
-import * as R from "ramda";
-import { DEFAULT_WORKSPACE_NAME } from "@/components/common/utils/constants";
+interface BuildBreadcrumbPathParams {
+  studyName: string;
+  workspaceName: string;
+  folderPath?: string;
+}
 
 /**
  * Builds the complete folder path hierarchy for breadcrumb navigation.
  *
- * @param folderPath - The folder path from study metadata
- * @param workspaceName - The workspace name to include in the hierarchy
- * @param studyIdToRemove - Study ID to filter out from the path (API adds it automatically)
+ * @param params - The parameters for building the breadcrumb path
+ * @param params.studyName - The study name to always include at the end
+ * @param params.workspaceName - The workspace name to include in the hierarchy
+ * @param params.folderPath - The folder path from study metadata
  * @returns Array of folder names representing the complete path hierarchy
  */
-export function buildBreadcrumbPath(
-  folderPath: string,
-  workspaceName?: string,
-  studyIdToRemove?: string,
-): string[] {
-  const pathSegments = folderPath.split("/").filter(Boolean);
-
-  // Remove study ID if it's the last segment (API adds it automatically)
-  if (studyIdToRemove) {
-    const lastSegment = R.last(pathSegments);
-    if (lastSegment === studyIdToRemove) {
-      pathSegments.pop();
-    }
-  }
+export function buildBreadcrumbPath({
+  studyName,
+  folderPath,
+  workspaceName,
+}: BuildBreadcrumbPathParams) {
+  const pathSegments = folderPath ? folderPath.split("/").filter(Boolean) : [];
 
   // Build complete hierarchy including workspace (same pattern as StudyTree)
-  return workspaceName ? [workspaceName, ...pathSegments] : pathSegments;
-}
+  const hierarchy = [workspaceName, ...pathSegments];
 
-/**
- * Determines if the breadcrumb should be displayed based on the folder structure.
- *
- * @param pathHierarchy - Array of folder names in the hierarchy
- * @returns true if breadcrumb should be shown, false otherwise
- */
-export function shouldShowBreadcrumb(pathHierarchy: string[]) {
-  if (pathHierarchy.length === 0) {
-    return false;
+  // When no folder path exists, ensure default workspace and study names are included
+  // in the breadcrumb hierarchy to maintain navigation context and enable users
+  // to navigate back to the study overview or workspace listing
+  if (!folderPath) {
+    hierarchy.push(studyName);
+    return hierarchy;
   }
 
-  // Hide if only default workspace (no meaningful folder structure)
-  if (pathHierarchy.length === 1 && pathHierarchy[0] === DEFAULT_WORKSPACE_NAME) {
-    return false;
-  }
+  // Replace the last folder segment with the study name to provide clear navigation context
+  // This ensures users always see the study name as the final breadcrumb segment
+  // and can click it to return to the study overview page
+  hierarchy[hierarchy.length - 1] = studyName;
 
-  return true;
+  return hierarchy;
 }
