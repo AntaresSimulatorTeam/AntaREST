@@ -33,7 +33,7 @@ class TestTableMode:
     which contains the following areas: ["de", "es", "fr", "it"].
     """
 
-    @pytest.mark.parametrize("study_version", [0, 810, 830, 860, 870, 880, 920])
+    @pytest.mark.parametrize("study_version", [0, 810, 830, 860, 870, 880, 920, 930])
     def test_lifecycle__nominal(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ) -> None:
@@ -668,6 +668,8 @@ class TestTableMode:
                 "efficiencyWithdrawal",
                 "penalizeVariationInjection",
                 "penalizeVariationWithdrawal",
+                # Since v9.3
+                "allowOverflow",
             }
 
             # Prepare data for short-term storage tests
@@ -729,6 +731,8 @@ class TestTableMode:
                 _fr_tesla_values["efficiencyWithdrawal"] = 0.8
                 _fr_tesla_values["penalizeVariationInjection"] = False
                 _fr_tesla_values["penalizeVariationWithdrawal"] = True
+            if study_version >= 930:
+                _fr_tesla_values["allowOverflow"] = True
 
             res = client.put(
                 f"/v1/studies/{internal_study_id}/table-mode/st-storages",
@@ -790,6 +794,10 @@ class TestTableMode:
                     expected[key]["penalizeVariationWithdrawal"] = False
                 expected["fr / tesla"]["efficiencyWithdrawal"] = 0.8
                 expected["fr / tesla"]["penalizeVariationWithdrawal"] = True
+            if study_version >= 930:
+                for key in expected:
+                    expected[key]["allowOverflow"] = False
+                expected["fr / tesla"]["allowOverflow"] = True
 
             assert actual == expected
 
