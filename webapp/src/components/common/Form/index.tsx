@@ -13,7 +13,7 @@
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
+import useFormCloseProtection from "@/hooks/useFormCloseProtection";
 import { toError } from "@/utils/fnUtils";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";

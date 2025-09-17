@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import useFormCloseProtection from "@/hooks/useCloseFormSecurity";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useFormCloseProtection from "@/hooks/useFormCloseProtection";
 import { getColumnWidth } from "@/utils/dataGridUtils";
 import { toError } from "@/utils/fnUtils";
 import { mergeSxProp } from "@/utils/muiUtils";

@@ -22,6 +22,13 @@ export interface UIState {
   maintenanceMode: boolean;
   messageInfo: string;
   taskNotificationsCount: number;
+  form: {
+    status: {
+      isSubmitting: boolean;
+      isDirty: boolean;
+    };
+    closeDialogStatus: "opened" | "closed" | "confirmed" | "canceled";
+  };
 }
 
 const initialState = {
@@ -31,6 +38,13 @@ const initialState = {
   maintenanceMode: false,
   messageInfo: "",
   taskNotificationsCount: 0,
+  form: {
+    status: {
+      isSubmitting: false,
+      isDirty: false,
+    },
+    closeDialogStatus: "closed",
+  },
 } as UIState;
 
 const n = makeActionName("ui");
@@ -57,6 +71,12 @@ export const setMessageInfo = createAction<UIState["messageInfo"]>(n("SET_MESSAG
 
 export const setMaintenanceMode = createAction<UIState["maintenanceMode"]>(
   n("SET_MAINTENANCE_MODE"),
+);
+
+export const setFormStatus = createAction<UIState["form"]["status"]>(n("SET_FORM_STATUS"));
+
+export const setFormCloseDialogStatus = createAction<UIState["form"]["closeDialogStatus"]>(
+  n("SET_FORM_CLOSE_DIALOG_STATUS"),
 );
 
 ////////////////////////////////////////////////////////////////
@@ -88,5 +108,11 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(setMaintenanceMode, (draftState, action) => {
       draftState.maintenanceMode = action.payload;
+    })
+    .addCase(setFormStatus, (draftState, action) => {
+      draftState.form.status = action.payload;
+    })
+    .addCase(setFormCloseDialogStatus, (draftState, action) => {
+      draftState.form.closeDialogStatus = action.payload;
     });
 });
