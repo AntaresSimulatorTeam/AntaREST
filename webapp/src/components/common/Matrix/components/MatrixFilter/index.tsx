@@ -57,11 +57,11 @@ function MatrixFilter(
   });
 
   const datesInfo = useMemo(() => {
-    if (!dateTime || !isTimeSeries || dateTime.values.length === 0) {
+    if (!dateTime || dateTime.values.length === 0) {
       return [];
     }
     return extractDatesInfo(dateTime.values);
-  }, [dateTime, isTimeSeries]);
+  }, [dateTime]);
 
   // Filtered data based on current filter settings
   const currentFilteredData = useFilteredData({
