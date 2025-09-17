@@ -35,7 +35,13 @@ function MiscGen() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Matrix url={url} customColumns={columns} aggregateColumns={["total"]} isTimeSeries={false} />
+    <Matrix
+      url={url}
+      customColumns={columns}
+      aggregateColumns={["total"]}
+      isTimeSeries={false}
+      enableFilters
+    />
   );
 }
 
