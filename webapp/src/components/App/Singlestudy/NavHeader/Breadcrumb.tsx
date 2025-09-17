@@ -58,7 +58,7 @@ function Breadcrumb({ studyId, studyName, workspace, folder }: BreadcrumbProps) 
 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
-      <Breadcrumbs maxItems={5} sx={{ fontSize: 13 }}>
+      <Breadcrumbs maxItems={5} sx={{ fontSize: 15 }}>
         {pathHierarchy.map((folderName, index) => {
           const path = pathHierarchy.slice(0, index + 1).join("/");
           const isFirstSegment = index === 0;

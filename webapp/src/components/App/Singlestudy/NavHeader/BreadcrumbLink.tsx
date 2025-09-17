@@ -26,7 +26,7 @@ const truncatedTextStyle = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-  maxWidth: 150,
+  maxWidth: 160,
 } as const;
 
 const linkStyle = {
@@ -52,7 +52,7 @@ function BreadcrumbLink({ folderName, isFirstSegment, onClick }: BreadcrumbLinkP
 
   const linkContent = (
     <Link underline="hover" color="inherit" onClick={onClick} sx={linkStyle}>
-      {isFirstSegment && <HomeIcon fontSize="inherit" sx={{ mr: 0.5 }} />}
+      {isFirstSegment && <HomeIcon fontSize="inherit" sx={{ mr: 1 }} />}
       <span ref={textRef} style={truncatedTextStyle}>
         {folderName}
       </span>
