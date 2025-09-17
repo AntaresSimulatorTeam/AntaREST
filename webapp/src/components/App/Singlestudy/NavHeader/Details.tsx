@@ -83,6 +83,7 @@ function Details({ study, parentStudy, variantNb }: Props) {
       </Item>
       <StyledDivider />
       <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+      <StyledDivider />
       {parentStudy && (
         <Item>
           <AltRouteOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />

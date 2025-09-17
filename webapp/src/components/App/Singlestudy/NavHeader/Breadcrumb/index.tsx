@@ -16,23 +16,21 @@ import { Box, Breadcrumbs } from "@mui/material";
 import { useNavigate } from "react-router";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import type { StudyMetadata } from "@/types/types";
+import { buildBreadcrumbPath } from "../utils";
 import BreadcrumbLink from "./BreadcrumbLink";
-import { buildBreadcrumbPath } from "./utils";
 
 interface BreadcrumbProps {
-  studyId: string;
-  studyName: string;
-  workspace: string;
-  folder?: string;
+  study: StudyMetadata;
 }
 
-function Breadcrumb({ studyId, studyName, workspace, folder }: BreadcrumbProps) {
+function Breadcrumb({ study }: BreadcrumbProps) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const pathHierarchy = buildBreadcrumbPath({
-    folderPath: folder,
-    workspaceName: workspace,
-    studyName,
+  const breadcrumbPath = buildBreadcrumbPath({
+    folderPath: study.folder,
+    workspaceName: study.workspace,
+    studyName: study.name,
   });
 
   ////////////////////////////////////////////////////////////////
@@ -43,7 +41,7 @@ function Breadcrumb({ studyId, studyName, workspace, folder }: BreadcrumbProps) 
     if (isLastSegment) {
       // Navigate to the specific study's detail page when clicking the study name
       // This allows users to go back to the study overview from any sub-page
-      navigate(`/studies/${studyId}`);
+      navigate(`/studies/${study.id}`);
     } else {
       // Navigate to studies list with folder filter when clicking folder segments
       // This allows users to browse other studies in the same folder hierarchy
@@ -59,10 +57,10 @@ function Breadcrumb({ studyId, studyName, workspace, folder }: BreadcrumbProps) 
   return (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       <Breadcrumbs maxItems={5} sx={{ fontSize: 15 }}>
-        {pathHierarchy.map((folderName, index) => {
-          const path = pathHierarchy.slice(0, index + 1).join("/");
+        {breadcrumbPath.map((folderName, index) => {
+          const path = breadcrumbPath.slice(0, index + 1).join("/");
           const isFirstSegment = index === 0;
-          const isLastSegment = index === pathHierarchy.length - 1;
+          const isLastSegment = index === breadcrumbPath.length - 1;
 
           return (
             <BreadcrumbLink

@@ -96,14 +96,8 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
         }}
       >
         <Box sx={{ flex: 1 }}>
-          <Breadcrumb
-            studyId={study.id}
-            studyName={study.name}
-            workspace={study.workspace}
-            folder={study.folder}
-          />
+          <Breadcrumb study={study} />
         </Box>
-        <Divider flexItem orientation="vertical" />
         <Box sx={{ overflow: "auto" }}>
           <CustomScrollbar>
             <Box
@@ -140,6 +134,8 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
             onClick={handleUnarchive}
             startIcon={<UnarchiveOutlinedIcon />}
             variant="contained"
+            size="extra-small"
+            sx={{ px: 1 }}
           >
             {t("global.unarchive")}
           </Button>

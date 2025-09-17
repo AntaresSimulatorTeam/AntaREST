@@ -26,13 +26,17 @@ const truncatedTextStyle = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-  maxWidth: 160,
+  maxWidth: 180,
 } as const;
 
 const linkStyle = {
   display: "flex",
   alignItems: "center",
   cursor: "pointer",
+  transition: "color 0.15s ease",
+  "&:hover": {
+    color: "info.main",
+  },
 } as const;
 
 function BreadcrumbLink({ folderName, isFirstSegment, onClick }: BreadcrumbLinkProps) {
