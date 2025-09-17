@@ -39,6 +39,7 @@ EXPECTED_STORAGES = {
             "penalizeVariationWithdrawal": False,
             "reservoirCapacity": 0.0,
             "withdrawalNominalCapacity": 0.0,
+            "allowOverflow": True,
         }
     ],
     "fr": [
@@ -56,6 +57,7 @@ EXPECTED_STORAGES = {
             "penalizeVariationWithdrawal": False,
             "reservoirCapacity": 20000.0,
             "withdrawalNominalCapacity": 1500.0,
+            "allowOverflow": False,
         },
         {
             "efficiency": 1.0,
@@ -71,6 +73,7 @@ EXPECTED_STORAGES = {
             "penalizeVariationWithdrawal": False,
             "reservoirCapacity": 0.0,
             "withdrawalNominalCapacity": 0.0,
+            "allowOverflow": False,
         },
     ],
 }
@@ -134,6 +137,7 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
             efficiency=0.46,
             efficiency_withdrawal=0.47,
             penalize_variation_injection=True,
+            allow_overflow=True,
         ),
         study_version=study.version,
     )
@@ -142,8 +146,8 @@ def _set_up_study(study: StudyInterface, command_context: CommandContext) -> Non
 
 
 @pytest.fixture
-def study_interface(matrix_service: ISimpleMatrixService, empty_study_920, command_context) -> StudyInterface:
-    study_interface = FileStudyInterface(empty_study_920)
+def study_interface(matrix_service: ISimpleMatrixService, empty_study_930, command_context) -> StudyInterface:
+    study_interface = FileStudyInterface(empty_study_930)
     _set_up_study(study_interface, command_context)
     return study_interface
 

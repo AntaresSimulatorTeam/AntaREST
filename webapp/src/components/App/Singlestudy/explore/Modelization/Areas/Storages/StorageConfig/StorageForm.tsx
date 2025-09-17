@@ -139,6 +139,13 @@ function StorageForm({ studyId, studyVersion, areaId, storageId }: Props) {
                 width: 2,
               }}
             />
+            {studyVersion >= 930 && (
+              <SwitchFE
+                label={t("study.modelization.storages.allowOverflow")}
+                name="allowOverflow"
+                control={control}
+              />
+            )}
           </Fieldset>
           <Fieldset legend={t("study.modelization.storages.injectionParameters")}>
             <Tooltip
