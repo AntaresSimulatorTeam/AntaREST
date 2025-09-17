@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
@@ -33,7 +34,6 @@ import type {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import type { FolderDTO, WorkspaceDTO } from "@/components/App/Studies/StudyTree/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -262,6 +262,11 @@ interface LauncherMetrics {
   status: string;
 }
 
+export const getLauncherEngines = async () => {
+  const res = await client.get<{ engines: string[] }>("/v1/launcher/engines");
+  return res.data;
+};
+
 export const getLauncherVersions = async (): Promise<string[]> => {
   const res = await client.get("/v1/launcher/versions");
   return res.data;
@@ -283,8 +288,10 @@ export const getLauncherTimeLimit = async (): Promise<Record<string, number>> =>
   return res.data;
 };
 
-export const getLauncherMetrics = async (): Promise<LauncherMetrics> => {
-  const res = await client.get("/v1/launcher/load");
+export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherMetrics> => {
+  const res = await client.get("/v1/launcher/load", {
+    params: { launcher_id: launcherId },
+  });
   return res.data;
 };
 

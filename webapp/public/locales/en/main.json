@@ -713,6 +713,7 @@
   "study.question.killJob": "Are you sure you want to cancel the simulation job?",
   "study.error.exportOutput": "Failed to export the output",
   "study.error.listOutputs": "Failed to retrieve output list",
+  "study.error.launcherEngines": "Failed to retrieve launcher engines",
   "study.error.launcherVersions": "Failed to retrieve launcher versions",
   "study.error.launcherCores": "Failed to retrieve launcher number of cores",
   "study.error.launcherTimeLimit": "Failed to retrieve launcher time limit",

@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import LinearProgressWithLabel from "@/components/common/LinearProgressWithLabel";
+import SelectFE from "@/components/common/fieldEditors/SelectFE";
+import UsePromiseCond from "@/components/common/utils/UsePromiseCond";
 import { toError } from "@/utils/fnUtils";
 import {
   Box,
@@ -31,13 +34,15 @@ import * as R from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shallowEqual } from "react-redux";
-import { useMountedState } from "react-use";
+import { useInterval, useMountedState } from "react-use";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../../../redux/selectors";
 import {
   getLauncherCores,
+  getLauncherEngines,
+  getLauncherMetrics,
   getLauncherTimeLimit,
   getLauncherVersions,
   getStudyOutputs,
@@ -49,7 +54,6 @@ import SelectSingle from "../../../../common/SelectSingle";
 import BasicDialog from "../../../../common/dialogs/BasicDialog";
 import CheckBoxFE from "../../../../common/fieldEditors/CheckBoxFE";
 import SwitchFE from "../../../../common/fieldEditors/SwitchFE";
-import UsePromiseCond from "../../../../common/utils/UsePromiseCond";
 
 interface Props {
   open: boolean;
@@ -63,6 +67,7 @@ function LaunchStudyDialog(props: Props) {
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [options, setOptions] = useState<LaunchOptions>({
+    launcher_id: "local",
     auto_unzip: true,
   });
   const [solverVersion, setSolverVersion] = useState<string>();
@@ -73,6 +78,21 @@ function LaunchStudyDialog(props: Props) {
     (state) => studyIds.map((sid) => getStudy(state, sid)?.name),
     shallowEqual,
   );
+
+  const launcherEngines = usePromiseWithSnackbarError(getLauncherEngines, {
+    errorMessage: t("study.error.launcherEngines"),
+  });
+
+  const launcherMetrics = usePromiseWithSnackbarError(
+    () => getLauncherMetrics(options.launcher_id),
+    {
+      errorMessage: t("study.error.launchLoad"),
+      deps: [options.launcher_id],
+    },
+  );
+
+  // Refresh launcher metrics every minute
+  useInterval(launcherMetrics.reload, 60_000);
 
   const launcherCores = usePromiseWithSnackbarError(
     () =>
@@ -240,92 +260,21 @@ function LaunchStudyDialog(props: Props) {
             </List>
           )}
         </Box>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 2,
+
+        <TextField
+          id="launcher-option-output-suffix"
+          label={t("global.name")}
+          type="text"
+          variant="outlined"
+          value={options.output_suffix}
+          onChange={(e) => handleChange("output_suffix", e.target.value.trim())}
+          InputLabelProps={{
+            shrink: true,
           }}
-        >
-          <TextField
-            id="launcher-option-output-suffix"
-            label={t("global.name")}
-            type="text"
-            variant="outlined"
-            value={options.output_suffix}
-            onChange={(e) => handleChange("output_suffix", e.target.value.trim())}
-            InputLabelProps={{
-              shrink: true,
-            }}
-            sx={{
-              width: "50%",
-            }}
-          />
+        />
 
-          <UsePromiseCond
-            response={launcherTimeLimit}
-            ifFulfilled={(timeLimit) => (
-              <TextField
-                id="launcher-option-time-limit"
-                label={t("study.timeLimit")}
-                type="number"
-                variant="outlined"
-                required
-                value={options.time_limit ? options.time_limit / 3600 : timeLimit.defaultValue}
-                onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
-                  handleChange(
-                    "time_limit",
-                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) * 3600,
-                  );
-                }}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  min: timeLimit.min,
-                  max: timeLimit.max,
-                  step: 1,
-                }}
-                sx={{
-                  minWidth: "125px",
-                }}
-              />
-            )}
-            ifPending={() => <Skeleton width={125} height={60} />}
-            ifRejected={() => <Skeleton width={125} height={60} />}
-          />
-
-          <UsePromiseCond
-            response={launcherCores}
-            ifFulfilled={(cores) => (
-              <TextField
-                id="nb-cpu"
-                label={t("study.nbCpu")}
-                type="number"
-                variant="outlined"
-                required
-                value={options.nb_cpu ? options.nb_cpu : cores.defaultValue}
-                onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
-                  handleChange("nb_cpu", Math.min(Math.max(newValue, cores.min), cores.max));
-                }}
-                inputProps={{
-                  min: cores.min,
-                  max: cores.max,
-                  step: 1,
-                }}
-                sx={{
-                  minWidth: "125px",
-                }}
-              />
-            )}
-            ifPending={() => <Skeleton width={125} height={60} />}
-            ifRejected={() => <Skeleton width={125} height={60} />}
-          />
-        </Box>
         <Divider
-          sx={{ width: 1, mt: 2, border: "0.5px solid", opacity: 0.7 }}
+          sx={{ width: 1, mt: 2, mb: 1, border: "0.5px solid", opacity: 0.7 }}
           orientation="horizontal"
         />
         <Box
@@ -381,31 +330,6 @@ function LaunchStudyDialog(props: Props) {
             label={t("launcher.autoUnzip")}
             value={!!options.auto_unzip}
             onChange={(e, checked) => handleChange("auto_unzip", checked)}
-          />
-        </Box>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            width: 1,
-            mt: 1,
-          }}
-        >
-          <CheckBoxFE
-            label="Adequacy patch R"
-            value={!!options.adequacy_patch}
-            onChange={(e, checked) => {
-              handleChange("adequacy_patch", checked ? { legacy: true } : undefined);
-              handleOtherOptionsChange([{ option: "adq_patch_rc", active: checked }]);
-            }}
-          />
-          <CheckBoxFE
-            label="Adequacy patch non linearized"
-            value={!!options.adequacy_patch?.legacy}
-            onChange={(e, checked) =>
-              handleChange("adequacy_patch", checked ? { legacy: true } : {})
-            }
           />
         </Box>
         <Divider
@@ -470,6 +394,140 @@ function LaunchStudyDialog(props: Props) {
             </Box>
           )}
         </FormGroup>
+        <Divider
+          sx={{ width: 1, my: 2, border: "0.5px solid", opacity: 0.7 }}
+          orientation="horizontal"
+        />
+        <Box
+          sx={{
+            display: "flex",
+            gap: 2,
+            alignItems: "center",
+          }}
+        >
+          <UsePromiseCond
+            response={launcherEngines}
+            ifFulfilled={({ engines }) => (
+              <SelectFE
+                label="Clusters"
+                value={options.launcher_id}
+                options={engines}
+                onChange={(e) => {
+                  handleChange("launcher_id", e.target.value);
+                }}
+                sx={{ flex: 1 }}
+              />
+            )}
+            ifPending={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
+            ifRejected={() => (
+              <SelectFE
+                label="Clusters"
+                value={options.launcher_id}
+                options={[]}
+                sx={{ flex: 1 }}
+                disabled
+              />
+            )}
+          />
+          <UsePromiseCond
+            response={launcherTimeLimit}
+            ifFulfilled={(timeLimit) => (
+              <TextField
+                label={t("study.timeLimit")}
+                type="number"
+                variant="outlined"
+                required
+                value={options.time_limit ? options.time_limit / 3600 : timeLimit.defaultValue}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
+                  handleChange(
+                    "time_limit",
+                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) * 3600,
+                  );
+                }}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{
+                  min: timeLimit.min,
+                  max: timeLimit.max,
+                  step: 1,
+                }}
+                sx={{
+                  minWidth: 140,
+                }}
+              />
+            )}
+            ifPending={() => <Skeleton width={140} height={60} />}
+            ifRejected={() => <Skeleton width={140} height={60} />}
+          />
+          <UsePromiseCond
+            response={launcherCores}
+            ifFulfilled={(cores) => (
+              <TextField
+                label={t("study.nbCpu")}
+                type="number"
+                variant="outlined"
+                disabled
+                value={options.nb_cpu ? options.nb_cpu : cores.defaultValue}
+                onChange={(e) => {
+                  const newValue = parseInt(e.target.value, 10);
+                  handleChange("nb_cpu", Math.min(Math.max(newValue, cores.min), cores.max));
+                }}
+                inputProps={{
+                  min: cores.min,
+                  max: cores.max,
+                  step: 1,
+                }}
+                sx={{
+                  minWidth: 125,
+                }}
+              />
+            )}
+            ifPending={() => <Skeleton width={125} height={60} />}
+            ifRejected={() => <Skeleton width={125} height={60} />}
+          />
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            alignContent: "center",
+            gap: 1,
+            mt: 2,
+          }}
+        >
+          <UsePromiseCond
+            // Reload when launcher changes to see Skeleton
+            // because `keepLastResolvedOnReload` is set to true for refresh
+            key={options.launcher_id}
+            response={launcherMetrics}
+            keepLastResolvedOnReload
+            ifPending={() => <Skeleton width={500} />}
+            ifFulfilled={(data) => (
+              <>
+                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                  {t("study.allocatedCpuRate")}
+                </Typography>
+                <LinearProgressWithLabel
+                  value={Math.floor(data.allocatedCpuRate)}
+                  tooltip={t("study.allocatedCpuRate")}
+                  sx={{ width: 100 }}
+                />
+                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                  {t("study.clusterLoadRate")}
+                </Typography>
+                <LinearProgressWithLabel
+                  value={Math.floor(data.clusterLoadRate)}
+                  tooltip={t("study.clusterLoadRate")}
+                  sx={{ width: 100 }}
+                />
+                <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
+                  {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}
+                </Typography>
+              </>
+            )}
+          />
+        </Box>
       </Box>
     </BasicDialog>
   );
