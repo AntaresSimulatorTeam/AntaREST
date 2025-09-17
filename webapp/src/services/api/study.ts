@@ -272,19 +272,29 @@ export const getLauncherVersions = async (): Promise<string[]> => {
   return res.data;
 };
 
-export const getLauncherCores = async (): Promise<Record<string, number>> => {
-  const res = await client.get("/v1/launcher/nbcores");
+interface NbCoresConfig {
+  defaultValue: number;
+  min: number;
+  max: number;
+}
+
+export const getLauncherCores = async (launcherId?: string) => {
+  const res = await client.get<NbCoresConfig>("/v1/launcher/nbcores", {
+    params: { launcher: launcherId },
+  });
   return res.data;
 };
 
-/**
- * Time limit for SLURM jobs.
- * If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
- *
- * @returns The min, defaultValue and max for the time limit in hours.
- */
-export const getLauncherTimeLimit = async (): Promise<Record<string, number>> => {
-  const res = await client.get("/v1/launcher/time-limit");
+interface TimeLimitConfig {
+  defaultValue: number;
+  min: number;
+  max: number;
+}
+
+export const getLauncherTimeLimit = async (launcherId?: string) => {
+  const res = await client.get<TimeLimitConfig>("/v1/launcher/time-limit", {
+    params: { launcher: launcherId },
+  });
   return res.data;
 };
 

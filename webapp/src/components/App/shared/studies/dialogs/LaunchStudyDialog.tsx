@@ -81,7 +81,36 @@ function LaunchStudyDialog(props: Props) {
 
   const launcherEngines = usePromiseWithSnackbarError(getLauncherEngines, {
     errorMessage: t("study.error.launcherEngines"),
+    onDataChange: (data) => {
+      if (data && options.launcher_id && !data.engines.includes(options.launcher_id)) {
+        setOptions((prevOptions) => ({
+          ...prevOptions,
+          launcher_id: data.engines[0],
+        }));
+      }
+    },
   });
+
+  const launcherCores = usePromiseWithSnackbarError(() => getLauncherCores(options.launcher_id), {
+    onDataChange: (cores) => {
+      if (cores) {
+        setOptions((prevOptions) => ({
+          ...prevOptions,
+          nb_cpu: cores.defaultValue,
+        }));
+      }
+    },
+    errorMessage: t("study.error.launcherCores"),
+    deps: [options.launcher_id],
+  });
+
+  const launcherTimeLimit = usePromiseWithSnackbarError(
+    () => getLauncherTimeLimit(options.launcher_id),
+    {
+      errorMessage: t("study.error.launcherTimeLimit"),
+      deps: [options.launcher_id],
+    },
+  );
 
   const launcherMetrics = usePromiseWithSnackbarError(
     () => getLauncherMetrics(options.launcher_id),
@@ -93,38 +122,6 @@ function LaunchStudyDialog(props: Props) {
 
   // Refresh launcher metrics every minute
   useInterval(launcherMetrics.reload, 60_000);
-
-  const launcherCores = usePromiseWithSnackbarError(
-    () =>
-      getLauncherCores().then((cores) => {
-        setOptions((prevOptions) => {
-          return {
-            ...prevOptions,
-            nb_cpu: cores.defaultValue,
-          };
-        });
-        return cores;
-      }),
-    {
-      errorMessage: t("study.error.launcherCores"),
-    },
-  );
-
-  const launcherTimeLimit = usePromiseWithSnackbarError(
-    () =>
-      getLauncherTimeLimit().then((timeLimit) => {
-        setOptions((prevOptions) => {
-          return {
-            ...prevOptions,
-            time_limit: timeLimit.defaultValue * 3600,
-          };
-        });
-        return timeLimit;
-      }),
-    {
-      errorMessage: t("study.error.launcherTimeLimit"),
-    },
-  );
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -222,7 +219,12 @@ function LaunchStudyDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={isLaunching || !launcherCores.isFulfilled || !launcherTimeLimit.isFulfilled}
+            disabled={
+              isLaunching ||
+              !launcherEngines.isFulfilled ||
+              !launcherCores.isFulfilled ||
+              !launcherTimeLimit.isFulfilled
+            }
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -260,7 +262,6 @@ function LaunchStudyDialog(props: Props) {
             </List>
           )}
         </Box>
-
         <TextField
           id="launcher-option-output-suffix"
           label={t("global.name")}
@@ -272,7 +273,6 @@ function LaunchStudyDialog(props: Props) {
             shrink: true,
           }}
         />
-
         <Divider
           sx={{ width: 1, mt: 2, mb: 1, border: "0.5px solid", opacity: 0.7 }}
           orientation="horizontal"
@@ -419,39 +419,19 @@ function LaunchStudyDialog(props: Props) {
               />
             )}
             ifPending={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
-            ifRejected={() => (
-              <SelectFE
-                label="Clusters"
-                value={options.launcher_id}
-                options={[]}
-                sx={{ flex: 1 }}
-                disabled
-              />
-            )}
+            ifRejected={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
           />
           <UsePromiseCond
             response={launcherTimeLimit}
-            ifFulfilled={(timeLimit) => (
+            ifFulfilled={({ defaultValue }) => (
               <TextField
                 label={t("study.timeLimit")}
                 type="number"
                 variant="outlined"
-                required
-                value={options.time_limit ? options.time_limit / 3600 : timeLimit.defaultValue}
-                onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
-                  handleChange(
-                    "time_limit",
-                    Math.min(Math.max(newValue, timeLimit.min), timeLimit.max) * 3600,
-                  );
-                }}
+                disabled
+                value={defaultValue}
                 InputLabelProps={{
                   shrink: true,
-                }}
-                inputProps={{
-                  min: timeLimit.min,
-                  max: timeLimit.max,
-                  step: 1,
                 }}
                 sx={{
                   minWidth: 140,
@@ -463,20 +443,20 @@ function LaunchStudyDialog(props: Props) {
           />
           <UsePromiseCond
             response={launcherCores}
-            ifFulfilled={(cores) => (
+            ifFulfilled={({ min, max }) => (
               <TextField
                 label={t("study.nbCpu")}
                 type="number"
                 variant="outlined"
-                disabled
-                value={options.nb_cpu ? options.nb_cpu : cores.defaultValue}
+                required
+                value={options.nb_cpu}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
-                  handleChange("nb_cpu", Math.min(Math.max(newValue, cores.min), cores.max));
+                  handleChange("nb_cpu", Math.min(Math.max(newValue, min), max));
                 }}
                 inputProps={{
-                  min: cores.min,
-                  max: cores.max,
+                  min,
+                  max,
                   step: 1,
                 }}
                 sx={{
