@@ -586,6 +586,7 @@
   "study.modelization.storages.penalizeVariationInjection.info": "Pénalité sur la variation d'injection dans le stock depuis le réseau (€/MWh)",
   "study.modelization.storages.penalizeVariationWithdrawal": "Pénalité sur la variation de soutirage",
   "study.modelization.storages.penalizeVariationWithdrawal.info": "Pénalité sur la variation de soutirage du stock vers le réseau (€/MWh)",
+  "study.modelization.storages.allowOverflow": "Autoriser le débordement du stockage",
   "study.modelization.storages.initialLevel": "Niveau initial (%)",
   "study.modelization.storages.initialLevelOptim": "Niveau initial optimisé",
   "study.modelization.storages.operatingParameters": "Paramètres de fonctionnement",

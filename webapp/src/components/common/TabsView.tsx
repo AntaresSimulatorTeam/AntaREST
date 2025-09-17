@@ -13,6 +13,7 @@
  */
 
 import BackButton from "@/components/common/buttons/BackButton";
+import useFormCloseConfirm from "@/hooks/useFormCloseConfirm";
 import { TabContext, TabList, TabPanel, type TabListProps } from "@mui/lab";
 import { Box, Tab } from "@mui/material";
 import { useState } from "react";
@@ -39,15 +40,16 @@ function TabsView({
   disableGutters = false,
 }: TabsViewProps) {
   const [value, setValue] = useState(0);
+  const { withFormCloseCheck } = useFormCloseConfirm();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleChange = withFormCloseCheck((event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
     onChange?.(event, newValue);
-  };
+  });
 
   ////////////////////////////////////////////////////////////////
   // JSX
