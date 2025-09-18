@@ -46,6 +46,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.injectionModulation")}
               url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -55,6 +56,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.withdrawalModulation")}
               url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -71,6 +73,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.lowerRuleCurve")}
               url={`input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -80,6 +83,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.upperRuleCurve")}
               url={`input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -109,6 +113,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.injectionCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -118,6 +123,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.withdrawalCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -137,6 +143,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.injectionVariationCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_injection`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -146,6 +153,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
               title={t("study.modelization.storages.withdrawalVariationCost")}
               url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_withdrawal`}
               isTimeSeries={false}
+              enableFilters
               customColumns={["TS 1"]}
             />
           </Box>
@@ -159,6 +167,7 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
           title={t("study.modelization.storages.levelCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
           isTimeSeries={false}
+          enableFilters
           customColumns={["TS 1"]}
         />
       ),
