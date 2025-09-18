@@ -437,13 +437,11 @@ function LaunchStudyDialog(props: Props) {
                   max,
                   step: 1,
                 }}
-                sx={{
-                  minWidth: 125,
-                }}
+                sx={{ width: 150 }}
               />
             )}
-            ifPending={() => <Skeleton width={125} height={60} />}
-            ifRejected={() => <Skeleton width={125} height={60} />}
+            ifPending={() => <Skeleton width={150} height={60} />}
+            ifRejected={() => <Skeleton width={150} height={60} />}
           />
           {/* Field only to display the value, it is not editable */}
           <UsePromiseCond
@@ -458,13 +456,11 @@ function LaunchStudyDialog(props: Props) {
                 InputLabelProps={{
                   shrink: true,
                 }}
-                sx={{
-                  minWidth: 140,
-                }}
+                sx={{ width: 150 }}
               />
             )}
-            ifPending={() => <Skeleton width={140} height={60} />}
-            ifRejected={() => <Skeleton width={140} height={60} />}
+            ifPending={() => <Skeleton width={150} height={60} />}
+            ifRejected={() => <Skeleton width={150} height={60} />}
           />
         </Box>
         <Box
