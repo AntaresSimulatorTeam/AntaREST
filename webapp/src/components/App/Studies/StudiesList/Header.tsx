@@ -102,6 +102,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const isRootFolder = folderList.length === 1;
   const canScan = !isRootFolder && !isInDefaultWorkspace;
   const isDesktopMode = import.meta.env.MODE === "desktop";
+  const isReferenceStudyTypeActive = studyTypeFilter === "references";
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -217,9 +218,15 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </ToggleButton>
             </Tooltip>
           </ToggleButtonGroup>
-          <Tooltip title={t("studies.filters.toggleScope")}>
+          <Tooltip
+            title={
+              isReferenceStudyTypeActive
+                ? t("studies.filters.disableReferenceType")
+                : t("studies.filters.enableReferenceType")
+            }
+          >
             <IconButton onClick={toggleStudyTypeFilter}>
-              {studyTypeFilter === "references" ? <LayersIcon /> : <LayersClearIcon />}
+              {isReferenceStudyTypeActive ? <LayersClearIcon /> : <LayersIcon />}
             </IconButton>
           </Tooltip>
           {canScan && (

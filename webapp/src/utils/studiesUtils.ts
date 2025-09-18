@@ -90,7 +90,7 @@ const archivedPredicate = R.curry((archived: StudyFilters["archived"], study: St
   return archived ? study.archived : true;
 });
 
-const scopePredicate = R.curry((scope: StudyFilters["type"], study: StudyMetadata) => {
+const typePredicate = R.curry((scope: StudyFilters["type"], study: StudyMetadata) => {
   if (scope === "references") {
     return study.type === StudyType.RAW;
   }
@@ -114,7 +114,7 @@ export function filterStudies(filters: StudyFilters, studies: StudyMetadata[]): 
     groupsPredicate(filters.groups),
     managedPredicate(filters.managed),
     archivedPredicate(filters.archived),
-    scopePredicate(filters.type),
+    typePredicate(filters.type),
   ] as RA.Pred[];
   return R.filter(R.allPass(predicates), studies);
 }
