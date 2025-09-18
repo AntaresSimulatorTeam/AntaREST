@@ -32,6 +32,8 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import FolderIcon from "@mui/icons-material/Folder";
 import HomeIcon from "@mui/icons-material/Home";
+import LayersIcon from "@mui/icons-material/Layers";
+import LayersClearIcon from "@mui/icons-material/LayersClear";
 import RadarIcon from "@mui/icons-material/Radar";
 import {
   Box,
@@ -88,6 +90,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
   const folderList = folder.split("/");
   const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
+  const scopeFilter = useAppSelector((state) => getStudyFilters(state).scope);
   const sortConf = useAppSelector(getStudiesSortConf);
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
@@ -108,9 +111,13 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
     dispatch(updateStudyFilters({ folder: value }));
   };
 
-  const toggleStrictFolder = useCallback(() => {
+  const toggleStrictFolderFilter = useCallback(() => {
     dispatch(updateStudyFilters({ strictFolder: !strictFolderFilter }));
   }, [dispatch, strictFolderFilter]);
+
+  const toggleScopeFilter = useCallback(() => {
+    dispatch(updateStudyFilters({ scope: scopeFilter !== "references" ? "references" : "all" }));
+  }, [dispatch, scopeFilter]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -195,7 +202,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
           <ToggleButtonGroup
             value={strictFolderFilter}
             exclusive
-            onChange={toggleStrictFolder}
+            onChange={toggleStrictFolderFilter}
             size="extra-small"
             color="primary"
           >
@@ -210,6 +217,11 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </ToggleButton>
             </Tooltip>
           </ToggleButtonGroup>
+          <Tooltip title={t("studies.filters.toggleScope")}>
+            <IconButton onClick={toggleScopeFilter}>
+              {scopeFilter === "references" ? <LayersIcon /> : <LayersClearIcon />}
+            </IconButton>
+          </Tooltip>
           {canScan && (
             <Tooltip title={t("studies.scanFolder")}>
               <IconButton onClick={() => setConfirmFolderScan(true)}>
