@@ -18,7 +18,7 @@ from typing_extensions import override
 from antarest.core.model import JSON
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_1, STUDY_VERSION_8_3, STUDY_VERSION_8_6
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling, OptimizationParameters
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -89,7 +89,7 @@ class CreateArea(ICommand):
         if area_id in config.areas.keys():
             return command_failed(message=f"Area '{self.area_name}' already exists and could not be created")
 
-        config.areas[area_id] = OptimizationParameters(
+        config.areas[area_id] = AreaConfig(
             name=self.area_name,
             links={},
             thermals=[],

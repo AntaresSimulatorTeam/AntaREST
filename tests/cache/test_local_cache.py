@@ -19,8 +19,8 @@ from antares.study.version import StudyVersion
 from antarest.core.cache.business.local_chache import LocalCache, LocalCacheElement
 from antarest.core.config import CacheConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
     FileStudyTreeConfigDTO,
-    OptimizationParameters,
 )
 
 
@@ -33,7 +33,7 @@ def test_lifecycle():
         study_id="",
         version=StudyVersion.parse(0),
         areas={
-            "a1": OptimizationParameters(
+            "a1": AreaConfig(
                 name="a1",
                 links={},
                 thermals=[],

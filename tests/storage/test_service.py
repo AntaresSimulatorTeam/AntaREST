@@ -68,11 +68,11 @@ from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetad
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
-    OptimizationParameters,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -672,7 +672,7 @@ def test_download_output() -> None:
         includeClusters=True,
     )
 
-    area = OptimizationParameters(
+    area = AreaConfig(
         name="area",
         links={"west": LinkConfig(filters_synthesis=[], filters_year=[])},
         thermals=[],

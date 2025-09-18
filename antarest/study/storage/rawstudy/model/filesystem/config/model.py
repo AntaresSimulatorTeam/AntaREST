@@ -73,9 +73,9 @@ class LinkConfig(AntaresBaseModel, extra="ignore"):
         return values
 
 
-class OptimizationParameters(AntaresBaseModel, extra="forbid"):
+class AreaConfig(AntaresBaseModel, extra="forbid"):
     """
-    Object linked to /input/<area>/optimization.ini information
+    Object linked to /input/<area> configuration information
     """
 
     name: str
@@ -174,7 +174,7 @@ class FileStudyTreeConfig(DTO):
         study_id: str,
         version: StudyVersion,
         output_path: Optional[Path] = None,
-        areas: Optional[Dict[str, OptimizationParameters]] = None,
+        areas: Optional[Dict[str, AreaConfig]] = None,
         sets: Optional[Dict[str, DistrictSet]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[BindingConstraint]] = None,
@@ -301,7 +301,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_id: str
     version: StudyVersionInt
     output_path: Optional[Path] = None
-    areas: Dict[str, OptimizationParameters] = dict()
+    areas: Dict[str, AreaConfig] = dict()
     sets: Dict[str, DistrictSet] = dict()
     outputs: Dict[str, Simulation] = dict()
     bindings: List[BindingConstraint] = list()

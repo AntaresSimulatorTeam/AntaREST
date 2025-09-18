@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, OptimizationParameters
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.input.bindingconstraints.bindingconstraints_ini import (
     BindingConstraintsIni,
 )
@@ -47,7 +47,7 @@ def ini_file(study_dir: Path) -> Path:
 
 
 def create_study_config(study_dir: Path, ini_file: Path, version: StudyVersion, area_name: str) -> FileStudyTreeConfig:
-    area = OptimizationParameters(
+    area = AreaConfig(
         name=area_name, links={}, thermals=[], renewables=[], filters_synthesis=[], filters_year=[], st_storages=[]
     )
     areas = {area_name: area}

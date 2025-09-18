@@ -21,10 +21,10 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
-    OptimizationParameters,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
@@ -75,7 +75,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         study_id="",
         version=STUDY_VERSION_7_0,
         areas={
-            "a1": OptimizationParameters(
+            "a1": AreaConfig(
                 name="a1",
                 links={
                     "a2": LinkConfig(filters_synthesis=[], filters_year=[]),
@@ -86,7 +86,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 filters_synthesis=[],
                 filters_year=[],
             ),
-            "a2": OptimizationParameters(
+            "a2": AreaConfig(
                 name="a2",
                 links={"a3": LinkConfig(filters_synthesis=[], filters_year=[])},
                 thermals=[],
@@ -94,7 +94,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 filters_synthesis=[],
                 filters_year=[],
             ),
-            "a3": OptimizationParameters(
+            "a3": AreaConfig(
                 name="a3",
                 links={},
                 thermals=[],

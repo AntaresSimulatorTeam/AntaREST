@@ -227,7 +227,8 @@ class TableModeManager:
                 data[area_id] = area_dict
             if study.version < STUDY_VERSION_8_3:
                 for values in data.values():
-                    values.pop("adequacyPatchMode", None)
+                    if isinstance(values, dict):
+                        values.pop("adequacyPatchMode", None)
             return data
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkUpdate(**values) for key, values in data.items()}

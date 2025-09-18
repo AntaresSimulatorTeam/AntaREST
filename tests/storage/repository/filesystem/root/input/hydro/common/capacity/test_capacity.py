@@ -17,7 +17,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, OptimizationParameters
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
@@ -67,7 +67,7 @@ class TestInputHydroCommonCapacity:
             study_id=study_id,
             version=int(version),  # will become a `str` in the future
             areas={
-                name: OptimizationParameters(
+                name: AreaConfig(
                     name=name.upper(),
                     links={},
                     thermals=[],

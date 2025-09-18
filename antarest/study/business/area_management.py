@@ -24,17 +24,18 @@ from antarest.study.business.model.area_model import (
 )
 from antarest.study.business.model.area_properties_model import (
     AreaProperties,
+    AreaPropertiesFileData,
     AreaPropertiesUpdate,
-    encode_filter,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
+    AdequacyPathFileData,
     AreaFileData,
     ThermalAreasProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import DistrictSet, OptimizationParameters
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -105,27 +106,12 @@ class AreaManager:
         area_map: Dict[str, AreaProperties] = {}
         for area_id, area_cfg in areas_cfg.items():
             area_folder = AreaFileData(**area_cfg)
-            optimization = area_folder.optimization
-            nodal_optimization = optimization.nodal_optimization
-            filtering = optimization.filtering
-
-            props_kwargs: Dict[str, Any] = {
-                "energy_cost_unsupplied": thermal_areas.unserverd_energy_cost.get(area_id, 0.0),
-                "energy_cost_spilled": thermal_areas.spilled_energy_cost.get(area_id, 0.0),
-                "non_dispatch_power": nodal_optimization.non_dispatchable_power,
-                "dispatch_hydro_power": nodal_optimization.dispatchable_hydro_power,
-                "other_dispatch_power": nodal_optimization.other_dispatchable_power,
-                "spread_unsupplied_energy_cost": nodal_optimization.spread_unsupplied_energy_cost,
-                "spread_spilled_energy_cost": nodal_optimization.spread_spilled_energy_cost,
-                "filter_synthesis": encode_filter(filtering.filter_synthesis),
-                "filter_by_year": encode_filter(filtering.filter_year_by_year),
-            }
-
-            adequacy_patch = area_folder.adequacy_patch.adequacy_patch if area_folder.adequacy_patch else None
-            if adequacy_patch:
-                props_kwargs["adequacy_patch_mode"] = adequacy_patch.adequacy_patch_mode
-
-            area_map[area_id] = AreaProperties(**props_kwargs)
+            props_data = AreaPropertiesFileData(
+                thermal_properties=thermal_areas,
+                optimization_properties=area_folder.optimization,
+                adequacy_properties=area_folder.adequacy_patch or AdequacyPathFileData(),
+            )
+            area_map[area_id] = props_data.get_area_properties(area_id)
 
         return area_map
 
@@ -180,7 +166,7 @@ class AreaManager:
             A list of area/district information.
         """
         file_study = study.get_files()
-        cfg_areas: Dict[str, OptimizationParameters] = file_study.config.areas
+        cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
         result: List[Area] = []
 
         if area_type is None or area_type == AreaType.AREA:

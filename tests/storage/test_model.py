@@ -19,11 +19,11 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
     DistrictSet,
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
     Mode,
-    OptimizationParameters,
     Simulation,
     validate_config,
 )
@@ -39,7 +39,7 @@ def config() -> FileStudyTreeConfig:
         version=STUDY_VERSION_7_0,
         output_path=Path("output_path"),
         areas={
-            "a": OptimizationParameters(
+            "a": AreaConfig(
                 name="a",
                 links={},
                 thermals=[ThermalCluster(name="cluster")],
