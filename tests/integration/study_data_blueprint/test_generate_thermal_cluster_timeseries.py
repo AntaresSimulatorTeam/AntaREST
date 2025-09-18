@@ -139,15 +139,19 @@ class TestGenerateThermalClusterTimeseries:
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.COMPLETED
 
-        # Puts nominal capacity at 0
-        body = {"nominalCapacity": 0}
-        res = client.patch(f"/v1/studies/{study_id}/areas/{area1_id}/clusters/thermal/{cluster_name}", json=body)
-        assert res.status_code in {200, 201}
-        # Timeseries generation fails because there's no nominal power
+        # Puts 2 as PO rate and 2 as FO rate
+        modulation_matrix = np.full(shape=(365, 6), fill_value=2).tolist()
+        res = client.post(
+            f"/v1/studies/{study_id}/raw",
+            params={"path": f"input/thermal/prepro/{area1_id}/{cluster_name.lower()}/data"},
+            json=modulation_matrix,
+        )
+        assert res.status_code == 200
+        # Timeseries generation fails because these values are unacceptable
         task = self._generate_timeseries(client, user_access_token, study_id)
         assert task.status == TaskStatus.FAILED
         assert (
-            f"Area {area1_id}, cluster {cluster_name.lower()}: Nominal power must be strictly positive, got 0.0"
+            f"Area {area1_id}, cluster {cluster_name.lower()}: Forced failure rate is greater than 1 on following days"
             in task.result.message
         )
 
