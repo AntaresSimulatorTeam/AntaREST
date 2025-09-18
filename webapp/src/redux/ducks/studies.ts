@@ -37,7 +37,7 @@ export interface StudyFilters {
   strictFolder: boolean;
   managed: boolean;
   archived: boolean;
-  scope: "all" | "references" | "variants";
+  type: "all" | "references" | "variants";
   versions: string[];
   users: Array<UserDTO["id"]>;
   groups: Array<GroupDTO["id"]>;
@@ -88,7 +88,7 @@ const initialState = studiesAdapter.getInitialState({
     strictFolder: false,
     managed: false,
     archived: false,
-    scope: "references",
+    type: "references",
     versions: [],
     users: [],
     groups: [],

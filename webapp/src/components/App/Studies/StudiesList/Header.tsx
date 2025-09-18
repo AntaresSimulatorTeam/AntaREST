@@ -47,7 +47,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { AxiosError } from "axios";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const sortOptions = [
@@ -90,7 +90,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
   const folderList = folder.split("/");
   const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
-  const scopeFilter = useAppSelector((state) => getStudyFilters(state).scope);
+  const studyTypeFilter = useAppSelector((state) => getStudyFilters(state).type);
   const sortConf = useAppSelector(getStudiesSortConf);
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
@@ -111,13 +111,13 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
     dispatch(updateStudyFilters({ folder: value }));
   };
 
-  const toggleStrictFolderFilter = useCallback(() => {
+  const toggleStrictFolderFilter = () => {
     dispatch(updateStudyFilters({ strictFolder: !strictFolderFilter }));
-  }, [dispatch, strictFolderFilter]);
+  };
 
-  const toggleScopeFilter = useCallback(() => {
-    dispatch(updateStudyFilters({ scope: scopeFilter !== "references" ? "references" : "all" }));
-  }, [dispatch, scopeFilter]);
+  const toggleStudyTypeFilter = () => {
+    dispatch(updateStudyFilters({ type: studyTypeFilter !== "references" ? "references" : "all" }));
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -218,8 +218,8 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
             </Tooltip>
           </ToggleButtonGroup>
           <Tooltip title={t("studies.filters.toggleScope")}>
-            <IconButton onClick={toggleScopeFilter}>
-              {scopeFilter === "references" ? <LayersIcon /> : <LayersClearIcon />}
+            <IconButton onClick={toggleStudyTypeFilter}>
+              {studyTypeFilter === "references" ? <LayersIcon /> : <LayersClearIcon />}
             </IconButton>
           </Tooltip>
           {canScan && (

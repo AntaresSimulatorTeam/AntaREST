@@ -34,7 +34,7 @@ import useAppSelector from "../../../redux/hooks/useAppSelector";
 import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
 
-const LEVEL_OPTIONS: Options<StudyFilters["scope"]> = [
+const LEVEL_OPTIONS: Options<StudyFilters["type"]> = [
   { label: (t) => t("global.all"), value: "all" },
   { label: (t) => t("studies.references"), value: "references" },
   { label: (t) => t("studies.variants"), value: "variants" },
@@ -72,7 +72,7 @@ function FilterDrawer(props: Props) {
       updateStudyFilters({
         managed: false,
         archived: false,
-        scope: "references",
+        type: "references",
         versions: [],
         users: [],
         groups: [],
@@ -120,8 +120,8 @@ function FilterDrawer(props: Props) {
                 label={t("studies.archivedStudiesFilter")}
               />
               <SelectFE
-                label={t("global.scope")}
-                name="scope"
+                label={t("study.type")}
+                name="type"
                 control={control}
                 options={LEVEL_OPTIONS}
               />
