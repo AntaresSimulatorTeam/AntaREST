@@ -32,12 +32,12 @@ import { PUBLIC_MODE_LIST } from "../../../common/utils/constants";
 const MAX_STUDY_TITLE_LENGTH = 45;
 
 const TinyText = styled(Typography)(({ theme }) => ({
-  fontSize: "14px",
+  fontSize: 12,
   color: theme.palette.text.secondary,
 }));
 
 const LinkText = styled(Link)(({ theme }) => ({
-  fontSize: "14px",
+  fontSize: 12,
   color: theme.palette.secondary.main,
 }));
 
@@ -74,18 +74,19 @@ function Details({ study, parentStudy, variantNb }: Props) {
       }}
     >
       <Item>
-        <ScheduleOutlinedIcon sx={{ color: "text.secondary" }} />
+        <ScheduleOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
         <TinyText>{convertUTCToLocalTime(study.creationDate)}</TinyText>
       </Item>
       <Item>
-        <UpdateOutlinedIcon sx={{ color: "text.secondary" }} />
+        <UpdateOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
         <TinyText>{buildModificationDate(study.modificationDate, t, i18n.language)}</TinyText>
       </Item>
       <StyledDivider />
       <TinyText>{`v${displayVersionName(study.version)}`}</TinyText>
+      <StyledDivider />
       {parentStudy && (
         <Item>
-          <AltRouteOutlinedIcon sx={{ color: "text.secondary" }} />
+          <AltRouteOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
           <Tooltip title={parentStudy.name}>
             <LinkText to={`/studies/${parentStudy.id}`}>
               {`${parentStudy.name.substring(0, MAX_STUDY_TITLE_LENGTH)}...`}
@@ -94,16 +95,16 @@ function Details({ study, parentStudy, variantNb }: Props) {
         </Item>
       )}
       <Item>
-        <AccountTreeOutlinedIcon sx={{ color: "text.secondary" }} />
+        <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
         <TinyText>{variantNb}</TinyText>
       </Item>
       <StyledDivider />
       <Item>
-        <PersonOutlineOutlinedIcon sx={{ color: "text.secondary" }} />
+        <PersonOutlineOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
         <TinyText>{study.owner.name}</TinyText>
       </Item>
       <Item>
-        <SecurityOutlinedIcon sx={{ color: "text.secondary" }} />
+        <SecurityOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
         <TinyText>{t(publicModeLabel)}</TinyText>
       </Item>
     </Box>
