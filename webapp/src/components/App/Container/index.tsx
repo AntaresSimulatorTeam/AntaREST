@@ -12,34 +12,39 @@
  * This file is part of the Antares project.
  */
 
+import Logo from "@/components/common/Logo";
+import { useAppMode } from "@/hooks/useAppMode";
+import { setFormCloseDialogStatus, setMenuOpen } from "@/redux/ducks/ui";
+import {
+  getCurrentStudyId,
+  getFormState,
+  isMenuOpen,
+  isWebSocketConnected,
+} from "@/redux/selectors";
+import { getConfig } from "@/services/config";
+import ApiIcon from "@mui/icons-material/Api";
+import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
+import LogoutIcon from "@mui/icons-material/Logout";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import StorageIcon from "@mui/icons-material/Storage";
+import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
+import { Box, Divider, List, Toolbar, Tooltip, Typography, useTheme } from "@mui/material";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
-import TravelExploreOutlinedIcon from "@mui/icons-material/TravelExploreOutlined";
-import StorageIcon from "@mui/icons-material/Storage";
-import CenterFocusStrongIcon from "@mui/icons-material/CenterFocusStrong";
-import ClassOutlinedIcon from "@mui/icons-material/ClassOutlined";
-import ApiIcon from "@mui/icons-material/Api";
-import LogoutIcon from "@mui/icons-material/Logout";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
-import { Box, Divider, List, Toolbar, Tooltip, Typography, useTheme } from "@mui/material";
 import { useMount } from "react-use";
-import { setMenuOpen } from "@/redux/ducks/ui";
-import { StyledDrawer } from "./styles";
-import { getCurrentStudyId, isWebSocketConnected, isMenuOpen } from "@/redux/selectors";
-import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import { logout } from "../../../redux/ducks/auth";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { fetchUsers } from "../../../redux/ducks/users";
 import { fetchGroups } from "../../../redux/ducks/groups";
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
+import { fetchUsers } from "../../../redux/ducks/users";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import MenuItem from "./MenuItem";
+import { StyledDrawer } from "./styles";
 import TaskIcon from "./TaskIcon";
-import Logo from "@/components/common/Logo";
-import { getConfig } from "@/services/config";
-import { useAppMode } from "@/hooks/useAppMode";
 
 const topMenuItems = [
   {
@@ -79,6 +84,7 @@ function Container({ children }: Props) {
   const isDrawerOpen = useAppSelector(isMenuOpen);
   const currentStudyId = useAppSelector(getCurrentStudyId);
   const isWsConnected = useAppSelector(isWebSocketConnected);
+  const formState = useAppSelector(getFormState);
   const dispatch = useAppDispatch();
   const { isWebMode } = useAppMode();
 
@@ -197,6 +203,16 @@ function Container({ children }: Props) {
           open
         >
           <Typography sx={{ px: 3, py: 1 }}>{t("dialog.message.signOut")}</Typography>
+        </ConfirmationDialog>
+      )}
+      {formState.closeDialogStatus === "opened" && (
+        <ConfirmationDialog
+          open
+          alert="warning"
+          onConfirm={() => dispatch(setFormCloseDialogStatus("confirmed"))}
+          onCancel={() => dispatch(setFormCloseDialogStatus("canceled"))}
+        >
+          {formState.status.isSubmitting ? t("form.submit.inProgress") : t("form.changeNotSaved")}
         </ConfirmationDialog>
       )}
     </>

@@ -19,7 +19,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStora
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
 
@@ -88,6 +88,9 @@ class STStorage(AntaresBaseModel):
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
 
+    # Added in 9.3
+    allow_overflow: Optional[bool] = None
+
 
 class STStorageCreation(AntaresBaseModel):
     """
@@ -112,6 +115,7 @@ class STStorageCreation(AntaresBaseModel):
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
+    allow_overflow: Optional[bool] = None
 
     @classmethod
     def from_storage(cls, storage: STStorage) -> "STStorageCreation":
@@ -153,6 +157,7 @@ class STStorageUpdate(AntaresBaseModel):
     efficiency_withdrawal: Optional[Efficiency] = None
     penalize_variation_injection: Optional[bool] = None
     penalize_variation_withdrawal: Optional[bool] = None
+    allow_overflow: Optional[bool] = None
 
 
 STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]
@@ -187,6 +192,9 @@ def validate_st_storage_against_version(
         for field in ["efficiency_withdrawal", "penalize_variation_injection", "penalize_variation_withdrawal"]:
             _check_min_version(storage_data, field, version)
 
+    if version < STUDY_VERSION_9_3:
+        _check_min_version(storage_data, "allow_overflow", version)
+
 
 def _initialize_field_default(storage: STStorage, field: str, default_value: Any) -> None:
     if getattr(storage, field) is None:
@@ -211,6 +219,9 @@ def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
         _initialize_field_default(storage, "efficiency_withdrawal", 1)
         _initialize_field_default(storage, "penalize_variation_injection", False)
         _initialize_field_default(storage, "penalize_variation_withdrawal", False)
+
+    if version >= STUDY_VERSION_9_3:
+        _initialize_field_default(storage, "allow_overflow", False)
 
 
 def check_attributes_coherence(storage: STStorage, version: StudyVersion) -> None:
