@@ -96,7 +96,11 @@ function StorageMatrices({ areaId, storageId, studyVersion }: Props) {
         <Matrix
           url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
           // Since v9.3 this matrix supports the resize functionality
-          {...(studyVersion < 930 && { isTimeSeries: false, customColumns: ["TS 1"] })}
+          {...(studyVersion < 930 && {
+            isTimeSeries: false,
+            customColumns: ["TS 1"],
+            enableFilters: true,
+          })}
         />
       ),
     },
