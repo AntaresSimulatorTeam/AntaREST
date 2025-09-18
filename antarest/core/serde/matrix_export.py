@@ -57,27 +57,45 @@ class DataframeStreamWriter(Protocol):
     def __call__(self, path: Path, dataframes: Iterator[pd.DataFrame]) -> None: ...
 
 
-def _checked_dataframes_generator(dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
+def _checked_dataframes_generator(dataframes: Iterator[pd.DataFrame]) -> Iterator[tuple[pd.DataFrame, bool]]:
     """
     Checks consistency between subsequent dataframes
     """
-    columns = None
+    existing_columns: set[str] = set()
     for df in dataframes:
+        should_add_cols = False
         if df.empty:
             continue
-        if columns is None:
-            columns = df.columns
+        if not existing_columns:
+            existing_columns = set(df.columns)
         else:
-            if any(columns != df.columns):
-                raise ValueError("Cannot append dataframe to file, columns are different from initial dataframe.")
-        yield df
+            df_cols = set(df.columns)
+            if existing_columns != df_cols:
+                if df_cols - existing_columns:
+                    # Means we have to add new columns to the existing dataframe
+                    should_add_cols = True
+                else:
+                    # Means we only have to add mising columns inside the current dataframe
+                    columns_to_add = existing_columns - df_cols
+                    for col in columns_to_add:
+                        df[col] = None
+                existing_columns.update(df_cols)
+
+        yield df, should_add_cols
 
 
 def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes: Iterator[pd.DataFrame]) -> None:
     headers = True
     append = False
-    for df in _checked_dataframes_generator(dataframes):
-        df.to_csv(path, mode="a" if append else "w", sep=sep, decimal=decimal, index=False, header=headers)
+    for df, columns_to_add in _checked_dataframes_generator(dataframes):
+        if not columns_to_add:
+            df.to_csv(path, mode="a" if append else "w", sep=sep, decimal=decimal, index=False, header=headers)
+        else:
+            current_df = pd.read_csv(path, sep=sep, decimal=decimal, header=0)
+            new_df = pd.concat([df, current_df])
+            new_df = new_df.replace({np.nan: None})
+            new_df.to_csv(path, mode="w", sep=sep, decimal=decimal, index=False)
+
         headers = False
         append = True
 
@@ -92,7 +110,8 @@ def _csv_stream_writer(sep: str, decimal: str) -> DataframeStreamWriter:
 def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     row = 0
     is_first = True
-    for df in _checked_dataframes_generator(dataframes):
+    for df, _ in _checked_dataframes_generator(dataframes):
+        # todo: implement the same behavior as csv
         with pd.ExcelWriter(
             path, mode="w" if is_first else "a", if_sheet_exists=None if is_first else "overlay", engine="openpyxl"
         ) as writer:
@@ -105,7 +124,8 @@ def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame
 
 def _write_dataframes_stream_hdf5(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     append = False
-    for df in _checked_dataframes_generator(dataframes):
+    for df, _ in _checked_dataframes_generator(dataframes):
+        # todo: implement the same behavior as csv
         df.to_hdf(path, key="data", append=append, index=False, format="table", mode="r+" if append else "w")
         append = True
 
