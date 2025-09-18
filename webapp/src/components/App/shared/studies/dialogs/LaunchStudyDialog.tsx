@@ -407,7 +407,7 @@ function LaunchStudyDialog(props: Props) {
             response={launchers}
             ifFulfilled={(launchers) => (
               <SelectFE
-                label="Clusters"
+                label={t("study.cluster")}
                 value={options.launcher_id}
                 options={launchers}
                 onChange={(e) => {
@@ -418,27 +418,6 @@ function LaunchStudyDialog(props: Props) {
             )}
             ifPending={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
             ifRejected={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
-          />
-          {/* Field only to display the value, it is not editable */}
-          <UsePromiseCond
-            response={launcherTimeLimit}
-            ifFulfilled={({ defaultValue }) => (
-              <TextField
-                label={t("study.timeLimit")}
-                type="number"
-                variant="outlined"
-                disabled
-                value={defaultValue}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                sx={{
-                  minWidth: 140,
-                }}
-              />
-            )}
-            ifPending={() => <Skeleton width={140} height={60} />}
-            ifRejected={() => <Skeleton width={140} height={60} />}
           />
           <UsePromiseCond
             response={launcherCores}
@@ -465,6 +444,27 @@ function LaunchStudyDialog(props: Props) {
             )}
             ifPending={() => <Skeleton width={125} height={60} />}
             ifRejected={() => <Skeleton width={125} height={60} />}
+          />
+          {/* Field only to display the value, it is not editable */}
+          <UsePromiseCond
+            response={launcherTimeLimit}
+            ifFulfilled={({ defaultValue }) => (
+              <TextField
+                label={t("study.timeLimit")}
+                type="number"
+                variant="outlined"
+                disabled
+                value={defaultValue}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                sx={{
+                  minWidth: 140,
+                }}
+              />
+            )}
+            ifPending={() => <Skeleton width={140} height={60} />}
+            ifRejected={() => <Skeleton width={140} height={60} />}
           />
         </Box>
         <Box
