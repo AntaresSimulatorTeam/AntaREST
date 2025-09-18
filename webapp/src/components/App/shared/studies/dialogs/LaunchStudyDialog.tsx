@@ -41,8 +41,8 @@ import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../../../redux/selectors";
 import {
   getLauncherCores,
-  getLauncherEngines,
   getLauncherMetrics,
+  getLaunchers,
   getLauncherTimeLimit,
   getLauncherVersions,
   getStudyOutputs,
@@ -79,13 +79,13 @@ function LaunchStudyDialog(props: Props) {
     shallowEqual,
   );
 
-  const launcherEngines = usePromiseWithSnackbarError(getLauncherEngines, {
-    errorMessage: t("study.error.launcherEngines"),
-    onDataChange: (data) => {
-      if (data && options.launcher_id && !data.engines.includes(options.launcher_id)) {
+  const launchers = usePromiseWithSnackbarError(getLaunchers, {
+    errorMessage: t("study.error.launchers"),
+    onDataChange: (launchers) => {
+      if (launchers && options.launcher_id && !launchers.includes(options.launcher_id)) {
         setOptions((prevOptions) => ({
           ...prevOptions,
-          launcher_id: data.engines[0],
+          launcher_id: launchers[0],
         }));
       }
     },
@@ -221,7 +221,7 @@ function LaunchStudyDialog(props: Props) {
             variant="contained"
             disabled={
               isLaunching ||
-              !launcherEngines.isFulfilled ||
+              !launchers.isFulfilled ||
               !launcherCores.isFulfilled ||
               !launcherTimeLimit.isFulfilled
             }
@@ -283,6 +283,7 @@ function LaunchStudyDialog(props: Props) {
             alignItems: "center",
             gap: 2,
             width: 1,
+            mt: 1,
           }}
         >
           <Typography>Simulateur</Typography>
@@ -292,7 +293,7 @@ function LaunchStudyDialog(props: Props) {
             list={launcherVersions}
             data={solverVersion}
             setValue={setSolverVersion}
-            sx={{ width: 1, mt: 0.5 }}
+            sx={{ flex: 1 }}
           />
           <TextField
             id="other-options"
@@ -301,10 +302,7 @@ function LaunchStudyDialog(props: Props) {
             variant="outlined"
             value={options.other_options}
             onChange={(e) => handleChange("other_options", e.target.value)}
-            sx={{
-              mt: 2,
-              width: 1,
-            }}
+            sx={{ flex: 1 }}
             InputLabelProps={{
               shrink: true,
             }}
@@ -406,12 +404,12 @@ function LaunchStudyDialog(props: Props) {
           }}
         >
           <UsePromiseCond
-            response={launcherEngines}
-            ifFulfilled={({ engines }) => (
+            response={launchers}
+            ifFulfilled={(launchers) => (
               <SelectFE
                 label="Clusters"
                 value={options.launcher_id}
-                options={engines}
+                options={launchers}
                 onChange={(e) => {
                   handleChange("launcher_id", e.target.value);
                 }}
@@ -421,6 +419,7 @@ function LaunchStudyDialog(props: Props) {
             ifPending={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
             ifRejected={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
           />
+          {/* Field only to display the value, it is not editable */}
           <UsePromiseCond
             response={launcherTimeLimit}
             ifFulfilled={({ defaultValue }) => (

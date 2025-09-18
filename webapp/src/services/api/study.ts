@@ -262,9 +262,9 @@ interface LauncherMetrics {
   status: string;
 }
 
-export const getLauncherEngines = async () => {
+export const getLaunchers = async () => {
   const res = await client.get<{ engines: string[] }>("/v1/launcher/engines");
-  return res.data;
+  return res.data.engines;
 };
 
 export const getLauncherVersions = async (): Promise<string[]> => {
