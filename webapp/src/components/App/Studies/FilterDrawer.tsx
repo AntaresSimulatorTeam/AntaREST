@@ -12,9 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { useTranslation } from "react-i18next";
-import { Box, Button, Drawer, Toolbar, Typography } from "@mui/material";
-import useAppSelector from "../../../redux/hooks/useAppSelector";
+import SelectFE, { type Options } from "@/components/common/fieldEditors/SelectFE";
+import Fieldset from "@/components/common/Fieldset";
+import Form from "@/components/common/Form";
+import type { SubmitHandlerPlus } from "@/components/common/Form/types";
+import { updateStudyFilters, type StudyFilters } from "@/redux/ducks/studies";
 import {
   getGroupIds,
   getGroupsById,
@@ -23,15 +25,20 @@ import {
   getUserIds,
   getUsersById,
 } from "@/redux/selectors";
-import useAppDispatch from "../../../redux/hooks/useAppDispatch";
-import { updateStudyFilters, type StudyFilters } from "@/redux/ducks/studies";
-import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
 import { displayVersionName } from "@/services/utils";
-import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
-import Form from "@/components/common/Form";
-import Fieldset from "@/components/common/Fieldset";
-import type { SubmitHandlerPlus } from "@/components/common/Form/types";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import { Box, Button, Drawer, Toolbar, Typography } from "@mui/material";
+import { useTranslation } from "react-i18next";
+import useAppDispatch from "../../../redux/hooks/useAppDispatch";
+import useAppSelector from "../../../redux/hooks/useAppSelector";
+import CheckboxesTagsFE from "../../common/fieldEditors/CheckboxesTagsFE";
+import CheckBoxFE from "../../common/fieldEditors/CheckBoxFE";
+
+const STUDY_TYPE_OPTIONS: Options<StudyFilters["type"]> = [
+  { label: (t) => t("global.all"), value: "all" },
+  { label: (t) => t("studies.references"), value: "references" },
+  { label: (t) => t("studies.variants"), value: "variants" },
+];
 
 interface Props {
   open: boolean;
@@ -54,28 +61,8 @@ function FilterDrawer(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values, dirtyValues }: SubmitHandlerPlus<StudyFilters>) => {
-    const { users, groups, versions, tags, ...rest } = dirtyValues;
-
-    const newFilters: Partial<StudyFilters> = rest;
-
-    if (users) {
-      newFilters.users = values.users;
-    }
-
-    if (groups) {
-      newFilters.groups = values.groups;
-    }
-
-    if (versions) {
-      newFilters.versions = values.versions;
-    }
-
-    if (tags) {
-      newFilters.tags = values.tags;
-    }
-
-    dispatch(updateStudyFilters(newFilters));
+  const handleSubmit = ({ values }: SubmitHandlerPlus<StudyFilters>) => {
+    dispatch(updateStudyFilters(values));
 
     onClose();
   };
@@ -85,7 +72,7 @@ function FilterDrawer(props: Props) {
       updateStudyFilters({
         managed: false,
         archived: false,
-        variant: false,
+        type: "references",
         versions: [],
         users: [],
         groups: [],
@@ -132,7 +119,12 @@ function FilterDrawer(props: Props) {
                 control={control}
                 label={t("studies.archivedStudiesFilter")}
               />
-              <CheckBoxFE name="variant" control={control} label={t("studies.variant")} />
+              <SelectFE
+                label={t("study.type")}
+                name="type"
+                control={control}
+                options={STUDY_TYPE_OPTIONS}
+              />
               <CheckboxesTagsFE
                 name="versions"
                 control={control}
