@@ -48,19 +48,21 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
 
 def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
     all_df_names = write_dataframes_in_parquet_format(path, dataframes)
-    all_cols = set()
+    all_cols: set[str] = set()
     for df_name in all_df_names:
         parquet_file = ParquetFile(path / df_name)
         table = parquet_file.read_row_group(0)
-        all_cols.update(table.columns)
-    df_with_all_cols = pd.DataFrame(columns=list(all_cols))
+        all_cols.update(table.column_names)
 
     for df_name in all_df_names:
         parquet_file = ParquetFile(path / df_name)
         for i in range(parquet_file.num_row_groups):
             table = parquet_file.read_row_group(i)
             df = table.to_pandas()
-            yield pd.concat([df, df_with_all_cols])
+            missing_cols = all_cols - set(df.columns)
+            for col in missing_cols:
+                df[col] = None
+            yield df
 
 
 def _check_dataframes_columns_consistency(dataframes: Iterator[pd.DataFrame]) -> Iterator[tuple[pd.DataFrame, bool]]:
