@@ -39,18 +39,17 @@ class ParquetOptions:
 def _parquet_writer(
     output_file: Path,
     schema: pa.Schema,
-    parquet_options: ParquetOptions | None = None,
+    parquet_options: ParquetOptions,
 ) -> ParquetWriter:
-    options = parquet_options or ParquetOptions()
     return ParquetWriter(
         output_file,
         schema,
-        write_page_index=options.write_page_index,
-        use_dictionary=options.use_dict,
-        use_byte_stream_split=options.use_bss,
+        write_page_index=parquet_options.write_page_index,
+        use_dictionary=parquet_options.use_dict,
+        use_byte_stream_split=parquet_options.use_bss,
         compression="zstd",
         data_page_version="2.0",
-        sorting_columns=options.sorting_columns or [],
+        sorting_columns=parquet_options.sorting_columns or [],
     )
 
 
