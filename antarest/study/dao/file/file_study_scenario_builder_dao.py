@@ -35,7 +35,6 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 SCENARIO_BUILDER_PATH = ["settings", "scenariobuilder"]
-RULESETS_DIR = "rulesets"
 
 
 class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
