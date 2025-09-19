@@ -319,3 +319,22 @@ def test_delete_ignorecase(tmp_path: Path) -> None:
 
     node.delete(url=["sts_fr"])
     assert node.get() == {}
+
+
+def test_get_node(tmp_path: Path) -> None:
+    ini_path = tmp_path.joinpath("test.ini")
+    ini_content = textwrap.dedent(
+        """\
+        [sts_FR]
+        Key = 1
+        key2 = 3
+        """
+    )
+    ini_path.write_text(ini_content)
+    node = create_ini_node(
+        study_path=tmp_path,
+        ini_path=ini_path,
+    )
+
+    assert node.get_node() is node
+    assert node.get_node_and_remainder(["sts_fr", "key2"]) == (node, ["sts_fr", "key2"])
