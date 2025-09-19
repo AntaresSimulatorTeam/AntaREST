@@ -29,13 +29,15 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     )
 
 
-def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> set[str]:
+def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> tuple[set[str], set[str]]:
     writers = {}
     file_counter = 0
     filenames = set()
+    existing_columns: set[str] = set()
 
     for df, new_file_to_write in _check_dataframes_columns_consistency(dataframes):
         df_cols = tuple(df.columns)
+        existing_columns.update(df_cols)
 
         table = pa.Table.from_pandas(df)
 
@@ -54,17 +56,11 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
     for writer in writers.values():
         writer.close()
 
-    return filenames
+    return filenames, existing_columns
 
 
 def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
-    all_df_names = write_dataframes_in_parquet_format(path, dataframes)
-    all_cols: set[str] = set()
-    for df_name in all_df_names:
-        parquet_file = ParquetFile(path / df_name)
-        table = parquet_file.read_row_group(0)
-        all_cols.update(table.column_names)
-
+    all_df_names, all_cols = write_dataframes_in_parquet_format(path, dataframes)
     for df_name in all_df_names:
         parquet_file = ParquetFile(path / df_name)
         for i in range(parquet_file.num_row_groups):
