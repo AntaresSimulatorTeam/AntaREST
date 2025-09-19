@@ -10,51 +10,26 @@
 #
 # This file is part of the Antares project.
 
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterator
 
 import pandas as pd
 import pyarrow as pa
-from pyarrow.parquet import ParquetFile, ParquetWriter, SortingColumn
+from pyarrow.parquet import ParquetFile, ParquetWriter
 
 
-@dataclass
-class ParquetOptions:
-    """
-    Options for writing parquet files.
-
-    Attributes:
-        row_group_size: The number of rows in each row group. Default 64k, found to be performant for later queries,
-                        compared to 1024k which is the default batch size of pyarrow.
-    """
-
-    row_group_size: int = 64 * 1024
-    use_dict: bool = True
-    use_bss: bool = False
-    write_page_index: bool = True
-    sorting_columns: list[SortingColumn] | None = None
-
-
-def _parquet_writer(
-    output_file: Path,
-    schema: pa.Schema,
-    parquet_options: ParquetOptions,
-) -> ParquetWriter:
+def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     return ParquetWriter(
         output_file,
         schema,
-        write_page_index=parquet_options.write_page_index,
-        use_dictionary=parquet_options.use_dict,
-        use_byte_stream_split=parquet_options.use_bss,
+        write_page_index=True,
         compression="zstd",
         data_page_version="2.0",
-        sorting_columns=parquet_options.sorting_columns or [],
+        sorting_columns=[],
     )
 
 
 def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> set[str]:
-    parquet_options = ParquetOptions()
     file_name = "file1.parquet"
     all_df_paths = {file_name}
 
@@ -65,12 +40,8 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
             all_df_paths.add(file_name)
 
         table = pa.Table.from_pandas(df)
-        with _parquet_writer(
-            path / file_name,
-            table.schema,
-            parquet_options,
-        ) as writer:
-            writer.write_table(table, row_group_size=len(df))
+        with _parquet_writer(path / file_name, table.schema) as writer:
+            writer.write_table(table)
 
     return all_df_paths
 
