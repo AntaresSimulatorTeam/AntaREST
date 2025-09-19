@@ -35,7 +35,9 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
     filenames = set()
     existing_columns: set[str] = set()
 
-    for df, new_file_to_write in _check_dataframes_columns_consistency(dataframes):
+    for df in dataframes:
+        if df.empty:
+            continue
         df_cols = tuple(df.columns)
         existing_columns.update(df_cols)
 
@@ -70,27 +72,3 @@ def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) ->
             for col in missing_cols:
                 df[col] = None
             yield df
-
-
-def _check_dataframes_columns_consistency(dataframes: Iterator[pd.DataFrame]) -> Iterator[tuple[pd.DataFrame, bool]]:
-    existing_columns: set[str] = set()
-    for df in dataframes:
-        should_write_new_file = False
-        if df.empty:
-            continue
-        if not existing_columns:
-            existing_columns = set(df.columns)
-        else:
-            df_cols = set(df.columns)
-            if existing_columns != df_cols:
-                if df_cols - existing_columns:
-                    # Means we have to add new columns to the existing dataframe
-                    should_write_new_file = True
-                else:
-                    # Means we only have to add mising columns inside the current dataframe
-                    columns_to_add = existing_columns - df_cols
-                    for col in columns_to_add:
-                        df[col] = None
-                existing_columns.update(df_cols)
-
-        yield df, should_write_new_file
