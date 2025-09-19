@@ -13,7 +13,6 @@ from abc import ABC, abstractmethod
 
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
-    Ruleset,
     Rulesets,
     RulesetsUpdate,
     ScenarioType,
@@ -24,15 +23,11 @@ SCENARIO_BUILDER_PATH = ["settings", "scenariobuilder"]
 
 class ReadOnlyScenarioBuilderDao(ABC):
     @abstractmethod
-    def get_config(self) -> Rulesets:
+    def get_rulesets(self) -> Rulesets:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_active_ruleset_name(self, default_ruleset: str) -> str:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def read_ruleset(self, scenario_type: ScenarioType) -> Ruleset:
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
         raise NotImplementedError()
 
     @abstractmethod

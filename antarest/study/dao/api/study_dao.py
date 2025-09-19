@@ -27,6 +27,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -56,6 +57,7 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderDao, ScenarioBuilderDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
@@ -82,6 +84,7 @@ class ReadOnlyStudyDao(
     ReadOnlyLayerDao,
     ReadOnlyPlaylistConfigDao,
     ReadOnlyUserResourcesDao,
+    ReadOnlyScenarioBuilderDao,
 ):
     @abstractmethod
     def get_version(self) -> StudyVersion:
@@ -110,6 +113,7 @@ class StudyDao(
     LayerDao,
     PlaylistConfigDao,
     UserResourcesDao,
+    ScenarioBuilderDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -392,3 +396,15 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_playlist_config(self) -> Playlist:
         return self._adaptee.get_playlist_config()
+
+    @override
+    def get_rulesets(self) -> Rulesets:
+        return self._adaptee.get_rulesets()
+
+    @override
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+        return self._adaptee.get_active_ruleset_name(default_ruleset)
+
+    @override
+    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        return self._adaptee.get_scenario_by_type(scenario_type)
