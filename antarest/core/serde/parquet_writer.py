@@ -30,20 +30,31 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
 
 
 def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> set[str]:
-    file_name = "file1.parquet"
-    all_df_paths = {file_name}
+    writers = {}
+    file_counter = 0
+    filenames = set()
 
     for df, new_file_to_write in _check_dataframes_columns_consistency(dataframes):
-        file_name = "file1.parquet"
-        if new_file_to_write:
-            file_name = f"file{len(all_df_paths) + 1}.parquet"
-            all_df_paths.add(file_name)
+        df_cols = tuple(df.columns)
 
         table = pa.Table.from_pandas(df)
-        with _parquet_writer(path / file_name, table.schema) as writer:
-            writer.write_table(table)
 
-    return all_df_paths
+        if df_cols not in writers:
+            file_name = f"file{file_counter}.parquet"
+            filenames.add(file_name)
+            file_path = path / file_name
+            file_counter += 1
+
+            new_writer = _parquet_writer(file_path, table.schema)
+            writers[df_cols] = new_writer
+
+        writers[df_cols].write_table(table)
+
+    # Close all writers
+    for writer in writers.values():
+        writer.close()
+
+    return filenames
 
 
 def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
