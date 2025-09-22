@@ -21,7 +21,6 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.roles import RoleType
 from antarest.login.ldap import LdapService
 from antarest.login.model import (
-    GROUP_ID,
     Bot,
     BotCreateDTO,
     BotIdentityDTO,
@@ -590,17 +589,22 @@ class LoginService:
 
         # Get roles
         if user.is_site_admin():
-            groups: Optional[List[Group]] = None
-            all_roles = self.roles.get_all(details=details, groups=None)
+            groups = None
         else:
             groups = [r.group for r in self.roles.get_all_by_user(user.id)]
-            all_roles = self.roles.get_all(details=details, groups=groups) if groups else []
+            if not groups:
+                # The user has no groups, he can only fetch himself
+                user_id = user.id
+                user_name = next(iter(identity.name for identity in all_users if identity.id == user_id))
+                if details:
+                    return [IdentityDTO(id=user_id, name=user_name, roles=[])]
+                return [UserInfo(id=user_id, name=user_name)]
+
+        all_roles = self.roles.get_all(details=details, groups=groups)
 
         # Builds a map from a user to all his roles
         roles_per_user: dict[int, List[RoleDTO]] = {}
-        accessible_user_ids: set[int] = set()
         for role in all_roles:
-            accessible_user_ids.add(role.identity_id)
             roles_per_user.setdefault(role.identity_id, []).append(
                 RoleDTO(
                     group_id=role.group_id,
@@ -610,44 +614,20 @@ class LoginService:
                 )
             )
 
-        user_mapping_id_to_name = {identity.id: identity.name for identity in all_users}
-
+        # For the admin, loop through every user and build the return containing role information
         if user.is_site_admin():
             return [
                 IdentityDTO(id=identity.id, name=identity.name, roles=roles_per_user.get(identity.id, []))
                 for identity in all_users
             ]
 
-        if not groups:
-            accessible_user_ids.add(user.id)
-
-        # Always expose site administrators to allow displaying task owners launched by admins.
-        admin_roles = [
-            role
-            for role in self.roles.get_all(details=details, groups=[Group(id=GROUP_ID)])
-            if role.type == RoleType.ADMIN
-        ]
-        for role in admin_roles:
-            accessible_user_ids.add(role.identity_id)
-            if details:
-                entries = roles_per_user.setdefault(role.identity_id, [])
-                if not any(r.group_id == role.group_id and r.type == role.type for r in entries):
-                    entries.append(
-                        RoleDTO(
-                            group_id=role.group_id,
-                            group_name=role.group.name,
-                            identity_id=role.identity_id,
-                            type=role.type,
-                        )
-                    )
-
+        # For other users, we need to loop on the map we built earlier to avoid accessing info the user shouldn't have
+        user_mapping_id_to_name = {user.id: user.name for user in all_users}
         if details:
             return [
-                IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user.get(id, []))
-                for id in sorted(accessible_user_ids)
+                IdentityDTO(id=id, name=user_mapping_id_to_name[id], roles=roles_per_user[id]) for id in roles_per_user
             ]
-
-        return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in sorted(accessible_user_ids)]
+        return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]
 
     def get_all_bots(self) -> List[Bot]:
         """
