@@ -62,9 +62,20 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
 
 
 def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
-    all_df_names, _ = write_dataframes_in_parquet_format(path, dataframes)
-    assert len(all_df_names) == 1
-    (path / next(iter(all_df_names))).rename(path)
+    try:
+        first_df = next(dataframes)
+        table = pa.Table.from_pandas(first_df)
+        schema = table.schema
+    except StopIteration:
+        raise ValueError("No dataframe provided")
+
+    with _parquet_writer(path, schema) as writer:
+        for df in dataframes:
+            if df.empty:
+                continue
+
+            table = pa.Table.from_pandas(df)
+            writer.write_table(table)
 
 
 def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
