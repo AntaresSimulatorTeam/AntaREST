@@ -22,7 +22,7 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     return ParquetWriter(output_file, schema, compression="zstd", data_page_version="2.0")
 
 
-def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> tuple[set[str], set[str]]:
+def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> tuple[set[str], list[str]]:
     writers = {}
     file_counter = 0
     filenames = set()
@@ -52,7 +52,7 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
     for writer in writers.values():
         writer.close()
 
-    return filenames, existing_columns
+    return filenames, list(existing_columns)
 
 
 def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
@@ -73,13 +73,14 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
             writer.write_table(table)
 
 
-def yield_parquet_dataframes(folder_path: Path, all_df_names: set[str], all_cols: set[str]) -> Iterator[pd.DataFrame]:
+def yield_parquet_dataframes(
+    folder_path: Path, all_df_names: set[str], all_cols: list[str], should_reindex: bool
+) -> Iterator[pd.DataFrame]:
     for df_name in all_df_names:
         parquet_file = ParquetFile(folder_path / df_name)
         for i in range(parquet_file.num_row_groups):
             table = parquet_file.read_row_group(i)
             df = table.to_pandas()
-            missing_cols = all_cols - set(df.columns)
-            for col in missing_cols:
-                df[col] = None
+            if should_reindex:
+                df = df.reindex(all_cols, axis="columns")
             yield df

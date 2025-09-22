@@ -1077,7 +1077,7 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     output_id = "20201014-1422eco-hello"
-    params = {"query_file": "values", "frequency": "annual"}
+    params = {"query_file": "values", "frequency": "annual", "export_format": "parquet"}
 
     # Add a file inside area `fr`. The file is a copy of the `DE` one but is missing the column `C02 EMIS.`
     # The aggregation should still succeed.
@@ -1111,6 +1111,6 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
     assert res.status_code == 200, res.content
     # ensures the missing data exists and was filled with a NaN
     content = io.BytesIO(res.content)
-    actual_df = pd.read_csv(content)
+    actual_df = pd.read_parquet(content)
     print(actual_df["CO2 EMIS."])
     # assert pd.isna(actual_df)["CO2 EMIS."][0]

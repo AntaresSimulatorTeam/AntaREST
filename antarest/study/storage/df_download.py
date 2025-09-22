@@ -109,8 +109,13 @@ def export_df_chunks(
 ) -> None:
     all_df_names, all_cols = write_dataframes_in_parquet_format(tmp_path, df_chunks)
 
-    if export_format == TableExportFormat.PARQUET and len(all_df_names) == 1:
-        (tmp_path / next(iter(all_df_names))).rename(file_download_path)
-    else:
-        stream_writer = export_format.get_stream_writer()
-        stream_writer(file_download_path, yield_parquet_dataframes(tmp_path, all_df_names, all_cols))
+    should_reindex = True
+    if len(all_df_names) == 1:
+        if export_format == TableExportFormat.PARQUET:
+            (tmp_path / next(iter(all_df_names))).rename(file_download_path)
+            return
+        # No need to reindex as all dataframes have the same columns
+        should_reindex = False
+
+    stream_writer = export_format.get_stream_writer()
+    stream_writer(file_download_path, yield_parquet_dataframes(tmp_path, all_df_names, all_cols, should_reindex))
