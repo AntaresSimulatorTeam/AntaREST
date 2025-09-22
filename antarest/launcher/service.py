@@ -52,6 +52,7 @@ from antarest.launcher.model import (
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user
+from antarest.core.jwt import JWTUser
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.output_service import OutputService
