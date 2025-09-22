@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import override
 
+from antarest.core.serde.parquet_writer import write_dataframes_stream_parquet
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 try:
@@ -87,10 +88,6 @@ def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame
         is_first = False
 
 
-def _write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
-    pass
-
-
 class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""
 
@@ -147,7 +144,7 @@ class TableExportFormat(EnumIgnoreCase):
             case TableExportFormat.TSV:
                 return _csv_stream_writer(sep="\t", decimal=".")
             case TableExportFormat.PARQUET:
-                return _write_dataframes_stream_parquet
+                return write_dataframes_stream_parquet
             case _:
                 raise NotImplementedError(f"Export format '{self}' does not support stream writing.")
 

@@ -61,6 +61,12 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
     return filenames, existing_columns
 
 
+def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
+    all_df_names, _ = write_dataframes_in_parquet_format(path, dataframes)
+    assert len(all_df_names) == 1
+    (path / next(iter(all_df_names))).rename(path)
+
+
 def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
     all_df_names, all_cols = write_dataframes_in_parquet_format(path, dataframes)
     for df_name in all_df_names:
