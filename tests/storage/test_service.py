@@ -20,7 +20,7 @@ from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from unittest.mock import ANY, Mock, patch, seal
+from unittest.mock import ANY, Mock, call, patch, seal
 
 import numpy as np
 import pandas as pd
@@ -1400,6 +1400,77 @@ def test_delete_recursively(tmp_path: Path) -> None:
         "my_study",
         children=True,
     )
+
+
+@with_admin_user
+def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
+    config = Config()
+
+    repository = Mock(spec=StudyMetadataRepository)
+
+    raw_study = create_raw_study(
+        id="raw-study",
+        path=str(tmp_path / "raw"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+
+    variant_study = create_variant_study(
+        id="variant-study",
+        path=str(tmp_path / "variant"),
+        parent_id=raw_study.id,
+        archived=False,
+        owner=None,
+        groups=[],
+    )
+    variant_study.generation_task = None
+    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})  # type: ignore[attr-defined]
+
+    def get_study_by_id(study_id: str) -> Study:
+        if study_id == raw_study.id:
+            return raw_study
+        if study_id == variant_study.id:
+            return variant_study
+        raise ValueError(f"Unexpected study id: {study_id}")
+
+    repository.get.side_effect = get_study_by_id
+    repository.delete = Mock()
+
+    raw_study_service = Mock(spec=RawStudyService)
+    raw_study_service.delete = Mock()
+    raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.delete = Mock()
+    variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
+    variant_study_service.get_children.return_value = [variant_study]
+
+    def walk_children(parent_id: str, fun, bottom_first: bool) -> None:
+        assert parent_id == variant_study.id
+        assert bottom_first is True
+        fun(variant_study)
+
+    variant_study_service.walk_children.side_effect = walk_children
+
+    service = build_study_service(
+        raw_study_service=raw_study_service,
+        repository=repository,
+        config=config,
+        variant_study_service=variant_study_service,
+    )
+
+    service.delete_study(raw_study.id, children=True)
+
+    variant_study_service.walk_children.assert_called_once()
+    args, kwargs = variant_study_service.walk_children.call_args
+    assert args[0] == variant_study.id
+    assert kwargs.get("bottom_first") is True
+
+    assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 
 
 @pytest.mark.unit_test
