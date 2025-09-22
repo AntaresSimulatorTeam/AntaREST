@@ -87,12 +87,17 @@ def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame
         is_first = False
 
 
+def _write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
+    pass
+
+
 class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""
 
     XLSX = "xlsx"
     TSV = "tsv"
     CSV = "csv"
+    PARQUET = "parquet"
     CSV_SEMICOLON = "csv (semicolon)"
 
     @override
@@ -111,6 +116,8 @@ class TableExportFormat(EnumIgnoreCase):
                 return "text/tab-separated-values"
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return "text/csv"
+            case TableExportFormat.PARQUET:
+                return "application/octet-stream"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -124,6 +131,8 @@ class TableExportFormat(EnumIgnoreCase):
                 return ".tsv"
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return ".csv"
+            case TableExportFormat.PARQUET:
+                return ".parquet"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -137,6 +146,8 @@ class TableExportFormat(EnumIgnoreCase):
                 return _csv_stream_writer(sep=";", decimal=",")
             case TableExportFormat.TSV:
                 return _csv_stream_writer(sep="\t", decimal=".")
+            case TableExportFormat.PARQUET:
+                return _write_dataframes_stream_parquet
             case _:
                 raise NotImplementedError(f"Export format '{self}' does not support stream writing.")
 
@@ -163,5 +174,7 @@ class TableExportFormat(EnumIgnoreCase):
                 return df.to_csv(export_path, sep=",", index=with_index, header=with_header)
             case TableExportFormat.CSV_SEMICOLON:
                 return df.to_csv(export_path, sep=";", decimal=",", index=with_index, header=with_header)
+            case TableExportFormat.PARQUET:
+                return df.to_parquet(export_path, compression="zstd", index=with_index)
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
