@@ -78,10 +78,9 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
             writer.write_table(table)
 
 
-def yield_dataframes_to_write(path: Path, dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
-    all_df_names, all_cols = write_dataframes_in_parquet_format(path, dataframes)
+def yield_parquet_dataframes(tmp_path: Path, all_df_names: set[str], all_cols: set[str]) -> Iterator[pd.DataFrame]:
     for df_name in all_df_names:
-        parquet_file = ParquetFile(path / df_name)
+        parquet_file = ParquetFile(tmp_path / df_name)
         for i in range(parquet_file.num_row_groups):
             table = parquet_file.read_row_group(i)
             df = table.to_pandas()

@@ -27,7 +27,6 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
-from antarest.core.serde.parquet_writer import yield_dataframes_to_write
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
@@ -521,10 +520,7 @@ class OutputService:
                 )
 
                 results = aggregator_manager.aggregate_output_data()
-                parquet_dataframes = yield_dataframes_to_write(self._study_service.config.storage.tmp_dir, results)
-
-                writer = export_df_chunks(parquet_dataframes, export_format)
-                writer(file_download_path)
+                export_df_chunks(self._study_service.config.storage.tmp_dir, file_download_path, results, export_format)
 
                 stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_download_path}'."))
 

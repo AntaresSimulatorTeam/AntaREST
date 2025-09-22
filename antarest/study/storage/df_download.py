@@ -20,6 +20,7 @@ from starlette.responses import FileResponse
 from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.matrix_export import TableExportFormat
+from antarest.core.serde.parquet_writer import write_dataframes_in_parquet_format, yield_parquet_dataframes
 
 
 def export_file(
@@ -57,18 +58,6 @@ def export_file(
 
 
 FileWriter: TypeAlias = Callable[[Path], None]
-
-
-def export_df_chunks(
-    df_chunks: Iterator[pd.DataFrame],
-    export_format: TableExportFormat,
-) -> FileWriter:
-    stream_writer = export_format.get_stream_writer()
-
-    def file_writer(export_path: Path) -> None:
-        stream_writer(export_path, df_chunks)
-
-    return file_writer
 
 
 def _export_file(
@@ -113,3 +102,15 @@ def _export_file(
         },
         media_type=media_type,
     )
+
+
+def export_df_chunks(
+    tmp_path: Path, file_download_path: Path, df_chunks: Iterator[pd.DataFrame], export_format: TableExportFormat
+) -> None:
+    all_df_names, all_cols = write_dataframes_in_parquet_format(tmp_path, df_chunks)
+
+    if export_format == TableExportFormat.PARQUET and len(all_df_names) == 1:
+        (tmp_path / next(iter(all_df_names))).rename(file_download_path)
+    else:
+        stream_writer = export_format.get_stream_writer()
+        stream_writer(file_download_path, yield_parquet_dataframes(tmp_path, all_df_names, all_cols))
