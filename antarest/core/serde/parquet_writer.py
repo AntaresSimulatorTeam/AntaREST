@@ -64,12 +64,13 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
 def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     try:
         first_df = next(dataframes)
-        table = pa.Table.from_pandas(first_df)
-        schema = table.schema
+        first_table = pa.Table.from_pandas(first_df)
+        schema = first_table.schema
     except StopIteration:
         raise ValueError("No dataframe provided")
 
     with _parquet_writer(path, schema) as writer:
+        writer.write_table(first_table)
         for df in dataframes:
             if df.empty:
                 continue

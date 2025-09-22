@@ -63,3 +63,15 @@ def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame],
     parsed = pd.read_excel(export_path)
 
     pd.testing.assert_frame_equal(parsed, expected_concatenation)
+
+
+def test_parquet_stream_writer(
+    tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame
+):
+    export_path = tmp_path / "export.parquet"
+    writer = TableExportFormat.PARQUET.get_stream_writer()
+    writer(path=export_path, dataframes=dataframes)
+
+    parsed = pd.read_parquet(export_path)
+
+    pd.testing.assert_frame_equal(parsed, expected_concatenation)
