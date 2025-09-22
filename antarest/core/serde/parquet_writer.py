@@ -73,14 +73,12 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
             writer.write_table(table)
 
 
-def yield_parquet_dataframes(
-    folder_path: Path, all_df_names: set[str], all_cols: list[str], should_reindex: bool
-) -> Iterator[pd.DataFrame]:
+def yield_parquet_dataframes(folder_path: Path, all_df_names: set[str], new_index: list[str]) -> Iterator[pd.DataFrame]:
     for df_name in all_df_names:
         parquet_file = ParquetFile(folder_path / df_name)
         for i in range(parquet_file.num_row_groups):
             table = parquet_file.read_row_group(i)
             df = table.to_pandas()
-            if should_reindex:
-                df = df.reindex(all_cols, axis="columns")
+            if new_index:
+                df = df.reindex(new_index, axis="columns")
             yield df
