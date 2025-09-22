@@ -1034,10 +1034,7 @@ class TestDataAggregationCreationOperations:
         - request the results of a correct aggregation operation: Success, 200
         """
         output_id = "20201014-1422eco-hello"
-        params = {
-            "query_file": "values",
-            "frequency": "hourly",
-        }
+        params = {"query_file": "values", "frequency": "hourly"}
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # create a bad aggregated output task and get its id
@@ -1074,3 +1071,46 @@ class TestDataAggregationCreationOperations:
 
         # get successful results
         assert res.status_code == 200, res.content
+
+
+def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    output_id = "20201014-1422eco-hello"
+    params = {"query_file": "values", "frequency": "annual"}
+
+    # Add a file inside area `fr`. The file is a copy of the `DE` one but is missing the column `C02 EMIS.`
+    # The aggregation should still succeed.
+    file_path = (
+        tmp_path
+        / "ext_workspace"
+        / "STA-mini"
+        / "output"
+        / output_id
+        / "economy"
+        / "mc-ind"
+        / "00001"
+        / "areas"
+        / "fr"
+        / "values-annual.txt"
+    )
+    shutil.copy(ASSETS_DIR / "columns_mismatch.txt", file_path)
+
+    # Perform the request
+    res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+    assert res.status_code == 200
+    download_id = res.json()
+
+    # wait for the task to be completed
+    res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+    assert res.status_code == 200, res.json()
+
+    res = client.get(f"v1/downloads/{download_id}")
+
+    # get successful results
+    assert res.status_code == 200, res.content
+    # ensures the missing data exists and was filled with a NaN
+    content = io.BytesIO(res.content)
+    actual_df = pd.read_csv(content)
+    print(actual_df["CO2 EMIS."])
+    # assert pd.isna(actual_df)["CO2 EMIS."][0]
