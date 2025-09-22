@@ -740,11 +740,18 @@ class TestLoginService:
             # With details
             with DBStatementRecorder(db_session.bind) as db_recorder:
                 actual = login_service.get_all_groups(details=True)
-                assert len(db_recorder.sql_statements) == 3
-                # One request to get the current user groups
-                # One request for users
-                # One request for roles
+                assert len(db_recorder.sql_statements) == 4
+                # Requests:
+                # - current user groups
+                # - all users
+                # - roles for user groups
+                # - roles for admin group exposure
                 assert [g.model_dump() for g in actual] == [
+                    {
+                        "id": "admin",
+                        "name": "X-Men",
+                        "users": [{"id": 1, "name": "Professor Xavier", "role": RoleType.ADMIN}],
+                    },
                     {
                         "id": "superman",
                         "name": "Superman",
@@ -752,7 +759,7 @@ class TestLoginService:
                             {"id": 2, "name": "Clark Kent", "role": RoleType.ADMIN},
                             {"id": 3, "name": "Lois Lane", "role": RoleType.READER},
                         ],
-                    }
+                    },
                 ]
 
         # The user can get its own groups
@@ -830,17 +837,28 @@ class TestLoginService:
             # Without details
             with DBStatementRecorder(db_session.bind) as db_recorder:
                 actual = login_service.get_all_users()
-            assert len(db_recorder.sql_statements) == 3
-            # One request to get the current user groups
-            # One request for users
-            # One request for roles
-            assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
+            assert len(db_recorder.sql_statements) == 4
+            # Requests:
+            # - current user groups
+            # - all users
+            # - roles for user groups
+            # - roles for admin group exposure
+            assert [u.model_dump() for u in actual] == [
+                {"id": 1, "name": "Professor Xavier"},
+                {"id": 2, "name": "Clark Kent"},
+                {"id": 3, "name": "Lois Lane"},
+            ]
 
             # With details
             with DBStatementRecorder(db_session.bind) as db_recorder:
                 actual = login_service.get_all_users(details=True)
-            assert len(db_recorder.sql_statements) == 3  # Same requests
+            assert len(db_recorder.sql_statements) == 4  # Same requests + admin roles exposure
             assert [u.model_dump() for u in actual] == [
+                {
+                    "id": 1,
+                    "name": "Professor Xavier",
+                    "roles": [{"group_id": "admin", "group_name": "X-Men", "identity_id": 1, "type": RoleType.ADMIN}],
+                },
                 {
                     "id": 2,
                     "name": "Clark Kent",
@@ -861,7 +879,11 @@ class TestLoginService:
         user = get_user(login_service, user_id=3, group_id="superman")
         with current_user_context(user):
             actual = login_service.get_all_users()
-        assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
+        assert [u.model_dump() for u in actual] == [
+            {"id": 1, "name": "Professor Xavier"},
+            {"id": 2, "name": "Clark Kent"},
+            {"id": 3, "name": "Lois Lane"},
+        ]
 
     @with_db_context
     def test_get_all_users_for_user_wo_group(self, login_service: LoginService) -> None:
@@ -878,7 +900,10 @@ class TestLoginService:
         ldap_user = get_user(login_service, user_id=60)
         with current_user_context(ldap_user):
             actual = login_service.get_all_users()
-            assert actual == [UserInfo(id=60, name="Jane DOE")]
+            assert actual == [
+                UserInfo(id=1, name="Professor Xavier"),
+                UserInfo(id=60, name="Jane DOE"),
+            ]
 
     @with_db_context
     def test_get_all_bots(self, login_service: LoginService) -> None:
