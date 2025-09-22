@@ -22,7 +22,6 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     return ParquetWriter(
         output_file,
         schema,
-        write_page_index=True,
         compression="zstd",
         data_page_version="2.0",
         sorting_columns=[],
@@ -41,6 +40,7 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
         df_cols = tuple(df.columns)
         existing_columns.update(df_cols)
 
+        df.index = pd.Index(range(len(df)))
         table = pa.Table.from_pandas(df)
 
         if df_cols not in writers:

@@ -391,6 +391,15 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
         },
         "test-01-all.result.tsv",
     ),
+    (
+        {
+            "output_id": "20241807-1540eco-extra-outputs",
+            "query_file": "values",
+            "frequency": "daily",
+            "format": "parquet",
+        },
+        "test-01-all.result.parquet",
+    ),
 ]
 
 
@@ -785,8 +794,10 @@ class TestRawDataAggregationMCAll:
                 df = pd.read_csv(content, sep=",")
             elif export_format == TableExportFormat.TSV.value:
                 df = pd.read_csv(content, sep="\t")
-            else:
+            elif export_format == TableExportFormat.XLSX.value:
                 df = pd.read_excel(content)  # type: ignore
+            else:
+                df = pd.read_parquet(content)
             resource_file = ASSETS_DIR.joinpath(f"aggregate_links_raw_data/{expected_result_filename}")
             resource_file.parent.mkdir(exist_ok=True, parents=True)
             if not resource_file.exists():
@@ -794,10 +805,7 @@ class TestRawDataAggregationMCAll:
                 df.to_csv(resource_file, sep="\t", index=False)
             expected_df = pd.read_csv(resource_file, sep="\t", header=0)
             expected_df = expected_df.replace({np.nan: None})
-            # cast types of expected_df to match df
-            for col in expected_df.columns:
-                expected_df[col] = expected_df[col].astype(df[col].dtype)
-            pd.testing.assert_frame_equal(df, expected_df)
+            pd.testing.assert_frame_equal(df, expected_df, check_dtype=False)
 
     def test_with_variant(self, client: TestClient, user_access_token: str, tmp_path: Path) -> None:
         """
