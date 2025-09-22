@@ -87,18 +87,10 @@ def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame
         is_first = False
 
 
-def _write_dataframes_stream_hdf5(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
-    append = False
-    for df in dataframes:
-        df.to_hdf(path, key="data", append=append, index=False, format="table", mode="r+" if append else "w")
-        append = True
-
-
 class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""
 
     XLSX = "xlsx"
-    HDF5 = "hdf5"
     TSV = "tsv"
     CSV = "csv"
     CSV_SEMICOLON = "csv (semicolon)"
@@ -119,8 +111,6 @@ class TableExportFormat(EnumIgnoreCase):
                 return "text/tab-separated-values"
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return "text/csv"
-            case TableExportFormat.HDF5:
-                return "application/x-hdf5"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -134,8 +124,6 @@ class TableExportFormat(EnumIgnoreCase):
                 return ".tsv"
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return ".csv"
-            case TableExportFormat.HDF5:
-                return ".h5"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -149,8 +137,6 @@ class TableExportFormat(EnumIgnoreCase):
                 return _csv_stream_writer(sep=";", decimal=",")
             case TableExportFormat.TSV:
                 return _csv_stream_writer(sep="\t", decimal=".")
-            case TableExportFormat.HDF5:
-                return _write_dataframes_stream_hdf5
             case _:
                 raise NotImplementedError(f"Export format '{self}' does not support stream writing.")
 
@@ -177,13 +163,5 @@ class TableExportFormat(EnumIgnoreCase):
                 return df.to_csv(export_path, sep=",", index=with_index, header=with_header)
             case TableExportFormat.CSV_SEMICOLON:
                 return df.to_csv(export_path, sep=";", decimal=",", index=with_index, header=with_header)
-            case TableExportFormat.HDF5:
-                return df.to_hdf(
-                    export_path,
-                    key="data",
-                    mode="w",
-                    format="table",
-                    data_columns=True,
-                )
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")

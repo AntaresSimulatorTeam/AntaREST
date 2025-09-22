@@ -63,14 +63,3 @@ def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame],
     parsed = pd.read_excel(export_path)
 
     pd.testing.assert_frame_equal(parsed, expected_concatenation)
-
-
-def test_hdf5_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame):
-    export_path = tmp_path / "export.hdf5"
-    writer = TableExportFormat.HDF5.get_stream_writer()
-    writer(path=export_path, dataframes=dataframes)
-
-    parsed = pd.read_hdf(export_path)
-    parsed = parsed.reset_index(drop=True)
-
-    pd.testing.assert_frame_equal(parsed, expected_concatenation)
