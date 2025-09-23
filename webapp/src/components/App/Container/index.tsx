@@ -43,6 +43,7 @@ import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import MenuItem from "./MenuItem";
+import FavoritesMenu from "./FavoritesMenu";
 import { StyledDrawer } from "./styles";
 import TaskIcon from "./TaskIcon";
 
@@ -140,6 +141,7 @@ function Container({ children }: Props) {
                 link={`/studies/${currentStudyId}`}
               />
             )}
+            <FavoritesMenu isMenuOpen={isDrawerOpen} />
             {topMenuItems.map(({ titleKey, icon, link }) => (
               <MenuItem
                 key={titleKey}
