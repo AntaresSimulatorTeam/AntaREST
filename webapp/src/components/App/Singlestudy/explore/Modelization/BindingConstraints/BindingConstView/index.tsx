@@ -172,7 +172,9 @@ function BindingConstView({ constraintId }: Props) {
           alert="warning"
           open
         >
-          {t("study.modelization.bindingConst.question.deleteBindingConstraint")}
+          {t("study.modelization.bindingConst.question.deleteBindingConstraint", {
+            constraintName: constraintId,
+          })}
         </ConfirmationDialog>
       )}
     </>

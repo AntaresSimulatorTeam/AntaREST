@@ -55,7 +55,7 @@ export interface GroupedDataTableProps<
   onNameClick?: (row: TData) => void;
   onDataChange?: (data: TData[]) => void;
   isLoading?: boolean;
-  deleteConfirmationMessage?: string | ((count: number) => string);
+  deleteConfirmationMessage?: string | ((count: number, rows: TData[]) => string);
   fillPendingRow?: (pendingRow: TRow<TGroups[number]>) => TRow<TGroups[number]> & Partial<TData>;
 }
 
@@ -421,7 +421,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
           alert="warning"
         >
           {RA.isFunction(deleteConfirmationMessage)
-            ? deleteConfirmationMessage(selectedRows.length)
+            ? deleteConfirmationMessage(selectedRows.length, selectedRows)
             : (deleteConfirmationMessage ?? t("dialog.message.confirmDelete"))}
         </ConfirmationDialog>
       )}

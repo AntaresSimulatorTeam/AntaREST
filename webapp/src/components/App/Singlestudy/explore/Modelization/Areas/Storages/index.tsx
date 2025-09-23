@@ -176,9 +176,19 @@ function Storages() {
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
-      deleteConfirmationMessage={(count) =>
-        t("studies.modelization.clusters.question.delete", { count })
-      }
+      deleteConfirmationMessage={(count, rows) => {
+        if (count === 1) {
+          return t("studies.modelization.clusters.question.delete", {
+            count,
+            clusterName: rows[0].name,
+          });
+        }
+        const clusterNames = rows.map((row) => row.name).join(", ");
+        return t("studies.modelization.clusters.question.delete", {
+          count,
+          clusterNames,
+        });
+      }}
       fillPendingRow={(row) => ({
         withdrawalNominalCapacity: 0,
         injectionNominalCapacity: 0,
