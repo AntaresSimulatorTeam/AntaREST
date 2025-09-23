@@ -52,6 +52,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
             df_cols = tuple(df.columns)
             for col in df_cols:
                 if col not in existing_columns:
+                    existing_columns.add(col)
                     new_index.append(col)
 
             df.index = pd.RangeIndex(len(df))
