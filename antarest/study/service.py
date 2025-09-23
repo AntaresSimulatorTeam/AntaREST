@@ -1275,17 +1275,18 @@ class StudyService:
             _ = study.workspace
             study_info = study.to_enhanced_json_summary()
 
-        if self.storage_service.variant_study_service.has_children(study):
-            if children:
-                if isinstance(study, VariantStudy):
-                    self.storage_service.variant_study_service.walk_children(
-                        study.id,
-                        lambda v: self.delete_study(v.id, True),
-                        bottom_first=True,
-                    )
-                    return
-            else:
+        variant_service = self.storage_service.variant_study_service
+
+        if variant_service.has_children(study):
+            if not children:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
+
+            variant_service.walk_children(
+                study.id,
+                lambda s: self.delete_study(s.id, True),
+                bottom_first=True,
+                include_parent=False,
+            )
 
         # If the study is a variant, and its snapshot is generating,
         # we need to wait until it's done to delete it to avoid any fs issues
