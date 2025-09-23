@@ -24,7 +24,7 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
 
 def write_dataframes_in_parquet_format_by_column_sets(
     path: Path, dataframes: Iterator[pd.DataFrame]
-) -> tuple[set[str], list[str]]:
+) -> tuple[list[str], list[str]]:
     """
     Iterates over the given dataframes and writes them according to their given column sets.
     If 2 dataframes share the same columns, we write them in the same file.
@@ -41,7 +41,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
     """
     writers = {}
     file_counter = 0
-    filenames = set()
+    filenames = []
     existing_columns: set[str] = set()
     new_index: list[str] = []
 
@@ -60,7 +60,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
 
             if df_cols not in writers:
                 file_name = f"file{file_counter}.parquet"
-                filenames.add(file_name)
+                filenames.append(file_name)
                 file_path = path / file_name
                 file_counter += 1
 
@@ -95,7 +95,9 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
             writer.write_table(table)
 
 
-def yield_parquet_dataframes(folder_path: Path, all_df_names: set[str], new_index: list[str]) -> Iterator[pd.DataFrame]:
+def yield_parquet_dataframes(
+    folder_path: Path, all_df_names: list[str], new_index: list[str]
+) -> Iterator[pd.DataFrame]:
     """
     Iterates over the written parquet files, reads them using chunks and reindex them if needed.
 

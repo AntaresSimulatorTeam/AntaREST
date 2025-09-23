@@ -127,7 +127,7 @@ def export_df_chunks(
     new_index = all_cols
     if len(all_df_names) == 1:
         if export_format == TableExportFormat.PARQUET:
-            shutil.move(tmp_path / next(iter(all_df_names)), file_download_path)
+            shutil.move(tmp_path / all_df_names[0], file_download_path)
             return
         # No need to reindex as all dataframes have the same columns
         new_index = []
