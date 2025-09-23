@@ -27,6 +27,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSecurityCriterion,
+    XpansionSecurityCriterionUpdate,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -200,5 +201,16 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.xpansion_manager.get_security_criterion(study_interface)
+
+    @bp.put(
+        "/studies/{uuid}/extensions/xpansion/security_criterion",
+        tags=[APITag.xpansion_study_management],
+        summary="Updates the Xpansion security criterion configuration",
+    )
+    def update_security_criterion(uuid: str, criterion: XpansionSecurityCriterionUpdate) -> XpansionSecurityCriterion:
+        logger.info(f"Updates xpansion security criterion from the study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.xpansion_manager.update_security_criterion(study_interface, criterion)
 
     return bp

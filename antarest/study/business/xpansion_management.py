@@ -26,6 +26,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionCandidateCreation,
     XpansionResourceFileType,
     XpansionSecurityCriterion,
+    XpansionSecurityCriterionUpdate,
     XpansionSettings,
     XpansionSettingsUpdate,
     create_xpansion_candidate,
@@ -208,3 +209,8 @@ class XpansionManager:
 
     def get_security_criterion(self, study: StudyInterface) -> XpansionSecurityCriterion:
         return study.get_study_dao().get_xpansion_security_criterion()
+
+    def update_security_criterion(
+        self, study: StudyInterface, criterion: XpansionSecurityCriterionUpdate
+    ) -> XpansionSecurityCriterion:
+        return self.get_security_criterion(study)
