@@ -167,6 +167,7 @@ export interface LaunchJob {
   outputId: string;
   exitCode: number;
   ownerId: number;
+  ownerName: string;
 }
 
 export interface LaunchJobDTO {
