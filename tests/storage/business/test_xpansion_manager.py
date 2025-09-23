@@ -35,6 +35,9 @@ from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
+    XpansionSecurityCriterion,
+    XpansionSecurityCriterionUpdate,
+    XpansionSecurityPattern,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
@@ -660,3 +663,29 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert xpansion_manager.list_resources(study, XpansionResourceFileType.CAPACITIES) == [filename1, filename2]
+
+
+@pytest.mark.unit_test
+def test_security_criterion(
+    area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface
+) -> None:
+    xpansion_manager.create_xpansion_configuration(study)
+
+    assert xpansion_manager.get_security_criterion(study) == XpansionSecurityCriterion()
+
+    make_areas(area_manager, study)
+    new_criterion = XpansionSecurityCriterionUpdate(
+        criterion_count_threshold=1.2,
+        patterns=[XpansionSecurityPattern(area="area2", criterion=19)],
+    )
+    criterion = xpansion_manager.update_security_criterion(study, new_criterion)
+    created_criterion = xpansion_manager.get_security_criterion(study)
+    assert (
+        created_criterion
+        == criterion
+        == XpansionSecurityCriterion(
+            stopping_threshold=1e6,
+            criterion_count_threshold=1.2,
+            patterns=[XpansionSecurityPattern(area="area2", criterion=19)],
+        )
+    )
