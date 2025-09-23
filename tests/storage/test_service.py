@@ -1449,9 +1449,10 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
     variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
     variant_study_service.get_children.return_value = [variant_study]
 
-    def walk_children(parent_id: str, fun, bottom_first: bool) -> None:
-        assert parent_id == variant_study.id
+    def walk_children(parent_id: str, fun, bottom_first: bool, include_parent: bool = True) -> None:
+        assert parent_id == raw_study.id
         assert bottom_first is True
+        assert include_parent is False
         fun(variant_study)
 
     variant_study_service.walk_children.side_effect = walk_children
@@ -1467,8 +1468,9 @@ def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
 
     variant_study_service.walk_children.assert_called_once()
     args, kwargs = variant_study_service.walk_children.call_args
-    assert args[0] == variant_study.id
+    assert args[0] == raw_study.id
     assert kwargs.get("bottom_first") is True
+    assert kwargs.get("include_parent") is False
 
     assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
 

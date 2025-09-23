@@ -1281,21 +1281,12 @@ class StudyService:
             if not children:
                 raise StudyDeletionNotAllowed(study.id, "Study has variant children")
 
-            if isinstance(study, VariantStudy):
-                variant_service.walk_children(
-                    study.id,
-                    lambda v: self.delete_study(v.id, True),
-                    bottom_first=True,
-                )
-                return
-
-            # Raw studies may own variant children: delete every variant subtree
-            for child in variant_service.get_children(study.id):
-                variant_service.walk_children(
-                    child.id,
-                    lambda v: self.delete_study(v.id, True),
-                    bottom_first=True,
-                )
+            variant_service.walk_children(
+                study.id,
+                lambda s: self.delete_study(s.id, True),
+                bottom_first=True,
+                include_parent=False,
+            )
 
         # If the study is a variant, and its snapshot is generating,
         # we need to wait until it's done to delete it to avoid any fs issues
