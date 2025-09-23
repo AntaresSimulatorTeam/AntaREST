@@ -135,7 +135,7 @@ def test_fails_because_of_versions_asked(tmp_path: Path):
     ):
         StudyUpgrader(study_dir, "710").upgrade()
     # Try to upgrade with a version that does not exist
-    with pytest.raises(InvalidUpgrade, match="Invalid version number '820.rc'"):
+    with pytest.raises(ValueError, match="Invalid version number '820.rc'"):
         StudyUpgrader(study_dir, "820.rc").upgrade()
 
 
