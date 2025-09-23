@@ -40,6 +40,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     parse_xpansion_security_criterion,
     parse_xpansion_sensitivity_settings,
     parse_xpansion_settings,
+    serialize_xpansion_security_criterion,
     serialize_xpansion_sensitivity_settings,
     serialize_xpansion_settings,
 )
@@ -249,7 +250,9 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def save_xpansion_security_criterion(self, criterion: XpansionSecurityCriterion) -> None:
-        raise NotImplementedError
+        file_study = self.get_file_study()
+        content = serialize_xpansion_security_criterion(criterion)
+        file_study.tree.save(data=content, url=["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
 
     def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
         file_study = self.get_file_study()
