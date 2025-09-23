@@ -969,6 +969,15 @@ COMMANDS = [
         None,
         id="update_timeseries_configuration",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_XPANSION_SECURITY_CRITERION.value,
+            args=[{"criterion": {"stopping_threshold": 100}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="update_xpansion_security_criterion",
+    ),
 ]
 
 

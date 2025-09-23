@@ -94,6 +94,9 @@ from antarest.study.storage.variantstudy.model.command.update_st_storages import
 from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command.update_timeseries_config import UpdateTimeSeriesConfig
+from antarest.study.storage.variantstudy.model.command.update_xpansion_security_criterion import (
+    UpdateXpansionSecurityCriterion,
+)
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -149,6 +152,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
     CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
+    CommandName.UPDATE_XPANSION_SECURITY_CRITERION.value: UpdateXpansionSecurityCriterion,
     CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value: UpdateOptimizationPreferences,
     CommandName.UPDATE_ADVANCED_PARAMETERS.value: UpdateAdvancedParameters,
     CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: CreateSTStorageAdditionalConstraints,

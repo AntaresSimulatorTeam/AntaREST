@@ -88,6 +88,7 @@ class CommandName(Enum):
     REMOVE_XPANSION_CANDIDATE = "remove_xpansion_candidate"
     REPLACE_XPANSION_CANDIDATE = "replace_xpansion_candidate"
     UPDATE_XPANSION_SETTINGS = "update_xpansion_settings"
+    UPDATE_XPANSION_SECURITY_CRITERION = "update_xpansion_security_criterion"
     UPDATE_GENERAL_CONFIG = "update_general_config"
     UPDATE_OPTIMIZATION_PREFERENCES = "update_optimization_preferences"
     UPDATE_ADVANCED_PARAMETERS = "update_advanced_parameters"
