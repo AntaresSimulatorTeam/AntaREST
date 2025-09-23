@@ -124,14 +124,13 @@ def export_df_chunks(
     """
     all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, df_chunks)
 
-    should_reindex = True
+    new_index = all_cols
     if len(all_df_names) == 1:
         if export_format == TableExportFormat.PARQUET:
             shutil.move(tmp_path / next(iter(all_df_names)), file_download_path)
             return
         # No need to reindex as all dataframes have the same columns
-        should_reindex = False
+        new_index = []
 
     stream_writer = export_format.get_stream_writer()
-    new_index = all_cols if should_reindex else []
     stream_writer(file_download_path, yield_parquet_dataframes(tmp_path, all_df_names, new_index))
