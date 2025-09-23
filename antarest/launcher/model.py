@@ -13,10 +13,10 @@
 import enum
 import typing
 from datetime import datetime
-from typing import Any, Dict, List, MutableMapping, Optional
+from typing import Any, Dict, MutableMapping, Optional
 from uuid import uuid4
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -254,8 +254,24 @@ class JobCreationDTO(AntaresBaseModel):
     job_id: str
 
 
-class LauncherEnginesDTO(AntaresBaseModel):
-    engines: List[str]
+class LauncherResourceRangeDTO(AntaresBaseModel, extra="forbid"):
+    min: int
+    max: int
+    default: int
+
+
+class LauncherInfoDTO(AntaresBaseModel):
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True,
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
+    id: str
+    name: str
+    nb_cores: LauncherResourceRangeDTO
+    time_limit: LauncherResourceRangeDTO
 
 
 class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):

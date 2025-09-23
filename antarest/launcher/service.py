@@ -44,8 +44,10 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
+    LauncherInfoDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherResourceRangeDTO,
     LogType,
     XpansionParametersDTO,
 )
@@ -116,8 +118,27 @@ class LauncherService:
         adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
-    def get_launchers(self) -> List[str]:
-        return list(self.launchers.keys())
+    def get_launchers(self) -> List[LauncherInfoDTO]:
+        configs = self.config.launcher.configs or []
+        launchers: List[LauncherInfoDTO] = []
+        for launcher_config in configs:
+            launchers.append(
+                LauncherInfoDTO(
+                    id=launcher_config.id,
+                    name=launcher_config.name,
+                    nb_cores=LauncherResourceRangeDTO(
+                        min=launcher_config.nb_cores.min,
+                        max=launcher_config.nb_cores.max,
+                        default=launcher_config.nb_cores.default,
+                    ),
+                    time_limit=LauncherResourceRangeDTO(
+                        min=launcher_config.time_limit.min,
+                        max=launcher_config.time_limit.max,
+                        default=launcher_config.time_limit.default,
+                    ),
+                )
+            )
+        return launchers
 
     def get_nb_cores(self, launcher: Optional[str]) -> NbCoresConfig:
         """

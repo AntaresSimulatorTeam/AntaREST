@@ -10,21 +10,19 @@
 #
 # This file is part of the Antares project.
 
-import http
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, List, Optional
 from uuid import UUID
 
 from fastapi import APIRouter
-from fastapi.exceptions import HTTPException
 
-from antarest.core.config import Config, InvalidConfigurationError
+from antarest.core.config import Config
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
-    LauncherEnginesDTO,
+    LauncherInfoDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
@@ -36,19 +34,6 @@ from antarest.login.auth import Auth
 logger = logging.getLogger(__name__)
 
 DEFAULT_MAX_LATEST_JOBS = 200
-
-
-class UnknownSolverConfig(HTTPException):
-    """
-    Exception raised during solver versions retrieval when
-    the name of the launcher is not "default", "slurm" or "local".
-    """
-
-    def __init__(self, solver: str | None) -> None:
-        super().__init__(
-            http.HTTPStatus.UNPROCESSABLE_ENTITY,
-            f"Unknown solver configuration: '{solver}'",
-        )
 
 
 def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
@@ -151,14 +136,14 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         service.remove_job(job_id)
 
     @bp.get(
-        "/engines",
+        "/launchers",
         tags=[APITag.launcher],
-        summary="Retrieve available engines",
-        response_model=LauncherEnginesDTO,
+        summary="Retrieve configured launchers",
+        response_model=List[LauncherInfoDTO],
     )
-    def get_engines() -> Any:
-        logger.info("Listing launch engines")
-        return LauncherEnginesDTO(engines=service.get_launchers())
+    def get_launchers() -> Any:
+        logger.info("Listing launchers")
+        return service.get_launchers()
 
     @bp.get(
         "/load",
@@ -196,58 +181,5 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         """
         logger.info(f"Fetching the list of solver versions for the '{solver}' configuration")
         return service.get_solver_versions(solver)
-
-    # noinspection SpellCheckingInspection
-    @bp.get(
-        "/nbcores",
-        tags=[APITag.launcher],
-        summary="Retrieving Min, Default, and Max Core Count",
-        response_model=Dict[str, int],
-    )
-    def get_nb_cores(launcher: Optional[str] = None) -> Dict[str, int]:
-        """
-        Retrieve the numer of cores of the launcher.
-
-        Args:
-        - `launcher`: name of the configuration to read.
-          If no launcher is specified, retrieve the configuration of the default launcher.
-
-        Returns:
-        - "min": min number of cores
-        - "defaultValue": default number of cores
-        - "max": max number of cores
-        """
-        logger.info(f"Fetching the number of cores for the '{launcher}' configuration")
-        try:
-            return service.config.launcher.get_nb_cores(launcher).to_json()
-        except InvalidConfigurationError:
-            raise UnknownSolverConfig(launcher)
-
-    # noinspection SpellCheckingInspection
-    @bp.get(
-        "/time-limit",
-        tags=[APITag.launcher],
-        summary="Retrieve the time limit for a job (in hours)",
-    )
-    def get_time_limit(launcher: Optional[str] = None) -> Dict[str, int]:
-        """
-        Retrieve the time limit for a job (in hours) of the given launcher.
-
-        If a jobs exceed this time limit, SLURM kills the job and it is considered failed.
-
-        Args:
-        - `launcher`: name of the configuration to read.
-          If no launcher is specified, retrieve the configuration of the default launcher.
-
-        Returns:
-        - "min": min allowed time limit
-        - "defaultValue": default time limit
-        - "max": max allowed time limit
-        """
-        logger.info(f"Fetching the time limit for the '{launcher}' configuration")
-        try:
-            return service.config.launcher.get_time_limit(launcher).to_json()
-        except InvalidConfigurationError:
-            raise UnknownSolverConfig(launcher)
 
     return bp
