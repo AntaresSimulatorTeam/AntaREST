@@ -114,7 +114,7 @@ class TableExportFormat(EnumIgnoreCase):
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return "text/csv"
             case TableExportFormat.PARQUET:
-                return "application/octet-stream"
+                return "application/vnd.apache.parquet"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 

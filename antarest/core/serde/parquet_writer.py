@@ -28,31 +28,33 @@ def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataF
     filenames = set()
     existing_columns: set[str] = set()
 
-    for df in dataframes:
-        if df.empty:
-            continue
-        df_cols = tuple(df.columns)
-        existing_columns.update(df_cols)
+    try:
+        for df in dataframes:
+            if df.empty:
+                continue
+            df_cols = tuple(df.columns)
+            existing_columns.update(df_cols)
 
-        df.index = pd.RangeIndex(len(df))
-        table = pa.Table.from_pandas(df)
+            df.index = pd.RangeIndex(len(df))
+            table = pa.Table.from_pandas(df)
 
-        if df_cols not in writers:
-            file_name = f"file{file_counter}.parquet"
-            filenames.add(file_name)
-            file_path = path / file_name
-            file_counter += 1
+            if df_cols not in writers:
+                file_name = f"file{file_counter}.parquet"
+                filenames.add(file_name)
+                file_path = path / file_name
+                file_counter += 1
 
-            new_writer = _parquet_writer(file_path, table.schema)
-            writers[df_cols] = new_writer
+                new_writer = _parquet_writer(file_path, table.schema)
+                writers[df_cols] = new_writer
 
-        writers[df_cols].write_table(table)
+            writers[df_cols].write_table(table)
 
-    # Close all writers
-    for writer in writers.values():
-        writer.close()
+        return filenames, list(existing_columns)
 
-    return filenames, list(existing_columns)
+    finally:
+        # Close all writers
+        for writer in writers.values():
+            writer.close()
 
 
 def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
