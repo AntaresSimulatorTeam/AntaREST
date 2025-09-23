@@ -10,17 +10,18 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Optional, Sequence
+from typing import Sequence
 
 from antarest.study.business.model.district_model import (
-    District,
-    DistrictBaseFilter,
+    DistrictApplyFilter,
+    DistrictDefinition,
+    DistrictDTO,
 )
 
 
 class ReadOnlyDistrictDao(ABC):
     @abstractmethod
-    def get_districts(self) -> Sequence[District]:
+    def get_districts(self) -> Sequence[DistrictDTO]:
         """
         Get the list of districts defined in this study.
 
@@ -30,12 +31,12 @@ class ReadOnlyDistrictDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_district(self, district_id: str) -> District:
+    def get_district(self, district_id: str) -> DistrictDTO:
         """
-        Get the list of districts defined in this study.
+        Get the district with the given ID.
 
         Returns:
-            The (unordered) list of Data Transfer Objects (DTO) representing districts.
+            The Data Transfer Object (DTO) representing the district.
         """
         raise NotImplementedError()
 
@@ -51,28 +52,43 @@ class ReadOnlyDistrictDao(ABC):
         # TODO this method should be moved to the area DAO when we'll implement it
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
+        """
+        Get the apply filter of a district.
+
+        Args:
+            district_id: district identifier
+
+        Returns:
+            The apply filter of the district.
+
+        Raises:
+            DistrictNotFound: exception raised when district is not found in the study.
+        """
+        raise NotImplementedError()
+
 
 class DistrictDao(ReadOnlyDistrictDao):
     @abstractmethod
-    def save_district(self, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> None:
+    def save_district(self, district: DistrictDefinition) -> None:
         """
         Create a district or update the district if it already exists.
 
         Note:
             the `name` can't be updated because it is used as a unique identifier.
 
-            Also, the areas in district will be stored under the "+" or "-" key depending if the base filter is "remove_all" or "add_all".
+            Also, the areas in district will be stored under the "+" or "-" key depending if the apply filter is "remove_all" or "add_all".
 
-            If the base filter is "add_all" it means that this distrit will contain all existing areas except the ones in district.areas .
+            If the apply filter is "add_all" it means that this distrit will contain all existing areas except the ones in district.areas .
 
-            Otherwise if the base filter is "remove_all" it means the district contains only the areas in district.areas .
+            Otherwise if the apply filter is "remove_all" it means the district contains only the areas in district.areas .
 
         Args:
             district: District object note that the areas field will contains exactly the area that will be stored.
-            district_base_filter: indicate whether this district include all areas except those given in district or only those .
+            district_apply_filter: indicate whether this district include all areas except those given in district or only those .
 
         Raises:
-            DistrictNotFound: exception raised when district is not found in the study.
             AreaNotFound: exception raised when one (or more) area(s) don't exist in the study.
         """
         raise NotImplementedError()

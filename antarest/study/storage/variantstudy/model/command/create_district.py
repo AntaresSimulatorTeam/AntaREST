@@ -57,7 +57,7 @@ class CreateDistrict(ICommand):
                 if "name" in values:
                     parameters["name"] = values.pop("name")
                 if "base_filter" in values:
-                    parameters["base_filter"] = values.pop("base_filter")
+                    parameters["apply_filter"] = values.pop("base_filter")
                 if "filter_items" in values:
                     parameters["areas"] = values.pop("filter_items")
                 if "output" in values:
@@ -85,9 +85,9 @@ class CreateDistrict(ICommand):
         if invalid_areas:
             return command_failed(message=f"District '{self.parameters.name}' has invalid areas: {invalid_areas}")
 
-        new_district = create_district(self.parameters, district_id)
+        new_district_definition = create_district(self.parameters, district_id)
 
-        study_data.save_district(new_district, self.parameters.base_filter)
+        study_data.save_district(new_district_definition)
 
         return command_succeeded(message=district_id)
 

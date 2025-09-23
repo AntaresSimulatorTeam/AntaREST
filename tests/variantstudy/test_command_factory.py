@@ -133,7 +133,7 @@ COMMANDS = [
                 {
                     "parameters": {
                         "name": "id",
-                        "base_filter": "add-all",
+                        "apply_filter": "add-all",
                         "output": True,
                         "areas": [],
                         "comments": "",
@@ -551,7 +551,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_DISTRICT.value,
-            args=[{"id": "id", "parameters": {"base_filter": "add-all"}}],
+            args=[{"id": "id", "parameters": {"apply_filter": "add-all"}}],
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
@@ -1430,7 +1430,7 @@ def test_parse_legacy_command_create_district(command_factory: CommandFactory):
     assert dto.args == {
         "parameters": {
             "name": "id",
-            "base_filter": "add-all",
+            "apply_filter": "add-all",
             "areas": ["a"],
             "output": False,
             "comments": "",

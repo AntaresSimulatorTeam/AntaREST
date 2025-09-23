@@ -36,7 +36,7 @@ from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VER
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet, district_set_sign_from_data
+from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -226,10 +226,12 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
 
     return {
         transform_name_to_id(name): DistrictSet(
-            areas=item.get(district_set_sign_from_data(item)),
+            add_areas=item.get("+", []),
+            substract_areas=item.get("-", []),
             name=item.get("caption"),
-            inverted_set=district_set_sign_from_data(item) == "-",
             output=item.get("output", True),
+            comments=item.get("comments", ""),
+            apply_filter=item.get("apply-filter", "remove-all"),
         )
         for name, item in obj.items()
     }

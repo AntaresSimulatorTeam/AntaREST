@@ -19,7 +19,7 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdate,
 )
-from antarest.study.business.model.district_model import District
+from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -94,21 +94,21 @@ class TestDistrictManager:
     def test_get_districts(self, manager: DistrictManager, study_with_sets: FileStudy):
         actual = manager.get_districts(study_with_sets)
         expected = [
-            District(
+            DistrictDTO(
                 id="d1",
                 name="D1",
                 areas=[],
                 output=True,
                 comments="dummy",
             ),
-            District(
+            DistrictDTO(
                 id="d2",
                 name="D2",
                 areas=["n1", "n2"],
                 output=True,
                 comments="dummy",
             ),
-            District(
+            DistrictDTO(
                 id="d3",
                 name="D2",
                 areas=["n1", "n2", "n3"],
@@ -142,14 +142,15 @@ class TestDistrictManager:
                 areas=["n1", "n2", "n2"],  # areas can have duplicates
             )
             actual = manager.create_district(study_with_sets, dto)
-            expected = District(
+            expected = DistrictDefinition(
                 id="d4",
                 name="D4",
-                areas=["n1", "n2"],
+                add_areas=["n1", "n2"],
                 output=True,
                 comments="hello",
+                apply_filter=DistrictApplyFilter.remove_all,
             )
-            actual.areas.sort()
+            actual.add_areas.sort()
             assert actual == expected
             _check_add_commands(add_commands_mock, CreateDistrict)
 

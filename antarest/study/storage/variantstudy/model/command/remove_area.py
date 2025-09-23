@@ -55,9 +55,13 @@ class RemoveArea(ICommand):
 
     def _remove_area_from_sets_in_config(self, study_data_config: FileStudyTreeConfig) -> None:
         for id_, set_ in study_data_config.sets.items():
-            if set_.areas and self.id in set_.areas:
+            if set_.add_areas and self.id in set_.add_areas:
                 with contextlib.suppress(ValueError):
-                    set_.areas.remove(self.id)
+                    set_.add_areas.remove(self.id)
+                    study_data_config.sets[id_] = set_
+            if set_.substract_areas and self.id in set_.substract_areas:
+                with contextlib.suppress(ValueError):
+                    set_.substract_areas.remove(self.id)
                     study_data_config.sets[id_] = set_
 
     def remove_from_config(self, study_data_config: FileStudyTreeConfig) -> None:

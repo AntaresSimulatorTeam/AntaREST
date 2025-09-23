@@ -69,8 +69,9 @@ from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfigurationUpdate,
 )
 from antarest.study.business.model.district_model import (
-    District,
     DistrictCreation,
+    DistrictDefinition,
+    DistrictDTO,
     DistrictUpdate,
 )
 from antarest.study.business.model.hydro_model import (
@@ -281,9 +282,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Get the list of districts defined in this study",
-        response_model=List[District],
+        response_model=List[DistrictDTO],
     )
-    def get_districts(uuid: str) -> List[District]:
+    def get_districts(uuid: str) -> List[DistrictDTO]:
         logger.info(f"Fetching districts list for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
@@ -293,9 +294,9 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Create a new district in the study",
-        response_model=District,
+        response_model=DistrictDefinition,
     )
-    def create_district(uuid: str, dto: DistrictCreation) -> District:
+    def create_district(uuid: str, dto: DistrictCreation) -> DistrictDefinition:
         logger.info(f"Create district {dto.name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)

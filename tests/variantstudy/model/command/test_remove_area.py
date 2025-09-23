@@ -13,7 +13,7 @@
 from checksumdir import dirhash
 
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
-from antarest.study.business.model.district_model import DistrictBaseFilter, DistrictCreation
+from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictCreation
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterCreation,
     RenewableClusterGroup,
@@ -94,7 +94,7 @@ class TestRemoveArea:
             study_version = empty_study.config.version
 
             create_district_command = CreateDistrict(
-                parameters=DistrictCreation(name="foo", base_filter=DistrictBaseFilter.add_all, areas=[area_id]),
+                parameters=DistrictCreation(name="foo", apply_filter=DistrictApplyFilter.add_all, areas=[area_id]),
                 command_context=command_context,
                 study_version=study_version,
             )
@@ -215,7 +215,7 @@ class TestRemoveArea:
             create_district_command = CreateDistrict(
                 parameters=DistrictCreation(
                     name="foo",
-                    base_filter=DistrictBaseFilter.add_all,
+                    apply_filter=DistrictApplyFilter.add_all,
                     areas=[area_id, area_id2],
                 ),
                 command_context=command_context,

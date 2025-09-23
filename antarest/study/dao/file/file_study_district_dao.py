@@ -10,16 +10,16 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Optional, Sequence
+from typing import Any, Sequence
 
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
-from antarest.study.business.model.district_model import District, DistrictBaseFilter
+from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     DistrictSet,
-    district_set_sign_from_base_filter,
+    district_set_apply_filter,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -32,7 +32,7 @@ class FileStudyDistrictDao(DistrictDao):
         pass
 
     @override
-    def get_districts(self) -> Sequence[District]:
+    def get_districts(self) -> Sequence[DistrictDTO]:
         """
         Returns all districts of the study.
         """
@@ -47,12 +47,12 @@ class FileStudyDistrictDao(DistrictDao):
 
         all_areas = list(file_study.config.areas)
         return [
-            DistrictSet.from_data(district_data, district_id).to_model(district_id, all_areas)
+            DistrictSet.from_data(district_data, district_id).to_model(district_id).to_dto(all_areas)
             for district_id, district_data in districts.items()
         ]
 
     @override
-    def get_district(self, district_id: str) -> District:
+    def get_district(self, district_id: str) -> DistrictDTO:
         """
         Returns the district with the given district id.
         """
@@ -65,7 +65,25 @@ class FileStudyDistrictDao(DistrictDao):
             raise DistrictConfigNotFound(str(path))
 
         all_areas = list(study_data.config.areas)
-        return DistrictSet.from_data(district_data, district_id).to_model(district_id, all_areas)
+        return DistrictSet.from_data(district_data, district_id).to_model(district_id).to_dto(all_areas)
+
+    @override
+    def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
+        """
+        Returns the district base filter.
+        """
+        if not self.district_exists(district_id):
+            raise DistrictConfigNotFound(district_id)
+
+        study_data = self.get_file_study()
+        path = DISTRICTS_PATH + [district_id]
+        try:
+            # may raise KeyError if the path is missing
+            district_data = study_data.tree.get(path)
+        except KeyError:
+            raise DistrictConfigNotFound(str(path))
+
+        return district_set_apply_filter(district_data)
 
     @override
     def district_exists(self, district_id: str) -> bool:
@@ -76,33 +94,34 @@ class FileStudyDistrictDao(DistrictDao):
         return district_id in study_data.config.sets
 
     @override
-    def save_district(self, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> None:
+    def save_district(self, district: DistrictDefinition) -> None:
         """
         Save a new district to a study.
 
         If the district already exists, it will be overwritten.
-
-        Depending on the `district_base_filter`, the areas in the district will be stored under the key "+" or "-".
         """
         study_data = self.get_file_study()
-        invalid_areas = self.get_invalid_areas_in_district(district.areas)
+        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.substract_areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
         # Update the in-memory config
-        study_data.config.sets[district.id] = DistrictSet.from_model(district, district_base_filter)
+        study_data.config.sets[district.id] = DistrictSet.from_model(district)
 
         # Persist the change in the filesystem
-        item_key = district_set_sign_from_base_filter(district_base_filter)
-        apply_filter = district_base_filter if district_base_filter else DistrictBaseFilter.remove_all
+        district_data_tree: dict[str, Any] = {
+            "caption": district.name,
+            "apply-filter": district.apply_filter.value,
+            "output": district.output,
+            "comments": district.comments,
+        }
+        if district.add_areas:
+            district_data_tree["+"] = district.add_areas
+        if district.substract_areas:
+            district_data_tree["-"] = district.substract_areas
+
         study_data.tree.save(
-            {
-                "caption": district.name,
-                "apply-filter": apply_filter.value,
-                item_key: district.areas,
-                "output": district.output,
-                "comments": district.comments,
-            },
+            district_data_tree,
             ["input", "areas", "sets", district.id],
         )
 

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from antarest.core.serde.ini_reader import IniReader
-from antarest.study.business.model.district_model import DistrictBaseFilter, DistrictCreation, DistrictUpdate
+from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictCreation, DistrictUpdate
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -49,6 +49,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         {"area_name": area3, "command_context": command_context, "study_version": study_version}
     ).apply(study_dao)
 
+    # create district with two added areas
     create_district1_command: ICommand = CreateDistrict(
         parameters=DistrictCreation(
             name="Two added zone",
@@ -68,10 +69,11 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert set_config["output"]
     assert set_config["comments"] == "First district"
 
+    # create district with one subtracted area, apply-filter set to add-all
     create_district2_command: ICommand = CreateDistrict(
         parameters=DistrictCreation(
             name="One subtracted zone",
-            base_filter=DistrictBaseFilter.add_all,
+            apply_filter=DistrictApplyFilter.add_all,
             areas=[area1_id],
         ),
         command_context=command_context,
@@ -86,9 +88,10 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert set_config["-"] == [area1_id]
     assert set_config["apply-filter"] == "add-all"
 
+    # update district to remove area1 and keep area2, apply-filter set to remove-all
     update_district2_command: ICommand = UpdateDistrict(
         id="one subtracted zone",
-        parameters=DistrictUpdate(base_filter=DistrictBaseFilter.remove_all, areas=[area2_id]),
+        parameters=DistrictUpdate(apply_filter=DistrictApplyFilter.remove_all, areas=[area2_id]),
         command_context=command_context,
         study_version=study_version,
     )
@@ -100,6 +103,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert set_config["+"] == [area2_id]
     assert set_config["apply-filter"] == "remove-all"
 
+    # case create empty district with output false
     create_district3_command: ICommand = CreateDistrict(
         parameters=DistrictCreation(name="Empty district without output", output=False),
         command_context=command_context,
@@ -148,6 +152,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     read_config = build(empty_study.config.study_path, "")
     assert len(read_config.sets.keys()) == 4
 
+    # case remove district
     remove_district3_command: ICommand = RemoveDistrict(
         id="empty district without output", command_context=command_context, study_version=study_version
     )
@@ -159,3 +164,36 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert remove_output_d3.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 3
+
+    # case update district with empty area
+    update_district6_command: ICommand = UpdateDistrict(
+        id="one subtracted zone",
+        parameters=DistrictUpdate(areas=[]),
+        command_context=command_context,
+        study_version=study_version,
+    )
+    output_d6 = update_district6_command.apply(
+        study_data=study_dao,
+    )
+    assert output_d6.status
+    sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
+    set_config = sets_config.get("one subtracted zone")
+    assert "+" not in set_config
+    assert "-" not in set_config
+
+    # case update district, set back apply_filter to add-all and areas to area1
+    update_district6_command: ICommand = UpdateDistrict(
+        id="one subtracted zone",
+        parameters=DistrictUpdate(areas=["area1"], apply_filter=DistrictApplyFilter.add_all),
+        command_context=command_context,
+        study_version=study_version,
+    )
+    output_d6 = update_district6_command.apply(
+        study_data=study_dao,
+    )
+    assert output_d6.status
+    sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
+    set_config = sets_config.get("one subtracted zone")
+    assert set_config["-"] == ["area1"]
+    assert "+" not in set_config
+    assert set_config["apply-filter"] == "add-all"

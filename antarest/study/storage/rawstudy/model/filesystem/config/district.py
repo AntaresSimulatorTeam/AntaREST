@@ -13,10 +13,8 @@
 
 from typing import Any, List, Optional
 
-from typing_extensions import Literal
-
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.district_model import District, DistrictBaseFilter
+from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition
 
 
 class DistrictSet(AntaresBaseModel):
@@ -25,64 +23,44 @@ class DistrictSet(AntaresBaseModel):
     """
 
     name: Optional[str] = None
-    inverted_set: bool = False
-    areas: Optional[List[str]] = None
+    apply_filter: Optional[str] = None
+    add_areas: Optional[List[str]] = None
+    substract_areas: Optional[List[str]] = None
     output: bool = True
     comments: Optional[str] = None
 
     def get_areas(self, all_areas: List[str]) -> List[str]:
-        areas = self.areas or []
-        if self.inverted_set:
-            areas = list(set(all_areas).difference(set(areas)))
+        add_areas_set = set(self.add_areas or [])
+        substract_areas_set = set(self.substract_areas or [])
+        apply_filter = self.apply_filter or "remove-all"
+        base_areas = set(all_areas) if apply_filter == "add-all" else set()
+        areas = list(base_areas.union(add_areas_set).difference(substract_areas_set))
         return sorted(areas)
 
     @classmethod
-    def from_model(cls, district: District, district_base_filter: Optional[DistrictBaseFilter]) -> "DistrictSet":
-        base_filter = district_base_filter or DistrictBaseFilter.remove_all
-        inverted_set = base_filter == DistrictBaseFilter.add_all
+    def from_model(cls, district: DistrictDefinition) -> "DistrictSet":
         return DistrictSet.model_validate(
-            {
-                **district.model_dump(include={"name", "output", "comments", "areas"}),
-                "inverted_set": inverted_set,
-            }
+            district.model_dump(include={"name", "output", "comments", "add_areas", "substract_areas", "apply_filter"}),
         )
 
     @classmethod
     def from_data(cls, data: Any, district_id: str) -> "DistrictSet":
-        inverted_set = district_set_sign_from_data(data) == "-"
-        areas = data.get("-", []) if inverted_set else data.get("+", [])
         return DistrictSet.model_validate(
             {
                 "name": data.get("caption", district_id),
                 "output": data.get("output", True),
                 "comments": data.get("comments", ""),
-                "inverted_set": inverted_set,
-                "areas": sorted(areas),
+                "apply_filter": data.get("apply-filter", "remove-all"),
+                "add_areas": data.get("+", []),
+                "substract_areas": data.get("-", []),
             }
         )
 
-    def to_model(self, district_id: str, all_areas: List[str]) -> District:
-        return District.model_validate(
-            {
-                "id": district_id,
-                "name": self.name,
-                "areas": self.get_areas(all_areas),
-                "output": self.output,
-                "comments": self.comments or "",
-            }
-        )
+    def to_model(self, district_id: str) -> DistrictDefinition:
+        return DistrictDefinition.model_validate({**self.model_dump(), "id": district_id})
 
 
-def district_set_sign_from_data(item: dict[str, Any]) -> str:
+def district_set_apply_filter(item: dict[str, Any]) -> DistrictApplyFilter:
     if "apply-filter" not in item:
-        return "+"
-    base_filter = DistrictBaseFilter(item["apply-filter"])
-    return district_set_sign_from_base_filter(base_filter)
-
-
-def district_set_sign_from_base_filter(district_base_filter: Optional[DistrictBaseFilter]) -> Literal["+", "-"]:
-    if district_base_filter is None:
-        return "+"
-    if district_base_filter == DistrictBaseFilter.remove_all:
-        return "+"
-    return "-"
+        return DistrictApplyFilter.remove_all
+    return DistrictApplyFilter(item["apply-filter"])

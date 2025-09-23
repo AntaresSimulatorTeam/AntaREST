@@ -14,8 +14,9 @@ from typing import Sequence
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.model.district_model import (
-    District,
     DistrictCreation,
+    DistrictDefinition,
+    DistrictDTO,
     DistrictUpdate,
     create_district,
 )
@@ -40,7 +41,7 @@ class DistrictManager:
     def __init__(self, command_context: CommandContext):
         self._command_context = command_context
 
-    def get_districts(self, study: StudyInterface) -> Sequence[District]:
+    def get_districts(self, study: StudyInterface) -> Sequence[DistrictDTO]:
         """
         Get the list of districts defined in this study.
 
@@ -56,7 +57,7 @@ class DistrictManager:
         self,
         study: StudyInterface,
         district_creation: DistrictCreation,
-    ) -> District:
+    ) -> DistrictDefinition:
         """
         Create a new district in the study and possibly attach areas to it.
 

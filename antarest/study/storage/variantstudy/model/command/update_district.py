@@ -15,7 +15,7 @@ from typing import Any, Dict, Final, List, Optional
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import DistrictUpdate
+from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictUpdate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -55,7 +55,7 @@ class UpdateDistrict(ICommand):
             if version == 1:
                 parameters = {}
                 if "base_filter" in values:
-                    parameters["base_filter"] = values.pop("base_filter")
+                    parameters["apply_filter"] = values.pop("base_filter")
                 if "filter_items" in values:
                     parameters["areas"] = values.pop("filter_items")
                 if "output" in values:
@@ -79,13 +79,27 @@ class UpdateDistrict(ICommand):
 
         district = study_data.get_district(self.id)
 
-        updated_district = district.model_copy(
-            update=self.parameters.model_dump(
-                mode="json", exclude_none=True, by_alias=True, include={"areas", "output", "comments"}
-            )
+        # Merge existing district data with the update parameters
+        district_definition = DistrictDefinition.model_validate(
+            {
+                **district.model_dump(exclude_none=True, include={"output", "comments", "name", "id"}),
+                **self.parameters.model_dump(
+                    mode="json", exclude_none=True, by_alias=True, include={"output", "comments", "apply_filter"}
+                ),
+            }
         )
 
-        study_data.save_district(updated_district, self.parameters.base_filter)
+        # If areas are provided, we need to update add_areas and substract_areas based on the apply_filter
+        if self.parameters.areas is not None:
+            apply_filter = self.parameters.apply_filter or study_data.get_district_apply_filter(self.id)
+            if apply_filter == DistrictApplyFilter.remove_all:
+                add_areas, substract_areas = self.parameters.areas, []
+            else:
+                add_areas, substract_areas = [], self.parameters.areas
+            district_definition.add_areas = add_areas
+            district_definition.substract_areas = substract_areas
+
+        study_data.save_district(district_definition)
 
         return command_succeeded(message=self.id)
 
