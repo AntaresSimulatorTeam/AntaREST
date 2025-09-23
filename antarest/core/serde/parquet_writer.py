@@ -22,7 +22,23 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
     return ParquetWriter(output_file, schema, compression="zstd", data_page_version="2.0")
 
 
-def write_dataframes_in_parquet_format(path: Path, dataframes: Iterator[pd.DataFrame]) -> tuple[set[str], list[str]]:
+def write_dataframes_in_parquet_format_by_column_sets(
+    path: Path, dataframes: Iterator[pd.DataFrame]
+) -> tuple[set[str], list[str]]:
+    """
+    Iterates over the given dataframes and writes them according to their given column sets.
+    If 2 dataframes share the same columns, we write them in the same file.
+    Everytime we encounter a new column sets, we create a new parquet file.
+
+    Args:
+        path: The parent folder path to write the parquet files into.
+        dataframes: The dataframes to iterate over.
+
+    Returns:
+        A tuple containing:
+        1- A list of all created parquet files
+        2- The list of every column encountered in the given dataframes. To use when reindexing the dataframes.
+    """
     writers = {}
     file_counter = 0
     filenames = set()
@@ -76,6 +92,15 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
 
 
 def yield_parquet_dataframes(folder_path: Path, all_df_names: set[str], new_index: list[str]) -> Iterator[pd.DataFrame]:
+    """
+    Iterates over the written parquet files, reads them using chunks and reindex them if needed.
+
+    Args:
+        folder_path: The parent folder path containing the parquet files
+        all_df_names: The names of every written parquet file
+        new_index: The new index to use for the dataframes. If the list is empty, we don't reindex them.
+
+    """
     for df_name in all_df_names:
         parquet_file = ParquetFile(folder_path / df_name)
         for i in range(parquet_file.num_row_groups):

@@ -21,7 +21,10 @@ from starlette.responses import FileResponse
 from antarest.core.filetransfer.model import FileDownloadNotFound
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.matrix_export import TableExportFormat
-from antarest.core.serde.parquet_writer import write_dataframes_in_parquet_format, yield_parquet_dataframes
+from antarest.core.serde.parquet_writer import (
+    write_dataframes_in_parquet_format_by_column_sets,
+    yield_parquet_dataframes,
+)
 
 
 def export_file(
@@ -108,7 +111,18 @@ def _export_file(
 def export_df_chunks(
     tmp_path: Path, file_download_path: Path, df_chunks: Iterator[pd.DataFrame], export_format: TableExportFormat
 ) -> None:
-    all_df_names, all_cols = write_dataframes_in_parquet_format(tmp_path, df_chunks)
+    """
+    We need to harmonize all dataframes as we could be aggregating dataframes with different columns.
+    But we cannot perform a classic concatenation as we cannot hold all the dataframes in memory.
+    So first, we're writing them in parquet files according to their columns.
+
+    If only one file is created, it means all dataframes shared the same columns.
+    If the user asked for `parquet` format, there's nothing more to do, we can use the created file as the response.
+
+    Else, we'll have to iterate over written file(s), reading in chunks to avoid using too much memory and transforming them in the requested format.
+    If there's several files, we also have to reindex the dataframes to fill missing columns and to share the same columns order.
+    """
+    all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, df_chunks)
 
     should_reindex = True
     if len(all_df_names) == 1:
