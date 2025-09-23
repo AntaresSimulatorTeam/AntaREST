@@ -20,7 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 
 class ExpansionAdequacyCriterion(FolderNode):
     def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
-        super().__init__(matrix_mapper, config, None)
+        super().__init__(matrix_mapper, config)
 
     @override
     def build(self) -> TREE:
