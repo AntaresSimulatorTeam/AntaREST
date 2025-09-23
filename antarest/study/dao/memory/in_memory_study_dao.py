@@ -46,6 +46,7 @@ from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
+    XpansionSecurityCriterion,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -142,6 +143,7 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings: XpansionSettings = XpansionSettings()
         self._xpansion_configuration_exists: bool = False
         self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
+        self._xpansion_security_criterion: XpansionSecurityCriterion = XpansionSecurityCriterion()
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -639,6 +641,10 @@ class InMemoryStudyDao(StudyDao):
     @override
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         return
+
+    @override
+    def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
+        return self._xpansion_security_criterion
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:

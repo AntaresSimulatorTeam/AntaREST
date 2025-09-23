@@ -25,6 +25,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
+    XpansionSecurityCriterion,
     XpansionSettings,
     XpansionSettingsUpdate,
     create_xpansion_candidate,
@@ -204,3 +205,6 @@ class XpansionManager:
     def list_resources(self, study: StudyInterface, resource_type: XpansionResourceFileType) -> list[str]:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         return study.get_study_dao().get_xpansion_resources(resource_type)
+
+    def get_security_criterion(self, study: StudyInterface) -> XpansionSecurityCriterion:
+        return study.get_study_dao().get_xpansion_security_criterion()

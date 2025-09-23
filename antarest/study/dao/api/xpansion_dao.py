@@ -18,6 +18,7 @@ import pandas as pd
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
+    XpansionSecurityCriterion,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -58,6 +59,10 @@ class ReadOnlyXpansionDao(ABC):
 
     @abstractmethod
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
         raise NotImplementedError()
 
 

@@ -30,6 +30,7 @@ from antarest.core.exceptions import (
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionResourceFileType,
+    XpansionSecurityCriterion,
     XpansionSensitivitySettings,
     XpansionSettings,
     XpansionSettingsUpdate,
@@ -175,6 +176,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
         if resource_type in file_checkers and file_checkers[resource_type](filename):
             raise FileCurrentlyUsedInSettings(resource_type, filename)
+
+    @override
+    def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
+        raise NotImplementedError()
 
     @override
     def create_xpansion_configuration(self) -> None:

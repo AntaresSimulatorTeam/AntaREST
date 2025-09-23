@@ -12,6 +12,7 @@
 from typing import Annotated, Optional, TypeAlias
 
 from pydantic import BeforeValidator, Field, PlainSerializer
+from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import (
     BadCandidateFormatError,
@@ -257,3 +258,30 @@ def create_xpansion_candidate(candidate_data: XpansionCandidateCreation) -> Xpan
     candidate = XpansionCandidate.model_validate(candidate_data.model_dump(exclude_none=True))
     validate_xpansion_candidate(candidate)
     return candidate
+
+
+##########################
+# Security criterion part
+##########################
+
+
+class XpansionSecurityPattern(AntaresBaseModel, populate_by_name=True):
+    area: str
+    criterion: float = Field(ge=0)
+
+
+class XpansionSecurityPatternUpdate(AntaresBaseModel, populate_by_name=True):
+    area: Optional[str] = None
+    criterion: Optional[float] = Field(default=None, ge=0)
+
+
+class XpansionSecurityCriterion(AntaresBaseModel, populate_by_name=True, alias_generator=to_camel):
+    stopping_threshold: float = Field(default=1e6, ge=0)
+    criterion_count_threshold: float = Field(default=1, ge=0)
+    patterns: list[XpansionSecurityPattern] = Field(default_factory=list)
+
+
+class XpansionSecurityCriterionUpdate(AntaresBaseModel, populate_by_name=True, alias_generator=to_camel):
+    stopping_threshold: Optional[float] = Field(default=None, ge=0)
+    criterion_count_threshold: Optional[float] = Field(default=None, ge=0)
+    patterns: Optional[list[XpansionSecurityPatternUpdate]] = None
