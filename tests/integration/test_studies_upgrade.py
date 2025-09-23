@@ -48,7 +48,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
-        assert target_version in task.result.message, f"Version not in {task.result.message=}"
+        assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.2"
 
     def test_upgrade_study__bad_target_version(
         self, client: TestClient, user_access_token: str, internal_study_id: str

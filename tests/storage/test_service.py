@@ -1935,9 +1935,10 @@ def test_upgrade_study__raw_study__nominal(
     event_bus = Mock()
 
     # Prepare the task for an upgrade
+    parsed_target_version = StudyVersion.parse(target_version)
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        parsed_target_version,
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -1954,7 +1955,7 @@ def test_upgrade_study__raw_study__nominal(
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
-    assert actual_study.version == target_version
+    assert actual_study.version == f"{parsed_target_version:2d}"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -1971,7 +1972,7 @@ def test_upgrade_study__raw_study__nominal(
     # The function must return a successful result
     assert actual.success
     assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
 
 
 @with_db_context
@@ -2025,7 +2026,7 @@ def test_upgrade_study__variant_study__nominal(
     # Prepare the task for an upgrade
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        StudyVersion.parse(target_version),
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -2043,7 +2044,7 @@ def test_upgrade_study__variant_study__nominal(
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
-    assert actual_study.version == target_version
+    assert actual_study.version == "8.0"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -2060,7 +2061,7 @@ def test_upgrade_study__variant_study__nominal(
     # The function must return a successful result
     assert actual.success
     assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
 
 
 @with_db_context
