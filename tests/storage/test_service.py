@@ -1791,7 +1791,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Upgrade study my_study ({study_id}) to version 800",
+                name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
                 creation_date_utc=str(datetime.utcnow()),  # type: ignore
                 type=TaskType.UNARCHIVE,
@@ -1814,7 +1814,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Upgrade study my_study ({study_id}) to version 800",
+        f"Upgrade study my_study ({study_id}) to version 8",
         task_type=TaskType.UPGRADE_STUDY,
         ref_id=study_id,
         progress=None,
