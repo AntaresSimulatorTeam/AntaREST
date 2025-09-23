@@ -398,7 +398,7 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
             "frequency": "daily",
             "format": "parquet",
         },
-        "test-01-all.result.parquet",
+        "test-01-all.result.tsv",
     ),
 ]
 
