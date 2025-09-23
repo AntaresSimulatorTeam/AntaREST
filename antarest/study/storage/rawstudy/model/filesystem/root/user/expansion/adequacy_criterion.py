@@ -9,16 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
 from typing_extensions import override
 
+from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.json_file_node import JsonFileNode
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 
 
-class SensitivityConfig(FolderNode):
+class ExpansionAdequacyCriterion(FolderNode):
+    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+        super().__init__(matrix_mapper, config, None)
+
     @override
     def build(self) -> TREE:
-        return {"sensitivity_in": JsonFileNode(self.config.next_file("sensitivity_in.json"))}
+        return {"adequacy_criterion": RawFileNode(self.matrix_mapper, self.config.next_file("adequacy_criterion.yml"))}
