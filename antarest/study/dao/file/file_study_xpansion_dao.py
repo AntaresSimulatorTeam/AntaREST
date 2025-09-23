@@ -37,6 +37,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
+    parse_xpansion_security_criterion,
     parse_xpansion_sensitivity_settings,
     parse_xpansion_settings,
     serialize_xpansion_sensitivity_settings,
@@ -179,7 +180,12 @@ class FileStudyXpansionDao(XpansionDao, ABC):
 
     @override
     def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+        try:
+            content = file_study.tree.get(["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
+            return parse_xpansion_security_criterion(content)
+        except ChildNotFoundError:
+            return XpansionSecurityCriterion()
 
     @override
     def create_xpansion_configuration(self) -> None:

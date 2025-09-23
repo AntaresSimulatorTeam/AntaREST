@@ -23,6 +23,8 @@ from antarest.study.business.model.xpansion_model import (
     UcType,
     XpansionCandidate,
     XpansionLinkStr,
+    XpansionSecurityCriterion,
+    XpansionSecurityPattern,
     XpansionSensitivitySettings,
     XpansionSettings,
     validate_xpansion_candidate,
@@ -149,3 +151,35 @@ def parse_xpansion_sensitivity_settings(data: Any) -> XpansionSensitivitySetting
 
 def serialize_xpansion_sensitivity_settings(settings: XpansionSensitivitySettings) -> dict[str, Any]:
     return XpansionSensitivitySettingsFileData.from_model(settings).model_dump(by_alias=True)
+
+
+##########################
+# Security criterion part
+##########################
+
+
+class XpansionSecurityCriterionFileData(AntaresBaseModel):
+    """
+    Xpansion sensitivity criterion data parsed from YAML file.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    stopping_threshold: float = Field(default=1e6, ge=0)
+    criterion_count_threshold: float = Field(default=1, ge=0)
+    patterns: list[XpansionSecurityPattern] = Field(default_factory=list)
+
+    def to_model(self) -> XpansionSecurityCriterion:
+        return XpansionSecurityCriterion.model_validate(self.model_dump())
+
+    @classmethod
+    def from_model(cls, criterion: XpansionSecurityCriterion) -> "XpansionSecurityCriterionFileData":
+        return cls.model_validate(criterion.model_dump())
+
+
+def parse_xpansion_security_criterion(data: Any) -> XpansionSecurityCriterion:
+    return XpansionSecurityCriterionFileData.model_validate(data).to_model()
+
+
+def serialize_xpansion_security_criterion(criterion: XpansionSecurityCriterion) -> dict[str, Any]:
+    return XpansionSecurityCriterionFileData.from_model(criterion).model_dump(by_alias=True)
