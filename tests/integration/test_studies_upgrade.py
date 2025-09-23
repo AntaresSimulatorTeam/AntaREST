@@ -36,8 +36,10 @@ class TestStudyUpgrade:
         assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.1"
 
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
-    def test_upgrade_study__target_version(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        target_version = "720"
+    @pytest.mark.parametrize("target_version", ["720", "7.2"])
+    def test_upgrade_study__target_version(
+        self, client: TestClient, user_access_token: str, internal_study_id: str, target_version: str
+    ):
         res = client.put(
             f"/v1/studies/{internal_study_id}/upgrade",
             headers={"Authorization": f"Bearer {user_access_token}"},
