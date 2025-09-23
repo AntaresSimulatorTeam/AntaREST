@@ -47,6 +47,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
     RemoveXpansionResource,
 )
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.update_xpansion_security_criterion import (
+    UpdateXpansionSecurityCriterion,
+)
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -213,4 +216,8 @@ class XpansionManager:
     def update_security_criterion(
         self, study: StudyInterface, criterion: XpansionSecurityCriterionUpdate
     ) -> XpansionSecurityCriterion:
+        command = UpdateXpansionSecurityCriterion(
+            criterion=criterion, command_context=self._command_context, study_version=study.version
+        )
+        study.add_commands([command])
         return self.get_security_criterion(study)
