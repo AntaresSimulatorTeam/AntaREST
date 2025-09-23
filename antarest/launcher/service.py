@@ -22,7 +22,7 @@ from uuid import UUID, uuid4
 from antares.study.version import SolverVersion
 from fastapi import HTTPException
 
-from antarest.core.config import Config, InvalidConfigurationError, NbCoresConfig
+from antarest.core.config import Config, InvalidConfigurationError
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -139,18 +139,6 @@ class LauncherService:
                 )
             )
         return launchers
-
-    def get_nb_cores(self, launcher: Optional[str]) -> NbCoresConfig:
-        """
-        Retrieve the configuration of the launcher's nb of cores.
-
-        Args:
-            launcher: name of the launcher: "default", "slurm" or "local".
-
-        Returns:
-            Number of cores of the launcher
-        """
-        return self.config.launcher.get_nb_cores(launcher)
 
     def _after_export_flat_hooks(
         self,
