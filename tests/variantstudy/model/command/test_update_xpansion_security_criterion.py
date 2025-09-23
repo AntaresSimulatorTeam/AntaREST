@@ -9,12 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import pytest
 
 from antarest.study.business.model.xpansion_model import (
+    XpansionSecurityCriterion,
     XpansionSecurityCriterionUpdate,
     XpansionSecurityPattern,
-    XpansionSettingsUpdate,
 )
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -22,7 +22,6 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.update_xpansion_security_criterion import (
     UpdateXpansionSecurityCriterion,
 )
-from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -131,24 +130,22 @@ stopping_threshold: 3.0
         empty_study = empty_study_870
         self.set_up(empty_study, command_context)
 
-        # Try to update with a non-existing weight
-        new_constraint = XpansionSettingsUpdate.model_validate({"yearly_weights": "test"})
-        cmd = UpdateXpansionSettings(
-            settings=new_constraint,
+        # Try to update with a non-existing area
+        cmd = UpdateXpansionSecurityCriterion(
+            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionSecurityPattern(area="fake", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
         output = cmd.apply(study_data=empty_study)
         assert output.status is False
-        assert "Additional weights file 'test' does not exist" in output.message
+        assert "Area is not found: 'fake'" in output.message
 
-        # Try to update with a non-existing constraint
-        new_constraint = XpansionSettingsUpdate.model_validate({"additional_constraints": "test"})
-        cmd = UpdateXpansionSettings(
-            settings=new_constraint,
-            command_context=command_context,
-            study_version=STUDY_VERSION_8_7,
-        )
-        output = cmd.apply(study_data=empty_study)
-        assert output.status is False
-        assert "Additional constraints file 'test' does not exist" in output.message
+        # Try to give wrong values for the criterion parameters
+        with pytest.raises(ValueError, match="Input should be greater than or equal to 0"):
+            XpansionSecurityCriterion(stopping_threshold=-2)
+
+        with pytest.raises(ValueError, match="Input should be greater than or equal to 0"):
+            XpansionSecurityCriterion(criterion_count_threshold=-2)
+
+        with pytest.raises(ValueError, match="Input should be greater than or equal to 0"):
+            XpansionSecurityPattern(area="fake", criterion=-2)
