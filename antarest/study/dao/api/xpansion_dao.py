@@ -65,6 +65,10 @@ class ReadOnlyXpansionDao(ABC):
     def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
         raise NotImplementedError()
 
+    @abstractmethod
+    def checks_xpansion_security_criterion_coherence(self, criterion: XpansionSecurityCriterion) -> None:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
@@ -101,4 +105,8 @@ class XpansionDao(ReadOnlyXpansionDao):
 
     @abstractmethod
     def save_xpansion_weight(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_security_criterion(self, criterion: XpansionSecurityCriterion) -> None:
         raise NotImplementedError()

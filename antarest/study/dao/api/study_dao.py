@@ -375,6 +375,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_xpansion_security_criterion()
 
     @override
+    def checks_xpansion_security_criterion_coherence(self, criterion: XpansionSecurityCriterion) -> None:
+        return self._adaptee.checks_xpansion_security_criterion_coherence(criterion)
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._adaptee.get_thematic_trimming()
 

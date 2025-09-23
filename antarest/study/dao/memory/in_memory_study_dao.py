@@ -647,6 +647,10 @@ class InMemoryStudyDao(StudyDao):
         return self._xpansion_security_criterion
 
     @override
+    def checks_xpansion_security_criterion_coherence(self, criterion: XpansionSecurityCriterion) -> None:
+        return
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 
@@ -695,6 +699,10 @@ class InMemoryStudyDao(StudyDao):
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         content = series.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def save_xpansion_security_criterion(self, criterion: XpansionSecurityCriterion) -> None:
+        self._xpansion_security_criterion = criterion
 
     @override
     def save_layer(self, layer: Layer) -> None:

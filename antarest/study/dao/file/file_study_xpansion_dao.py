@@ -188,6 +188,17 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             return XpansionSecurityCriterion()
 
     @override
+    def checks_xpansion_security_criterion_coherence(self, criterion: XpansionSecurityCriterion) -> None:
+        # Checks if the provided areas exist in the study
+        file_study = self.get_file_study()
+        missing_areas = ""
+        for pattern in criterion.patterns:
+            if pattern.area not in file_study.config.areas:
+                missing_areas += pattern.area
+        if missing_areas:
+            raise AreaNotFound(missing_areas)
+
+    @override
     def create_xpansion_configuration(self) -> None:
         file_study = self.get_file_study()
         try:
@@ -235,6 +246,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series)
+
+    @override
+    def save_xpansion_security_criterion(self, criterion: XpansionSecurityCriterion) -> None:
+        raise NotImplementedError
 
     def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
         file_study = self.get_file_study()

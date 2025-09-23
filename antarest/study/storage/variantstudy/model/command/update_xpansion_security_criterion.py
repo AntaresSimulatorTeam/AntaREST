@@ -26,9 +26,10 @@ from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import (
     XpansionSecurityCriterionUpdate,
+    update_xpansion_security_criterion,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput
+from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -51,7 +52,14 @@ class UpdateXpansionSecurityCriterion(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        raise NotImplementedError()
+        current_criterion = study_data.get_xpansion_security_criterion()
+        new_criterion = update_xpansion_security_criterion(current_criterion, self.criterion)
+        if self.criterion.patterns is not None:
+            # Ensures the provided areas exist in the study
+            study_data.checks_xpansion_security_criterion_coherence(new_criterion)
+        study_data.save_xpansion_security_criterion(new_criterion)
+
+        return command_succeeded(message="Xpansion security criterion updated successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -280,3 +280,15 @@ class XpansionSecurityCriterionUpdate(AntaresBaseModel, populate_by_name=True, a
     stopping_threshold: Optional[float] = Field(default=None, ge=0)
     criterion_count_threshold: Optional[float] = Field(default=None, ge=0)
     patterns: Optional[list[XpansionSecurityPattern]] = None
+
+
+def update_xpansion_security_criterion(
+    criterion: XpansionSecurityCriterion, data: XpansionSecurityCriterionUpdate
+) -> XpansionSecurityCriterion:
+    """
+    Updates the xpansion security criterion according to the provided update data.
+    """
+    current_criterion = criterion.model_dump()
+    update_criterion = data.model_dump(exclude_none=True)
+    current_criterion.update(update_criterion)
+    return XpansionSecurityCriterion.model_validate(current_criterion)
