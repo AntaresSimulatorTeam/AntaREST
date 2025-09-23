@@ -133,9 +133,5 @@ def export_df_chunks(
         should_reindex = False
 
     stream_writer = export_format.get_stream_writer()
-    new_index = []
-    if should_reindex:
-        # Sort the index for reproducibility
-        new_index = list(all_cols)
-        new_index.sort(key=lambda x: (x.isupper(), x.lower()))
+    new_index = all_cols if should_reindex else []
     stream_writer(file_download_path, yield_parquet_dataframes(tmp_path, all_df_names, new_index))

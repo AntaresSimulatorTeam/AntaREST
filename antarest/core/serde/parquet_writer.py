@@ -42,14 +42,16 @@ def write_dataframes_in_parquet_format_by_column_sets(
     writers = {}
     file_counter = 0
     filenames = set()
-    existing_columns: set[str] = set()
+    existing_columns: dict[str, int] = {}
 
     try:
         for df in dataframes:
             if df.empty:
                 continue
             df_cols = tuple(df.columns)
-            existing_columns.update(df_cols)
+            for col in df_cols:
+                if col not in existing_columns:
+                    existing_columns[col] = len(existing_columns)
 
             df.index = pd.RangeIndex(len(df))
             table = pa.Table.from_pandas(df)
@@ -65,7 +67,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
 
             writers[df_cols].write_table(table)
 
-        return filenames, list(existing_columns)
+        return filenames, [k for k, _ in sorted(existing_columns.items(), key=lambda x: x[1])]
 
     finally:
         # Close all writers
