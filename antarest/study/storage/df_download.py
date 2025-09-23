@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import http
+import shutil
 from pathlib import Path
 from typing import Callable, Iterator, TypeAlias
 
@@ -112,7 +113,7 @@ def export_df_chunks(
     should_reindex = True
     if len(all_df_names) == 1:
         if export_format == TableExportFormat.PARQUET:
-            (tmp_path / next(iter(all_df_names))).rename(file_download_path)
+            shutil.move(tmp_path / next(iter(all_df_names)), file_download_path)
             return
         # No need to reindex as all dataframes have the same columns
         should_reindex = False
