@@ -33,7 +33,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
-        assert "710" in task.result.message, f"Version not in {task.result.message=}"
+        assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.1"
 
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
     def test_upgrade_study__target_version(self, client: TestClient, user_access_token: str, internal_study_id: str):
