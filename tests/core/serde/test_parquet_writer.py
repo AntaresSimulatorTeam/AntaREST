@@ -10,11 +10,9 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Iterator
 
 import numpy as np
 import pandas as pd
-import pytest
 
 from antarest.core.serde.parquet_writer import (
     write_dataframes_in_parquet_format_by_column_sets,
@@ -22,17 +20,14 @@ from antarest.core.serde.parquet_writer import (
 )
 
 
-@pytest.fixture
-def dataframes() -> Iterator[pd.DataFrame]:
-    return iter(
+def test_different_columns(tmp_path: Path) -> None:
+    dataframes = iter(
         [
             pd.DataFrame(data=[(10, 11), (12, 13)], columns=["A", "B"]),
             pd.DataFrame(data=[(12, 13), (14, 15)], columns=["C", "B"]),
         ]
     )
 
-
-def test_different_columns(tmp_path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
     assert all_df_names == ["file0.parquet", "file1.parquet"]
     assert all_cols == ["A", "B", "C"]
@@ -44,3 +39,18 @@ def test_different_columns(tmp_path: Path, dataframes: Iterator[pd.DataFrame]) -
 
     expected_second_df = pd.DataFrame(data=[(np.NaN, 13, 12), (np.NaN, 15, 14)], columns=["A", "B", "C"])
     pd.testing.assert_frame_equal(next(dfs), expected_second_df, check_dtype=False)
+
+
+def test_same_columns(tmp_path: Path) -> None:
+    df1 = pd.DataFrame(data=[(10, 11), (12, 13)], columns=["A", "B"])
+    df2 = pd.DataFrame(data=[(12, 13), (14, 15)], columns=["A", "B"])
+    dataframes = iter([df1, df2])
+
+    all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
+    assert all_df_names == ["file0.parquet"]
+    assert all_cols == ["A", "B"]
+
+    dfs = yield_parquet_dataframes(tmp_path, all_df_names, all_cols)
+
+    pd.testing.assert_frame_equal(next(dfs), df1, check_dtype=False)
+    pd.testing.assert_frame_equal(next(dfs), df2, check_dtype=False)
