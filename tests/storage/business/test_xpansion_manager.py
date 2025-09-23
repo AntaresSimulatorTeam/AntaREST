@@ -90,6 +90,7 @@ def test_create_configuration(
             "timelimit": int(1e12),
         },
         "weights": {},
+        "adequacy_criterion": {"adequacy_criterion": {}},
     }
 
 
