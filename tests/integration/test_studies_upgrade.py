@@ -61,7 +61,7 @@ class TestStudyUpgrade:
         )
         assert res.status_code == 400
         assert res.json()["exception"] == "UnsupportedStudyVersion"
-        assert f"Version '{target_version}' isn't among supported versions" in res.json()["description"]
+        assert "Version '9.9' isn't among supported versions" in res.json()["description"]
 
     def test_upgrade_study__unmet_requirements(self, client: TestClient, admin_access_token: str):
         """

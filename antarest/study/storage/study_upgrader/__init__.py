@@ -77,7 +77,8 @@ def _get_version_index(version: StudyVersion) -> int:
     try:
         return AVAILABLE_VERSIONS.index(version)
     except ValueError:
-        raise UnsupportedStudyVersion(f"Version '{version}' isn't among supported versions: {AVAILABLE_VERSIONS}")
+        available_versions = [f"{v:2d}" for v in AVAILABLE_VERSIONS]
+        raise UnsupportedStudyVersion(f"Version '{version}' isn't among supported versions: {available_versions}")
 
 
 def find_next_version(from_version: StudyVersion) -> StudyVersion:
