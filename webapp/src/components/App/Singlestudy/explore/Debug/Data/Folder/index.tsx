@@ -57,7 +57,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
   const { t } = useTranslation();
   const { study } = useOutletContext<{ study: StudyMetadata }>();
   const replaceAction = useConfirm();
-  const deleteAction = useConfirm<{ isFolder: boolean }>();
+  const deleteAction = useConfirm<{ isFolder: boolean; filename: string }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openCreateFolderDialog, setOpenCreateFolderDialog] = useState(false);
 
@@ -65,6 +65,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
     anchorEl: HTMLElement;
     filePath: string;
     isFolder: boolean;
+    filename: string;
   }>(null);
 
   const treeFolder = treeData as TreeFolder;
@@ -96,15 +97,22 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
       return;
     }
 
-    deleteAction.showConfirm({ data: { isFolder: menuData.isFolder } }).then((confirm) => {
-      if (confirm) {
-        deleteFile({ studyId, path: menuData.filePath })
-          .then(reloadTree)
-          .catch((err) => {
-            enqueueErrorSnackbar("Delete failed", toError(err));
-          });
-      }
-    });
+    deleteAction
+      .showConfirm({
+        data: {
+          isFolder: menuData.isFolder,
+          filename: menuData.filename,
+        },
+      })
+      .then((confirm) => {
+        if (confirm) {
+          deleteFile({ studyId, path: menuData.filePath })
+            .then(reloadTree)
+            .catch((err) => {
+              enqueueErrorSnackbar(t("global.error.delete"), toError(err));
+            });
+        }
+      });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -168,6 +176,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                             anchorEl: event.currentTarget,
                             filePath: path,
                             isFolder: type === "folder",
+                            filename,
                           });
                         }}
                       >
@@ -250,8 +259,10 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
         onCancel={deleteAction.no}
       >
         {deleteAction.data?.isFolder
-          ? t("study.debug.folder.deleteConfirm.message")
-          : t("study.debug.file.deleteConfirm.message")}
+          ? t("study.debug.folder.deleteConfirm.message", {
+              folderName: deleteAction.data?.filename,
+            })
+          : t("study.debug.file.deleteConfirm.message", { fileName: deleteAction.data?.filename })}
       </ConfirmationDialog>
     </>
   );
