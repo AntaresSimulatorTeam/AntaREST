@@ -215,6 +215,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                         "capa": {},
                         "weights": {},
                         "constraints": {},
+                        "adequacy_criterion": {"adequacy_criterion": {}},
                     }
                 }
             }
