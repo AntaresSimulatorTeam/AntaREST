@@ -1864,7 +1864,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Upgrade study my_study ({study_id}) to version 800",
+                name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
                 creation_date_utc=str(datetime.utcnow()),  # type: ignore
                 type=TaskType.UNARCHIVE,
@@ -1887,7 +1887,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Upgrade study my_study ({study_id}) to version 800",
+        f"Upgrade study my_study ({study_id}) to version 8",
         task_type=TaskType.UPGRADE_STUDY,
         ref_id=study_id,
         progress=None,
@@ -2008,9 +2008,10 @@ def test_upgrade_study__raw_study__nominal(
     event_bus = Mock()
 
     # Prepare the task for an upgrade
+    parsed_target_version = StudyVersion.parse(target_version)
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        parsed_target_version,
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -2027,7 +2028,7 @@ def test_upgrade_study__raw_study__nominal(
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
-    assert actual_study.version == target_version
+    assert actual_study.version == f"{parsed_target_version:2d}"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -2044,7 +2045,7 @@ def test_upgrade_study__raw_study__nominal(
     # The function must return a successful result
     assert actual.success
     assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
 
 
 @with_db_context
@@ -2098,7 +2099,7 @@ def test_upgrade_study__variant_study__nominal(
     # Prepare the task for an upgrade
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        StudyVersion.parse(target_version),
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -2116,7 +2117,7 @@ def test_upgrade_study__variant_study__nominal(
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
-    assert actual_study.version == target_version
+    assert actual_study.version == "8.0"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -2133,7 +2134,7 @@ def test_upgrade_study__variant_study__nominal(
     # The function must return a successful result
     assert actual.success
     assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
 
 
 @with_db_context
