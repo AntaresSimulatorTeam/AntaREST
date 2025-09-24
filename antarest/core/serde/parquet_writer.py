@@ -40,40 +40,55 @@ def write_dataframes_in_parquet_format_by_column_sets(
         2- The list of every column encountered in the given dataframes. To use when reindexing the dataframes.
     """
     writers = {}
-    file_counter = 0
-    filenames = []
-    existing_columns: set[str] = set()
-    new_index: list[str] = []
-
     try:
-        for df in dataframes:
-            if df.empty:
-                continue
-            df_cols = tuple(df.columns)
-            for col in df_cols:
-                if col not in existing_columns:
-                    existing_columns.add(col)
-                    new_index.append(col)
+        first_df = next(dataframes)
+        first_df.index = pd.RangeIndex(len(first_df))
+        new_index = list(first_df.columns)
+        existing_columns = set(new_index)
 
-            df.index = pd.RangeIndex(len(df))
-            table = pa.Table.from_pandas(df)
+        filenames = ["file0.parquet"]
+        file_path = path / filenames[0]
+        file_counter = 1
 
-            if df_cols not in writers:
-                file_name = f"file{file_counter}.parquet"
-                filenames.append(file_name)
-                file_path = path / file_name
-                file_counter += 1
+        table = pa.Table.from_pandas(first_df)
+        current_writer = _parquet_writer(file_path, table.schema)
+        writers[current_writer] = table.schema
+        current_writer.write_table(table)
 
-                new_writer = _parquet_writer(file_path, table.schema)
-                writers[df_cols] = new_writer
+        while True:
+            try:
+                df = next(dataframes)
+                should_write_new_file = False
+                for col in df.columns:
+                    if col not in existing_columns:
+                        should_write_new_file = True
+                        existing_columns.add(col)
+                        new_index.append(col)
 
-            writers[df_cols].write_table(table)
+                df.index = pd.RangeIndex(len(df))
 
-        return filenames, new_index
+                if should_write_new_file:
+                    file_name = f"file{file_counter}.parquet"
+                    filenames.append(file_name)
+                    file_path = path / file_name
+                    file_counter += 1
+
+                    table = pa.Table.from_pandas(df)
+                    current_writer = _parquet_writer(file_path, table.schema)
+                    writers[current_writer] = table.schema
+
+                else:
+                    df = df.reindex(new_index, axis="columns")
+                    table = pa.Table.from_pandas(df, schema=writers[current_writer])
+
+                current_writer.write_table(table)
+
+            except StopIteration:
+                return filenames, new_index
 
     finally:
         # Close all writers
-        for writer in writers.values():
+        for writer in writers:
             writer.close()
 
 

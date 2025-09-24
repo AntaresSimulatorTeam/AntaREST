@@ -23,8 +23,9 @@ from antarest.core.serde.parquet_writer import (
 def test_different_columns(tmp_path: Path) -> None:
     dataframes = iter(
         [
-            pd.DataFrame(data=[(10, 11), (12, 13)], columns=["A", "B"]),
-            pd.DataFrame(data=[(12, 13), (14, 15)], columns=["C", "B"]),
+            pd.DataFrame(data=[(1, 2), (3, 4)], columns=["A", "B"]),
+            pd.DataFrame(data=[(5, 6, 7), (8, 9, 10)], columns=["A", "B", "C"]),
+            pd.DataFrame(data=[(11, 12), (13, 14)], columns=["A", "B"]),
         ]
     )
 
@@ -34,11 +35,15 @@ def test_different_columns(tmp_path: Path) -> None:
 
     dfs = yield_parquet_dataframes(tmp_path, all_df_names, all_cols)
 
-    expected_first_df = pd.DataFrame(data=[(10, 11, np.NaN), (12, 13, np.NaN)], columns=["A", "B", "C"])
+    # Ensures we kept the order we had in the iterator
+    expected_first_df = pd.DataFrame(data=[(1, 2, np.NaN), (3, 4, np.NaN)], columns=["A", "B", "C"])
     pd.testing.assert_frame_equal(next(dfs), expected_first_df, check_dtype=False)
 
-    expected_second_df = pd.DataFrame(data=[(np.NaN, 13, 12), (np.NaN, 15, 14)], columns=["A", "B", "C"])
+    expected_second_df = pd.DataFrame(data=[(5, 6, 7), (8, 9, 10)], columns=["A", "B", "C"])
     pd.testing.assert_frame_equal(next(dfs), expected_second_df, check_dtype=False)
+
+    expected_third_df = pd.DataFrame(data=[(11, 12, np.NaN), (13, 14, np.NaN)], columns=["A", "B", "C"])
+    pd.testing.assert_frame_equal(next(dfs), expected_third_df, check_dtype=False)
 
 
 def test_same_columns(tmp_path: Path) -> None:
