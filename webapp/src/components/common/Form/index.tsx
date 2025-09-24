@@ -221,6 +221,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
+
         setNewPresent(lastSubmittedData.current);
 
         fieldsChangeDuringAutoSubmitting.current.forEach((fieldName, index) => {

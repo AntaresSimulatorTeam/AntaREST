@@ -33,6 +33,8 @@ import useUpdatedRef from "./useUpdatedRef";
  *    if the form is dirty or submitting.
  * - `executeWithFormCloseCheck`: A function that takes a callback and executes it
  *    if the form can be safely closed (not dirty or submitting, or user confirmed).
+ * - `executeWithoutFormCloseCheck`: A function that takes a callback and executes it
+ *    even if the form is dirty or submitting.
  * - `withFormCloseCheck`: A higher-order function that wraps a function to execute it only
  *    if the form can be safely closed (not dirty or submitting, or user confirmed).
  * - `isPending`: A boolean that indicates if the confirmation dialog is currently shown.
