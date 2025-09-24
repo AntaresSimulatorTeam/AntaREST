@@ -15,12 +15,12 @@ from pathlib import Path
 import pytest
 
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.district_model import DistrictDefinition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictFileData,
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
     Mode,
@@ -48,7 +48,7 @@ def config() -> FileStudyTreeConfig:
                 filters_year=[],
             )
         },
-        sets={"s": DistrictFileData()},
+        sets={"s": DistrictDefinition(id="s", name="s")},
         outputs={
             "o": Simulation(
                 name="o",

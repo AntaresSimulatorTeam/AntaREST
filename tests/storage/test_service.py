@@ -45,6 +45,7 @@ from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
+from antarest.study.business.model.district_model import DistrictDefinition
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_7_2,
@@ -69,7 +70,6 @@ from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, Stud
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictFileData,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
@@ -698,7 +698,7 @@ def test_download_output() -> None:
         study_id=str(uuid.uuid4()),
         version=StudyVersion.parse(input_study.version),
         areas={"east": area},
-        sets={"north": DistrictFileData()},
+        sets={"north": DistrictDefinition(id="north", name="north")},
         outputs={"output-id": sim},
         store_new_set=False,
     )
