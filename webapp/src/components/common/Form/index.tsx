@@ -188,7 +188,9 @@ function Form<TFieldValues extends FieldValues, TContext>({
     submit: () => requestSubmit(),
   });
 
-  const { set, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
+  const { set: setNewPresent, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
+
+  const { executeWithoutFormCloseCheck } = useFormCloseProtection({ isSubmitting, isDirty });
 
   // Auto Submit Loader
   useEffect(
@@ -213,13 +215,13 @@ function Form<TFieldValues extends FieldValues, TContext>({
   useEffect(
     () => {
       if (isSubmitSuccessful && lastSubmittedData.current) {
-        submitSuccessfulCb.current();
+        executeWithoutFormCloseCheck(submitSuccessfulCb.current);
 
         const valuesToSetAfterReset = getValues(fieldsChangeDuringAutoSubmitting.current);
 
         // Reset only dirty values make issue with `getValues` and `watch` which only return reset values
         reset(lastSubmittedData.current);
-        set(lastSubmittedData.current);
+        setNewPresent(lastSubmittedData.current);
 
         fieldsChangeDuringAutoSubmitting.current.forEach((fieldName, index) => {
           setValue(fieldName, valuesToSetAfterReset[index], {
@@ -233,8 +235,6 @@ function Form<TFieldValues extends FieldValues, TContext>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [isSubmitSuccessful],
   );
-
-  useFormCloseProtection({ isSubmitting, isDirty });
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 
