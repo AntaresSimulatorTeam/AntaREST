@@ -182,8 +182,15 @@ function MatrixGrid({
     [getDataRowIndex, originalGetCellContent, filterPreview.active, columns, visibleColumns],
   );
 
+  // When filters are active, use filtered data for stats calculation
+  const filteredData = filterPreview.active
+    ? rowsIndices.map((rowIndex) =>
+        columnsIndices.map((colIndex) => data[rowIndex]?.[colIndex] ?? 0),
+      )
+    : data;
+
   const selectionStats = useSelectionStats({
-    data,
+    data: filteredData,
     selection: gridSelection,
     gridToData,
   });
