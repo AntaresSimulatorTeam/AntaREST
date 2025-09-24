@@ -79,6 +79,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
 
                 else:
                     df = df.reindex(new_index, axis="columns")
+                    # We're specifying the schema to use to be able to append NaN values to existing values.
                     table = pa.Table.from_pandas(df, schema=writers[current_writer])
 
                 current_writer.write_table(table)

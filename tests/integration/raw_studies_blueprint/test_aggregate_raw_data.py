@@ -556,7 +556,9 @@ class TestRawDataAggregationMCInd:
         assert res.status_code == 200
         res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200, res.json()
-        assert res.content == b""
+        content = io.BytesIO(res.content)
+        actual_df = pd.read_csv(content, sep=",")
+        assert list(actual_df.columns) == ["link", "mcYear", "timeId"]
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__IND:
@@ -816,7 +818,9 @@ class TestRawDataAggregationMCAll:
         assert res.status_code == 200
         res = client.get(f"v1/downloads/{download_id}")
         assert res.status_code == 200, res.json()
-        assert res.content == b""
+        content = io.BytesIO(res.content)
+        actual_df = pd.read_csv(content, sep=",")
+        assert list(actual_df.columns) == ["area", "cluster", "timeId"]
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__ALL:
@@ -1007,3 +1011,30 @@ def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token:
     content = io.BytesIO(res.content)
     actual_df = pd.read_parquet(content)
     assert actual_df["CO2 EMIS."].isna().any()
+
+    # Replace the `DE` file with the one were C02 EMIS. is missing and ask for this column specifically.
+    # Even though we don't find it in the first file we check, we should still iterate over the other files.
+    file_path = file_path.parent.parent / "de" / "values-annual.txt"
+    shutil.copy(ASSETS_DIR / "columns_mismatch.txt", file_path)
+
+    # Perform the request
+    params["columns_names"] = "CO2 EMIS."
+    res = client.get(f"v1/studies/{internal_study_id}/outputs/{output_id}/aggregate/areas/mc-ind", params=params)
+    assert res.status_code == 200
+    download_id = res.json()
+
+    # wait for the task to be completed
+    res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+    assert res.status_code == 200, res.json()
+
+    res = client.get(f"v1/downloads/{download_id}")
+
+    # get successful results
+    assert res.status_code == 200, res.content
+    content = io.BytesIO(res.content)
+    actual_df = pd.read_parquet(content)
+    expected_df = pd.DataFrame(
+        columns=["area", "mcYear", "timeId", "CO2 EMIS."],
+        data=[["de", 1, 1, np.NaN], ["es", 1, 1, 0.0], ["fr", 1, 1, np.NaN]],
+    )
+    pd.testing.assert_frame_equal(actual_df, expected_df)

@@ -318,13 +318,8 @@ class AggregatorManager:
             # columns filtering
             df = self.columns_filtering(df, is_details)
 
-            # if no columns, no need to continue
-            list_of_df_columns = df.columns.tolist()
-            if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
-                continue
-
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
+            new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
 
             if self.mc_root == MCRoot.MC_IND:
                 # add column for links/areas
