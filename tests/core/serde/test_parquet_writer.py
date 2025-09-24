@@ -59,3 +59,11 @@ def test_same_columns(tmp_path: Path) -> None:
 
     pd.testing.assert_frame_equal(next(dfs), df1, check_dtype=False)
     pd.testing.assert_frame_equal(next(dfs), df2, check_dtype=False)
+
+def test_no_dataframes_given(tmp_path: Path) -> None:
+    # This case can happen when no column matched the ones given by the user
+    dataframes = iter([])
+
+    all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
+    assert all_df_names == []
+    assert all_cols == []

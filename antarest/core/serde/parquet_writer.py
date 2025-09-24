@@ -86,6 +86,9 @@ def write_dataframes_in_parquet_format_by_column_sets(
             except StopIteration:
                 return filenames, new_index
 
+    except StopIteration:
+        return [], []
+
     finally:
         # Close all writers
         for writer in writers:
@@ -103,9 +106,6 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
     with _parquet_writer(path, schema) as writer:
         writer.write_table(first_table)
         for df in dataframes:
-            if df.empty:
-                continue
-
             table = pa.Table.from_pandas(df)
             writer.write_table(table)
 

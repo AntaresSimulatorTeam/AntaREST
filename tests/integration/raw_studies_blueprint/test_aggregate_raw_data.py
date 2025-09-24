@@ -184,27 +184,6 @@ SAME_REQUEST_DIFFERENT_FORMATS__IND = [
 ]
 
 
-INCOHERENT_REQUESTS_BODIES__IND = [
-    {
-        "output_id": "20201014-1425eco-goodbye",
-        "query_file": "values",
-        "frequency": "hourly",
-        "mc_years": "123456789",
-    },
-    {
-        "output_id": "20201014-1425eco-goodbye",
-        "query_file": "values",
-        "frequency": "hourly",
-        "columns_names": "fake_col",
-    },
-    {
-        "output_id": "20201014-1425eco-goodbye",
-        "query_file": "values",
-        "frequency": "hourly",
-        "links_ids": "fake_id",
-    },
-]
-
 WRONGLY_TYPED_REQUESTS__IND = [
     {
         "output_id": "20201014-1425eco-goodbye",
@@ -403,26 +382,6 @@ SAME_REQUEST_DIFFERENT_FORMATS__ALL = [
 ]
 
 
-INCOHERENT_REQUESTS_BODIES__ALL = [
-    {
-        "output_id": "20201014-1427eco",
-        "query_file": "values",
-        "frequency": "daily",
-    },
-    {
-        "output_id": "20201014-1427eco",
-        "query_file": "values",
-        "frequency": "daily",
-        "columns_names": "fake_col",
-    },
-    {
-        "output_id": "20201014-1427eco",
-        "query_file": "values",
-        "frequency": "monthly",
-        "links_ids": "fake_id",
-    },
-]
-
 WRONGLY_TYPED_REQUESTS__ALL = [
     {
         "output_id": "20201014-1427eco",
@@ -572,19 +531,32 @@ class TestRawDataAggregationMCInd:
     ):
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        # Asserts that requests with incoherent bodies don't crash but send empty dataframes
-        for params in INCOHERENT_REQUESTS_BODIES__IND:
-            output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
-            assert res.status_code == 200, res.json()
-            download_id = res.json()
-            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-            assert res.status_code == 200, res.json()
+        # Requesting a fake mc_year should crash
+        output_id = "20201014-1425eco-goodbye"
+        params = {"query_file": "values", "frequency": "hourly", "mc_years": "123456789"}
+        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422
+        assert "No output files matching the criteria were found" in res.json()["description"]
 
-            res = client.get(f"v1/downloads/{download_id}")
-            assert res.status_code == 200, res.json()
+        # Requesting a fake link should crash
+        params = {"query_file": "values", "frequency": "hourly", "links_ids": "fake_id"}
+        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422
+        assert "No output files matching the criteria were found" in res.json()["description"]
 
-            assert res.content.strip() == b""
+        # Requesting a fake_col should not crash but return an empty content
+        params = {"query_file": "values", "frequency": "hourly", "columns_names": "fake_col"}
+        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200
+        res = client.get(f"v1/downloads/{download_id}")
+        assert res.status_code == 200, res.json()
+        assert res.content == b""
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__IND:
@@ -597,10 +569,7 @@ class TestRawDataAggregationMCInd:
         # for areas
         res = client.get(
             f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/unknown_id",
-            params={
-                "query_file": "values",
-                "frequency": "hourly",
-            },
+            params={"query_file": "values", "frequency": "hourly"},
         )
         assert res.status_code == 200, res.json()
 
@@ -612,10 +581,7 @@ class TestRawDataAggregationMCInd:
         # for links
         res = client.get(
             f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/unknown_id",
-            params={
-                "query_file": "values",
-                "frequency": "hourly",
-            },
+            params={"query_file": "values", "frequency": "hourly"},
         )
         download_id = res.json()
 
@@ -639,48 +605,6 @@ class TestRawDataAggregationMCInd:
         res = client.get(f"v1/downloads/{file_data_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "economy/mc-ind" in res.json()["description"]
-
-    def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """
-        Asserts that requests get an empty dataframe when columns are not existing
-        """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # test for areas
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/20201014-1425eco-goodbye",
-            params={
-                "query_file": "details",
-                "frequency": "hourly",
-                "columns_names": "fake_col",
-            },
-        )
-        download_id = res.json()
-
-        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-        assert res.status_code == 200, res.json()
-
-        res = client.get(f"v1/downloads/{download_id}")
-        assert res.status_code == 200, res.json()
-        assert res.content.strip() == b""
-
-        # test for links
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/20201014-1425eco-goodbye",
-            params={
-                "query_file": "values",
-                "frequency": "hourly",
-                "columns_names": "fake_col",
-            },
-        )
-        download_id = res.json()
-
-        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-        assert res.status_code == 200, res.json()
-
-        res = client.get(f"v1/downloads/{download_id}")
-        assert res.status_code == 200, res.json()
-        assert res.content.strip() == b""
 
 
 @pytest.mark.integration_test
@@ -867,19 +791,32 @@ class TestRawDataAggregationMCAll:
     ):
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        # Asserts that requests with incoherent bodies don't crash but send empty dataframes
-        for params in INCOHERENT_REQUESTS_BODIES__ALL:
-            output_id = params.pop("output_id")
-            res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
-            assert res.status_code == 200, res.json()
-            download_id = res.json()
+        # Requesting matrices that do not exist (daily outputs were not generated) should crash
+        output_id = "20201014-1427eco"
+        params = {"query_file": "values", "frequency": "daily"}
+        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422
+        assert "No output files matching the criteria were found" in res.json()["description"]
 
-            res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-            assert res.status_code == 200, res.json()
+        # Requesting a fake link should crash
+        params = {"query_file": "values", "frequency": "monthly", "links_ids": "fake_id"}
+        res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 422
+        assert "No output files matching the criteria were found" in res.json()["description"]
 
-            res = client.get(f"v1/downloads/{download_id}")
-            assert res.status_code == 200, res.json()
-            assert res.content.strip() == b""
+        # Requesting a fake_col should not crash but return an empty content
+        params = {"query_file": "details", "frequency": "monthly", "columns_names": "fake_col"}
+        res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
+        download_id = res.json()
+        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
+        assert res.status_code == 200
+        res = client.get(f"v1/downloads/{download_id}")
+        assert res.status_code == 200, res.json()
+        assert res.content == b""
 
         # Asserts that wrongly typed requests send an HTTP 422 Exception
         for params in WRONGLY_TYPED_REQUESTS__ALL:
@@ -932,49 +869,6 @@ class TestRawDataAggregationMCAll:
         res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
         assert res.status_code == 422, res.json()
         assert "economy/mc-all" in res.json()["description"]
-
-    def test_empty_columns(self, client: TestClient, user_access_token: str, internal_study_id: str):
-        """
-        Asserts that requests get an empty dataframe when columns are not existing
-        """
-
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-        # test for areas
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/20201014-1427eco",
-            params={
-                "query_file": "details",
-                "frequency": "monthly",
-                "columns_names": "fake_col",
-            },
-        )
-        download_id = res.json()
-
-        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-        assert res.status_code == 200, res.json()
-
-        res = client.get(f"v1/downloads/{download_id}")
-        assert res.status_code == 200, res.json()
-        assert res.content.strip() == b""
-
-        # test for links
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/20241807-1540eco-extra-outputs",
-            params={
-                "query_file": "values",
-                "frequency": "daily",
-                "columns_names": "fake_col",
-            },
-        )
-        download_id = res.json()
-
-        res = client.get(f"v1/downloads/{download_id}/metadata", params={"wait_for_availability": True})
-        assert res.status_code == 200, res.json()
-
-        res = client.get(f"v1/downloads/{download_id}")
-        assert res.status_code == 200, res.json()
-        assert res.content.strip() == b""
 
 
 @pytest.mark.integration_test
