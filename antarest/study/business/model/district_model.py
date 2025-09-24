@@ -51,7 +51,7 @@ class DistrictUpdate(AntaresBaseModel):
     #: User-defined comments.
     comments: Optional[str] = None
     #: List of areas that will be grouped in the district.
-    areas: Optional[List[str]] = []
+    areas: Optional[List[str]] = None
     #: Base filter for the district.
     apply_filter: Optional[DistrictApplyFilter] = None
 
