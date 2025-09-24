@@ -16,13 +16,13 @@ from unittest.mock import Mock
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaCreationDTO, AreaManager, AreaType, UpdateAreaUi
 from antarest.study.business.link_management import LinkManager
+from antarest.study.business.model.district_model import DistrictDefinition
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictFileData,
     FileStudyTreeConfig,
     LinkConfig,
 )
@@ -103,7 +103,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 filters_year=[],
             ),
         },
-        sets={"s1": DistrictFileData(areas=["a1"])},
+        sets={"s1": DistrictDefinition(id="s1", name="s1", add_areas=["a1"])},
     )
     file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
 
