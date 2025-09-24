@@ -28,7 +28,7 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.model import STUDY_VERSION_9_2, StudyVersionInt
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictFileData
 
 from .validation import extract_filtering, study_version_context
 
@@ -156,7 +156,7 @@ class FileStudyTreeConfig(DTO):
         version: StudyVersion,
         output_path: Optional[Path] = None,
         areas: Optional[Dict[str, Area]] = None,
-        sets: Optional[Dict[str, DistrictSet]] = None,
+        sets: Optional[Dict[str, DistrictFileData]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[BindingConstraint]] = None,
         store_new_set: bool = False,
@@ -283,7 +283,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     version: StudyVersionInt
     output_path: Optional[Path] = None
     areas: Dict[str, Area] = dict()
-    sets: Dict[str, DistrictSet] = dict()
+    sets: Dict[str, DistrictFileData] = dict()
     outputs: Dict[str, Simulation] = dict()
     bindings: List[BindingConstraint] = list()
     store_new_set: bool = False

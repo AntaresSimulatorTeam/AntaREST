@@ -39,7 +39,7 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictFileData
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,
@@ -279,7 +279,7 @@ def test_parse_sets(study_path: Path) -> None:
     """
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
-    assert _parse_sets(study_path) == {"hello": DistrictSet(areas=["a", "b"], output=True, inverted_set=False)}
+    assert _parse_sets(study_path) == {"hello": DistrictFileData(areas=["a", "b"], output=True, inverted_set=False)}
 
 
 def test_parse_area(study_path: Path) -> None:

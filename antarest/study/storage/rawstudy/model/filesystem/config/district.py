@@ -13,21 +13,27 @@
 
 from typing import Any, List, Optional
 
+from pydantic import ConfigDict, Field
+
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition
 
 
-class DistrictSet(AntaresBaseModel):
+class DistrictFileData(AntaresBaseModel):
     """
     Object linked to /inputs/sets.ini information
     """
 
-    name: Optional[str] = None
-    apply_filter: Optional[str] = None
-    add_areas: Optional[List[str]] = None
-    substract_areas: Optional[List[str]] = None
+    caption: Optional[str] = None
+    apply_filter: Optional[str] = Field(None, alias="apply-filter")
+    add_areas: Optional[List[str]] = Field(None, alias="+")
+    substract_areas: Optional[List[str]] = Field(None, alias="+")
     output: bool = True
     comments: Optional[str] = None
+
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
 
     def get_areas(self, all_areas: List[str]) -> List[str]:
         add_areas_set = set(self.add_areas or [])
@@ -38,21 +44,24 @@ class DistrictSet(AntaresBaseModel):
         return sorted(areas)
 
     @classmethod
-    def from_model(cls, district: DistrictDefinition) -> "DistrictSet":
-        return DistrictSet.model_validate(
-            district.model_dump(include={"name", "output", "comments", "add_areas", "substract_areas", "apply_filter"}),
+    def from_model(cls, district: DistrictDefinition) -> "DistrictFileData":
+        return DistrictFileData.model_validate(
+            {
+                **district.model_dump(include={"output", "comments", "add_areas", "substract_areas", "apply_filter"}),
+                "caption": district.name,
+            }
         )
 
     @classmethod
-    def from_data(cls, data: Any, district_id: str) -> "DistrictSet":
-        return DistrictSet.model_validate(
+    def from_data(cls, data: Any, district_id: str) -> "DistrictFileData":
+        return DistrictFileData.model_validate(
             {
-                "name": data.get("caption", district_id),
+                "caption": data.get("caption", district_id),
                 "output": data.get("output", True),
-                "comments": data.get("comments", ""),
-                "apply_filter": data.get("apply-filter", "remove-all"),
-                "add_areas": data.get("+", []),
-                "substract_areas": data.get("-", []),
+                "comments": data.get("comments", None),
+                "apply_filter": data.get("apply-filter", None),
+                "add_areas": data.get("+", None),
+                "substract_areas": data.get("-", None),
             }
         )
 
@@ -64,3 +73,20 @@ def district_set_apply_filter(item: dict[str, Any]) -> DistrictApplyFilter:
     if "apply-filter" not in item:
         return DistrictApplyFilter.remove_all
     return DistrictApplyFilter(item["apply-filter"])
+
+
+def parse_district(item: dict[str, Any], district_id: str) -> DistrictDefinition:
+    return DistrictFileData.from_data(item, district_id).to_model(district_id)
+
+
+def serialize_district(district: DistrictDefinition) -> dict[str, Any]:
+    district_file_data = DistrictFileData.from_model(district)
+    district_dict = district_file_data.model_dump(exclude_none=True, mode="json", by_alias=True)
+
+    # Drop "-" and "+" if empty list
+    if not district_file_data.add_areas:
+        district_dict.pop("+", None)
+    if not district_file_data.substract_areas:
+        district_dict.pop("-", None)
+
+    return district_dict

@@ -69,7 +69,7 @@ from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, Stud
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictSet,
+    DistrictFileData,
     FileStudyTreeConfig,
     LinkConfig,
     Mode,
@@ -698,7 +698,7 @@ def test_download_output() -> None:
         study_id=str(uuid.uuid4()),
         version=StudyVersion.parse(input_study.version),
         areas={"east": area},
-        sets={"north": DistrictSet()},
+        sets={"north": DistrictFileData()},
         outputs={"output-id": sim},
         store_new_set=False,
     )

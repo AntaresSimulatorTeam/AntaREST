@@ -84,7 +84,7 @@ class UpdateDistrict(ICommand):
             {
                 **district.model_dump(exclude_none=True, include={"output", "comments", "name", "id"}),
                 **self.parameters.model_dump(
-                    mode="json", exclude_none=True, by_alias=True, include={"output", "comments", "apply_filter"}
+                    mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
                 ),
             }
         )

@@ -21,7 +21,7 @@ from antarest.study.business.district_manager import (
 )
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
 from antarest.study.business.study_interface import FileStudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, DistrictFileData
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
@@ -82,9 +82,9 @@ def study_with_sets(empty_study_880: FileStudy):
     study = FileStudyInterface(empty_study_880)
     study.file_study.tree.save(district_ini_content)
     study.file_study.config.sets = {
-        "d1": DistrictSet(name="D1", areas=[], output=True),
-        "d2": DistrictSet(name="D2", areas=["n1", "n2"], output=True),
-        "d3": DistrictSet(name="D2", areas=["n1", "n2", "n3"], output=False),
+        "d1": DistrictFileData(caption="D1", areas=[], output=True),
+        "d2": DistrictFileData(caption="D2", areas=["n1", "n2"], output=True),
+        "d3": DistrictFileData(caption="D2", areas=["n1", "n2", "n3"], output=False),
     }
     study.file_study.config.areas = {"n1": dummy_area("n1"), "n2": dummy_area("n2"), "n3": dummy_area("n3")}
     return study

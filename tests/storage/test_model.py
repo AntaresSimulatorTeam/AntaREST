@@ -20,7 +20,7 @@ from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictSet,
+    DistrictFileData,
     FileStudyTreeConfig,
     FileStudyTreeConfigDTO,
     Mode,
@@ -48,7 +48,7 @@ def config() -> FileStudyTreeConfig:
                 filters_year=[],
             )
         },
-        sets={"s": DistrictSet()},
+        sets={"s": DistrictFileData()},
         outputs={
             "o": Simulation(
                 name="o",

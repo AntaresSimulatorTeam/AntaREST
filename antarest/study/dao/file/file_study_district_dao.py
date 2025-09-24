@@ -18,8 +18,9 @@ from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
-    DistrictSet,
+    DistrictFileData,
     district_set_apply_filter,
+    parse_district,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -47,14 +48,14 @@ class FileStudyDistrictDao(DistrictDao):
 
         all_areas = list(file_study.config.areas)
         return [
-            DistrictSet.from_data(district_data, district_id).to_model(district_id).to_dto(all_areas)
+            parse_district(district_data, district_id).to_dto(all_areas)
             for district_id, district_data in districts.items()
         ]
 
     @override
     def get_district(self, district_id: str) -> DistrictDTO:
         """
-        Returns the district with the given district id.
+        Get the district with the given district id.
         """
         study_data = self.get_file_study()
         path = DISTRICTS_PATH + [district_id]
@@ -65,7 +66,7 @@ class FileStudyDistrictDao(DistrictDao):
             raise DistrictConfigNotFound(str(path))
 
         all_areas = list(study_data.config.areas)
-        return DistrictSet.from_data(district_data, district_id).to_model(district_id).to_dto(all_areas)
+        return parse_district(district_data, district_id).to_dto(all_areas)
 
     @override
     def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
@@ -106,7 +107,7 @@ class FileStudyDistrictDao(DistrictDao):
             raise AreaNotFound(*invalid_areas)
 
         # Update the in-memory config
-        study_data.config.sets[district.id] = DistrictSet.from_model(district)
+        study_data.config.sets[district.id] = DistrictFileData.from_model(district)
 
         # Persist the change in the filesystem
         district_data_tree: dict[str, Any] = {

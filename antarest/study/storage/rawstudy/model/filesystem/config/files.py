@@ -36,7 +36,7 @@ from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VER
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictFileData
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -216,7 +216,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraint]:
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
-def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
+def _parse_sets(root: Path) -> Dict[str, DistrictFileData]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
@@ -225,10 +225,10 @@ def _parse_sets(root: Path) -> Dict[str, DistrictSet]:
     )
 
     return {
-        transform_name_to_id(name): DistrictSet(
+        transform_name_to_id(name): DistrictFileData(
             add_areas=item.get("+", []),
             substract_areas=item.get("-", []),
-            name=item.get("caption"),
+            caption=item.get("caption"),
             output=item.get("output", True),
             comments=item.get("comments", ""),
             apply_filter=item.get("apply-filter", "remove-all"),

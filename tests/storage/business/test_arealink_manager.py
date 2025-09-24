@@ -22,7 +22,7 @@ from antarest.study.business.study_interface import FileStudyInterface, StudyInt
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     Area,
-    DistrictSet,
+    DistrictFileData,
     FileStudyTreeConfig,
     LinkConfig,
 )
@@ -103,7 +103,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                 filters_year=[],
             ),
         },
-        sets={"s1": DistrictSet(areas=["a1"])},
+        sets={"s1": DistrictFileData(areas=["a1"])},
     )
     file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
 
