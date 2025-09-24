@@ -40,10 +40,8 @@ import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnac
 import useAppSelector from "../../../../../redux/hooks/useAppSelector";
 import { getStudy } from "../../../../../redux/selectors";
 import {
-  getLauncherCores,
   getLauncherMetrics,
-  getLaunchers,
-  getLauncherTimeLimit,
+  getLaunchersConfig,
   getLauncherVersions,
   getStudyOutputs,
   launchStudy,
@@ -66,10 +64,7 @@ function LaunchStudyDialog(props: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const [options, setOptions] = useState<LaunchOptions>({
-    launcher_id: "local",
-    auto_unzip: true,
-  });
+  const [options, setOptions] = useState<LaunchOptions>({ auto_unzip: true });
   const [solverVersion, setSolverVersion] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
@@ -79,36 +74,27 @@ function LaunchStudyDialog(props: Props) {
     shallowEqual,
   );
 
-  const launchers = usePromiseWithSnackbarError(getLaunchers, {
-    errorMessage: t("study.error.launchers"),
-    onDataChange: (launchers) => {
-      if (launchers && options.launcher_id && !launchers.includes(options.launcher_id)) {
-        setOptions((prevOptions) => ({
-          ...prevOptions,
-          launcher_id: launchers[0],
-        }));
-      }
-    },
-  });
+  const launchersConfigRes = usePromiseWithSnackbarError(
+    async () => {
+      const config = await getLaunchersConfig();
 
-  const launcherCores = usePromiseWithSnackbarError(() => getLauncherCores(options.launcher_id), {
-    onDataChange: (cores) => {
-      if (cores) {
-        setOptions((prevOptions) => ({
-          ...prevOptions,
-          nb_cpu: cores.defaultValue,
-        }));
-      }
+      return {
+        ...config,
+        launchers: R.indexBy(R.prop("id"), config.launchers),
+        launcherOptions: config.launchers.map(({ id, name }) => ({ value: id, label: name })),
+      };
     },
-    errorMessage: t("study.error.launcherCores"),
-    deps: [options.launcher_id],
-  });
-
-  const launcherTimeLimit = usePromiseWithSnackbarError(
-    () => getLauncherTimeLimit(options.launcher_id),
     {
-      errorMessage: t("study.error.launcherTimeLimit"),
-      deps: [options.launcher_id],
+      errorMessage: t("study.error.launchers"),
+      onDataChange: (launchersConfig) => {
+        const defaultLauncher = launchersConfig?.launchers[launchersConfig.defaultLauncher];
+
+        setOptions((prev) => ({
+          ...prev,
+          launcher_id: defaultLauncher?.id || "",
+          nb_cpu: defaultLauncher?.nbCores?.default,
+        }));
+      },
     },
   );
 
@@ -219,12 +205,7 @@ function LaunchStudyDialog(props: Props) {
             sx={{ mx: 2 }}
             color="primary"
             variant="contained"
-            disabled={
-              isLaunching ||
-              !launchers.isFulfilled ||
-              !launcherCores.isFulfilled ||
-              !launcherTimeLimit.isFulfilled
-            }
+            disabled={isLaunching || !launchersConfigRes.isFulfilled}
             onClick={handleLaunchClick}
           >
             {t("global.launch")}
@@ -406,66 +387,60 @@ function LaunchStudyDialog(props: Props) {
           }}
         >
           <UsePromiseCond
-            response={launchers}
-            ifFulfilled={(launchers) => (
-              <SelectFE
-                label={t("study.cluster")}
-                value={options.launcher_id}
-                options={launchers}
-                onChange={(e) => {
-                  handleChange("launcher_id", e.target.value);
-                }}
-                sx={{ flex: 1 }}
-              />
+            response={launchersConfigRes}
+            ifFulfilled={({ launchers, launcherOptions }) => (
+              <>
+                <SelectFE
+                  label={t("study.cluster")}
+                  value={options.launcher_id}
+                  options={launcherOptions}
+                  onChange={(e) => {
+                    const newLauncherId = e.target.value;
+                    handleChange("launcher_id", newLauncherId);
+                    handleChange("nb_cpu", launchers[newLauncherId]?.nbCores.default);
+                  }}
+                  sx={{ flex: 1 }}
+                />
+
+                <TextField
+                  label={t("study.nbCpu")}
+                  type="number"
+                  variant="outlined"
+                  value={options.nb_cpu}
+                  onChange={(e) => {
+                    const { min, max } = launchers[options.launcher_id || ""]?.nbCores || {};
+                    const newValue = Number(e.target.value);
+
+                    handleChange("nb_cpu", R.clamp(min, max, newValue));
+                  }}
+                  slotProps={{
+                    htmlInput: {
+                      min: launchers[options.launcher_id || ""]?.nbCores.min,
+                      max: launchers[options.launcher_id || ""]?.nbCores.max,
+                      step: 1,
+                    },
+                  }}
+                  sx={{ width: 150 }}
+                />
+
+                {/* Field only to display the value, it is not editable */}
+                <TextField
+                  label={t("study.timeLimit")}
+                  type="number"
+                  variant="outlined"
+                  disabled
+                  value={launchers[options.launcher_id || ""]?.timeLimit?.default}
+                  slotProps={{
+                    inputLabel: {
+                      shrink: true,
+                    },
+                  }}
+                  sx={{ width: 150 }}
+                />
+              </>
             )}
-            ifPending={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
-            ifRejected={() => <Skeleton width={125} height={60} sx={{ flex: 1 }} />}
-          />
-          <UsePromiseCond
-            response={launcherCores}
-            ifFulfilled={({ min, max }) => (
-              <TextField
-                label={t("study.nbCpu")}
-                type="number"
-                variant="outlined"
-                value={options.nb_cpu}
-                onChange={(e) => {
-                  const newValue = parseInt(e.target.value, 10);
-                  handleChange("nb_cpu", Math.min(Math.max(newValue, min), max));
-                }}
-                slotProps={{
-                  htmlInput: {
-                    min,
-                    max,
-                    step: 1,
-                  },
-                }}
-                sx={{ width: 150 }}
-              />
-            )}
-            ifPending={() => <Skeleton width={150} height={60} />}
-            ifRejected={() => <Skeleton width={150} height={60} />}
-          />
-          {/* Field only to display the value, it is not editable */}
-          <UsePromiseCond
-            response={launcherTimeLimit}
-            ifFulfilled={({ defaultValue }) => (
-              <TextField
-                label={t("study.timeLimit")}
-                type="number"
-                variant="outlined"
-                disabled
-                value={defaultValue}
-                slotProps={{
-                  inputLabel: {
-                    shrink: true,
-                  },
-                }}
-                sx={{ width: 150 }}
-              />
-            )}
-            ifPending={() => <Skeleton width={150} height={60} />}
-            ifRejected={() => <Skeleton width={150} height={60} />}
+            ifPending={() => <Skeleton height={60} sx={{ flex: 1 }} />}
+            ifRejected={() => <Skeleton height={60} sx={{ flex: 1 }} />}
           />
         </Box>
         <Box
