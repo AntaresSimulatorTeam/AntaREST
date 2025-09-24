@@ -12,110 +12,85 @@
  * This file is part of the Antares project.
  */
 
-import { nestedStructureToFlattened } from "./adapters";
-import type {
-  Level1Data,
-  Level2Data,
-  Level2Display,
-  Level3Data,
-  Level3Display,
-  NonNullableScenarioData,
-  ScenarioData,
-  ScenarioDisplayMap,
-} from "./types";
+import { SCENARIOS } from "@/services/api/studies/config/scenarioBuilder/constants";
+import {
+  isLevel2Scenario,
+  isLevel3Scenario,
+  type ScenarioType,
+} from "@/services/api/studies/config/scenarioBuilder/types";
 
 ////////////////////////////////////////////////////////////////
-// Data Processors
+// Constants
 ////////////////////////////////////////////////////////////////
 
-type DataProcessor<T, U = T> = (data: T) => U;
+interface ScenarioMetadata {
+  level: 1 | 2 | 3;
+  requiresAreaSelection: boolean;
+  minVersion?: number;
+}
 
-const processors: {
-  [K in keyof NonNullableScenarioData]: DataProcessor<
-    NonNullableScenarioData[K],
-    ScenarioDisplayMap[K]
-  >;
-} = {
-  load: processLevel1Data,
-  thermal: processLevel2Data,
-  hydro: processLevel1Data,
-  wind: processLevel1Data,
-  solar: processLevel1Data,
-  ntc: processLevel1Data,
-  renewable: processLevel2Data,
-  hydroInitialLevels: processLevel1Data,
-  bindingConstraints: processLevel1Data,
-  hydroFinalLevels: processLevel1Data,
-  shortTermStorageInflows: processLevel2Data,
-  shortTermStorageAdditionalConstraints: processLevel3Data,
+const SCENARIO_METADATA: Record<ScenarioType, ScenarioMetadata> = {
+  // Level 1 scenarios (area → values)
+  load: { level: 1, requiresAreaSelection: false },
+  hydro: { level: 1, requiresAreaSelection: false },
+  wind: { level: 1, requiresAreaSelection: false },
+  solar: { level: 1, requiresAreaSelection: false },
+  ntc: { level: 1, requiresAreaSelection: false, minVersion: 820 },
+  hydroInitialLevels: { level: 1, requiresAreaSelection: false },
+  bindingConstraints: { level: 1, requiresAreaSelection: false, minVersion: 870 },
+  hydroFinalLevels: { level: 1, requiresAreaSelection: false, minVersion: 920 },
+
+  // Level 2 scenarios (area → entity → values)
+  thermal: { level: 2, requiresAreaSelection: true },
+  renewable: { level: 2, requiresAreaSelection: true, minVersion: 810 },
+  shortTermStorageInflows: { level: 2, requiresAreaSelection: true, minVersion: 930 },
+
+  // Level 3 scenarios (area → entity → subentity → values)
+  shortTermStorageAdditionalConstraints: { level: 3, requiresAreaSelection: true, minVersion: 930 },
 };
 
+////////////////////////////////////////////////////////////////
+// Function Helpers
+////////////////////////////////////////////////////////////////
+
 /**
- * Processes Level 1 data (direct area to yearly values)
+ * Checks if a scenario requires area selection
  *
- * @param data - The Level 1 data from API
- * @returns The processed Level 1 display data
+ * @param type - The scenario type to check
+ * @returns True if the scenario requires area selection, false otherwise
  */
-function processLevel1Data(data: Level1Data): Level1Data {
-  return Object.entries(data).reduce<Level1Data>((acc, [areaId, yearlyValue]) => {
-    acc[areaId] = yearlyValue;
-    return acc;
-  }, {});
+export function requiresAreaSelection(type: ScenarioType): boolean {
+  return isLevel2Scenario(type) || isLevel3Scenario(type);
 }
 
 /**
- * Processes Level 2 data (area → entity → yearly values)
- * Extracts areas and organizes entities by area
+ * Get metadata for a scenario type
  *
- * @param data - The Level 2 data from API
- * @returns Object with areas list and entity configurations
+ * @param type - The scenario type to get metadata for
+ * @returns The metadata for the scenario type
  */
-function processLevel2Data(data: Level2Data): Level2Display {
-  return Object.entries(data).reduce<Level2Display>(
-    (acc, [areaId, entityConfig]) => {
-      acc.areas.push(areaId);
-      acc.entities[areaId] = entityConfig;
-      return acc;
-    },
-    { areas: [], entities: {} },
-  );
+export function getScenarioMetadata(type: ScenarioType) {
+  return SCENARIO_METADATA[type];
 }
 
 /**
- * Processes Level 3 data (area → entity → subentity → yearly values)
- * Extracts areas and flattens the nested structure for UI display
+ * Check if a scenario is available for the given study version
  *
- * @param data - The Level 3 data from API
- * @returns Object with areas list and flattened entity configurations
+ * @param type - The scenario type to check
+ * @param version - The study version (3-digit format, e.g., 930 for v9.3)
+ * @returns True if the scenario is available for this version, false otherwise
  */
-function processLevel3Data(data: Level3Data): Level3Display {
-  return Object.entries(data).reduce<Level3Display>(
-    (acc, [areaId, entityConfig]) => {
-      acc.areas.push(areaId);
-      // Flatten the nested structure for UI display
-      acc.flattenedEntities[areaId] = nestedStructureToFlattened(entityConfig);
-      return acc;
-    },
-    { areas: [], flattenedEntities: {} },
-  );
+export function isScenarioAvailableForVersion(type: ScenarioType, version: number): boolean {
+  const metadata = getScenarioMetadata(type);
+  return !metadata.minVersion || version >= metadata.minVersion;
 }
 
 /**
- * Retrieves and processes the configuration for a specific scenario type
+ * Filter scenarios by study version, only returning those available for the version
  *
- * @param data - Full scenario data from API
- * @param scenario - The specific scenario type to process
- * @returns The processed display data or undefined if not found
+ * @param version - The study version (3-digit format)
+ * @returns Array of scenario types available for this version
  */
-export function getConfigByScenario<K extends keyof ScenarioData>(
-  data: ScenarioData,
-  scenario: K,
-): ScenarioDisplayMap[K] | undefined {
-  const scenarioData = data[scenario];
-
-  if (!scenarioData) {
-    return undefined;
-  }
-
-  return processors[scenario](scenarioData);
+export function getAvailableScenariosForVersion(version: number): ScenarioType[] {
+  return SCENARIOS.filter((scenario) => isScenarioAvailableForVersion(scenario, version));
 }

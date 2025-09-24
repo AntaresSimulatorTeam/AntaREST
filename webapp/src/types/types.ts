@@ -150,6 +150,8 @@ export interface LaunchOptions {
   output_suffix?: string;
   other_options?: string;
   auto_unzip?: boolean;
+  archive_output?: boolean;
+  launcher_id?: string;
 }
 
 export type JobStatus = "running" | "pending" | "success" | "failed";
@@ -165,6 +167,7 @@ export interface LaunchJob {
   outputId: string;
   exitCode: number;
   ownerId: number;
+  ownerName: string;
 }
 
 export interface LaunchJobDTO {

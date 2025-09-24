@@ -12,24 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import CustomScrollbar from "@/components/common/CustomScrollbar";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import { unarchiveStudy } from "@/services/api/study";
-import { type StudyMetadata } from "@/types/types";
-import { toError } from "@/utils/fnUtils";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import { Box, Button, Chip, Divider, IconButton, Tooltip, Typography } from "@mui/material";
+import { Box, Button, Chip, Divider, IconButton, Tooltip } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import CustomScrollbar from "@/components/common/CustomScrollbar";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { unarchiveStudy } from "@/services/api/study";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
 import FavoriteStudyToggle from "../../shared/studies/FavoriteStudyToggle";
 import StudyActionsMenu from "../../shared/studies/StudyActionsMenu";
 import CommandsDrawer from "../CommandsDrawer";
+import Breadcrumb from "./Breadcrumb";
 
 export type DialogType = "commands";
 
@@ -42,7 +41,6 @@ interface Props {
 
 function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
@@ -60,14 +58,6 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
-
-  const handleClickBack = () => {
-    if (isExplorer) {
-      navigate(`/studies/${study.id}`);
-    } else {
-      navigate("/studies");
-    }
-  };
 
   const handleCopyId = async () => {
     try {
@@ -102,28 +92,22 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
           justifyContent: "flex-start",
           alignItems: "center",
           boxSizing: "border-box",
-          gap: 2,
+          gap: 1,
         }}
       >
-        <Button onClick={handleClickBack} startIcon={<ArrowBackIcon />} color="secondary">
-          {isExplorer ? t("button.back") : t("global.studies")}
-        </Button>
-        <Divider flexItem orientation="vertical" />
-        <Box sx={{ flex: 1, overflow: "auto" }}>
+        <Box sx={{ flex: 1 }}>
+          <Breadcrumb study={study} />
+        </Box>
+        <Box sx={{ overflow: "auto" }}>
           <CustomScrollbar>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "nowrap" }}>
-              <Tooltip title={study.name} placement="bottom-start">
-                <Typography
-                  variant="h6"
-                  noWrap
-                  sx={{
-                    flex: 1,
-                    minWidth: 50,
-                  }}
-                >
-                  {study.name}
-                </Typography>
-              </Tooltip>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.5,
+                flexWrap: "nowrap",
+              }}
+            >
               <FavoriteStudyToggle studyId={study.id} />
               <Tooltip title={t("study.copyId")}>
                 <IconButton onClick={handleCopyId}>
@@ -150,6 +134,8 @@ function Actions({ study, parentStudy, variantNb, isExplorer }: Props) {
             onClick={handleUnarchive}
             startIcon={<UnarchiveOutlinedIcon />}
             variant="contained"
+            size="extra-small"
+            sx={{ px: 1 }}
           >
             {t("global.unarchive")}
           </Button>

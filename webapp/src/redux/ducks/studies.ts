@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import storage, { StorageKey } from "@/services/utils/localStorage";
+import type { StudyEventPayload } from "@/services/webSocket/types";
 import {
   createAction,
   createAsyncThunk,
@@ -20,14 +22,12 @@ import {
 } from "@reduxjs/toolkit";
 import * as R from "ramda";
 import type { O } from "ts-toolbelt";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
 import * as api from "../../services/api/study";
+import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
 import { getFavoriteStudyIds, getStudyVersions } from "../selectors";
 import type { AppAsyncThunkConfig, AppThunk } from "../store";
-import { makeActionName, FetchStatus, createThunk, type AsyncEntityState } from "../utils";
+import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
-import type { StudyEventPayload } from "@/services/webSocket/types";
-import storage, { StorageKey } from "@/services/utils/localStorage";
 
 const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
@@ -37,7 +37,7 @@ export interface StudyFilters {
   strictFolder: boolean;
   managed: boolean;
   archived: boolean;
-  variant: boolean;
+  type: "all" | "references" | "variants";
   versions: string[];
   users: Array<UserDTO["id"]>;
   groups: Array<GroupDTO["id"]>;
@@ -88,13 +88,13 @@ const initialState = studiesAdapter.getInitialState({
     strictFolder: false,
     managed: false,
     archived: false,
-    variant: false,
+    type: "references",
     versions: [],
     users: [],
     groups: [],
     tags: [],
     ...(storage.getItem(StorageKey.StudiesFilters) || {}),
-  },
+  } satisfies StudyFilters,
   sort: {
     property: "name",
     order: "ascend",

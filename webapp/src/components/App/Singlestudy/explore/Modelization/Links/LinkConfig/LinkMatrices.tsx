@@ -70,6 +70,7 @@ function LinkMatrices({ area1, area2, isOldStudy }: Props) {
                 t("study.modelization.links.matrix.columns.pShiftMax"),
               ]}
               isTimeSeries={false}
+              enableFilters
             />
           ),
         },
