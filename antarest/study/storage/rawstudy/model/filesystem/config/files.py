@@ -29,6 +29,7 @@ from antarest.core.utils.archives import extract_lines_from_archive, is_archive_
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
+from antarest.study.business.model.district_model import DistrictDefinition
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -36,7 +37,7 @@ from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VER
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictFileData
+from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
 from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
     SimulationParsingError,
     XpansionParsingError,
@@ -216,7 +217,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraint]:
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
-def _parse_sets(root: Path) -> Dict[str, DistrictFileData]:
+def _parse_sets(root: Path) -> Dict[str, DistrictDefinition]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
@@ -224,17 +225,7 @@ def _parse_sets(root: Path) -> Dict[str, DistrictFileData]:
         multi_ini_keys=["+", "-"],
     )
 
-    return {
-        transform_name_to_id(name): DistrictFileData(
-            add_areas=item.get("+", []),
-            substract_areas=item.get("-", []),
-            caption=item.get("caption"),
-            output=item.get("output", True),
-            comments=item.get("comments", ""),
-            apply_filter=item.get("apply-filter", "remove-all"),
-        )
-        for name, item in obj.items()
-    }
+    return {transform_name_to_id(name): parse_district(item, transform_name_to_id(name)) for name, item in obj.items()}
 
 
 def _parse_areas(root: Path) -> Dict[str, Area]:

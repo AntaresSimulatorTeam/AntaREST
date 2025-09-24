@@ -27,7 +27,7 @@ class DistrictFileData(AntaresBaseModel):
     caption: Optional[str] = None
     apply_filter: Optional[str] = Field(None, alias="apply-filter")
     add_areas: Optional[List[str]] = Field(None, alias="+")
-    substract_areas: Optional[List[str]] = Field(None, alias="+")
+    substract_areas: Optional[List[str]] = Field(None, alias="-")
     output: bool = True
     comments: Optional[str] = None
 
@@ -66,7 +66,15 @@ class DistrictFileData(AntaresBaseModel):
         )
 
     def to_model(self, district_id: str) -> DistrictDefinition:
-        return DistrictDefinition.model_validate({**self.model_dump(), "id": district_id})
+        return DistrictDefinition.model_validate(
+            {
+                **self.model_dump(
+                    include={"output", "comments", "add_areas", "substract_areas", "apply_filter"}, exclude_none=True
+                ),
+                "name": self.caption,
+                "id": district_id,
+            }
+        )
 
 
 def district_set_apply_filter(item: dict[str, Any]) -> DistrictApplyFilter:

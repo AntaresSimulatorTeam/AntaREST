@@ -27,6 +27,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.district_model import DistrictDefinition
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
@@ -39,7 +40,6 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import BindingConstraintFrequency
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictFileData
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,
@@ -279,7 +279,42 @@ def test_parse_sets(study_path: Path) -> None:
     """
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
-    assert _parse_sets(study_path) == {"hello": DistrictFileData(areas=["a", "b"], output=True, inverted_set=False)}
+    assert _parse_sets(study_path) == {
+        "hello": DistrictDefinition(
+            id="hello", name="hello", add_areas=["a", "b"], output=True, apply_filter="remove-all"
+        )
+    }
+
+    content = """\
+    [hello]
+    output = true
+    apply-filter = add-all
+    - = a
+    - = b
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
+
+    assert _parse_sets(study_path) == {
+        "hello": DistrictDefinition(
+            id="hello", name="hello", substract_areas=["a", "b"], output=True, apply_filter="add-all"
+        )
+    }
+
+    content = """\
+    [hello]
+    output = false
+    apply-filter = add-all
+    - = a
+    - = b
+    + = c
+    """
+    (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
+
+    assert _parse_sets(study_path) == {
+        "hello": DistrictDefinition(
+            id="hello", name="hello", substract_areas=["a", "b"], add_areas=["c"], output=False, apply_filter="add-all"
+        )
+    }
 
 
 def test_parse_area(study_path: Path) -> None:

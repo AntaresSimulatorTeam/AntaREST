@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Any, Sequence
+from typing import Sequence
 
 from typing_extensions import override
 
@@ -18,9 +18,9 @@ from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
-    DistrictFileData,
     district_set_apply_filter,
     parse_district,
+    serialize_district,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -107,22 +107,11 @@ class FileStudyDistrictDao(DistrictDao):
             raise AreaNotFound(*invalid_areas)
 
         # Update the in-memory config
-        study_data.config.sets[district.id] = DistrictFileData.from_model(district)
+        study_data.config.sets[district.id] = district
 
         # Persist the change in the filesystem
-        district_data_tree: dict[str, Any] = {
-            "caption": district.name,
-            "apply-filter": district.apply_filter.value,
-            "output": district.output,
-            "comments": district.comments,
-        }
-        if district.add_areas:
-            district_data_tree["+"] = district.add_areas
-        if district.substract_areas:
-            district_data_tree["-"] = district.substract_areas
-
         study_data.tree.save(
-            district_data_tree,
+            serialize_district(district),
             ["input", "areas", "sets", district.id],
         )
 

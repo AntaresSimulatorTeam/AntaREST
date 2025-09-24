@@ -26,13 +26,13 @@ from antarest.study.business.model.area_model import (
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
 )
+from antarest.study.business.model.district_model import DistrictDefinition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     AreaFolder,
     ThermalAreasProperties,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.district import DistrictFileData
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
@@ -182,13 +182,13 @@ class AreaManager:
             )
 
         if area_type is None or area_type == AreaType.DISTRICT:
-            cfg_sets: Dict[str, DistrictFileData] = file_study.config.sets
+            cfg_sets: Dict[str, DistrictDefinition] = file_study.config.sets
             result.extend(
                 AreaInfoDTO(
                     id=set_id,
-                    name=district.caption or set_id,
+                    name=district.name or set_id,
                     type=AreaType.DISTRICT,
-                    set=district.get_areas(list(cfg_areas)),
+                    set=district.to_dto(list(cfg_areas)).areas,
                 )
                 for set_id, district in cfg_sets.items()
             )

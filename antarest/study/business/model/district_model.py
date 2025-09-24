@@ -158,10 +158,10 @@ class DistrictDefinition(AntaresBaseModel):
     apply_filter: DistrictApplyFilter = DistrictApplyFilter.remove_all
 
     def to_dto(self, all_areas: List[str]) -> DistrictDTO:
-        if self.apply_filter == DistrictApplyFilter.remove_all:
+        if self.apply_filter == DistrictApplyFilter.add_all:
             areas = list(set(all_areas).difference(set(self.substract_areas)))
         else:
-            areas = list(set(all_areas).union(set(self.add_areas)))
+            areas = list(set(self.add_areas))
         return DistrictDTO.model_validate(
             {
                 "id": self.id,
