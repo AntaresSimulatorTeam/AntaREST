@@ -215,6 +215,8 @@ function Form<TFieldValues extends FieldValues, TContext>({
   useEffect(
     () => {
       if (isSubmitSuccessful && lastSubmittedData.current) {
+        // Form still dirty here, so we need to bypass the form close protection
+        // in case the callback makes a view transition
         executeWithoutFormCloseCheck(submitSuccessfulCb.current);
 
         const valuesToSetAfterReset = getValues(fieldsChangeDuringAutoSubmitting.current);
