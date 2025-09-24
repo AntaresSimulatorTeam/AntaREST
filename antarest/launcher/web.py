@@ -22,7 +22,7 @@ from antarest.core.utils.web import APITag
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
-    LauncherInfoDTO,
+    LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
@@ -139,7 +139,7 @@ def create_launcher_api(service: LauncherService, config: Config) -> APIRouter:
         "/launchers",
         tags=[APITag.launcher],
         summary="Retrieve configured launchers",
-        response_model=List[LauncherInfoDTO],
+        response_model=LauncherListDTO,
     )
     def get_launchers() -> Any:
         logger.info("Listing launchers")

@@ -45,6 +45,7 @@ from antarest.launcher.model import (
     JobResult,
     JobStatus,
     LauncherInfoDTO,
+    LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
@@ -118,7 +119,7 @@ class LauncherService:
         adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
         return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
-    def get_launchers(self) -> List[LauncherInfoDTO]:
+    def get_launchers(self) -> LauncherListDTO:
         configs = self.config.launcher.configs or []
         launchers: List[LauncherInfoDTO] = []
         for launcher_config in configs:
@@ -138,7 +139,8 @@ class LauncherService:
                     ),
                 )
             )
-        return launchers
+        default_launcher = self.config.launcher.default
+        return LauncherListDTO(launchers=launchers, default_launcher=default_launcher)
 
     def _after_export_flat_hooks(
         self,

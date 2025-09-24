@@ -13,7 +13,7 @@
 import enum
 import typing
 from datetime import datetime
-from typing import Any, Dict, MutableMapping, Optional
+from typing import Any, Dict, List, MutableMapping, Optional
 from uuid import uuid4
 
 from pydantic import ConfigDict, Field
@@ -272,6 +272,18 @@ class LauncherInfoDTO(AntaresBaseModel):
     name: str
     nb_cores: LauncherResourceRangeDTO
     time_limit: LauncherResourceRangeDTO
+
+
+class LauncherListDTO(AntaresBaseModel):
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True,
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
+    launchers: List[LauncherInfoDTO]
+    default_launcher: str
 
 
 class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):

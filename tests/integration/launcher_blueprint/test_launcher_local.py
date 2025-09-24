@@ -55,7 +55,8 @@ class TestLauncherConfiguration:
         )
         res.raise_for_status()
         actual = res.json()
-        assert actual == expected_launchers
+        assert actual["launchers"] == expected_launchers
+        assert actual["defaultLauncher"] == "local_id"
 
     def test_jobs_permissions(
         self,
