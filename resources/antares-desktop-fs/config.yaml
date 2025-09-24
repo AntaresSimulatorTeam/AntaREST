@@ -57,14 +57,6 @@ server:
   worker_threadpool_size: 12
   services:
     - watcher
-    # - id: my_service
-    #   name: My Service
-    #   type: http
-    #   url: http://my_service:port/
-    #   prefix: /my_service
-    #   timeout: 10
-    #   headers:
-    #     X-My-Header: my_value
 
 logging:
   logfile: ./logs/antarest.log
