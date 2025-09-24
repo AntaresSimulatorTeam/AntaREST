@@ -1496,10 +1496,12 @@
   "sets": {
     "all areas": {
       "name": "All areas",
-      "inverted_set": true,
-      "areas": null,
+      "applyFilter": "add-all",
+      "addAreas": [],
+      "substractAreas": [],
       "output": false,
-      "comments": null
+      "comments": "Spatial aggregates on all areas",
+      "id": "all areas"
     }
   },
   "outputs": {},
