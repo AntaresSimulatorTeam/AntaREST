@@ -182,4 +182,5 @@ def parse_xpansion_security_criterion(data: Any) -> XpansionAdequacyCriterion:
 
 
 def serialize_xpansion_security_criterion(criterion: XpansionAdequacyCriterion) -> dict[str, Any]:
-    return XpansionAdequacyCriterionFileData.from_model(criterion).model_dump(by_alias=True)
+    excludes = set() if criterion.patterns else {"patterns"}
+    return XpansionAdequacyCriterionFileData.from_model(criterion).model_dump(by_alias=True, exclude=excludes)

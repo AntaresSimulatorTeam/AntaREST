@@ -14,7 +14,6 @@ import pytest
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
-    XpansionSecurityCriterionUpdate,
 )
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -25,7 +24,7 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-class TestUpdateXpansionSettings:
+class TestReplaceXpansionAdequacyCriterion:
     @staticmethod
     def set_up(empty_study: FileStudy, command_context: CommandContext):
         empty_study.tree.save(
@@ -54,7 +53,7 @@ class TestUpdateXpansionSettings:
         self.set_up(empty_study, command_context)
 
         # Add some patterns
-        new_criterion = XpansionSecurityCriterionUpdate(
+        new_criterion = XpansionAdequacyCriterion(
             patterns=[
                 XpansionAdequacyPattern(area="fr", criterion=2.3),
                 XpansionAdequacyPattern(area="de", criterion=11),
@@ -74,19 +73,19 @@ class TestUpdateXpansionSettings:
         )
         assert (
             file_path.read_text()
-            == """criterion_count_threshold: 1.2
+            == """criterion_count_threshold: 1.0
 patterns:
 - area: fr
   criterion: 2.3
 - area: de
   criterion: 11.0
-stopping_threshold: 3.0
+stopping_threshold: 1000000.0
 """
         )
 
-        # Modify the criterion_count_threshold only
+        # Performs another replacement
         cmd = ReplaceXpansionAdequacyCriterion(
-            criterion=XpansionSecurityCriterionUpdate(criterion_count_threshold=4),
+            criterion=XpansionAdequacyCriterion(criterion_count_threshold=4, stopping_threshold=1.2),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -97,18 +96,16 @@ stopping_threshold: 3.0
         assert (
             file_path.read_text()
             == """criterion_count_threshold: 4.0
-patterns:
-- area: fr
-  criterion: 2.3
-- area: de
-  criterion: 11.0
-stopping_threshold: 3.0
+stopping_threshold: 1.2
 """
         )
 
-        # Removes a pattern
+        # Performs another replacement
         cmd = ReplaceXpansionAdequacyCriterion(
-            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionAdequacyPattern(area="fr", criterion=6.1)]),
+            criterion=XpansionAdequacyCriterion(
+                patterns=[XpansionAdequacyPattern(area="fr", criterion=6.1)],
+                stopping_threshold=3.0,
+            ),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -118,7 +115,7 @@ stopping_threshold: 3.0
         # Checks the file content
         assert (
             file_path.read_text()
-            == """criterion_count_threshold: 4.0
+            == """criterion_count_threshold: 1.0
 patterns:
 - area: fr
   criterion: 6.1
@@ -132,7 +129,7 @@ stopping_threshold: 3.0
 
         # Try to update with a non-existing area
         cmd = ReplaceXpansionAdequacyCriterion(
-            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionAdequacyPattern(area="fake", criterion=6.1)]),
+            criterion=XpansionAdequacyCriterion(patterns=[XpansionAdequacyPattern(area="fake", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
