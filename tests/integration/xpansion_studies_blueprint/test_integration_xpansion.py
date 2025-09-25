@@ -418,6 +418,19 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     res = xp_client.delete(f"resources/capacities/{filename_capa1}")
     assert res.status_code == 200
 
+    res = xp_client.get("adequacy_criterion")
+    assert res.status_code == 200
+    assert res.json() == {"stoppingThreshold": 1000000.0, "criterionCountThreshold": 1.0, "patterns": []}
+
+    new_criterion = {
+        "stoppingThreshold": 3,
+        "criterionCountThreshold": 1.2,
+        "patterns": [{"area": area1_id, "criterion": 2.5}, {"area": area2_id, "criterion": 3.6}],
+    }
+    res = xp_client.put("adequacy_criterion", json=new_criterion)
+    assert res.status_code == 200
+    assert res.json() == new_criterion
+
     res = client.delete(f"/v1/studies/{study_id}/extensions/xpansion")
     assert res.status_code == 200
 
@@ -432,7 +445,7 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
     if study_type == "variant":
         res = client.get(f"/v1/studies/{study_id}/commands")
         commands_list = res.json()
-        assert len(commands_list) == 16
+        assert len(commands_list) == 17
         assert commands_list[0]["action"] == "create_xpansion_configuration"
 
         assert commands_list[1]["action"] == "update_xpansion_settings"
@@ -483,4 +496,16 @@ def test_integration_xpansion(client: TestClient, tmp_path: Path, admin_access_t
         assert commands_list[14]["action"] == "remove_xpansion_resource"
         assert commands_list[14]["args"] == {"filename": "filename_capa1.txt", "resource_type": "capacities"}
 
-        assert commands_list[15]["action"] == "remove_xpansion_configuration"
+        assert commands_list[15]["action"] == "replace_xpansion_adequacy_criterion"
+        assert commands_list[15]["args"] == {
+            "criterion": {
+                "criterion_count_threshold": 1.2,
+                "patterns": [
+                    {"area": "area1", "criterion": 2.5},
+                    {"area": "area2", "criterion": 3.6},
+                ],
+                "stopping_threshold": 3.0,
+            },
+        }
+
+        assert commands_list[16]["action"] == "remove_xpansion_configuration"

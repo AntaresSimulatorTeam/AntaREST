@@ -32,6 +32,8 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
@@ -87,6 +89,7 @@ def test_create_configuration(
             "timelimit": int(1e12),
         },
         "weights": {},
+        "adequacy_criterion": {"adequacy_criterion": {}},
     }
 
 
@@ -660,3 +663,37 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert xpansion_manager.list_resources(study, XpansionResourceFileType.CAPACITIES) == [filename1, filename2]
+
+
+@pytest.mark.parametrize("optional_folder", [True, False])
+@pytest.mark.unit_test
+def test_adequacy_criterion(
+    area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface, optional_folder: bool
+) -> None:
+    xpansion_manager.create_xpansion_configuration(study)
+
+    if optional_folder:
+        # The adequacy_criterion folder is optional.
+        # We need to ensure this is transparent for the user
+        study.get_files().tree.delete(["user", "expansion", "adequacy_criterion"])
+
+    assert xpansion_manager.get_adequacy_criterion(study) == XpansionAdequacyCriterion(
+        stopping_threshold=1e6, criterion_count_threshold=1, patterns=[]
+    )
+
+    make_areas(area_manager, study)
+    new_criterion = XpansionAdequacyCriterion(
+        criterion_count_threshold=1.2,
+        patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
+    )
+    criterion = xpansion_manager.replace_adequacy_criterion(study, new_criterion)
+    created_criterion = xpansion_manager.get_adequacy_criterion(study)
+    assert (
+        created_criterion
+        == criterion
+        == XpansionAdequacyCriterion(
+            stopping_threshold=1e6,
+            criterion_count_threshold=1.2,
+            patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
+        )
+    )

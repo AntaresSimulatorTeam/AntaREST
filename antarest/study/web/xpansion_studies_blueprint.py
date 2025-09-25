@@ -23,6 +23,7 @@ from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
@@ -188,5 +189,27 @@ def create_xpansion_routes(study_service: StudyService, config: Config) -> APIRo
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.xpansion_manager.list_resources(study_interface, resource_type)
+
+    @bp.get(
+        "/studies/{uuid}/extensions/xpansion/adequacy_criterion",
+        tags=[APITag.xpansion_study_management],
+        summary="Gets the Xpansion adequacy criterion configuration",
+    )
+    def get_adequacy_criterion(uuid: str) -> XpansionAdequacyCriterion:
+        logger.info(f"Getting xpansion adequacy criterion from the study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.xpansion_manager.get_adequacy_criterion(study_interface)
+
+    @bp.put(
+        "/studies/{uuid}/extensions/xpansion/adequacy_criterion",
+        tags=[APITag.xpansion_study_management],
+        summary="Replace the Xpansion adequacy criterion configuration",
+    )
+    def update_security_criterion(uuid: str, criterion: XpansionAdequacyCriterion) -> XpansionAdequacyCriterion:
+        logger.info(f"Updates xpansion adequacy criterion from the study {uuid}")
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.xpansion_manager.replace_adequacy_criterion(study_interface, criterion)
 
     return bp
