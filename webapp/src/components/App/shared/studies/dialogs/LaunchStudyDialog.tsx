@@ -209,7 +209,7 @@ function LaunchStudyDialog(props: Props) {
       open={open}
       onClose={onClose}
       maxWidth="md"
-      PaperProps={{ sx: { width: 700 } }}
+      slotProps={{ paper: { sx: { width: 700 } } }}
       actions={
         <>
           <Button variant="text" color="primary" onClick={onClose}>
@@ -263,14 +263,15 @@ function LaunchStudyDialog(props: Props) {
           )}
         </Box>
         <TextField
-          id="launcher-option-output-suffix"
           label={t("global.name")}
           type="text"
           variant="outlined"
           value={options.output_suffix}
           onChange={(e) => handleChange("output_suffix", e.target.value.trim())}
-          InputLabelProps={{
-            shrink: true,
+          slotProps={{
+            inputLabel: {
+              shrink: true,
+            },
           }}
         />
         <Divider
@@ -296,15 +297,16 @@ function LaunchStudyDialog(props: Props) {
             sx={{ flex: 1 }}
           />
           <TextField
-            id="other-options"
             label={t("study.otherOptions")}
             type="text"
             variant="outlined"
             value={options.other_options}
             onChange={(e) => handleChange("other_options", e.target.value)}
             sx={{ flex: 1 }}
-            InputLabelProps={{
-              shrink: true,
+            slotProps={{
+              inputLabel: {
+                shrink: true,
+              },
             }}
           />
         </Box>
@@ -320,14 +322,14 @@ function LaunchStudyDialog(props: Props) {
           <CheckBoxFE
             label={t("launcher.xpress")}
             value={!!options.other_options?.match("xpress")}
-            onChange={(e, checked) =>
+            onChange={(_e, checked) =>
               handleOtherOptionsChange([{ option: "xpress", active: checked }])
             }
           />
           <CheckBoxFE
             label={t("launcher.autoUnzip")}
             value={!!options.auto_unzip}
-            onChange={(e, checked) => handleChange("auto_unzip", checked)}
+            onChange={(_e, checked) => handleChange("auto_unzip", checked)}
           />
         </Box>
         <Divider
@@ -352,7 +354,7 @@ function LaunchStudyDialog(props: Props) {
             <Typography>Xpansion</Typography>
             <SwitchFE
               value={!!options.xpansion}
-              onChange={(e, checked) => {
+              onChange={(_e, checked) => {
                 handleChange("xpansion", checked ? { enabled: true } : undefined);
               }}
             />
@@ -364,7 +366,7 @@ function LaunchStudyDialog(props: Props) {
                   <Checkbox
                     disabled={!!options.xpansion_r_version || !options.xpansion}
                     checked={options.xpansion?.sensitivity_mode || false}
-                    onChange={(e, checked) =>
+                    onChange={(_e, checked) =>
                       handleObjectChange("xpansion", {
                         sensitivity_mode: checked,
                       })
@@ -382,7 +384,7 @@ function LaunchStudyDialog(props: Props) {
                 }))}
                 disabled={!!options.xpansion_r_version || !options.xpansion}
                 data={options.xpansion?.output_id || ""}
-                setValue={(data: string) =>
+                setValue={(data) =>
                   handleObjectChange("xpansion", {
                     output_id: data,
                   })
@@ -426,16 +428,17 @@ function LaunchStudyDialog(props: Props) {
                 label={t("study.nbCpu")}
                 type="number"
                 variant="outlined"
-                required
                 value={options.nb_cpu}
                 onChange={(e) => {
                   const newValue = parseInt(e.target.value, 10);
                   handleChange("nb_cpu", Math.min(Math.max(newValue, min), max));
                 }}
-                inputProps={{
-                  min,
-                  max,
-                  step: 1,
+                slotProps={{
+                  htmlInput: {
+                    min,
+                    max,
+                    step: 1,
+                  },
                 }}
                 sx={{ width: 150 }}
               />
@@ -453,8 +456,10 @@ function LaunchStudyDialog(props: Props) {
                 variant="outlined"
                 disabled
                 value={defaultValue}
-                InputLabelProps={{
-                  shrink: true,
+                slotProps={{
+                  inputLabel: {
+                    shrink: true,
+                  },
                 }}
                 sx={{ width: 150 }}
               />
@@ -487,6 +492,7 @@ function LaunchStudyDialog(props: Props) {
                   value={Math.floor(data.allocatedCpuRate)}
                   tooltip={t("study.allocatedCpuRate")}
                   sx={{ width: 100 }}
+                  colorMode="cluster"
                 />
                 <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                   {t("study.clusterLoadRate")}
@@ -495,6 +501,7 @@ function LaunchStudyDialog(props: Props) {
                   value={Math.floor(data.clusterLoadRate)}
                   tooltip={t("study.clusterLoadRate")}
                   sx={{ width: 100 }}
+                  colorMode="cluster"
                 />
                 <Typography fontSize="small" sx={{ textWrap: "nowrap" }}>
                   {t("study.nbQueuedJobs")}: {data.nbQueuedJobs}

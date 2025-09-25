@@ -490,19 +490,18 @@ class VariantStudyService(AbstractStorageService):
     def walk_children(
         self,
         parent_id: str,
-        fun: Callable[[VariantStudy], None],
+        fun: Callable[[Study], None],
         bottom_first: bool,
+        include_parent: bool = True,
     ) -> None:
-        study = self._get_variant_study(
-            parent_id,
-        )
+        study = self._get_study_by_id(parent_id)
         children = self.get_children(parent_id=parent_id)
         # TODO : the bottom_first should always be True, otherwise we will have an infinite loop
-        if not bottom_first:
+        if include_parent and not bottom_first:
             fun(study)
         for child in children:
             self.walk_children(child.id, fun, bottom_first)
-        if bottom_first:
+        if include_parent and bottom_first:
             fun(study)
 
     def get_variants_parents(self, study_id: str) -> List[StudyMetadataDTO]:
