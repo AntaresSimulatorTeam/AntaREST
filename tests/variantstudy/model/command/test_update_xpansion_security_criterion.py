@@ -12,9 +12,9 @@
 import pytest
 
 from antarest.study.business.model.xpansion_model import (
-    XpansionSecurityCriterion,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionSecurityCriterionUpdate,
-    XpansionSecurityPattern,
 )
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -56,8 +56,8 @@ class TestUpdateXpansionSettings:
         # Add some patterns
         new_criterion = XpansionSecurityCriterionUpdate(
             patterns=[
-                XpansionSecurityPattern(area="fr", criterion=2.3),
-                XpansionSecurityPattern(area="de", criterion=11),
+                XpansionAdequacyPattern(area="fr", criterion=2.3),
+                XpansionAdequacyPattern(area="de", criterion=11),
             ]
         )
         cmd = UpdateXpansionSecurityCriterion(
@@ -108,7 +108,7 @@ stopping_threshold: 3.0
 
         # Removes a pattern
         cmd = UpdateXpansionSecurityCriterion(
-            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionSecurityPattern(area="fr", criterion=6.1)]),
+            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionAdequacyPattern(area="fr", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -132,7 +132,7 @@ stopping_threshold: 3.0
 
         # Try to update with a non-existing area
         cmd = UpdateXpansionSecurityCriterion(
-            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionSecurityPattern(area="fake", criterion=6.1)]),
+            criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionAdequacyPattern(area="fake", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
@@ -142,10 +142,10 @@ stopping_threshold: 3.0
 
         # Try to give wrong values for the criterion parameters
         with pytest.raises(ValueError, match="Input should be greater than or equal to 0"):
-            XpansionSecurityCriterion(stopping_threshold=-2)
+            XpansionAdequacyCriterion(stopping_threshold=-2)
 
         with pytest.raises(ValueError, match="Input should be greater than or equal to 0"):
-            XpansionSecurityCriterion(criterion_count_threshold=-2)
+            XpansionAdequacyCriterion(criterion_count_threshold=-2)
 
         with pytest.raises(ValueError, match="Input should be greater than or equal to 0"):
-            XpansionSecurityPattern(area="fake", criterion=-2)
+            XpansionAdequacyPattern(area="fake", criterion=-2)

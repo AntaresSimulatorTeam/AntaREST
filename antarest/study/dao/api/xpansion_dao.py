@@ -16,9 +16,9 @@ from typing import Optional
 import pandas as pd
 
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
-    XpansionSecurityCriterion,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -62,11 +62,7 @@ class ReadOnlyXpansionDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def checks_xpansion_security_criterion_coherence(self, criterion: XpansionSecurityCriterion) -> None:
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
         raise NotImplementedError()
 
 
@@ -108,5 +104,5 @@ class XpansionDao(ReadOnlyXpansionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_security_criterion(self, criterion: XpansionSecurityCriterion) -> None:
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
         raise NotImplementedError()

@@ -21,10 +21,10 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionLinkStr,
-    XpansionSecurityCriterion,
-    XpansionSecurityPattern,
     XpansionSensitivitySettings,
     XpansionSettings,
     validate_xpansion_candidate,
@@ -154,11 +154,11 @@ def serialize_xpansion_sensitivity_settings(settings: XpansionSensitivitySetting
 
 
 ##########################
-# Security criterion part
+# Adequacy criterion part
 ##########################
 
 
-class XpansionSecurityCriterionFileData(AntaresBaseModel):
+class XpansionAdequacyCriterionFileData(AntaresBaseModel):
     """
     Xpansion sensitivity criterion data parsed from YAML file.
     """
@@ -167,19 +167,19 @@ class XpansionSecurityCriterionFileData(AntaresBaseModel):
 
     stopping_threshold: float = Field(default=1e6, ge=0)
     criterion_count_threshold: float = Field(default=1, ge=0)
-    patterns: list[XpansionSecurityPattern] = Field(default_factory=list)
+    patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)
 
-    def to_model(self) -> XpansionSecurityCriterion:
-        return XpansionSecurityCriterion.model_validate(self.model_dump())
+    def to_model(self) -> XpansionAdequacyCriterion:
+        return XpansionAdequacyCriterion.model_validate(self.model_dump())
 
     @classmethod
-    def from_model(cls, criterion: XpansionSecurityCriterion) -> "XpansionSecurityCriterionFileData":
+    def from_model(cls, criterion: XpansionAdequacyCriterion) -> "XpansionAdequacyCriterionFileData":
         return cls.model_validate(criterion.model_dump())
 
 
-def parse_xpansion_security_criterion(data: Any) -> XpansionSecurityCriterion:
-    return XpansionSecurityCriterionFileData.model_validate(data).to_model()
+def parse_xpansion_security_criterion(data: Any) -> XpansionAdequacyCriterion:
+    return XpansionAdequacyCriterionFileData.model_validate(data).to_model()
 
 
-def serialize_xpansion_security_criterion(criterion: XpansionSecurityCriterion) -> dict[str, Any]:
-    return XpansionSecurityCriterionFileData.from_model(criterion).model_dump(by_alias=True)
+def serialize_xpansion_security_criterion(criterion: XpansionAdequacyCriterion) -> dict[str, Any]:
+    return XpansionAdequacyCriterionFileData.from_model(criterion).model_dump(by_alias=True)

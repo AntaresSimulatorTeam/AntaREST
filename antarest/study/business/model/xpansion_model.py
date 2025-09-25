@@ -261,34 +261,16 @@ def create_xpansion_candidate(candidate_data: XpansionCandidateCreation) -> Xpan
 
 
 ##########################
-# Security criterion part
+# Adequacy criterion part
 ##########################
 
 
-class XpansionSecurityPattern(AntaresBaseModel, populate_by_name=True):
+class XpansionAdequacyPattern(AntaresBaseModel, populate_by_name=True):
     area: str
     criterion: float = Field(ge=0)
 
 
-class XpansionSecurityCriterion(AntaresBaseModel, populate_by_name=True, alias_generator=to_camel):
+class XpansionAdequacyCriterion(AntaresBaseModel, populate_by_name=True, alias_generator=to_camel):
     stopping_threshold: float = Field(default=1e6, ge=0)
     criterion_count_threshold: float = Field(default=1, ge=0)
-    patterns: list[XpansionSecurityPattern] = Field(default_factory=list)
-
-
-class XpansionSecurityCriterionUpdate(AntaresBaseModel, populate_by_name=True, alias_generator=to_camel):
-    stopping_threshold: Optional[float] = Field(default=None, ge=0)
-    criterion_count_threshold: Optional[float] = Field(default=None, ge=0)
-    patterns: Optional[list[XpansionSecurityPattern]] = None
-
-
-def update_xpansion_security_criterion(
-    criterion: XpansionSecurityCriterion, data: XpansionSecurityCriterionUpdate
-) -> XpansionSecurityCriterion:
-    """
-    Updates the xpansion security criterion according to the provided update data.
-    """
-    current_criterion = criterion.model_dump()
-    update_criterion = data.model_dump(exclude_none=True)
-    current_criterion.update(update_criterion)
-    return XpansionSecurityCriterion.model_validate(current_criterion)
+    patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)

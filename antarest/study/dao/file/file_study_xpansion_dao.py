@@ -28,9 +28,9 @@ from antarest.core.exceptions import (
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
-    XpansionSecurityCriterion,
     XpansionSensitivitySettings,
     XpansionSettings,
     XpansionSettingsUpdate,
@@ -180,24 +180,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             raise FileCurrentlyUsedInSettings(resource_type, filename)
 
     @override
-    def get_xpansion_security_criterion(self) -> XpansionSecurityCriterion:
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
         file_study = self.get_file_study()
         try:
             content = file_study.tree.get(["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
             return parse_xpansion_security_criterion(content)
         except ChildNotFoundError:
-            return XpansionSecurityCriterion()
-
-    @override
-    def checks_xpansion_security_criterion_coherence(self, criterion: XpansionSecurityCriterion) -> None:
-        # Checks if the provided areas exist in the study
-        file_study = self.get_file_study()
-        missing_areas = ""
-        for pattern in criterion.patterns:
-            if pattern.area not in file_study.config.areas:
-                missing_areas += pattern.area
-        if missing_areas:
-            raise AreaNotFound(missing_areas)
+            return XpansionAdequacyCriterion()
 
     @override
     def create_xpansion_configuration(self) -> None:
@@ -250,8 +239,16 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series)
 
     @override
-    def save_xpansion_security_criterion(self, criterion: XpansionSecurityCriterion) -> None:
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
+        # Checks if the provided areas exist in the study
         file_study = self.get_file_study()
+        missing_areas = ""
+        for pattern in criterion.patterns:
+            if pattern.area not in file_study.config.areas:
+                missing_areas += pattern.area
+        if missing_areas:
+            raise AreaNotFound(missing_areas)
+        # Save the data inside the file
         content = serialize_xpansion_security_criterion(criterion)
         file_study.tree.save(data=content, url=["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
 

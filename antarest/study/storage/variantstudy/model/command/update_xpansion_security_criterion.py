@@ -52,12 +52,12 @@ class UpdateXpansionSecurityCriterion(ICommand):
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_criterion = study_data.get_xpansion_security_criterion()
+        current_criterion = study_data.get_xpansion_adequacy_criterion()
         new_criterion = update_xpansion_security_criterion(current_criterion, self.criterion)
         if self.criterion.patterns is not None:
             # Ensures the provided areas exist in the study
-            study_data.checks_xpansion_security_criterion_coherence(new_criterion)
-        study_data.save_xpansion_security_criterion(new_criterion)
+            study_data.checks_xpansion_adequacy_criterion_coherence(new_criterion)
+        study_data.save_xpansion_adequacy_criterion(new_criterion)
 
         return command_succeeded(message="Xpansion security criterion updated successfully")
 

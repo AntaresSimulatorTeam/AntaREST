@@ -32,12 +32,12 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
-    XpansionSecurityCriterion,
     XpansionSecurityCriterionUpdate,
-    XpansionSecurityPattern,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
@@ -672,21 +672,21 @@ def test_security_criterion(
 ) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert xpansion_manager.get_security_criterion(study) == XpansionSecurityCriterion()
+    assert xpansion_manager.get_adequacy_criterion(study) == XpansionAdequacyCriterion()
 
     make_areas(area_manager, study)
     new_criterion = XpansionSecurityCriterionUpdate(
         criterion_count_threshold=1.2,
-        patterns=[XpansionSecurityPattern(area="area2", criterion=19)],
+        patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
     )
-    criterion = xpansion_manager.update_security_criterion(study, new_criterion)
-    created_criterion = xpansion_manager.get_security_criterion(study)
+    criterion = xpansion_manager.replace_adequacy_criterion(study, new_criterion)
+    created_criterion = xpansion_manager.get_adequacy_criterion(study)
     assert (
         created_criterion
         == criterion
-        == XpansionSecurityCriterion(
+        == XpansionAdequacyCriterion(
             stopping_threshold=1e6,
             criterion_count_threshold=1.2,
-            patterns=[XpansionSecurityPattern(area="area2", criterion=19)],
+            patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
         )
     )

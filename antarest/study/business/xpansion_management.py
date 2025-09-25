@@ -22,11 +22,10 @@ from antarest.core.exceptions import (
     XpansionFileAlreadyExistsError,
 )
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
-    XpansionSecurityCriterion,
-    XpansionSecurityCriterionUpdate,
     XpansionSettings,
     XpansionSettingsUpdate,
     create_xpansion_candidate,
@@ -210,14 +209,14 @@ class XpansionManager:
         logger.info(f"Getting all xpansion {resource_type} files from study '{study.id}'")
         return study.get_study_dao().get_xpansion_resources(resource_type)
 
-    def get_security_criterion(self, study: StudyInterface) -> XpansionSecurityCriterion:
-        return study.get_study_dao().get_xpansion_security_criterion()
+    def get_adequacy_criterion(self, study: StudyInterface) -> XpansionAdequacyCriterion:
+        return study.get_study_dao().get_xpansion_adequacy_criterion()
 
-    def update_security_criterion(
-        self, study: StudyInterface, criterion: XpansionSecurityCriterionUpdate
-    ) -> XpansionSecurityCriterion:
+    def replace_adequacy_criterion(
+        self, study: StudyInterface, criterion: XpansionAdequacyCriterion
+    ) -> XpansionAdequacyCriterion:
         command = UpdateXpansionSecurityCriterion(
             criterion=criterion, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
-        return self.get_security_criterion(study)
+        return criterion
