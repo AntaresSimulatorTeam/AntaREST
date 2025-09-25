@@ -32,6 +32,8 @@ import BoltIcon from "@mui/icons-material/Bolt";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import FolderIcon from "@mui/icons-material/Folder";
 import HomeIcon from "@mui/icons-material/Home";
+import LayersIcon from "@mui/icons-material/Layers";
+import LayersClearIcon from "@mui/icons-material/LayersClear";
 import RadarIcon from "@mui/icons-material/Radar";
 import {
   Box,
@@ -45,7 +47,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { AxiosError } from "axios";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 const sortOptions = [
@@ -88,6 +90,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const folder = useAppSelector((state) => getStudyFilters(state).folder);
   const folderList = folder.split("/");
   const strictFolderFilter = useAppSelector((state) => getStudyFilters(state).strictFolder);
+  const studyTypeFilter = useAppSelector((state) => getStudyFilters(state).type);
   const sortConf = useAppSelector(getStudiesSortConf);
   const [confirmFolderScan, setConfirmFolderScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
@@ -99,6 +102,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
   const isRootFolder = folderList.length === 1;
   const canScan = !isRootFolder && !isInDefaultWorkspace;
   const isDesktopMode = import.meta.env.MODE === "desktop";
+  const isReferenceStudyTypeActive = studyTypeFilter === "references";
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -108,9 +112,13 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
     dispatch(updateStudyFilters({ folder: value }));
   };
 
-  const toggleStrictFolder = useCallback(() => {
+  const toggleStrictFolderFilter = () => {
     dispatch(updateStudyFilters({ strictFolder: !strictFolderFilter }));
-  }, [dispatch, strictFolderFilter]);
+  };
+
+  const toggleStudyTypeFilter = () => {
+    dispatch(updateStudyFilters({ type: studyTypeFilter !== "references" ? "references" : "all" }));
+  };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -195,7 +203,7 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
           <ToggleButtonGroup
             value={strictFolderFilter}
             exclusive
-            onChange={toggleStrictFolder}
+            onChange={toggleStrictFolderFilter}
             size="extra-small"
             color="primary"
           >
@@ -210,6 +218,17 @@ function Header({ studyIds, selectedStudyIds, setSelectedStudyIds, setStudiesToL
               </ToggleButton>
             </Tooltip>
           </ToggleButtonGroup>
+          <Tooltip
+            title={
+              isReferenceStudyTypeActive
+                ? t("studies.filters.disableReferenceType")
+                : t("studies.filters.enableReferenceType")
+            }
+          >
+            <IconButton onClick={toggleStudyTypeFilter}>
+              {isReferenceStudyTypeActive ? <LayersClearIcon /> : <LayersIcon />}
+            </IconButton>
+          </Tooltip>
           {canScan && (
             <Tooltip title={t("studies.scanFolder")}>
               <IconButton onClick={() => setConfirmFolderScan(true)}>
