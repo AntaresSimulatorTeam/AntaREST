@@ -21,10 +21,7 @@ def test_yaml_reader_and_writer(tmp_path: Path) -> None:
     yaml_file = tmp_path / "test.yaml"
     yaml_dict = {
         "criterion_count_threshold": 1.2,
-        "patterns": [
-            {"area": "area1", "criterion": 2.5},
-            {"area": "area2", "criterion": 3.6},
-        ],
+        "patterns": [{"area": "area1", "criterion": 2.5}, {"area": "area2", "criterion": 3.6}],
         "stopping_threshold": 3.0,
     }
     writer = YAMLWriter()
