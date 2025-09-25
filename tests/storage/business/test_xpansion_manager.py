@@ -665,11 +665,17 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
     assert xpansion_manager.list_resources(study, XpansionResourceFileType.CAPACITIES) == [filename1, filename2]
 
 
+@pytest.mark.parametrize("optional_folder", [True, False])
 @pytest.mark.unit_test
 def test_adequacy_criterion(
-    area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface
+    area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface, optional_folder: bool
 ) -> None:
     xpansion_manager.create_xpansion_configuration(study)
+
+    if optional_folder:
+        # The adequacy_criterion folder is optional.
+        # We need to ensure this is transparent for the user
+        study.get_files().tree.delete(["user", "expansion", "adequacy_criterion"])
 
     assert xpansion_manager.get_adequacy_criterion(study) == XpansionAdequacyCriterion(
         stopping_threshold=1e6, criterion_count_threshold=1, patterns=[]
