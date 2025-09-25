@@ -27,7 +27,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -150,7 +150,7 @@ class InMemoryStudyDao(StudyDao):
         # TimeSeries config
         self._timeseries_config: TimeSeriesConfiguration = TimeSeriesConfiguration()
         # Districts
-        self._districts: dict[str, DistrictDefinition] = {}
+        self._districts: dict[str, District] = {}
         # Layer
         self._layers: list[Layer] = []
         # Comments
@@ -712,7 +712,7 @@ class InMemoryStudyDao(StudyDao):
         return district_id in self._districts
 
     @override
-    def save_district(self, district: DistrictDefinition) -> None:
+    def save_district(self, district: District) -> None:
         self._districts[district.id] = district
 
     @override

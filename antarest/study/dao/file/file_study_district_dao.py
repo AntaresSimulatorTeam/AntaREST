@@ -15,7 +15,7 @@ from typing import Sequence
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
-from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
     district_set_apply_filter,
@@ -35,7 +35,7 @@ class FileStudyDistrictDao(DistrictDao):
     @override
     def get_districts(self) -> Sequence[DistrictDTO]:
         """
-        Returns all districts of the study.
+        Returns the list of Data Transfer Objects (DTO) representing districts.
         """
         file_study = self.get_file_study()
         path = DISTRICTS_PATH
@@ -55,7 +55,7 @@ class FileStudyDistrictDao(DistrictDao):
     @override
     def get_district(self, district_id: str) -> DistrictDTO:
         """
-        Get the district with the given district id.
+        Get the Data Transfer Objects (DTO) representing the district with the given id.
         """
         study_data = self.get_file_study()
         path = DISTRICTS_PATH + [district_id]
@@ -73,9 +73,6 @@ class FileStudyDistrictDao(DistrictDao):
         """
         Returns the district base filter.
         """
-        if not self.district_exists(district_id):
-            raise DistrictConfigNotFound(district_id)
-
         study_data = self.get_file_study()
         path = DISTRICTS_PATH + [district_id]
         try:
@@ -92,10 +89,16 @@ class FileStudyDistrictDao(DistrictDao):
         Returns whether a district with the given id exists in the study.
         """
         study_data = self.get_file_study()
-        return district_id in study_data.config.sets
+        path = DISTRICTS_PATH + [district_id]
+        try:
+            # may raise KeyError if the path is missing
+            study_data.tree.get(path)
+        except KeyError:
+            return False
+        return True
 
     @override
-    def save_district(self, district: DistrictDefinition) -> None:
+    def save_district(self, district: District) -> None:
         """
         Save a new district to a study.
 

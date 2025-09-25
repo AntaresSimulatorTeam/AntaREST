@@ -29,7 +29,7 @@ from antarest.core.utils.archives import extract_lines_from_archive, is_archive_
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
-from antarest.study.business.model.district_model import DistrictDefinition
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -217,7 +217,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraint]:
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
-def _parse_sets(root: Path) -> Dict[str, DistrictDefinition]:
+def _parse_sets(root: Path) -> Dict[str, District]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),

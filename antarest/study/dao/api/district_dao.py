@@ -13,8 +13,8 @@ from abc import ABC, abstractmethod
 from typing import Sequence
 
 from antarest.study.business.model.district_model import (
+    District,
     DistrictApplyFilter,
-    DistrictDefinition,
     DistrictDTO,
 )
 
@@ -71,7 +71,7 @@ class ReadOnlyDistrictDao(ABC):
 
 class DistrictDao(ReadOnlyDistrictDao):
     @abstractmethod
-    def save_district(self, district: DistrictDefinition) -> None:
+    def save_district(self, district: District) -> None:
         """
         Create a district or update the district if it already exists.
 

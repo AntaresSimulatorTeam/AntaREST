@@ -15,7 +15,7 @@ from typing import Any, Dict, Final, List, Optional
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictUpdate
+from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictUpdate
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -80,7 +80,7 @@ class UpdateDistrict(ICommand):
         district = study_data.get_district(self.id)
 
         # Merge existing district data with the update parameters
-        district_definition = DistrictDefinition.model_validate(
+        district_definition = District.model_validate(
             {
                 **district.model_dump(exclude_none=True, include={"output", "comments", "name", "id"}),
                 **self.parameters.model_dump(

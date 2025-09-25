@@ -16,7 +16,7 @@ from typing import Any, List, Optional
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition
+from antarest.study.business.model.district_model import District, DistrictApplyFilter
 
 
 class DistrictFileData(AntaresBaseModel):
@@ -44,7 +44,7 @@ class DistrictFileData(AntaresBaseModel):
         return sorted(areas)
 
     @classmethod
-    def from_model(cls, district: DistrictDefinition) -> "DistrictFileData":
+    def from_model(cls, district: District) -> "DistrictFileData":
         return DistrictFileData.model_validate(
             {
                 **district.model_dump(include={"output", "comments", "add_areas", "substract_areas", "apply_filter"}),
@@ -65,8 +65,8 @@ class DistrictFileData(AntaresBaseModel):
             }
         )
 
-    def to_model(self, district_id: str) -> DistrictDefinition:
-        return DistrictDefinition.model_validate(
+    def to_model(self, district_id: str) -> District:
+        return District.model_validate(
             {
                 **self.model_dump(
                     include={"output", "comments", "add_areas", "substract_areas", "apply_filter"}, exclude_none=True
@@ -83,11 +83,11 @@ def district_set_apply_filter(item: dict[str, Any]) -> DistrictApplyFilter:
     return DistrictApplyFilter(item["apply-filter"])
 
 
-def parse_district(item: dict[str, Any], district_id: str) -> DistrictDefinition:
+def parse_district(item: dict[str, Any], district_id: str) -> District:
     return DistrictFileData.from_data(item, district_id).to_model(district_id)
 
 
-def serialize_district(district: DistrictDefinition) -> dict[str, Any]:
+def serialize_district(district: District) -> dict[str, Any]:
     district_file_data = DistrictFileData.from_model(district)
     district_dict = district_file_data.model_dump(exclude_none=True, mode="json", by_alias=True)
 

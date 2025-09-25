@@ -26,7 +26,7 @@ from antarest.study.business.model.area_model import (
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
 )
-from antarest.study.business.model.district_model import DistrictDefinition
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
@@ -182,7 +182,7 @@ class AreaManager:
             )
 
         if area_type is None or area_type == AreaType.DISTRICT:
-            cfg_sets: Dict[str, DistrictDefinition] = file_study.config.sets
+            cfg_sets: Dict[str, District] = file_study.config.sets
             result.extend(
                 AreaInfoDTO(
                     id=set_id,

@@ -23,7 +23,7 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
 )
-from antarest.study.business.model.district_model import DistrictDefinition
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.study_index import StudyIndex
@@ -156,7 +156,7 @@ class FileStudyTreeConfig(DTO):
         version: StudyVersion,
         output_path: Optional[Path] = None,
         areas: Optional[Dict[str, Area]] = None,
-        sets: Optional[Dict[str, DistrictDefinition]] = None,
+        sets: Optional[Dict[str, District]] = None,
         outputs: Optional[Dict[str, Simulation]] = None,
         bindings: Optional[List[BindingConstraint]] = None,
         store_new_set: bool = False,
@@ -283,7 +283,7 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     version: StudyVersionInt
     output_path: Optional[Path] = None
     areas: Dict[str, Area] = dict()
-    sets: Dict[str, DistrictDefinition] = dict()
+    sets: Dict[str, District] = dict()
     outputs: Dict[str, Simulation] = dict()
     bindings: List[BindingConstraint] = list()
     store_new_set: bool = False

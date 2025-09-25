@@ -120,7 +120,7 @@ class DistrictDTO(AntaresBaseModel):
     name: str
 
 
-class DistrictDefinition(AntaresBaseModel):
+class District(AntaresBaseModel):
     """
     District model.
     """
@@ -132,7 +132,7 @@ class DistrictDefinition(AntaresBaseModel):
 
         @staticmethod
         def json_schema_extra(schema: MutableMapping[str, Any]) -> None:
-            schema["example"] = DistrictDefinition(
+            schema["example"] = District(
                 id="my-cluster",
                 name="My Cluster",
                 comments="",
@@ -173,14 +173,14 @@ class DistrictDefinition(AntaresBaseModel):
         )
 
 
-def create_district(district_creation: DistrictCreation, district_id: str) -> DistrictDefinition:
+def create_district(district_creation: DistrictCreation, district_id: str) -> District:
     """
     Creates a district  from a creation request.
     """
     apply_filter = district_creation.apply_filter or DistrictApplyFilter.remove_all
     add_areas = district_creation.areas if apply_filter == DistrictApplyFilter.remove_all else []
     substract_areas = district_creation.areas if apply_filter == DistrictApplyFilter.add_all else []
-    return DistrictDefinition.model_validate(
+    return District.model_validate(
         {
             **district_creation.model_dump(exclude_none=True, include={"name", "output", "comments"}),
             "add_areas": add_areas,

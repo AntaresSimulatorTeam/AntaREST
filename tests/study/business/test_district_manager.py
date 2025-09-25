@@ -19,7 +19,7 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdate,
 )
-from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictDefinition, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
 from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -82,9 +82,9 @@ def study_with_sets(empty_study_880: FileStudy):
     study = FileStudyInterface(empty_study_880)
     study.file_study.tree.save(district_ini_content)
     study.file_study.config.sets = {
-        "d1": DistrictDefinition(id="d1", name="D1", add_areas=[], output=True),
-        "d2": DistrictDefinition(id="d2", name="D2", add_areas=["n1", "n2"], output=True),
-        "d3": DistrictDefinition(id="d3", name="D2", add_areas=["n1", "n2", "n3"], output=False),
+        "d1": District(id="d1", name="D1", add_areas=[], output=True),
+        "d2": District(id="d2", name="D2", add_areas=["n1", "n2"], output=True),
+        "d3": District(id="d3", name="D2", add_areas=["n1", "n2", "n3"], output=False),
     }
     study.file_study.config.areas = {"n1": dummy_area("n1"), "n2": dummy_area("n2"), "n3": dummy_area("n3")}
     return study
@@ -142,7 +142,7 @@ class TestDistrictManager:
                 areas=["n1", "n2", "n2"],  # areas can have duplicates
             )
             actual = manager.create_district(study_with_sets, dto)
-            expected = DistrictDefinition(
+            expected = District(
                 id="d4",
                 name="D4",
                 add_areas=["n1", "n2"],

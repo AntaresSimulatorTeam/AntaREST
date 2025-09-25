@@ -27,7 +27,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
-from antarest.study.business.model.district_model import DistrictDefinition
+from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
@@ -280,9 +280,7 @@ def test_parse_sets(study_path: Path) -> None:
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
     assert _parse_sets(study_path) == {
-        "hello": DistrictDefinition(
-            id="hello", name="hello", add_areas=["a", "b"], output=True, apply_filter="remove-all"
-        )
+        "hello": District(id="hello", name="hello", add_areas=["a", "b"], output=True, apply_filter="remove-all")
     }
 
     content = """\
@@ -295,9 +293,7 @@ def test_parse_sets(study_path: Path) -> None:
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
     assert _parse_sets(study_path) == {
-        "hello": DistrictDefinition(
-            id="hello", name="hello", substract_areas=["a", "b"], output=True, apply_filter="add-all"
-        )
+        "hello": District(id="hello", name="hello", substract_areas=["a", "b"], output=True, apply_filter="add-all")
     }
 
     content = """\
@@ -311,7 +307,7 @@ def test_parse_sets(study_path: Path) -> None:
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
     assert _parse_sets(study_path) == {
-        "hello": DistrictDefinition(
+        "hello": District(
             id="hello", name="hello", substract_areas=["a", "b"], add_areas=["c"], output=False, apply_filter="add-all"
         )
     }
