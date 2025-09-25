@@ -21,6 +21,8 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionLinkStr,
     XpansionSensitivitySettings,
@@ -149,3 +151,36 @@ def parse_xpansion_sensitivity_settings(data: Any) -> XpansionSensitivitySetting
 
 def serialize_xpansion_sensitivity_settings(settings: XpansionSensitivitySettings) -> dict[str, Any]:
     return XpansionSensitivitySettingsFileData.from_model(settings).model_dump(by_alias=True)
+
+
+##########################
+# Adequacy criterion part
+##########################
+
+
+class XpansionAdequacyCriterionFileData(AntaresBaseModel):
+    """
+    Xpansion sensitivity criterion data parsed from YAML file.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    stopping_threshold: float = Field(default=1e6, ge=0)
+    criterion_count_threshold: float = Field(default=1, ge=0)
+    patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)
+
+    def to_model(self) -> XpansionAdequacyCriterion:
+        return XpansionAdequacyCriterion.model_validate(self.model_dump())
+
+    @classmethod
+    def from_model(cls, criterion: XpansionAdequacyCriterion) -> "XpansionAdequacyCriterionFileData":
+        return cls.model_validate(criterion.model_dump())
+
+
+def parse_xpansion_adequacy_criterion(data: Any) -> XpansionAdequacyCriterion:
+    return XpansionAdequacyCriterionFileData.model_validate(data).to_model()
+
+
+def serialize_xpansion_adequacy_criterion(criterion: XpansionAdequacyCriterion) -> dict[str, Any]:
+    excludes = set() if criterion.patterns else {"patterns"}
+    return XpansionAdequacyCriterionFileData.from_model(criterion).model_dump(by_alias=True, exclude=excludes)

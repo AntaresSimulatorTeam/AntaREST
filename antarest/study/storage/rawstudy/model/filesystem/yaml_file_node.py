@@ -14,19 +14,19 @@ import json
 from pathlib import Path
 from typing import Any, cast
 
+import yaml
 from typing_extensions import override
 
 from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import IReader
 from antarest.core.serde.ini_writer import IniWriter
-from antarest.core.serde.json import from_json, to_json
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 
 
-class JsonReader(IReader):
+class YAMLReader(IReader):
     """
-    JSON file reader.
+    YAML file reader.
     """
 
     @override
@@ -50,23 +50,23 @@ class JsonReader(IReader):
             raise TypeError(repr(type(path)))
 
         try:
-            return cast(JSON, from_json(content))
+            return cast(JSON, yaml.safe_load(content))
         except json.JSONDecodeError as exc:
-            err_msg = f"Failed to parse JSON file '{path}'"
+            err_msg = f"Failed to parse YAML file '{path}'"
             raise ValueError(err_msg) from exc
 
 
-class JsonWriter(IniWriter):
+class YAMLWriter(IniWriter):
     """
-    JSON file writer.
+    YAML file writer.
     """
 
     @override
     def write(self, data: JSON, path: Path) -> None:
         with open(path, "wb") as fh:
-            fh.write(to_json(data))
+            fh.write(yaml.safe_dump(data).encode("utf-8"))
 
 
-class JsonFileNode(IniFileNode):
+class YAMLFileNode(IniFileNode):
     def __init__(self, config: FileStudyTreeConfig) -> None:
-        super().__init__(config, JsonReader(), JsonWriter())
+        super().__init__(config, YAMLReader(), YAMLWriter())

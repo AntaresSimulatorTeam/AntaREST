@@ -28,6 +28,7 @@ from antarest.core.exceptions import (
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSensitivitySettings,
@@ -36,8 +37,10 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
+    parse_xpansion_adequacy_criterion,
     parse_xpansion_sensitivity_settings,
     parse_xpansion_settings,
+    serialize_xpansion_adequacy_criterion,
     serialize_xpansion_sensitivity_settings,
     serialize_xpansion_settings,
 )
@@ -177,6 +180,15 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             raise FileCurrentlyUsedInSettings(resource_type, filename)
 
     @override
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        file_study = self.get_file_study()
+        try:
+            content = file_study.tree.get(["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
+            return parse_xpansion_adequacy_criterion(content)
+        except ChildNotFoundError:
+            return XpansionAdequacyCriterion()
+
+    @override
     def create_xpansion_configuration(self) -> None:
         file_study = self.get_file_study()
         try:
@@ -192,6 +204,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
                         "capa": {},
                         "weights": {},
                         "constraints": {},
+                        "adequacy_criterion": {"adequacy_criterion": {}},
                     }
                 }
             }
@@ -224,6 +237,20 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series)
+
+    @override
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
+        # Checks if the provided areas exist in the study
+        file_study = self.get_file_study()
+        missing_areas = ""
+        for pattern in criterion.patterns:
+            if pattern.area not in file_study.config.areas:
+                missing_areas += pattern.area
+        if missing_areas:
+            raise AreaNotFound(missing_areas)
+        # Save the data inside the file
+        content = serialize_xpansion_adequacy_criterion(criterion)
+        file_study.tree.save(data=content, url=["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
 
     def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
         file_study = self.get_file_study()
