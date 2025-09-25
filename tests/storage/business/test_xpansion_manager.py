@@ -37,7 +37,6 @@ from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
-    XpansionSecurityCriterionUpdate,
     XpansionSettingsUpdate,
 )
 from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
@@ -667,15 +666,17 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
 
 
 @pytest.mark.unit_test
-def test_security_criterion(
+def test_adequacy_criterion(
     area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface
 ) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
-    assert xpansion_manager.get_adequacy_criterion(study) == XpansionAdequacyCriterion()
+    assert xpansion_manager.get_adequacy_criterion(study) == XpansionAdequacyCriterion(
+        stopping_threshold=1e6, criterion_count_threshold=1, patterns=[]
+    )
 
     make_areas(area_manager, study)
-    new_criterion = XpansionSecurityCriterionUpdate(
+    new_criterion = XpansionAdequacyCriterion(
         criterion_count_threshold=1.2,
         patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
     )
