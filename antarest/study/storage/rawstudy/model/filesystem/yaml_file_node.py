@@ -52,7 +52,7 @@ class YAMLReader(IReader):
         try:
             return cast(JSON, yaml.safe_load(content))
         except json.JSONDecodeError as exc:
-            err_msg = f"Failed to parse JSON file '{path}'"
+            err_msg = f"Failed to parse YAML file '{path}'"
             raise ValueError(err_msg) from exc
 
 
