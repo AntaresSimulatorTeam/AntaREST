@@ -255,16 +255,27 @@ export const launchStudy = async (
   return res.data;
 };
 
-interface LauncherMetrics {
-  allocatedCpuRate: number;
-  clusterLoadRate: number;
-  nbQueuedJobs: number;
-  status: string;
+interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
 }
 
-export const getLaunchers = async () => {
-  const res = await client.get<{ engines: string[] }>("/v1/launcher/engines");
-  return res.data.engines;
+interface Launcher {
+  id: string;
+  name: string;
+  nbCores: RangeWithDefault;
+  timeLimit: RangeWithDefault;
+}
+
+interface LaunchersConfig {
+  launchers: Launcher[];
+  defaultLauncher: string;
+}
+
+export const getLaunchersConfig = async () => {
+  const res = await client.get<LaunchersConfig>("/v1/launcher/launchers");
+  return res.data;
 };
 
 export const getLauncherVersions = async (): Promise<string[]> => {
@@ -272,31 +283,12 @@ export const getLauncherVersions = async (): Promise<string[]> => {
   return res.data;
 };
 
-interface NbCoresConfig {
-  defaultValue: number;
-  min: number;
-  max: number;
+interface LauncherMetrics {
+  allocatedCpuRate: number;
+  clusterLoadRate: number;
+  nbQueuedJobs: number;
+  status: string;
 }
-
-export const getLauncherCores = async (launcherId?: string) => {
-  const res = await client.get<NbCoresConfig>("/v1/launcher/nbcores", {
-    params: { launcher: launcherId },
-  });
-  return res.data;
-};
-
-interface TimeLimitConfig {
-  defaultValue: number;
-  min: number;
-  max: number;
-}
-
-export const getLauncherTimeLimit = async (launcherId?: string) => {
-  const res = await client.get<TimeLimitConfig>("/v1/launcher/time-limit", {
-    params: { launcher: launcherId },
-  });
-  return res.data;
-};
 
 export const getLauncherMetrics = async (launcherId?: string): Promise<LauncherMetrics> => {
   const res = await client.get("/v1/launcher/load", {
