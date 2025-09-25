@@ -104,8 +104,7 @@ function DeleteAreaDialog(props: Props) {
         >
           <Typography sx={{ p: 3 }}>
             {currentArea && t("study.question.deleteArea", { areaName: currentArea.id })}
-            {currentLink &&
-              t("study.question.deleteLink", { linkName: `${currentLink.from}⇉${currentLink.to}` })}
+            {currentLink && t("study.question.deleteLink", { linkName: currentLink.id })}
           </Typography>
         </ConfirmationDialog>
       )}
