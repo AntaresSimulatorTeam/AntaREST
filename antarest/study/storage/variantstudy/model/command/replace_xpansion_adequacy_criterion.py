@@ -25,8 +25,7 @@ from typing import List, Optional
 from typing_extensions import override
 
 from antarest.study.business.model.xpansion_model import (
-    XpansionSecurityCriterionUpdate,
-    update_xpansion_security_criterion,
+    XpansionAdequacyCriterion,
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
@@ -35,31 +34,25 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class UpdateXpansionSecurityCriterion(ICommand):
+class ReplaceXpansionAdequacyCriterion(ICommand):
     """
-    Command used to update xpansion security criterion
+    Command used to replace xpansion adequacy criterion
     """
 
     # Overloaded metadata
     # ===================
 
-    command_name: CommandName = CommandName.UPDATE_XPANSION_SECURITY_CRITERION
+    command_name: CommandName = CommandName.REPLACE_XPANSION_ADEQUACY_CRITERION
 
     # Command parameters
     # ==================
 
-    criterion: XpansionSecurityCriterionUpdate
+    criterion: XpansionAdequacyCriterion
 
     @override
     def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_criterion = study_data.get_xpansion_adequacy_criterion()
-        new_criterion = update_xpansion_security_criterion(current_criterion, self.criterion)
-        if self.criterion.patterns is not None:
-            # Ensures the provided areas exist in the study
-            study_data.checks_xpansion_adequacy_criterion_coherence(new_criterion)
-        study_data.save_xpansion_adequacy_criterion(new_criterion)
-
-        return command_succeeded(message="Xpansion security criterion updated successfully")
+        study_data.save_xpansion_adequacy_criterion(self.criterion)
+        return command_succeeded(message="Xpansion security criterion replaced successfully")
 
     @override
     def to_dto(self) -> CommandDTO:

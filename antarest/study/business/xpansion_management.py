@@ -45,10 +45,10 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_configura
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import (
     RemoveXpansionResource,
 )
-from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
-from antarest.study.storage.variantstudy.model.command.update_xpansion_security_criterion import (
-    UpdateXpansionSecurityCriterion,
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
+    ReplaceXpansionAdequacyCriterion,
 )
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -215,7 +215,7 @@ class XpansionManager:
     def replace_adequacy_criterion(
         self, study: StudyInterface, criterion: XpansionAdequacyCriterion
     ) -> XpansionAdequacyCriterion:
-        command = UpdateXpansionSecurityCriterion(
+        command = ReplaceXpansionAdequacyCriterion(
             criterion=criterion, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])

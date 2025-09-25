@@ -19,8 +19,8 @@ from antarest.study.business.model.xpansion_model import (
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.update_xpansion_security_criterion import (
-    UpdateXpansionSecurityCriterion,
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
+    ReplaceXpansionAdequacyCriterion,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -60,7 +60,7 @@ class TestUpdateXpansionSettings:
                 XpansionAdequacyPattern(area="de", criterion=11),
             ]
         )
-        cmd = UpdateXpansionSecurityCriterion(
+        cmd = ReplaceXpansionAdequacyCriterion(
             criterion=new_criterion,
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
@@ -85,7 +85,7 @@ stopping_threshold: 3.0
         )
 
         # Modify the criterion_count_threshold only
-        cmd = UpdateXpansionSecurityCriterion(
+        cmd = ReplaceXpansionAdequacyCriterion(
             criterion=XpansionSecurityCriterionUpdate(criterion_count_threshold=4),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
@@ -107,7 +107,7 @@ stopping_threshold: 3.0
         )
 
         # Removes a pattern
-        cmd = UpdateXpansionSecurityCriterion(
+        cmd = ReplaceXpansionAdequacyCriterion(
             criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionAdequacyPattern(area="fr", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
@@ -131,7 +131,7 @@ stopping_threshold: 3.0
         self.set_up(empty_study, command_context)
 
         # Try to update with a non-existing area
-        cmd = UpdateXpansionSecurityCriterion(
+        cmd = ReplaceXpansionAdequacyCriterion(
             criterion=XpansionSecurityCriterionUpdate(patterns=[XpansionAdequacyPattern(area="fake", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,

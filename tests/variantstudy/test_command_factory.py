@@ -971,12 +971,12 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
-            action=CommandName.UPDATE_XPANSION_SECURITY_CRITERION.value,
-            args=[{"criterion": {"stopping_threshold": 100}}],
+            action=CommandName.REPLACE_XPANSION_ADEQUACY_CRITERION.value,
+            args=[{"criterion": {"stopping_threshold": 100, "patterns": [], "criterion_count_threshold": 12.4}}],
             study_version=STUDY_VERSION_8_8,
         ),
         None,
-        id="update_xpansion_security_criterion",
+        id="replace_xpansion_adequacy_criterion",
     ),
 ]
 
