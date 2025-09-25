@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import override
 
 from antarest.study.business.model.area_properties_model import (
-    AreaPropertiesFileData,
     AreaPropertiesUpdate,
     get_adequacy_patch_path,
     get_optimization_path,
@@ -22,7 +21,8 @@ from antarest.study.business.model.area_properties_model import (
 )
 from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPathFileData,
+    AdequacyPatchFileData,
+    AreaPropertiesFileData,
     OptimizationFileData,
     ThermalAreasProperties,
 )
@@ -52,7 +52,7 @@ class UpdateAreasProperties(ICommand):
         current_properties: AreaPropertiesFileData = AreaPropertiesFileData(
             thermal_properties=ThermalAreasProperties(),
             optimization_properties=OptimizationFileData(),
-            adequacy_properties=AdequacyPathFileData(),
+            adequacy_properties=AdequacyPatchFileData(),
         )
 
         current_thermal_props = ThermalAreasProperties(**study_data.tree.get(get_thermal_path()))
@@ -63,7 +63,7 @@ class UpdateAreasProperties(ICommand):
             current_properties = AreaPropertiesFileData(
                 thermal_properties=current_thermal_props,
                 optimization_properties=OptimizationFileData(**current_optim_properties),
-                adequacy_properties=AdequacyPathFileData(**current_adequacy_patch),
+                adequacy_properties=AdequacyPatchFileData(**current_adequacy_patch),
             )
 
             new_properties = current_properties.get_area_properties(area_id=area_id).model_copy(

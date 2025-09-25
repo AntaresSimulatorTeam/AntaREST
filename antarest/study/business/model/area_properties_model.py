@@ -17,14 +17,21 @@ from pydantic import AliasChoices, Field, model_validator
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import all_optional_model
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPatchMode,
-    AdequacyPathFileData,
-    OptimizationFileData,
-    ThermalAreasProperties,
-)
+from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+
+class AdequacyPatchMode(EnumIgnoreCase):
+    """
+    Adequacy patch mode.
+
+    Only available if study version >= 830.
+    """
+
+    OUTSIDE = "outside"
+    INSIDE = "inside"
+    VIRTUAL = "virtual"
 
 
 def get_thermal_path() -> List[str]:
@@ -127,40 +134,3 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
                     values.setdefault("filterYearByYear", options)
                     values.pop("filterByYear", None)
         return values
-
-
-@all_optional_model
-class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
-    thermal_properties: ThermalAreasProperties
-    optimization_properties: OptimizationFileData
-    adequacy_properties: AdequacyPathFileData
-
-    def get_area_properties(self, area_id: str) -> AreaProperties:
-        return AreaProperties(
-            energy_cost_unsupplied=self.thermal_properties.unserverd_energy_cost.get(area_id, 0.0),
-            energy_cost_spilled=self.thermal_properties.spilled_energy_cost.get(area_id, 0.0),
-            non_dispatch_power=self.optimization_properties.nodal_optimization.non_dispatchable_power,
-            dispatch_hydro_power=self.optimization_properties.nodal_optimization.dispatchable_hydro_power,
-            other_dispatch_power=self.optimization_properties.nodal_optimization.other_dispatchable_power,
-            spread_unsupplied_energy_cost=self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost,
-            spread_spilled_energy_cost=self.optimization_properties.nodal_optimization.spread_spilled_energy_cost,
-            filter_synthesis=encode_filter(self.optimization_properties.filtering.filter_synthesis),
-            filter_by_year=encode_filter(self.optimization_properties.filtering.filter_year_by_year),
-            adequacy_patch_mode=self.adequacy_properties.adequacy_patch.adequacy_patch_mode,
-        )
-
-    def set_area_properties(self, area_id: str, properties: AreaProperties) -> None:
-        self.thermal_properties.unserverd_energy_cost[area_id] = properties.energy_cost_unsupplied
-        self.thermal_properties.spilled_energy_cost[area_id] = properties.energy_cost_spilled
-        self.optimization_properties.nodal_optimization.non_dispatchable_power = properties.non_dispatch_power
-        self.optimization_properties.nodal_optimization.dispatchable_hydro_power = properties.dispatch_hydro_power
-        self.optimization_properties.nodal_optimization.other_dispatchable_power = properties.other_dispatch_power
-        self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost = (
-            properties.spread_unsupplied_energy_cost
-        )
-        self.optimization_properties.nodal_optimization.spread_spilled_energy_cost = (
-            properties.spread_spilled_energy_cost
-        )
-        self.optimization_properties.filtering.filter_synthesis = decode_filter(properties.filter_synthesis)
-        self.optimization_properties.filtering.filter_year_by_year = decode_filter(properties.filter_by_year)
-        self.adequacy_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode

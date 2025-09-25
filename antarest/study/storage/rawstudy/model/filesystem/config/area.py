@@ -21,23 +21,16 @@ from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
-from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.area_properties_model import (
+    AdequacyPatchMode,
+    AreaProperties,
+    decode_filter,
+    encode_filter,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_filtering,
 )
-
-
-class AdequacyPatchMode(EnumIgnoreCase):
-    """
-    Adequacy patch mode.
-
-    Only available if study version >= 830.
-    """
-
-    OUTSIDE = "outside"
-    INSIDE = "inside"
-    VIRTUAL = "virtual"
 
 
 class AreaUI(IniProperties):
@@ -188,7 +181,7 @@ class OptimizationFileData(AntaresBaseModel):
     )
 
 
-class AdequacyPathFileData(AntaresBaseModel):
+class AdequacyPatchFileData(AntaresBaseModel):
     """
     Only available if study version >= 830.
     """
@@ -209,7 +202,7 @@ class AreaFileData(AntaresBaseModel):
         default_factory=OptimizationFileData,
         description="optimization configuration",
     )
-    adequacy_patch: Optional[AdequacyPathFileData] = Field(
+    adequacy_patch: Optional[AdequacyPatchFileData] = Field(
         None,
         description="adequacy patch configuration",
     )
@@ -223,55 +216,6 @@ class AreaFileData(AntaresBaseModel):
 class ThermalAreasProperties(IniProperties):
     """
     Object linked to `/input/thermal/areas.ini` information.
-
-    Usage:
-
-    >>> from antarest.study.storage.rawstudy.model.filesystem.config.area import ThermalAreasProperties
-    >>> from pprint import pprint
-
-    Create and validate a new ThermalArea object from a dictionary read from a configuration file::
-
-        [unserverdenergycost]
-        at = 4000.80
-        be = 3500
-        de = 1250
-        fr = 138.50
-
-        [spilledenergycost]
-        cz = 100.0
-
-    >>> obj = {
-    ...     "unserverdenergycost": {
-    ...         "at": "4000.80",
-    ...         "be": "3500",
-    ...         "de": "1250",
-    ...         "fr": "138.50",
-    ...     },
-    ...     "spilledenergycost": {
-    ...         "cz": "100.0",
-    ...     },
-    ... }
-    >>> area = ThermalAreasProperties(**obj)
-    >>> pprint(area.model_dump(), width=80)
-    {'spilled_energy_cost': {'cz': 100.0},
-     'unserverd_energy_cost': {'at': 4000.8,
-                               'be': 3500.0,
-                               'de': 1250.0,
-                               'fr': 138.5}}
-
-    Update the unserverd energy cost:
-
-    >>> area.unserverd_energy_cost["at"] = 6500.0
-    >>> area.unserverd_energy_cost["fr"] = 0.0
-    >>> pprint(area.model_dump(), width=80)
-    {'spilled_energy_cost': {'cz': 100.0},
-     'unserverd_energy_cost': {'at': 6500.0, 'be': 3500.0, 'de': 1250.0, 'fr': 0.0}}
-
-    Convert the object to a dictionary for writing to a configuration file:
-
-    >>> pprint(area.to_config(), width=80)
-    {'spilledenergycost': {'cz': 100.0},
-     'unserverdenergycost': {'at': 6500.0, 'be': 3500.0, 'de': 1250.0, 'fr': 0.0}}
     """
 
     unserverd_energy_cost: MutableMapping[str, float] = Field(
@@ -291,3 +235,39 @@ class ThermalAreasProperties(IniProperties):
         if isinstance(v, dict):
             return {str(k): float(v) for k, v in v.items()}
         raise TypeError(f"Invalid type for energy cost: {type(v)}")
+
+
+class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
+    thermal_properties: ThermalAreasProperties
+    optimization_properties: OptimizationFileData
+    adequacy_properties: AdequacyPatchFileData
+
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        return AreaProperties(
+            energy_cost_unsupplied=self.thermal_properties.unserverd_energy_cost.get(area_id, 0.0),
+            energy_cost_spilled=self.thermal_properties.spilled_energy_cost.get(area_id, 0.0),
+            non_dispatch_power=self.optimization_properties.nodal_optimization.non_dispatchable_power,
+            dispatch_hydro_power=self.optimization_properties.nodal_optimization.dispatchable_hydro_power,
+            other_dispatch_power=self.optimization_properties.nodal_optimization.other_dispatchable_power,
+            spread_unsupplied_energy_cost=self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost,
+            spread_spilled_energy_cost=self.optimization_properties.nodal_optimization.spread_spilled_energy_cost,
+            filter_synthesis=encode_filter(self.optimization_properties.filtering.filter_synthesis),
+            filter_by_year=encode_filter(self.optimization_properties.filtering.filter_year_by_year),
+            adequacy_patch_mode=self.adequacy_properties.adequacy_patch.adequacy_patch_mode,
+        )
+
+    def set_area_properties(self, area_id: str, properties: AreaProperties) -> None:
+        self.thermal_properties.unserverd_energy_cost[area_id] = properties.energy_cost_unsupplied
+        self.thermal_properties.spilled_energy_cost[area_id] = properties.energy_cost_spilled
+        self.optimization_properties.nodal_optimization.non_dispatchable_power = properties.non_dispatch_power
+        self.optimization_properties.nodal_optimization.dispatchable_hydro_power = properties.dispatch_hydro_power
+        self.optimization_properties.nodal_optimization.other_dispatchable_power = properties.other_dispatch_power
+        self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost = (
+            properties.spread_unsupplied_energy_cost
+        )
+        self.optimization_properties.nodal_optimization.spread_spilled_energy_cost = (
+            properties.spread_spilled_energy_cost
+        )
+        self.optimization_properties.filtering.filter_synthesis = decode_filter(properties.filter_synthesis)
+        self.optimization_properties.filtering.filter_year_by_year = decode_filter(properties.filter_by_year)
+        self.adequacy_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode

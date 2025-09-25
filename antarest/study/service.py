@@ -1643,17 +1643,21 @@ class StudyService:
     def get_all_areas(
         self,
         uuid: str,
-        area_type: Optional[AreaType],
-        ui: bool,
-    ) -> List[Area] | Dict[str, Any]:
+        area_type: Optional[AreaType] = None,
+    ) -> List[Area]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return (
-            self.area_manager.get_all_areas_ui_info(study_interface)
-            if ui
-            else self.area_manager.get_all_areas(study_interface, area_type)
-        )
+        return self.area_manager.get_all_areas(study_interface, area_type)
+
+    def get_all_areas_ui_info(
+        self,
+        uuid: str,
+    ) -> Dict[str, Any]:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
+        return self.area_manager.get_all_areas_ui_info(study_interface)
 
     def get_all_links(
         self,
@@ -2196,10 +2200,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas = cast(
-                List[Area],
-                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False),
-            )
+            all_areas: List[Area] = self.get_all_areas(study_id, area_type=AreaType.AREA)
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:
