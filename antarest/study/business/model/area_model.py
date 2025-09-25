@@ -32,6 +32,10 @@ class Area(AntaresBaseModel):
 
 class AreaCreation(AntaresBaseModel):
     name: str
+    type: Optional[AreaType] = Field(
+        default=None,
+        json_schema_extra={"deprecated": True},
+    )
 
 
 class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):

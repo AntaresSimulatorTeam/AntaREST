@@ -336,15 +336,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
     created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()
     res_areas = client.get(f"/v1/studies/{study_id}/areas")
-    assert res_areas.json() == [
-        {
-            "id": "all areas",
-            "name": "All areas",
-            "set": [],
-            "thermals": None,
-            "type": "DISTRICT",
-        }
-    ]
+    assert res_areas.json() == []
 
     res = client.post(
         f"/v1/studies/{study_id}/areas",
@@ -467,7 +459,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         {
             "id": "area 1",
             "name": "area 1",
-            "set": None,
             "thermals": [
                 {
                     "co2": 0.0,
@@ -514,7 +505,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         {
             "id": "area 2",
             "name": "area 2",
-            "set": None,
             "thermals": [
                 {
                     "co2": 0.0,
@@ -558,7 +548,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             ],
             "type": "AREA",
         },
-        {"id": "all areas", "name": "All areas", "set": ["area 1", "area 2"], "thermals": None, "type": "DISTRICT"},
     ]
 
     res = client.post(
@@ -939,7 +928,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         {
             "id": "area 2",
             "name": "area 2",
-            "set": None,
             "thermals": [
                 {
                     "co2": 0.0,
@@ -982,13 +970,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                 }
             ],
             "type": "AREA",
-        },
-        {
-            "id": "all areas",
-            "name": "All areas",
-            "set": ["area 2"],
-            "thermals": None,
-            "type": "DISTRICT",
         },
     ]
 

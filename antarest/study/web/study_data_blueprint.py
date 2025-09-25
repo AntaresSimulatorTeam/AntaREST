@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence
 import typing_extensions as te
 from fastapi import APIRouter, Body, Query
 from pydantic import ConfigDict, Field, RootModel
-from starlette.responses import JSONResponse, RedirectResponse
+from starlette.responses import RedirectResponse
 
 from antarest.core.config import Config
 from antarest.core.model import JSON, StudyPermissionType
@@ -135,15 +135,6 @@ class PlaylistUpdateRootModel(RootModel[dict[int, PlaylistValuesUpdate]]):
     model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
 
 
-class AreaResponse(Area):
-    """API view for areas with deprecated ``type`` field kept for compatibility."""
-
-    type: Literal[AreaType.AREA] = Field(
-        default=AreaType.AREA,
-        json_schema_extra={"deprecated": True},
-    )
-
-
 def create_study_data_routes(study_service: StudyService, config: Config) -> APIRouter:
     """
     Endpoint implementation for studies area management
@@ -158,6 +149,14 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
     auth = Auth(config)
     bp = APIRouter(prefix="/v1", dependencies=[auth.required()])
 
+    class AreaResponse(Area):
+        """API view for areas with deprecated ``type`` field kept for compatibility."""
+
+        type: Literal[AreaType.AREA] = Field(
+            default=AreaType.AREA,
+            json_schema_extra={"deprecated": True},
+        )
+
     @bp.get(
         "/studies/{uuid}/areas",
         tags=[APITag.study_data],
@@ -167,12 +166,11 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         uuid: str,
         type: Optional[AreaType] = Query(default=None, deprecated=True),
         ui: bool = Query(default=False),
-    ) -> List[AreaResponse] | JSONResponse:
+    ) -> List[AreaResponse] | Dict[str, Any]:
+        logger.info(f"Fetching area list (type={type}, ui={ui}) for study {uuid}")
         if ui:
-            logger.info(f"Fetching area UI info for study {uuid}")
-            return JSONResponse(study_service.get_all_areas_ui_info(uuid))
+            return study_service.get_all_areas_ui_info(uuid)
 
-        logger.info(f"Fetching area list (type={type}) for study {uuid}")
         areas = study_service.get_all_areas(uuid, type)
         return [AreaResponse.model_validate(area.model_dump()) for area in areas]
 

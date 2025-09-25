@@ -159,8 +159,9 @@ class AreaManager:
 
         The optional ``area_type`` argument is kept for backward compatibility but
         only ``AreaType.AREA`` (or ``None``) is supported. District information is
-        now exposed by the dedicated district services.
+        exposed through dedicated endpoints.
         """
+
         file_study = study.get_files()
         cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
         if area_type not in (None, AreaType.AREA):
