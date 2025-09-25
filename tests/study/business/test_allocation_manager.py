@@ -24,7 +24,6 @@ from antarest.study.business.allocation_management import (
     AllocationManager,
     AllocationMatrix,
 )
-from antarest.study.business.area_management import AreaType
 from antarest.study.business.model.area_model import Area
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8
@@ -206,10 +205,10 @@ class TestAllocationManager:
 
         # Given the following arguments
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
-            Area(id="e", name="East", type=AreaType.AREA),
-            Area(id="s", name="South", type=AreaType.AREA),
-            Area(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
 
         # run
@@ -241,10 +240,10 @@ class TestAllocationManager:
 
         # Given the following arguments
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
-            Area(id="e", name="East", type=AreaType.AREA),
-            Area(id="s", name="South", type=AreaType.AREA),
-            Area(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
 
         with pytest.raises(AllocationDataNotFound) as ctx:
@@ -266,10 +265,10 @@ class TestAllocationManager:
         )
 
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
-            Area(id="e", name="East", type=AreaType.AREA),
-            Area(id="s", name="South", type=AreaType.AREA),
-            Area(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
 
         area_id = "n"
@@ -292,7 +291,7 @@ class TestAllocationManager:
         )
 
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
+            Area(id="n", name="North"),
         ]
 
         area_id = "n"
@@ -303,10 +302,10 @@ class TestAllocationManager:
 
     def test_set_allocation_form_fields__nominal_case(self, manager):
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
-            Area(id="e", name="East", type=AreaType.AREA),
-            Area(id="s", name="South", type=AreaType.AREA),
-            Area(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
         area_id = "n"
         study = create_study_interface(
@@ -343,10 +342,10 @@ class TestAllocationManager:
 
     def test_set_allocation_form_fields__no_allocation_data(self, manager):
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
-            Area(id="e", name="East", type=AreaType.AREA),
-            Area(id="s", name="South", type=AreaType.AREA),
-            Area(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
 
         area_id = "n"
@@ -377,10 +376,10 @@ class TestAllocationManager:
 
     def test_set_allocation_form_fields__invalid_area_ids(self, manager):
         all_areas = [
-            Area(id="n", name="North", type=AreaType.AREA),
-            Area(id="e", name="East", type=AreaType.AREA),
-            Area(id="s", name="South", type=AreaType.AREA),
-            Area(id="w", name="West", type=AreaType.AREA),
+            Area(id="n", name="North"),
+            Area(id="e", name="East"),
+            Area(id="s", name="South"),
+            Area(id="w", name="West"),
         ]
 
         area_id = "n"

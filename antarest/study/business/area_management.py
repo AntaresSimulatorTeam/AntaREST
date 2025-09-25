@@ -35,7 +35,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.area import (
     ThermalAreasProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, DistrictSet
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -155,44 +155,25 @@ class AreaManager:
         return AreaProperties.model_json_schema()
 
     def get_all_areas(self, study: StudyInterface, area_type: Optional[AreaType] = None) -> List[Area]:
-        """
-        Retrieves all areas and districts of a raw study based on the area type.
+        """Retrieve all physical areas of a raw study.
 
-        Args:
-            study: The raw study object.
-            area_type: The type of area. Retrieves areas and districts if `None`.
-
-        Returns:
-            A list of area/district information.
+        The optional ``area_type`` argument is kept for backward compatibility but
+        only ``AreaType.AREA`` (or ``None``) is supported. District information is
+        now exposed by the dedicated district services.
         """
         file_study = study.get_files()
         cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
-        result: List[Area] = []
+        if area_type not in (None, AreaType.AREA):
+            logger.debug("Requested unsupported area_type '%s', returning areas only", area_type)
 
-        if area_type is None or area_type == AreaType.AREA:
-            result.extend(
-                Area(
-                    id=area_id,
-                    name=area.name,
-                    type=AreaType.AREA,
-                    thermals=self._get_clusters(file_study, area_id),
-                )
-                for area_id, area in cfg_areas.items()
+        return [
+            Area(
+                id=area_id,
+                name=area.name,
+                thermals=self._get_clusters(file_study, area_id),
             )
-
-        if area_type is None or area_type == AreaType.DISTRICT:
-            cfg_sets: Dict[str, DistrictSet] = file_study.config.sets
-            result.extend(
-                Area(
-                    id=set_id,
-                    name=district.name or set_id,
-                    type=AreaType.DISTRICT,
-                    set=district.get_areas(list(cfg_areas)),
-                )
-                for set_id, district in cfg_sets.items()
-            )
-
-        return result
+            for area_id, area in cfg_areas.items()
+        ]
 
     def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, Any]:
         """
@@ -294,7 +275,6 @@ class AreaManager:
         return Area(
             id=area_id,
             name=area_creation_info.name,
-            type=AreaType.AREA,
             # this should always be empty since it's a new area
             thermals=[],
         )

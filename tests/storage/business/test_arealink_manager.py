@@ -37,7 +37,7 @@ def test_area_crud(
     file_study = study.get_files()
     assert len(file_study.config.areas.keys()) == 0
 
-    area_manager.create_area(study, AreaCreation(name="test", type=AreaType.AREA))
+    area_manager.create_area(study, AreaCreation(name="test"))
     assert len(file_study.config.areas.keys()) == 1
 
     area_manager.update_area_ui(study, "test", UpdateAreaUi(x=100, y=200, color_rgb=(255, 0, 100)), layer="0")
@@ -50,7 +50,7 @@ def test_area_crud(
         "layers": 0,
     }
 
-    area_manager.create_area(study, AreaCreation(name="test2", type=AreaType.AREA))
+    area_manager.create_area(study, AreaCreation(name="test2"))
 
     link_manager.create_link(
         study,
@@ -124,8 +124,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
     expected_areas = [
         {
             "name": "a1",
-            "type": AreaType.AREA,
-            "set": None,
             "thermals": [
                 {
                     "co2": 0.0,
@@ -171,15 +169,11 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         },
         {
             "name": "a2",
-            "type": AreaType.AREA,
-            "set": None,
             "thermals": [],
             "id": "a2",
         },
         {
             "name": "a3",
-            "type": AreaType.AREA,
-            "set": None,
             "thermals": [],
             "id": "a3",
         },
@@ -187,47 +181,38 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
     areas = area_manager.get_all_areas(study_interface, AreaType.AREA)
     assert [area.model_dump() for area in areas] == expected_areas
 
-    expected_clusters = [
+    # `AreaType.DISTRICT` is now ignored but kept for backward compatibility.
+    file_tree_mock.get.side_effect = [
         {
-            "name": "s1",
-            "type": AreaType.DISTRICT,
-            "set": ["a1"],
-            "thermals": None,
-            "id": "s1",
-        }
+            "a": {
+                "name": "A",
+                "unitcount": 1,
+                "nominalcapacity": 500,
+                "min-stable-power": 200,
+            }
+        },
+        {},
+        {},
     ]
     clusters = area_manager.get_all_areas(study_interface, AreaType.DISTRICT)
-    assert expected_clusters == [area.model_dump() for area in clusters]
+    assert [area.model_dump() for area in clusters] == expected_areas
 
     file_tree_mock.get.side_effect = [{}, {}, {}]
     expected_all = [
         {
             "name": "a1",
-            "type": AreaType.AREA,
-            "set": None,
             "thermals": [],
             "id": "a1",
         },
         {
             "name": "a2",
-            "type": AreaType.AREA,
-            "set": None,
             "thermals": [],
             "id": "a2",
         },
         {
             "name": "a3",
-            "type": AreaType.AREA,
-            "set": None,
             "thermals": [],
             "id": "a3",
-        },
-        {
-            "name": "s1",
-            "type": AreaType.DISTRICT,
-            "set": ["a1"],
-            "thermals": None,
-            "id": "s1",
         },
     ]
     all_areas = area_manager.get_all_areas(study_interface)

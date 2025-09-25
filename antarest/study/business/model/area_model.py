@@ -27,14 +27,11 @@ class AreaType(enum.Enum):
 class Area(AntaresBaseModel):
     id: str
     name: str
-    type: AreaType
-    set: Optional[List[str]] = None
     thermals: Optional[List[ThermalCluster]] = None
 
 
 class AreaCreation(AntaresBaseModel):
     name: str
-    type: AreaType
 
 
 class UpdateAreaUi(AntaresBaseModel, extra="forbid", populate_by_name=True):

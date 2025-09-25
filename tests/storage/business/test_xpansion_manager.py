@@ -26,7 +26,7 @@ from antarest.core.exceptions import (
 )
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.model.area_model import AreaCreation, AreaType
+from antarest.study.business.model.area_model import AreaCreation
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     Master,
@@ -45,8 +45,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
-    area_manager.create_area(study, AreaCreation(type=AreaType.AREA, name="area1"))
-    area_manager.create_area(study, AreaCreation(type=AreaType.AREA, name="area2"))
+    area_manager.create_area(study, AreaCreation(name="area1"))
+    area_manager.create_area(study, AreaCreation(name="area2"))
 
 
 def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
