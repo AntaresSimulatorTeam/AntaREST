@@ -23,6 +23,7 @@ import type {
   LaunchJobDTO,
   LaunchOptions,
   MatrixAggregationResult,
+  RangeWithDefault,
   StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
@@ -255,22 +256,16 @@ export const launchStudy = async (
   return res.data;
 };
 
-interface RangeConfig {
-  min: number;
-  max: number;
-  default: number;
-}
-
 interface Launcher {
   id: string;
   name: string;
-  nbCores: RangeConfig;
-  timeLimit: RangeConfig;
+  nbCores: RangeWithDefault;
+  timeLimit: RangeWithDefault;
 }
 
 interface LaunchersConfig {
   launchers: Launcher[];
-  defaultLauncher: "string";
+  defaultLauncher: string;
 }
 
 export const getLaunchersConfig = async () => {

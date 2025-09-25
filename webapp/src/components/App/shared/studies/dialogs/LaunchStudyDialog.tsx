@@ -80,14 +80,14 @@ function LaunchStudyDialog(props: Props) {
 
       return {
         ...config,
-        launchers: R.indexBy(R.prop("id"), config.launchers),
+        launchersById: R.indexBy(R.prop("id"), config.launchers),
         launcherOptions: config.launchers.map(({ id, name }) => ({ value: id, label: name })),
       };
     },
     {
       errorMessage: t("study.error.launchers"),
       onDataChange: (launchersConfig) => {
-        const defaultLauncher = launchersConfig?.launchers[launchersConfig.defaultLauncher];
+        const defaultLauncher = launchersConfig?.launchersById[launchersConfig.defaultLauncher];
 
         setOptions((prev) => ({
           ...prev,
@@ -98,7 +98,7 @@ function LaunchStudyDialog(props: Props) {
     },
   );
 
-  const launcherMetrics = usePromiseWithSnackbarError(
+  const launcherMetricsRes = usePromiseWithSnackbarError(
     () => getLauncherMetrics(options.launcher_id),
     {
       errorMessage: t("study.error.launchLoad"),
@@ -107,7 +107,7 @@ function LaunchStudyDialog(props: Props) {
   );
 
   // Refresh launcher metrics every minute
-  useInterval(launcherMetrics.reload, 60_000);
+  useInterval(launcherMetricsRes.reload, 60_000);
 
   const { data: outputList } = usePromiseWithSnackbarError(
     () => Promise.all(studyIds.map((sid) => getStudyOutputs(sid))),
@@ -388,57 +388,65 @@ function LaunchStudyDialog(props: Props) {
         >
           <UsePromiseCond
             response={launchersConfigRes}
-            ifFulfilled={({ launchers, launcherOptions }) => (
-              <>
-                <SelectFE
-                  label={t("study.cluster")}
-                  value={options.launcher_id}
-                  options={launcherOptions}
-                  onChange={(e) => {
-                    const newLauncherId = e.target.value;
-                    handleChange("launcher_id", newLauncherId);
-                    handleChange("nb_cpu", launchers[newLauncherId]?.nbCores.default);
-                  }}
-                  sx={{ flex: 1 }}
-                />
+            ifFulfilled={({ launchersById, launcherOptions }) => {
+              const currentLauncher = launchersById[options.launcher_id || ""];
+              const nbCores = currentLauncher?.nbCores;
+              const minCores = nbCores?.min;
+              const maxCores = nbCores?.max;
 
-                <TextField
-                  label={t("study.nbCpu")}
-                  type="number"
-                  variant="outlined"
-                  value={options.nb_cpu}
-                  onChange={(e) => {
-                    const { min, max } = launchers[options.launcher_id || ""]?.nbCores || {};
-                    const newValue = Number(e.target.value);
+              return (
+                <>
+                  <SelectFE
+                    label={t("study.cluster")}
+                    value={options.launcher_id}
+                    options={launcherOptions}
+                    onChange={(e) => {
+                      const newLauncherId = e.target.value;
 
-                    handleChange("nb_cpu", R.clamp(min, max, newValue));
-                  }}
-                  slotProps={{
-                    htmlInput: {
-                      min: launchers[options.launcher_id || ""]?.nbCores.min,
-                      max: launchers[options.launcher_id || ""]?.nbCores.max,
-                      step: 1,
-                    },
-                  }}
-                  sx={{ width: 150 }}
-                />
+                      setOptions((prev) => ({
+                        ...prev,
+                        launcher_id: newLauncherId,
+                        nb_cpu: launchersById[newLauncherId]?.nbCores.default,
+                      }));
+                    }}
+                    sx={{ flex: 1 }}
+                  />
 
-                {/* Field only to display the value, it is not editable */}
-                <TextField
-                  label={t("study.timeLimit")}
-                  type="number"
-                  variant="outlined"
-                  disabled
-                  value={launchers[options.launcher_id || ""]?.timeLimit?.default}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                  }}
-                  sx={{ width: 150 }}
-                />
-              </>
-            )}
+                  <TextField
+                    label={t("study.nbCpu")}
+                    type="number"
+                    variant="outlined"
+                    value={options.nb_cpu}
+                    onChange={(e) => {
+                      handleChange("nb_cpu", R.clamp(minCores, maxCores, Number(e.target.value)));
+                    }}
+                    slotProps={{
+                      htmlInput: {
+                        min: minCores,
+                        max: maxCores,
+                        step: 1,
+                      },
+                    }}
+                    sx={{ width: 150 }}
+                  />
+
+                  {/* Field only to display the value, it is not editable */}
+                  <TextField
+                    label={t("study.timeLimit")}
+                    type="number"
+                    variant="outlined"
+                    disabled
+                    value={currentLauncher?.timeLimit.default}
+                    slotProps={{
+                      inputLabel: {
+                        shrink: true,
+                      },
+                    }}
+                    sx={{ width: 150 }}
+                  />
+                </>
+              );
+            }}
             ifPending={() => <Skeleton height={60} sx={{ flex: 1 }} />}
             ifRejected={() => <Skeleton height={60} sx={{ flex: 1 }} />}
           />
@@ -455,7 +463,7 @@ function LaunchStudyDialog(props: Props) {
             // Reload when launcher changes to see Skeleton
             // because `keepLastResolvedOnReload` is set to true for refresh
             key={options.launcher_id}
-            response={launcherMetrics}
+            response={launcherMetricsRes}
             keepLastResolvedOnReload
             ifPending={() => <Skeleton width={500} />}
             ifFulfilled={(data) => (
