@@ -90,7 +90,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
     optimality_gap: float = Field(default=1, ge=0)
     relative_gap: float = Field(default=1e-6, ge=0)
     relaxed_optimality_gap: float = Field(default=1e-5, ge=0)
-    max_iteration: int = Field(default=int(1e12), gt=0)
+    max_iteration: int = Field(default=1000, gt=0)
     solver: Solver = Field(default=Solver.XPRESS)
     log_level: int = Field(default=0, ge=0, le=3)
     separation_parameter: float = Field(default=0.5, gt=0, le=1)
@@ -102,7 +102,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
     @field_validator("max_iteration", mode="before")
     def validate_max_iteration(cls, data: Any) -> Any:
         if isinstance(data, str) and data.lower() == "+inf":
-            data = int(1e12)
+            data = 1000
         return data
 
     def to_model(self) -> XpansionSettings:
