@@ -23,7 +23,6 @@ import type {
   LaunchJobDTO,
   LaunchOptions,
   MatrixAggregationResult,
-  RangeWithDefault,
   StudyLayer,
   StudyMetadata,
   StudyMetadataDTO,
@@ -255,6 +254,12 @@ export const launchStudy = async (
   const res = await client.post(`/v1/launcher/run/${sid}${versionArg}`, options);
   return res.data;
 };
+
+interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
+}
 
 interface Launcher {
   id: string;
