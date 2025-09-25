@@ -177,10 +177,10 @@ class XpansionAdequacyCriterionFileData(AntaresBaseModel):
         return cls.model_validate(criterion.model_dump())
 
 
-def parse_xpansion_security_criterion(data: Any) -> XpansionAdequacyCriterion:
+def parse_xpansion_adequacy_criterion(data: Any) -> XpansionAdequacyCriterion:
     return XpansionAdequacyCriterionFileData.model_validate(data).to_model()
 
 
-def serialize_xpansion_security_criterion(criterion: XpansionAdequacyCriterion) -> dict[str, Any]:
+def serialize_xpansion_adequacy_criterion(criterion: XpansionAdequacyCriterion) -> dict[str, Any]:
     excludes = set() if criterion.patterns else {"patterns"}
     return XpansionAdequacyCriterionFileData.from_model(criterion).model_dump(by_alias=True, exclude=excludes)
