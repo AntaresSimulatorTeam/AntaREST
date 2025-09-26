@@ -37,6 +37,13 @@ def get_user_id() -> str:
     return str(escape(str(user.id))) if user else "Unknown"
 
 
+def get_user_impersonator() -> int:
+    user = get_current_user()
+    if not user:
+        raise MustBeAuthenticatedError()
+    return user.impersonator
+
+
 @contextlib.contextmanager
 def current_user_context(token: Optional[JWTUser]) -> Iterator[JWTUser | None]:
     reset_token = _current_user.set(token)

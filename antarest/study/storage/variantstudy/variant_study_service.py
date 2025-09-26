@@ -49,7 +49,7 @@ from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import assert_this, suppress_exception
 from antarest.login.model import Identity
-from antarest.login.utils import get_user_id, require_current_user
+from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
 from antarest.matrixstore.service import MatrixService
 from antarest.study.model import (
     RawStudy,
@@ -230,7 +230,7 @@ class VariantStudyService(AbstractStorageService):
                 index=(first_index + i),
                 version=command.version,
                 study_version=str(command.study_version),
-                user_id=get_user_id(),
+                user_id=get_user_impersonator(),
                 updated_at=datetime.utcnow(),
             )
             for i, command in enumerate(validated_commands)
