@@ -359,12 +359,12 @@ export interface Area {
 }
 
 export interface Set {
+  id: string;
   name?: string;
-  inverted_set: boolean;
-  areas?: string[];
+  addAreas?: string[];
+  substractAreas?: string[];
+  applyFilter?: string;
   output: boolean;
-  filters_synthesis: string[];
-  filters_year: string[];
 }
 
 export interface Simulation {
