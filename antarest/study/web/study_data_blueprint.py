@@ -171,7 +171,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         if ui:
             return study_service.get_all_areas_ui_info(uuid)
 
-        areas = study_service.get_all_areas(uuid, type)
+        areas = study_service.get_all_areas(uuid)
         return [AreaResponse.model_validate(area.model_dump()) for area in areas]
 
     @bp.get("/studies/{uuid}/links", tags=[APITag.study_data], summary="Get all links")
@@ -1114,7 +1114,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - the values are the allocation factors.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.get_allocation_matrix(study_interface, all_areas)
 
@@ -1135,7 +1135,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.get_allocation_form_fields(all_areas, study_interface, area_id)
 
@@ -1169,7 +1169,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the updated allocation form fields.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.allocation_manager.set_allocation_form_fields(all_areas, study_interface, area_id, data)
 
@@ -1215,7 +1215,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         - `data`: a 2D-array matrix of correlation coefficients with values in the range of -1 to 1.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_matrix(
             all_areas,
@@ -1258,7 +1258,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the hydraulic/load/solar/wind correlation matrix updated
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.set_correlation_matrix(all_areas, study_interface, matrix)
 
@@ -1279,7 +1279,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.get_correlation_form_fields(all_areas, study_interface, area_id)
 
@@ -1313,7 +1313,7 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         Returns the correlation form fields in percentage.
         """
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
-        all_areas: List[Area] = study_service.get_all_areas(uuid, area_type=AreaType.AREA)
+        all_areas: List[Area] = study_service.get_all_areas(uuid)
         study_interface = study_service.get_study_interface(study)
         return study_service.correlation_manager.set_correlation_form_fields(all_areas, study_interface, area_id, data)
 

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping
 
 from antarest.core.exceptions import ConfigFileNotFound, DuplicateAreaName, LayerNotFound
 from antarest.core.model import JSON
@@ -19,7 +19,6 @@ from antarest.study.business.areas.area_utils import _get_area_layers, _get_ui_i
 from antarest.study.business.model.area_model import (
     Area,
     AreaCreation,
-    AreaType,
     UpdateAreaUi,
 )
 from antarest.study.business.model.area_properties_model import (
@@ -154,19 +153,11 @@ class AreaManager:
     def get_table_schema() -> JSON:
         return AreaProperties.model_json_schema()
 
-    def get_all_areas(self, study: StudyInterface, area_type: Optional[AreaType] = None) -> List[Area]:
-        """Retrieve all physical areas of a raw study.
-
-        The optional ``area_type`` argument is kept for backward compatibility but
-        only ``AreaType.AREA`` (or ``None``) is supported. District information is
-        exposed through dedicated endpoints.
-        """
+    def get_all_areas(self, study: StudyInterface) -> List[Area]:
+        """Retrieve all physical areas of a raw study."""
 
         file_study = study.get_files()
         cfg_areas: Dict[str, AreaConfig] = file_study.config.areas
-        if area_type not in (None, AreaType.AREA):
-            logger.debug("Requested unsupported area_type '%s', returning areas only", area_type)
-
         return [
             Area(
                 id=area_id,
