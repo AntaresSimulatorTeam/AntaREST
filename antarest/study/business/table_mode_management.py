@@ -38,7 +38,6 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate, ThermalClusterUpdates
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_3
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -112,13 +111,10 @@ class TableModeManager:
             areas_map = self._area_manager.get_all_area_props(study)
             data = {}
             for area_id, area in areas_map.items():
-                area_dict = area.model_dump(by_alias=True)
+                area_dict = area.model_dump(by_alias=True, exclude_none=True)
                 area_dict["filterSynthesis"] = decode_filter(area.filter_synthesis)
                 area_dict["filterByYear"] = decode_filter(area.filter_by_year)
                 data[area_id] = area_dict
-            if study.version < STUDY_VERSION_8_3:
-                for values in data.values():
-                    values.pop("adequacyPatchMode", None)
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links(study)
             data = {f"{link.area1} / {link.area2}": link.model_dump(mode="json", by_alias=True) for link in links_map}
@@ -225,10 +221,6 @@ class TableModeManager:
                 area_dict["filterSynthesis"] = decode_filter(area.filter_synthesis)
                 area_dict["filterByYear"] = decode_filter(area.filter_by_year)
                 data[area_id] = area_dict
-            if study.version < STUDY_VERSION_8_3:
-                for values in data.values():
-                    if isinstance(values, dict):
-                        values.pop("adequacyPatchMode", None)
             return data
         elif table_type == TableModeType.LINK:
             links_map = {tuple(key.split(" / ")): LinkUpdate(**values) for key, values in data.items()}

@@ -75,7 +75,7 @@ class AreaProperties(AntaresBaseModel, extra="forbid", populate_by_name=True, al
     filter_synthesis: Set[str] = Field(default_factory=lambda: set(FILTER_OPTIONS))
     filter_by_year: Set[str] = Field(default_factory=lambda: set(FILTER_OPTIONS))
     # version 830
-    adequacy_patch_mode: AdequacyPatchMode = AdequacyPatchMode.OUTSIDE
+    adequacy_patch_mode: AdequacyPatchMode | None = None
 
     @model_validator(mode="before")
     def validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:

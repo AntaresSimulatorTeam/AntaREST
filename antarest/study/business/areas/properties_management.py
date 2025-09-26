@@ -53,7 +53,7 @@ class AreaPropertiesManager:
             adequacy_properties=AdequacyPatchFileData(**current_adequacy_patch),
         )
 
-        return properties.get_area_properties(area_id)
+        return properties.get_area_properties(area_id, study.version)
 
     def update_area_properties(
         self,

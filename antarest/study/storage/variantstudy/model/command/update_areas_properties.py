@@ -66,9 +66,9 @@ class UpdateAreasProperties(ICommand):
                 adequacy_properties=AdequacyPatchFileData(**current_adequacy_patch),
             )
 
-            new_properties = current_properties.get_area_properties(area_id=area_id).model_copy(
-                update=area_properties.model_dump(exclude_none=True)
-            )
+            new_properties = current_properties.get_area_properties(
+                area_id=area_id, study_version=study_data.config.version
+            ).model_copy(update=area_properties.model_dump(exclude_none=True))
 
             current_properties.set_area_properties(area_id, new_properties)
 

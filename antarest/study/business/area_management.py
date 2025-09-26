@@ -110,7 +110,7 @@ class AreaManager:
                 optimization_properties=area_folder.optimization,
                 adequacy_properties=area_folder.adequacy_patch or AdequacyPatchFileData(),
             )
-            area_map[area_id] = props_data.get_area_properties(area_id)
+            area_map[area_id] = props_data.get_area_properties(area_id, study.version)
 
         return area_map
 

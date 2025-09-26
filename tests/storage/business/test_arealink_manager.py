@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.area_management import AreaCreation, AreaManager, AreaType, UpdateAreaUi
+from antarest.study.business.area_management import AreaCreation, AreaManager, UpdateAreaUi
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -178,7 +178,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
             "id": "a3",
         },
     ]
-    areas = area_manager.get_all_areas(study_interface, AreaType.AREA)
+    areas = area_manager.get_all_areas(study_interface)
     assert [area.model_dump() for area in areas] == expected_areas
 
     # `AreaType.DISTRICT` is now ignored but kept for backward compatibility.
@@ -194,8 +194,6 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         {},
         {},
     ]
-    clusters = area_manager.get_all_areas(study_interface, AreaType.DISTRICT)
-    assert [area.model_dump() for area in clusters] == expected_areas
 
     file_tree_mock.get.side_effect = [{}, {}, {}]
     expected_all = [

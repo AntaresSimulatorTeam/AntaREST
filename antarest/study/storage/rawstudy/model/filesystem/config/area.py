@@ -16,6 +16,7 @@ Object model used to read and update area configuration.
 
 from typing import Any, Dict, Mapping, MutableMapping, Optional, Set
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, field_validator, model_validator
 from typing_extensions import override
 
@@ -27,6 +28,7 @@ from antarest.study.business.model.area_properties_model import (
     decode_filter,
     encode_filter,
 )
+from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_filtering,
@@ -242,7 +244,10 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
     optimization_properties: OptimizationFileData
     adequacy_properties: AdequacyPatchFileData
 
-    def get_area_properties(self, area_id: str) -> AreaProperties:
+    def get_area_properties(self, area_id: str, study_version: StudyVersion) -> AreaProperties:
+        adequacy_patch_mode = (
+            None if study_version < STUDY_VERSION_8_3 else self.adequacy_properties.adequacy_patch.adequacy_patch_mode
+        )
         return AreaProperties(
             energy_cost_unsupplied=self.thermal_properties.unserverd_energy_cost.get(area_id, 0.0),
             energy_cost_spilled=self.thermal_properties.spilled_energy_cost.get(area_id, 0.0),
@@ -253,7 +258,7 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
             spread_spilled_energy_cost=self.optimization_properties.nodal_optimization.spread_spilled_energy_cost,
             filter_synthesis=encode_filter(self.optimization_properties.filtering.filter_synthesis),
             filter_by_year=encode_filter(self.optimization_properties.filtering.filter_year_by_year),
-            adequacy_patch_mode=self.adequacy_properties.adequacy_patch.adequacy_patch_mode,
+            adequacy_patch_mode=adequacy_patch_mode,
         )
 
     def set_area_properties(self, area_id: str, properties: AreaProperties) -> None:
@@ -270,4 +275,5 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
         )
         self.optimization_properties.filtering.filter_synthesis = decode_filter(properties.filter_synthesis)
         self.optimization_properties.filtering.filter_year_by_year = decode_filter(properties.filter_by_year)
-        self.adequacy_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode
+        if properties.adequacy_patch_mode:
+            self.adequacy_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode
