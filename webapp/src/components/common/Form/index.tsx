@@ -98,6 +98,7 @@ export interface FormProps<
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
   disableStickyFooter?: boolean;
   extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
+  disableFormConfirm?: boolean;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
@@ -124,6 +125,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
   apiRef,
   disableStickyFooter,
   extraActions,
+  disableFormConfirm = false,
   ...formProps
 }: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -234,7 +236,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
     [isSubmitSuccessful],
   );
 
-  useFormCloseProtection({ isSubmitting, isDirty });
+  useFormCloseProtection({ isSubmitting, isDirty, disabled: disableFormConfirm });
 
   useUpdateEffect(() => onStateChange?.(formState), [formState]);
 

@@ -56,6 +56,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     submitButtonText,
     submitButtonIcon,
     allowSubmitOnPristine = false,
+    disableFormConfirm,
     ...dialogProps
   } = props;
 
@@ -66,6 +67,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     onInvalid,
     children,
     autoSubmit,
+    disableFormConfirm,
   };
 
   const { t } = useTranslation();

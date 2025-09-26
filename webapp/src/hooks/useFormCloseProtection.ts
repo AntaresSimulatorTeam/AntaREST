@@ -21,6 +21,7 @@ import useFormCloseConfirm from "./useFormCloseConfirm";
 export interface UseFormCloseProtectionParams {
   isSubmitting: boolean;
   isDirty: boolean;
+  disabled?: boolean;
 }
 
 /**
@@ -35,19 +36,26 @@ export interface UseFormCloseProtectionParams {
  * @see {@link useFormCloseConfirm} Use to show the confirmation dialog.
  *
  * @param params - The parameters.
+ * @param params.disabled - Whether the form close protection is disabled.
  * @param params.isSubmitting - Whether the form is being submitted.
  * @param params.isDirty - Whether the form is dirty (has unsaved changes).
  */
-function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectionParams) {
+function useFormCloseProtection({
+  isSubmitting,
+  isDirty,
+  disabled = false,
+}: UseFormCloseProtectionParams) {
   const dispatch = useAppDispatch();
   const { withFormCloseCheck } = useFormCloseConfirm();
 
   useUpdateEffect(() => {
-    dispatch(setFormStatus({ isSubmitting, isDirty }));
-  }, [dispatch, isDirty, isSubmitting]);
+    if (!disabled) {
+      dispatch(setFormStatus({ isSubmitting, isDirty }));
+    }
+  }, [dispatch, isDirty, isSubmitting, disabled]);
 
   useUnmount(() => {
-    if (isSubmitting || isDirty) {
+    if (!disabled && (isSubmitting || isDirty)) {
       dispatch(setFormStatus({ isSubmitting: false, isDirty: false }));
     }
   });
@@ -56,7 +64,7 @@ function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectio
     withFormCloseCheck((tx) => {
       tx.retry();
     }),
-    isSubmitting || isDirty,
+    !disabled && (isSubmitting || isDirty),
   );
 }
 

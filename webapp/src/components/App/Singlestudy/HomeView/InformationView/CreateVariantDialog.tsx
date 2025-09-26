@@ -76,6 +76,7 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
       config={{ defaultValues }}
+      disableFormConfirm // Prevent state sync issue where form confirmation shows after successful submit during navigation
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
