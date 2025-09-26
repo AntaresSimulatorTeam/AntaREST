@@ -23,11 +23,6 @@ from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
 
 
-class CommandDict(t.TypedDict):
-    action: str
-    args: t.Dict[str, t.Any]
-
-
 def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str) -> None:
     """
     Test the nominal case for an API user, which includes creating a **bot**, importing a study,
@@ -68,7 +63,6 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
         json={"yearByYear": True},
     )
     assert res.status_code == 200
-    commands: t.List[CommandDict]
     commands = [
         {
             "action": "update_config",
