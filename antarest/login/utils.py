@@ -38,9 +38,7 @@ def get_user_id() -> str:
 
 
 def get_user_impersonator() -> int:
-    user = get_current_user()
-    if not user:
-        raise MustBeAuthenticatedError()
+    user = require_current_user()
     return user.impersonator
 
 
