@@ -30,7 +30,7 @@ export interface UseFormCloseProtectionParams {
  * Commonly used in components containing forms.
  *
  * Note: Only work with view transitions triggered by react-router, to support view transitions
- * without react-router use `useFormCloseConfirm` directly.
+ * without react-router use {@link useFormCloseConfirm} directly.
  *
  * @see {@link useFormCloseConfirm} Use to show the confirmation dialog.
  *

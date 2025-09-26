@@ -36,6 +36,7 @@ interface Props {
 function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
+  const defaultValues = { name: "", sourceId: parentId };
 
   const studiesSource = useMemo(() => createListFromTree(variantTree), [variantTree]);
 
@@ -45,8 +46,6 @@ function CreateVariantDialog({ parentId, open, variantTree, onClose }: Props) {
   );
 
   const existingNames = useMemo(() => studiesSource.map(({ name }) => name), [studiesSource]);
-
-  const defaultValues = { name: "", sourceId: parentId };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
