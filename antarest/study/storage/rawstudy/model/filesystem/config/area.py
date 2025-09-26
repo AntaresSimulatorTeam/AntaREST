@@ -25,9 +25,9 @@ from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.area_properties_model import (
     AdequacyPatchMode,
     AreaProperties,
-    decode_filter,
-    encode_filter,
     initialize_area_properties,
+    parse_filters,
+    serialize_filters,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
@@ -254,8 +254,8 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
             other_dispatch_power=self.optimization_properties.nodal_optimization.other_dispatchable_power,
             spread_unsupplied_energy_cost=self.optimization_properties.nodal_optimization.spread_unsupplied_energy_cost,
             spread_spilled_energy_cost=self.optimization_properties.nodal_optimization.spread_spilled_energy_cost,
-            filter_synthesis=encode_filter(self.optimization_properties.filtering.filter_synthesis),
-            filter_by_year=encode_filter(self.optimization_properties.filtering.filter_year_by_year),
+            filter_synthesis=parse_filters(self.optimization_properties.filtering.filter_synthesis),
+            filter_by_year=parse_filters(self.optimization_properties.filtering.filter_year_by_year),
             adequacy_patch_mode=self.adequacy_patch_properties.adequacy_patch.adequacy_patch_mode,
         )
         initialize_area_properties(props, study_version)
@@ -273,7 +273,7 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
         self.optimization_properties.nodal_optimization.spread_spilled_energy_cost = (
             properties.spread_spilled_energy_cost
         )
-        self.optimization_properties.filtering.filter_synthesis = decode_filter(properties.filter_synthesis)
-        self.optimization_properties.filtering.filter_year_by_year = decode_filter(properties.filter_by_year)
+        self.optimization_properties.filtering.filter_synthesis = serialize_filters(properties.filter_synthesis)
+        self.optimization_properties.filtering.filter_year_by_year = serialize_filters(properties.filter_by_year)
         if properties.adequacy_patch_mode:
             self.adequacy_patch_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode

@@ -55,17 +55,19 @@ def sort_filter_options(options: Iterable[FrequencyFilter]) -> List[FrequencyFil
     )
 
 
-def encode_filter(value: str) -> Set[FrequencyFilter]:
-    return {validate_filter(item.strip()) for item in value.split(",")}
+def parse_filters(value: str) -> Set[FrequencyFilter]:
+    if not value:
+        return set()
+    return {_validate_filter(item.strip()) for item in value.split(",")}
 
 
-def validate_filter(value: str) -> FrequencyFilter:
+def _validate_filter(value: str) -> FrequencyFilter:
     if value not in FILTER_OPTIONS:
         raise ValueError(f"Invalid filter {value}, expected one of {','.join(FILTER_OPTIONS)}.")
     return cast(FrequencyFilter, value)
 
 
-def decode_filter(encoded_value: Set[FrequencyFilter]) -> str:
+def serialize_filters(encoded_value: Set[FrequencyFilter]) -> str:
     if isinstance(encoded_value, str):
         return encoded_value
     return ", ".join(sort_filter_options(encoded_value))

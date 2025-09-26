@@ -26,7 +26,7 @@ from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, decode_filter, encode_filter
+from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, parse_filters, serialize_filters
 from antarest.study.business.model.binding_constraint_model import BindingConstraintUpdate
 from antarest.study.business.model.link_model import LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate, RenewableClusterUpdates
@@ -93,9 +93,9 @@ def _parse_area_properties_update(data: Mapping[_TableColumn, _CellValue]) -> Ar
     values = dict(data.items())
     # need to "unflatten" filters
     if "filterSynthesis" in values:
-        values["filterSynthesis"] = encode_filter(values["filterSynthesis"])
+        values["filterSynthesis"] = parse_filters(values["filterSynthesis"])
     if "filterByYear" in values:
-        values["filterByYear"] = encode_filter(values["filterByYear"])
+        values["filterByYear"] = parse_filters(values["filterByYear"])
     return AreaPropertiesUpdate.model_validate(values)
 
 
@@ -122,8 +122,8 @@ class TableModeManager:
             data = {}
             for area_id, area in areas_map.items():
                 area_dict = area.model_dump(by_alias=True, exclude_none=True)
-                area_dict["filterSynthesis"] = decode_filter(area.filter_synthesis)
-                area_dict["filterByYear"] = decode_filter(area.filter_by_year)
+                area_dict["filterSynthesis"] = serialize_filters(area.filter_synthesis)
+                area_dict["filterByYear"] = serialize_filters(area.filter_by_year)
                 data[area_id] = area_dict
         elif table_type == TableModeType.LINK:
             links_map = self._link_manager.get_all_links(study)
@@ -228,8 +228,8 @@ class TableModeManager:
             data = {}
             for area_id, area in areas_map.items():
                 area_dict = area.model_dump(by_alias=True, exclude_none=True)
-                area_dict["filterSynthesis"] = decode_filter(area.filter_synthesis)
-                area_dict["filterByYear"] = decode_filter(area.filter_by_year)
+                area_dict["filterSynthesis"] = serialize_filters(area.filter_synthesis)
+                area_dict["filterByYear"] = serialize_filters(area.filter_by_year)
                 data[area_id] = area_dict
             return data
         elif table_type == TableModeType.LINK:
