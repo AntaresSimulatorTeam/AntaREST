@@ -337,11 +337,7 @@ class SlurmLauncher(AbstractLauncher):
                 unzipped_output_path = (
                     self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output" / output_path.name[:-4]
                 )
-                unzip(
-                    unzipped_output_path,
-                    output_path,
-                    remove_source_zip=True,
-                )
+                unzip(unzipped_output_path, output_path)
                 output_path = unzipped_output_path
 
             if xpansion_mode == "r":

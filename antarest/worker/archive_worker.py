@@ -29,7 +29,6 @@ logger = logging.getLogger(__name__)
 class ArchiveTaskArgs(AntaresBaseModel):
     src: str
     dest: str
-    remove_src: bool = False
 
 
 class ArchiveWorker(AbstractWorker):
@@ -69,11 +68,7 @@ class ArchiveWorker(AbstractWorker):
             src = self.translate_path(Path(archive_args.src))
             stopwatch = StopWatch()
             logger.info(f"Extracting {src} into {dest}")
-            unzip(
-                dest,
-                src,
-                remove_source_zip=archive_args.remove_src,
-            )
+            unzip(dest, src)
             stopwatch.log_elapsed(lambda t: logger.info(f"Successfully extracted {src} into {dest} in {t}s"))
             return TaskResult(success=True, message="")
         except Exception as e:
