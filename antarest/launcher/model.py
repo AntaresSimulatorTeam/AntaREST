@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Any, Dict, List, MutableMapping, Optional
 from uuid import uuid4
 
-from pydantic import Field
+from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -32,6 +32,13 @@ class XpansionParametersDTO(AntaresBaseModel):
     output_id: Optional[str] = None
     sensitivity_mode: bool = False
     enabled: bool = True
+    adequacy_criterion: bool = False
+
+    @model_validator(mode="after")
+    def check_coherence(self) -> "XpansionParametersDTO":
+        if self.sensitivity_mode and self.adequacy_criterion:
+            raise ValueError("Cannot launch a sensitivity analysis and an adequacy criterion one at the same time")
+        return self
 
 
 class LauncherParametersDTO(AntaresBaseModel):
@@ -254,8 +261,36 @@ class JobCreationDTO(AntaresBaseModel):
     job_id: str
 
 
-class LauncherEnginesDTO(AntaresBaseModel):
-    engines: List[str]
+class LauncherResourceRangeDTO(AntaresBaseModel, extra="forbid"):
+    min: int
+    max: int
+    default: int
+
+
+class LauncherInfoDTO(AntaresBaseModel):
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True,
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
+    id: str
+    name: str
+    nb_cores: LauncherResourceRangeDTO
+    time_limit: LauncherResourceRangeDTO
+
+
+class LauncherListDTO(AntaresBaseModel):
+    model_config = ConfigDict(
+        coerce_numbers_to_str=True,
+        extra="forbid",
+        alias_generator=to_camel,
+        populate_by_name=True,
+    )
+
+    launchers: List[LauncherInfoDTO]
+    default_launcher: str
 
 
 class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):
