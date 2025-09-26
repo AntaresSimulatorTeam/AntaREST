@@ -38,7 +38,11 @@ from antarest.study.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area, EnrModelling, FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.config.model import (
+    AreaConfig,
+    EnrModelling,
+    FileStudyTreeConfig,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FilterError, FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
@@ -144,7 +148,7 @@ class StudyDownloader:
         second_element_type_condition: Callable[[str], bool],
     ) -> None:
         if first_element_type_condition:
-            if data.type == StudyDownloadType.LINK and isinstance(type_elm[elm], Area):
+            if data.type == StudyDownloadType.LINK and isinstance(type_elm[elm], AreaConfig):
                 if type_elm[elm].links:
                     for out_link in type_elm[elm].links.keys():
                         if second_element_type_condition(out_link):
