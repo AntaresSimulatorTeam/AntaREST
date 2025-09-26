@@ -28,7 +28,6 @@ from antarest.study.business.model.area_properties_model import (
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPatchFileData,
     AreaFileData,
     AreaPropertiesFileData,
     ThermalAreasProperties,
@@ -108,7 +107,7 @@ class AreaManager:
             props_data = AreaPropertiesFileData(
                 thermal_properties=thermal_areas,
                 optimization_properties=area_folder.optimization,
-                adequacy_properties=area_folder.adequacy_patch or AdequacyPatchFileData(),
+                adequacy_patch_properties=area_folder.adequacy_patch,
             )
             area_map[area_id] = props_data.get_area_properties(area_id, study.version)
 

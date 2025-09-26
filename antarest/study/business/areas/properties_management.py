@@ -50,7 +50,7 @@ class AreaPropertiesManager:
         properties = AreaPropertiesFileData(
             thermal_properties=ThermalAreasProperties(**current_thermal_props),
             optimization_properties=OptimizationFileData(**current_optim_properties),
-            adequacy_properties=AdequacyPatchFileData(**current_adequacy_patch),
+            adequacy_patch_properties=AdequacyPatchFileData(**current_adequacy_patch),
         )
 
         return properties.get_area_properties(area_id, study.version)

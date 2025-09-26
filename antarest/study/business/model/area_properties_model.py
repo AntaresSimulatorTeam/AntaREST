@@ -12,12 +12,14 @@
 import re
 from typing import Any, Dict, Iterable, List, Set
 
+from antares.study.version import StudyVersion
 from pydantic import AliasChoices, Field, model_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
 from antarest.study.business.all_optional_meta import all_optional_model
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.model import STUDY_VERSION_8_3
 
 FILTER_OPTIONS = ["hourly", "daily", "weekly", "monthly", "annual"]
 
@@ -134,3 +136,8 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
                     values.setdefault("filterYearByYear", options)
                     values.pop("filterByYear", None)
         return values
+
+
+def initialize_area_properties(area_props: AreaProperties, study_version: StudyVersion) -> None:
+    if study_version >= STUDY_VERSION_8_3 and area_props.adequacy_patch_mode is None:
+        area_props.adequacy_patch_mode = AdequacyPatchMode.OUTSIDE

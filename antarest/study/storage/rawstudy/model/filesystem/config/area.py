@@ -14,7 +14,7 @@
 Object model used to read and update area configuration.
 """
 
-from typing import Any, Dict, Mapping, MutableMapping, Optional, Set
+from typing import Any, Dict, Mapping, MutableMapping, Set
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -27,8 +27,8 @@ from antarest.study.business.model.area_properties_model import (
     AreaProperties,
     decode_filter,
     encode_filter,
+    initialize_area_properties,
 )
-from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_filtering,
@@ -190,11 +190,12 @@ class AdequacyPatchFileData(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-    class AdequacyPathSection(AntaresBaseModel):
+    class AdequacyPatchSection(AntaresBaseModel):
         model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
-        adequacy_patch_mode: AdequacyPatchMode = Field(default=AdequacyPatchMode.OUTSIDE)
 
-    adequacy_patch: AdequacyPathSection = Field(default_factory=AdequacyPathSection)
+        adequacy_patch_mode: AdequacyPatchMode | None = None
+
+    adequacy_patch: AdequacyPatchSection = Field(default_factory=AdequacyPatchSection)
 
 
 class AreaFileData(AntaresBaseModel):
@@ -204,8 +205,8 @@ class AreaFileData(AntaresBaseModel):
         default_factory=OptimizationFileData,
         description="optimization configuration",
     )
-    adequacy_patch: Optional[AdequacyPatchFileData] = Field(
-        None,
+    adequacy_patch: AdequacyPatchFileData = Field(
+        default_factory=AdequacyPatchFileData,
         description="adequacy patch configuration",
     )
     ui: UIProperties = Field(
@@ -242,13 +243,10 @@ class ThermalAreasProperties(IniProperties):
 class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=True):
     thermal_properties: ThermalAreasProperties
     optimization_properties: OptimizationFileData
-    adequacy_properties: AdequacyPatchFileData
+    adequacy_patch_properties: AdequacyPatchFileData
 
     def get_area_properties(self, area_id: str, study_version: StudyVersion) -> AreaProperties:
-        adequacy_patch_mode = (
-            None if study_version < STUDY_VERSION_8_3 else self.adequacy_properties.adequacy_patch.adequacy_patch_mode
-        )
-        return AreaProperties(
+        props = AreaProperties(
             energy_cost_unsupplied=self.thermal_properties.unserverd_energy_cost.get(area_id, 0.0),
             energy_cost_spilled=self.thermal_properties.spilled_energy_cost.get(area_id, 0.0),
             non_dispatch_power=self.optimization_properties.nodal_optimization.non_dispatchable_power,
@@ -258,8 +256,10 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
             spread_spilled_energy_cost=self.optimization_properties.nodal_optimization.spread_spilled_energy_cost,
             filter_synthesis=encode_filter(self.optimization_properties.filtering.filter_synthesis),
             filter_by_year=encode_filter(self.optimization_properties.filtering.filter_year_by_year),
-            adequacy_patch_mode=adequacy_patch_mode,
+            adequacy_patch_mode=self.adequacy_patch_properties.adequacy_patch.adequacy_patch_mode,
         )
+        initialize_area_properties(props, study_version)
+        return props
 
     def set_area_properties(self, area_id: str, properties: AreaProperties) -> None:
         self.thermal_properties.unserverd_energy_cost[area_id] = properties.energy_cost_unsupplied
@@ -276,4 +276,4 @@ class AreaPropertiesFileData(AntaresBaseModel, extra="forbid", populate_by_name=
         self.optimization_properties.filtering.filter_synthesis = decode_filter(properties.filter_synthesis)
         self.optimization_properties.filtering.filter_year_by_year = decode_filter(properties.filter_by_year)
         if properties.adequacy_patch_mode:
-            self.adequacy_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode
+            self.adequacy_patch_properties.adequacy_patch.adequacy_patch_mode = properties.adequacy_patch_mode
