@@ -42,8 +42,8 @@ import { fetchUsers } from "../../../redux/ducks/users";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import MenuItem from "./MenuItem";
 import FavoritesMenu from "./FavoritesMenu";
+import MenuItem from "./MenuItem";
 import { StyledDrawer } from "./styles";
 import TaskIcon from "./TaskIcon";
 
@@ -137,48 +137,28 @@ function Container({ children }: Props) {
               <MenuItem
                 title={t("recentStudy.title")}
                 icon={<CenterFocusStrongIcon />}
-                isMenuOpen={isDrawerOpen}
                 link={`/studies/${currentStudyId}`}
               />
             )}
-            <FavoritesMenu isMenuOpen={isDrawerOpen} />
+            <FavoritesMenu />
             {topMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem
-                key={titleKey}
-                title={t(titleKey)}
-                icon={icon}
-                isMenuOpen={isDrawerOpen}
-                link={link}
-              />
+              <MenuItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
           </List>
           <List>
             {subMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem
-                key={titleKey}
-                title={t(titleKey)}
-                icon={icon}
-                isMenuOpen={isDrawerOpen}
-                link={link}
-              />
+              <MenuItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
           </List>
           <Divider />
           <List>
             {bottomMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem
-                key={titleKey}
-                title={t(titleKey)}
-                icon={icon}
-                isMenuOpen={isDrawerOpen}
-                link={link}
-              />
+              <MenuItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
             {isWebMode && (
               <MenuItem
                 title={t("global.signOut")}
                 icon={<LogoutIcon />}
-                isMenuOpen={isDrawerOpen}
                 onClick={() => setOpenLogoutDialog(true)}
               />
             )}
@@ -188,7 +168,6 @@ function Container({ children }: Props) {
             <MenuItem
               title={t("global.reduce")}
               icon={isDrawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-              isMenuOpen={isDrawerOpen}
               onClick={() => dispatch(setMenuOpen(!isDrawerOpen))}
             />
           </List>
