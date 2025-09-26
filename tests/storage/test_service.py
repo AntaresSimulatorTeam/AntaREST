@@ -1583,19 +1583,13 @@ def test_unarchive_output(tmp_path: Path) -> None:
         Mock(),
         Mock(),
     )
-    output_service.unarchive_output(
-        study_id,
-        output_id,
-        keep_src_zip=True,
-    )
+    output_service.unarchive_output(study_id, output_id)
 
     service.task_service.add_worker_task.assert_called_once_with(
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_id}.zip"),
-            dest=str(tmp_path / "output" / output_id),
-            remove_src=False,
+            src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
         ).model_dump(),
         name=f"Unarchive output {study_name}/{output_id} ({study_id})",
         ref_id=study_id,
@@ -1696,18 +1690,10 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         Mock(),
     )
     with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(
-            study_id,
-            output_zipped,
-            keep_src_zip=True,
-        )
+        output_service.unarchive_output(study_id, output_zipped)
 
     with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(
-            study_id,
-            output_zipped,
-            keep_src_zip=True,
-        )
+        output_service.unarchive_output(study_id, output_zipped)
 
     with pytest.raises(TaskAlreadyRunning):
         output_service.archive_output(
@@ -1721,19 +1707,13 @@ def test_archive_output_locks(tmp_path: Path) -> None:
             output_unzipped,
         )
 
-    output_service.unarchive_output(
-        study_id,
-        output_zipped,
-        keep_src_zip=True,
-    )
+    output_service.unarchive_output(study_id, output_zipped)
 
     service.task_service.add_worker_task.assert_called_once_with(
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_zipped}.zip"),
-            dest=str(tmp_path / "output" / output_zipped),
-            remove_src=False,
+            src=str(tmp_path / "output" / f"{output_zipped}.zip"), dest=str(tmp_path / "output" / output_zipped)
         ).model_dump(),
         name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         ref_id=study_id,
