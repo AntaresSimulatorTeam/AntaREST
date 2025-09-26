@@ -26,7 +26,7 @@ from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, decode_filter
+from antarest.study.business.model.area_properties_model import AreaPropertiesUpdate, decode_filter, encode_filter
 from antarest.study.business.model.binding_constraint_model import BindingConstraintUpdate
 from antarest.study.business.model.link_model import LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableClusterUpdate, RenewableClusterUpdates
@@ -87,6 +87,16 @@ class TableModeType(EnumIgnoreCase):
             if value in aliases:
                 return aliases[value]
         return super()._missing_(value)
+
+
+def _parse_area_properties_update(data: Mapping[_TableColumn, _CellValue]) -> AreaPropertiesUpdate:
+    values = dict(data.items())
+    # need to "unflatten" filters
+    if "filterSynthesis" in values:
+        values["filterSynthesis"] = encode_filter(values["filterSynthesis"])
+    if "filterByYear" in values:
+        values["filterByYear"] = encode_filter(values["filterByYear"])
+    return AreaPropertiesUpdate.model_validate(values)
 
 
 class TableModeManager:
@@ -213,7 +223,7 @@ class TableModeManager:
             The updated properties of the objects including the old ones.
         """
         if table_type == TableModeType.AREA:
-            area_props_by_ids = {key: AreaPropertiesUpdate(**values) for key, values in data.items()}
+            area_props_by_ids = {key: _parse_area_properties_update(values) for key, values in data.items()}
             areas_map = self._area_manager.update_areas_props(study, area_props_by_ids)
             data = {}
             for area_id, area in areas_map.items():
