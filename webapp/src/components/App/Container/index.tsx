@@ -38,6 +38,7 @@ import { NavLink } from "react-router-dom";
 import { useMount } from "react-use";
 import { logout } from "../../../redux/ducks/auth";
 import { fetchGroups } from "../../../redux/ducks/groups";
+import { fetchStudies } from "../../../redux/ducks/studies";
 import { fetchUsers } from "../../../redux/ducks/users";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
@@ -94,6 +95,7 @@ function Container({ children }: Props) {
   useMount(() => {
     dispatch(fetchUsers());
     dispatch(fetchGroups());
+    dispatch(fetchStudies());
   });
 
   ////////////////////////////////////////////////////////////////
