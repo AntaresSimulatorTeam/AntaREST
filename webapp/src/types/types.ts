@@ -597,3 +597,9 @@ export interface MatrixItem {
   titleKey: string;
   content: SplitMatrixContent | SingleMatrixContent;
 }
+
+export interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
+}

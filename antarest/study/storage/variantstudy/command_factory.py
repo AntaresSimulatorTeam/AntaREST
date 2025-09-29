@@ -62,6 +62,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_configura
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
+    ReplaceXpansionAdequacyCriterion,
+)
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import (
     ReplaceXpansionCandidate,
 )
@@ -149,6 +152,7 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CREATE_XPANSION_WEIGHT.value: CreateXpansionWeight,
     CommandName.CREATE_XPANSION_CONSTRAINT.value: CreateXpansionConstraint,
     CommandName.UPDATE_XPANSION_SETTINGS.value: UpdateXpansionSettings,
+    CommandName.REPLACE_XPANSION_ADEQUACY_CRITERION.value: ReplaceXpansionAdequacyCriterion,
     CommandName.UPDATE_OPTIMIZATION_PREFERENCES.value: UpdateOptimizationPreferences,
     CommandName.UPDATE_ADVANCED_PARAMETERS.value: UpdateAdvancedParameters,
     CommandName.CREATE_ST_STORAGE_ADDITIONAL_CONSTRAINTS.value: CreateSTStorageAdditionalConstraints,

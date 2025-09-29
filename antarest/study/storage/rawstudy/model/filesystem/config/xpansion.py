@@ -21,6 +21,8 @@ from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionLinkStr,
     XpansionSensitivitySettings,
@@ -88,7 +90,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
     optimality_gap: float = Field(default=1, ge=0)
     relative_gap: float = Field(default=1e-6, ge=0)
     relaxed_optimality_gap: float = Field(default=1e-5, ge=0)
-    max_iteration: int = Field(default=int(1e12), gt=0)
+    max_iteration: int = Field(default=1000, gt=0)
     solver: Solver = Field(default=Solver.XPRESS)
     log_level: int = Field(default=0, ge=0, le=3)
     separation_parameter: float = Field(default=0.5, gt=0, le=1)
@@ -100,7 +102,7 @@ class XpansionSettingsFileData(AntaresBaseModel):
     @field_validator("max_iteration", mode="before")
     def validate_max_iteration(cls, data: Any) -> Any:
         if isinstance(data, str) and data.lower() == "+inf":
-            data = int(1e12)
+            data = 1000
         return data
 
     def to_model(self) -> XpansionSettings:
@@ -149,3 +151,36 @@ def parse_xpansion_sensitivity_settings(data: Any) -> XpansionSensitivitySetting
 
 def serialize_xpansion_sensitivity_settings(settings: XpansionSensitivitySettings) -> dict[str, Any]:
     return XpansionSensitivitySettingsFileData.from_model(settings).model_dump(by_alias=True)
+
+
+##########################
+# Adequacy criterion part
+##########################
+
+
+class XpansionAdequacyCriterionFileData(AntaresBaseModel):
+    """
+    Xpansion sensitivity criterion data parsed from YAML file.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    stopping_threshold: float = Field(default=1e6, ge=0)
+    criterion_count_threshold: float = Field(default=1, ge=0)
+    patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)
+
+    def to_model(self) -> XpansionAdequacyCriterion:
+        return XpansionAdequacyCriterion.model_validate(self.model_dump())
+
+    @classmethod
+    def from_model(cls, criterion: XpansionAdequacyCriterion) -> "XpansionAdequacyCriterionFileData":
+        return cls.model_validate(criterion.model_dump())
+
+
+def parse_xpansion_adequacy_criterion(data: Any) -> XpansionAdequacyCriterion:
+    return XpansionAdequacyCriterionFileData.model_validate(data).to_model()
+
+
+def serialize_xpansion_adequacy_criterion(criterion: XpansionAdequacyCriterion) -> dict[str, Any]:
+    excludes = set() if criterion.patterns else {"patterns"}
+    return XpansionAdequacyCriterionFileData.from_model(criterion).model_dump(by_alias=True, exclude=excludes)

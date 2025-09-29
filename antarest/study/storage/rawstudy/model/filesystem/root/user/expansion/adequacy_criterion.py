@@ -9,16 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.json_file_node import JsonFileNode
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLFileNode
 
 
-class SensitivityConfig(FolderNode):
+class ExpansionAdequacyCriterion(FolderNode):
     @override
     def build(self) -> TREE:
-        return {"sensitivity_in": JsonFileNode(self.config.next_file("sensitivity_in.json"))}
+        return {"adequacy_criterion": YAMLFileNode(self.config.next_file("adequacy_criterion.yml"))}

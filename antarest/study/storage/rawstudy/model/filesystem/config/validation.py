@@ -14,7 +14,7 @@
 Contains various utilities for pydantic models validation.
 """
 
-from typing import Annotated, Any, Dict, List, Mapping, MutableMapping, TypeAlias
+from typing import Annotated, Any, Dict, List, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, Field
@@ -72,52 +72,6 @@ def validate_filtering(v: Any) -> str:
     """
 
     return ", ".join(extract_filtering(v))
-
-
-# noinspection SpellCheckingInspection
-def validate_colors(values: MutableMapping[str, Any]) -> Mapping[str, Any]:
-    """
-    Validate ``color_rgb``, ``color_r``, ``color_g``, ``color_b`` and convert them to ``color_rgb``.
-    """
-
-    def _pop_any(dictionary: MutableMapping[str, Any], *keys: str) -> Any:
-        """Save as `pop` but for multiple keys. Return the first found value."""
-        return next((dictionary.pop(key, None) for key in keys if key in dictionary), None)
-
-    color_r = _pop_any(values, "color_r", "colorr")
-    color_g = _pop_any(values, "color_g", "colorg")
-    color_b = _pop_any(values, "color_b", "colorb")
-    if color_r is not None and color_g is not None and color_b is not None:
-        values["color_rgb"] = color_r, color_g, color_b
-    return values
-
-
-def validate_color_rgb(v: Any) -> str:
-    """
-    Validate RGB color field and convert it to color code.
-
-    Accepts:
-        - a string in the format "#RRGGBB"
-        - a string in the format "rgb(R, G, B)"
-        - a string in the format "R, G, B"
-        - a list or tuple of 3 integers
-    """
-
-    if isinstance(v, str):
-        if v.startswith("#"):
-            r = int(v[1:3], 16)
-            g = int(v[3:5], 16)
-            b = int(v[5:7], 16)
-        elif v.startswith("rgb("):
-            r, g, b = [int(c) for c in v[4:-1].split(",")]
-        else:
-            r, g, b = [int(c) for c in v.split(",")]
-    elif isinstance(v, (list, tuple)):
-        r, g, b = map(int, v)
-    else:
-        raise TypeError(f"Invalid type for 'color_rgb': {type(v)}")
-
-    return f"#{r:02X}{g:02X}{b:02X}"
 
 
 STUDY_VERSION_KEY: str = "study_version"

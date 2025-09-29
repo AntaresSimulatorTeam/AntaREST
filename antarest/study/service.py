@@ -80,7 +80,7 @@ from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaInfoDTO, AreaType, UpdateAreaUi
+from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -1644,17 +1644,20 @@ class StudyService:
     def get_all_areas(
         self,
         uuid: str,
-        area_type: Optional[AreaType],
-        ui: bool,
-    ) -> List[AreaInfoDTO] | Dict[str, Any]:
+    ) -> List[Area]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
-        return (
-            self.area_manager.get_all_areas_ui_info(study_interface)
-            if ui
-            else self.area_manager.get_all_areas(study_interface, area_type)
-        )
+        return self.area_manager.get_all_areas(study_interface)
+
+    def get_all_areas_ui_info(
+        self,
+        uuid: str,
+    ) -> Dict[str, Any]:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        study_interface = self.get_study_interface(study)
+        return self.area_manager.get_all_areas_ui_info(study_interface)
 
     def get_all_links(
         self,
@@ -1667,8 +1670,8 @@ class StudyService:
     def create_area(
         self,
         uuid: str,
-        area_creation_dto: AreaCreationDTO,
-    ) -> AreaInfoDTO:
+        area_creation_dto: AreaCreation,
+    ) -> Area:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
@@ -2199,10 +2202,7 @@ class StudyService:
         study_interface = self.get_study_interface(study)
 
         if matrix_path.parts in [("input", "hydro", "allocation"), ("input", "hydro", "correlation")]:
-            all_areas = cast(
-                List[AreaInfoDTO],
-                self.get_all_areas(study_id, area_type=AreaType.AREA, ui=False),
-            )
+            all_areas: List[Area] = self.get_all_areas(study_id)
             if matrix_path.parts[-1] == "allocation":
                 hydro_matrix = self.allocation_manager.get_allocation_matrix(study_interface, all_areas)
             else:

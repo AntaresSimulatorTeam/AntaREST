@@ -983,6 +983,15 @@ COMMANDS = [
         None,
         id="update_timeseries_configuration",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_XPANSION_ADEQUACY_CRITERION.value,
+            args=[{"criterion": {"stopping_threshold": 100, "patterns": [], "criterion_count_threshold": 12.4}}],
+            study_version=STUDY_VERSION_8_8,
+        ),
+        None,
+        id="replace_xpansion_adequacy_criterion",
+    ),
 ]
 
 
