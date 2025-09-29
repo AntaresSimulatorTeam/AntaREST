@@ -30,17 +30,20 @@ export interface UseFormCloseProtectionParams {
  * Commonly used in components containing forms.
  *
  * Note: Only work with view transitions triggered by react-router, to support view transitions
- * without react-router use `useFormCloseConfirm` directly.
+ * without react-router use {@link useFormCloseConfirm} directly.
  *
  * @see {@link useFormCloseConfirm} Use to show the confirmation dialog.
  *
  * @param params - The parameters.
  * @param params.isSubmitting - Whether the form is being submitted.
  * @param params.isDirty - Whether the form is dirty (has unsaved changes).
+ *
+ * @returns An object with the following property:
+ * - `executeWithoutFormCloseCheck`: From {@link useFormCloseConfirm}.
  */
 function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectionParams) {
   const dispatch = useAppDispatch();
-  const { withFormCloseCheck } = useFormCloseConfirm();
+  const { withFormCloseCheck, executeWithoutFormCloseCheck } = useFormCloseConfirm();
 
   useUpdateEffect(() => {
     dispatch(setFormStatus({ isSubmitting, isDirty }));
@@ -58,6 +61,8 @@ function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectio
     }),
     isSubmitting || isDirty,
   );
+
+  return { executeWithoutFormCloseCheck };
 }
 
 export default useFormCloseProtection;
