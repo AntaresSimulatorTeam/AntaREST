@@ -43,7 +43,7 @@ import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
 import FavoritesMenu from "./FavoritesMenu";
-import MenuItem from "./MenuItem";
+import SidebarItem from "./SidebarItem";
 import { StyledDrawer } from "./styles";
 import TaskIcon from "./TaskIcon";
 
@@ -134,7 +134,7 @@ function Container({ children }: Props) {
           <Divider />
           <List sx={{ flex: 1 }}>
             {currentStudyId && (
-              <MenuItem
+              <SidebarItem
                 title={t("recentStudy.title")}
                 icon={<CenterFocusStrongIcon />}
                 link={`/studies/${currentStudyId}`}
@@ -142,21 +142,21 @@ function Container({ children }: Props) {
             )}
             <FavoritesMenu />
             {topMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
+              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
           </List>
           <List>
             {subMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
+              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
           </List>
           <Divider />
           <List>
             {bottomMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
+              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
             {isWebMode && (
-              <MenuItem
+              <SidebarItem
                 title={t("global.signOut")}
                 icon={<LogoutIcon />}
                 onClick={() => setOpenLogoutDialog(true)}
@@ -165,7 +165,7 @@ function Container({ children }: Props) {
           </List>
           <Divider />
           <List>
-            <MenuItem
+            <SidebarItem
               title={t("global.reduce")}
               icon={isDrawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
               onClick={() => dispatch(setMenuOpen(!isDrawerOpen))}

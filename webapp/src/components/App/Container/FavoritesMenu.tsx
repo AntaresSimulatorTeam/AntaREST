@@ -12,14 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import FavoriteStudyToggle from "@/components/App/shared/studies/FavoriteStudyToggle";
-import { getFavoriteStudies } from "@/redux/selectors";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { List, ListItemButton, ListItemText, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import FavoriteStudyToggle from "@/components/App/shared/studies/FavoriteStudyToggle";
+import { getFavoriteStudies } from "@/redux/selectors";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
-import MenuItem from "./MenuItem";
+import SidebarItem from "./SidebarItem";
 
 function FavoritesMenu() {
   const { t } = useTranslation();
@@ -35,7 +35,7 @@ function FavoritesMenu() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <MenuItem title={t("studies.favorites")} icon={<StarBorderIcon />}>
+    <SidebarItem title={t("studies.favorites")} icon={<StarBorderIcon />}>
       <List disablePadding dense>
         {favorites.map((fav) => (
           <ListItemButton key={fav.id} onClick={() => navigate(`/studies/${fav.id}`)}>
@@ -57,7 +57,7 @@ function FavoritesMenu() {
           </ListItemButton>
         ))}
       </List>
-    </MenuItem>
+    </SidebarItem>
   );
 }
 

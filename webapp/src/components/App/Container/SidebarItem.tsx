@@ -12,10 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { setMenuOpen as setMainMenuOpen } from "@/redux/ducks/ui";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { isMenuOpen as isMainMenuOpen } from "@/redux/selectors";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import LaunchIcon from "@mui/icons-material/Launch";
@@ -29,6 +25,10 @@ import {
 } from "@mui/material";
 import { Children, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { setMenuOpen as setMainMenuOpen } from "@/redux/ducks/ui";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { isMenuOpen as isMainMenuOpen } from "@/redux/selectors";
 
 type Props = {
   title: string;
@@ -41,7 +41,7 @@ type Props = {
   | { children?: React.ReactNode; link?: never }
 );
 
-function MenuItem({ title, icon, onClick, link, children }: Props) {
+function SidebarItem({ title, icon, onClick, link, children }: Props) {
   const location = useLocation();
   const [expanded, setExpanded] = useState(false);
   const isMenuOpen = useAppSelector(isMainMenuOpen);
@@ -117,4 +117,4 @@ function MenuItem({ title, icon, onClick, link, children }: Props) {
   );
 }
 
-export default MenuItem;
+export default SidebarItem;
