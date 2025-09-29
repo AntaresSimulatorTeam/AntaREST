@@ -31,12 +31,22 @@ class ReadOnlyDistrictDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_district(self, district_id: str) -> DistrictDTO:
+    def get_district_dto(self, district_id: str) -> DistrictDTO:
         """
         Get the district with the given ID.
 
         Returns:
             The Data Transfer Object (DTO) representing the district.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_district(self, district_id: str) -> District:
+        """
+        Get the district  with the given ID.
+
+        Returns:
+            The object representing the district.
         """
         raise NotImplementedError()
 

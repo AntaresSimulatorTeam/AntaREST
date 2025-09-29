@@ -471,11 +471,13 @@ export async function updateStudyDistrict(
   output: StudyMapDistrict["output"],
   comments: StudyMapDistrict["comments"],
   areas?: StudyMapDistrict["areas"],
+  applyFilter?: string,
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,
     comments,
     areas,
+    applyFilter,
   });
 }
 

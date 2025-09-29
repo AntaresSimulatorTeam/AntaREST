@@ -79,10 +79,15 @@ class UpdateDistrict(ICommand):
 
         district = study_data.get_district(self.id)
 
+        apply_filter = self.parameters.apply_filter or study_data.get_district_apply_filter(self.id)
+
         # Merge existing district data with the update parameters
-        district_definition = District.model_validate(
+        next_district = District.model_validate(
             {
-                **district.model_dump(exclude_none=True, include={"output", "comments", "name", "id"}),
+                "apply_filter": apply_filter,
+                **district.model_dump(
+                    exclude_none=True, include={"output", "comments", "name", "add_areas", "substract_areas", "id"}
+                ),
                 **self.parameters.model_dump(
                     mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
                 ),
@@ -91,15 +96,14 @@ class UpdateDistrict(ICommand):
 
         # If areas are provided, we need to update add_areas and substract_areas based on the apply_filter
         if self.parameters.areas is not None:
-            apply_filter = self.parameters.apply_filter or study_data.get_district_apply_filter(self.id)
             if apply_filter == DistrictApplyFilter.remove_all:
                 add_areas, substract_areas = self.parameters.areas, []
             else:
                 add_areas, substract_areas = [], self.parameters.areas
-            district_definition.add_areas = add_areas
-            district_definition.substract_areas = substract_areas
+            next_district.add_areas = add_areas
+            next_district.substract_areas = substract_areas
 
-        study_data.save_district(district_definition)
+        study_data.save_district(next_district)
 
         return command_succeeded(message=self.id)
 

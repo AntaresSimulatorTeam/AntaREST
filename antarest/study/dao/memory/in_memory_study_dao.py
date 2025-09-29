@@ -706,7 +706,7 @@ class InMemoryStudyDao(StudyDao):
         return [d.to_dto(self._area_names) for d in self._districts.values()]
 
     @override
-    def get_district(self, district_id: str) -> DistrictDTO:
+    def get_district_dto(self, district_id: str) -> DistrictDTO:
         return self._districts[district_id].to_dto(self._area_names)
 
     @override

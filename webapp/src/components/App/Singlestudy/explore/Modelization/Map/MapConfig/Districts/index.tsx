@@ -85,6 +85,7 @@ function Districts() {
           output: districtsById[districtId].output,
           comments: districtsById[districtId].comments,
           areas: areasByDistrict[districtId],
+          applyFilter: "remove-all",
         }),
       ).unwrap();
     });

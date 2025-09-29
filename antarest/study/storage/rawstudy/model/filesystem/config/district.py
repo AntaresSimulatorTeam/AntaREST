@@ -77,7 +77,7 @@ class DistrictFileData(AntaresBaseModel):
         )
 
 
-def district_set_apply_filter(item: dict[str, Any]) -> DistrictApplyFilter:
+def district_apply_filter_from_data(item: dict[str, Any]) -> DistrictApplyFilter:
     if "apply-filter" not in item:
         return DistrictApplyFilter.remove_all
     return DistrictApplyFilter(item["apply-filter"])

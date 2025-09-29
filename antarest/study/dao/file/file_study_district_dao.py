@@ -18,7 +18,7 @@ from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
-    district_set_apply_filter,
+    district_apply_filter_from_data,
     parse_district,
     serialize_district,
 )
@@ -53,7 +53,7 @@ class FileStudyDistrictDao(DistrictDao):
         ]
 
     @override
-    def get_district(self, district_id: str) -> DistrictDTO:
+    def get_district_dto(self, district_id: str) -> DistrictDTO:
         """
         Get the Data Transfer Objects (DTO) representing the district with the given id.
         """
@@ -69,6 +69,20 @@ class FileStudyDistrictDao(DistrictDao):
         return parse_district(district_data, district_id).to_dto(all_areas)
 
     @override
+    def get_district(self, district_id: str) -> District:
+        """
+        Get the Data Transfer Objects (DTO) representing the district with the given id.
+        """
+        study_data = self.get_file_study()
+        path = DISTRICTS_PATH + [district_id]
+        try:
+            # may raise KeyError if the path is missing
+            district_data = study_data.tree.get(path)
+        except KeyError:
+            raise DistrictConfigNotFound(str(path))
+        return parse_district(district_data, district_id)
+
+    @override
     def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
         """
         Returns the district base filter.
@@ -81,7 +95,7 @@ class FileStudyDistrictDao(DistrictDao):
         except KeyError:
             raise DistrictConfigNotFound(str(path))
 
-        return district_set_apply_filter(district_data)
+        return district_apply_filter_from_data(district_data)
 
     @override
     def district_exists(self, district_id: str) -> bool:
