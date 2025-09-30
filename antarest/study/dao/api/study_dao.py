@@ -407,6 +407,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.district_exists(district_id)
 
     @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._adaptee.tmp_get_all_areas()
+
+    @override
     def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
         return self._adaptee.get_district_apply_filter(district_id)
 

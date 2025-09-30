@@ -14,7 +14,6 @@ from typing import Sequence
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.model.district_model import (
-    District,
     DistrictCreation,
     DistrictDTO,
     DistrictUpdate,
@@ -57,7 +56,7 @@ class DistrictManager:
         self,
         study: StudyInterface,
         district_creation: DistrictCreation,
-    ) -> District:
+    ) -> DistrictDTO:
         """
         Create a new district in the study and possibly attach areas to it.
 
@@ -87,7 +86,8 @@ class DistrictManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return create_district(district_creation, district_id)
+        all_areas = study_dao.tmp_get_all_areas()
+        return create_district(district_creation, district_id).to_dto(all_areas)  #
 
     def update_district(
         self,

@@ -96,12 +96,11 @@ class UpdateDistrict(ICommand):
 
         # If areas are provided, we need to update add_areas and substract_areas based on the apply_filter
         if self.parameters.areas is not None:
-            if apply_filter == DistrictApplyFilter.remove_all:
-                add_areas, substract_areas = self.parameters.areas, []
-            else:
-                add_areas, substract_areas = [], self.parameters.areas
-            next_district.add_areas = add_areas
-            next_district.substract_areas = substract_areas
+            next_district.add_areas, next_district.substract_areas = (
+                (self.parameters.areas, [])
+                if apply_filter == DistrictApplyFilter.remove_all
+                else ([], self.parameters.areas)
+            )
 
         study_data.save_district(next_district)
 

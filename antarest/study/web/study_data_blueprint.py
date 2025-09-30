@@ -69,7 +69,6 @@ from antarest.study.business.model.config.timeseries_config_model import (
     TimeSeriesConfigurationUpdate,
 )
 from antarest.study.business.model.district_model import (
-    District,
     DistrictCreation,
     DistrictDTO,
     DistrictUpdate,
@@ -307,13 +306,13 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         "/studies/{uuid}/districts",
         tags=[APITag.study_data],
         summary="Create a new district in the study",
-        response_model=District,
+        response_model=DistrictDTO,
     )
-    def create_district(uuid: str, dto: DistrictCreation) -> District:
-        logger.info(f"Create district {dto.name} for study {uuid}")
+    def create_district(uuid: str, district_creation: DistrictCreation) -> DistrictDTO:
+        logger.info(f"Create district {district_creation.name} for study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        return study_service.district_manager.create_district(study_interface, dto)
+        return study_service.district_manager.create_district(study_interface, district_creation)
 
     @bp.put(
         "/studies/{uuid}/districts/{district_id}",

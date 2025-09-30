@@ -19,9 +19,9 @@ from antarest.study.business.district_manager import (
     DistrictManager,
     DistrictUpdate,
 )
-from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictDTO
 from antarest.study.business.study_interface import FileStudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Area
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
@@ -44,7 +44,7 @@ def manager(command_context: CommandContext) -> DistrictManager:
 @pytest.fixture
 def study_with_sets(empty_study_880: FileStudy):
     def dummy_area(name: str):
-        return Area(
+        return AreaConfig(
             name=name,
             links={},
             thermals=[],
@@ -142,15 +142,14 @@ class TestDistrictManager:
                 areas=["n1", "n2", "n2"],  # areas can have duplicates
             )
             actual = manager.create_district(study_with_sets, dto)
-            expected = District(
+            expected = DistrictDTO(
                 id="d4",
                 name="D4",
-                add_areas=["n1", "n2"],
+                areas=["n1", "n2"],
                 output=True,
                 comments="hello",
-                apply_filter=DistrictApplyFilter.remove_all,
             )
-            actual.add_areas.sort()
+            actual.areas.sort()
             assert actual == expected
             _check_add_commands(add_commands_mock, CreateDistrict)
 

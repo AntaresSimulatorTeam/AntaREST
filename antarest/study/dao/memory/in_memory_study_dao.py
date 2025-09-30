@@ -710,6 +710,10 @@ class InMemoryStudyDao(StudyDao):
         return self._districts[district_id].to_dto(self._area_names)
 
     @override
+    def get_district(self, district_id: str) -> District:
+        return self._districts[district_id]
+
+    @override
     def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
         return self._districts[district_id].apply_filter
 
@@ -729,6 +733,10 @@ class InMemoryStudyDao(StudyDao):
     def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
         # TODO make this actually work once we implement area DAO
         return list(set(areas) - set(self._area_names))
+
+    @override
+    def tmp_get_all_areas(self) -> list[str]:
+        return self._area_names
 
     @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
