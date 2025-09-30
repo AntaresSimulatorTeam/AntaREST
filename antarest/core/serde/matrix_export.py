@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 from typing_extensions import override
 
+from antarest.core.serde.parquet_writer import write_dataframes_stream_parquet
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 try:
@@ -57,26 +58,10 @@ class DataframeStreamWriter(Protocol):
     def __call__(self, path: Path, dataframes: Iterator[pd.DataFrame]) -> None: ...
 
 
-def _checked_dataframes_generator(dataframes: Iterator[pd.DataFrame]) -> Iterator[pd.DataFrame]:
-    """
-    Checks consistency between subsequent dataframes
-    """
-    columns = None
-    for df in dataframes:
-        if df.empty:
-            continue
-        if columns is None:
-            columns = df.columns
-        else:
-            if any(columns != df.columns):
-                raise ValueError("Cannot append dataframe to file, columns are different from initial dataframe.")
-        yield df
-
-
 def _write_dataframes_stream_csv(path: Path, sep: str, decimal: str, dataframes: Iterator[pd.DataFrame]) -> None:
     headers = True
     append = False
-    for df in _checked_dataframes_generator(dataframes):
+    for df in dataframes:
         df.to_csv(path, mode="a" if append else "w", sep=sep, decimal=decimal, index=False, header=headers)
         headers = False
         append = True
@@ -92,7 +77,7 @@ def _csv_stream_writer(sep: str, decimal: str) -> DataframeStreamWriter:
 def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
     row = 0
     is_first = True
-    for df in _checked_dataframes_generator(dataframes):
+    for df in dataframes:
         with pd.ExcelWriter(
             path, mode="w" if is_first else "a", if_sheet_exists=None if is_first else "overlay", engine="openpyxl"
         ) as writer:
@@ -103,20 +88,13 @@ def _write_dataframes_stream_excel(path: Path, dataframes: Iterator[pd.DataFrame
         is_first = False
 
 
-def _write_dataframes_stream_hdf5(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
-    append = False
-    for df in _checked_dataframes_generator(dataframes):
-        df.to_hdf(path, key="data", append=append, index=False, format="table", mode="r+" if append else "w")
-        append = True
-
-
 class TableExportFormat(EnumIgnoreCase):
     """Export format for tables."""
 
     XLSX = "xlsx"
-    HDF5 = "hdf5"
     TSV = "tsv"
     CSV = "csv"
+    PARQUET = "parquet"
     CSV_SEMICOLON = "csv (semicolon)"
 
     @override
@@ -135,8 +113,8 @@ class TableExportFormat(EnumIgnoreCase):
                 return "text/tab-separated-values"
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return "text/csv"
-            case TableExportFormat.HDF5:
-                return "application/x-hdf5"
+            case TableExportFormat.PARQUET:
+                return "application/vnd.apache.parquet"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -150,8 +128,8 @@ class TableExportFormat(EnumIgnoreCase):
                 return ".tsv"
             case TableExportFormat.CSV | TableExportFormat.CSV_SEMICOLON:
                 return ".csv"
-            case TableExportFormat.HDF5:
-                return ".h5"
+            case TableExportFormat.PARQUET:
+                return ".parquet"
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")
 
@@ -165,8 +143,8 @@ class TableExportFormat(EnumIgnoreCase):
                 return _csv_stream_writer(sep=";", decimal=",")
             case TableExportFormat.TSV:
                 return _csv_stream_writer(sep="\t", decimal=".")
-            case TableExportFormat.HDF5:
-                return _write_dataframes_stream_hdf5
+            case TableExportFormat.PARQUET:
+                return write_dataframes_stream_parquet
             case _:
                 raise NotImplementedError(f"Export format '{self}' does not support stream writing.")
 
@@ -193,13 +171,7 @@ class TableExportFormat(EnumIgnoreCase):
                 return df.to_csv(export_path, sep=",", index=with_index, header=with_header)
             case TableExportFormat.CSV_SEMICOLON:
                 return df.to_csv(export_path, sep=";", decimal=",", index=with_index, header=with_header)
-            case TableExportFormat.HDF5:
-                return df.to_hdf(
-                    export_path,
-                    key="data",
-                    mode="w",
-                    format="table",
-                    data_columns=True,
-                )
+            case TableExportFormat.PARQUET:
+                return df.to_parquet(export_path, compression="zstd", index=with_index)
             case _:
                 raise NotImplementedError(f"Export format '{self}' is not implemented")

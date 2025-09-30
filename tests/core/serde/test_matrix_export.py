@@ -15,41 +15,7 @@ from typing import Iterator
 import pandas as pd
 import pytest
 
-from antarest.core.serde.matrix_export import TableExportFormat, _checked_dataframes_generator
-
-
-def test_checked_stream_removes_empty_dataframes():
-    dfs = [
-        pd.DataFrame(),
-        pd.DataFrame(data=[(12, 13), (14, 15)], columns=["A", "B"]),
-    ]
-    as_list = [d for d in _checked_dataframes_generator(iter(dfs))]
-    assert len(as_list) == 1
-
-    dfs = [
-        pd.DataFrame(data=[(12, 13), (14, 15)], columns=["A", "B"]),
-        pd.DataFrame(),
-    ]
-    as_list = [d for d in _checked_dataframes_generator(iter(dfs))]
-    assert len(as_list) == 1
-
-
-def test_checked_stream_provides_valid_dataframes():
-    dfs = [
-        pd.DataFrame(data=[(10, 11), (12, 13)], columns=["A", "B"]),
-        pd.DataFrame(data=[(12, 13), (14, 15)], columns=["A", "B"]),
-    ]
-    as_list = [d for d in _checked_dataframes_generator(iter(dfs))]
-    assert len(as_list) == 2
-
-
-def test_checked_stream_raises_on_different_columns():
-    dfs = [
-        pd.DataFrame(data=[(10, 11), (12, 13)], columns=["A", "B"]),
-        pd.DataFrame(data=[(12, 13), (14, 15)], columns=["B", "C"]),
-    ]
-    with pytest.raises(ValueError, match="columns are different"):
-        [d for d in _checked_dataframes_generator(iter(dfs))]
+from antarest.core.serde.matrix_export import TableExportFormat
 
 
 @pytest.fixture
@@ -99,12 +65,13 @@ def test_excel_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame],
     pd.testing.assert_frame_equal(parsed, expected_concatenation)
 
 
-def test_hdf5_stream_writer(tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame):
-    export_path = tmp_path / "export.hdf5"
-    writer = TableExportFormat.HDF5.get_stream_writer()
+def test_parquet_stream_writer(
+    tmp_path: Path, dataframes: Iterator[pd.DataFrame], expected_concatenation: pd.DataFrame
+):
+    export_path = tmp_path / "export.parquet"
+    writer = TableExportFormat.PARQUET.get_stream_writer()
     writer(path=export_path, dataframes=dataframes)
 
-    parsed = pd.read_hdf(export_path)
-    parsed = parsed.reset_index(drop=True)
+    parsed = pd.read_parquet(export_path)
 
     pd.testing.assert_frame_equal(parsed, expected_concatenation)
