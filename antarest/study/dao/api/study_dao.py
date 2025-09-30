@@ -35,6 +35,7 @@ from antarest.study.business.model.sts_model import (
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettings,
@@ -368,6 +369,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         return self._adaptee.checks_xpansion_resource_can_be_deleted(resource_type, filename)
+
+    @override
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        return self._adaptee.get_xpansion_adequacy_criterion()
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:

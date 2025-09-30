@@ -68,9 +68,13 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
     >
       <Typography>
         {typeof variantNb !== "number" || variantNb > 0 ? (
-          <Trans t={t} i18nKey="studies.question.deleteWithVariants" values={{ variantNb }} />
+          <Trans
+            t={t}
+            i18nKey="studies.question.deleteWithVariants"
+            values={{ variantNb, studyName: study.name }}
+          />
         ) : (
-          t("studies.question.delete")
+          t("studies.question.delete", { studyName: study.name })
         )}
       </Typography>
     </ConfirmationDialog>

@@ -60,11 +60,10 @@ def archive_dir(
         shutil.rmtree(src_dir_path)
 
 
-def unzip(dir_path: Path, zip_path: Path, remove_source_zip: bool = False) -> None:
+def unzip(dir_path: Path, zip_path: Path) -> None:
     with zipfile.ZipFile(zip_path, mode="r") as zipf:
         zipf.extractall(dir_path)
-    if remove_source_zip:
-        zip_path.unlink()
+    zip_path.unlink()
 
 
 def is_zip(path: Path) -> bool:

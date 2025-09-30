@@ -77,7 +77,7 @@ class IOutputStorage(ABC):
 
     # noinspection SpellCheckingInspection
     @abstractmethod
-    def unarchive_study_output(self, study: Study, output_id: str, keep_src_zip: bool) -> bool:
+    def unarchive_study_output(self, study: Study, output_id: str) -> bool:
         """Un-archive a study output."""
 
     @abstractmethod

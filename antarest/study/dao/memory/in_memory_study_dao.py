@@ -44,6 +44,7 @@ from antarest.study.business.model.thematic_trimming_model import ThematicTrimmi
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettings,
@@ -142,6 +143,7 @@ class InMemoryStudyDao(StudyDao):
         self._xpansion_settings: XpansionSettings = XpansionSettings()
         self._xpansion_configuration_exists: bool = False
         self._xpansion_resources: dict[XpansionResourceFileType, dict[str, bytes]] = {}
+        self._xpansion_security_criterion: XpansionAdequacyCriterion = XpansionAdequacyCriterion()
         # Thematic trimming
         self._thematic_trimming: ThematicTrimming = ThematicTrimming()
         # AdequacyPatch parameters
@@ -641,6 +643,10 @@ class InMemoryStudyDao(StudyDao):
         return
 
     @override
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        return self._xpansion_security_criterion
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._thematic_trimming
 
@@ -689,6 +695,10 @@ class InMemoryStudyDao(StudyDao):
     def save_xpansion_weight(self, filename: str, series: str) -> None:
         content = series.encode("utf-8")
         self._xpansion_resources[XpansionResourceFileType.WEIGHTS][filename] = content
+
+    @override
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
+        self._xpansion_security_criterion = criterion
 
     @override
     def save_layer(self, layer: Layer) -> None:

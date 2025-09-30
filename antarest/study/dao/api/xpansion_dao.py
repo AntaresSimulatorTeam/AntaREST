@@ -16,6 +16,7 @@ from typing import Optional
 import pandas as pd
 
 from antarest.study.business.model.xpansion_model import (
+    XpansionAdequacyCriterion,
     XpansionCandidate,
     XpansionResourceFileType,
     XpansionSettings,
@@ -60,6 +61,10 @@ class ReadOnlyXpansionDao(ABC):
     def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
@@ -96,4 +101,8 @@ class XpansionDao(ReadOnlyXpansionDao):
 
     @abstractmethod
     def save_xpansion_weight(self, filename: str, series: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
         raise NotImplementedError()
