@@ -251,9 +251,9 @@ export const launchStudy = async (
   version: string | undefined = undefined,
   launcher: string | undefined = undefined,
 ): Promise<string> => {
-  const versionArg = version ? `?version=${version}` : "";
-  const launcherArg = launcher ? `?launcher=${launcher}` : "";
-  const res = await client.post(`/v1/launcher/run/${sid}${versionArg}${launcherArg}`, options);
+  const res = await client.post(`/v1/launcher/run/${sid}`, options, {
+    params: { version, launcher },
+  });
   return res.data;
 };
 
