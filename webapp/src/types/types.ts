@@ -151,7 +151,6 @@ export interface LaunchOptions {
   other_options?: string;
   auto_unzip?: boolean;
   archive_output?: boolean;
-  launcher_id?: string;
 }
 
 export type JobStatus = "running" | "pending" | "success" | "failed";
