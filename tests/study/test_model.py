@@ -15,13 +15,29 @@ Test the database model.
 """
 
 import uuid
+from unittest.mock import Mock
 
+import pytest
 from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, joinedload
 
+from antarest.login.service import LoginService
 from antarest.study.model import Study, StudyTag, Tag
+from antarest.study.service import RawStudyInterface
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_study
+
+
+@pytest.fixture
+def raw_study_interface_fixture(
+    raw_study_service: RawStudyService,
+    variant_study_service: VariantStudyService,
+    login_service: LoginService,
+    root_study_id,
+) -> RawStudyInterface:
+    return RawStudyInterface(raw_study_service, variant_study_service, login_service, Mock(), )
 
 
 class TestStudy:
@@ -138,3 +154,6 @@ class TestStudy:
             assert len(study_tag_pairs) == 2
             assert set(e.tag_label for e in study_tag_pairs) == {"test-tag-2", "test-tag-3"}
             assert set(e.study_id for e in study_tag_pairs) == {study_id_1}
+
+    def test_update_editor(self, raw_study_service: RawStudyService) -> None:
+        pass

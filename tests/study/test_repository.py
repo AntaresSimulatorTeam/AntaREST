@@ -1256,7 +1256,7 @@ def test_editor_study(
     db_session: Session,
 ) -> None:
     test_workspace = "test-repository"
-    icache: Mock = Mock(spec=ICache)
+    #icache: Mock = Mock(spec=ICache)
     #repository = StudyMetadataRepository(cache_service=icache, session=db_session)
 
     group_1 = Group(id=101, name="group1")
@@ -1271,3 +1271,10 @@ def test_editor_study(
 
     db_session.add_all([study_1, study_2])
     db_session.commit()
+
+    #with DBStatementRecorder(db_session.bind) as db_recorder:
+
+        #get_study_1 = repository.get("1")
+        #print(get_study_1)
+        #get_study_1.
+        #repository.get("2").
