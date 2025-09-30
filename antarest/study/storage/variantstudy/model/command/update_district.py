@@ -15,7 +15,7 @@ from typing import Any, Dict, Final, List, Optional
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictUpdate
+from antarest.study.business.model.district_model import DistrictUpdate, update_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -79,30 +79,9 @@ class UpdateDistrict(ICommand):
 
         district = study_data.get_district(self.id)
 
-        apply_filter = self.parameters.apply_filter or study_data.get_district_apply_filter(self.id)
+        updated_district = update_district(district, self.parameters)
 
-        # Merge existing district data with the update parameters
-        next_district = District.model_validate(
-            {
-                "apply_filter": apply_filter,
-                **district.model_dump(
-                    exclude_none=True, include={"output", "comments", "name", "add_areas", "subtract_areas", "id"}
-                ),
-                **self.parameters.model_dump(
-                    mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
-                ),
-            }
-        )
-
-        # If areas are provided, we need to update add_areas and subtract_areas based on the apply_filter
-        if self.parameters.areas is not None:
-            next_district.add_areas, next_district.subtract_areas = (
-                (self.parameters.areas, [])
-                if apply_filter == DistrictApplyFilter.remove_all
-                else ([], self.parameters.areas)
-            )
-
-        study_data.save_district(next_district)
+        study_data.save_district(updated_district)
 
         return command_succeeded(message=self.id)
 

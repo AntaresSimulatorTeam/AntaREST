@@ -189,3 +189,28 @@ def create_district(district_creation: DistrictCreation, district_id: str) -> Di
             "id": district_id,
         }
     )
+
+
+def update_district(district: District, district_update: DistrictUpdate) -> District:
+    # Merge existing district data with the update parameters
+    updated_district = District.model_validate(
+        {
+            **district.model_dump(
+                exclude_none=True,
+                include={"output", "comments", "name", "add_areas", "subtract_areas", "apply_filter", "id"},
+            ),
+            **district_update.model_dump(
+                mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
+            ),
+        }
+    )
+
+    # If areas are provided, we need to update add_areas and subtract_areas based on the apply_filter
+    if district_update.areas is not None:
+        updated_district.add_areas, updated_district.subtract_areas = (
+            (district_update.areas, [])
+            if updated_district.apply_filter == DistrictApplyFilter.remove_all
+            else ([], district_update.areas)
+        )
+
+    return updated_district
