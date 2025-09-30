@@ -27,7 +27,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictDTO
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroProperties,
@@ -712,10 +712,6 @@ class InMemoryStudyDao(StudyDao):
     @override
     def get_district(self, district_id: str) -> District:
         return self._districts[district_id]
-
-    @override
-    def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
-        return self._districts[district_id].apply_filter
 
     @override
     def district_exists(self, district_id: str) -> bool:

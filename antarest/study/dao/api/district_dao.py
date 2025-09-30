@@ -14,7 +14,6 @@ from typing import Sequence
 
 from antarest.study.business.model.district_model import (
     District,
-    DistrictApplyFilter,
     DistrictDTO,
 )
 
@@ -67,22 +66,6 @@ class ReadOnlyDistrictDao(ABC):
         Check all areas exists in the study
         """
         # TODO this method should be moved to the area DAO when we'll implement it
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
-        """
-        Get the apply filter of a district.
-
-        Args:
-            district_id: district identifier
-
-        Returns:
-            The apply filter of the district.
-
-        Raises:
-            DistrictNotFound: exception raised when district is not found in the study.
-        """
         raise NotImplementedError()
 
 

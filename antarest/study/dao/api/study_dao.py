@@ -23,7 +23,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictDTO
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
@@ -409,10 +409,6 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def tmp_get_all_areas(self) -> list[str]:
         return self._adaptee.tmp_get_all_areas()
-
-    @override
-    def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
-        return self._adaptee.get_district_apply_filter(district_id)
 
     @override
     def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:

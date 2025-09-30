@@ -15,10 +15,9 @@ from typing import Sequence
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
-from antarest.study.business.model.district_model import District, DistrictApplyFilter, DistrictDTO
+from antarest.study.business.model.district_model import District, DistrictDTO
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.storage.rawstudy.model.filesystem.config.district import (
-    district_apply_filter_from_data,
     parse_district,
     serialize_district,
 )
@@ -81,21 +80,6 @@ class FileStudyDistrictDao(DistrictDao):
         except KeyError:
             raise DistrictConfigNotFound(str(path))
         return parse_district(district_data, district_id)
-
-    @override
-    def get_district_apply_filter(self, district_id: str) -> DistrictApplyFilter:
-        """
-        Returns the district base filter.
-        """
-        study_data = self.get_file_study()
-        path = DISTRICTS_PATH + [district_id]
-        try:
-            # may raise KeyError if the path is missing
-            district_data = study_data.tree.get(path)
-        except KeyError:
-            raise DistrictConfigNotFound(str(path))
-
-        return district_apply_filter_from_data(district_data)
 
     @override
     def district_exists(self, district_id: str) -> bool:
