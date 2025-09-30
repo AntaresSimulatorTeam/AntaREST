@@ -14,13 +14,15 @@
 
 import { setFormStatus } from "@/redux/ducks/ui";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { useUnmount, useUpdateEffect } from "react-use";
+import { useEffect } from "react";
+import { usePrevious, useUnmount } from "react-use";
 import useBlocker from "./useBlocker";
 import useFormCloseConfirm from "./useFormCloseConfirm";
 
 export interface UseFormCloseProtectionParams {
   isSubmitting: boolean;
   isDirty: boolean;
+  disableHook?: boolean;
 }
 
 /**
@@ -37,29 +39,49 @@ export interface UseFormCloseProtectionParams {
  * @param params - The parameters.
  * @param params.isSubmitting - Whether the form is being submitted.
  * @param params.isDirty - Whether the form is dirty (has unsaved changes).
+ * @param params.disableHook - If true, the hook is disabled and does not block navigation.
  *
  * @returns An object with the following property:
  * - `executeWithoutFormCloseCheck`: From {@link useFormCloseConfirm}.
  */
-function useFormCloseProtection({ isSubmitting, isDirty }: UseFormCloseProtectionParams) {
+function useFormCloseProtection({
+  isSubmitting,
+  isDirty,
+  disableHook,
+}: UseFormCloseProtectionParams) {
   const dispatch = useAppDispatch();
   const { withFormCloseCheck, executeWithoutFormCloseCheck } = useFormCloseConfirm();
+  const prevDisableHook = usePrevious(disableHook);
 
-  useUpdateEffect(() => {
-    dispatch(setFormStatus({ isSubmitting, isDirty }));
-  }, [dispatch, isDirty, isSubmitting]);
+  // Reset form status when the hook is disabled
+  if (disableHook && !prevDisableHook) {
+    dispatch(setFormStatus({ isSubmitting: false, isDirty: false }));
+  }
 
-  useUnmount(() => {
-    if (isSubmitting || isDirty) {
-      dispatch(setFormStatus({ isSubmitting: false, isDirty: false }));
+  // Update form status in the global state
+  useEffect(() => {
+    if (disableHook) {
+      return;
     }
+
+    dispatch(setFormStatus({ isSubmitting, isDirty }));
+  }, [disableHook, dispatch, isDirty, isSubmitting]);
+
+  // Reset form status on unmount
+  useUnmount(() => {
+    if (disableHook) {
+      return;
+    }
+
+    dispatch(setFormStatus({ isSubmitting: false, isDirty: false }));
   });
 
+  // Block navigation if the form is dirty or submitting and the hook is not disabled
   useBlocker(
     withFormCloseCheck((tx) => {
       tx.retry();
     }),
-    isSubmitting || isDirty,
+    !disableHook && (isSubmitting || isDirty),
   );
 
   return { executeWithoutFormCloseCheck };
