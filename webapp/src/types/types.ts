@@ -362,7 +362,7 @@ export interface Set {
   id: string;
   name?: string;
   addAreas?: string[];
-  substractAreas?: string[];
+  subtractAreas?: string[];
   applyFilter?: string;
   output: boolean;
 }

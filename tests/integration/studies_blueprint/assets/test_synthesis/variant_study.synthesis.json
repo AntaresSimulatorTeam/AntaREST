@@ -1498,7 +1498,7 @@
       "name": "All areas",
       "applyFilter": "add-all",
       "addAreas": [],
-      "substractAreas": [],
+      "subtractAreas": [],
       "output": false,
       "comments": "Spatial aggregates on all areas",
       "id": "all areas"

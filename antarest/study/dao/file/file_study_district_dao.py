@@ -119,7 +119,7 @@ class FileStudyDistrictDao(DistrictDao):
         If the district already exists, it will be overwritten.
         """
         study_data = self.get_file_study()
-        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.substract_areas)
+        invalid_areas = self.get_invalid_areas_in_district(district.add_areas + district.subtract_areas)
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 

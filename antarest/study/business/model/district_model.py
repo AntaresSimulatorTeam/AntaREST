@@ -137,7 +137,7 @@ class District(AntaresBaseModel):
                 name="My Cluster",
                 comments="",
                 add_areas=["z1", "z2", "z3"],
-                substract_areas=[],
+                subtract_areas=[],
                 output=True,
             ).model_dump(mode="json")
 
@@ -151,7 +151,7 @@ class District(AntaresBaseModel):
     #: List of areas that will be grouped in the district.
     add_areas: List[str] = []
     #: List of areas that will be grouped in the district.
-    substract_areas: List[str] = []
+    subtract_areas: List[str] = []
     #: Name of the district (this name is also used as a unique identifier).
     name: str
     #: Base filter for the district.
@@ -159,7 +159,7 @@ class District(AntaresBaseModel):
 
     def to_dto(self, all_areas: List[str]) -> DistrictDTO:
         if self.apply_filter == DistrictApplyFilter.add_all:
-            areas = list(set(all_areas).difference(set(self.substract_areas)))
+            areas = list(set(all_areas).difference(set(self.subtract_areas)))
         else:
             areas = list(set(self.add_areas))
         return DistrictDTO.model_validate(
@@ -179,12 +179,12 @@ def create_district(district_creation: DistrictCreation, district_id: str) -> Di
     """
     apply_filter = district_creation.apply_filter or DistrictApplyFilter.remove_all
     add_areas = district_creation.areas if apply_filter == DistrictApplyFilter.remove_all else []
-    substract_areas = district_creation.areas if apply_filter == DistrictApplyFilter.add_all else []
+    subtract_areas = district_creation.areas if apply_filter == DistrictApplyFilter.add_all else []
     return District.model_validate(
         {
             **district_creation.model_dump(exclude_none=True, include={"name", "output", "comments"}),
             "add_areas": add_areas,
-            "substract_areas": substract_areas,
+            "subtract_areas": subtract_areas,
             "apply_filter": apply_filter,
             "id": district_id,
         }
