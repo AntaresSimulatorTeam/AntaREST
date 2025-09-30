@@ -166,16 +166,16 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert len(sets_config.keys()) == 3
 
     # case update district with empty area
-    update_district7_command: ICommand = UpdateDistrict(
+    update_district6_command: ICommand = UpdateDistrict(
         id="one subtracted zone",
         parameters=DistrictUpdate(areas=[]),
         command_context=command_context,
         study_version=study_version,
     )
-    output_d7 = update_district7_command.apply(
+    output_d6 = update_district6_command.apply(
         study_data=study_dao,
     )
-    assert output_d7.status
+    assert output_d6.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
     assert "+" not in set_config
@@ -185,7 +185,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     update_district7_command: ICommand = UpdateDistrict(
         id="one subtracted zone",
         parameters=DistrictUpdate(
-            output=True, areas=["area1"], apply_filter=DistrictApplyFilter.add_all, comment="basic comment"
+            output=True, areas=["area1"], apply_filter=DistrictApplyFilter.add_all, comments="basic comment"
         ),
         command_context=command_context,
         study_version=study_version,
@@ -200,24 +200,24 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert "+" not in set_config
     assert set_config["apply-filter"] == "add-all"
     assert set_config["output"]
-    assert set_config["comment"] == "basic comment"
+    assert set_config["comments"] == "basic comment"
 
     # This test covers a bug where, if the initial state was "add-filter" and the update command
     # omitted the "apply filter" field, applying the command incorrectly reset "apply filter" to "remove-all".
-    update_district7_command: ICommand = UpdateDistrict(
+    update_district8_command: ICommand = UpdateDistrict(
         id="one subtracted zone",
-        parameters=DistrictUpdate(output=False, comment="next gen comment"),
+        parameters=DistrictUpdate(output=False, comments="next gen comment"),
         command_context=command_context,
         study_version=study_version,
     )
-    output_d7 = update_district7_command.apply(
+    output_d8 = update_district8_command.apply(
         study_data=study_dao,
     )
-    assert output_d7.status
+    assert output_d8.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
     assert set_config["-"] == ["area1"]
     assert "+" not in set_config
     assert set_config["apply-filter"] == "add-all"
     assert not set_config["output"]
-    assert set_config["comment"] == "next gen comment"
+    assert set_config["comments"] == "next gen comment"

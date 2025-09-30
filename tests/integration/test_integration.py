@@ -656,9 +656,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "name": "District 1",
         "output": True,
         "comments": "My District",
-        "addAreas": [],
-        "subtractAreas": [],
-        "applyFilter": "remove-all",
+        "areas": [],
     }
 
     res = client.put(

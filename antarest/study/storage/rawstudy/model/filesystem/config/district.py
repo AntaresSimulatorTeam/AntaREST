@@ -27,7 +27,7 @@ class DistrictFileData(AntaresBaseModel):
     caption: Optional[str] = None
     apply_filter: Optional[str] = Field(None, alias="apply-filter")
     add_areas: Optional[List[str]] = Field(None, alias="+")
-    substract_areas: Optional[List[str]] = Field(None, alias="-")
+    subtract_areas: Optional[List[str]] = Field(None, alias="-")
     output: bool = True
     comments: Optional[str] = None
 
@@ -37,17 +37,17 @@ class DistrictFileData(AntaresBaseModel):
 
     def get_areas(self, all_areas: List[str]) -> List[str]:
         add_areas_set = set(self.add_areas or [])
-        substract_areas_set = set(self.substract_areas or [])
+        subtract_areas_set = set(self.subtract_areas or [])
         apply_filter = self.apply_filter or "remove-all"
         base_areas = set(all_areas) if apply_filter == "add-all" else set()
-        areas = list(base_areas.union(add_areas_set).difference(substract_areas_set))
+        areas = list(base_areas.union(add_areas_set).difference(subtract_areas_set))
         return sorted(areas)
 
     @classmethod
     def from_model(cls, district: District) -> "DistrictFileData":
         return DistrictFileData.model_validate(
             {
-                **district.model_dump(include={"output", "comments", "add_areas", "substract_areas", "apply_filter"}),
+                **district.model_dump(include={"output", "comments", "add_areas", "subtract_areas", "apply_filter"}),
                 "caption": district.name,
             }
         )
@@ -61,7 +61,7 @@ class DistrictFileData(AntaresBaseModel):
                 "comments": data.get("comments", None),
                 "apply_filter": data.get("apply-filter", None),
                 "add_areas": data.get("+", None),
-                "substract_areas": data.get("-", None),
+                "subtract_areas": data.get("-", None),
             }
         )
 
@@ -69,7 +69,7 @@ class DistrictFileData(AntaresBaseModel):
         return District.model_validate(
             {
                 **self.model_dump(
-                    include={"output", "comments", "add_areas", "substract_areas", "apply_filter"}, exclude_none=True
+                    include={"output", "comments", "add_areas", "subtract_areas", "apply_filter"}, exclude_none=True
                 ),
                 "name": self.caption,
                 "id": district_id,
@@ -94,7 +94,7 @@ def serialize_district(district: District) -> dict[str, Any]:
     # Drop "-" and "+" if empty list
     if not district_file_data.add_areas:
         district_dict.pop("+", None)
-    if not district_file_data.substract_areas:
+    if not district_file_data.subtract_areas:
         district_dict.pop("-", None)
 
     return district_dict

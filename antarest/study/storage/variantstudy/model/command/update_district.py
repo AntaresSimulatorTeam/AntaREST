@@ -86,7 +86,7 @@ class UpdateDistrict(ICommand):
             {
                 "apply_filter": apply_filter,
                 **district.model_dump(
-                    exclude_none=True, include={"output", "comments", "name", "add_areas", "substract_areas", "id"}
+                    exclude_none=True, include={"output", "comments", "name", "add_areas", "subtract_areas", "id"}
                 ),
                 **self.parameters.model_dump(
                     mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
@@ -94,9 +94,9 @@ class UpdateDistrict(ICommand):
             }
         )
 
-        # If areas are provided, we need to update add_areas and substract_areas based on the apply_filter
+        # If areas are provided, we need to update add_areas and subtract_areas based on the apply_filter
         if self.parameters.areas is not None:
-            next_district.add_areas, next_district.substract_areas = (
+            next_district.add_areas, next_district.subtract_areas = (
                 (self.parameters.areas, [])
                 if apply_filter == DistrictApplyFilter.remove_all
                 else ([], self.parameters.areas)

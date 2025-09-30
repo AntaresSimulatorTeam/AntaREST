@@ -293,7 +293,7 @@ def test_parse_sets(study_path: Path) -> None:
     (study_path / "input/areas/sets.ini").write_text(textwrap.dedent(content))
 
     assert _parse_sets(study_path) == {
-        "hello": District(id="hello", name="hello", substract_areas=["a", "b"], output=True, apply_filter="add-all")
+        "hello": District(id="hello", name="hello", subtract_areas=["a", "b"], output=True, apply_filter="add-all")
     }
 
     content = """\
@@ -308,7 +308,7 @@ def test_parse_sets(study_path: Path) -> None:
 
     assert _parse_sets(study_path) == {
         "hello": District(
-            id="hello", name="hello", substract_areas=["a", "b"], add_areas=["c"], output=False, apply_filter="add-all"
+            id="hello", name="hello", subtract_areas=["a", "b"], add_areas=["c"], output=False, apply_filter="add-all"
         )
     }
 
