@@ -54,7 +54,7 @@ function useFormCloseProtection({
   const prevDisableHook = usePrevious(disableHook);
 
   // Reset form status when the hook is disabled
-  if (disableHook && prevDisableHook === false) {
+  if (disableHook && !prevDisableHook) {
     dispatch(setFormStatus({ isSubmitting: false, isDirty: false }));
   }
 
