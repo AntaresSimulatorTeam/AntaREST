@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import http
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Callable, Iterator, TypeAlias
 
@@ -23,7 +24,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.serde.parquet_writer import (
     write_dataframes_in_parquet_format_by_column_sets,
-    yield_parquet_dataframes,
+    yield_dataframes_from_parquet,
 )
 
 
@@ -122,15 +123,18 @@ def export_df_chunks(
     Else, we'll have to iterate over written file(s), reading in chunks to avoid using too much memory and transforming them in the requested format.
     If there's several files, we also have to reindex the dataframes to fill missing columns and to share the same columns order.
     """
-    all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, df_chunks)
 
-    new_index = all_cols
-    if len(all_df_names) == 1:
-        if export_format == TableExportFormat.PARQUET:
-            shutil.move(tmp_path / all_df_names[0], file_download_path)
-            return
-        # No need to reindex as all dataframes have the same columns
-        new_index = []
+    with tempfile.TemporaryDirectory(dir=tmp_path) as working_dir_str:
+        working_dir = Path(working_dir_str)
+        files, all_cols = write_dataframes_in_parquet_format_by_column_sets(working_dir, df_chunks)
 
-    stream_writer = export_format.get_stream_writer()
-    stream_writer(file_download_path, yield_parquet_dataframes(tmp_path, all_df_names, new_index))
+        new_index = all_cols
+        if len(files) == 1:
+            if export_format == TableExportFormat.PARQUET:
+                shutil.move(files[0], file_download_path)
+                return
+            # No need to reindex as all dataframes have the same columns
+            new_index = []
+
+        stream_writer = export_format.get_stream_writer()
+        stream_writer(file_download_path, yield_dataframes_from_parquet(files, new_index))

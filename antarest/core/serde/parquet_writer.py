@@ -24,7 +24,7 @@ def _parquet_writer(output_file: Path, schema: pa.Schema) -> ParquetWriter:
 
 def write_dataframes_in_parquet_format_by_column_sets(
     path: Path, dataframes: Iterator[pd.DataFrame]
-) -> tuple[list[str], list[str]]:
+) -> tuple[list[Path], list[str]]:
     """
     Iterates over the given dataframes and writes them according to their given column sets.
     If 2 dataframes share the same columns, we write them in the same file.
@@ -39,20 +39,21 @@ def write_dataframes_in_parquet_format_by_column_sets(
         1- A list of all created parquet files
         2- The list of every column encountered in the given dataframes. To use when reindexing the dataframes.
     """
-    writers = {}
+    file_paths = []
+    current_writer = None
     try:
         first_df = next(dataframes)
         first_df.index = pd.RangeIndex(len(first_df))
         new_index = list(first_df.columns)
         existing_columns = set(new_index)
 
-        filenames = ["file0.parquet"]
-        file_path = path / filenames[0]
+        file_path = path / "file0.parquet"
+        file_paths.append(file_path)
         file_counter = 1
 
         table = pa.Table.from_pandas(first_df)
-        current_writer = _parquet_writer(file_path, table.schema)
-        writers[current_writer] = table.schema
+        current_schema = table.schema
+        current_writer = _parquet_writer(file_path, current_schema)
         current_writer.write_table(table)
 
         while True:
@@ -68,32 +69,47 @@ def write_dataframes_in_parquet_format_by_column_sets(
                 df.index = pd.RangeIndex(len(df))
 
                 if should_write_new_file:
-                    file_name = f"file{file_counter}.parquet"
-                    filenames.append(file_name)
-                    file_path = path / file_name
+                    current_writer.close()
+
+                    file_path = path / f"file{file_counter}.parquet"
+                    file_paths.append(file_path)
                     file_counter += 1
 
                     table = pa.Table.from_pandas(df)
-                    current_writer = _parquet_writer(file_path, table.schema)
-                    writers[current_writer] = table.schema
-
+                    current_schema = table.schema
+                    current_writer = _parquet_writer(file_path, current_schema)
                 else:
                     df = df.reindex(new_index, axis="columns")
                     # We're specifying the schema to use to be able to append NaN values to existing values.
-                    table = pa.Table.from_pandas(df, schema=writers[current_writer])
+                    table = pa.Table.from_pandas(df, schema=current_schema)
 
                 current_writer.write_table(table)
 
             except StopIteration:
-                return filenames, new_index
-
+                return file_paths, new_index
     except StopIteration:
         return [], []
-
     finally:
-        # Close all writers
-        for writer in writers:
-            writer.close()
+        if current_writer:
+            current_writer.close()
+
+
+def yield_dataframes_from_parquet(files: list[Path], new_index: list[str]) -> Iterator[pd.DataFrame]:
+    """
+    Iterates over the written parquet files, reads them using chunks and reindex them if needed.
+
+    Args:
+        files: Parquet files to read from
+        new_index: The new index to use for the dataframes. If the list is empty, we don't reindex them.
+    """
+    for file in files:
+        parquet_file = ParquetFile(file)
+        for i in range(parquet_file.num_row_groups):
+            table = parquet_file.read_row_group(i)
+            df = table.to_pandas()
+            if new_index:
+                df = df.reindex(new_index, axis="columns")
+            yield df
 
 
 def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFrame]) -> None:
@@ -109,25 +125,3 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
         for df in dataframes:
             table = pa.Table.from_pandas(df)
             writer.write_table(table)
-
-
-def yield_parquet_dataframes(
-    folder_path: Path, all_df_names: list[str], new_index: list[str]
-) -> Iterator[pd.DataFrame]:
-    """
-    Iterates over the written parquet files, reads them using chunks and reindex them if needed.
-
-    Args:
-        folder_path: The parent folder path containing the parquet files
-        all_df_names: The names of every written parquet file
-        new_index: The new index to use for the dataframes. If the list is empty, we don't reindex them.
-
-    """
-    for df_name in all_df_names:
-        parquet_file = ParquetFile(folder_path / df_name)
-        for i in range(parquet_file.num_row_groups):
-            table = parquet_file.read_row_group(i)
-            df = table.to_pandas()
-            if new_index:
-                df = df.reindex(new_index, axis="columns")
-            yield df

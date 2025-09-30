@@ -16,7 +16,7 @@ import pandas as pd
 
 from antarest.core.serde.parquet_writer import (
     write_dataframes_in_parquet_format_by_column_sets,
-    yield_parquet_dataframes,
+    yield_dataframes_from_parquet,
 )
 
 
@@ -26,24 +26,38 @@ def test_different_columns(tmp_path: Path) -> None:
             pd.DataFrame(data=[(1, 2), (3, 4)], columns=["A", "B"]),
             pd.DataFrame(data=[(5, 6, 7), (8, 9, 10)], columns=["A", "B", "C"]),
             pd.DataFrame(data=[(11, 12), (13, 14)], columns=["A", "B"]),
+            pd.DataFrame(data=[(15, 16, 17), (18, 19, 20)], columns=["B", "A", "D"]),
         ]
     )
 
-    all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
-    assert all_df_names == ["file0.parquet", "file1.parquet"]
-    assert all_cols == ["A", "B", "C"]
+    files, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
+    assert files == [
+        tmp_path / "file0.parquet",
+        tmp_path / "file1.parquet",
+        tmp_path / "file2.parquet",
+    ]
+    # A and B keep same order as in first files
+    assert all_cols == ["A", "B", "C", "D"]
 
-    dfs = yield_parquet_dataframes(tmp_path, all_df_names, all_cols)
+    dfs = yield_dataframes_from_parquet(files, all_cols)
 
     # Ensures we kept the order we had in the iterator
-    expected_first_df = pd.DataFrame(data=[(1, 2, np.NaN), (3, 4, np.NaN)], columns=["A", "B", "C"])
+    expected_first_df = pd.DataFrame(
+        data=[(1, 2, np.NaN, np.NaN), (3, 4, np.NaN, np.NaN)], columns=["A", "B", "C", "D"]
+    )
     pd.testing.assert_frame_equal(next(dfs), expected_first_df, check_dtype=False)
 
-    expected_second_df = pd.DataFrame(data=[(5, 6, 7), (8, 9, 10)], columns=["A", "B", "C"])
+    expected_second_df = pd.DataFrame(data=[(5, 6, 7, np.NaN), (8, 9, 10, np.NaN)], columns=["A", "B", "C", "D"])
     pd.testing.assert_frame_equal(next(dfs), expected_second_df, check_dtype=False)
 
-    expected_third_df = pd.DataFrame(data=[(11, 12, np.NaN), (13, 14, np.NaN)], columns=["A", "B", "C"])
+    expected_third_df = pd.DataFrame(
+        data=[(11, 12, np.NaN, np.NaN), (13, 14, np.NaN, np.NaN)], columns=["A", "B", "C", "D"]
+    )
     pd.testing.assert_frame_equal(next(dfs), expected_third_df, check_dtype=False)
+
+    # values of A and B are correctly "inverted"
+    expected_fourth_df = pd.DataFrame(data=[(16, 15, np.NaN, 17), (19, 18, np.NaN, 20)], columns=["A", "B", "C", "D"])
+    pd.testing.assert_frame_equal(next(dfs), expected_fourth_df, check_dtype=False)
 
 
 def test_same_columns(tmp_path: Path) -> None:
@@ -51,11 +65,11 @@ def test_same_columns(tmp_path: Path) -> None:
     df2 = pd.DataFrame(data=[(12, 13), (14, 15)], columns=["A", "B"])
     dataframes = iter([df1, df2])
 
-    all_df_names, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
-    assert all_df_names == ["file0.parquet"]
+    files, all_cols = write_dataframes_in_parquet_format_by_column_sets(tmp_path, dataframes)
+    assert files == [tmp_path / "file0.parquet"]
     assert all_cols == ["A", "B"]
 
-    dfs = yield_parquet_dataframes(tmp_path, all_df_names, all_cols)
+    dfs = yield_dataframes_from_parquet(files, all_cols)
 
     pd.testing.assert_frame_equal(next(dfs), df1, check_dtype=False)
     pd.testing.assert_frame_equal(next(dfs), df2, check_dtype=False)
