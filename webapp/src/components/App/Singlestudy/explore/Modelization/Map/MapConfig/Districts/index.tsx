@@ -85,6 +85,8 @@ function Districts() {
           output: districtsById[districtId].output,
           comments: districtsById[districtId].comments,
           areas: areasByDistrict[districtId],
+          // remove-all is hard coded here
+          // The front always send updates with apply filter set to remove-all
           applyFilter: "remove-all",
         }),
       ).unwrap();

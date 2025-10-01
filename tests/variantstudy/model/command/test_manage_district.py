@@ -53,6 +53,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     create_district1_command: ICommand = CreateDistrict(
         parameters=DistrictCreation(
             name="Two added zone",
+            # duplication here is intentional, it should be handled by the command
             areas=[area1_id, area2_id, area2_id],
             comments="First district",
         ),
