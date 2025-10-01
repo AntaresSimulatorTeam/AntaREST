@@ -20,8 +20,10 @@ class ReadOnlyAreaPropertiesDao(ABC):
         self,
         area_id: str,
     ) -> AreaProperties:
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class AreaPropertiesDao(ReadOnlyAreaPropertiesDao):
-    pass
+    @abstractmethod
+    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
+        raise NotImplementedError()

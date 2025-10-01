@@ -57,3 +57,37 @@ class FileStudyAreaPropertiesDao(AreaPropertiesDao, ABC):
         )
 
         return properties.get_area_properties(area_id, file_study.config.version)
+
+    @override
+    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
+        file_study = self.get_file_study()
+
+        thermal_props = ThermalAreasProperties(**file_study.tree.get(get_thermal_path()))
+        optimization_props = OptimizationFileData(**file_study.tree.get(get_optimization_path(area_id)))
+        adequacy_patch_props = (
+            AdequacyPatchFileData(**file_study.tree.get(get_adequacy_patch_path(area_id)))
+            if file_study.config.version >= STUDY_VERSION_8_3
+            else AdequacyPatchFileData()
+        )
+
+        properties = AreaPropertiesFileData(
+            thermal_properties=thermal_props,
+            optimization_properties=optimization_props,
+            adequacy_patch_properties=adequacy_patch_props,
+        )
+
+        properties.set_area_properties(area_id, area_properties)
+
+        file_study.tree.save(
+            properties.optimization_properties.model_dump(mode="json", by_alias=True),
+            get_optimization_path(area_id),
+        )
+        if file_study.config.version >= STUDY_VERSION_8_3:
+            file_study.tree.save(
+                properties.adequacy_patch_properties.model_dump(mode="json", by_alias=True),
+                get_adequacy_patch_path(area_id),
+            )
+        file_study.tree.save(
+            properties.thermal_properties.model_dump(mode="json", by_alias=True),
+            get_thermal_path(),
+        )

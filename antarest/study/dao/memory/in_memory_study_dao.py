@@ -743,3 +743,7 @@ class InMemoryStudyDao(StudyDao):
         area_id: str,
     ) -> AreaProperties:
         return self._area_properties[area_id]
+
+    @override
+    def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
+        self._area_properties[area_id] = area_properties

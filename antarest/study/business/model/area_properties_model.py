@@ -109,3 +109,10 @@ class AreaPropertiesUpdate(AntaresBaseModel, extra="forbid", populate_by_name=Tr
 def initialize_area_properties(area_props: AreaProperties, study_version: StudyVersion) -> None:
     if study_version >= STUDY_VERSION_8_3 and area_props.adequacy_patch_mode is None:
         area_props.adequacy_patch_mode = AdequacyPatchMode.OUTSIDE
+
+
+def update_area_properties(area_properties: AreaProperties, data: AreaPropertiesUpdate) -> AreaProperties:
+    current_properties = area_properties.model_dump(mode="json")
+    new_properties = data.model_dump(mode="json", exclude_none=True)
+    current_properties.update(new_properties)
+    return AreaProperties.model_validate(current_properties)
