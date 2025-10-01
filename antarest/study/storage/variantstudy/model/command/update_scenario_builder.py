@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional, cast
+from typing import Any, Dict, Final, List, Optional
 
 from pydantic import TypeAdapter, model_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -21,27 +21,10 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     parse_rulesets_update,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-def _get_active_ruleset(study_data: FileStudy) -> str:
-    """
-    Get the active ruleset from the study data.
-
-    The active ruleset is stored in the section "[general]" in `settings/generaldata.ini`.
-    The key "active-rules-scenario" may be missing in the configuration,
-    when the study is just created or when the configuration is not up-to-date.
-    """
-    url = ["settings", "generaldata", "general", "active-rules-scenario"]
-    try:
-        return cast(str, study_data.tree.get(url))
-    except KeyError:
-        return ""
-
 
 _RULESETS_ADAPTER = TypeAdapter(RulesetsUpdate)
 
