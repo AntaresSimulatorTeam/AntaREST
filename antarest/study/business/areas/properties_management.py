@@ -14,18 +14,8 @@
 from antarest.study.business.model.area_properties_model import (
     AreaProperties,
     AreaPropertiesUpdate,
-    get_adequacy_patch_path,
-    get_optimization_path,
-    get_thermal_path,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_8_3
-from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPatchFileData,
-    AreaPropertiesFileData,
-    OptimizationFileData,
-    ThermalAreasProperties,
-)
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -39,21 +29,7 @@ class AreaPropertiesManager:
         study: StudyInterface,
         area_id: str,
     ) -> AreaProperties:
-        file_study = study.get_files()
-
-        current_thermal_props = file_study.tree.get(get_thermal_path())
-        current_optim_properties = file_study.tree.get(get_optimization_path(area_id))
-        current_adequacy_patch = (
-            file_study.tree.get(get_adequacy_patch_path(area_id)) if study.version >= STUDY_VERSION_8_3 else {}
-        )
-
-        properties = AreaPropertiesFileData(
-            thermal_properties=ThermalAreasProperties(**current_thermal_props),
-            optimization_properties=OptimizationFileData(**current_optim_properties),
-            adequacy_patch_properties=AdequacyPatchFileData(**current_adequacy_patch),
-        )
-
-        return properties.get_area_properties(area_id, study.version)
+        return study.get_study_dao().get_area_properties(area_id)
 
     def update_area_properties(
         self,

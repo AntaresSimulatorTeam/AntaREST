@@ -20,6 +20,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import LinkNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
@@ -158,6 +159,8 @@ class InMemoryStudyDao(StudyDao):
         self._playlist_config = Playlist()
         # User resources
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
+        # Area Properties
+        self._area_properties: dict[str, AreaProperties] = {}
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -733,3 +736,10 @@ class InMemoryStudyDao(StudyDao):
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         del self._user_resources[resource_path]
+
+    @override
+    def get_area_properties(
+        self,
+        area_id: str,
+    ) -> AreaProperties:
+        return self._area_properties[area_id]
