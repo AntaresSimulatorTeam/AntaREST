@@ -832,3 +832,9 @@ class STStorageAdditionalConstraintNotFound(HTTPException):
     def __init__(self, area_id: str, constraint_id: str) -> None:
         msg = f"The constraint '{constraint_id}' inside area {area_id} was not found."
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class OutputAggregationError(HTTPException):
+    def __init__(self, output_id: str, message: str) -> None:
+        msg = f"Could not aggregate output data for output '{output_id}' : {message}."
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, msg)

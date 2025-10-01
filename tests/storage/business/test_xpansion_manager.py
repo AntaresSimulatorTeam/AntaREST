@@ -26,12 +26,14 @@ from antarest.core.exceptions import (
 )
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.link_management import LinkManager
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
+from antarest.study.business.model.area_model import AreaCreation
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     Master,
     Solver,
     UcType,
+    XpansionAdequacyCriterion,
+    XpansionAdequacyPattern,
     XpansionCandidate,
     XpansionCandidateCreation,
     XpansionResourceFileType,
@@ -45,8 +47,8 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
 def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
-    area_manager.create_area(study, AreaCreationDTO(type=AreaType.AREA, name="area1"))
-    area_manager.create_area(study, AreaCreationDTO(type=AreaType.AREA, name="area2"))
+    area_manager.create_area(study, AreaCreation(name="area1"))
+    area_manager.create_area(study, AreaCreation(name="area2"))
 
 
 def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
@@ -79,7 +81,7 @@ def test_create_configuration(
             "optimality_gap": 1,
             "relative_gap": 1e-06,
             "relaxed_optimality_gap": 1e-05,
-            "max_iteration": 1000000000000,
+            "max_iteration": 1000,
             "solver": "Xpress",
             "log_level": 0,
             "separation_parameter": 0.5,
@@ -87,6 +89,7 @@ def test_create_configuration(
             "timelimit": int(1e12),
         },
         "weights": {},
+        "adequacy_criterion": {"adequacy_criterion": {}},
     }
 
 
@@ -135,7 +138,7 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_81
         "optimality_gap": 1.0,
         "relative_gap": 1e-06,
         "relaxed_optimality_gap": 1e-05,
-        "max_iteration": 1000000000000,
+        "max_iteration": 1000,
         "solver": Solver.XPRESS,
         "log_level": 0,
         "separation_parameter": 0.5,
@@ -660,3 +663,37 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
     assert xpansion_manager.list_resources(study, XpansionResourceFileType.CAPACITIES) == [filename1, filename2]
+
+
+@pytest.mark.parametrize("optional_folder", [True, False])
+@pytest.mark.unit_test
+def test_adequacy_criterion(
+    area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface, optional_folder: bool
+) -> None:
+    xpansion_manager.create_xpansion_configuration(study)
+
+    if optional_folder:
+        # The adequacy_criterion folder is optional.
+        # We need to ensure this is transparent for the user
+        study.get_files().tree.delete(["user", "expansion", "adequacy_criterion"])
+
+    assert xpansion_manager.get_adequacy_criterion(study) == XpansionAdequacyCriterion(
+        stopping_threshold=1e6, criterion_count_threshold=1, patterns=[]
+    )
+
+    make_areas(area_manager, study)
+    new_criterion = XpansionAdequacyCriterion(
+        criterion_count_threshold=1.2,
+        patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
+    )
+    criterion = xpansion_manager.replace_adequacy_criterion(study, new_criterion)
+    created_criterion = xpansion_manager.get_adequacy_criterion(study)
+    assert (
+        created_criterion
+        == criterion
+        == XpansionAdequacyCriterion(
+            stopping_threshold=1e6,
+            criterion_count_threshold=1.2,
+            patterns=[XpansionAdequacyPattern(area="area2", criterion=19)],
+        )
+    )

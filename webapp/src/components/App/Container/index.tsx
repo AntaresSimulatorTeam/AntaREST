@@ -38,11 +38,13 @@ import { NavLink } from "react-router-dom";
 import { useMount } from "react-use";
 import { logout } from "../../../redux/ducks/auth";
 import { fetchGroups } from "../../../redux/ducks/groups";
+import { fetchStudies } from "../../../redux/ducks/studies";
 import { fetchUsers } from "../../../redux/ducks/users";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import ConfirmationDialog from "../../common/dialogs/ConfirmationDialog";
-import MenuItem from "./MenuItem";
+import FavoritesMenu from "./FavoritesMenu";
+import SidebarItem from "./SidebarItem";
 import { StyledDrawer } from "./styles";
 import TaskIcon from "./TaskIcon";
 
@@ -93,6 +95,7 @@ function Container({ children }: Props) {
   useMount(() => {
     dispatch(fetchUsers());
     dispatch(fetchGroups());
+    dispatch(fetchStudies());
   });
 
   ////////////////////////////////////////////////////////////////
@@ -133,60 +136,40 @@ function Container({ children }: Props) {
           <Divider />
           <List sx={{ flex: 1 }}>
             {currentStudyId && (
-              <MenuItem
+              <SidebarItem
                 title={t("recentStudy.title")}
                 icon={<CenterFocusStrongIcon />}
-                isMenuOpen={isDrawerOpen}
                 link={`/studies/${currentStudyId}`}
               />
             )}
+            <FavoritesMenu />
             {topMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem
-                key={titleKey}
-                title={t(titleKey)}
-                icon={icon}
-                isMenuOpen={isDrawerOpen}
-                link={link}
-              />
+              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
           </List>
           <List>
             {subMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem
-                key={titleKey}
-                title={t(titleKey)}
-                icon={icon}
-                isMenuOpen={isDrawerOpen}
-                link={link}
-              />
+              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
           </List>
           <Divider />
           <List>
             {bottomMenuItems.map(({ titleKey, icon, link }) => (
-              <MenuItem
-                key={titleKey}
-                title={t(titleKey)}
-                icon={icon}
-                isMenuOpen={isDrawerOpen}
-                link={link}
-              />
+              <SidebarItem key={titleKey} title={t(titleKey)} icon={icon} link={link} />
             ))}
             {isWebMode && (
-              <MenuItem
+              <SidebarItem
                 title={t("global.signOut")}
                 icon={<LogoutIcon />}
-                isMenuOpen={isDrawerOpen}
                 onClick={() => setOpenLogoutDialog(true)}
               />
             )}
           </List>
           <Divider />
           <List>
-            <MenuItem
+            <SidebarItem
               title={t("global.reduce")}
               icon={isDrawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-              isMenuOpen={isDrawerOpen}
               onClick={() => dispatch(setMenuOpen(!isDrawerOpen))}
             />
           </List>

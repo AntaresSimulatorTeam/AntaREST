@@ -16,7 +16,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.model import StudyPermissionType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
-from antarest.study.business.model.area_model import AreaCreationDTO, AreaType
+from antarest.study.business.model.area_model import AreaCreation
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.scenario_builder_model import AreaItemsScenarios, AreaScenarios
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
@@ -26,8 +26,8 @@ from antarest.study.service import StudyService
 
 
 def _initialize_study(study_service: StudyService, study_id: str):
-    study_service.create_area(study_id, AreaCreationDTO(name="fr", type=AreaType.AREA))
-    study_service.create_area(study_id, AreaCreationDTO(name="be", type=AreaType.AREA))
+    study_service.create_area(study_id, AreaCreation(name="fr"))
+    study_service.create_area(study_id, AreaCreation(name="be"))
     study_service.create_link(study_id, Link(area1="be", area2="fr"))
     study = study_service.check_study_access(study_id, StudyPermissionType.WRITE)
     study_interface = study_service.get_study_interface(study)

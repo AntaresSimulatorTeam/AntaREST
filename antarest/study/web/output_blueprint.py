@@ -160,7 +160,7 @@ def create_output_routes(output_service: OutputService, config: Config) -> APIRo
         output_id = sanitize_string(output_id)
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
-        content = output_service.unarchive_output(study_id, output_id, False)
+        content = output_service.unarchive_output(study_id, output_id)
         return content
 
     @bp.get(

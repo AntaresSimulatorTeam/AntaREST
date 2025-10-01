@@ -151,7 +151,6 @@ export interface LaunchOptions {
   other_options?: string;
   auto_unzip?: boolean;
   archive_output?: boolean;
-  launcher_id?: string;
 }
 
 export type JobStatus = "running" | "pending" | "success" | "failed";
@@ -167,6 +166,7 @@ export interface LaunchJob {
   outputId: string;
   exitCode: number;
   ownerId: number;
+  ownerName: string;
 }
 
 export interface LaunchJobDTO {
@@ -595,4 +595,10 @@ export interface SingleMatrixContent {
 export interface MatrixItem {
   titleKey: string;
   content: SplitMatrixContent | SingleMatrixContent;
+}
+
+export interface RangeWithDefault {
+  min: number;
+  max: number;
+  default: number;
 }

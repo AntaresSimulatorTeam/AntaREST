@@ -42,7 +42,6 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useMount } from "react-use";
 import useEnqueueErrorSnackbar from "../../../hooks/useEnqueueErrorSnackbar";
-import { fetchStudies } from "../../../redux/ducks/studies";
 import useAppDispatch from "../../../redux/hooks/useAppDispatch";
 import useAppSelector from "../../../redux/hooks/useAppSelector";
 import { getStudies, getUsersById } from "../../../redux/selectors";
@@ -94,9 +93,6 @@ function JobsListing() {
   const init = async (fetchOnlyLatest = true) => {
     setLoaded(false);
     try {
-      if (studies.length === 0) {
-        await dispatch(fetchStudies()).unwrap();
-      }
       const allJobs = await getStudyJobs(undefined, true, fetchOnlyLatest);
       setJobs(allJobs);
 
@@ -340,9 +336,9 @@ function JobsListing() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
-        userName: (job.ownerId && usersByID[job.ownerId]?.name) || "",
+        userName: usersByID[job.ownerId]?.name || job.ownerName || "",
       })),
-    [jobs, studyJobsProgress],
+    [jobs, studyJobsProgress, studies],
   );
 
   const downloadsMemo = useMemo<TaskView[]>(

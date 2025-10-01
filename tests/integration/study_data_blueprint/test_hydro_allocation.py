@@ -17,8 +17,6 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.business.area_management import AreaInfoDTO, AreaType
-
 
 @pytest.mark.unit_test
 class TestHydroAllocation:
@@ -188,11 +186,11 @@ class TestHydroAllocation:
         - the coefficient == 0 for the other areas.
         Other columns must not be changed.
         """
-        area_info = AreaInfoDTO(id="north", name="NORTH", type=AreaType.AREA)
+        area_info = {"name": "NORTH"}
         res = client.post(
             f"/v1/studies/{internal_study_id}/areas",
             headers={"Authorization": f"Bearer {user_access_token}"},
-            data=area_info.model_dump_json(),
+            json=area_info,
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
 

@@ -68,8 +68,5 @@ class JsonWriter(IniWriter):
 
 
 class JsonFileNode(IniFileNode):
-    def __init__(
-        self,
-        config: FileStudyTreeConfig,
-    ) -> None:
+    def __init__(self, config: FileStudyTreeConfig) -> None:
         super().__init__(config, JsonReader(), JsonWriter())

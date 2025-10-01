@@ -14,7 +14,6 @@ from typing import Any, Dict, List, Optional, Tuple
 from typing_extensions import override
 
 from antarest.study.business.model.area_properties_model import (
-    AreaFileData,
     AreaPropertiesUpdate,
     get_adequacy_patch_path,
     get_optimization_path,
@@ -22,8 +21,9 @@ from antarest.study.business.model.area_properties_model import (
 )
 from antarest.study.model import STUDY_VERSION_8_3
 from antarest.study.storage.rawstudy.model.filesystem.config.area import (
-    AdequacyPathProperties,
-    OptimizationProperties,
+    AdequacyPatchFileData,
+    AreaPropertiesFileData,
+    OptimizationFileData,
     ThermalAreasProperties,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -49,10 +49,10 @@ class UpdateAreasProperties(ICommand):
 
     @override
     def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
-        current_properties: AreaFileData = AreaFileData(
+        current_properties: AreaPropertiesFileData = AreaPropertiesFileData(
             thermal_properties=ThermalAreasProperties(),
-            optimization_properties=OptimizationProperties(),
-            adequacy_properties=AdequacyPathProperties(),
+            optimization_properties=OptimizationFileData(),
+            adequacy_patch_properties=AdequacyPatchFileData(),
         )
 
         current_thermal_props = ThermalAreasProperties(**study_data.tree.get(get_thermal_path()))
@@ -60,15 +60,15 @@ class UpdateAreasProperties(ICommand):
         for area_id, area_properties in self.properties.items():
             current_optim_properties, current_adequacy_patch = self.fetch_area_properties(study_data, area_id)
 
-            current_properties = AreaFileData(
+            current_properties = AreaPropertiesFileData(
                 thermal_properties=current_thermal_props,
-                optimization_properties=OptimizationProperties(**current_optim_properties),
-                adequacy_properties=AdequacyPathProperties(**current_adequacy_patch),
+                optimization_properties=OptimizationFileData(**current_optim_properties),
+                adequacy_patch_properties=AdequacyPatchFileData(**current_adequacy_patch),
             )
 
-            new_properties = current_properties.get_area_properties(area_id=area_id).model_copy(
-                update=area_properties.model_dump(exclude_none=True)
-            )
+            new_properties = current_properties.get_area_properties(
+                area_id=area_id, study_version=study_data.config.version
+            ).model_copy(update=area_properties.model_dump(exclude_none=True))
 
             current_properties.set_area_properties(area_id, new_properties)
 
@@ -83,14 +83,16 @@ class UpdateAreasProperties(ICommand):
         updated_areas = ", ".join(self.properties.keys())
         return command_succeeded(message=f"Areas properties updated: {updated_areas}")
 
-    def save_area_properties(self, study_data: FileStudy, area_id: str, current_properties: AreaFileData) -> None:
+    def save_area_properties(
+        self, study_data: FileStudy, area_id: str, current_properties: AreaPropertiesFileData
+    ) -> None:
         study_data.tree.save(
             current_properties.optimization_properties.model_dump(mode="json", by_alias=True),
             get_optimization_path(area_id),
         )
         if self.study_version >= STUDY_VERSION_8_3:
             study_data.tree.save(
-                current_properties.adequacy_properties.model_dump(mode="json", by_alias=True),
+                current_properties.adequacy_patch_properties.model_dump(mode="json", by_alias=True),
                 get_adequacy_patch_path(area_id),
             )
 

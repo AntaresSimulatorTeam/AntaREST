@@ -20,7 +20,7 @@ from configparser import MissingSectionHeaderError
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from unittest.mock import ANY, Mock, patch, seal
+from unittest.mock import ANY, Mock, call, patch, seal
 
 import numpy as np
 import pandas as pd
@@ -68,7 +68,7 @@ from antarest.study.repository import AccessPermissions, StudyFilter, StudyMetad
 from antarest.study.service import MAX_MISSING_STUDY_TIMEOUT, StudyService, StudyUpgraderTask
 from antarest.study.storage.output_service import OutputService
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Area,
+    AreaConfig,
     DistrictSet,
     FileStudyTreeConfig,
     LinkConfig,
@@ -672,7 +672,7 @@ def test_download_output() -> None:
         includeClusters=True,
     )
 
-    area = Area(
+    area = AreaConfig(
         name="area",
         links={"west": LinkConfig(filters_synthesis=[], filters_year=[])},
         thermals=[],
@@ -1402,6 +1402,79 @@ def test_delete_recursively(tmp_path: Path) -> None:
     )
 
 
+@with_admin_user
+def test_delete_raw_study_removes_variant_children(tmp_path: Path) -> None:
+    config = Config()
+
+    repository = Mock(spec=StudyMetadataRepository)
+
+    raw_study = create_raw_study(
+        id="raw-study",
+        path=str(tmp_path / "raw"),
+        archived=False,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        owner=None,
+        groups=[],
+    )
+    raw_study.to_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+    raw_study.to_enhanced_json_summary = Mock(return_value={"id": raw_study.id})  # type: ignore[attr-defined]
+
+    variant_study = create_variant_study(
+        id="variant-study",
+        path=str(tmp_path / "variant"),
+        parent_id=raw_study.id,
+        archived=False,
+        owner=None,
+        groups=[],
+    )
+    variant_study.generation_task = None
+    variant_study.to_json_summary = Mock(return_value={"id": variant_study.id})  # type: ignore[attr-defined]
+
+    def get_study_by_id(study_id: str) -> Study:
+        if study_id == raw_study.id:
+            return raw_study
+        if study_id == variant_study.id:
+            return variant_study
+        raise ValueError(f"Unexpected study id: {study_id}")
+
+    repository.get.side_effect = get_study_by_id
+    repository.delete = Mock()
+
+    raw_study_service = Mock(spec=RawStudyService)
+    raw_study_service.delete = Mock()
+    raw_study_service.find_archive_path.return_value = str(tmp_path / "archive.zip")
+
+    variant_study_service = Mock(spec=VariantStudyService)
+    variant_study_service.delete = Mock()
+    variant_study_service.has_children.side_effect = lambda study: study.id == raw_study.id
+    variant_study_service.get_children.return_value = [variant_study]
+
+    def walk_children(parent_id: str, fun, bottom_first: bool, include_parent: bool = True) -> None:
+        assert parent_id == raw_study.id
+        assert bottom_first is True
+        assert include_parent is False
+        fun(variant_study)
+
+    variant_study_service.walk_children.side_effect = walk_children
+
+    service = build_study_service(
+        raw_study_service=raw_study_service,
+        repository=repository,
+        config=config,
+        variant_study_service=variant_study_service,
+    )
+
+    service.delete_study(raw_study.id, children=True)
+
+    variant_study_service.walk_children.assert_called_once()
+    args, kwargs = variant_study_service.walk_children.call_args
+    assert args[0] == raw_study.id
+    assert kwargs.get("bottom_first") is True
+    assert kwargs.get("include_parent") is False
+
+    assert repository.delete.call_args_list == [call(variant_study.id), call(raw_study.id)]
+
+
 @pytest.mark.unit_test
 def test_edit_study_with_command() -> None:
     study_id = str(uuid.uuid4())
@@ -1510,19 +1583,13 @@ def test_unarchive_output(tmp_path: Path) -> None:
         Mock(),
         Mock(),
     )
-    output_service.unarchive_output(
-        study_id,
-        output_id,
-        keep_src_zip=True,
-    )
+    output_service.unarchive_output(study_id, output_id)
 
     service.task_service.add_worker_task.assert_called_once_with(
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_id}.zip"),
-            dest=str(tmp_path / "output" / output_id),
-            remove_src=False,
+            src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
         ).model_dump(),
         name=f"Unarchive output {study_name}/{output_id} ({study_id})",
         ref_id=study_id,
@@ -1623,18 +1690,10 @@ def test_archive_output_locks(tmp_path: Path) -> None:
         Mock(),
     )
     with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(
-            study_id,
-            output_zipped,
-            keep_src_zip=True,
-        )
+        output_service.unarchive_output(study_id, output_zipped)
 
     with pytest.raises(TaskAlreadyRunning):
-        output_service.unarchive_output(
-            study_id,
-            output_zipped,
-            keep_src_zip=True,
-        )
+        output_service.unarchive_output(study_id, output_zipped)
 
     with pytest.raises(TaskAlreadyRunning):
         output_service.archive_output(
@@ -1648,19 +1707,13 @@ def test_archive_output_locks(tmp_path: Path) -> None:
             output_unzipped,
         )
 
-    output_service.unarchive_output(
-        study_id,
-        output_zipped,
-        keep_src_zip=True,
-    )
+    output_service.unarchive_output(study_id, output_zipped)
 
     service.task_service.add_worker_task.assert_called_once_with(
         TaskType.UNARCHIVE,
         "unarchive_other_workspace",
         ArchiveTaskArgs(
-            src=str(tmp_path / "output" / f"{output_zipped}.zip"),
-            dest=str(tmp_path / "output" / output_zipped),
-            remove_src=False,
+            src=str(tmp_path / "output" / f"{output_zipped}.zip"), dest=str(tmp_path / "output" / output_zipped)
         ).model_dump(),
         name=f"Unarchive output {study_name}/{output_zipped} ({study_id})",
         ref_id=study_id,
@@ -1791,7 +1844,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         [
             TaskDTO(
                 id="1",
-                name=f"Upgrade study my_study ({study_id}) to version 800",
+                name=f"Upgrade study my_study ({study_id}) to version 8",
                 status=TaskStatus.RUNNING,
                 creation_date_utc=str(datetime.utcnow()),  # type: ignore
                 type=TaskType.UNARCHIVE,
@@ -1814,7 +1867,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
     service.task_service.add_task.assert_called_once_with(
         ANY,
-        f"Upgrade study my_study ({study_id}) to version 800",
+        f"Upgrade study my_study ({study_id}) to version 8",
         task_type=TaskType.UPGRADE_STUDY,
         ref_id=study_id,
         progress=None,
@@ -1935,9 +1988,10 @@ def test_upgrade_study__raw_study__nominal(
     event_bus = Mock()
 
     # Prepare the task for an upgrade
+    parsed_target_version = StudyVersion.parse(target_version)
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        parsed_target_version,
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -1954,7 +2008,7 @@ def test_upgrade_study__raw_study__nominal(
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
-    assert actual_study.version == target_version
+    assert actual_study.version == f"{parsed_target_version:2d}"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -1971,7 +2025,7 @@ def test_upgrade_study__raw_study__nominal(
     # The function must return a successful result
     assert actual.success
     assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
 
 
 @with_db_context
@@ -2025,7 +2079,7 @@ def test_upgrade_study__variant_study__nominal(
     # Prepare the task for an upgrade
     task = StudyUpgraderTask(
         study_id,
-        target_version,
+        StudyVersion.parse(target_version),
         repository=repository,
         storage_service=storage_service,
         cache_service=cache_service,
@@ -2043,7 +2097,7 @@ def test_upgrade_study__variant_study__nominal(
     # The study must be updated in the database
     actual_study: RawStudy = db.session.query(Study).get(study_id)
     assert actual_study is not None, "Not in database"
-    assert actual_study.version == target_version
+    assert actual_study.version == "8.0"
 
     # An event of type `STUDY_EDITED` must be pushed when the upgrade is done.
     event = Event(
@@ -2060,7 +2114,7 @@ def test_upgrade_study__variant_study__nominal(
     # The function must return a successful result
     assert actual.success
     assert study_id in actual.message, f"{actual.message=}"
-    assert target_version in actual.message, f"{actual.message=}"
+    assert actual.message == f"Successfully upgraded study '{study_id}' to version 8"
 
 
 @with_db_context

@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import { Badge } from "@mui/material";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getTaskNotificationsCount } from "@/redux/selectors";
-import { Badge } from "@mui/material";
-import AssignmentIcon from "@mui/icons-material/Assignment";
 
 function TaskIcon() {
   const notificationCount = useAppSelector(getTaskNotificationsCount);

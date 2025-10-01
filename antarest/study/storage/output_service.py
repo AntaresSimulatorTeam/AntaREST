@@ -49,7 +49,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
     DigestUI,
 )
 from antarest.study.storage.study_download_utils import StudyDownloader, get_output_variables_information
-from antarest.study.storage.utils import assert_permission, is_managed, is_output_archived, remove_from_cache
+from antarest.study.storage.utils import assert_permission, is_output_archived, remove_from_cache
 from antarest.worker.archive_worker import ArchiveTaskArgs
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ class OutputService:
             f"Unarchive output {study.name}/{output_id} ({study.id})",
         )
 
-    def unarchive_output(self, study_id: str, output_id: str, keep_src_zip: bool) -> Optional[str]:
+    def unarchive_output(self, study_id: str, output_id: str) -> Optional[str]:
         study = self._study_service.get_study(study_id)
         assert_permission(study, StudyPermissionType.READ)
         self._study_service.assert_study_unarchived(study)
@@ -113,7 +113,7 @@ class OutputService:
             try:
                 study = self._study_service.get_study(study_id)
                 stopwatch = StopWatch()
-                self._storage.unarchive_study_output(study, output_id, keep_src_zip)
+                self._storage.unarchive_study_output(study, output_id)
                 stopwatch.log_elapsed(
                     lambda x: logger.info(f"Output {output_id} of study {study_id} unarchived in {x}s")
                 )
@@ -136,11 +136,7 @@ class OutputService:
             task_id = self._task_service.add_worker_task(
                 TaskType.UNARCHIVE,
                 f"unarchive_{workspace}",
-                ArchiveTaskArgs(
-                    src=str(src),
-                    dest=str(dest),
-                    remove_src=not keep_src_zip,
-                ).model_dump(mode="json"),
+                ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
                 name=task_name,
                 ref_id=study.id,
             )
@@ -204,7 +200,7 @@ class OutputService:
         logger.info("output added to study %s by user %s", uuid, get_user_id())
 
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
-            self.unarchive_output(uuid, output_id, not is_managed(study))
+            self.unarchive_output(uuid, output_id)
 
         return output_id
 
@@ -520,9 +516,7 @@ class OutputService:
                 )
 
                 results = aggregator_manager.aggregate_output_data()
-
-                writer = export_df_chunks(results, export_format)
-                writer(file_download_path)
+                export_df_chunks(self._study_service.config.storage.tmp_dir, file_download_path, results, export_format)
 
                 stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_download_path}'."))
 

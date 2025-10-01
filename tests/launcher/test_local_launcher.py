@@ -150,23 +150,28 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
     # Xpress cases
     os.environ["XPRESSDIR"] = "fake_path_for_test"
     launcher_parameters.other_options = "xpress presolve"
-    sim_args, env_variables = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_3)
-    assert env_variables["XPRESSDIR"] == "fake_path_for_test"
-    assert sim_args == [
-        "--linear-solver=xpress",
-        '--lp-solver-param-optim-1="PRESOLVE 1"',
-        '--lp-solver-param-optim-2="PRESOLVE 1"',
-    ]
+    for version in [solver_version_9_2, solver_version_9_3]:
+        sim_args, env_variables = local_launcher._parse_launcher_options(launcher_parameters, version)
+        assert env_variables["XPRESSDIR"] == "fake_path_for_test"
+        arg = "lp" if version == solver_version_9_2 else "linear"
+        assert sim_args == [
+            "--linear-solver=xpress",
+            f'--{arg}-solver-param-optim-1="PRESOLVE 1"',
+            f'--{arg}-solver-param-optim-2="PRESOLVE 1"',
+        ]
+
     options = 'xpress nobasis1 nobasis2 param-optim1="PRESOLVE 2 THREADS 4" param-optim2="LPFLAGS 5"'
     launcher_parameters = LauncherParametersDTO(other_options=options)
-    sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_9_3)
-    assert sim_args == [
-        "--linear-solver=xpress",
-        "--use-optim-1-basis-next-week=false",
-        "--use-optim-1-basis-optim-2=false",
-        '--lp-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
-        '--lp-solver-param-optim-2="LPFLAGS 5"',
-    ]
+    for version in [solver_version_9_2, solver_version_9_3]:
+        sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, version)
+        arg = "lp" if version == solver_version_9_2 else "linear"
+        assert sim_args == [
+            "--linear-solver=xpress",
+            "--use-optim-1-basis-next-week=false",
+            "--use-optim-1-basis-optim-2=false",
+            f'--{arg}-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
+            f'--{arg}-solver-param-optim-2="LPFLAGS 5"',
+        ]
 
 
 @pytest.mark.unit_test
