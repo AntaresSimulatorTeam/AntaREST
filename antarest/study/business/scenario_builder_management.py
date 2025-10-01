@@ -30,7 +30,7 @@ class ScenarioBuilderManager:
     def get_rulesets(self, study: StudyInterface) -> Rulesets:
         return study.get_study_dao().get_rulesets()
 
-    def update_config(self, study: StudyInterface, rulesets: RulesetsUpdate) -> None:
+    def update_scenario(self, study: StudyInterface, rulesets: RulesetsUpdate) -> None:
         command = UpdateScenarioBuilder(
             data=rulesets, command_context=self._command_context, study_version=study.version
         )

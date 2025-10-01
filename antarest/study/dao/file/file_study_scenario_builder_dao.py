@@ -35,6 +35,8 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 SCENARIO_BUILDER_PATH = ["settings", "scenariobuilder"]
+ACTIVE_RULESET_URL = ["settings", "generaldata", "general", "active-rules-scenario"]
+NB_YEARS_URL = ["settings", "generaldata", "general", "nbyears"]
 
 
 class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
@@ -70,8 +72,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         """
         study_data = self.get_file_study()
         try:
-            url = "settings/generaldata/general/active-rules-scenario".split("/")
-            active_ruleset = cast(str, study_data.tree.get(url))
+            active_ruleset = cast(str, study_data.tree.get(ACTIVE_RULESET_URL))
         except KeyError:
             active_ruleset = default_ruleset
         else:
@@ -83,9 +84,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
     def _get_nb_years(self) -> int:
         study_data = self.get_file_study()
         try:
-            # noinspection SpellCheckingInspection
-            url = "settings/generaldata/general/nbyears".split("/")
-            nb_years = cast(int, study_data.tree.get(url))
+            nb_years = cast(int, study_data.tree.get(NB_YEARS_URL))
         except KeyError:
             nb_years = 1
         return nb_years
@@ -124,7 +123,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         Save the scenario builder configuration to the study directory.
         """
         study_data = self.get_file_study()
-        rulesets = parse_rulesets(study_data.tree.get(SCENARIO_BUILDER_PATH))
+        rulesets = self.get_rulesets()
         update_rulesets(rulesets, ruleset_update)
 
         active_rules_scenario = self.get_active_ruleset_name()
