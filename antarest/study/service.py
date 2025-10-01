@@ -433,7 +433,7 @@ class RawStudyInterface(StudyInterface):
                 file_study.tree.save(study_antares, ["study", "antares"])
                 study_db = self._repository.get(self._study.id)
 
-                if study_db:
+                if study_db and study_db.additional_data:
                     study_db.additional_data.editor = user.name
                     self._repository.save(study_db)
 
