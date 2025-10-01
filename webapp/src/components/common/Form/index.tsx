@@ -98,6 +98,7 @@ export interface FormProps<
   apiRef?: React.Ref<UseFormReturnPlus<TFieldValues, TContext>>;
   disableStickyFooter?: boolean;
   extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
+  disableCloseProtection?: boolean;
 }
 
 export function useFormContextPlus<TFieldValues extends FieldValues>() {
@@ -124,6 +125,7 @@ function Form<TFieldValues extends FieldValues, TContext>({
   apiRef,
   disableStickyFooter,
   extraActions,
+  disableCloseProtection = false,
   ...formProps
 }: FormProps<TFieldValues, TContext>) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -190,7 +192,11 @@ function Form<TFieldValues extends FieldValues, TContext>({
 
   const { set: setNewPresent, undo, redo, canUndo, canRedo } = useFormUndoRedo(formApiPlus);
 
-  const { executeWithoutFormCloseCheck } = useFormCloseProtection({ isSubmitting, isDirty });
+  const { executeWithoutFormCloseCheck } = useFormCloseProtection({
+    isSubmitting,
+    isDirty,
+    disableHook: disableCloseProtection,
+  });
 
   // Auto Submit Loader
   useEffect(

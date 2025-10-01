@@ -15,10 +15,9 @@ from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, MutableSequence, Optional, Sequence
 
-import numpy as np
 import pandas as pd
 
-from antarest.core.exceptions import MCRootNotHandled, OutputNotFound, OutputSubFolderNotFound
+from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.study.storage.rawstudy.model.filesystem.matrix.date_serializer import (
     FactoryDateSerializer,
     rename_unnamed,
@@ -319,14 +318,8 @@ class AggregatorManager:
             # columns filtering
             df = self.columns_filtering(df, is_details)
 
-            # if no columns, no need to continue
-            list_of_df_columns = df.columns.tolist()
-            if not list_of_df_columns or set(list_of_df_columns) == {CLUSTER_ID_COL, TIME_ID_COL}:
-                yield pd.DataFrame()
-                return
-
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
-            new_column_order = _columns_ordering(list_of_df_columns, column_name, is_details, self.mc_root)
+            new_column_order = _columns_ordering(df.columns.tolist(), column_name, is_details, self.mc_root)
 
             if self.mc_root == MCRoot.MC_IND:
                 # add column for links/areas
@@ -343,10 +336,6 @@ class AggregatorManager:
             df[TIME_ID_COL] = _infer_time_id(df, is_details)
             # Reorganize the columns
             df = df.reindex(columns=pd.Index(new_column_order))
-
-            # replace np.nan by None
-            # TODO: should be done at serialization time if really needed, not here since it converts to object ...
-            df = df.replace({np.nan: None})
 
             yield df
 
@@ -376,6 +365,9 @@ class AggregatorManager:
 
         # filters files to consider
         all_output_files = sorted(self._gather_all_files_to_consider())
+
+        if not all_output_files:
+            raise OutputAggregationError(self.output_id, "No output files matching the criteria were found.")
 
         logger.info(
             f"Parsing {len(all_output_files)} {self.frequency.value} files"

@@ -516,9 +516,7 @@ class OutputService:
                 )
 
                 results = aggregator_manager.aggregate_output_data()
-
-                writer = export_df_chunks(results, export_format)
-                writer(file_download_path)
+                export_df_chunks(self._study_service.config.storage.tmp_dir, file_download_path, results, export_format)
 
                 stopwatch.log_elapsed(lambda x: logger.info(f"Store aggregation outputs in '{file_download_path}'."))
 
