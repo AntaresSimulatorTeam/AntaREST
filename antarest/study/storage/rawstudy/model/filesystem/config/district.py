@@ -16,7 +16,7 @@ from typing import Any, List, Optional
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.business.model.district_model import District, DistrictApplyFilter
+from antarest.study.business.model.district_model import District
 
 
 class DistrictFileData(AntaresBaseModel):
@@ -75,12 +75,6 @@ class DistrictFileData(AntaresBaseModel):
                 "id": district_id,
             }
         )
-
-
-def district_apply_filter_from_data(item: dict[str, Any]) -> DistrictApplyFilter:
-    if "apply-filter" not in item:
-        return DistrictApplyFilter.remove_all
-    return DistrictApplyFilter(item["apply-filter"])
 
 
 def parse_district(item: dict[str, Any], district_id: str) -> District:
