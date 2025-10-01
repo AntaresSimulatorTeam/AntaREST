@@ -429,11 +429,13 @@ class RawStudyInterface(StudyInterface):
             user = self._user_service.get_identity(jwt_user.id)
             if user and user.name:
                 study_antares = file_study.tree.get(["study", "antares"])
-                study_db = self._repository.get(self._study.id)
                 study_antares["editor"] = user.name
-                study_db.additional_data.editor = user.name
                 file_study.tree.save(study_antares, ["study", "antares"])
-                self._repository.save(study_db)
+                study_db = self._repository.get(self._study.id)
+
+                if study_db:
+                    study_db.additional_data.editor = user.name
+                    self._repository.save(study_db)
 
 
 class VariantStudyInterface(StudyInterface):
