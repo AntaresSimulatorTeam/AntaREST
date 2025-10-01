@@ -191,14 +191,13 @@ export const findNodeInTree = (studyId: string, tree: VariantTree): VariantTree 
   return undefined;
 };
 
-export const createListFromTree = (tree: VariantTree): GenericInfo[] => {
-  const { node, children } = tree;
+export const createListFromTree = ({ node, children }: VariantTree): GenericInfo[] => {
   const { id, name } = node;
-  let res: GenericInfo[] = [{ id, name }];
-  children.forEach((elm) => {
-    res = res.concat(createListFromTree(elm));
-  });
-  return res;
+
+  return children.reduce<GenericInfo[]>(
+    (list, tree) => list.concat(createListFromTree(tree)),
+    [{ id, name }],
+  );
 };
 
 export const sortByName = <T extends { name: string }>(list: T[]) =>

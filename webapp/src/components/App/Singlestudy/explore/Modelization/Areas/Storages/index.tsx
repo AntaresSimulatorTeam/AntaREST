@@ -176,9 +176,12 @@ function Storages() {
       onDuplicate={handleDuplicate}
       onDelete={handleDelete}
       onNameClick={handleNameClick}
-      deleteConfirmationMessage={(count) =>
-        t("studies.modelization.clusters.question.delete", { count })
-      }
+      deleteConfirmationMessage={(rows) => {
+        return t("studies.modelization.clusters.question.delete", {
+          count: rows.length,
+          clusterNames: rows.map((row) => row.name),
+        });
+      }}
       fillPendingRow={(row) => ({
         withdrawalNominalCapacity: 0,
         injectionNominalCapacity: 0,

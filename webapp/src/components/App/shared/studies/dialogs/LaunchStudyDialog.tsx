@@ -66,6 +66,7 @@ function LaunchStudyDialog(props: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [options, setOptions] = useState<LaunchOptions>({ auto_unzip: true });
   const [solverVersion, setSolverVersion] = useState<string>();
+  const [launcherId, setLauncherId] = useState<string>();
   const [isLaunching, setIsLaunching] = useState(false);
   const isMounted = useMountedState();
 
@@ -89,22 +90,19 @@ function LaunchStudyDialog(props: Props) {
       onDataChange: (launchersConfig) => {
         const defaultLauncher = launchersConfig?.launchersById[launchersConfig.defaultLauncher];
 
+        setLauncherId(defaultLauncher?.id || "");
         setOptions((prev) => ({
           ...prev,
-          launcher_id: defaultLauncher?.id || "",
           nb_cpu: defaultLauncher?.nbCores?.default,
         }));
       },
     },
   );
 
-  const launcherMetricsRes = usePromiseWithSnackbarError(
-    () => getLauncherMetrics(options.launcher_id),
-    {
-      errorMessage: t("study.error.launchLoad"),
-      deps: [options.launcher_id],
-    },
-  );
+  const launcherMetricsRes = usePromiseWithSnackbarError(() => getLauncherMetrics(launcherId), {
+    errorMessage: t("study.error.launchLoad"),
+    deps: [launcherId],
+  });
 
   // Refresh launcher metrics every minute
   useInterval(launcherMetricsRes.reload, 60_000);
@@ -126,7 +124,7 @@ function LaunchStudyDialog(props: Props) {
   const handleLaunchClick = () => {
     if (studyIds.length > 0) {
       setIsLaunching(true);
-      Promise.all(studyIds.map((sid) => launchStudy(sid, options, solverVersion)))
+      Promise.all(studyIds.map((sid) => launchStudy(sid, options, solverVersion, launcherId)))
         .then(() => {
           enqueueSnackbar(
             t("studies.studylaunched", {
@@ -389,7 +387,7 @@ function LaunchStudyDialog(props: Props) {
           <UsePromiseCond
             response={launchersConfigRes}
             ifFulfilled={({ launchersById, launcherOptions }) => {
-              const currentLauncher = launchersById[options.launcher_id || ""];
+              const currentLauncher = launchersById[launcherId || ""];
               const nbCores = currentLauncher?.nbCores;
               const minCores = nbCores?.min;
               const maxCores = nbCores?.max;
@@ -398,14 +396,14 @@ function LaunchStudyDialog(props: Props) {
                 <>
                   <SelectFE
                     label={t("study.cluster")}
-                    value={options.launcher_id}
+                    value={launcherId}
                     options={launcherOptions}
                     onChange={(e) => {
                       const newLauncherId = e.target.value;
 
+                      setLauncherId(newLauncherId);
                       setOptions((prev) => ({
                         ...prev,
-                        launcher_id: newLauncherId,
                         nb_cpu: launchersById[newLauncherId]?.nbCores.default,
                       }));
                     }}
@@ -462,7 +460,7 @@ function LaunchStudyDialog(props: Props) {
           <UsePromiseCond
             // Reload when launcher changes to see Skeleton
             // because `keepLastResolvedOnReload` is set to true for refresh
-            key={options.launcher_id}
+            key={launcherId}
             response={launcherMetricsRes}
             keepLastResolvedOnReload
             ifPending={() => <Skeleton width={500} />}
