@@ -26,10 +26,9 @@ from antarest.study.business.model.scenario_builder_model import (
 )
 from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
-    RulesetsFileData,
     extract_ruleset_data,
     parse_ruleset_update,
-    parse_rulesets,
+    parse_rulesets_from_any,
     serialize_rulesets,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -51,8 +50,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         """
         study_data = self.get_file_study()
         scenario_builder_data = study_data.tree.get(["settings", "scenariobuilder"])
-        rule_sets_file_data = cast(RulesetsFileData, scenario_builder_data)
-        return parse_rulesets(rule_sets_file_data)
+        return parse_rulesets_from_any(scenario_builder_data)
 
     @override
     def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
