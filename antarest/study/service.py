@@ -2368,7 +2368,7 @@ class StudyService:
         url = [item for item in path.split("/") if item]
         node, relative_url = file_study.tree.get_node_and_remainder(url)
 
-        # Return a datframe when possible instead of less memory & computation - efficient python objects
+        # Return a dataframe when possible instead of less memory & computation - efficient python objects
         if isinstance(node, MatrixNode):
             return node.parse_as_dataframe()
 
