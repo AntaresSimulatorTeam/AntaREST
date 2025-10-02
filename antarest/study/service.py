@@ -130,6 +130,7 @@ from antarest.study.model import (
     StudyFolder,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
+    StudyVersionStr,
 )
 from antarest.study.repository import (
     StudyFilter,
@@ -138,7 +139,6 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -244,11 +244,11 @@ class AntaresCraftStudy(AntaresBaseModel):
     """
 
     name: str
-    version: StudyVersion
+    version: StudyVersionStr
     path: str | None
 
     area_properties: dict[str, AreaProperties]
-    area_ui: dict[str, AreaUI]
+    area_ui: dict[str, Any]
     links: list[Link]
     binding_constraints: list[BindingConstraint]
     renewable_clusters: dict[str, dict[str, RenewableCluster]]
