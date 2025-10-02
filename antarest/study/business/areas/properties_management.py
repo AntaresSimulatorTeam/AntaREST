@@ -31,15 +31,6 @@ class AreaPropertiesManager:
     def get_all_area_properties(self, study: StudyInterface) -> dict[str, AreaProperties]:
         return study.get_study_dao().get_all_area_properties()
 
-    def update_area_properties(self, study: StudyInterface, area_id: str, properties: AreaPropertiesUpdate) -> None:
-        command = UpdateAreasProperties(
-            properties={area_id: properties},
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-
-        study.add_commands([command])
-
     def update_all_area_properties(
         self, study: StudyInterface, properties: dict[str, AreaPropertiesUpdate]
     ) -> Mapping[str, AreaProperties]:

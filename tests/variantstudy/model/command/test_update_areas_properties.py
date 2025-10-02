@@ -14,8 +14,11 @@
 from antarest.study.business.model.area_properties_model import (
     AreaPropertiesUpdate,
 )
-from antarest.study.dao.file.file_study_area_properties_dao import get_thermal_path, get_adequacy_patch_path, \
-    get_optimization_path
+from antarest.study.dao.file.file_study_area_properties_dao import (
+    get_adequacy_patch_path,
+    get_optimization_path,
+    get_thermal_path,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
