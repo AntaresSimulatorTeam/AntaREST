@@ -2394,10 +2394,8 @@ class StudyService:
             "bcs": self.binding_constraint_manager.get_binding_constraints(interface),
             "renewable": self.table_mode_manager.get_table_data(interface, TableModeType.RENEWABLE, []),
             "thermal": self.table_mode_manager.get_table_data(interface, TableModeType.THERMAL, []),
-            "sts": self.table_mode_manager.get_table_data(interface, TableModeType.ST_STORAGE, []),
-            "sts_c": self.table_mode_manager.get_table_data(
-                interface, TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS, []
-            ),
+            "sts": self.st_storage_manager.get_all_storages_props(interface),
+            "sts_c": self.st_storage_manager.get_all_additional_constraints(interface),
             "hydro": self.hydro_manager.get_all_hydro_properties(interface),
             "xp_settings": xp_settings,
             "ts_config": self.ts_config_manager.get_timeseries_configuration(interface),
