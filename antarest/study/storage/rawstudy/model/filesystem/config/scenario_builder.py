@@ -14,7 +14,7 @@
 Serialization and parsing for scenariobuilder.dat file
 """
 
-from typing import TypeVar, cast, overload
+from typing import Any, TypeVar, cast, overload
 
 from antarest.core.utils.dict_utils import iter_nested, iter_nested_2, iter_nested_3
 from antarest.study.business.model.scenario_builder_model import (
@@ -234,6 +234,11 @@ def parse_ruleset(ruleset_data: RulesetFileData) -> Ruleset:
 
 def parse_ruleset_update(ruleset_data: RulesetFileData) -> RulesetUpdate:
     return _parse_ruleset(ruleset_data, cls=RulesetUpdate)
+
+
+def parse_rulesets_from_any(data: Any) -> Rulesets:
+    rulesets_data = cast(RulesetsFileData, data)
+    return parse_rulesets(rulesets_data)
 
 
 def parse_rulesets(rulesets_data: RulesetsFileData) -> Rulesets:

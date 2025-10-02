@@ -1,0 +1,119 @@
+# Copyright (c) 2025, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+from abc import abstractmethod
+from typing import cast
+
+from typing_extensions import override
+
+from antarest.study.business.model.scenario_builder_model import (
+    AnyScenarios,
+    Ruleset,
+    Rulesets,
+    ScenarioType,
+    initialize_ruleset,
+    update_ruleset,
+)
+from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
+from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
+    extract_ruleset_data,
+    parse_ruleset_update,
+    parse_rulesets_from_any,
+    serialize_rulesets,
+)
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+SCENARIO_BUILDER_PATH = ["settings", "scenariobuilder"]
+ACTIVE_RULESET_URL = ["settings", "generaldata", "general", "active-rules-scenario"]
+NB_YEARS_URL = ["settings", "generaldata", "general", "nbyears"]
+
+
+class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
+    @abstractmethod
+    def get_file_study(self) -> FileStudy:
+        pass
+
+    @override
+    def get_rulesets(self) -> Rulesets:
+        """
+        Load the scenario builder configuration from the study directory.
+        """
+        study_data = self.get_file_study()
+        scenario_builder_data = study_data.tree.get(["settings", "scenariobuilder"])
+        return parse_rulesets_from_any(scenario_builder_data)
+
+    @override
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+        """
+        Get the active ruleset name stored in the configuration at the following path:
+        ``settings/generaldata.ini``, in the section "general", key "active-rules-scenario".
+
+        Args:
+            default_ruleset: Name of the default ruleset
+
+        Returns:
+            The active ruleset name if found in the configuration, or the default ruleset name if missing.
+        """
+        study_data = self.get_file_study()
+        try:
+            active_ruleset = cast(str, study_data.tree.get(ACTIVE_RULESET_URL))
+        except KeyError:
+            active_ruleset = default_ruleset
+        else:
+            # In some old studies, the active ruleset is stored in lowercase.
+            if not active_ruleset or active_ruleset.lower() == "default ruleset":
+                active_ruleset = default_ruleset
+        return active_ruleset
+
+    def _get_nb_years(self) -> int:
+        study_data = self.get_file_study()
+        try:
+            nb_years = cast(int, study_data.tree.get(NB_YEARS_URL))
+        except KeyError:
+            nb_years = 1
+        return nb_years
+
+    def _read_ruleset(self, scenario_type: ScenarioType) -> Ruleset:
+        """
+        Read a ruleset JSON file by name from the rulesets directory.
+        """
+        study_data = self.get_file_study()
+        ruleset_name = self.get_active_ruleset_name()
+        nb_years = self._get_nb_years()
+        ruleset_config = extract_ruleset_data(study_data, ruleset_name, scenario_type)
+
+        complete_ruleset = initialize_ruleset(
+            years=[str(y) for y in range(0, nb_years)],
+            index=study_data.tree.config.to_study_index(),
+            scenario_types={scenario_type},
+        )
+        file_ruleset = parse_ruleset_update(ruleset_config)
+        update_ruleset(complete_ruleset, file_ruleset)
+        return complete_ruleset
+
+    @override
+    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        """
+        Get a scenario by its type (name).
+        """
+        ruleset = self._read_ruleset(scenario_type)
+
+        # Extract the table form for the given scenario type
+        return ruleset.get(scenario_type)
+
+    @override
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+        """
+        Save the scenario builder configuration to the study directory.
+        """
+        study_data = self.get_file_study()
+
+        study_data.tree.save(serialize_rulesets(rulesets), SCENARIO_BUILDER_PATH)
