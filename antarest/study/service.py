@@ -108,6 +108,7 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_8_8,
+    AntaresCraftStudy,
     MatrixIndex,
     RawStudy,
     Study,
@@ -2374,7 +2375,7 @@ class StudyService:
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
 
-    def get_whole_study_as_a_dict(self, uuid: str) -> dict[str, Any]:
+    def get_antares_craft_study(self, uuid: str) -> AntaresCraftStudy:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         interface = self.get_study_interface(study)

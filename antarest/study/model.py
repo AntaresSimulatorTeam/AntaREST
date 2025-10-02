@@ -687,3 +687,19 @@ class MatrixAggregationResult(AntaresBaseModel):
 class ReferenceStudy(AntaresBaseModel):
     version: str
     template_name: str
+
+
+class AntaresCraftStudy(AntaresBaseModel):
+    """
+    Study representation used by antares-craft inside its reading method.
+    """
+
+    type: StudyDownloadType
+    years: Optional[List[int]]
+    level: StudyDownloadLevelDTO
+    filterIn: Optional[str]
+    filterOut: Optional[str]
+    filter: Optional[List[str]]
+    columns: Optional[List[str]]
+    synthesis: bool = False
+    includeClusters: bool = False
