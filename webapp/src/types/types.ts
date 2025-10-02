@@ -357,12 +357,13 @@ export interface Area {
   filters_year: string[];
 }
 
-export interface Set {
+export interface District {
   id: string;
   name?: string;
   addAreas?: string[];
   subtractAreas?: string[];
   applyFilter?: string;
+  comments?: string;
   output: boolean;
 }
 
@@ -383,7 +384,7 @@ export interface FileStudyTreeConfigDTO {
   version: number;
   output_path?: string;
   areas: Record<string, Area>;
-  sets: Record<string, Set>;
+  districts: Record<string, District>;
   outputs: Record<string, Simulation>;
   bindings: string[];
   store_new_set: boolean;

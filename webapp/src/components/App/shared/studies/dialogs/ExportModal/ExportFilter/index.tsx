@@ -20,7 +20,7 @@ import {
   StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
   type Area,
-  type Set as District,
+  type District,
   type FileStudyTreeConfigDTO,
   type StudyOutputDownloadDTO,
 } from "../../../../../../../types/types";
@@ -90,7 +90,7 @@ function ExportFilterModal(props: PropTypes) {
         const outputs = synthesis.outputs[output];
         setByYear({ isByYear: outputs?.by_year, nbYear: outputs?.nbyears });
         setAreaList(synthesis.areas);
-        setDistrictList(synthesis.sets);
+        setDistrictList(synthesis.districts);
       }
     }
   }, [synthesis, output]);
@@ -141,7 +141,7 @@ function ExportFilterModal(props: PropTypes) {
       <Filter
         type={filter.type}
         areas={areaList}
-        sets={districtList}
+        districts={districtList}
         filterValue={filter.filter ? filter.filter : []}
         setFilterValue={(elm: string[]) => setFilter({ ...filter, filter: elm })}
         filterInValue={filter.filterIn ? filter.filterIn : ""}
