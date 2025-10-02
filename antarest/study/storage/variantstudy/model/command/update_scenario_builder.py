@@ -10,39 +10,21 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, Final, List, Optional, cast
+from typing import Any, Dict, Final, List, Optional
 
 from pydantic import TypeAdapter, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
 from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetsUpdate, update_rulesets
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
-    parse_rulesets,
     parse_rulesets_update,
-    serialize_rulesets,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-
-
-def _get_active_ruleset(study_data: FileStudy) -> str:
-    """
-    Get the active ruleset from the study data.
-
-    The active ruleset is stored in the section "[general]" in `settings/generaldata.ini`.
-    The key "active-rules-scenario" may be missing in the configuration,
-    when the study is just created or when the configuration is not up-to-date.
-    """
-    url = ["settings", "generaldata", "general", "active-rules-scenario"]
-    try:
-        return cast(str, study_data.tree.get(url))
-    except KeyError:
-        return ""
-
 
 _RULESETS_ADAPTER = TypeAdapter(RulesetsUpdate)
 
@@ -77,7 +59,7 @@ class UpdateScenarioBuilder(ICommand):
         return values
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
         """
         Apply the command to the study data.
 
@@ -91,17 +73,14 @@ class UpdateScenarioBuilder(ICommand):
         Returns:
             CommandOutput: The output of the command, indicating the status of the operation.
         """
-        url = ["settings", "scenariobuilder"]
-
-        rulesets = parse_rulesets(study_data.tree.get(url))
+        rulesets = study_data.get_rulesets()
         update_rulesets(rulesets, self.data)
 
-        # Ensure the active ruleset is present in the configuration.
-        active_rules_scenario = _get_active_ruleset(study_data)
+        active_rules_scenario = study_data.get_active_ruleset_name()
         if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:
             rulesets[active_rules_scenario] = Ruleset()
 
-        study_data.tree.save(serialize_rulesets(rulesets), url)
+        study_data.save_scenario_builder(rulesets)
         return command_succeeded(message="Scenario builder updated successfully")
 
     @override

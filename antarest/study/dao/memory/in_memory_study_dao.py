@@ -36,6 +36,11 @@ from antarest.study.business.model.hydro_model import (
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.scenario_builder_model import (
+    AnyScenarios,
+    Rulesets,
+    ScenarioType,
+)
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -161,6 +166,9 @@ class InMemoryStudyDao(StudyDao):
         self._user_resources: dict[PurePosixPath, Optional[bytes]] = {}
         # Area Properties
         self._area_properties: dict[str, AreaProperties] = {}
+        # Scenario Builder
+        self.rulesets: Rulesets = {}
+        self.active_ruleset_name: Optional[str] = None
 
     @override
     def get_file_study(self) -> FileStudy:
@@ -748,3 +756,19 @@ class InMemoryStudyDao(StudyDao):
     @override
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
         self._area_properties[area_id] = area_properties
+
+    @override
+    def get_rulesets(self) -> Rulesets:
+        return self.rulesets
+
+    @override
+    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
+        return self.active_ruleset_name or default_ruleset
+
+    @override
+    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
+        return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
+
+    @override
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+        self.rulesets = rulesets
