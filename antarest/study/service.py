@@ -2378,16 +2378,16 @@ class StudyService:
     def get_antares_craft_study(self, uuid: str) -> AntaresCraftStudy:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
-        interface = self.get_study_interface(study)
+        study_interface = self.get_study_interface(study)
 
-        if interface.version < STUDY_VERSION_8_8:
+        if study_interface.version < STUDY_VERSION_8_8:
             raise HTTPException(status_code=422, detail="This method is only available for v8.8+ studies")
 
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
                 xpansion_constraints = self.xpansion_manager.get_resource_content(
-                    interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
                 )
             else:
                 xpansion_constraints = b""
@@ -2397,34 +2397,34 @@ class StudyService:
             xpansion_constraints = b""
 
         obj = {
-            "version": study.version,
+            "version": study_interface.version,
             "name": study.name,
             "path": study.folder,
-            "area_properties": self.area_manager.get_all_area_props(interface),
-            "area_ui": self.area_manager.get_all_areas_ui_info(interface),
-            "links": self.links_manager.get_all_links(interface),
-            "binding_constraints": self.binding_constraint_manager.get_binding_constraints(interface),
-            "renewable_clusters": self.renewable_manager.get_all_renewables_props(interface),
-            "thermal_clusters": self.thermal_manager.get_all_thermals_props(interface),
-            "st_storages": self.st_storage_manager.get_all_storages_props(interface),
-            "st_storages_constraints": self.st_storage_manager.get_all_additional_constraints(interface),
-            "hydro": self.hydro_manager.get_all_hydro_properties(interface),
+            "area_properties": self.area_manager.get_all_area_props(study_interface),
+            "area_ui": self.area_manager.get_all_areas_ui_info(study_interface),
+            "links": self.links_manager.get_all_links(study_interface),
+            "binding_constraints": self.binding_constraint_manager.get_binding_constraints(study_interface),
+            "renewable_clusters": self.renewable_manager.get_all_renewables_props(study_interface),
+            "thermal_clusters": self.thermal_manager.get_all_thermals_props(study_interface),
+            "st_storages": self.st_storage_manager.get_all_storages_props(study_interface),
+            "st_storages_constraints": self.st_storage_manager.get_all_additional_constraints(study_interface),
+            "hydro": self.hydro_manager.get_all_hydro_properties(study_interface),
             "settings": {
-                "time_series": self.ts_config_manager.get_timeseries_configuration(interface),
-                "general": self.general_manager.get_general_config(interface),
-                "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(interface),
-                "playlist": self.playlist_manager.get_playlist(interface),
-                "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(interface),
-                "optimization": self.optimization_manager.get_optimization_preferences(interface),
-                "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(interface),
+                "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
+                "general": self.general_manager.get_general_config(study_interface),
+                "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
+                "playlist": self.playlist_manager.get_playlist(study_interface),
+                "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
+                "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
+                "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
             },
             "xpansion": {
                 "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(interface) if xpansion_settings else [],
+                "candidates": self.xpansion_manager.get_candidates(study_interface) if xpansion_settings else [],
                 "constraint": xpansion_constraints,
             },
             # todo: we'll have to change this as this doesn't use the DAO
-            "outputs": interface.get_files().config.outputs,
+            "outputs": study_interface.get_files().config.outputs,
         }
 
         return AntaresCraftStudy.model_validate(obj)
