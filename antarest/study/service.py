@@ -95,7 +95,7 @@ from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.table_mode_management import TableModeManager, TableModeType
+from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.xpansion_management import (
@@ -2389,12 +2389,12 @@ class StudyService:
             xp_settings = {}  # type: ignore
 
         obj = {
-            "areas": self.table_mode_manager.get_table_data(interface, TableModeType.AREA, []),
+            "area_properties": self.area_manager.get_all_area_props(interface),
             "areas_ui": self.area_manager.get_all_areas_ui_info(interface),
-            "links": self.table_mode_manager.get_table_data(interface, TableModeType.LINK, []),
+            "links": self.links_manager.get_all_links(interface),
             "bcs": self.binding_constraint_manager.get_binding_constraints(interface),
-            "renewable": self.table_mode_manager.get_table_data(interface, TableModeType.RENEWABLE, []),
-            "thermal": self.table_mode_manager.get_table_data(interface, TableModeType.THERMAL, []),
+            "renewable": self.renewable_manager.get_all_renewables_props(interface),
+            "thermal": self.thermal_manager.get_all_thermals_props(interface),
             "sts": self.st_storage_manager.get_all_storages_props(interface),
             "sts_c": self.st_storage_manager.get_all_additional_constraints(interface),
             "hydro": self.hydro_manager.get_all_hydro_properties(interface),
@@ -2419,4 +2419,4 @@ class StudyService:
                     interface, XpansionResourceFileType.CONSTRAINTS, xp_settings.additional_constraints
                 )
 
-        return obj
+        return AntaresCraftStudy.model_validate(obj)

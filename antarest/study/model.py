@@ -47,7 +47,22 @@ from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.np_array import NpArray
 from antarest.login.model import Group, GroupDTO, Identity
+from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.hydro_model import HydroProperties
+from antarest.study.business.model.link_model import Link
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraintsMap
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings
 from antarest.study.css4_colors import COLOR_NAMES
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
 
 if TYPE_CHECKING:
     # avoid circular import
@@ -689,17 +704,43 @@ class ReferenceStudy(AntaresBaseModel):
     template_name: str
 
 
+class AntaresCraftStudySettings(AntaresBaseModel):
+    time_series: TimeSeriesConfiguration
+    general: GeneralConfig
+    advanced_parameters: AdvancedParameters
+    adequacy_patch: AdequacyPatchParameters
+    optimization: OptimizationPreferences
+    thematic_trimmming: ThematicTrimming
+    playlist: Playlist
+
+
+class AntaresCraftStudyXpansion(AntaresBaseModel):
+    settings: XpansionSettings
+    candidates: list[XpansionCandidate]
+    constraint: bytes
+
+
 class AntaresCraftStudy(AntaresBaseModel):
     """
     Study representation used by antares-craft inside its reading method.
     """
 
-    type: StudyDownloadType
-    years: Optional[List[int]]
-    level: StudyDownloadLevelDTO
-    filterIn: Optional[str]
-    filterOut: Optional[str]
-    filter: Optional[List[str]]
-    columns: Optional[List[str]]
-    synthesis: bool = False
-    includeClusters: bool = False
+    name: str
+    version: StudyVersion
+    path: str | None
+
+    area_properties: dict[str, AreaProperties]
+    area_ui: dict[str, AreaUI]
+    links: list[Link]
+    binding_constraints: list[BindingConstraint]
+    renewable_clusters: dict[str, dict[str, RenewableCluster]]
+    thermal_clusters: dict[str, dict[str, RenewableCluster]]
+    st_storages: dict[str, dict[str, STStorage]]
+    st_storages_constraints: STStorageAdditionalConstraintsMap
+    hydro: dict[str, HydroProperties]
+
+    settings: AntaresCraftStudySettings
+    xpansion: AntaresCraftStudyXpansion
+
+    # todo: have a model
+    outputs: None
