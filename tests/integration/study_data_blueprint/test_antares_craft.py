@@ -37,4 +37,12 @@ def test_antares_craft(client: TestClient, user_access_token: str, internal_stud
     expected_json = from_json(expected_result_path.read_text())
 
     res = client.get(f"/v1/studies/{internal_study_id}/craft")
-    assert res.json() == expected_json
+    actual_json = res.json()
+
+    # Sort the filters for areas to ensure test reproducibility
+    for content in [actual_json, expected_json]:
+        for area, values in content["area_properties"].items():
+            for filter in ["filterByYear", "filterSynthesis"]:
+                content["area_properties"][area][filter] = sorted(content["area_properties"][area][filter])
+
+    assert actual_json == expected_json

@@ -2456,7 +2456,7 @@ class StudyService:
                 "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
                 "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
             },
-            # todo: we'll have to change this as this doesn't use the DAO
+            # We don't have access to the output service, so we have to do it like this
             "outputs": study_interface.get_files().config.outputs,
         }
 
