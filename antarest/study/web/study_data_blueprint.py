@@ -98,8 +98,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.model import AntaresCraftStudy
-from antarest.study.service import StudyService
+from antarest.study.service import AntaresCraftStudy, StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
 

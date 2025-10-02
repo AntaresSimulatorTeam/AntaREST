@@ -54,6 +54,7 @@ from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.jwt import JWTGroup
 from antarest.core.model import JSON, SUB_JSON, PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService, NoopNotifier
 from antarest.core.utils.archives import ArchiveFormat, is_archive_format
@@ -81,8 +82,20 @@ from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
 from antarest.study.business.matrix_management import MatrixManager, MatrixManagerError
 from antarest.study.business.model.area_model import Area, AreaCreation, UpdateAreaUi
-from antarest.study.business.model.binding_constraint_model import LinkTerm
+from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, LinkTerm
+from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
+from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
+from antarest.study.business.model.config.general_model import GeneralConfig
+from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
+from antarest.study.business.model.config.playlist_model import Playlist
+from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraintsMap
+from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
@@ -108,7 +121,6 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_8_8,
-    AntaresCraftStudy,
     MatrixIndex,
     RawStudy,
     Study,
@@ -126,7 +138,8 @@ from antarest.study.repository import (
     StudySortBy,
 )
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
+from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode, OriginalFile
@@ -207,6 +220,45 @@ def assert_raw(study: Study) -> RawStudy:
     if not isinstance(study, RawStudy):
         raise TypeError("Study must be a RawStudy")
     return study
+
+
+class AntaresCraftStudySettings(AntaresBaseModel):
+    time_series: TimeSeriesConfiguration
+    general: GeneralConfig
+    advanced_parameters: AdvancedParameters
+    adequacy_patch: AdequacyPatchParameters
+    optimization: OptimizationPreferences
+    thematic_trimming: ThematicTrimming
+    playlist: Playlist
+
+
+class AntaresCraftStudyXpansion(AntaresBaseModel):
+    settings: XpansionSettings
+    candidates: list[XpansionCandidate]
+    constraint: bytes
+
+
+class AntaresCraftStudy(AntaresBaseModel):
+    """
+    Study representation used by antares-craft inside its reading method.
+    """
+
+    name: str
+    version: StudyVersion
+    path: str | None
+
+    area_properties: dict[str, AreaProperties]
+    area_ui: dict[str, AreaUI]
+    links: list[Link]
+    binding_constraints: list[BindingConstraint]
+    renewable_clusters: dict[str, dict[str, RenewableCluster]]
+    thermal_clusters: dict[str, dict[str, ThermalCluster]]
+    st_storages: dict[str, dict[str, STStorage]]
+    st_storages_constraints: STStorageAdditionalConstraintsMap
+    hydro: dict[str, HydroProperties]
+    settings: AntaresCraftStudySettings
+    xpansion: AntaresCraftStudyXpansion
+    outputs: dict[str, Simulation]
 
 
 class TaskProgressRecorder(ICommandListener):
