@@ -12,6 +12,7 @@
 
 import io
 import os
+import time
 import zipfile
 from http import HTTPStatus
 from pathlib import Path
@@ -1890,3 +1891,20 @@ def test_links_deletion_with_binding_constraints(
     # delete the link
     res = client.delete(f"/v1/studies/{internal_study_id}/links/area_1/area_2")
     assert res.status_code == 200, res.json()
+
+
+def test_craft(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    zip_path = ASSETS_DIR / "STA-mini.zip"
+
+    # imports a study
+    uuid = client.post("/v1/studies/_import", files={"study": io.BytesIO(zip_path.read_bytes())}).json()
+
+    # Upgrade in v8.8
+    res = client.put(f"/v1/studies/{uuid}/upgrade", params={"target_version": "8.8"})
+
+    time.sleep(5)
+
+    res = client.get(f"/v1/studies/{uuid}/craft")
+    print(res.json())

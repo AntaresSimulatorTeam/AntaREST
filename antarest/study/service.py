@@ -87,6 +87,7 @@ from antarest.study.business.model.user_model import ResourceType, UserResourceD
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
+    XpansionResourceFileType,
     XpansionSettings,
     XpansionSettingsUpdate,
 )
@@ -94,7 +95,7 @@ from antarest.study.business.optimization_management import OptimizationManager
 from antarest.study.business.playlist_management import PlaylistManager
 from antarest.study.business.scenario_builder_management import ScenarioBuilderManager
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.business.table_mode_management import TableModeManager
+from antarest.study.business.table_mode_management import TableModeManager, TableModeType
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
 from antarest.study.business.xpansion_management import (
@@ -2371,3 +2372,47 @@ class StudyService:
             return node.parse_as_dataframe()
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
+
+    def get_whole_craft_study(self, uuid: str) -> dict[str, Any]:
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        interface = self.get_study_interface(study)
+
+        try:
+            xp_settings = self.get_xpansion_settings(uuid)
+        except ChildNotFoundError:
+            xp_settings = {}
+
+        obj = {
+            "areas": self.table_mode_manager.get_table_data(interface, TableModeType.AREA, []),
+            "links": self.table_mode_manager.get_table_data(interface, TableModeType.LINK, []),
+            "bcs": self.table_mode_manager.get_table_data(interface, TableModeType.BINDING_CONSTRAINT, []),
+            "renewable": self.table_mode_manager.get_table_data(interface, TableModeType.RENEWABLE, []),
+            "thermal": self.table_mode_manager.get_table_data(interface, TableModeType.THERMAL, []),
+            "sts": self.table_mode_manager.get_table_data(interface, TableModeType.ST_STORAGE, []),
+            "sts_c": self.table_mode_manager.get_table_data(
+                interface, TableModeType.ST_STORAGE_ADDITIONAL_CONSTRAINTS, []
+            ),
+            "hydro": self.hydro_manager.get_all_hydro_properties(interface),
+            "xp_settings": xp_settings,
+            "ts_config": self.ts_config_manager.get_timeseries_configuration(interface),
+            "general_config": self.general_manager.get_general_config(interface),
+            "adv_config": self.advanced_parameters_manager.get_advanced_parameters(interface),
+            "playlist": self.playlist_manager.get_playlist(interface),
+            "thematic_config": self.thematic_trimming_manager.get_thematic_trimming(interface),
+            "opt_config": self.optimization_manager.get_optimization_preferences(interface),
+            "adequacy_config": self.adequacy_patch_manager.get_adequacy_patch_parameters(interface),
+            "version": study.version,
+            "name": study.name,
+            "path": study.path,
+            "outputs": interface.get_files().config.outputs,
+        }
+
+        if xp_settings:
+            obj["xp_cdt"] = self.xpansion_manager.get_candidates(interface)
+            if xp_settings.additional_constraints:
+                obj["xp_contraint"] = self.xpansion_manager.get_resource_content(
+                    interface, XpansionResourceFileType.CONSTRAINTS, xp_settings.additional_constraints
+                )
+
+        return obj
