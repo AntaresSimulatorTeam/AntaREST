@@ -2391,10 +2391,14 @@ class StudyService:
                 )
             else:
                 xpansion_constraints = b""
+            xpansion = {
+                "settings": xpansion_settings,
+                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "constraint": xpansion_constraints,
+            }
 
         except ChildNotFoundError:
-            xpansion_settings = {}  # type: ignore
-            xpansion_constraints = b""
+            xpansion = {}
 
         obj = {
             "version": study_interface.version,
@@ -2418,11 +2422,7 @@ class StudyService:
                 "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
                 "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
             },
-            "xpansion": {
-                "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(study_interface) if xpansion_settings else [],
-                "constraint": xpansion_constraints,
-            },
+            "xpansion": xpansion,
             # todo: we'll have to change this as this doesn't use the DAO
             "outputs": study_interface.get_files().config.outputs,
         }
