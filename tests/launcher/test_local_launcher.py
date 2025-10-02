@@ -142,9 +142,9 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
         for version in [solver_version_8_8, solver_version_9_2, solver_version_9_3]:
             sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, version)
             if version == solver_version_8_8:
-                assert sim_args == ["--use-ortools", "--ortools-solver", f"{solver}"]
+                assert sim_args == ["--use-ortools", "--ortools-solver", solver]
             elif version == solver_version_9_2 or version == solver_version_9_3:
-                assert sim_args == ["--linear-solver", f"{solver}"]
+                assert sim_args == ["--linear-solver", solver]
 
     # Xpress cases
     os.environ["XPRESSDIR"] = "fake_path_for_test"
