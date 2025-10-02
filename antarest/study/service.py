@@ -107,6 +107,7 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_8_8,
     MatrixIndex,
     RawStudy,
     Study,
@@ -2377,6 +2378,9 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         interface = self.get_study_interface(study)
+
+        if interface.version < STUDY_VERSION_8_8:
+            raise HTTPException(status_code=422, detail="This method is only available for v8.8+ studies")
 
         try:
             xp_settings = self.get_xpansion_settings(uuid)

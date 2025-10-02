@@ -570,11 +570,4 @@ def create_study_routes(study_service: StudyService, config: Config) -> APIRoute
         study_id = sanitize_uuid(study_id)
         return study_service.normalize_study_by_id(study_id)
 
-    @bp.get(
-        "/studies/{study_id}/craft", summary="Whole study as a dict used by antares-craft", tags=[APITag.study_data]
-    )
-    def get_whole_study_as_a_dict(study_id: str) -> dict[str, Any]:
-        study_id = sanitize_uuid(study_id)
-        return study_service.get_whole_study_as_a_dict(study_id)
-
     return bp
