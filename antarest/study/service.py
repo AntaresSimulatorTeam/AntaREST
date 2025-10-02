@@ -2435,7 +2435,7 @@ class StudyService:
         if study_interface.version < STUDY_VERSION_8_8:
             raise HTTPException(status_code=422, detail="This method is only available for v8.8+ studies")
 
-        obj = {
+        obj: dict[str, Any] = {
             "version": study_interface.version,
             "name": study.name,
             "path": study.folder,
@@ -2443,7 +2443,6 @@ class StudyService:
             "area_ui": self.area_manager.get_all_areas_ui_info(study_interface),
             "links": self.links_manager.get_all_links(study_interface),
             "binding_constraints": self.binding_constraint_manager.get_binding_constraints(study_interface),
-            "renewable_clusters": self.renewable_manager.get_all_renewables_props(study_interface),
             "thermal_clusters": self.thermal_manager.get_all_thermals_props(study_interface),
             "st_storages": self.st_storage_manager.get_all_storages_props(study_interface),
             "st_storages_constraints": self.st_storage_manager.get_all_additional_constraints(study_interface),
@@ -2460,6 +2459,13 @@ class StudyService:
             # todo: we'll have to change this as this doesn't use the DAO
             "outputs": study_interface.get_files().config.outputs,
         }
+
+        try:
+            renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
+        except ChildNotFoundError:  # Can happen, according to the enr-modelling
+            renewable_clusters = {}
+
+        obj["renewable_clusters"] = renewable_clusters
 
         # Xpansion part
         try:
