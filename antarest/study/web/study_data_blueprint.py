@@ -72,7 +72,6 @@ from antarest.study.business.model.config.timeseries_config_model import (
 from antarest.study.business.model.hydro_model import (
     HydroManagement,
     HydroManagementUpdate,
-    HydroProperties,
     InflowStructure,
     InflowStructureUpdate,
 )
@@ -331,19 +330,6 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.district_manager.remove_district(study_interface, district_id)
-
-    @bp.get(
-        "/studies/{uuid}/hydro",
-        tags=[APITag.study_data],
-        summary="Get Hydro properties for each area of the study",
-        response_model=dict[str, HydroProperties],
-        response_model_exclude_none=True,
-    )
-    def get_hydro_properties_by_area(uuid: str) -> dict[str, HydroProperties]:
-        logger.info(f"Getting Hydro properties for each area of study {uuid}")
-        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
-        study_interface = study_service.get_study_interface(study)
-        return study_service.hydro_manager.get_all_hydro_properties(study_interface)
 
     @bp.get(
         "/studies/{uuid}/areas/{area_id}/hydro/form",

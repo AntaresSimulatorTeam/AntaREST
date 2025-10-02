@@ -2373,7 +2373,7 @@ class StudyService:
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
 
-    def get_whole_craft_study(self, uuid: str) -> dict[str, Any]:
+    def get_whole_study_as_a_dict(self, uuid: str) -> dict[str, Any]:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         interface = self.get_study_interface(study)
@@ -2381,7 +2381,7 @@ class StudyService:
         try:
             xp_settings = self.get_xpansion_settings(uuid)
         except ChildNotFoundError:
-            xp_settings = {}
+            xp_settings = {}  # type: ignore
 
         obj = {
             "areas": self.table_mode_manager.get_table_data(interface, TableModeType.AREA, []),
