@@ -1569,8 +1569,7 @@
                     "useLeeway": false,
                     "leewayLow": 1.0,
                     "leewayUp": 1.0,
-                    "pumpingEfficiency": 1.0,
-                    "overflowSpilledCostDifference": null
+                    "pumpingEfficiency": 1.0
                 },
                 "inflowStructure": {"interMonthlyCorrelation": 0.5}
             },
@@ -1590,8 +1589,7 @@
                     "useLeeway": false,
                     "leewayLow": 1.0,
                     "leewayUp": 1.0,
-                    "pumpingEfficiency": 1.0,
-                    "overflowSpilledCostDifference": null
+                    "pumpingEfficiency": 1.0
                 },
                 "inflowStructure": {"interMonthlyCorrelation": 0.5}
             },
@@ -1611,8 +1609,7 @@
                     "useLeeway": false,
                     "leewayLow": 1.0,
                     "leewayUp": 1.0,
-                    "pumpingEfficiency": 1.0,
-                    "overflowSpilledCostDifference": null
+                    "pumpingEfficiency": 1.0
                 },
                 "inflowStructure": {"interMonthlyCorrelation": 0.5}
             },
@@ -1632,8 +1629,7 @@
                     "useLeeway": false,
                     "leewayLow": 1.0,
                     "leewayUp": 1.0,
-                    "pumpingEfficiency": 1.0,
-                    "overflowSpilledCostDifference": null
+                    "pumpingEfficiency": 1.0
                 },
                 "inflowStructure": {"interMonthlyCorrelation": 0.5}
             }
@@ -1655,7 +1651,6 @@
                 "yearByYear": false,
                 "simulationSynthesis": true,
                 "mcScenario": true,
-                "filtering": null,
                 "geographicTrimming": true,
                 "thematicTrimming": false
             },
@@ -1680,8 +1675,7 @@
                 "seedThermalCosts": 8005489,
                 "seedHydroCosts": 9005489,
                 "seedInitialReservoirLevels": 10005489,
-                "initialReservoirLevels": "cold start",
-                "accurateShavePeaksIncludeShortTermStorage": null
+                "initialReservoirLevels": "cold start"
             },
             "adequacy_patch": {
                 "enableAdequacyPatch": false,
@@ -1692,8 +1686,7 @@
                 "thresholdInitiateCurtailmentSharingRule": 1.0,
                 "thresholdDisplayLocalMatchingRuleViolations": 0.0,
                 "thresholdCsrVariableBoundsRelaxation": 7,
-                "ntcBetweenPhysicalAreasOutAdequacyPatch": true,
-                "redispatch": null
+                "ntcBetweenPhysicalAreasOutAdequacyPatch": true
             },
             "optimization": {
                 "bindingConstraints": true,
@@ -1759,9 +1752,6 @@
                 "stsLvlByPlant": true,
                 "stsCashflowByCluster": true,
                 "npcapHours": true,
-                "stsByGroup": null,
-                "dispatchGen": null,
-                "renewableGen": null,
                 "pspOpenInjection": true,
                 "pspOpenWithdrawal": true,
                 "pspOpenLevel": true,

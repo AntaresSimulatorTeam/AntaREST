@@ -42,7 +42,7 @@ def test_antares_craft(client: TestClient, user_access_token: str, internal_stud
     # Sort the filters for areas to ensure test reproducibility
     for content in [actual_json, expected_json]:
         for area, values in content["area_properties"].items():
-            for filter in ["filterByYear", "filterSynthesis"]:
-                content["area_properties"][area][filter] = sorted(content["area_properties"][area][filter])
+            for key in ["filterByYear", "filterSynthesis"]:
+                content["area_properties"][area][key] = sorted(content["area_properties"][area][key])
 
     assert actual_json == expected_json

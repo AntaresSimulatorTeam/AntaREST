@@ -257,7 +257,7 @@ class AntaresCraftStudy(AntaresBaseModel):
     st_storages_constraints: STStorageAdditionalConstraintsMap
     hydro: dict[str, HydroProperties]
     settings: AntaresCraftStudySettings
-    xpansion: AntaresCraftStudyXpansion
+    xpansion: AntaresCraftStudyXpansion | None
     outputs: dict[str, Simulation]
 
 
@@ -2462,7 +2462,7 @@ class StudyService:
 
         try:
             renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
-        except ChildNotFoundError:  # Can happen, according to the enr-modelling
+        except ChildNotFoundError:  # Can happen, according to the enr-modeling
             renewable_clusters = {}
 
         obj["renewable_clusters"] = renewable_clusters
@@ -2483,7 +2483,7 @@ class StudyService:
             }
 
         except ChildNotFoundError:
-            xpansion = {}
+            xpansion = None
 
         obj["xpansion"] = xpansion
 

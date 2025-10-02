@@ -1945,7 +1945,10 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
 
     @bp.get(
-        "/studies/{study_id}/craft", summary="Whole study as a dict used by antares-craft", tags=[APITag.study_data]
+        "/studies/{study_id}/craft",
+        summary="Whole study as a dict used by antares-craft",
+        tags=[APITag.study_data],
+        response_model_exclude_none=True,
     )
     def get_antares_craft_study(study_id: str) -> AntaresCraftStudy:
         study_id = sanitize_uuid(study_id)
