@@ -2409,7 +2409,7 @@ class StudyService:
             "adequacy_config": self.adequacy_patch_manager.get_adequacy_patch_parameters(interface),
             "version": study.version,
             "name": study.name,
-            "path": study.path,
+            "path": study.folder,
             "outputs": interface.get_files().config.outputs,
         }
 
