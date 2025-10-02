@@ -16,7 +16,7 @@ from pydantic import TypeAdapter, model_validator
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import override
 
-from antarest.study.business.model.scenario_builder_model import RulesetsUpdate
+from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetsUpdate, update_rulesets
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     parse_rulesets_update,
@@ -73,7 +73,14 @@ class UpdateScenarioBuilder(ICommand):
         Returns:
             CommandOutput: The output of the command, indicating the status of the operation.
         """
-        study_data.save_scenario_builder(self.data)
+        rulesets = study_data.get_rulesets()
+        update_rulesets(rulesets, self.data)
+
+        active_rules_scenario = study_data.get_active_ruleset_name()
+        if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:
+            rulesets[active_rules_scenario] = Ruleset()
+
+        study_data.save_scenario_builder(rulesets)
         return command_succeeded(message="Scenario builder updated successfully")
 
     @override

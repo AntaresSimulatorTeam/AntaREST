@@ -37,11 +37,8 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
-    Ruleset,
     Rulesets,
-    RulesetsUpdate,
     ScenarioType,
-    update_rulesets,
 )
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -758,9 +755,5 @@ class InMemoryStudyDao(StudyDao):
         return self.rulesets[self.get_active_ruleset_name()].get(scenario_type)
 
     @override
-    def save_scenario_builder(self, ruleset_update: RulesetsUpdate) -> None:
-        update_rulesets(self.rulesets, ruleset_update)
-
-        active_rules_scenario = self.get_active_ruleset_name()
-        if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in self.rulesets.keys()}:
-            self.rulesets[active_rules_scenario] = Ruleset()
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
+        self.rulesets = rulesets

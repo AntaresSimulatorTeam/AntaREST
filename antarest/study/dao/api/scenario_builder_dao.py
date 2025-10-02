@@ -14,7 +14,6 @@ from abc import ABC, abstractmethod
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
     Rulesets,
-    RulesetsUpdate,
     ScenarioType,
 )
 
@@ -54,8 +53,8 @@ class ReadOnlyScenarioBuilderDao(ABC):
 
 class ScenarioBuilderDao(ReadOnlyScenarioBuilderDao):
     @abstractmethod
-    def save_scenario_builder(self, ruleset_update: RulesetsUpdate) -> None:
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
         """
-        Update a ruleset.
+        Save rulesets.
         """
         raise NotImplementedError()

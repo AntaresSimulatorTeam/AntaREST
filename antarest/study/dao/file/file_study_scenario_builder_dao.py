@@ -18,11 +18,9 @@ from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
     Ruleset,
     Rulesets,
-    RulesetsUpdate,
     ScenarioType,
     initialize_ruleset,
     update_ruleset,
-    update_rulesets,
 )
 from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
@@ -112,16 +110,10 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         return ruleset.get(scenario_type)
 
     @override
-    def save_scenario_builder(self, ruleset_update: RulesetsUpdate) -> None:
+    def save_scenario_builder(self, rulesets: Rulesets) -> None:
         """
         Save the scenario builder configuration to the study directory.
         """
         study_data = self.get_file_study()
-        rulesets = self.get_rulesets()
-        update_rulesets(rulesets, ruleset_update)
-
-        active_rules_scenario = self.get_active_ruleset_name()
-        if active_rules_scenario and active_rules_scenario.lower() not in {k.lower() for k in rulesets.keys()}:
-            rulesets[active_rules_scenario] = Ruleset()
 
         study_data.tree.save(serialize_rulesets(rulesets), SCENARIO_BUILDER_PATH)
