@@ -63,6 +63,7 @@ from antarest.study.business.model.thematic_trimming_model import ThematicTrimmi
 from antarest.study.business.model.xpansion_model import XpansionCandidate, XpansionSettings
 from antarest.study.css4_colors import COLOR_NAMES
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUI
+from antarest.study.storage.rawstudy.model.filesystem.config.model import Simulation
 
 if TYPE_CHECKING:
     # avoid circular import
@@ -710,7 +711,7 @@ class AntaresCraftStudySettings(AntaresBaseModel):
     advanced_parameters: AdvancedParameters
     adequacy_patch: AdequacyPatchParameters
     optimization: OptimizationPreferences
-    thematic_trimmming: ThematicTrimming
+    thematic_trimming: ThematicTrimming
     playlist: Playlist
 
 
@@ -738,9 +739,6 @@ class AntaresCraftStudy(AntaresBaseModel):
     st_storages: dict[str, dict[str, STStorage]]
     st_storages_constraints: STStorageAdditionalConstraintsMap
     hydro: dict[str, HydroProperties]
-
     settings: AntaresCraftStudySettings
     xpansion: AntaresCraftStudyXpansion
-
-    # todo: have a model
-    outputs: None
+    outputs: dict[str, Simulation]

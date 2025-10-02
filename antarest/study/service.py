@@ -2384,39 +2384,47 @@ class StudyService:
             raise HTTPException(status_code=422, detail="This method is only available for v8.8+ studies")
 
         try:
-            xp_settings = self.get_xpansion_settings(uuid)
+            xpansion_settings = self.get_xpansion_settings(uuid)
+            if xpansion_settings.additional_constraints:
+                xpansion_constraints = self.xpansion_manager.get_resource_content(
+                    interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                )
+            else:
+                xpansion_constraints = b""
+
         except ChildNotFoundError:
-            xp_settings = {}  # type: ignore
+            xpansion_settings = {}  # type: ignore
+            xpansion_constraints = b""
 
         obj = {
-            "area_properties": self.area_manager.get_all_area_props(interface),
-            "areas_ui": self.area_manager.get_all_areas_ui_info(interface),
-            "links": self.links_manager.get_all_links(interface),
-            "bcs": self.binding_constraint_manager.get_binding_constraints(interface),
-            "renewable": self.renewable_manager.get_all_renewables_props(interface),
-            "thermal": self.thermal_manager.get_all_thermals_props(interface),
-            "sts": self.st_storage_manager.get_all_storages_props(interface),
-            "sts_c": self.st_storage_manager.get_all_additional_constraints(interface),
-            "hydro": self.hydro_manager.get_all_hydro_properties(interface),
-            "xp_settings": xp_settings,
-            "ts_config": self.ts_config_manager.get_timeseries_configuration(interface),
-            "general_config": self.general_manager.get_general_config(interface),
-            "adv_config": self.advanced_parameters_manager.get_advanced_parameters(interface),
-            "playlist": self.playlist_manager.get_playlist(interface),
-            "thematic_config": self.thematic_trimming_manager.get_thematic_trimming(interface),
-            "opt_config": self.optimization_manager.get_optimization_preferences(interface),
-            "adequacy_config": self.adequacy_patch_manager.get_adequacy_patch_parameters(interface),
             "version": study.version,
             "name": study.name,
             "path": study.folder,
+            "area_properties": self.area_manager.get_all_area_props(interface),
+            "area_ui": self.area_manager.get_all_areas_ui_info(interface),
+            "links": self.links_manager.get_all_links(interface),
+            "binding_constraints": self.binding_constraint_manager.get_binding_constraints(interface),
+            "renewable_clusters": self.renewable_manager.get_all_renewables_props(interface),
+            "thermal_clusters": self.thermal_manager.get_all_thermals_props(interface),
+            "st_storages": self.st_storage_manager.get_all_storages_props(interface),
+            "st_storages_constraints": self.st_storage_manager.get_all_additional_constraints(interface),
+            "hydro": self.hydro_manager.get_all_hydro_properties(interface),
+            "settings": {
+                "time_series": self.ts_config_manager.get_timeseries_configuration(interface),
+                "general": self.general_manager.get_general_config(interface),
+                "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(interface),
+                "playlist": self.playlist_manager.get_playlist(interface),
+                "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(interface),
+                "optimization": self.optimization_manager.get_optimization_preferences(interface),
+                "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(interface),
+            },
+            "xpansion": {
+                "settings": xpansion_settings,
+                "candidates": self.xpansion_manager.get_candidates(interface) if xpansion_settings else [],
+                "constraint": xpansion_constraints,
+            },
+            # todo: we'll have to change this as this doesn't use the DAO
             "outputs": interface.get_files().config.outputs,
         }
-
-        if xp_settings:
-            obj["xp_cdt"] = self.xpansion_manager.get_candidates(interface)
-            if xp_settings.additional_constraints:
-                obj["xp_contraint"] = self.xpansion_manager.get_resource_content(
-                    interface, XpansionResourceFileType.CONSTRAINTS, xp_settings.additional_constraints
-                )
 
         return AntaresCraftStudy.model_validate(obj)
