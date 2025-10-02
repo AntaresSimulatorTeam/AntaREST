@@ -93,7 +93,10 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.link_model import Link, LinkUpdate
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraintsMap
+from antarest.study.business.model.sts_model import (
+    STStorage,
+    STStorageAdditionalConstraint,
+)
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
@@ -120,7 +123,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
-    STUDY_VERSION_8_8,
     MatrixIndex,
     RawStudy,
     Study,
@@ -222,7 +224,7 @@ def assert_raw(study: Study) -> RawStudy:
     return study
 
 
-class AntaresCraftStudySettings(AntaresBaseModel):
+class StudySettingsDTO(AntaresBaseModel):
     time_series: TimeSeriesConfiguration
     general: GeneralConfig
     advanced_parameters: AdvancedParameters
@@ -232,32 +234,41 @@ class AntaresCraftStudySettings(AntaresBaseModel):
     playlist: Playlist
 
 
-class AntaresCraftStudyXpansion(AntaresBaseModel):
+class StudyXpansionDTO(AntaresBaseModel):
     settings: XpansionSettings
     candidates: list[XpansionCandidate]
     constraint: bytes
 
 
-class AntaresCraftStudy(AntaresBaseModel):
+class StudyShortTermStorageDTO(AntaresBaseModel):
+    cluster: STStorage
+    constraints: list[STStorageAdditionalConstraint]
+
+
+class StudyAreasDTO(AntaresBaseModel):
+    id: str
+    properties: AreaProperties
+    ui: dict[str, Any]
+    thermals: list[ThermalCluster]
+    renewables: list[RenewableCluster]
+    st_storages: list[StudyShortTermStorageDTO]
+    hydro: HydroProperties
+
+
+class StudyDataDTO(AntaresBaseModel):
     """
-    Study representation used by antares-craft inside its reading method.
+    DTO representing data of the whole study.
     """
 
     name: str
     version: StudyVersionStr
     path: str | None
 
-    area_properties: dict[str, AreaProperties]
-    area_ui: dict[str, Any]
+    areas: list[StudyAreasDTO]
     links: list[Link]
     binding_constraints: list[BindingConstraint]
-    renewable_clusters: dict[str, dict[str, RenewableCluster]]
-    thermal_clusters: dict[str, dict[str, ThermalCluster]]
-    st_storages: dict[str, dict[str, STStorage]]
-    st_storages_constraints: STStorageAdditionalConstraintsMap
-    hydro: dict[str, HydroProperties]
-    settings: AntaresCraftStudySettings
-    xpansion: AntaresCraftStudyXpansion | None
+    settings: StudySettingsDTO
+    xpansion: StudyXpansionDTO | None
     outputs: dict[str, Simulation]
 
 
@@ -2427,47 +2438,80 @@ class StudyService:
 
         return node.get(url=relative_url, depth=depth, formatted=formatted)
 
-    def get_antares_craft_study(self, uuid: str) -> AntaresCraftStudy:
+    def get_study_data(self, uuid: str) -> StudyDataDTO:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.READ)
         study_interface = self.get_study_interface(study)
 
-        if study_interface.version < STUDY_VERSION_8_8:
-            raise HTTPException(status_code=422, detail="This method is only available for v8.8+ studies")
+        ##########################
+        # Study metadata
+        ##########################
 
-        obj: dict[str, Any] = {
-            "version": study_interface.version,
-            "name": study.name,
-            "path": study.folder,
-            "area_properties": self.area_manager.get_all_area_props(study_interface),
-            "area_ui": self.area_manager.get_all_areas_ui_info(study_interface),
-            "links": self.links_manager.get_all_links(study_interface),
-            "binding_constraints": self.binding_constraint_manager.get_binding_constraints(study_interface),
-            "thermal_clusters": self.thermal_manager.get_all_thermals_props(study_interface),
-            "st_storages": self.st_storage_manager.get_all_storages_props(study_interface),
-            "st_storages_constraints": self.st_storage_manager.get_all_additional_constraints(study_interface),
-            "hydro": self.hydro_manager.get_all_hydro_properties(study_interface),
-            "settings": {
-                "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
-                "general": self.general_manager.get_general_config(study_interface),
-                "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
-                "playlist": self.playlist_manager.get_playlist(study_interface),
-                "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
-                "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
-                "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
-            },
-            # We don't have access to the output service, so we have to do it like this
-            "outputs": study_interface.get_files().config.outputs,
-        }
+        obj: dict[str, Any] = {"version": study_interface.version, "name": study.name, "path": study.folder}
 
+        ##########################
+        # Areas
+        ##########################
+
+        area_properties = self.area_manager.get_all_area_props(study_interface)
+        area_ui = self.area_manager.get_all_areas_ui_info(study_interface)
+        thermal_clusters = self.thermal_manager.get_all_thermals_props(study_interface)
+        st_storages = self.st_storage_manager.get_all_storages_props(study_interface)
+        st_storages_constraints = self.st_storage_manager.get_all_additional_constraints(study_interface)
+        hydro = self.hydro_manager.get_all_hydro_properties(study_interface)
         try:
             renewable_clusters = self.renewable_manager.get_all_renewables_props(study_interface)
         except ChildNotFoundError:  # Can happen, according to the enr-modeling
             renewable_clusters = {}
 
-        obj["renewable_clusters"] = renewable_clusters
+        areas = []
+        for area_id, properties in area_properties.items():
+            area = {
+                "id": area_id,
+                "properties": properties,
+                "ui": area_ui[area_id],
+                "thermals": thermal_clusters.get(area_id, {}).values(),
+                "renewables": renewable_clusters.get(area_id, {}).values(),
+                "hydro": hydro[area_id],
+                "st_storages": [],
+            }
+            # Short-term storages
+            storage_dict = st_storages.get(area_id, {})
+            for storage_id, storage in storage_dict.items():
+                sts_constraints = st_storages_constraints.get(area_id, {}).get(storage_id, [])
+                area["st_storages"].append({"cluster": storage, "constraints": sts_constraints})
 
-        # Xpansion part
+            areas.append(area)
+
+        obj["areas"] = areas
+
+        ##########################
+        # Links, BCs and outputs
+        ##########################
+
+        obj["links"] = self.links_manager.get_all_links(study_interface)
+        obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
+        # We don't have access to the output service, so we have to do it like this
+        obj["outputs"] = study_interface.get_files().config.outputs
+
+        ##########################
+        # Settings
+        ##########################
+
+        obj["settings"] = {
+            "time_series": self.ts_config_manager.get_timeseries_configuration(study_interface),
+            "general": self.general_manager.get_general_config(study_interface),
+            "advanced_parameters": self.advanced_parameters_manager.get_advanced_parameters(study_interface),
+            "playlist": self.playlist_manager.get_playlist(study_interface),
+            "thematic_trimming": self.thematic_trimming_manager.get_thematic_trimming(study_interface),
+            "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
+            "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
+        }
+
+        ##########################
+        # Xpansion
+        ##########################
+
         try:
             xpansion_settings = self.get_xpansion_settings(uuid)
             if xpansion_settings.additional_constraints:
@@ -2487,4 +2531,8 @@ class StudyService:
 
         obj["xpansion"] = xpansion
 
-        return AntaresCraftStudy.model_validate(obj)
+        ##########################
+        # Return the object
+        ##########################
+
+        return StudyDataDTO.model_validate(obj)

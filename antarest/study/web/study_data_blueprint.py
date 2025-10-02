@@ -98,7 +98,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
-from antarest.study.service import AntaresCraftStudy, StudyService
+from antarest.study.service import StudyDataDTO, StudyService
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.web.views.scenario_builder_views import RulesetsView, rulesets_model_to_view, rulesets_view_to_model
 
@@ -1945,13 +1945,16 @@ def create_study_data_routes(study_service: StudyService, config: Config) -> API
         study_service.st_storage_manager.update_matrix(study_interface, area_id, storage_id, ts_name, ts)
 
     @bp.get(
-        "/studies/{study_id}/craft",
-        summary="Whole study as a dict used by antares-craft",
+        "/studies/{study_id}/data",
+        summary="Fetches data for the whole study",
         tags=[APITag.study_data],
         response_model_exclude_none=True,
     )
-    def get_antares_craft_study(study_id: str) -> AntaresCraftStudy:
+    def get_study_data(study_id: str) -> StudyDataDTO:
+        """
+        NOTE: This endpoint is used by antares-craft to read a study.
+        """
         study_id = sanitize_uuid(study_id)
-        return study_service.get_antares_craft_study(study_id)
+        return study_service.get_study_data(study_id)
 
     return bp

@@ -19,13 +19,8 @@ from tests.integration.study_data_blueprint import ASSETS_DIR
 from tests.integration.utils import wait_task_completion
 
 
-def test_antares_craft(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+def test_study_data(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
-
-    # Antares-craft doesn't handle studies before v8.8. So in such cases, we should raise to go faster.
-    res = client.get(f"/v1/studies/{internal_study_id}/craft")
-    assert res.status_code == 422
-    assert res.json()["description"] == "This method is only available for v8.8+ studies"
 
     # Upgrades the study in v8.8
     res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": "8.8"})
