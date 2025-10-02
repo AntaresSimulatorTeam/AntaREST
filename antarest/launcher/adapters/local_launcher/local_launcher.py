@@ -127,7 +127,6 @@ class LocalLauncher(AbstractLauncher):
                         env=environment_variables,
                         stdout=out_file,
                         stderr=err_file,
-                        text=True,
                     )
                 self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
                 self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
