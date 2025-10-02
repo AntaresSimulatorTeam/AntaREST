@@ -13,7 +13,7 @@
                 "spreadUnsuppliedEnergyCost": 0.0,
                 "spreadSpilledEnergyCost": 0.0,
                 "filterSynthesis": ["daily", "monthly"],
-                "filterByYear": ["weekly", "hourly", "annual"],
+                "filterByYear": ["annual", "weekly", "hourly"],
                 "adequacyPatchMode": "outside"
             },
             "es": {
@@ -25,7 +25,7 @@
                 "spreadUnsuppliedEnergyCost": 0.0,
                 "spreadSpilledEnergyCost": 0.0,
                 "filterSynthesis": ["daily", "monthly"],
-                "filterByYear": ["weekly", "hourly", "annual"],
+                "filterByYear": ["annual", "weekly", "hourly"],
                 "adequacyPatchMode": "outside"
             },
             "fr": {

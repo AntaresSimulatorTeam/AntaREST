@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from unittest.mock import ANY
 
 from starlette.testclient import TestClient
 
@@ -36,7 +35,6 @@ def test_antares_craft(client: TestClient, user_access_token: str, internal_stud
 
     expected_result_path = ASSETS_DIR / "craft_study.json"
     expected_json = from_json(expected_result_path.read_text())
-    expected_json["path"] = ANY
 
     res = client.get(f"/v1/studies/{internal_study_id}/craft")
-    print(res.json())
+    assert res.json() == expected_json
