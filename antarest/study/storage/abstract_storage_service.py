@@ -80,6 +80,8 @@ class AbstractStorageService(IStudyStorage, IOutputStorage, ABC):
             id=study.id,
             name=study.name,
             version=study.version,
+            author=study.author,
+            editor=study.additional_data.editor,
             created=str(study.created_at),
             updated=str(study.updated_at),
             workspace=study_workspace,
