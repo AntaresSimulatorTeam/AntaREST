@@ -2383,23 +2383,6 @@ class StudyService:
         if study_interface.version < STUDY_VERSION_8_8:
             raise HTTPException(status_code=422, detail="This method is only available for v8.8+ studies")
 
-        try:
-            xpansion_settings = self.get_xpansion_settings(uuid)
-            if xpansion_settings.additional_constraints:
-                xpansion_constraints = self.xpansion_manager.get_resource_content(
-                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
-                )
-            else:
-                xpansion_constraints = b""
-            xpansion = {
-                "settings": xpansion_settings,
-                "candidates": self.xpansion_manager.get_candidates(study_interface),
-                "constraint": xpansion_constraints,
-            }
-
-        except ChildNotFoundError:
-            xpansion = {}
-
         obj = {
             "version": study_interface.version,
             "name": study.name,
@@ -2422,9 +2405,28 @@ class StudyService:
                 "optimization": self.optimization_manager.get_optimization_preferences(study_interface),
                 "adequacy_patch": self.adequacy_patch_manager.get_adequacy_patch_parameters(study_interface),
             },
-            "xpansion": xpansion,
             # todo: we'll have to change this as this doesn't use the DAO
             "outputs": study_interface.get_files().config.outputs,
         }
+
+        # Xpansion part
+        try:
+            xpansion_settings = self.get_xpansion_settings(uuid)
+            if xpansion_settings.additional_constraints:
+                xpansion_constraints = self.xpansion_manager.get_resource_content(
+                    study_interface, XpansionResourceFileType.CONSTRAINTS, xpansion_settings.additional_constraints
+                )
+            else:
+                xpansion_constraints = b""
+            xpansion = {
+                "settings": xpansion_settings,
+                "candidates": self.xpansion_manager.get_candidates(study_interface),
+                "constraint": xpansion_constraints,
+            }
+
+        except ChildNotFoundError:
+            xpansion = {}
+
+        obj["xpansion"] = xpansion
 
         return AntaresCraftStudy.model_validate(obj)
