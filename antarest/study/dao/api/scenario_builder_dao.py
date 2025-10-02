@@ -26,7 +26,7 @@ class ReadOnlyScenarioBuilderDao(ABC):
         Get all rulesets by name.
 
         Returns:
-            The ruleselts.
+            The rulesets.
         """
 
         raise NotImplementedError()

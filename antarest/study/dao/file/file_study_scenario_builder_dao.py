@@ -58,11 +58,7 @@ class FileStudyScenarioBuilderDao(ScenarioBuilderDao):
         Get the active ruleset name stored in the configuration at the following path:
         ``settings/generaldata.ini``, in the section "general", key "active-rules-scenario".
 
-        This ruleset name must match a section name in the scenario builder configuration
-        at the following path: ``settings/scenariobuilder``.
-
         Args:
-            file_study: Object representing the study file
             default_ruleset: Name of the default ruleset
 
         Returns:
