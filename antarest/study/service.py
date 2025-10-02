@@ -2385,6 +2385,7 @@ class StudyService:
 
         obj = {
             "areas": self.table_mode_manager.get_table_data(interface, TableModeType.AREA, []),
+            "areas_ui": self.area_manager.get_all_areas_ui_info(interface),
             "links": self.table_mode_manager.get_table_data(interface, TableModeType.LINK, []),
             "bcs": self.binding_constraint_manager.get_binding_constraints(interface),
             "renewable": self.table_mode_manager.get_table_data(interface, TableModeType.RENEWABLE, []),
