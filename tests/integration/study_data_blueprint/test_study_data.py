@@ -28,16 +28,16 @@ def test_study_data(client: TestClient, user_access_token: str, internal_study_i
     task = wait_task_completion(client, user_access_token, task_id, base_timeout=20)
     assert task.status == TaskStatus.COMPLETED
 
-    expected_result_path = ASSETS_DIR / "craft_study.json"
+    expected_result_path = ASSETS_DIR / "study_data.json"
     expected_json = from_json(expected_result_path.read_text())
 
-    res = client.get(f"/v1/studies/{internal_study_id}/craft")
+    res = client.get(f"/v1/studies/{internal_study_id}/data")
     actual_json = res.json()
 
     # Sort the filters for areas to ensure test reproducibility
     for content in [actual_json, expected_json]:
-        for area, values in content["area_properties"].items():
+        for area in content["areas"]:
             for key in ["filterByYear", "filterSynthesis"]:
-                content["area_properties"][area][key] = sorted(content["area_properties"][area][key])
+                area["properties"][key] = sorted(area["properties"][key])
 
     assert actual_json == expected_json
