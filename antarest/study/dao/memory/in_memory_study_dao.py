@@ -738,11 +738,12 @@ class InMemoryStudyDao(StudyDao):
         del self._user_resources[resource_path]
 
     @override
-    def get_area_properties(
-        self,
-        area_id: str,
-    ) -> AreaProperties:
+    def get_area_properties(self, area_id: str) -> AreaProperties:
         return self._area_properties[area_id]
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._area_properties
 
     @override
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:

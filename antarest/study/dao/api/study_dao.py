@@ -403,8 +403,9 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_playlist_config()
 
     @override
-    def get_area_properties(
-        self,
-        area_id: str,
-    ) -> AreaProperties:
+    def get_area_properties(self, area_id: str) -> AreaProperties:
         return self._adaptee.get_area_properties(area_id)
+
+    @override
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
+        return self._adaptee.get_all_area_properties()

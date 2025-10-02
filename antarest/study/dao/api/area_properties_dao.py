@@ -16,10 +16,11 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 
 class ReadOnlyAreaPropertiesDao(ABC):
     @abstractmethod
-    def get_area_properties(
-        self,
-        area_id: str,
-    ) -> AreaProperties:
+    def get_area_properties(self, area_id: str) -> AreaProperties:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_area_properties(self) -> dict[str, AreaProperties]:
         raise NotImplementedError()
 
 

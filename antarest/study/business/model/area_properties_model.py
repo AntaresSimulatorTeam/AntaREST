@@ -36,18 +36,6 @@ class AdequacyPatchMode(EnumIgnoreCase):
     VIRTUAL = "virtual"
 
 
-def get_thermal_path() -> List[str]:
-    return ["input", "thermal", "areas"]
-
-
-def get_optimization_path(area_id: str) -> List[str]:
-    return ["input", "areas", area_id, "optimization"]
-
-
-def get_adequacy_patch_path(area_id: str) -> List[str]:
-    return ["input", "areas", area_id, "adequacy_patch"]
-
-
 def sort_filter_options(options: Iterable[FrequencyFilter]) -> List[FrequencyFilter]:
     return sorted(
         options,
