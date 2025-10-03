@@ -51,6 +51,9 @@ class DistrictUpdate(AntaresBaseModel):
     #: User-defined comments.
     comments: Optional[str] = None
     #: List of areas that will be grouped in the district.
+    #: This field take two meaning depending on the content of apply_filter.
+    #: When apply filter is "add_all" this command means "we want all areas except those in this list". This list will be stored in District.subtract_areas
+    #: Otherwise, this command means "we want no areas except those in this list". This list will be stored in District.add_areas
     areas: Optional[List[str]] = None
     #: Base filter for the district.
     apply_filter: Optional[DistrictApplyFilter] = None
@@ -86,6 +89,9 @@ class DistrictCreation(AntaresBaseModel):
     #: User-defined comments.
     comments: Optional[str] = None
     #: List of areas that will be grouped in the district.
+    #: This field take two meaning depending on the content of apply_filter.
+    #: When apply filter is "add_all" this command means "we want all areas except those in this list". This list will be stored in District.subtract_areas
+    #: Otherwise, this command means "we want no areas except those in this list". This list will be stored in District.add_areas
     areas: Optional[List[str]] = None
     #: Base filter for the district.
     apply_filter: Optional[DistrictApplyFilter] = None
