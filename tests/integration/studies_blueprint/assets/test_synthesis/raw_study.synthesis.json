@@ -1493,7 +1493,7 @@
       "st_storages_additional_constraints": {}
     }
   },
-  "sets": {
+  "districts": {
     "all areas": {
       "id": "all areas",
       "name": "All areas",
