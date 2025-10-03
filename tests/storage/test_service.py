@@ -1779,15 +1779,14 @@ def test_get_save_logs(tmp_path: Path) -> None:
 
     for log_path in possible_log_paths:
         log_path.write_text("some log 2")
-        assert (
-            service.get_logs(
-                study_id,
-                "output_id",
-                "job_id",
-                False,
-            )
-            == "some log 2"
-        )
+        logs = service.get_logs(study_id, "output_id", "job_id", False)
+        assert logs == "some log 2"
+        log_path.unlink()
+
+        # Check invalid utf-8 characters are correctly replaced
+        log_path.write_text("Caractère invalide", encoding="latin-1")
+        logs = service.get_logs(study_id, "output_id", "job_id", False)
+        assert logs == "Caract�re invalide"
         log_path.unlink()
 
     service.save_logs(study_id, "job_id", "out.log", "some log")

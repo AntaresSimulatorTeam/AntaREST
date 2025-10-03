@@ -72,7 +72,9 @@ class LogTailManager:
             self.stop_tracking(log_file)
             return
 
-        with open(log_file, "r") as fh:
+        # Assume UTF-8 but ignore errors, it's difficult to be sure of log encoding
+        # especially because of windows error messages
+        with open(log_file, "r", encoding="utf-8", errors="replace") as fh:
             logger.info(f"Scanning {log_file}")
             follow(cast(io.StringIO, fh), handler, stop, str(log_file))
 

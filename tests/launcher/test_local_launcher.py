@@ -87,7 +87,6 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig):
         auto_unzip=True,
         output_suffix="",
         other_options="",
-        launcher_id="id",
     )
     local_launcher.submitted_jobs = {job_id: launcher_parameters}
     local_launcher._compute(
@@ -126,13 +125,13 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
     solver_version_9_3 = SolverVersion.parse("9.3")
 
     # Easy cases
-    launcher_parameters = LauncherParametersDTO(launcher_id="id", nb_cpu=4)
+    launcher_parameters = LauncherParametersDTO(nb_cpu=4)
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
-    assert sim_args == ["--force-parallel=4"]
+    assert sim_args == ["--force-parallel", "4"]
 
-    launcher_parameters = LauncherParametersDTO(launcher_id="id", nb_cpu=8)
+    launcher_parameters = LauncherParametersDTO(nb_cpu=8)
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
-    assert sim_args == ["--force-parallel=8"]
+    assert sim_args == ["--force-parallel", "8"]
 
     launcher_parameters = LauncherParametersDTO(other_options="solver-logs")
     sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, solver_version_8_8)
@@ -143,9 +142,9 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
         for version in [solver_version_8_8, solver_version_9_2, solver_version_9_3]:
             sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, version)
             if version == solver_version_8_8:
-                assert sim_args == ["--use-ortools", f"--ortools-solver={solver}"]
+                assert sim_args == ["--use-ortools", "--ortools-solver", solver]
             elif version == solver_version_9_2 or version == solver_version_9_3:
-                assert sim_args == [f"--linear-solver={solver}"]
+                assert sim_args == ["--linear-solver", solver]
 
     # Xpress cases
     os.environ["XPRESSDIR"] = "fake_path_for_test"
@@ -155,9 +154,26 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
         assert env_variables["XPRESSDIR"] == "fake_path_for_test"
         arg = "lp" if version == solver_version_9_2 else "linear"
         assert sim_args == [
-            "--linear-solver=xpress",
-            f'--{arg}-solver-param-optim-1="PRESOLVE 1"',
-            f'--{arg}-solver-param-optim-2="PRESOLVE 1"',
+            "--linear-solver",
+            "xpress",
+            f"--{arg}-solver-param-optim-1",
+            "PRESOLVE 1",
+            f"--{arg}-solver-param-optim-2",
+            "PRESOLVE 1",
+        ]
+
+    launcher_parameters.other_options = 'xpress presolve param-optim1="THREADS 4"'
+    for version in [solver_version_9_2, solver_version_9_3]:
+        sim_args, env_variables = local_launcher._parse_launcher_options(launcher_parameters, version)
+        assert env_variables["XPRESSDIR"] == "fake_path_for_test"
+        arg = "lp" if version == solver_version_9_2 else "linear"
+        assert sim_args == [
+            "--linear-solver",
+            "xpress",
+            f"--{arg}-solver-param-optim-1",
+            "PRESOLVE 1 THREADS 4",
+            f"--{arg}-solver-param-optim-2",
+            "PRESOLVE 1",
         ]
 
     options = 'xpress nobasis1 nobasis2 param-optim1="PRESOLVE 2 THREADS 4" param-optim2="LPFLAGS 5"'
@@ -166,12 +182,38 @@ def test_parse_launcher_arguments(launcher_config: LocalConfig, xpress_env):
         sim_args, _ = local_launcher._parse_launcher_options(launcher_parameters, version)
         arg = "lp" if version == solver_version_9_2 else "linear"
         assert sim_args == [
-            "--linear-solver=xpress",
-            "--use-optim-1-basis-next-week=false",
-            "--use-optim-1-basis-optim-2=false",
-            f'--{arg}-solver-param-optim-1="PRESOLVE 2 THREADS 4"',
-            f'--{arg}-solver-param-optim-2="LPFLAGS 5"',
+            "--linear-solver",
+            "xpress",
+            "--use-optim-1-basis-next-week",
+            "false",
+            "--use-optim-1-basis-optim-2",
+            "false",
+            f"--{arg}-solver-param-optim-1",
+            "PRESOLVE 2 THREADS 4",
+            f"--{arg}-solver-param-optim-2",
+            "LPFLAGS 5",
         ]
+
+
+@pytest.mark.unit_test
+@pytest.mark.parametrize(
+    "solver_version,arguments",
+    [
+        (SolverVersion.parse("8.7"), "xpress presolve"),
+        (SolverVersion.parse("8.8"), "xpress nobasis1"),
+        (SolverVersion.parse("8.8"), "xpress nobasis2"),
+        (SolverVersion.parse("8.8"), 'xpress param-optim1="THREADS 4"'),
+        (SolverVersion.parse("8.8"), 'xpress param-optim2="THREADS 4"'),
+    ],
+)
+def test_unsupported_launcher_other_options_should_raise(
+    launcher_config: LocalConfig, xpress_env, solver_version: SolverVersion, arguments: str
+):
+    local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
+    launcher_parameters = LauncherParametersDTO(nb_cpu=4)
+    with pytest.raises(ValueError, match="not supported"):
+        launcher_parameters.other_options = arguments
+        local_launcher._parse_launcher_options(launcher_parameters, solver_version)
 
 
 @pytest.mark.unit_test

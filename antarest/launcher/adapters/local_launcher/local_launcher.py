@@ -37,6 +37,16 @@ from antarest.study.model import STUDY_VERSION_9_2
 logger = logging.getLogger(__name__)
 
 
+SOLVER_VERSION_8_8 = SolverVersion(major=8, minor=8, patch=0)
+SOLVER_VERSION_9_2 = SolverVersion(major=9, minor=2, patch=0)
+SOLVER_VERSION_9_3 = SolverVersion(major=9, minor=3, patch=0)
+
+
+def _check_option(option_name: str, min_version: SolverVersion, actual_version: SolverVersion) -> None:
+    if actual_version < min_version:
+        raise ValueError(f"Option '{option_name}' is not supported for solver version {actual_version}.")
+
+
 class LocalLauncher(AbstractLauncher):
     """
     This local launcher is meant to work when using AntaresWeb on a single worker process in local mode
@@ -117,8 +127,6 @@ class LocalLauncher(AbstractLauncher):
                         env=environment_variables,
                         stdout=out_file,
                         stderr=err_file,
-                        universal_newlines=True,
-                        encoding="utf-8",
                     )
                 self.job_id_to_study_id[job_id] = (study_uuid, export_path, process)
                 self.callbacks.update_status(job_id, JobStatus.RUNNING, None, None)
@@ -172,9 +180,9 @@ class LocalLauncher(AbstractLauncher):
         }
 
     def _parse_launcher_options(
-        self, launcher_parameters: LauncherParametersDTO, version: SolverVersion
+        self, launcher_parameters: LauncherParametersDTO, solver_version: SolverVersion
     ) -> Tuple[List[str], Dict[str, Any]]:
-        simulator_args = [f"--force-parallel={launcher_parameters.nb_cpu}"] if launcher_parameters.nb_cpu else []
+        simulator_args = ["--force-parallel", f"{launcher_parameters.nb_cpu}"] if launcher_parameters.nb_cpu else []
         environment_variables = os.environ.copy()
         if not launcher_parameters.other_options:
             return simulator_args, environment_variables
@@ -194,10 +202,10 @@ class LocalLauncher(AbstractLauncher):
             linear_solver = "coin"
 
         if linear_solver:
-            if version >= STUDY_VERSION_9_2:
-                simulator_args += [f"--linear-solver={linear_solver}"]
+            if solver_version >= STUDY_VERSION_9_2:
+                simulator_args += ["--linear-solver", linear_solver]
             else:
-                simulator_args.extend(["--use-ortools", f"--ortools-solver={linear_solver}"])
+                simulator_args.extend(["--use-ortools", "--ortools-solver", linear_solver])
 
         # 'xpress' specific part
         if "xpress" in options:
@@ -208,27 +216,36 @@ class LocalLauncher(AbstractLauncher):
 
             # Parse specific options
             if "nobasis1" in options:
-                simulator_args += ["--use-optim-1-basis-next-week=false"]
+                _check_option("nobasis1", min_version=SOLVER_VERSION_9_2, actual_version=solver_version)
+                simulator_args += ["--use-optim-1-basis-next-week", "false"]
             if "nobasis2" in options:
-                simulator_args += ["--use-optim-1-basis-optim-2=false"]
+                _check_option("nobasis2", min_version=SOLVER_VERSION_9_2, actual_version=solver_version)
+                simulator_args += ["--use-optim-1-basis-optim-2", "false"]
 
             solver_parameters_optim1 = []
             solver_parameters_optim2 = []
             if "presolve" in options:
-                solver_parameters_optim1 += ["PRESOLVE 1"]
-                solver_parameters_optim2 += ["PRESOLVE 1"]
+                _check_option("presolve", min_version=SOLVER_VERSION_8_8, actual_version=solver_version)
+                if solver_version < SOLVER_VERSION_9_2:
+                    simulator_args += ["--solver-parameters", "PRESOLVE 1"]
+                else:
+                    solver_parameters_optim1 += ["PRESOLVE 1"]
+                    solver_parameters_optim2 += ["PRESOLVE 1"]
+
             for opt in options:
                 if opt.startswith("param-optim1="):
-                    solver_parameters_optim1 += [opt.removeprefix("param-optim1=")]
+                    _check_option("param-optim1", min_version=SOLVER_VERSION_9_2, actual_version=solver_version)
+                    solver_parameters_optim1 += [opt.removeprefix("param-optim1=").strip('"')]
                 if opt.startswith("param-optim2="):
-                    solver_parameters_optim2 += [opt.removeprefix("param-optim2=")]
+                    _check_option("param-optim2", min_version=SOLVER_VERSION_9_2, actual_version=solver_version)
+                    solver_parameters_optim2 += [opt.removeprefix("param-optim2=").strip('"')]
 
             # The v9.2 Simulator has a specific command line
-            arg = "lp" if version == STUDY_VERSION_9_2 else "linear"
+            arg = "lp" if solver_version == STUDY_VERSION_9_2 else "linear"
             if solver_parameters_optim1:
-                simulator_args += [f'--{arg}-solver-param-optim-1="{" ".join(solver_parameters_optim1)}"']
+                simulator_args += [f"--{arg}-solver-param-optim-1", " ".join(solver_parameters_optim1)]
             if solver_parameters_optim2:
-                simulator_args += [f'--{arg}-solver-param-optim-2="{" ".join(solver_parameters_optim2)}"']
+                simulator_args += [f"--{arg}-solver-param-optim-2", " ".join(solver_parameters_optim2)]
 
         return simulator_args, environment_variables
 
