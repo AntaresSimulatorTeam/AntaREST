@@ -62,7 +62,7 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.repository import JobResultRepository
 from antarest.login.model import Group
 from antarest.login.service import LoginService
-from antarest.login.utils import get_current_user, get_user_id
+from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -424,9 +424,12 @@ class RawStudyInterface(StudyInterface):
             data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
             update_cache(self._raw_study_service.cache, study.id, data)
         self._variant_study_service.on_parent_change(study.id)
-        jwt_user = get_current_user()
+        self.update_editor(file_study)
+
+    def update_editor(self, file_study: FileStudy) -> None:
+        jwt_user = get_user_impersonator()
         if jwt_user:
-            user = self._user_service.get_identity(jwt_user.id)
+            user = self._user_service.get_identity(jwt_user)
             if user and user.name:
                 study_antares = file_study.tree.get(["study", "antares"])
                 study_antares["editor"] = user.name
