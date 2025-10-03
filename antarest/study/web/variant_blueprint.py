@@ -22,7 +22,7 @@ from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string, sanitize_uuid
 from antarest.core.utils.web import APITag
 from antarest.login.auth import Auth
-from antarest.study.model import StudyMetadataDTO
+from antarest.study.model import StudyAdditionalData, StudyMetadataDTO
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.model import CommandDTOAPI, VariantTreeDTO
@@ -70,7 +70,7 @@ def create_study_variant_routes(
         variant_study = variant_study_service.create_variant_study(uuid=sanitized_uuid, name=name)
 
         author = study_service.get_user_name()
-        parent_author = variant_study.additional_data.author
+        parent_author = (variant_study.additional_data or StudyAdditionalData()).author
         if author != parent_author:
             command_context = study_service.storage_service.variant_study_service.command_factory.command_context
             study_service.apply_commands(
