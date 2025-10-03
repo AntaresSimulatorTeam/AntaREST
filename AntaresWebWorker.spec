@@ -34,12 +34,11 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=False,
+    console=True,
     disable_windowed_traceback=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='resources/webapp/favicon.ico'
 )
 
 coll = COLLECT(exe,
