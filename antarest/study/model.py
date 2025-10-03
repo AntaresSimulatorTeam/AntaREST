@@ -280,7 +280,7 @@ class Study(Base):
     tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
-    additional_data = relationship(
+    additional_data: Mapped[StudyAdditionalData | None] = relationship(
         StudyAdditionalData,
         uselist=False,
         cascade="all, delete, delete-orphan",
