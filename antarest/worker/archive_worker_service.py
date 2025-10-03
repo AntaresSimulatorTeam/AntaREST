@@ -12,6 +12,7 @@
 
 import argparse
 import logging
+import multiprocessing
 from pathlib import Path
 from typing import Optional, Sequence, TypeAlias
 
@@ -77,4 +78,5 @@ def run_archive_worker(args: ArgsType = None) -> None:
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     run_archive_worker()
