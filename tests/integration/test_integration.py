@@ -26,6 +26,7 @@ from antarest.core.serde.ini_writer import write_ini_file
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from tests.integration.assets import ASSETS_DIR
+from tests.integration.prepare_proxy import PreparerProxy
 from tests.integration.utils import wait_for
 
 
@@ -2009,3 +2010,8 @@ def test_update_with_editor(client: TestClient, admin_access_token: str):
     assert res_area_delete["author"] == "creator_2"
     assert res_area_delete["editor"] == "creator_2"
     # END DELETING AREA
+
+def test_update_variant_with_editor(client: TestClient, admin_access_token: str):
+    proxy_variant = PreparerProxy(client, admin_access_token)
+    study = proxy_variant.create_study("test_study", version=880)
+    study_variant = proxy_variant.create_variant(study, "test_variant_study")

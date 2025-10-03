@@ -70,7 +70,7 @@ TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool, editor: str = "") -> None:
+def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool) -> None:
     """
     Update antares study information in the study.antares file.
 
@@ -83,20 +83,23 @@ def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_autho
     study_data_info = study_tree.get(["study"])
     antares_info = study_data_info["antares"]
     author = "Unknown"
+    editor = "Unknown"
 
     if metadata.additional_data:
         author = metadata.additional_data.author
+        if metadata.additional_data.editor is None:
+            editor = metadata.additional_data.author
 
     # Update basic fields
     antares_info["caption"] = metadata.name
     antares_info["created"] = _format_timestamp(metadata.created_at)
     antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
     antares_info["version"] = _format_version(metadata.version)
-    antares_info["editor"] = editor or author
+    antares_info["editor"] = editor
 
     # Update author-related fields if additional_data exists
-    if update_author and metadata.additional_data and metadata.additional_data.author:
-        antares_info["author"] = metadata.additional_data.author
+    if update_author:
+        antares_info["author"] = author
 
     study_tree.save(study_data_info, ["study"])
 

@@ -259,7 +259,6 @@ class RawStudyService(AbstractStorageService):
         destination_folder: PurePosixPath,
         output_ids: List[str],
         with_outputs: bool | None,
-        editor: str,
     ) -> RawStudy:
         """
         Create a new RAW study by copying a reference study.
@@ -271,7 +270,6 @@ class RawStudyService(AbstractStorageService):
             destination_folder: The path for the destination study. If not provided, the destination study will be created in the same directory as the source study.
             output_ids: A list of output names that you want to include in the destination study.
             with_outputs: Indicates whether to copy the outputs as well.
-            editor: The name of the editor that created the destination study.
 
         Returns:
             The newly created study.
@@ -289,7 +287,7 @@ class RawStudyService(AbstractStorageService):
 
         study = self.study_factory.create_from_fs(dest_path, is_managed(src_meta), study_id=dest_study.id)
 
-        update_antares_info(dest_study, study.tree, update_author=False, editor=editor)
+        update_antares_info(dest_study, study.tree, update_author=False)
 
         return dest_study
 

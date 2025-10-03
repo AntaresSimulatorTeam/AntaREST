@@ -1152,7 +1152,6 @@ class StudyService:
                 destination_folder,
                 output_ids,
                 with_outputs,
-                self.get_user_name(),
             )
 
             self._save_study(study, group_ids)
