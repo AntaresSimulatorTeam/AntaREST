@@ -12,6 +12,7 @@
 from collections import defaultdict
 from pathlib import Path
 
+
 class OutageCounter:
     def __init__(self):
         self.forced_outages_data = defaultdict(lambda: defaultdict(int))
@@ -30,12 +31,13 @@ class OutageCounter:
         return self.planned_outages_data[area_id][power_system_resource_id]
 
     def save_planned_outages(self, file_path: Path, area_id: str, power_system_resource_id: str):
-        (file_path/"planned_outages.txt").touch()
-        with (file_path/"planned_outages.txt").open('w') as f:
-            f.write(f"Number of units planned in outage: {self.get_planned_outages(area_id, power_system_resource_id)}\n")
+        (file_path / "planned_outages.txt").touch()
+        with (file_path / "planned_outages.txt").open("w") as f:
+            f.write(
+                f"Number of units planned in outage: {self.get_planned_outages(area_id, power_system_resource_id)}\n"
+            )
 
     def save_forced_outages(self, file_path: Path, area_id: str, power_system_resource_id: str):
-        (file_path/"forced_outages.txt").touch()
-        with (file_path/"forced_outages.txt").open('w') as f:
+        (file_path / "forced_outages.txt").touch()
+        with (file_path / "forced_outages.txt").open("w") as f:
             f.write(f"Number of units forced in outage: {self.get_forced_outages(area_id, power_system_resource_id)}\n")
-

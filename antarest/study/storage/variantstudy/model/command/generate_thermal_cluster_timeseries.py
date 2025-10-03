@@ -10,11 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from collections import defaultdict
 import logging
 from pathlib import Path
 from typing import List, Optional
-
 
 import numpy as np
 import pandas as pd
@@ -31,11 +29,11 @@ from antarest.study.storage.variantstudy.model.command.common import (
     command_failed,
     command_succeeded,
 )
-from . import outage_counter_utils as oc
-
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+from . import outage_counter_utils as oc
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +107,8 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     # 8- Generate the time-series
                     results = generator.generate_time_series_for_clusters(cluster, nb_years)
                     generated_matrix = results.available_power
-                    
-                    if len(results.outage_output.forced_outages) ==  len(results.outage_output.planned_outages):
+
+                    if len(results.outage_output.forced_outages) == len(results.outage_output.planned_outages):
                         print("They are same")
 
                     for i in range(len(results.outage_output.forced_outages)):
@@ -137,11 +135,11 @@ class GenerateThermalClusterTimeSeries(ICommand):
                     return command_failed(f"Area {area_id}, cluster {thermal.id.lower()}: " + e.args[0])
 
         # 11- Once we've written all matrices inside the matrix-store, modify the input folder.
-        
+
         # create outages directory in root of study if not exists
         # outages path save
         study_dir = Path(study_data._file_study.config.path)
-        outage_dir = (study_dir / "outages")
+        outage_dir = study_dir / "outages"
         outage_dir.mkdir(exist_ok=True)
 
         for area_id, values in series_mapping.items():
@@ -150,13 +148,13 @@ class GenerateThermalClusterTimeSeries(ICommand):
             area_dir.mkdir(exist_ok=True)
             for thermal_id, series in values.items():
                 # for each element create directory if not exists
-                # thermal id 
+                # thermal id
                 thermal_dir = area_dir / "thermal" / thermal_id
                 thermal_dir.mkdir(parents=True, exist_ok=True)
                 outage_counter.save_planned_outages(thermal_dir, area_id, thermal_id)
                 outage_counter.save_forced_outages(thermal_dir, area_id, thermal_id)
                 study_data.save_thermal_series(area_id, thermal_id, series)
-                #inside thermal id create planned_outages.txt and forced_outages.txt
+                # inside thermal id create planned_outages.txt and forced_outages.txt
 
         return command_succeeded(message="All time series were generated successfully")
 
