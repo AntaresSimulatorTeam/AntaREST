@@ -82,11 +82,11 @@ class DistrictCreation(AntaresBaseModel):
     name: str
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: Optional[bool] = True
+    output: Optional[bool] = None
     #: User-defined comments.
-    comments: Optional[str] = ""
+    comments: Optional[str] = None
     #: List of areas that will be grouped in the district.
-    areas: Optional[List[str]] = []
+    areas: Optional[List[str]] = None
     #: Base filter for the district.
     apply_filter: Optional[DistrictApplyFilter] = None
 
@@ -111,11 +111,11 @@ class DistrictDTO(AntaresBaseModel):
     id: str
     #: Indicates whether this district is used in the output (usually all
     #: districts are visible, but the user can decide to hide some of them).
-    output: bool = True
+    output: bool
     #: User-defined comments.
-    comments: str = ""
+    comments: str
     #: List of areas that will be grouped in the district.
-    areas: List[str] = []
+    areas: List[str]
     #: Name of the district (this name is also used as a unique identifier).
     name: str
 
