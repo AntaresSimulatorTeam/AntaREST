@@ -62,7 +62,7 @@ class TestSTStorage:
             "id": internal_study_id,
             "name": "STA-mini",
             "version": min_study_version,
-            "author": None,
+            "author": "Andrea SGATTONI",
             "editor": "Andrea SGATTONI",
             "created": ANY,  # ISO8601 Date/time
             "updated": ANY,  # ISO8601 Date/time

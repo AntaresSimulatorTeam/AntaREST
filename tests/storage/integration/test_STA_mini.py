@@ -535,7 +535,7 @@ def test_sta_mini_list_studies(storage_service) -> None:
             "id": UUID,
             "name": "STA-mini",
             "version": 700,
-            "author": None,
+            "author": "Andrea SGATTONI",
             "editor": None,
             "created": str(datetime.fromtimestamp(1480683452)),
             "updated": str(datetime.fromtimestamp(1602678639)),
